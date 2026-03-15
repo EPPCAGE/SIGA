@@ -4780,7 +4780,7 @@ function renderStep(p, i) {
         <ul class="step-actions ${em ? 'edit-mode-list' : ''}" id="${p}-actions-list-${i}">${actHTML}</ul>
         <div class="step-flow-actions">
           <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
-          <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}',${i})" title="Limpar todas as ações deste fluxo">🗑 Limpar ${isTobe ? 'TO BE' : 'AS IS'}</button>
+          <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}')" title="Limpar o fluxo ${isTobe ? 'TO BE' : 'AS IS'} inteiro (todas as etapas)">🗑 Limpar todo ${isTobe ? 'TO BE' : 'AS IS'}</button>
           <button class="copy-flow-btn" onclick="copyFlowAsIsToTobe('${p}',${i})" title="Copiar ações do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>
         </div>
         ${decHTML}${noteHTML}
@@ -4917,18 +4917,21 @@ function copyFlowAsIsToTobe(p,si) {
   showToast('⎘ Fluxo AS IS copiado para o TO BE.', 'success');
 }
 
-function clearCurrentFlow(p,si) {
+function clearCurrentFlow(p) {
   const label = flowMode === 'tobe' ? 'TO BE' : 'AS IS';
-  if(!confirm(`Limpar todas as ações do fluxo ${label} desta etapa? Esta ação não pode ser desfeita.`)) return;
-  const step = DATA[p].steps[si];
-  if(flowMode === 'tobe') {
-    if(!step.tobe) step.tobe = {};
-    step.tobe.actions = [];
-  } else {
-    step.actions = [];
-  }
-  renderStep(p,si); markChanged();
-  showToast(`🗑 Fluxo ${label} limpo.`, 'success');
+  const total = DATA[p].steps.length;
+  if(!confirm(`Limpar o fluxo ${label} inteiro — todas as ${total} etapa(s) e suas ações? Esta ação não pode ser desfeita.`)) return;
+  DATA[p].steps.forEach(step => {
+    if(flowMode === 'tobe') {
+      if(!step.tobe) step.tobe = {};
+      step.tobe.actions = [];
+    } else {
+      step.actions = [];
+    }
+  });
+  renderStep(p, DATA[p].currentStep);
+  markChanged();
+  showToast(`🗑 Fluxo ${label} inteiro limpo (${total} etapa(s)).`, 'success');
 }
 function navStep(p,dir){ const n=DATA[p].currentStep+dir; if(n>=0&&n<DATA[p].steps.length){DATA[p].currentStep=n;renderStep(p,n);} }
 
