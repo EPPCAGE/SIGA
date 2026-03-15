@@ -7306,8 +7306,10 @@ async function checkActionsDeadlinesEmail() {
         const alKey = `plano_acao_vencido_${pk}_${act.prazo}`;
         if(!sent[alKey]) {
           const subs = getAlertSubscribers('plano_acao_vencido');
+          console.log(`[checkActionsDeadlinesEmail] vencido key=${alKey} subs=`, subs);
+          let enviado = false;
           for(const {nome, email} of subs) {
-            await sendAlertEmail(
+            const ok = await sendAlertEmail(
               email, nome,
               `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
               _buildAlertHtml('plano_acao_vencido', popName, pk, {
@@ -7315,17 +7317,20 @@ async function checkActionsDeadlinesEmail() {
                 prazo: d.toLocaleDateString('pt-BR'),
               })
             );
+            if(ok) enviado = true;
           }
-          sent[alKey] = today.toISOString().slice(0,10);
-          changed = true;
+          if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
+          else if(!subs.length) console.warn('[checkActionsDeadlinesEmail] nenhum assinante configurado para plano_acao_vencido');
         }
       } else if(d <= in7) {
         const dias   = Math.round((d - today) / 86400000);
         const alKey  = `plano_acao_7d_${pk}_${act.prazo}`;
         if(!sent[alKey]) {
           const subs = getAlertSubscribers('plano_acao_7d');
+          console.log(`[checkActionsDeadlinesEmail] 7d key=${alKey} subs=`, subs);
+          let enviado = false;
           for(const {nome, email} of subs) {
-            await sendAlertEmail(
+            const ok = await sendAlertEmail(
               email, nome,
               `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
               _buildAlertHtml('plano_acao_7d', popName, pk, {
@@ -7333,9 +7338,10 @@ async function checkActionsDeadlinesEmail() {
                 prazo: d.toLocaleDateString('pt-BR'), dias,
               })
             );
+            if(ok) enviado = true;
           }
-          sent[alKey] = today.toISOString().slice(0,10);
-          changed = true;
+          if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
+          else if(!subs.length) console.warn('[checkActionsDeadlinesEmail] nenhum assinante configurado para plano_acao_7d');
         }
       }
     }
