@@ -1079,6 +1079,61 @@
   .ai-summary { background:linear-gradient(135deg,#eef2ff,#f5f3ff); border-radius:12px; padding:18px 20px; margin-top:20px; font-size:13px; color:#1e293b; line-height:1.7; border:1.5px solid #c4b5fd; }
   .ai-summary strong { color:#6366f1; }
   .ai-no-data { text-align:center; padding:48px 0; color:#94a3b8; font-size:14px; }
+
+  /* ── RELATÓRIO IA ── */
+  #ai-relatorio-module { box-sizing:border-box; }
+  .rel-gen-wrap { max-width:960px; margin:0 auto; padding:32px 32px 60px; }
+  .rel-gen-header { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+  .rel-gen-icon { width:52px; height:52px; border-radius:14px; background:linear-gradient(135deg,#0a2540,#1a4a7a); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
+  .rel-gen-title { font-family:'DM Serif Display',serif; font-size:22px; color:#0a2540; margin:0 0 4px; }
+  .rel-gen-sub { font-size:13px; color:#64748b; }
+  .rel-gen-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 22px; background:linear-gradient(135deg,#0a2540,#1a4a7a); color:white; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
+  .rel-gen-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(10,37,64,.3); }
+  .rel-gen-btn:disabled { opacity:.55; cursor:not-allowed; transform:none; }
+  .rel-quant-box { background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; margin-bottom:16px; overflow:hidden; }
+  .rel-quant-toggle { width:100%; padding:12px 16px; background:none; border:none; text-align:left; cursor:pointer; font-size:13px; font-weight:600; color:#0a2540; display:flex; align-items:center; gap:8px; }
+  .rel-quant-toggle:hover { background:#f1f5f9; }
+  .rel-quant-body { padding:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px; border-top:1px solid #e2e8f0; }
+  @media(max-width:600px){ .rel-quant-body { grid-template-columns:1fr; } }
+  .rel-quant-field label { display:block; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+  .rel-quant-field input { width:100%; padding:7px 10px; border:1.5px solid #e2e8f0; border-radius:7px; font-size:13px; outline:none; font-family:inherit; box-sizing:border-box; }
+  .rel-quant-field input:focus { border-color:#0a2540; }
+  /* Report document */
+  .rel-doc { background:white; border:1px solid #e2e8f0; border-radius:14px; padding:48px 52px; margin-top:24px; font-family:'Inter',sans-serif; box-shadow:0 4px 24px rgba(0,0,0,.06); }
+  .rel-doc-header { text-align:center; margin-bottom:32px; padding-bottom:24px; border-bottom:2px solid #0a2540; }
+  .rel-doc-badge { display:inline-block; background:#0a2540; color:white; font-size:10px; font-weight:700; letter-spacing:.1em; padding:4px 12px; border-radius:20px; margin-bottom:12px; }
+  .rel-doc-title { font-family:'DM Serif Display',serif; font-size:26px; color:#0a2540; margin:0 0 6px; }
+  .rel-doc-org { font-size:13px; color:#64748b; }
+  .rel-ficha { width:100%; border-collapse:collapse; margin-bottom:28px; font-size:13px; }
+  .rel-ficha td { padding:8px 12px; border:1px solid #e2e8f0; }
+  .rel-ficha td:first-child { font-weight:700; color:#0a2540; background:#f8fafc; width:220px; white-space:nowrap; }
+  .rel-ficha td:last-child { color:#1e293b; }
+  .rel-h1 { font-family:'DM Serif Display',serif; font-size:18px; color:#0a2540; margin:28px 0 12px; padding-bottom:6px; border-bottom:2px solid #00a86b; }
+  .rel-h2 { font-size:13px; font-weight:800; color:#0a2540; margin:20px 0 8px; text-transform:uppercase; letter-spacing:.04em; }
+  .rel-p { font-size:14px; color:#1e293b; line-height:1.75; margin:0 0 12px; }
+  .rel-ul { margin:0 0 12px; padding-left:22px; }
+  .rel-ul li { font-size:14px; color:#1e293b; line-height:1.7; margin-bottom:4px; }
+  .rel-table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13px; }
+  .rel-table th { background:#0a2540; color:white; padding:9px 12px; text-align:left; font-weight:700; }
+  .rel-table td { padding:8px 12px; border-bottom:1px solid #e2e8f0; color:#1e293b; vertical-align:top; }
+  .rel-table tr:nth-child(even) td { background:#f8fafc; }
+  .rel-tag-risk { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+  .rel-tag-risk.alto  { background:#fee2e2; color:#991b1b; }
+  .rel-tag-risk.medio { background:#fef3c7; color:#92400e; }
+  .rel-tag-risk.baixo { background:#d1fae5; color:#065f46; }
+  .rel-status { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+  .rel-status.concluido { background:#d1fae5; color:#065f46; }
+  .rel-status.pendente  { background:#fef3c7; color:#92400e; }
+  .rel-status.andamento { background:#dbeafe; color:#1e40af; }
+  .rel-status.atrasado  { background:#fee2e2; color:#991b1b; }
+  .rel-diagram-box { border:1.5px dashed #cbd5e1; border-radius:10px; padding:16px; text-align:center; margin:12px 0; }
+  .rel-diagram-box img { max-width:100%; border-radius:6px; }
+  .rel-print-bar { display:flex; gap:10px; justify-content:flex-end; padding-top:24px; margin-top:24px; border-top:1px solid #e2e8f0; }
+  .rel-print-btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; }
+  .rel-print-btn.primary   { background:#0a2540; color:white; }
+  .rel-print-btn.secondary { background:#f1f5f9; color:#0a2540; }
+  .rel-empty { font-style:italic; color:#94a3b8; font-size:13px; margin-bottom:12px; }
+  @media(max-width:700px){ .rel-doc { padding:24px 16px; } }
 </style>
 </head>
 <body>
@@ -1215,6 +1270,7 @@
     <div class="nav-tab nav-tab-bpmn" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
     <div class="nav-tab nav-tab-fd" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
     <div class="nav-tab nav-tab-ai" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
+    <div class="nav-tab nav-tab-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
   </div>
 </nav>
 
@@ -2553,6 +2609,56 @@ Fim"></textarea>
 
     <!-- Resultado -->
     <div id="ai-output"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MÓDULO: RELATÓRIO DE MAPEAMENTO DE PROCESSO (IA)          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="ai-relatorio-module" style="display:none;">
+  <div class="rel-gen-wrap">
+    <div class="rel-gen-header">
+      <div class="rel-gen-icon">📄</div>
+      <div>
+        <div class="rel-gen-title">Relatório de Mapeamento de Processo</div>
+        <div class="rel-gen-sub" id="rel-pop-name">Selecione um POP para gerar o relatório</div>
+      </div>
+    </div>
+
+    <!-- Dados Quantitativos (opcional) -->
+    <div class="rel-quant-box">
+      <button class="rel-quant-toggle" onclick="(function(b){var d=document.getElementById('rel-quant-body'),open=d.style.display!=='grid';d.style.display=open?'grid':'none';b.querySelector('.rq-arrow').textContent=open?'▲':'▼';})(this)">
+        📊 Dados Quantitativos <span style="font-weight:400;color:#64748b;">— volumetria e tempo (opcional, enriquece o relatório)</span>
+        <span class="rq-arrow" style="margin-left:auto;font-size:11px;">▼</span>
+      </button>
+      <div id="rel-quant-body" class="rel-quant-body" style="display:none;">
+        <div class="rel-quant-field"><label>Execuções médias / mês</label><input type="text" id="rq-vol-mensal" placeholder="ex: 120" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Execuções anuais estimadas</label><input type="text" id="rq-vol-anual" placeholder="ex: 1.440" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Variação sazonal</label><input type="text" id="rq-sazonalidade" placeholder="ex: maior no 1º trimestre" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Nº de participantes nas reuniões</label><input type="text" id="rq-participantes" placeholder="ex: 8 pessoas" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Tempo médio de execução</label><input type="text" id="rq-tempo-medio" placeholder="ex: 12 dias úteis" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Tempo mínimo</label><input type="text" id="rq-tempo-min" placeholder="ex: 5 dias" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Tempo máximo</label><input type="text" id="rq-tempo-max" placeholder="ex: 30 dias" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Tempo médio de espera</label><input type="text" id="rq-tempo-espera" placeholder="ex: 3 dias" oninput="saveRelQuant()"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="rel-gen-btn" id="rel-gen-btn" onclick="runAiRelatorio()">📄 Gerar Relatório com IA</button>
+      <span style="font-size:12px;color:#94a3b8;">Powered by Google Gemini · Baseado em todas as abas do mapeamento</span>
+    </div>
+
+    <!-- Spinner -->
+    <div id="rel-spinner" style="display:none;flex-direction:column;align-items:center;gap:16px;padding:48px 0;">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style="animation:ai-spin 1s linear infinite;">
+        <circle cx="22" cy="22" r="18" stroke="#0a2540" stroke-width="4" stroke-dasharray="90 28" stroke-linecap="round"/>
+      </svg>
+      <div style="font-size:14px;font-weight:700;color:#0a2540;">Gerando relatório com IA…</div>
+      <div style="font-size:12px;color:#94a3b8;">Analisando todas as abas do mapeamento, aguarde</div>
+    </div>
+
+    <!-- Report Output -->
+    <div id="rel-output"></div>
   </div>
 </div>
 
@@ -4292,11 +4398,10 @@ function switchPop(pop, tabEl) {
 // ═══ NAV ══════════════════════════════════════
 function showSection(id, tab, silent) {
   currentSection = id;
-  // Esconder BPMN e IA se estiverem visíveis (voltando de outra aba)
-  const bpmnMod = document.getElementById('bpmn-module');
-  if(bpmnMod) bpmnMod.style.display = 'none';
-  const aiMod = document.getElementById('ai-module');
-  if(aiMod) aiMod.style.display = 'none';
+  // Esconder BPMN e módulos IA se estiverem visíveis (voltando de outra aba)
+  ['bpmn-module','ai-module','ai-relatorio-module'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
 
   // Garantir que o pop atual está ativo
   document.querySelectorAll('.pop-content').forEach(p => p.classList.remove('active'));
@@ -5052,8 +5157,7 @@ function showBpmn(tab) {
   if(activePop) activePop.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   if(tab) tab.classList.add('active');
-  const aiMod = document.getElementById('ai-module');
-  if(aiMod) aiMod.style.display = 'none';
+  ['ai-module','ai-relatorio-module'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
   document.getElementById('bpmn-module').style.display = 'block';
   initImageModule();
   // Restore saved image for current pop
@@ -6646,7 +6750,7 @@ let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
 let workspaceId = sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
-  ['repo-module','drops-module','pat-module','bi-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','audit-module','epp-module','epp-dash-panel','indicadores-cage-module','indcage-panel'].forEach(id => {
+  ['repo-module','drops-module','pat-module','bi-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','indicadores-cage-module','indcage-panel'].forEach(id => {
     const el = document.getElementById(id);
     if(el) { el.style.display = 'none'; el.classList.remove('active'); }
   });
@@ -10646,8 +10750,7 @@ function showAiAnalysis(tab) {
   // Ocultar seções do POP ativo
   const activePop = document.getElementById('pop-' + popDomId(currentPop));
   if (activePop) activePop.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-  const bpmnMod = document.getElementById('bpmn-module');
-  if (bpmnMod) bpmnMod.style.display = 'none';
+  ['bpmn-module','ai-relatorio-module'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   if (tab) tab.classList.add('active');
 
@@ -10772,6 +10875,432 @@ ${fluxoTexto}`;
     btn.disabled = false;
     spinner.style.display = 'none';
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RELATÓRIO IA — Geração automática com Gemini
+// ══════════════════════════════════════════════════════════════
+
+function showAiRelatorio(tab) {
+  const activePop = document.getElementById('pop-' + popDomId(currentPop));
+  if (activePop) activePop.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  ['bpmn-module','ai-module'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  if (tab) tab.classList.add('active');
+
+  const mod = document.getElementById('ai-relatorio-module');
+  mod.style.display = 'block';
+
+  const p    = popPrefix(currentPop);
+  const meta = (DATA[p] && DATA[p].meta) || {};
+  document.getElementById('rel-pop-name').textContent = meta.name || currentPop || '—';
+
+  // Preencher campos quantitativos com dados salvos
+  document.getElementById('rq-vol-mensal').value    = meta.volumetria_mensal  || '';
+  document.getElementById('rq-vol-anual').value     = meta.volumetria_anual   || '';
+  document.getElementById('rq-sazonalidade').value  = meta.variacao_sazonal   || '';
+  document.getElementById('rq-participantes').value = meta.rel_participantes   || '';
+  document.getElementById('rq-tempo-medio').value   = meta.tempo_medio        || '';
+  document.getElementById('rq-tempo-min').value     = meta.tempo_minimo       || '';
+  document.getElementById('rq-tempo-max').value     = meta.tempo_maximo       || '';
+  document.getElementById('rq-tempo-espera').value  = meta.tempo_espera       || '';
+
+  if (mod._lastPop && mod._lastPop !== p) {
+    document.getElementById('rel-output').innerHTML = '';
+  }
+  mod._lastPop = p;
+}
+
+function saveRelQuant() {
+  const p = popPrefix(currentPop);
+  if (!DATA[p]) return;
+  if (!DATA[p].meta) DATA[p].meta = {};
+  const m = DATA[p].meta;
+  m.volumetria_mensal = document.getElementById('rq-vol-mensal').value;
+  m.volumetria_anual  = document.getElementById('rq-vol-anual').value;
+  m.variacao_sazonal  = document.getElementById('rq-sazonalidade').value;
+  m.rel_participantes = document.getElementById('rq-participantes').value;
+  m.tempo_medio       = document.getElementById('rq-tempo-medio').value;
+  m.tempo_minimo      = document.getElementById('rq-tempo-min').value;
+  m.tempo_maximo      = document.getElementById('rq-tempo-max').value;
+  m.tempo_espera      = document.getElementById('rq-tempo-espera').value;
+  markChanged(true);
+}
+
+async function runAiRelatorio() {
+  const p   = popPrefix(currentPop);
+  const pop = DATA[p];
+  if (!pop) return;
+
+  const meta       = pop.meta || {};
+  const steps      = pop.steps || [];
+  const roles      = pop.roles || [];
+  const risks      = pop.risks || [];
+  const indicators = pop.indicators || [];
+  const actions    = pop.actions_plan || [];
+  const meetings   = pop.meetings || [];
+  const normas     = pop.normas || [];
+
+  const btn     = document.getElementById('rel-gen-btn');
+  const spinner = document.getElementById('rel-spinner');
+  const output  = document.getElementById('rel-output');
+
+  btn.disabled = true;
+  spinner.style.display = 'flex';
+  output.innerHTML = '';
+
+  // Montar pacote de dados para a IA
+  const dadosParaIA = {
+    processo: meta.name || '',
+    macroprocesso: meta.macro || '',
+    unidade_responsavel: meta.unidade || '',
+    gestor_processo: meta.patrocinador || '',
+    tipo_trabalho: meta.tipo || '',
+    data_inicio: meta.dataInicio || '',
+    data_conclusao: meta.dataEfetiva || meta.dataPrevista || '',
+    analista_responsavel: meta.elaborado || '',
+    equipe: meta.equipe || '',
+    solicitante: meta.solicitante || '',
+    objetivo_descricao: meta.desc || '',
+    entradas: meta.input || '',
+    saidas: meta.output || '',
+    resultados_esperados: meta.resultados || '',
+    fornecedores: meta.fornecedores || '',
+    clientes: meta.clientes || '',
+    numero_reunioes: meetings.length,
+    volumetria_mensal: meta.volumetria_mensal || '',
+    volumetria_anual: meta.volumetria_anual || '',
+    variacao_sazonal: meta.variacao_sazonal || '',
+    tempo_medio: meta.tempo_medio || '',
+    tempo_minimo: meta.tempo_minimo || '',
+    tempo_maximo: meta.tempo_maximo || '',
+    tempo_espera: meta.tempo_espera || '',
+    atores: roles.map(r => ({ nome: r.name || '', cargo: r.title || '', atribuicoes: (r.duties || []).filter(Boolean) })),
+    etapas: steps.map((s,i) => ({
+      numero: i + 1,
+      titulo: s.title || '',
+      responsavel: s.responsible || '',
+      acoes: (s.actions || []).map(a => typeof a === 'string' ? a : (a.text || '')).filter(Boolean)
+    })),
+    riscos: risks.map(r => ({ titulo: r.title || '', descricao: r.desc || '', causa: r.causa || '', tratamento: r.solucao || '', nivel: r.score >= 16 ? 'Alto' : r.score >= 8 ? 'Médio' : 'Baixo' })),
+    normativos: normas.filter(n => n.name || n.code).map(n => n.code ? `${n.code} – ${n.name}` : n.name),
+    indicadores: indicators.map(i => ({ titulo: i.title || '', descricao: i.desc || '', formula: i.formula || '' })),
+    acoes_plano: actions.map(a => ({ acao: a.desc || '', responsavel: a.resp || '', prazo: a.prazo || '', status: a.status || '' })),
+    reunioes: meetings.map(m => ({ data: m.date, tipo: m.type, participantes: m.participants || '', resumo: m.ata ? m.ata.substring(0, 200) : '' }))
+  };
+
+  const prompt = `Você é um analista sênior de gestão de processos (BPM) do Escritório de Processos da CAGE-RS (Controladoria e Auditoria-Geral do Estado do Rio Grande do Sul). Gere as seções narrativas de um Relatório de Mapeamento de Processo em linguagem institucional formal em português brasileiro.
+
+Com base nos dados fornecidos, produza SOMENTE um JSON válido sem markdown, sem texto fora do JSON, com esta estrutura exata:
+
+{
+  "contexto_objetivo": "texto corrido de 2 a 3 parágrafos descrevendo origem da demanda, problema motivador, objetivo e escopo",
+  "metodologia": "texto corrido de 1 a 2 parágrafos sobre como o trabalho foi conduzido",
+  "visao_geral_funcionamento": "texto corrido de 2 a 3 parágrafos descrevendo o fluxo atual e interação entre áreas",
+  "gargalos": ["item conciso 1", "item conciso 2"],
+  "retrabalhos": ["item conciso 1"],
+  "pontos_cegos": ["item conciso 1"],
+  "inconsistencias": ["item conciso 1"],
+  "oportunidades_melhoria": ["item conciso 1", "item conciso 2"],
+  "redesenho_narrativa": "texto corrido sobre redesenho ou null se não aplicável",
+  "mudancas_propostas": ["item 1"],
+  "beneficios_esperados": ["item 1", "item 2"],
+  "conclusao": "texto corrido de 2 a 3 parágrafos sobre importância, ganhos institucionais e próximos passos"
+}
+
+REGRAS OBRIGATÓRIAS:
+- Linguagem institucional formal do serviço público brasileiro
+- Não invente dados que não estejam presentes nos dados fornecidos
+- Omita seções sem dados suficientes (retorne array vazio [] ou null)
+- Se não há gargalos/retrabalhos explícitos, infira com base nas etapas do processo
+- Refira-se à organização como CAGE-RS e ao setor como Escritório de Processos
+- Retorne APENAS o JSON, absolutamente nada antes ou depois
+
+DADOS DO PROCESSO:
+${JSON.stringify(dadosParaIA, null, 2)}`;
+
+  let aiData = {};
+  try {
+    const respText = await callGeminiProxy(prompt);
+    const m = respText.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('Resposta da IA não continha JSON válido.');
+    aiData = JSON.parse(m[0]);
+  } catch (err) {
+    output.innerHTML = `<div style="padding:20px;background:#fef2f2;border-radius:10px;color:#dc2626;font-size:13px;">
+      <strong>Erro ao gerar relatório:</strong> ${err.message}
+    </div>`;
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    return;
+  }
+
+  // Obter imagem do fluxo (se disponível)
+  const imgSrc = pop._fluxoObjectUrl || pop.fluxoImgUrl || pop.fluxoImg || null;
+  output.innerHTML = _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetings, normas, aiData, imgSrc);
+
+  btn.disabled = false;
+  spinner.style.display = 'none';
+  output.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetings, normas, ai, imgSrc) {
+  const esc  = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const fmt  = s => esc(s).replace(/\n/g,'<br>');
+  const paras = s => s ? String(s).split(/\n{2,}|\n/).filter(Boolean).map(p => `<p class="rel-p">${fmt(p)}</p>`).join('') : '';
+  const list = arr => (arr && arr.length)
+    ? `<ul class="rel-ul">${arr.map(i => `<li>${esc(i)}</li>`).join('')}</ul>`
+    : `<p class="rel-empty">Nenhum item identificado.</p>`;
+  const row  = (label, val) => val ? `<tr><td>${esc(label)}</td><td>${esc(val)}</td></tr>` : '';
+  const scoreTag = score => {
+    const [cls, lbl] = score >= 16 ? ['alto','Alto'] : score >= 8 ? ['medio','Médio'] : ['baixo','Baixo'];
+    return `<span class="rel-tag-risk ${cls}">${lbl}</span>`;
+  };
+  const statusLabel = { pendente:'Pendente', andamento:'Em andamento', concluido:'Concluído', atrasado:'Atrasado' };
+
+  let h = `<div class="rel-doc" id="rel-doc-content">`;
+
+  // ── Cabeçalho ──────────────────────────────────────────────
+  h += `<div class="rel-doc-header">
+    <div class="rel-doc-badge">ESCRITÓRIO DE PROCESSOS · CAGE-RS</div>
+    <div class="rel-doc-title">RELATÓRIO DE MAPEAMENTO DE PROCESSO</div>
+    <div class="rel-doc-org">Controladoria e Auditoria-Geral do Estado do Rio Grande do Sul</div>
+  </div>`;
+
+  // ── 1. Identificação ────────────────────────────────────────
+  h += `<h2 class="rel-h1">1. Identificação do Processo</h2>
+  <table class="rel-ficha">
+    ${row('Processo analisado',      meta.name)}
+    ${row('Macroprocesso',           meta.macro)}
+    ${row('Processo pai',            meta.processo)}
+    ${row('Unidade responsável',     meta.unidade)}
+    ${row('Gestor do processo',      meta.patrocinador)}
+    ${row('Tipo de trabalho',        meta.tipo)}
+    ${row('Data de início',          meta.dataInicio)}
+    ${row('Data de conclusão',       meta.dataEfetiva || meta.dataPrevista)}
+    ${row('Analista responsável',    meta.elaborado)}
+    ${row('Revisado por',            meta.revisado)}
+    ${row('Equipe envolvida',        meta.equipe)}
+    ${row('Solicitante',             meta.solicitante)}
+    ${row('Nº de reuniões realizadas', meetings.length || '—')}
+  </table>`;
+
+  // ── 2. Contexto e Objetivo ─────────────────────────────────
+  if (ai.contexto_objetivo) {
+    h += `<h2 class="rel-h1">2. Contexto e Objetivo do Trabalho</h2>${paras(ai.contexto_objetivo)}`;
+  }
+
+  // ── 3. Metodologia ─────────────────────────────────────────
+  if (ai.metodologia) {
+    h += `<h2 class="rel-h1">3. Metodologia Utilizada</h2>${paras(ai.metodologia)}`;
+    if (normas.length) {
+      h += `<h3 class="rel-h2">Normativos de Referência</h3>
+      <ul class="rel-ul">${normas.filter(n => n.name || n.code).map(n => `<li>${esc(n.code ? n.code + ' – ' + n.name : n.name)}</li>`).join('')}</ul>`;
+    }
+  }
+
+  // ── 4. Caracterização ──────────────────────────────────────
+  h += `<h2 class="rel-h1">4. Caracterização do Processo</h2>`;
+
+  // 4.1 Atores
+  h += `<h3 class="rel-h2">4.1 Atores do Processo</h3>`;
+  if (roles.length) {
+    h += `<table class="rel-table">
+      <tr><th>Ator</th><th>Cargo / Função</th><th>Principais Atribuições</th></tr>
+      ${roles.map(r => `<tr>
+        <td><strong>${esc(r.name)}</strong></td>
+        <td>${esc(r.title)}</td>
+        <td>${(r.duties || []).filter(Boolean).map(d => `• ${esc(d)}`).join('<br>') || '—'}</td>
+      </tr>`).join('')}
+    </table>`;
+  } else {
+    h += `<p class="rel-empty">Nenhum ator cadastrado na aba Responsabilidades.</p>`;
+  }
+
+  // 4.2 Volumetria
+  if (meta.volumetria_mensal || meta.volumetria_anual) {
+    h += `<h3 class="rel-h2">4.2 Volumetria do Processo</h3>`;
+    let vol = 'O processo é executado';
+    if (meta.volumetria_mensal) vol += `, em média, <strong>${esc(meta.volumetria_mensal)}</strong> vezes por mês`;
+    if (meta.volumetria_anual)  vol += `, representando aproximadamente <strong>${esc(meta.volumetria_anual)}</strong> execuções anuais`;
+    if (meta.variacao_sazonal)  vol += `. Há variação sazonal: <strong>${esc(meta.variacao_sazonal)}</strong>`;
+    h += `<p class="rel-p">${vol}.</p>`;
+  }
+
+  // 4.3 Tempo
+  if (meta.tempo_medio || meta.tempo_minimo || meta.tempo_maximo) {
+    h += `<h3 class="rel-h2">4.3 Tempo do Processo</h3>
+    <table class="rel-ficha">
+      ${row('Tempo médio de execução', meta.tempo_medio)}
+      ${row('Tempo mínimo',            meta.tempo_minimo)}
+      ${row('Tempo máximo',            meta.tempo_maximo)}
+      ${row('Tempo médio de espera',   meta.tempo_espera)}
+    </table>`;
+  }
+
+  // 4.4 Principais Etapas
+  h += `<h3 class="rel-h2">4.4 Principais Etapas do Processo</h3>`;
+  if (steps.length) {
+    h += `<ol class="rel-ul">${steps.map((s, i) => `<li><strong>${esc(s.title || 'Etapa ' + (i+1))}</strong>${s.responsible ? ' <span style="color:#64748b;font-size:12px;">— ' + esc(s.responsible) + '</span>' : ''}</li>`).join('')}</ol>`;
+  } else {
+    h += `<p class="rel-empty">Nenhuma etapa cadastrada na aba Fluxo.</p>`;
+  }
+
+  // ── 5. Diagnóstico AS IS ───────────────────────────────────
+  h += `<h2 class="rel-h1">5. Diagnóstico do Processo Atual (AS IS)</h2>`;
+  if (ai.visao_geral_funcionamento) {
+    h += `<h3 class="rel-h2">5.1 Visão Geral do Funcionamento Atual</h3>${paras(ai.visao_geral_funcionamento)}`;
+  }
+  h += `<h3 class="rel-h2">5.2 Gargalos Identificados</h3>${list(ai.gargalos)}`;
+  h += `<h3 class="rel-h2">5.3 Retrabalhos Identificados</h3>${list(ai.retrabalhos)}`;
+  h += `<h3 class="rel-h2">5.4 Pontos Cegos</h3>${list(ai.pontos_cegos)}`;
+
+  // 5.5 Riscos (da aba Riscos)
+  h += `<h3 class="rel-h2">5.5 Riscos do Processo</h3>`;
+  if (risks.length) {
+    h += `<table class="rel-table">
+      <tr><th>Risco</th><th>Descrição</th><th>Causa</th><th>Tratamento proposto</th><th>Nível</th></tr>
+      ${risks.slice().sort((a,b) => (b.score||0)-(a.score||0)).map(r => `<tr>
+        <td><strong>${esc(r.title)}</strong></td>
+        <td>${esc(r.desc)}</td>
+        <td>${esc(r.causa)}</td>
+        <td>${esc(r.solucao)}</td>
+        <td>${scoreTag(r.score || 0)}</td>
+      </tr>`).join('')}
+    </table>`;
+  } else {
+    h += `<p class="rel-empty">Nenhum risco cadastrado na aba Riscos.</p>`;
+  }
+  h += `<h3 class="rel-h2">5.6 Inconsistências</h3>${list(ai.inconsistencias)}`;
+
+  // ── 6. Oportunidades ───────────────────────────────────────
+  if (ai.oportunidades_melhoria && ai.oportunidades_melhoria.length) {
+    h += `<h2 class="rel-h1">6. Oportunidades de Melhoria</h2>${list(ai.oportunidades_melhoria)}`;
+  }
+
+  // ── 7. Redesenho TO BE ─────────────────────────────────────
+  if (ai.redesenho_narrativa || (ai.mudancas_propostas && ai.mudancas_propostas.length)) {
+    h += `<h2 class="rel-h1">7. Redesenho do Processo (TO BE)</h2>`;
+    if (ai.redesenho_narrativa) h += paras(ai.redesenho_narrativa);
+    if (ai.mudancas_propostas && ai.mudancas_propostas.length) {
+      h += `<h3 class="rel-h2">Principais Mudanças Propostas</h3>${list(ai.mudancas_propostas)}`;
+    }
+  }
+
+  // ── 8. Benefícios Esperados ────────────────────────────────
+  if (ai.beneficios_esperados && ai.beneficios_esperados.length) {
+    h += `<h2 class="rel-h1">8. Benefícios Esperados</h2>${list(ai.beneficios_esperados)}`;
+  }
+
+  // ── 9. Indicadores ─────────────────────────────────────────
+  h += `<h2 class="rel-h1">9. Indicadores do Processo</h2>`;
+  if (indicators.length) {
+    h += `<table class="rel-table">
+      <tr><th>Indicador</th><th>Descrição</th><th>Fórmula</th><th>Periodicidade</th><th>Responsável</th><th>Meta</th></tr>
+      ${indicators.map(i => `<tr>
+        <td><strong>${esc(i.title || i.name || '—')}</strong></td>
+        <td>${esc(i.desc)}</td>
+        <td>${esc(i.formula)}</td>
+        <td>${esc(i.periodicidade)}</td>
+        <td>${esc(i.responsavel)}</td>
+        <td>${esc(i.meta)}</td>
+      </tr>`).join('')}
+    </table>`;
+  } else {
+    h += `<p class="rel-empty">Nenhum indicador cadastrado na aba Indicadores.</p>`;
+  }
+
+  // ── 10. Plano de Ação ──────────────────────────────────────
+  h += `<h2 class="rel-h1">10. Plano de Ação</h2>`;
+  if (actions.length) {
+    h += `<table class="rel-table">
+      <tr><th>Ação</th><th>Responsável</th><th>Prazo</th><th>Status</th></tr>
+      ${actions.map(a => `<tr>
+        <td>${esc(a.desc)}</td>
+        <td>${esc(a.resp)}</td>
+        <td>${esc(a.prazo)}</td>
+        <td><span class="rel-status ${a.status || 'pendente'}">${statusLabel[a.status] || 'Pendente'}</span></td>
+      </tr>`).join('')}
+    </table>`;
+  } else {
+    h += `<p class="rel-empty">Nenhum item cadastrado no Plano de Ação.</p>`;
+  }
+
+  // ── 11. Conclusão ──────────────────────────────────────────
+  if (ai.conclusao) {
+    h += `<h2 class="rel-h1">11. Conclusão</h2>${paras(ai.conclusao)}`;
+  }
+
+  // ── 12. Diagramas ──────────────────────────────────────────
+  if (imgSrc) {
+    h += `<h2 class="rel-h1">12. Diagramas do Processo</h2>
+    <h3 class="rel-h2">12.1 Fluxo do Processo (Imagem BPMN)</h3>
+    <div class="rel-diagram-box"><img src="${imgSrc}" alt="Fluxo do processo — ${esc(meta.name)}"></div>`;
+  }
+
+  // ── Barra de Ações ─────────────────────────────────────────
+  h += `<div class="rel-print-bar">
+    <button class="rel-print-btn secondary" onclick="document.getElementById('rel-output').innerHTML=''">🗑 Limpar</button>
+    <button class="rel-print-btn primary" onclick="printAiRelatorio()">🖨 Imprimir / Salvar PDF</button>
+  </div>`;
+
+  h += `</div>`;
+  return h;
+}
+
+function printAiRelatorio() {
+  const docEl = document.getElementById('rel-doc-content');
+  if (!docEl) return;
+  const content = docEl.innerHTML.replace(/<div class="rel-print-bar">[\s\S]*?<\/div>\s*<\/div>$/, '</div>');
+  const win = window.open('', '_blank', 'width=960,height=700');
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="utf-8">
+<title>Relatório de Mapeamento — ${document.getElementById('rel-pop-name').textContent}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;color:#1e293b;padding:40px 52px;max-width:920px;margin:0 auto;font-size:13.5px}
+.rel-doc-header{text-align:center;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #0a2540}
+.rel-doc-badge{display:inline-block;background:#0a2540;color:white;font-size:9px;font-weight:700;letter-spacing:.1em;padding:3px 10px;border-radius:20px;margin-bottom:10px}
+.rel-doc-title{font-family:'DM Serif Display',serif;font-size:24px;color:#0a2540;margin:0 0 4px}
+.rel-doc-org{font-size:12px;color:#64748b}
+.rel-ficha{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12.5px}
+.rel-ficha td{padding:7px 10px;border:1px solid #e2e8f0}
+.rel-ficha td:first-child{font-weight:700;color:#0a2540;background:#f8fafc;width:210px;white-space:nowrap}
+.rel-h1{font-family:'DM Serif Display',serif;font-size:16px;color:#0a2540;margin:24px 0 10px;padding-bottom:5px;border-bottom:2px solid #00a86b;page-break-after:avoid}
+.rel-h2{font-size:12px;font-weight:800;color:#0a2540;margin:16px 0 7px;text-transform:uppercase;letter-spacing:.04em;page-break-after:avoid}
+.rel-p,.rel-doc p{font-size:13px;line-height:1.75;margin:0 0 10px;color:#1e293b}
+.rel-ul{margin:0 0 10px;padding-left:20px}
+.rel-ul li{font-size:13px;line-height:1.7;margin-bottom:3px}
+.rel-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
+.rel-table th{background:#0a2540;color:white;padding:8px 10px;text-align:left;font-weight:700}
+.rel-table td{padding:7px 10px;border-bottom:1px solid #e2e8f0;vertical-align:top}
+.rel-table tr:nth-child(even) td{background:#f8fafc}
+.rel-tag-risk{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.rel-tag-risk.alto{background:#fee2e2;color:#991b1b}
+.rel-tag-risk.medio{background:#fef3c7;color:#92400e}
+.rel-tag-risk.baixo{background:#d1fae5;color:#065f46}
+.rel-status{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.rel-status.concluido{background:#d1fae5;color:#065f46}
+.rel-status.pendente{background:#fef3c7;color:#92400e}
+.rel-status.andamento{background:#dbeafe;color:#1e40af}
+.rel-status.atrasado{background:#fee2e2;color:#991b1b}
+.rel-empty{font-style:italic;color:#94a3b8;font-size:12.5px;margin-bottom:10px}
+.rel-diagram-box{border:1.5px dashed #cbd5e1;border-radius:8px;padding:12px;text-align:center;margin:10px 0}
+.rel-diagram-box img{max-width:100%}
+.rel-print-bar{display:none!important}
+@media print{
+  body{padding:0 20px}
+  .rel-h1{page-break-before:auto}
+}
+</style>
+</head><body>
+${content}
+<script>window.onload=function(){window.print();}<\/script>
+</body></html>`);
+  win.document.close();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -12910,7 +13439,7 @@ function saveStatusModal() {
     document.querySelectorAll('.section').forEach(e => e.classList.remove('active'));
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     if (tab) tab.classList.add('active');
-    ['repo-module','drops-module','pat-module','bi-module','quadro-module','arq-module','ai-module'].forEach(id => {
+    ['repo-module','drops-module','pat-module','bi-module','quadro-module','arq-module','ai-module','ai-relatorio-module'].forEach(id => {
       const el = document.getElementById(id);
       if (el) { el.style.display = 'none'; el.classList.remove('active'); }
     });
