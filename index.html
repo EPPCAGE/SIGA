@@ -4659,7 +4659,7 @@ function renderStep(p, i) {
   const dispSubtitle  = isTobe ? (tb.subtitle    !== undefined && tb.subtitle !== '' ? tb.subtitle : (s.subtitle||'')) : (s.subtitle||'');
   const dispResp      = isTobe ? (tb.responsible || s.responsible) : s.responsible;
   const dispRespClass = isTobe ? (tb.respClass   || s.respClass)   : s.respClass;
-  const dispNote      = isTobe ? (tb.note        || '')            : (s.note || '');
+  const dispNote      = isTobe ? (tb.note        || s.note || '')  : (s.note || '');
 
   const titleSf    = isTobe ? 'tobe_title'       : 'title';
   const subtitleSf = isTobe ? 'tobe_subtitle'    : 'subtitle';
