@@ -1447,8 +1447,9 @@
       </div>
     </div>
     <div style="display:flex;gap:0;">
-      <button class="epp-tab active" data-tab="pat"  onclick="eppTab('pat',this)">📅 Plano Anual de Trabalho</button>
-      <button class="epp-tab"        data-tab="dash" onclick="eppTab('dash',this)">📊 Dashboard EPP</button>
+      <button class="epp-tab active" data-tab="pat"    onclick="eppTab('pat',this)">📅 Plano Anual de Trabalho</button>
+      <button class="epp-tab"        data-tab="dash"   onclick="eppTab('dash',this)">📊 Dashboard EPP</button>
+      <button class="epp-tab"        data-tab="config" onclick="eppTab('config',this)">⚙️ Tabelas de Referência</button>
     </div>
   </div>
 </div>
@@ -1563,6 +1564,17 @@
     <!-- Por tipo -->
     <div style="font-size:12px;font-weight:700;color:#64748b;margin:16px 0 10px;text-transform:uppercase;letter-spacing:.04em;">Status atual do PAT</div>
     <div class="epp-kpi-grid" id="epp-status-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;"></div>
+  </div>
+</div>
+
+<!-- EPP: Config panel (shown when config tab is active) -->
+<div id="epp-config-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
+  <div style="margin-bottom:20px;">
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#0a2540;margin:0 0 4px;">⚙️ Tabelas de Referência</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Gerencie as listas de opções usadas nos formulários do sistema. As alterações são salvas automaticamente e refletem imediatamente nos formulários.</p>
+  </div>
+  <div id="epp-config-tables-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
+    <!-- Preenchido por renderConfigPanel() -->
   </div>
 </div>
 
@@ -6772,6 +6784,564 @@ function patRemove(idx) {
   showToast('Patrocinador removido.','success');
 }
 
+// ── Tabelas de Referência (Config) ──────────────────────────────────────────
+const CONFIG_DEFAULTS = {
+  patrocinadores:       [...PATROCINADORES_DEFAULT],
+  areas:                ['DCO','DIR','DIE','DTTI','GAB','DAUD','DCON'],
+  macroprocessos:       [...MACROPROCESSOS],
+  tipoTrabalho:         ['Mapeamento de Processo Novo','Mapeamento de Processo Existente','Redesenho','Mapeamento e Redesenho','Criação de Documentação'],
+  naturezaProcesso:     ['Finalístico','Apoio','Governança'],
+  categoriaDocumentos:  ['Instrução Normativa','Manual de Processo','Procedimento Operacional','Formulário','Fluxograma'],
+  tipoAtividadePat:     ['Mapeamento de Processo','Monitoramento de Indicadores','Acompanhamento de Implementação','Auditoria','Controle Interno','Consultoria','Fiscalização','Normatização','Capacitação','Outro'],
+  servidoresEPP: [
+    {nome:'Marcelo Chaves',   email:''},
+    {nome:'Edison Weber',     email:'edisonw@sefaz.rs.gov.br'},
+    {nome:'Felipe Tourinho',  email:'felipet@sefaz.rs.gov.br'},
+    {nome:'Andrea Buhl',      email:''},
+    {nome:'Amanda Sardinha',  email:''},
+  ],
+  alertasEmail: [
+    {nome:'Felipe Tourinho', alertas:['mapeamento_6m','mapeamento_12m','plano_acao_7d','plano_acao_vencido']},
+    {nome:'Edison Weber',    alertas:['mapeamento_6m','mapeamento_12m','plano_acao_7d','plano_acao_vencido']},
+  ],
+  alertasEnviados: {},
+  statusMapeamento:     [{value:'planejado',label:'📋 Planejado'},{value:'em_andamento',label:'🔄 Em Andamento'},{value:'concluido',label:'✅ Concluído'},{value:'atrasado',label:'⚠️ Atrasado'},{value:'suspenso',label:'⏸ Suspenso'}],
+  statusAuditoria:      [{value:'planejada',label:'📋 Planejada'},{value:'em_execucao',label:'🔄 Em Execução'},{value:'concluida',label:'✅ Concluída'},{value:'cancelada',label:'⛔ Cancelada'}],
+};
+
+function getConfig(key) {
+  if(key === 'patrocinadores') return DATA.patrocinadores || CONFIG_DEFAULTS.patrocinadores;
+  const val = (DATA.config && DATA.config[key]);
+  if(val !== undefined && val !== null) {
+    // Migration: servidoresEPP may be stored as plain strings from earlier version
+    if(key === 'servidoresEPP' && Array.isArray(val) && val.length > 0 && typeof val[0] === 'string')
+      return val.map(nome => ({nome, email:''}));
+    return val;
+  }
+  return CONFIG_DEFAULTS[key] ?? [];
+}
+function setConfig(key, val) {
+  if(key === 'patrocinadores') { DATA.patrocinadores = val; return; }
+  if(!DATA.config) DATA.config = {};
+  DATA.config[key] = val;
+}
+function getMacroprocessos() { return getConfig('macroprocessos'); }
+
+function populateConfigSelect(selectId, configKey, selected) {
+  const el = document.getElementById(selectId);
+  if(!el) return;
+  const cur = (selected !== undefined ? selected : el.value) || '';
+  el.innerHTML = '<option value="">Selecione...</option>'
+    + getConfig(configKey).map(v => `<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');
+  if(cur) el.value = cur;
+}
+
+function applyConfigToDropdowns() {
+  ['pat-unidade','status-modal-unidade','nf-unidade'].forEach(id => populateConfigSelect(id,'areas'));
+  ['pat-tipo','nf-tipo'].forEach(id => populateConfigSelect(id,'tipoAtividadePat'));
+  populateConfigSelect('status-modal-tipo','tipoTrabalho');
+}
+
+// ── Config Panel rendering ───────────────────────────────────────────────────
+const _CFG_TABLES = [
+  { key:'servidoresEPP',       title:'👥 Servidores do EPP',          desc:'Membros lotados no Escritório de Projetos e Processos.', typed:'servidor' },
+  { key:'alertasEmail',        title:'📧 Alertas por E-mail',         desc:'Defina quem recebe cada tipo de alerta automático por e-mail.', typed:'alertas' },
+  { key:'patrocinadores',      title:'🤝 Patrocinadores',             desc:'Lista de patrocinadores dos projetos de mapeamento.' },
+  { key:'areas',               title:'🏢 Áreas / Divisões',           desc:'Unidades responsáveis usadas nos formulários.' },
+  { key:'macroprocessos',      title:'🗂️ Macroprocessos',            desc:'Macroprocessos disponíveis nos formulários.' },
+  { key:'tipoTrabalho',        title:'🔧 Tipo de Trabalho',           desc:'Tipos de trabalho da ficha técnica de mapeamento.' },
+  { key:'tipoAtividadePat',    title:'📅 Tipo de Atividade — PAT',    desc:'Tipos de atividade no Plano Anual de Trabalho.' },
+  { key:'naturezaProcesso',    title:'⚡ Natureza do Processo',       desc:'Classificação da natureza dos processos.' },
+  { key:'categoriaDocumentos', title:'📄 Categoria de Documentos',    desc:'Categorias usadas na gestão de documentos.' },
+  { key:'statusMapeamento',    title:'📊 Status do Mapeamento',       desc:'Status usados na ficha técnica de mapeamento.', typed:'status' },
+  { key:'statusAuditoria',     title:'🔍 Status de Auditoria',        desc:'Status usados nos planos de auditoria.', typed:'status' },
+];
+
+const _ALERT_TYPES = [
+  { id:'mapeamento_6m',       label:'6 meses pós conclusão' },
+  { id:'mapeamento_12m',      label:'12 meses pós conclusão' },
+  { id:'plano_acao_7d',       label:'Ação vence em 7 dias' },
+  { id:'plano_acao_vencido',  label:'Ação venceu hoje' },
+];
+
+function renderConfigPanel() {
+  const panel = document.getElementById('epp-config-panel');
+  if(!panel) return;
+  if(!isEditor) {
+    panel.innerHTML = '<div style="padding:60px;text-align:center;color:#94a3b8;font-size:14px;">🔒 Apenas editores podem gerenciar as tabelas de referência.</div>';
+    return;
+  }
+  const grid = panel.querySelector('#epp-config-tables-grid');
+  if(!grid) return;
+  grid.innerHTML = _CFG_TABLES.map(t => _renderCfgCard(t)).join('');
+}
+
+function _renderCfgCard({key, title, desc, typed=false}) {
+  if(typed === 'servidor') return _renderCfgCardServidor(title, desc);
+  if(typed === 'alertas')  return _renderCfgCardAlertas(title, desc);
+
+  const items = getConfig(key);
+  const empty = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum item cadastrado.</div>';
+
+  const listHtml = (typed === 'status')
+    ? items.map((it, i) =>
+        `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:7px;margin-bottom:6px;">
+          <span style="background:#e2e8f0;border-radius:4px;padding:1px 7px;font-size:11px;font-family:monospace;color:#475569;white-space:nowrap;">${it.value}</span>
+          <span id="cfg-lbl-${key}-${i}" style="flex:1;font-size:13px;color:#1e293b;">${it.label}</span>
+          <button onclick="configEditStatusLabel('${key}',${i})" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:12px;padding:0 3px;" title="Editar label">✏️</button>
+          <button onclick="configRemoveStatus('${key}',${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;padding:0 2px;" title="Remover">✕</button>
+        </div>`).join('')
+    : items.map((it, i) =>
+        `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8fafc;border-radius:7px;margin-bottom:6px;">
+          <span id="cfg-itm-${key}-${i}" style="flex:1;font-size:13px;color:#1e293b;">${it}</span>
+          <div style="display:flex;gap:2px;">
+            <button onclick="configEditItem('${key}',${i})" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:12px;padding:0 4px;" title="Editar">✏️</button>
+            <button onclick="configRemoveItem('${key}',${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;padding:0 3px;" title="Remover">✕</button>
+          </div>
+        </div>`).join('');
+
+  const addHtml = (typed === 'status')
+    ? `<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+        <input id="cfg-new-val-${key}" class="modal-input" type="text" placeholder="código (ex: novo)" style="flex:1;min-width:100px;font-family:monospace;font-size:12px;">
+        <input id="cfg-new-lbl-${key}" class="modal-input" type="text" placeholder="label (ex: 🆕 Novo Status)" style="flex:2;min-width:130px;">
+        <button onclick="configAddStatus('${key}')" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
+      </div>`
+    : `<div style="display:flex;gap:6px;margin-top:10px;">
+        <input id="cfg-new-${key}" class="modal-input" type="text" placeholder="Novo item..." style="flex:1;"
+          onkeydown="if(event.key==='Enter') configAddItem('${key}')">
+        <button onclick="configAddItem('${key}')" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
+      </div>`;
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">${desc}</div>
+    <div id="cfg-list-${key}">${listHtml || empty}</div>
+    ${addHtml}
+  </div>`;
+}
+
+function _renderCfgCardServidor(title, desc) {
+  const srvs = getConfig('servidoresEPP');
+  const rows = srvs.map((s, i) => {
+    const nome  = (s.nome  || '').replace(/"/g,'&quot;');
+    const email = (s.email || '').replace(/"/g,'&quot;');
+    return `<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:8px 10px;background:#f8fafc;border-radius:7px;margin-bottom:6px;">
+      <input class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" value="${nome}"
+        onchange="configSaveServidor(${i},'nome',this.value)"
+        placeholder="Nome do servidor">
+      <input class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" value="${email}" type="email"
+        onchange="configSaveServidor(${i},'email',this.value)"
+        placeholder="e-mail@sefaz.rs.gov.br">
+      <button onclick="configRemoveServidor(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;" title="Remover">✕</button>
+    </div>`;
+  }).join('');
+
+  const empty = srvs.length ? '' : '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum servidor cadastrado.</div>';
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">${desc}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;padding:0 10px 6px;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">
+      <span>Nome</span><span>E-mail</span><span></span>
+    </div>
+    <div id="cfg-list-servidoresEPP">${rows || empty}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px;align-items:center;">
+      <input id="cfg-new-srv-nome" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" placeholder="Nome do servidor"
+        onkeydown="if(event.key==='Enter') configAddServidor()">
+      <input id="cfg-new-srv-email" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" type="email" placeholder="e-mail (opcional)"
+        onkeydown="if(event.key==='Enter') configAddServidor()">
+      <button onclick="configAddServidor()" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
+    </div>
+  </div>`;
+}
+
+function _renderCfgCardAlertas(title, desc) {
+  const srvs     = getConfig('servidoresEPP');
+  const alertasCfg = getConfig('alertasEmail');
+
+  // helper: is server subscribed to alert?
+  function isSubscribed(nome, alertId) {
+    const entry = alertasCfg.find(a => a.nome === nome);
+    return entry ? (entry.alertas || []).includes(alertId) : false;
+  }
+
+  const colHeaders = _ALERT_TYPES.map(a =>
+    `<th style="padding:6px 8px;font-size:11px;font-weight:600;color:#64748b;text-align:center;white-space:nowrap;">${a.label}</th>`
+  ).join('');
+
+  const rows = srvs.map((s) => {
+    const nome   = s.nome || '';
+    const email  = s.email ? `<span style="font-size:11px;color:#94a3b8;">${s.email}</span>` : '<span style="font-size:11px;color:#e2e8f0;">sem e-mail</span>';
+    const checks = _ALERT_TYPES.map(a => {
+      const checked = isSubscribed(nome, a.id) ? 'checked' : '';
+      const noEmail = !s.email;
+      return `<td style="text-align:center;padding:4px 8px;">
+        <input type="checkbox" ${checked} ${noEmail ? 'disabled title="Cadastre o e-mail do servidor primeiro"' : ''}
+          onchange="configToggleAlerta('${nome.replace(/'/g,"\\'")}','${a.id}',this.checked)"
+          style="width:16px;height:16px;cursor:${noEmail?'not-allowed':'pointer'};">
+      </td>`;
+    }).join('');
+    return `<tr style="border-top:1px solid #f1f5f9;">
+      <td style="padding:8px 10px;">
+        <div style="font-size:13px;font-weight:500;color:#1e293b;">${nome}</div>
+        ${email}
+      </td>
+      ${checks}
+    </tr>`;
+  }).join('');
+
+  const emptyRow = srvs.length ? '' : `<tr><td colspan="${_ALERT_TYPES.length+1}" style="padding:16px;text-align:center;color:#94a3b8;font-size:12px;">Nenhum servidor cadastrado. Adicione servidores na tabela acima.</td></tr>`;
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;grid-column:1/-1;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">${desc}</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f8fafc;">
+            <th style="padding:6px 10px;font-size:11px;font-weight:600;color:#64748b;text-align:left;">Servidor</th>
+            ${colHeaders}
+          </tr>
+        </thead>
+        <tbody>${rows || emptyRow}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:#94a3b8;">
+      ℹ️ Servidores sem e-mail cadastrado não podem receber alertas. Servidores sem e-mail têm checkboxes desabilitados.
+    </div>
+  </div>`;
+
+function configAddItem(key) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const input = document.getElementById('cfg-new-' + key);
+  if(!input) return;
+  const val = input.value.trim();
+  if(!val) return;
+  const items = [...getConfig(key)];
+  if(items.includes(val)) { showToast('Item já existe na lista.','warn'); return; }
+  items.push(val);
+  setConfig(key, items);
+  input.value = '';
+  renderConfigPanel();
+  applyConfigToDropdowns();
+  saveToCloud();
+  showToast('✅ Item adicionado!','success');
+}
+
+function configRemoveItem(key, idx) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const items = [...getConfig(key)];
+  items.splice(idx, 1);
+  setConfig(key, items);
+  renderConfigPanel();
+  applyConfigToDropdowns();
+  saveToCloud();
+  showToast('Item removido.','success');
+}
+
+function configEditItem(key, idx) {
+  const span = document.getElementById(`cfg-itm-${key}-${idx}`);
+  if(!span) return;
+  const cur = span.textContent;
+  span.innerHTML = `<input id="cfg-edit-${key}-${idx}" style="border:1px solid #cbd5e1;border-radius:5px;padding:2px 6px;font-size:13px;width:95%;" value="${cur.replace(/"/g,'&quot;')}">`;
+  const inp = document.getElementById(`cfg-edit-${key}-${idx}`);
+  inp.focus(); inp.select();
+  inp.onblur  = () => configSaveEdit(key, idx);
+  inp.onkeydown = e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape') renderConfigPanel(); };
+}
+
+function configSaveEdit(key, idx) {
+  const inp = document.getElementById(`cfg-edit-${key}-${idx}`);
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val) { renderConfigPanel(); return; }
+  const items = [...getConfig(key)];
+  items[idx] = val;
+  setConfig(key, items);
+  renderConfigPanel();
+  applyConfigToDropdowns();
+  saveToCloud();
+}
+
+function configAddStatus(key) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const valInp = document.getElementById('cfg-new-val-' + key);
+  const lblInp = document.getElementById('cfg-new-lbl-' + key);
+  if(!valInp || !lblInp) return;
+  const value = valInp.value.trim().replace(/\s+/g,'_').toLowerCase();
+  const label = lblInp.value.trim();
+  if(!value || !label) { showToast('Preencha o código e o label.','warn'); return; }
+  const items = [...getConfig(key)];
+  if(items.some(it => it.value === value)) { showToast('Código já existe na lista.','warn'); return; }
+  items.push({ value, label });
+  setConfig(key, items);
+  valInp.value = ''; lblInp.value = '';
+  renderConfigPanel();
+  saveToCloud();
+  showToast('✅ Status adicionado!','success');
+}
+
+function configRemoveStatus(key, idx) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const items = [...getConfig(key)];
+  items.splice(idx, 1);
+  setConfig(key, items);
+  renderConfigPanel();
+  saveToCloud();
+  showToast('Status removido.','success');
+}
+
+function configEditStatusLabel(key, idx) {
+  const span = document.getElementById(`cfg-lbl-${key}-${idx}`);
+  if(!span) return;
+  const cur = span.textContent;
+  span.innerHTML = `<input id="cfg-edit-lbl-${key}-${idx}" style="border:1px solid #cbd5e1;border-radius:5px;padding:2px 6px;font-size:13px;width:95%;" value="${cur.replace(/"/g,'&quot;')}">`;
+  const inp = document.getElementById(`cfg-edit-lbl-${key}-${idx}`);
+  inp.focus(); inp.select();
+  inp.onblur    = () => configSaveStatusLabel(key, idx);
+  inp.onkeydown = e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape') renderConfigPanel(); };
+}
+
+function configSaveStatusLabel(key, idx) {
+  const inp = document.getElementById(`cfg-edit-lbl-${key}-${idx}`);
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val) { renderConfigPanel(); return; }
+  const items = [...getConfig(key)];
+  items[idx] = { ...items[idx], label: val };
+  setConfig(key, items);
+  renderConfigPanel();
+  saveToCloud();
+}
+
+// ── Servidores EPP management ────────────────────────────────────────────────
+function configAddServidor() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const nomeInp  = document.getElementById('cfg-new-srv-nome');
+  const emailInp = document.getElementById('cfg-new-srv-email');
+  if(!nomeInp) return;
+  const nome  = nomeInp.value.trim();
+  const email = emailInp ? emailInp.value.trim() : '';
+  if(!nome) { showToast('Informe o nome do servidor.','warn'); return; }
+  const srvs = [...getConfig('servidoresEPP')];
+  if(srvs.some(s => s.nome === nome)) { showToast('Servidor já cadastrado.','warn'); return; }
+  srvs.push({nome, email});
+  setConfig('servidoresEPP', srvs);
+  nomeInp.value = ''; if(emailInp) emailInp.value = '';
+  renderConfigPanel();
+  saveToCloud();
+  showToast('✅ Servidor adicionado!','success');
+}
+
+function configRemoveServidor(idx) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const srvs = [...getConfig('servidoresEPP')];
+  srvs.splice(idx, 1);
+  setConfig('servidoresEPP', srvs);
+  renderConfigPanel();
+  saveToCloud();
+  showToast('Servidor removido.','success');
+}
+
+function configSaveServidor(idx, field, value) {
+  if(!isEditor) return;
+  const srvs = [...getConfig('servidoresEPP')];
+  if(!srvs[idx]) return;
+  srvs[idx] = { ...srvs[idx], [field]: value.trim() };
+  setConfig('servidoresEPP', srvs);
+  // Re-render only the alertas table (email column)
+  const grid = document.getElementById('epp-config-tables-grid');
+  if(grid) {
+    const alertasCard = grid.children[1]; // second card is alertas
+    if(alertasCard) alertasCard.outerHTML = _renderCfgCardAlertas('📧 Alertas por E-mail','Defina quem recebe cada tipo de alerta automático por e-mail.');
+  }
+  saveToCloud();
+}
+
+// ── Alertas por E-mail management ────────────────────────────────────────────
+function configToggleAlerta(nome, alertId, enabled) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const alertasCfg = getConfig('alertasEmail').map(a => ({...a, alertas:[...(a.alertas||[])]}));
+  let entry = alertasCfg.find(a => a.nome === nome);
+  if(!entry) { entry = {nome, alertas:[]}; alertasCfg.push(entry); }
+  if(enabled) {
+    if(!entry.alertas.includes(alertId)) entry.alertas.push(alertId);
+  } else {
+    entry.alertas = entry.alertas.filter(a => a !== alertId);
+  }
+  setConfig('alertasEmail', alertasCfg);
+  saveToCloud();
+}
+
+// ── Email alert helpers ──────────────────────────────────────────────────────
+function getAlertSubscribers(tipoAlerta) {
+  const srvs      = getConfig('servidoresEPP');
+  const alertasCfg = getConfig('alertasEmail');
+  return alertasCfg
+    .filter(a => (a.alertas || []).includes(tipoAlerta))
+    .map(a => {
+      const srv   = srvs.find(s => s.nome === a.nome);
+      const email = srv?.email?.trim() || '';
+      return {nome: a.nome, email};
+    })
+    .filter(a => a.email);
+}
+
+async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
+  if(!supaClient || !toEmail) return false;
+  try {
+    const { data: { session } } = await supaClient.auth.getSession();
+    const token = session?.access_token || SUPA_KEY;
+    const resp = await fetch(`${SUPA_URL}/functions/v1/send-alert-email`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+      body: JSON.stringify({ to: toEmail, nome: toNome, subject, html: htmlBody }),
+    });
+    if(!resp.ok) { console.warn('[sendAlertEmail] HTTP', resp.status, await resp.text()); return false; }
+    console.log(`[sendAlertEmail] Enviado para ${toEmail}: ${subject}`);
+    return true;
+  } catch(e) {
+    console.error('[sendAlertEmail] erro:', e);
+    return false;
+  }
+}
+
+function _buildAlertHtml(tipo, popName, popKey, extra) {
+  const estilos = `font-family:Arial,sans-serif;color:#1e293b;`;
+  const tituloMap = {
+    mapeamento_6m:       `⏰ 6 meses desde a conclusão do mapeamento`,
+    mapeamento_12m:      `⏰ 12 meses desde a conclusão do mapeamento`,
+    plano_acao_7d:       `⚠️ Ação do plano vence em ${extra?.dias ?? 7} dia(s)`,
+    plano_acao_vencido:  `🔴 Ação do plano venceu hoje`,
+  };
+  const titulo = tituloMap[tipo] || tipo;
+  const descMap = {
+    mapeamento_6m:       `O mapeamento <strong>${popName}</strong> foi concluído em <strong>${extra?.dataEfetiva||'–'}</strong> e completou <strong>6 meses</strong>. Considere verificar se o processo foi efetivamente implementado e se os indicadores de desempenho estão sendo acompanhados.`,
+    mapeamento_12m:      `O mapeamento <strong>${popName}</strong> foi concluído em <strong>${extra?.dataEfetiva||'–'}</strong> e completou <strong>12 meses</strong>. Considere realizar uma revisão formal do processo para verificar sua aderência e atualidade.`,
+    plano_acao_7d:       `A ação <strong>"${extra?.desc||'–'}"</strong> do processo <strong>${popName}</strong>, sob responsabilidade de <strong>${extra?.resp||'–'}</strong>, vence em <strong>${extra?.prazo||'–'}</strong>.`,
+    plano_acao_vencido:  `A ação <strong>"${extra?.desc||'–'}"</strong> do processo <strong>${popName}</strong>, sob responsabilidade de <strong>${extra?.resp||'–'}</strong>, venceu em <strong>${extra?.prazo||'–'}</strong> e ainda está pendente.`,
+  };
+  const descricao = descMap[tipo] || '';
+  return `<div style="${estilos}max-width:520px;margin:0 auto;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+    <div style="background:#0a2540;padding:20px 24px;">
+      <div style="font-size:18px;font-weight:700;color:#fff;">🏢 EPP · CAGE-RS</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Escritório de Projetos e Processos</div>
+    </div>
+    <div style="padding:24px;">
+      <div style="font-size:16px;font-weight:700;color:#0a2540;margin-bottom:12px;">${titulo}</div>
+      <p style="font-size:14px;line-height:1.6;margin:0 0 16px;">${descricao}</p>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 14px;font-size:12px;color:#64748b;">
+        Processo: <strong style="color:#0a2540;">${popName}</strong><br>
+        Data do alerta: <strong>${new Date().toLocaleDateString('pt-BR')}</strong>
+      </div>
+    </div>
+    <div style="background:#f8fafc;padding:12px 24px;font-size:11px;color:#94a3b8;text-align:center;">
+      Este é um alerta automático do sistema GESTPOP · CAGE-RS
+    </div>
+  </div>`;
+}
+
+// ── Mapeamento 6/12 meses milestone check ────────────────────────────────────
+async function checkMapeamentoMilestones() {
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const popKeys = ['d','r',...Object.keys(DATA).filter(k=>k.startsWith('pop_'))];
+  if(!DATA.config) DATA.config = {};
+  if(!DATA.config.alertasEnviados) DATA.config.alertasEnviados = {};
+  const sent = DATA.config.alertasEnviados;
+  let changed = false;
+
+  for(const pk of popKeys) {
+    const pop = DATA[pk];
+    if(!pop?.meta?.dataEfetiva || pop.meta.statusMap !== 'concluido') continue;
+    const efetiva = new Date(pop.meta.dataEfetiva + 'T00:00:00');
+    if(isNaN(efetiva)) continue;
+    const popName = pop.meta?.name || pk;
+
+    for(const [tipo, months] of [['mapeamento_6m',6],['mapeamento_12m',12]]) {
+      const alKey  = `${tipo}_${pk}`;
+      if(sent[alKey]) continue;
+      const marco  = new Date(efetiva);
+      marco.setMonth(marco.getMonth() + months);
+      if(today < marco) continue;
+
+      const subs = getAlertSubscribers(tipo);
+      const dataEfetivaFmt = efetiva.toLocaleDateString('pt-BR');
+      for(const {nome, email} of subs) {
+        const label = months === 6 ? '6 meses' : '12 meses';
+        await sendAlertEmail(
+          email, nome,
+          `[EPP/CAGE-RS] ${label} desde conclusão: ${popName}`,
+          _buildAlertHtml(tipo, popName, pk, {dataEfetiva: dataEfetivaFmt})
+        );
+      }
+      sent[alKey] = today.toISOString().slice(0,10);
+      changed = true;
+    }
+  }
+  if(changed) { try { saveToCloud(); } catch(e) {} }
+}
+
+// ── Plano de ação email alerts ───────────────────────────────────────────────
+async function checkActionsDeadlinesEmail() {
+  const today  = new Date(); today.setHours(0,0,0,0);
+  const in7    = new Date(today); in7.setDate(in7.getDate() + 7);
+  const popKeys = ['d','r',...Object.keys(DATA).filter(k=>k.startsWith('pop_'))];
+  if(!DATA.config) DATA.config = {};
+  if(!DATA.config.alertasEnviados) DATA.config.alertasEnviados = {};
+  const sent = DATA.config.alertasEnviados;
+  let changed = false;
+
+  for(const pk of popKeys) {
+    const pop = DATA[pk];
+    if(!pop || !Array.isArray(pop.actions_plan)) continue;
+    const popName = pop.meta?.name || pk;
+
+    for(const act of pop.actions_plan) {
+      if(!act.prazo || act.status === 'concluido') continue;
+      const d = new Date(act.prazo + 'T00:00:00');
+      if(isNaN(d)) continue;
+
+      if(d < today) {
+        const alKey = `plano_acao_vencido_${pk}_${act.prazo}`;
+        if(!sent[alKey]) {
+          const subs = getAlertSubscribers('plano_acao_vencido');
+          for(const {nome, email} of subs) {
+            await sendAlertEmail(
+              email, nome,
+              `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
+              _buildAlertHtml('plano_acao_vencido', popName, pk, {
+                desc: act.desc, resp: act.resp,
+                prazo: d.toLocaleDateString('pt-BR'),
+              })
+            );
+          }
+          sent[alKey] = today.toISOString().slice(0,10);
+          changed = true;
+        }
+      } else if(d <= in7) {
+        const dias   = Math.round((d - today) / 86400000);
+        const alKey  = `plano_acao_7d_${pk}_${act.prazo}`;
+        if(!sent[alKey]) {
+          const subs = getAlertSubscribers('plano_acao_7d');
+          for(const {nome, email} of subs) {
+            await sendAlertEmail(
+              email, nome,
+              `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
+              _buildAlertHtml('plano_acao_7d', popName, pk, {
+                desc: act.desc, resp: act.resp,
+                prazo: d.toLocaleDateString('pt-BR'), dias,
+              })
+            );
+          }
+          sent[alKey] = today.toISOString().slice(0,10);
+          changed = true;
+        }
+      }
+    }
+  }
+  if(changed) { try { saveToCloud(); } catch(e) {} }
+}
+
 function renderSidebar() {
   // Processos mapeados não são exibidos na sidebar — navegação via Página Inicial
   const el = document.getElementById('sidebar-list');
@@ -7168,6 +7738,8 @@ function openPatModal(idx = null) {
   const preview = document.getElementById('pat-meta-preview');
   if(preview) preview.style.display = 'none';
   populatePatPopSelect();
+  populateConfigSelect('pat-unidade', 'areas', item?.unidade || '');
+  populateConfigSelect('pat-tipo', 'tipoAtividadePat', item?.tipo || '');
   document.getElementById('pat-pop-vinc').value    = item?.popVinc      || '';
   if(item?.meta && item?.qtdRealizada != null) patCalcProgresso();
   openModal('pat-modal');
@@ -7518,7 +8090,7 @@ window.addEventListener('beforeunload', () => {
   // Montar payload — limite keepalive do Chrome é 64KB (65536 bytes)
   // Incluir repoDocs e drops apenas se couberem no orçamento
   const KEEPALIVE_LIMIT = 63000; // margem de segurança abaixo de 64KB
-  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits']);
+  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores']);
   const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
 
   // Payload essencial (POPs, PAT, arquitetura)
@@ -7603,7 +8175,7 @@ async function saveToCloud(attempt=1) {
 
   try { harvestEditables(); } catch(e) { console.warn('harvestEditables:', e); }
 
-  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits']);
+  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores']);
   const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
   // Strip session-only transient fields (prefixed with _) before persisting
   function _stripTransient(obj) {
@@ -7624,6 +8196,7 @@ async function saveToCloud(attempt=1) {
     drops:           DROPS     || [],
     indicadoresCage: DATA.indicadoresCage || { indicadores: [], resultados: [] },
     patrocinadores:  DATA.patrocinadores  || null,
+    config:          DATA.config          || null,
   };
 
   try {
@@ -7779,6 +8352,8 @@ async function loadFromCloud() {
       _arqData = null;
     }
     if(Array.isArray(payload.patrocinadores)) DATA.patrocinadores = payload.patrocinadores;
+    if(payload.config && typeof payload.config === 'object') DATA.config = payload.config;
+    try { applyConfigToDropdowns(); } catch(e) {}
     if(payload.indicadoresCage && typeof payload.indicadoresCage === 'object') {
       DATA.indicadoresCage = {
         indicadores: Array.isArray(payload.indicadoresCage.indicadores) ? payload.indicadoresCage.indicadores : [],
@@ -7823,7 +8398,15 @@ async function loadFromCloud() {
     if(homePage && homePage.style.display !== 'none') homeRefresh();
     // Atualizar status automaticamente baseado nas datas
     checkAllAutoStatus();
-    setTimeout(() => { patCheckDeadlines(); checkActionsDeadlines(); }, 800);
+    setTimeout(() => {
+      patCheckDeadlines();
+      checkActionsDeadlines();
+      // Email alerts (fire-and-forget — only sends if configured)
+      if(isEditor) {
+        checkMapeamentoMilestones().catch(e => console.warn('[milestone email]',e));
+        checkActionsDeadlinesEmail().catch(e => console.warn('[actions email]',e));
+      }
+    }, 800);
 
     setSyncStatus('synced');
     updateLastSaveChip(data);
@@ -10295,7 +10878,7 @@ function arqInit() {
   // Populate macro filter and form select
   const filterMacro = document.getElementById('arq-filter-macro');
   const macroFormSel = document.getElementById('arq-f-macro');
-  const macroOpts = MACROPROCESSOS.map(m => `<option value="${m}">${m}</option>`).join('');
+  const macroOpts = getMacroprocessos().map(m => `<option value="${m}">${m}</option>`).join('');
   filterMacro.innerHTML = '<option value="">Todos</option>' + macroOpts;
   if(macroFormSel && macroFormSel.tagName === 'SELECT') {
     macroFormSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>' + macroOpts;
@@ -11857,7 +12440,7 @@ function npopInitSelects() {
   const macroSel = document.getElementById('nf-macro');
   if(!macroSel) return;
   macroSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>'
-    + MACROPROCESSOS.map(m => `<option value="${m}">${m}</option>`).join('');
+    + getMacroprocessos().map(m => `<option value="${m}">${m}</option>`).join('');
   populatePatrocinadoresSelect('nf-patrocinador');
 }
 
@@ -12551,15 +13134,21 @@ function eppTab(tab, el) {
   if(el) el.classList.add('active');
   else { const f=document.querySelector('.epp-tab[data-tab="'+tab+'"]'); if(f) f.classList.add('active'); }
 
-  const pat  = document.getElementById('pat-module');
-  const dash = document.getElementById('epp-dash-panel');
+  const pat    = document.getElementById('pat-module');
+  const dash   = document.getElementById('epp-dash-panel');
+  const cfg    = document.getElementById('epp-config-panel');
+
+  if(pat)  { pat.style.display='none'; pat.classList.remove('active'); }
+  if(dash) dash.style.display='none';
+  if(cfg)  cfg.style.display='none';
 
   if(tab === 'pat') {
     if(pat)  { pat.style.display='block'; pat.classList.add('active'); }
-    if(dash) dash.style.display='none';
     try { renderPat(); populatePatPopSelect(); } catch(e) {}
+  } else if(tab === 'config') {
+    if(cfg) cfg.style.display='block';
+    try { renderConfigPanel(); } catch(e) { console.error('renderConfigPanel', e); }
   } else {
-    if(pat)  { pat.style.display='none'; pat.classList.remove('active'); }
     if(dash) dash.style.display='block';
     eppRenderDashboard();
   }
@@ -13859,8 +14448,8 @@ function openStatusModal(p) {
   document.getElementById('status-modal-nome').value       = m.name         || '';
   document.getElementById('status-modal-macro').value      = m.macro        || '';
   document.getElementById('status-modal-processo').value   = m.processo     || '';
-  document.getElementById('status-modal-unidade').value    = m.unidade      || '';
-  document.getElementById('status-modal-tipo').value       = m.tipo         || '';
+  populateConfigSelect('status-modal-unidade', 'areas', m.unidade || '');
+  populateConfigSelect('status-modal-tipo', 'tipoTrabalho', m.tipo || '');
   document.getElementById('status-modal-dificuldade').value= m.dificuldade  || '';
   // Status e Datas
   document.getElementById('status-modal-status').value     = m.statusMap    || '';
