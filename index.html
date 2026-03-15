@@ -3861,6 +3861,23 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
 
 <!-- IMPORT TARGET MODAL -->
 <div class="modal-overlay" id="import-target-modal" style="display:none;z-index:9999;">
+
+<!-- FLOW PICK MODAL — reutilizável para análise, exportação, etc. -->
+<div class="modal-overlay" id="flow-pick-modal" style="display:none;z-index:10000;">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <h3 id="flow-pick-title">Qual fluxo usar?</h3>
+    <p id="flow-pick-sub" style="color:var(--text-muted);margin-bottom:20px;font-size:13px;"></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <button class="btn" style="padding:20px 12px;background:var(--cage-blue);color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.5;" onclick="_flowPickSelect('asis')">
+        📌 AS IS<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Atual</span>
+      </button>
+      <button class="btn" style="padding:20px 12px;background:#059669;color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.5;" onclick="_flowPickSelect('tobe')">
+        📋 TO BE<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Futuro</span>
+      </button>
+    </div>
+    <button class="btn btn-outline" onclick="_flowPickCancel()">Cancelar</button>
+  </div>
+</div>
   <div class="modal" style="max-width:420px;text-align:center;">
     <h3>🤖 Importar Fluxo com IA</h3>
     <p style="color:var(--text-muted);margin-bottom:20px;">O fluxo importado será integrado em qual versão do processo?</p>
@@ -4944,6 +4961,44 @@ function clearCurrentFlow(p) {
 }
 function navStep(p,dir){ const n=DATA[p].currentStep+dir; if(n>=0&&n<DATA[p].steps.length){DATA[p].currentStep=n;renderStep(p,n);} }
 
+// ── Flow picker — seletor genérico de AS IS / TO BE ─────────
+let _flowPickCb = null;
+function pickFlowMode(title, subtitle, callback) {
+  _flowPickCb = callback;
+  document.getElementById('flow-pick-title').textContent = title || 'Qual fluxo usar?';
+  document.getElementById('flow-pick-sub').textContent   = subtitle || '';
+  document.getElementById('flow-pick-modal').style.display = 'flex';
+}
+function _flowPickSelect(mode) {
+  document.getElementById('flow-pick-modal').style.display = 'none';
+  if(_flowPickCb) { const cb = _flowPickCb; _flowPickCb = null; cb(mode); }
+}
+function _flowPickCancel() {
+  document.getElementById('flow-pick-modal').style.display = 'none';
+  _flowPickCb = null;
+}
+
+// ── Helper: resolve step data according to AS IS / TO BE mode ─
+function resolveStep(step, mode) {
+  if(mode === 'tobe') {
+    const tb = step.tobe || {};
+    return {
+      title:       tb.title       || step.title       || '',
+      subtitle:    (tb.subtitle !== undefined && tb.subtitle !== '') ? tb.subtitle : (step.subtitle || ''),
+      responsible: tb.responsible || step.responsible || '',
+      note:        tb.note        || step.note        || '',
+      actions:     Array.isArray(tb.actions) && tb.actions.length > 0 ? tb.actions : (step.actions || []),
+    };
+  }
+  return {
+    title:       step.title       || '',
+    subtitle:    step.subtitle    || '',
+    responsible: step.responsible || '',
+    note:        step.note        || '',
+    actions:     step.actions     || [],
+  };
+}
+
 // ── AS IS / TO BE mode toggle ──────────────────
 function setFlowMode(mode) {
   flowMode = mode;
@@ -5317,14 +5372,19 @@ function addFaq(p){ openFaqModal(p, null); }
 function rmFaq(p,i){ DATA[p].faqs.splice(i,1); renderFaq(p); markChanged(); }
 
 async function generateFaqIA(p) {
+  pickFlowMode('Gerar FAQ de qual fluxo?', 'As perguntas serão baseadas nas etapas e ações do fluxo escolhido.', mode => _generateFaqIAWithMode(p, mode));
+}
+
+async function _generateFaqIAWithMode(p, mode) {
   const btn = document.getElementById(p+'-faq-ia-btn');
   if(btn) { btn.disabled=true; btn.textContent='⏳ Gerando...'; }
   try {
     const D = DATA[p];
-    const steps = (D.steps||[]).map((s,i)=>`Etapa ${i+1}: ${s.title}. Ações: ${(s.actions||[]).map(a=>(typeof a==='string'?a:a.text)).join('; ')}`).join('\n');
+    const modeLabel = mode === 'tobe' ? 'TO BE (Futuro)' : 'AS IS (Atual)';
+    const steps = (D.steps||[]).map((s,i)=>{ const rs=resolveStep(s,mode); return `Etapa ${i+1}: ${rs.title}. Ações: ${rs.actions.map(a=>(typeof a==='string'?a:a.text)).join('; ')}`; }).join('\n');
     const roles = (D.roles||[]).map(r=>`${r.name}: ${(r.duties||[]).join(', ')}`).join('\n');
     const desc  = D.meta?.desc || D.objetivo || '';
-    const context = `Processo: ${D.meta?.name||'POP'}\nObjetivo: ${desc}\nEtapas:\n${steps}\nAtores:\n${roles}`;
+    const context = `Processo: ${D.meta?.name||'POP'} [${modeLabel}]\nObjetivo: ${desc}\nEtapas:\n${steps}\nAtores:\n${roles}`;
     const prompt = `Com base neste processo, gere 5 perguntas frequentes (FAQ) realistas que cidadãos, servidores ou gestores fariam, com respostas claras e objetivas.\n\n${context}\n\nResponda APENAS em JSON puro (sem markdown, sem \`\`\`): [{"q":"pergunta","a":"resposta"},...]`;
 
     const text = await callGemini(prompt);
@@ -9131,22 +9191,25 @@ document.addEventListener('keydown', e => {
 
 // ═══ EXPORT PPTX ══════════════════════════════════════════════════════════
 async function exportPptx() {
-  const btn = document.getElementById('ppt-btn');
-  btn.textContent = '⏳ Gerando...';
-  btn.disabled = true;
-  try {
-    const p = popPrefix(currentPop);
-    const D = DATA[p];
-    await buildPptx(D);
-  } catch(e) {
-    console.error(e);
-    showToast('Erro ao gerar PPT: ' + e.message, 'warn');
-  }
-  btn.textContent = '📊 Exportar PPT';
-  btn.disabled = false;
+  pickFlowMode('Exportar PPT de qual fluxo?', 'As etapas e ações do fluxo escolhido serão incluídas na apresentação.', async mode => {
+    const btn = document.getElementById('ppt-btn');
+    btn.textContent = '⏳ Gerando...';
+    btn.disabled = true;
+    try {
+      const p = popPrefix(currentPop);
+      const D = DATA[p];
+      await buildPptx(D, mode);
+    } catch(e) {
+      console.error(e);
+      showToast('Erro ao gerar PPT: ' + e.message, 'warn');
+    }
+    btn.textContent = '📊 Exportar PPT';
+    btn.disabled = false;
+  });
 }
 
-async function buildPptx(D) {
+async function buildPptx(D, _pptFlowMode) {
+  const _pptMode = _pptFlowMode || 'asis';
   const pres = new PptxGenJS();
   pres.layout = 'LAYOUT_16x9';
   pres.title  = 'GesProc-RS · ' + (D.meta?.name || 'POP');
@@ -9275,15 +9338,16 @@ async function buildPptx(D) {
     ? { type:'atividade', text:a, actor:'' }
     : { type: a.type||'atividade', text: a.text||'', actor: a.actor||'' };
   steps.forEach((step, si) => {
+    const rs = resolveStep(step, _pptMode);
     const s = pres.addSlide();
     s.background = { color: C.light };
     hdr(s, '⚙️  FLUXO DO PROCESSO', `Etapa ${si+1} de ${steps.length}`);
     s.addShape(pres.ShapeType.ellipse, { x:0.3, y:1.0, w:0.7, h:0.7, fill:{ color:C.green } });
     s.addText(String(si+1), { x:0.3, y:1.0, w:0.7, h:0.7, fontSize:16, color:C.white, bold:true, align:'center', valign:'middle', margin:0 });
-    s.addText(step.title || '', { x:1.15, y:1.0, w:7.5, h:0.7, fontSize:22, color:C.navy, bold:true, valign:'middle', margin:0 });
+    s.addText(rs.title || '', { x:1.15, y:1.0, w:7.5, h:0.7, fontSize:22, color:C.navy, bold:true, valign:'middle', margin:0 });
     s.addShape(pres.ShapeType.rect, { x:0.3, y:1.85, w:3.2, h:0.45, fill:{ color:C.mid }, shadow:mks() });
-    s.addText('👤  ' + (step.responsible || ''), { x:0.3, y:1.85, w:3.2, h:0.45, fontSize:11, color:C.white, bold:true, valign:'middle', align:'center', margin:0 });
-    (step.actions || []).forEach((raw, ai) => {
+    s.addText('👤  ' + (rs.responsible || ''), { x:0.3, y:1.85, w:3.2, h:0.45, fontSize:11, color:C.white, bold:true, valign:'middle', align:'center', margin:0 });
+    rs.actions.forEach((raw, ai) => {
       const a  = normAction(raw);
       const ac = typeColor[a.type] || C.green;
       const ic = typeIcon[a.type]  || '▶';
@@ -11188,7 +11252,11 @@ async function runAiAnalysis() {
       '<div class="ai-no-data">⚠️ Este POP não possui etapas cadastradas. Adicione etapas na aba <strong>Fluxo</strong> antes de analisar.</div>';
     return;
   }
+  pickFlowMode('Analisar qual fluxo?', 'Escolha o fluxo que a IA deve analisar.', mode => _runAiAnalysisWithMode(p, pop, mode));
+}
 
+async function _runAiAnalysisWithMode(p, pop, mode) {
+  const modeLabel = mode === 'tobe' ? 'TO BE (Futuro)' : 'AS IS (Atual)';
   const btn = document.getElementById('ai-run-btn');
   const spinner = document.getElementById('ai-spinner');
   const output = document.getElementById('ai-output');
@@ -11200,18 +11268,19 @@ async function runAiAnalysis() {
   // Montar descrição textual do fluxo
   const meta = pop.meta || {};
   const linhas = [];
-  linhas.push(`PROCESSO: ${meta.name || p}`);
+  linhas.push(`PROCESSO: ${meta.name || p} [${modeLabel}]`);
   if (meta.desc) linhas.push(`DESCRIÇÃO: ${meta.desc}`);
   if (meta.input) linhas.push(`ENTRADAS: ${meta.input}`);
   if (meta.output) linhas.push(`SAÍDAS: ${meta.output}`);
   linhas.push('');
-  linhas.push('ETAPAS DO FLUXO:');
+  linhas.push(`ETAPAS DO FLUXO (${modeLabel}):`);
   pop.steps.forEach((step, i) => {
-    linhas.push(`\nEtapa ${i + 1}: ${step.title || '(sem título)'}`);
-    if (step.subtitle) linhas.push(`  Subtítulo: ${step.subtitle}`);
-    if (step.responsible) linhas.push(`  Responsável: ${step.responsible}`);
-    if (step.note) linhas.push(`  Observação: ${step.note}`);
-    (step.actions || []).forEach(a => {
+    const rs = resolveStep(step, mode);
+    linhas.push(`\nEtapa ${i + 1}: ${rs.title || '(sem título)'}`);
+    if (rs.subtitle)    linhas.push(`  Subtítulo: ${rs.subtitle}`);
+    if (rs.responsible) linhas.push(`  Responsável: ${rs.responsible}`);
+    if (rs.note)        linhas.push(`  Observação: ${rs.note}`);
+    rs.actions.forEach(a => {
       const raw = typeof a === 'string' ? a : (a.text || '');
       const tipo = typeof a === 'object' ? (a.type || '') : '';
       const ator = typeof a === 'object' ? (a.actor || '') : '';
@@ -11366,7 +11435,11 @@ async function runAiRelatorio() {
   const p   = popPrefix(currentPop);
   const pop = DATA[p];
   if (!pop) return;
+  pickFlowMode('Gerar relatório de qual fluxo?', 'O relatório será baseado no fluxo escolhido.', mode => _runAiRelatorioWithMode(p, pop, mode));
+}
 
+async function _runAiRelatorioWithMode(p, pop, mode) {
+  const modeLabel = mode === 'tobe' ? 'TO BE (Futuro)' : 'AS IS (Atual)';
   const meta       = pop.meta || {};
   const steps      = pop.steps || [];
   const roles      = pop.roles || [];
@@ -11411,12 +11484,11 @@ async function runAiRelatorio() {
     tempo_maximo: meta.tempo_maximo || '',
     tempo_espera: meta.tempo_espera || '',
     atores: roles.map(r => ({ nome: r.name || '', cargo: r.title || '', atribuicoes: (r.duties || []).filter(Boolean) })),
-    etapas: steps.map((s,i) => ({
-      numero: i + 1,
-      titulo: s.title || '',
-      responsavel: s.responsible || '',
-      acoes: (s.actions || []).map(a => typeof a === 'string' ? a : (a.text || '')).filter(Boolean)
-    })),
+    fluxo_analisado: modeLabel,
+    etapas: steps.map((s,i) => {
+      const rs = resolveStep(s, mode);
+      return { numero: i+1, titulo: rs.title, responsavel: rs.responsible, acoes: rs.actions.map(a => typeof a==='string' ? a : (a.text||'')).filter(Boolean) };
+    }),
     riscos: risks.map(r => ({ titulo: r.title || '', descricao: r.desc || '', causa: r.causa || '', tratamento: r.solucao || '', nivel: r.score >= 16 ? 'Alto' : r.score >= 8 ? 'Médio' : 'Baixo' })),
     normativos: normas.filter(n => n.name || n.code).map(n => n.code ? `${n.code} – ${n.name}` : n.name),
     indicadores: indicators.map(i => ({ titulo: i.title || '', descricao: i.desc || '', formula: i.formula || '' })),
@@ -12970,6 +13042,10 @@ async function auditGerarChecklistBtn() {
 }
 
 async function auditAutoChecklist(planId) {
+  pickFlowMode('Gerar checklist de qual fluxo?', 'O checklist de auditoria será baseado no fluxo escolhido.', mode => _auditAutoChecklistWithMode(planId, mode));
+}
+
+async function _auditAutoChecklistWithMode(planId, mode) {
   const plan = DATA.audits.plans.find(p=>p.id===planId);
   if(!plan?.processo) return;
   const D = DATA[plan.processo];
@@ -12980,21 +13056,23 @@ async function auditAutoChecklist(planId) {
   // Monta contexto completo do processo para o Gemini
   const procName = D.meta?.name || plan.processoNome || 'Processo';
   const objetivo = D.meta?.desc || D.objetivo || '';
+  const modeLabel = mode === 'tobe' ? 'TO BE (Futuro)' : 'AS IS (Atual)';
 
   const stepsCtx = (D.steps||[]).map((s,i) => {
-    const acoes = (s.actions||[]).map(a => {
+    const rs = resolveStep(s, mode);
+    const acoes = rs.actions.map(a => {
       const txt  = typeof a === 'string' ? a : (a.text||'');
       const tipo = typeof a === 'object' ? (a.type||'') : '';
       const ator = typeof a === 'object' ? (a.actor||'') : '';
       return `    - [${tipo}] ${txt}${ator?' (executado por: '+ator+')':''}`;
     }).join('\n');
     const decisao = s.decision?.label || s.decision?.text ? `  Ponto de decisão: "${s.decision?.label||s.decision?.text}"` : '';
-    return `Etapa ${i+1}: ${s.title}
-  Responsável: ${s.responsible||'não especificado'}
-  Subtítulo: ${s.subtitle||''}
+    return `Etapa ${i+1}: ${rs.title}
+  Responsável: ${rs.responsible||'não especificado'}
+  Subtítulo: ${rs.subtitle||''}
   Ações:\n${acoes}
   ${decisao}
-  Observação: ${s.note||''}`;
+  Observação: ${rs.note||''}`;
   }).join('\n\n');
 
   const rolesCtx = (D.roles||[]).map(r =>
