@@ -6793,14 +6793,32 @@ const CONFIG_DEFAULTS = {
   naturezaProcesso:     ['Finalístico','Apoio','Governança'],
   categoriaDocumentos:  ['Instrução Normativa','Manual de Processo','Procedimento Operacional','Formulário','Fluxograma'],
   tipoAtividadePat:     ['Mapeamento de Processo','Monitoramento de Indicadores','Acompanhamento de Implementação','Auditoria','Controle Interno','Consultoria','Fiscalização','Normatização','Capacitação','Outro'],
-  servidoresEPP:        ['Marcelo Chaves','Edison Weber','Felipe Tourinho','Andrea Buhl','Amanda Sardinha'],
+  servidoresEPP: [
+    {nome:'Marcelo Chaves',   email:''},
+    {nome:'Edison Weber',     email:'edisonw@sefaz.rs.gov.br'},
+    {nome:'Felipe Tourinho',  email:'felipet@sefaz.rs.gov.br'},
+    {nome:'Andrea Buhl',      email:''},
+    {nome:'Amanda Sardinha',  email:''},
+  ],
+  alertasEmail: [
+    {nome:'Felipe Tourinho', alertas:['mapeamento_6m','mapeamento_12m','plano_acao_7d','plano_acao_vencido']},
+    {nome:'Edison Weber',    alertas:['mapeamento_6m','mapeamento_12m','plano_acao_7d','plano_acao_vencido']},
+  ],
+  alertasEnviados: {},
   statusMapeamento:     [{value:'planejado',label:'📋 Planejado'},{value:'em_andamento',label:'🔄 Em Andamento'},{value:'concluido',label:'✅ Concluído'},{value:'atrasado',label:'⚠️ Atrasado'},{value:'suspenso',label:'⏸ Suspenso'}],
   statusAuditoria:      [{value:'planejada',label:'📋 Planejada'},{value:'em_execucao',label:'🔄 Em Execução'},{value:'concluida',label:'✅ Concluída'},{value:'cancelada',label:'⛔ Cancelada'}],
 };
 
 function getConfig(key) {
   if(key === 'patrocinadores') return DATA.patrocinadores || CONFIG_DEFAULTS.patrocinadores;
-  return (DATA.config && DATA.config[key]) || CONFIG_DEFAULTS[key] || [];
+  const val = (DATA.config && DATA.config[key]);
+  if(val !== undefined && val !== null) {
+    // Migration: servidoresEPP may be stored as plain strings from earlier version
+    if(key === 'servidoresEPP' && Array.isArray(val) && val.length > 0 && typeof val[0] === 'string')
+      return val.map(nome => ({nome, email:''}));
+    return val;
+  }
+  return CONFIG_DEFAULTS[key] ?? [];
 }
 function setConfig(key, val) {
   if(key === 'patrocinadores') { DATA.patrocinadores = val; return; }
@@ -6826,7 +6844,8 @@ function applyConfigToDropdowns() {
 
 // ── Config Panel rendering ───────────────────────────────────────────────────
 const _CFG_TABLES = [
-  { key:'servidoresEPP',       title:'👥 Servidores do EPP',          desc:'Membros lotados no Escritório de Projetos e Processos.' },
+  { key:'servidoresEPP',       title:'👥 Servidores do EPP',          desc:'Membros lotados no Escritório de Projetos e Processos.', typed:'servidor' },
+  { key:'alertasEmail',        title:'📧 Alertas por E-mail',         desc:'Defina quem recebe cada tipo de alerta automático por e-mail.', typed:'alertas' },
   { key:'patrocinadores',      title:'🤝 Patrocinadores',             desc:'Lista de patrocinadores dos projetos de mapeamento.' },
   { key:'areas',               title:'🏢 Áreas / Divisões',           desc:'Unidades responsáveis usadas nos formulários.' },
   { key:'macroprocessos',      title:'🗂️ Macroprocessos',            desc:'Macroprocessos disponíveis nos formulários.' },
@@ -6834,8 +6853,15 @@ const _CFG_TABLES = [
   { key:'tipoAtividadePat',    title:'📅 Tipo de Atividade — PAT',    desc:'Tipos de atividade no Plano Anual de Trabalho.' },
   { key:'naturezaProcesso',    title:'⚡ Natureza do Processo',       desc:'Classificação da natureza dos processos.' },
   { key:'categoriaDocumentos', title:'📄 Categoria de Documentos',    desc:'Categorias usadas na gestão de documentos.' },
-  { key:'statusMapeamento',    title:'📊 Status do Mapeamento',       desc:'Status usados na ficha técnica de mapeamento.', typed:true },
-  { key:'statusAuditoria',     title:'🔍 Status de Auditoria',        desc:'Status usados nos planos de auditoria.', typed:true },
+  { key:'statusMapeamento',    title:'📊 Status do Mapeamento',       desc:'Status usados na ficha técnica de mapeamento.', typed:'status' },
+  { key:'statusAuditoria',     title:'🔍 Status de Auditoria',        desc:'Status usados nos planos de auditoria.', typed:'status' },
+];
+
+const _ALERT_TYPES = [
+  { id:'mapeamento_6m',       label:'6 meses pós conclusão' },
+  { id:'mapeamento_12m',      label:'12 meses pós conclusão' },
+  { id:'plano_acao_7d',       label:'Ação vence em 7 dias' },
+  { id:'plano_acao_vencido',  label:'Ação venceu hoje' },
 ];
 
 function renderConfigPanel() {
@@ -6851,8 +6877,13 @@ function renderConfigPanel() {
 }
 
 function _renderCfgCard({key, title, desc, typed=false}) {
+  if(typed === 'servidor') return _renderCfgCardServidor(title, desc);
+  if(typed === 'alertas')  return _renderCfgCardAlertas(title, desc);
+
   const items = getConfig(key);
-  const listHtml = typed
+  const empty = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum item cadastrado.</div>';
+
+  const listHtml = (typed === 'status')
     ? items.map((it, i) =>
         `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:7px;margin-bottom:6px;">
           <span style="background:#e2e8f0;border-radius:4px;padding:1px 7px;font-size:11px;font-family:monospace;color:#475569;white-space:nowrap;">${it.value}</span>
@@ -6869,9 +6900,7 @@ function _renderCfgCard({key, title, desc, typed=false}) {
           </div>
         </div>`).join('');
 
-  const empty = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum item cadastrado.</div>';
-
-  const addHtml = typed
+  const addHtml = (typed === 'status')
     ? `<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
         <input id="cfg-new-val-${key}" class="modal-input" type="text" placeholder="código (ex: novo)" style="flex:1;min-width:100px;font-family:monospace;font-size:12px;">
         <input id="cfg-new-lbl-${key}" class="modal-input" type="text" placeholder="label (ex: 🆕 Novo Status)" style="flex:2;min-width:130px;">
@@ -6890,6 +6919,97 @@ function _renderCfgCard({key, title, desc, typed=false}) {
     ${addHtml}
   </div>`;
 }
+
+function _renderCfgCardServidor(title, desc) {
+  const srvs = getConfig('servidoresEPP');
+  const rows = srvs.map((s, i) => {
+    const nome  = (s.nome  || '').replace(/"/g,'&quot;');
+    const email = (s.email || '').replace(/"/g,'&quot;');
+    return `<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:8px 10px;background:#f8fafc;border-radius:7px;margin-bottom:6px;">
+      <input class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" value="${nome}"
+        onchange="configSaveServidor(${i},'nome',this.value)"
+        placeholder="Nome do servidor">
+      <input class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" value="${email}" type="email"
+        onchange="configSaveServidor(${i},'email',this.value)"
+        placeholder="e-mail@sefaz.rs.gov.br">
+      <button onclick="configRemoveServidor(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;" title="Remover">✕</button>
+    </div>`;
+  }).join('');
+
+  const empty = srvs.length ? '' : '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum servidor cadastrado.</div>';
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">${desc}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;padding:0 10px 6px;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">
+      <span>Nome</span><span>E-mail</span><span></span>
+    </div>
+    <div id="cfg-list-servidoresEPP">${rows || empty}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px;align-items:center;">
+      <input id="cfg-new-srv-nome" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" placeholder="Nome do servidor"
+        onkeydown="if(event.key==='Enter') configAddServidor()">
+      <input id="cfg-new-srv-email" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" type="email" placeholder="e-mail (opcional)"
+        onkeydown="if(event.key==='Enter') configAddServidor()">
+      <button onclick="configAddServidor()" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
+    </div>
+  </div>`;
+}
+
+function _renderCfgCardAlertas(title, desc) {
+  const srvs     = getConfig('servidoresEPP');
+  const alertasCfg = getConfig('alertasEmail');
+
+  // helper: is server subscribed to alert?
+  function isSubscribed(nome, alertId) {
+    const entry = alertasCfg.find(a => a.nome === nome);
+    return entry ? (entry.alertas || []).includes(alertId) : false;
+  }
+
+  const colHeaders = _ALERT_TYPES.map(a =>
+    `<th style="padding:6px 8px;font-size:11px;font-weight:600;color:#64748b;text-align:center;white-space:nowrap;">${a.label}</th>`
+  ).join('');
+
+  const rows = srvs.map((s) => {
+    const nome   = s.nome || '';
+    const email  = s.email ? `<span style="font-size:11px;color:#94a3b8;">${s.email}</span>` : '<span style="font-size:11px;color:#e2e8f0;">sem e-mail</span>';
+    const checks = _ALERT_TYPES.map(a => {
+      const checked = isSubscribed(nome, a.id) ? 'checked' : '';
+      const noEmail = !s.email;
+      return `<td style="text-align:center;padding:4px 8px;">
+        <input type="checkbox" ${checked} ${noEmail ? 'disabled title="Cadastre o e-mail do servidor primeiro"' : ''}
+          onchange="configToggleAlerta('${nome.replace(/'/g,"\\'")}','${a.id}',this.checked)"
+          style="width:16px;height:16px;cursor:${noEmail?'not-allowed':'pointer'};">
+      </td>`;
+    }).join('');
+    return `<tr style="border-top:1px solid #f1f5f9;">
+      <td style="padding:8px 10px;">
+        <div style="font-size:13px;font-weight:500;color:#1e293b;">${nome}</div>
+        ${email}
+      </td>
+      ${checks}
+    </tr>`;
+  }).join('');
+
+  const emptyRow = srvs.length ? '' : `<tr><td colspan="${_ALERT_TYPES.length+1}" style="padding:16px;text-align:center;color:#94a3b8;font-size:12px;">Nenhum servidor cadastrado. Adicione servidores na tabela acima.</td></tr>`;
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;grid-column:1/-1;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">${desc}</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f8fafc;">
+            <th style="padding:6px 10px;font-size:11px;font-weight:600;color:#64748b;text-align:left;">Servidor</th>
+            ${colHeaders}
+          </tr>
+        </thead>
+        <tbody>${rows || emptyRow}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:#94a3b8;">
+      ℹ️ Servidores sem e-mail cadastrado não podem receber alertas. Servidores sem e-mail têm checkboxes desabilitados.
+    </div>
+  </div>`;
 
 function configAddItem(key) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
@@ -6992,6 +7112,234 @@ function configSaveStatusLabel(key, idx) {
   setConfig(key, items);
   renderConfigPanel();
   saveToCloud();
+}
+
+// ── Servidores EPP management ────────────────────────────────────────────────
+function configAddServidor() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const nomeInp  = document.getElementById('cfg-new-srv-nome');
+  const emailInp = document.getElementById('cfg-new-srv-email');
+  if(!nomeInp) return;
+  const nome  = nomeInp.value.trim();
+  const email = emailInp ? emailInp.value.trim() : '';
+  if(!nome) { showToast('Informe o nome do servidor.','warn'); return; }
+  const srvs = [...getConfig('servidoresEPP')];
+  if(srvs.some(s => s.nome === nome)) { showToast('Servidor já cadastrado.','warn'); return; }
+  srvs.push({nome, email});
+  setConfig('servidoresEPP', srvs);
+  nomeInp.value = ''; if(emailInp) emailInp.value = '';
+  renderConfigPanel();
+  saveToCloud();
+  showToast('✅ Servidor adicionado!','success');
+}
+
+function configRemoveServidor(idx) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const srvs = [...getConfig('servidoresEPP')];
+  srvs.splice(idx, 1);
+  setConfig('servidoresEPP', srvs);
+  renderConfigPanel();
+  saveToCloud();
+  showToast('Servidor removido.','success');
+}
+
+function configSaveServidor(idx, field, value) {
+  if(!isEditor) return;
+  const srvs = [...getConfig('servidoresEPP')];
+  if(!srvs[idx]) return;
+  srvs[idx] = { ...srvs[idx], [field]: value.trim() };
+  setConfig('servidoresEPP', srvs);
+  // Re-render only the alertas table (email column)
+  const grid = document.getElementById('epp-config-tables-grid');
+  if(grid) {
+    const alertasCard = grid.children[1]; // second card is alertas
+    if(alertasCard) alertasCard.outerHTML = _renderCfgCardAlertas('📧 Alertas por E-mail','Defina quem recebe cada tipo de alerta automático por e-mail.');
+  }
+  saveToCloud();
+}
+
+// ── Alertas por E-mail management ────────────────────────────────────────────
+function configToggleAlerta(nome, alertId, enabled) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const alertasCfg = getConfig('alertasEmail').map(a => ({...a, alertas:[...(a.alertas||[])]}));
+  let entry = alertasCfg.find(a => a.nome === nome);
+  if(!entry) { entry = {nome, alertas:[]}; alertasCfg.push(entry); }
+  if(enabled) {
+    if(!entry.alertas.includes(alertId)) entry.alertas.push(alertId);
+  } else {
+    entry.alertas = entry.alertas.filter(a => a !== alertId);
+  }
+  setConfig('alertasEmail', alertasCfg);
+  saveToCloud();
+}
+
+// ── Email alert helpers ──────────────────────────────────────────────────────
+function getAlertSubscribers(tipoAlerta) {
+  const srvs      = getConfig('servidoresEPP');
+  const alertasCfg = getConfig('alertasEmail');
+  return alertasCfg
+    .filter(a => (a.alertas || []).includes(tipoAlerta))
+    .map(a => {
+      const srv   = srvs.find(s => s.nome === a.nome);
+      const email = srv?.email?.trim() || '';
+      return {nome: a.nome, email};
+    })
+    .filter(a => a.email);
+}
+
+async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
+  if(!supaClient || !toEmail) return false;
+  try {
+    const { data: { session } } = await supaClient.auth.getSession();
+    const token = session?.access_token || SUPA_KEY;
+    const resp = await fetch(`${SUPA_URL}/functions/v1/send-alert-email`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+      body: JSON.stringify({ to: toEmail, nome: toNome, subject, html: htmlBody }),
+    });
+    if(!resp.ok) { console.warn('[sendAlertEmail] HTTP', resp.status, await resp.text()); return false; }
+    console.log(`[sendAlertEmail] Enviado para ${toEmail}: ${subject}`);
+    return true;
+  } catch(e) {
+    console.error('[sendAlertEmail] erro:', e);
+    return false;
+  }
+}
+
+function _buildAlertHtml(tipo, popName, popKey, extra) {
+  const estilos = `font-family:Arial,sans-serif;color:#1e293b;`;
+  const tituloMap = {
+    mapeamento_6m:       `⏰ 6 meses desde a conclusão do mapeamento`,
+    mapeamento_12m:      `⏰ 12 meses desde a conclusão do mapeamento`,
+    plano_acao_7d:       `⚠️ Ação do plano vence em ${extra?.dias ?? 7} dia(s)`,
+    plano_acao_vencido:  `🔴 Ação do plano venceu hoje`,
+  };
+  const titulo = tituloMap[tipo] || tipo;
+  const descMap = {
+    mapeamento_6m:       `O mapeamento <strong>${popName}</strong> foi concluído em <strong>${extra?.dataEfetiva||'–'}</strong> e completou <strong>6 meses</strong>. Considere verificar se o processo foi efetivamente implementado e se os indicadores de desempenho estão sendo acompanhados.`,
+    mapeamento_12m:      `O mapeamento <strong>${popName}</strong> foi concluído em <strong>${extra?.dataEfetiva||'–'}</strong> e completou <strong>12 meses</strong>. Considere realizar uma revisão formal do processo para verificar sua aderência e atualidade.`,
+    plano_acao_7d:       `A ação <strong>"${extra?.desc||'–'}"</strong> do processo <strong>${popName}</strong>, sob responsabilidade de <strong>${extra?.resp||'–'}</strong>, vence em <strong>${extra?.prazo||'–'}</strong>.`,
+    plano_acao_vencido:  `A ação <strong>"${extra?.desc||'–'}"</strong> do processo <strong>${popName}</strong>, sob responsabilidade de <strong>${extra?.resp||'–'}</strong>, venceu em <strong>${extra?.prazo||'–'}</strong> e ainda está pendente.`,
+  };
+  const descricao = descMap[tipo] || '';
+  return `<div style="${estilos}max-width:520px;margin:0 auto;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+    <div style="background:#0a2540;padding:20px 24px;">
+      <div style="font-size:18px;font-weight:700;color:#fff;">🏢 EPP · CAGE-RS</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Escritório de Projetos e Processos</div>
+    </div>
+    <div style="padding:24px;">
+      <div style="font-size:16px;font-weight:700;color:#0a2540;margin-bottom:12px;">${titulo}</div>
+      <p style="font-size:14px;line-height:1.6;margin:0 0 16px;">${descricao}</p>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 14px;font-size:12px;color:#64748b;">
+        Processo: <strong style="color:#0a2540;">${popName}</strong><br>
+        Data do alerta: <strong>${new Date().toLocaleDateString('pt-BR')}</strong>
+      </div>
+    </div>
+    <div style="background:#f8fafc;padding:12px 24px;font-size:11px;color:#94a3b8;text-align:center;">
+      Este é um alerta automático do sistema GESTPOP · CAGE-RS
+    </div>
+  </div>`;
+}
+
+// ── Mapeamento 6/12 meses milestone check ────────────────────────────────────
+async function checkMapeamentoMilestones() {
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const popKeys = ['d','r',...Object.keys(DATA).filter(k=>k.startsWith('pop_'))];
+  if(!DATA.config) DATA.config = {};
+  if(!DATA.config.alertasEnviados) DATA.config.alertasEnviados = {};
+  const sent = DATA.config.alertasEnviados;
+  let changed = false;
+
+  for(const pk of popKeys) {
+    const pop = DATA[pk];
+    if(!pop?.meta?.dataEfetiva || pop.meta.statusMap !== 'concluido') continue;
+    const efetiva = new Date(pop.meta.dataEfetiva + 'T00:00:00');
+    if(isNaN(efetiva)) continue;
+    const popName = pop.meta?.name || pk;
+
+    for(const [tipo, months] of [['mapeamento_6m',6],['mapeamento_12m',12]]) {
+      const alKey  = `${tipo}_${pk}`;
+      if(sent[alKey]) continue;
+      const marco  = new Date(efetiva);
+      marco.setMonth(marco.getMonth() + months);
+      if(today < marco) continue;
+
+      const subs = getAlertSubscribers(tipo);
+      const dataEfetivaFmt = efetiva.toLocaleDateString('pt-BR');
+      for(const {nome, email} of subs) {
+        const label = months === 6 ? '6 meses' : '12 meses';
+        await sendAlertEmail(
+          email, nome,
+          `[EPP/CAGE-RS] ${label} desde conclusão: ${popName}`,
+          _buildAlertHtml(tipo, popName, pk, {dataEfetiva: dataEfetivaFmt})
+        );
+      }
+      sent[alKey] = today.toISOString().slice(0,10);
+      changed = true;
+    }
+  }
+  if(changed) { try { saveToCloud(); } catch(e) {} }
+}
+
+// ── Plano de ação email alerts ───────────────────────────────────────────────
+async function checkActionsDeadlinesEmail() {
+  const today  = new Date(); today.setHours(0,0,0,0);
+  const in7    = new Date(today); in7.setDate(in7.getDate() + 7);
+  const popKeys = ['d','r',...Object.keys(DATA).filter(k=>k.startsWith('pop_'))];
+  if(!DATA.config) DATA.config = {};
+  if(!DATA.config.alertasEnviados) DATA.config.alertasEnviados = {};
+  const sent = DATA.config.alertasEnviados;
+  let changed = false;
+
+  for(const pk of popKeys) {
+    const pop = DATA[pk];
+    if(!pop || !Array.isArray(pop.actions_plan)) continue;
+    const popName = pop.meta?.name || pk;
+
+    for(const act of pop.actions_plan) {
+      if(!act.prazo || act.status === 'concluido') continue;
+      const d = new Date(act.prazo + 'T00:00:00');
+      if(isNaN(d)) continue;
+
+      if(d < today) {
+        const alKey = `plano_acao_vencido_${pk}_${act.prazo}`;
+        if(!sent[alKey]) {
+          const subs = getAlertSubscribers('plano_acao_vencido');
+          for(const {nome, email} of subs) {
+            await sendAlertEmail(
+              email, nome,
+              `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
+              _buildAlertHtml('plano_acao_vencido', popName, pk, {
+                desc: act.desc, resp: act.resp,
+                prazo: d.toLocaleDateString('pt-BR'),
+              })
+            );
+          }
+          sent[alKey] = today.toISOString().slice(0,10);
+          changed = true;
+        }
+      } else if(d <= in7) {
+        const dias   = Math.round((d - today) / 86400000);
+        const alKey  = `plano_acao_7d_${pk}_${act.prazo}`;
+        if(!sent[alKey]) {
+          const subs = getAlertSubscribers('plano_acao_7d');
+          for(const {nome, email} of subs) {
+            await sendAlertEmail(
+              email, nome,
+              `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
+              _buildAlertHtml('plano_acao_7d', popName, pk, {
+                desc: act.desc, resp: act.resp,
+                prazo: d.toLocaleDateString('pt-BR'), dias,
+              })
+            );
+          }
+          sent[alKey] = today.toISOString().slice(0,10);
+          changed = true;
+        }
+      }
+    }
+  }
+  if(changed) { try { saveToCloud(); } catch(e) {} }
 }
 
 function renderSidebar() {
@@ -8050,7 +8398,15 @@ async function loadFromCloud() {
     if(homePage && homePage.style.display !== 'none') homeRefresh();
     // Atualizar status automaticamente baseado nas datas
     checkAllAutoStatus();
-    setTimeout(() => { patCheckDeadlines(); checkActionsDeadlines(); }, 800);
+    setTimeout(() => {
+      patCheckDeadlines();
+      checkActionsDeadlines();
+      // Email alerts (fire-and-forget — only sends if configured)
+      if(isEditor) {
+        checkMapeamentoMilestones().catch(e => console.warn('[milestone email]',e));
+        checkActionsDeadlinesEmail().catch(e => console.warn('[actions email]',e));
+      }
+    }, 800);
 
     setSyncStatus('synced');
     updateLastSaveChip(data);
