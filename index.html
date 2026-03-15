@@ -190,13 +190,16 @@
   .act-extra-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px;display:block;}
   .act-extra-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .act-extra-grid .full{grid-column:1/-1;}
-  .step-flow-actions{display:none;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;}
-  body.edit-mode .step-flow-actions{display:flex;}
+  .step-flow-actions{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
   .clear-flow-btn,.copy-flow-btn{padding:4px 10px;font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
-  .clear-flow-btn{border:1.5px solid #f87171;background:transparent;color:#ef4444;}
-  .clear-flow-btn:hover{background:#fef2f2;}
+  /* clear-flow-btn também usa edit-add-btn para controle de visibilidade no edit mode */
+  body.edit-mode .clear-flow-btn{background:transparent!important;color:#ef4444!important;border:1.5px solid #f87171!important;}
+  .clear-flow-btn:hover{background:#fef2f2!important;}
   .copy-flow-btn{border:1.5px solid #6366f1;background:transparent;color:#6366f1;}
   .copy-flow-btn:hover{background:#eef2ff;}
+  .rm-step-btn{display:none;padding:4px 10px;font-size:11px;font-weight:700;border:1.5px solid rgba(255,255,255,.5);background:transparent;color:rgba(255,255,255,.85);border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .rm-step-btn:hover{background:rgba(255,0,0,.25);border-color:white;}
+  body.edit-mode .rm-step-btn{display:inline-flex;}
   .action-type-box{overflow-y:auto;max-height:90vh;}
   .decision-box{background:#fffbf0;border:1.5px solid #f0c840;border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
   .decision-box .dicon{font-size:18px;flex-shrink:0;}
@@ -4770,13 +4773,14 @@ function renderStep(p, i) {
           <p ${ce} data-sp="${p}" data-si="${i}" data-sf="${subtitleSf}">${dispSubtitle}</p>
         </div>
         ${modeBadge}
+        <button class="rm-step-btn" onclick="rmStep('${p}',${i})" title="Apagar esta etapa">🗑 Apagar etapa</button>
       </div>
       <div class="step-panel-body">
         <div class="resp-tag ${dispRespClass}" ${ce} data-sp="${p}" data-si="${i}" data-sf="${respSf}">👤 ${dispResp}</div>
         <ul class="step-actions ${em ? 'edit-mode-list' : ''}" id="${p}-actions-list-${i}">${actHTML}</ul>
         <div class="step-flow-actions">
           <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
-          <button class="clear-flow-btn" onclick="clearCurrentFlow('${p}',${i})" title="Limpar todas as ações deste fluxo">🗑 Limpar ${isTobe ? 'TO BE' : 'AS IS'}</button>
+          <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}',${i})" title="Limpar todas as ações deste fluxo">🗑 Limpar ${isTobe ? 'TO BE' : 'AS IS'}</button>
           <button class="copy-flow-btn" onclick="copyFlowAsIsToTobe('${p}',${i})" title="Copiar ações do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>
         </div>
         ${decHTML}${noteHTML}
@@ -6295,6 +6299,18 @@ function addStep(p) {
   DATA[p].currentStep = DATA[p].steps.length - 1;
   renderStep(p, DATA[p].currentStep);
   markChanged();
+}
+
+// ── Helper: remove step ───────────────────────
+function rmStep(p, si) {
+  if(DATA[p].steps.length <= 1) { showToast('O processo precisa ter pelo menos uma etapa.', 'warn'); return; }
+  if(!confirm(`Apagar a Etapa ${si+1} — "${DATA[p].steps[si].title}"? Esta ação não pode ser desfeita.`)) return;
+  DATA[p].steps.splice(si, 1);
+  DATA[p].currentStep = Math.max(0, Math.min(DATA[p].currentStep, DATA[p].steps.length - 1));
+  renderTracker(p);
+  renderStep(p, DATA[p].currentStep);
+  markChanged();
+  showToast('🗑 Etapa apagada.', 'success');
 }
 
 // ── Helper: add role ──────────────────────────
