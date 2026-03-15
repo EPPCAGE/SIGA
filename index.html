@@ -1133,6 +1133,10 @@
   .rel-print-btn.primary   { background:#0a2540; color:white; }
   .rel-print-btn.secondary { background:#f1f5f9; color:#0a2540; }
   .rel-empty { font-style:italic; color:#94a3b8; font-size:13px; margin-bottom:12px; }
+  .rel-doc.rel-editing { outline:2px solid #3b82f6; outline-offset:3px; }
+  .rel-doc.rel-editing [contenteditable]:focus,
+  .rel-doc.rel-editing:focus { outline:none; }
+  .rel-print-btn.edit-active { background:#dbeafe !important; color:#1e40af !important; }
   @media(max-width:700px){ .rel-doc { padding:24px 16px; } }
 </style>
 </head>
@@ -4399,7 +4403,7 @@ function switchPop(pop, tabEl) {
 function showSection(id, tab, silent) {
   currentSection = id;
   // Esconder BPMN e módulos IA se estiverem visíveis (voltando de outra aba)
-  ['bpmn-module','ai-module','ai-relatorio-module'].forEach(id => {
+  ['bpmn-module','fd-module','ai-module','ai-relatorio-module'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
 
@@ -5157,7 +5161,7 @@ function showBpmn(tab) {
   if(activePop) activePop.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   if(tab) tab.classList.add('active');
-  ['ai-module','ai-relatorio-module'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+  ['fd-module','ai-module','ai-relatorio-module'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
   document.getElementById('bpmn-module').style.display = 'block';
   initImageModule();
   // Restore saved image for current pop
@@ -10884,7 +10888,7 @@ ${fluxoTexto}`;
 function showAiRelatorio(tab) {
   const activePop = document.getElementById('pop-' + popDomId(currentPop));
   if (activePop) activePop.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-  ['bpmn-module','ai-module'].forEach(id => {
+  ['bpmn-module','fd-module','ai-module'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -11242,6 +11246,7 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
   // ── Barra de Ações ─────────────────────────────────────────
   h += `<div class="rel-print-bar">
     <button class="rel-print-btn secondary" onclick="document.getElementById('rel-output').innerHTML=''">🗑 Limpar</button>
+    <button class="rel-print-btn secondary" id="rel-edit-btn" onclick="toggleRelEdit(this)">✏️ Editar</button>
     <button class="rel-print-btn primary" onclick="printAiRelatorio()">🖨 Imprimir / Salvar PDF</button>
   </div>`;
 
@@ -11249,7 +11254,28 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
   return h;
 }
 
+function toggleRelEdit(btn) {
+  const doc = document.getElementById('rel-doc-content');
+  if (!doc) return;
+  const editing = doc.contentEditable === 'true';
+  if (editing) {
+    doc.contentEditable = 'false';
+    doc.classList.remove('rel-editing');
+    btn.innerHTML = '✏️ Editar';
+    btn.classList.remove('edit-active');
+  } else {
+    doc.contentEditable = 'true';
+    doc.classList.add('rel-editing');
+    btn.innerHTML = '✅ Concluir Edição';
+    btn.classList.add('edit-active');
+    doc.focus();
+  }
+}
+
 function printAiRelatorio() {
+  // Sai do modo de edição antes de imprimir
+  const editBtn = document.getElementById('rel-edit-btn');
+  if (editBtn && editBtn.classList.contains('edit-active')) toggleRelEdit(editBtn);
   const docEl = document.getElementById('rel-doc-content');
   if (!docEl) return;
   const content = docEl.innerHTML.replace(/<div class="rel-print-bar">[\s\S]*?<\/div>\s*<\/div>$/, '</div>');
