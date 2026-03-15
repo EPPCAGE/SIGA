@@ -1447,8 +1447,9 @@
       </div>
     </div>
     <div style="display:flex;gap:0;">
-      <button class="epp-tab active" data-tab="pat"  onclick="eppTab('pat',this)">📅 Plano Anual de Trabalho</button>
-      <button class="epp-tab"        data-tab="dash" onclick="eppTab('dash',this)">📊 Dashboard EPP</button>
+      <button class="epp-tab active" data-tab="pat"    onclick="eppTab('pat',this)">📅 Plano Anual de Trabalho</button>
+      <button class="epp-tab"        data-tab="dash"   onclick="eppTab('dash',this)">📊 Dashboard EPP</button>
+      <button class="epp-tab"        data-tab="config" onclick="eppTab('config',this)">⚙️ Tabelas de Referência</button>
     </div>
   </div>
 </div>
@@ -1563,6 +1564,17 @@
     <!-- Por tipo -->
     <div style="font-size:12px;font-weight:700;color:#64748b;margin:16px 0 10px;text-transform:uppercase;letter-spacing:.04em;">Status atual do PAT</div>
     <div class="epp-kpi-grid" id="epp-status-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;"></div>
+  </div>
+</div>
+
+<!-- EPP: Config panel (shown when config tab is active) -->
+<div id="epp-config-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
+  <div style="margin-bottom:20px;">
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#0a2540;margin:0 0 4px;">⚙️ Tabelas de Referência</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Gerencie as listas de opções usadas nos formulários do sistema. As alterações são salvas automaticamente e refletem imediatamente nos formulários.</p>
+  </div>
+  <div id="epp-config-tables-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
+    <!-- Preenchido por renderConfigPanel() -->
   </div>
 </div>
 
@@ -6772,6 +6784,216 @@ function patRemove(idx) {
   showToast('Patrocinador removido.','success');
 }
 
+// ── Tabelas de Referência (Config) ──────────────────────────────────────────
+const CONFIG_DEFAULTS = {
+  patrocinadores:       [...PATROCINADORES_DEFAULT],
+  areas:                ['DCO','DIR','DIE','DTTI','GAB','DAUD','DCON'],
+  macroprocessos:       [...MACROPROCESSOS],
+  tipoTrabalho:         ['Mapeamento de Processo Novo','Mapeamento de Processo Existente','Redesenho','Mapeamento e Redesenho','Criação de Documentação'],
+  naturezaProcesso:     ['Finalístico','Apoio','Governança'],
+  categoriaDocumentos:  ['Instrução Normativa','Manual de Processo','Procedimento Operacional','Formulário','Fluxograma'],
+  tipoAtividadePat:     ['Mapeamento de Processo','Monitoramento de Indicadores','Acompanhamento de Implementação','Auditoria','Controle Interno','Consultoria','Fiscalização','Normatização','Capacitação','Outro'],
+  servidoresEPP:        ['Marcelo Chaves','Edison Weber','Felipe Tourinho','Andrea Buhl','Amanda Sardinha'],
+  statusMapeamento:     [{value:'planejado',label:'📋 Planejado'},{value:'em_andamento',label:'🔄 Em Andamento'},{value:'concluido',label:'✅ Concluído'},{value:'atrasado',label:'⚠️ Atrasado'},{value:'suspenso',label:'⏸ Suspenso'}],
+  statusAuditoria:      [{value:'planejada',label:'📋 Planejada'},{value:'em_execucao',label:'🔄 Em Execução'},{value:'concluida',label:'✅ Concluída'},{value:'cancelada',label:'⛔ Cancelada'}],
+};
+
+function getConfig(key) {
+  if(key === 'patrocinadores') return DATA.patrocinadores || CONFIG_DEFAULTS.patrocinadores;
+  return (DATA.config && DATA.config[key]) || CONFIG_DEFAULTS[key] || [];
+}
+function setConfig(key, val) {
+  if(key === 'patrocinadores') { DATA.patrocinadores = val; return; }
+  if(!DATA.config) DATA.config = {};
+  DATA.config[key] = val;
+}
+function getMacroprocessos() { return getConfig('macroprocessos'); }
+
+function populateConfigSelect(selectId, configKey, selected) {
+  const el = document.getElementById(selectId);
+  if(!el) return;
+  const cur = (selected !== undefined ? selected : el.value) || '';
+  el.innerHTML = '<option value="">Selecione...</option>'
+    + getConfig(configKey).map(v => `<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');
+  if(cur) el.value = cur;
+}
+
+function applyConfigToDropdowns() {
+  ['pat-unidade','status-modal-unidade','nf-unidade'].forEach(id => populateConfigSelect(id,'areas'));
+  ['pat-tipo','nf-tipo'].forEach(id => populateConfigSelect(id,'tipoAtividadePat'));
+  populateConfigSelect('status-modal-tipo','tipoTrabalho');
+}
+
+// ── Config Panel rendering ───────────────────────────────────────────────────
+const _CFG_TABLES = [
+  { key:'servidoresEPP',       title:'👥 Servidores do EPP',          desc:'Membros lotados no Escritório de Projetos e Processos.' },
+  { key:'patrocinadores',      title:'🤝 Patrocinadores',             desc:'Lista de patrocinadores dos projetos de mapeamento.' },
+  { key:'areas',               title:'🏢 Áreas / Divisões',           desc:'Unidades responsáveis usadas nos formulários.' },
+  { key:'macroprocessos',      title:'🗂️ Macroprocessos',            desc:'Macroprocessos disponíveis nos formulários.' },
+  { key:'tipoTrabalho',        title:'🔧 Tipo de Trabalho',           desc:'Tipos de trabalho da ficha técnica de mapeamento.' },
+  { key:'tipoAtividadePat',    title:'📅 Tipo de Atividade — PAT',    desc:'Tipos de atividade no Plano Anual de Trabalho.' },
+  { key:'naturezaProcesso',    title:'⚡ Natureza do Processo',       desc:'Classificação da natureza dos processos.' },
+  { key:'categoriaDocumentos', title:'📄 Categoria de Documentos',    desc:'Categorias usadas na gestão de documentos.' },
+  { key:'statusMapeamento',    title:'📊 Status do Mapeamento',       desc:'Status usados na ficha técnica de mapeamento.', typed:true },
+  { key:'statusAuditoria',     title:'🔍 Status de Auditoria',        desc:'Status usados nos planos de auditoria.', typed:true },
+];
+
+function renderConfigPanel() {
+  const panel = document.getElementById('epp-config-panel');
+  if(!panel) return;
+  if(!isEditor) {
+    panel.innerHTML = '<div style="padding:60px;text-align:center;color:#94a3b8;font-size:14px;">🔒 Apenas editores podem gerenciar as tabelas de referência.</div>';
+    return;
+  }
+  const grid = panel.querySelector('#epp-config-tables-grid');
+  if(!grid) return;
+  grid.innerHTML = _CFG_TABLES.map(t => _renderCfgCard(t)).join('');
+}
+
+function _renderCfgCard({key, title, desc, typed=false}) {
+  const items = getConfig(key);
+  const listHtml = typed
+    ? items.map((it, i) =>
+        `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:7px;margin-bottom:6px;">
+          <span style="background:#e2e8f0;border-radius:4px;padding:1px 7px;font-size:11px;font-family:monospace;color:#475569;white-space:nowrap;">${it.value}</span>
+          <span id="cfg-lbl-${key}-${i}" style="flex:1;font-size:13px;color:#1e293b;">${it.label}</span>
+          <button onclick="configEditStatusLabel('${key}',${i})" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:12px;padding:0 3px;" title="Editar label">✏️</button>
+          <button onclick="configRemoveStatus('${key}',${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;padding:0 2px;" title="Remover">✕</button>
+        </div>`).join('')
+    : items.map((it, i) =>
+        `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8fafc;border-radius:7px;margin-bottom:6px;">
+          <span id="cfg-itm-${key}-${i}" style="flex:1;font-size:13px;color:#1e293b;">${it}</span>
+          <div style="display:flex;gap:2px;">
+            <button onclick="configEditItem('${key}',${i})" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:12px;padding:0 4px;" title="Editar">✏️</button>
+            <button onclick="configRemoveItem('${key}',${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;padding:0 3px;" title="Remover">✕</button>
+          </div>
+        </div>`).join('');
+
+  const empty = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum item cadastrado.</div>';
+
+  const addHtml = typed
+    ? `<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+        <input id="cfg-new-val-${key}" class="modal-input" type="text" placeholder="código (ex: novo)" style="flex:1;min-width:100px;font-family:monospace;font-size:12px;">
+        <input id="cfg-new-lbl-${key}" class="modal-input" type="text" placeholder="label (ex: 🆕 Novo Status)" style="flex:2;min-width:130px;">
+        <button onclick="configAddStatus('${key}')" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
+      </div>`
+    : `<div style="display:flex;gap:6px;margin-top:10px;">
+        <input id="cfg-new-${key}" class="modal-input" type="text" placeholder="Novo item..." style="flex:1;"
+          onkeydown="if(event.key==='Enter') configAddItem('${key}')">
+        <button onclick="configAddItem('${key}')" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
+      </div>`;
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">${desc}</div>
+    <div id="cfg-list-${key}">${listHtml || empty}</div>
+    ${addHtml}
+  </div>`;
+}
+
+function configAddItem(key) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const input = document.getElementById('cfg-new-' + key);
+  if(!input) return;
+  const val = input.value.trim();
+  if(!val) return;
+  const items = [...getConfig(key)];
+  if(items.includes(val)) { showToast('Item já existe na lista.','warn'); return; }
+  items.push(val);
+  setConfig(key, items);
+  input.value = '';
+  renderConfigPanel();
+  applyConfigToDropdowns();
+  saveToCloud();
+  showToast('✅ Item adicionado!','success');
+}
+
+function configRemoveItem(key, idx) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const items = [...getConfig(key)];
+  items.splice(idx, 1);
+  setConfig(key, items);
+  renderConfigPanel();
+  applyConfigToDropdowns();
+  saveToCloud();
+  showToast('Item removido.','success');
+}
+
+function configEditItem(key, idx) {
+  const span = document.getElementById(`cfg-itm-${key}-${idx}`);
+  if(!span) return;
+  const cur = span.textContent;
+  span.innerHTML = `<input id="cfg-edit-${key}-${idx}" style="border:1px solid #cbd5e1;border-radius:5px;padding:2px 6px;font-size:13px;width:95%;" value="${cur.replace(/"/g,'&quot;')}">`;
+  const inp = document.getElementById(`cfg-edit-${key}-${idx}`);
+  inp.focus(); inp.select();
+  inp.onblur  = () => configSaveEdit(key, idx);
+  inp.onkeydown = e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape') renderConfigPanel(); };
+}
+
+function configSaveEdit(key, idx) {
+  const inp = document.getElementById(`cfg-edit-${key}-${idx}`);
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val) { renderConfigPanel(); return; }
+  const items = [...getConfig(key)];
+  items[idx] = val;
+  setConfig(key, items);
+  renderConfigPanel();
+  applyConfigToDropdowns();
+  saveToCloud();
+}
+
+function configAddStatus(key) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const valInp = document.getElementById('cfg-new-val-' + key);
+  const lblInp = document.getElementById('cfg-new-lbl-' + key);
+  if(!valInp || !lblInp) return;
+  const value = valInp.value.trim().replace(/\s+/g,'_').toLowerCase();
+  const label = lblInp.value.trim();
+  if(!value || !label) { showToast('Preencha o código e o label.','warn'); return; }
+  const items = [...getConfig(key)];
+  if(items.some(it => it.value === value)) { showToast('Código já existe na lista.','warn'); return; }
+  items.push({ value, label });
+  setConfig(key, items);
+  valInp.value = ''; lblInp.value = '';
+  renderConfigPanel();
+  saveToCloud();
+  showToast('✅ Status adicionado!','success');
+}
+
+function configRemoveStatus(key, idx) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const items = [...getConfig(key)];
+  items.splice(idx, 1);
+  setConfig(key, items);
+  renderConfigPanel();
+  saveToCloud();
+  showToast('Status removido.','success');
+}
+
+function configEditStatusLabel(key, idx) {
+  const span = document.getElementById(`cfg-lbl-${key}-${idx}`);
+  if(!span) return;
+  const cur = span.textContent;
+  span.innerHTML = `<input id="cfg-edit-lbl-${key}-${idx}" style="border:1px solid #cbd5e1;border-radius:5px;padding:2px 6px;font-size:13px;width:95%;" value="${cur.replace(/"/g,'&quot;')}">`;
+  const inp = document.getElementById(`cfg-edit-lbl-${key}-${idx}`);
+  inp.focus(); inp.select();
+  inp.onblur    = () => configSaveStatusLabel(key, idx);
+  inp.onkeydown = e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape') renderConfigPanel(); };
+}
+
+function configSaveStatusLabel(key, idx) {
+  const inp = document.getElementById(`cfg-edit-lbl-${key}-${idx}`);
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val) { renderConfigPanel(); return; }
+  const items = [...getConfig(key)];
+  items[idx] = { ...items[idx], label: val };
+  setConfig(key, items);
+  renderConfigPanel();
+  saveToCloud();
+}
+
 function renderSidebar() {
   // Processos mapeados não são exibidos na sidebar — navegação via Página Inicial
   const el = document.getElementById('sidebar-list');
@@ -7168,6 +7390,8 @@ function openPatModal(idx = null) {
   const preview = document.getElementById('pat-meta-preview');
   if(preview) preview.style.display = 'none';
   populatePatPopSelect();
+  populateConfigSelect('pat-unidade', 'areas', item?.unidade || '');
+  populateConfigSelect('pat-tipo', 'tipoAtividadePat', item?.tipo || '');
   document.getElementById('pat-pop-vinc').value    = item?.popVinc      || '';
   if(item?.meta && item?.qtdRealizada != null) patCalcProgresso();
   openModal('pat-modal');
@@ -7518,7 +7742,7 @@ window.addEventListener('beforeunload', () => {
   // Montar payload — limite keepalive do Chrome é 64KB (65536 bytes)
   // Incluir repoDocs e drops apenas se couberem no orçamento
   const KEEPALIVE_LIMIT = 63000; // margem de segurança abaixo de 64KB
-  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits']);
+  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores']);
   const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
 
   // Payload essencial (POPs, PAT, arquitetura)
@@ -7603,7 +7827,7 @@ async function saveToCloud(attempt=1) {
 
   try { harvestEditables(); } catch(e) { console.warn('harvestEditables:', e); }
 
-  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits']);
+  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores']);
   const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
   // Strip session-only transient fields (prefixed with _) before persisting
   function _stripTransient(obj) {
@@ -7624,6 +7848,7 @@ async function saveToCloud(attempt=1) {
     drops:           DROPS     || [],
     indicadoresCage: DATA.indicadoresCage || { indicadores: [], resultados: [] },
     patrocinadores:  DATA.patrocinadores  || null,
+    config:          DATA.config          || null,
   };
 
   try {
@@ -7779,6 +8004,8 @@ async function loadFromCloud() {
       _arqData = null;
     }
     if(Array.isArray(payload.patrocinadores)) DATA.patrocinadores = payload.patrocinadores;
+    if(payload.config && typeof payload.config === 'object') DATA.config = payload.config;
+    try { applyConfigToDropdowns(); } catch(e) {}
     if(payload.indicadoresCage && typeof payload.indicadoresCage === 'object') {
       DATA.indicadoresCage = {
         indicadores: Array.isArray(payload.indicadoresCage.indicadores) ? payload.indicadoresCage.indicadores : [],
@@ -10295,7 +10522,7 @@ function arqInit() {
   // Populate macro filter and form select
   const filterMacro = document.getElementById('arq-filter-macro');
   const macroFormSel = document.getElementById('arq-f-macro');
-  const macroOpts = MACROPROCESSOS.map(m => `<option value="${m}">${m}</option>`).join('');
+  const macroOpts = getMacroprocessos().map(m => `<option value="${m}">${m}</option>`).join('');
   filterMacro.innerHTML = '<option value="">Todos</option>' + macroOpts;
   if(macroFormSel && macroFormSel.tagName === 'SELECT') {
     macroFormSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>' + macroOpts;
@@ -11857,7 +12084,7 @@ function npopInitSelects() {
   const macroSel = document.getElementById('nf-macro');
   if(!macroSel) return;
   macroSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>'
-    + MACROPROCESSOS.map(m => `<option value="${m}">${m}</option>`).join('');
+    + getMacroprocessos().map(m => `<option value="${m}">${m}</option>`).join('');
   populatePatrocinadoresSelect('nf-patrocinador');
 }
 
@@ -12551,15 +12778,21 @@ function eppTab(tab, el) {
   if(el) el.classList.add('active');
   else { const f=document.querySelector('.epp-tab[data-tab="'+tab+'"]'); if(f) f.classList.add('active'); }
 
-  const pat  = document.getElementById('pat-module');
-  const dash = document.getElementById('epp-dash-panel');
+  const pat    = document.getElementById('pat-module');
+  const dash   = document.getElementById('epp-dash-panel');
+  const cfg    = document.getElementById('epp-config-panel');
+
+  if(pat)  { pat.style.display='none'; pat.classList.remove('active'); }
+  if(dash) dash.style.display='none';
+  if(cfg)  cfg.style.display='none';
 
   if(tab === 'pat') {
     if(pat)  { pat.style.display='block'; pat.classList.add('active'); }
-    if(dash) dash.style.display='none';
     try { renderPat(); populatePatPopSelect(); } catch(e) {}
+  } else if(tab === 'config') {
+    if(cfg) cfg.style.display='block';
+    try { renderConfigPanel(); } catch(e) { console.error('renderConfigPanel', e); }
   } else {
-    if(pat)  { pat.style.display='none'; pat.classList.remove('active'); }
     if(dash) dash.style.display='block';
     eppRenderDashboard();
   }
@@ -13859,8 +14092,8 @@ function openStatusModal(p) {
   document.getElementById('status-modal-nome').value       = m.name         || '';
   document.getElementById('status-modal-macro').value      = m.macro        || '';
   document.getElementById('status-modal-processo').value   = m.processo     || '';
-  document.getElementById('status-modal-unidade').value    = m.unidade      || '';
-  document.getElementById('status-modal-tipo').value       = m.tipo         || '';
+  populateConfigSelect('status-modal-unidade', 'areas', m.unidade || '');
+  populateConfigSelect('status-modal-tipo', 'tipoTrabalho', m.tipo || '');
   document.getElementById('status-modal-dificuldade').value= m.dificuldade  || '';
   // Status e Datas
   document.getElementById('status-modal-status').value     = m.statusMap    || '';
