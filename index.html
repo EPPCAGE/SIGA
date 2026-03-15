@@ -190,8 +190,13 @@
   .act-extra-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px;display:block;}
   .act-extra-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .act-extra-grid .full{grid-column:1/-1;}
-  .clear-flow-btn{padding:4px 10px;font-size:11px;font-weight:700;border:1.5px solid #f87171;background:transparent;color:#ef4444;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .step-flow-actions{display:none;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;}
+  body.edit-mode .step-flow-actions{display:flex;}
+  .clear-flow-btn,.copy-flow-btn{padding:4px 10px;font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .clear-flow-btn{border:1.5px solid #f87171;background:transparent;color:#ef4444;}
   .clear-flow-btn:hover{background:#fef2f2;}
+  .copy-flow-btn{border:1.5px solid #6366f1;background:transparent;color:#6366f1;}
+  .copy-flow-btn:hover{background:#eef2ff;}
   .action-type-box{overflow-y:auto;max-height:90vh;}
   .decision-box{background:#fffbf0;border:1.5px solid #f0c840;border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
   .decision-box .dicon{font-size:18px;flex-shrink:0;}
@@ -4769,10 +4774,11 @@ function renderStep(p, i) {
       <div class="step-panel-body">
         <div class="resp-tag ${dispRespClass}" ${ce} data-sp="${p}" data-si="${i}" data-sf="${respSf}">👤 ${dispResp}</div>
         <ul class="step-actions ${em ? 'edit-mode-list' : ''}" id="${p}-actions-list-${i}">${actHTML}</ul>
-        ${em ? `<div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+        <div class="step-flow-actions">
           <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
-          <button class="clear-flow-btn" onclick="clearCurrentFlow('${p}',${i})" title="Limpar todas as ações deste fluxo">🗑 Limpar fluxo ${isTobe ? 'TO BE' : 'AS IS'}</button>
-        </div>` : ''}
+          <button class="clear-flow-btn" onclick="clearCurrentFlow('${p}',${i})" title="Limpar todas as ações deste fluxo">🗑 Limpar ${isTobe ? 'TO BE' : 'AS IS'}</button>
+          <button class="copy-flow-btn" onclick="copyFlowAsIsToTobe('${p}',${i})" title="Copiar ações do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>
+        </div>
         ${decHTML}${noteHTML}
       </div>
     </div>`;
@@ -4893,6 +4899,18 @@ function rmStepAction(p,si,ai){
     step.actions.splice(ai,1);
   }
   renderStep(p,si); markChanged();
+}
+
+function copyFlowAsIsToTobe(p,si) {
+  const step = DATA[p].steps[si];
+  const asisActions = step.actions || [];
+  if(asisActions.length === 0) { showToast('O fluxo AS IS está vazio — nada a copiar.', 'warn'); return; }
+  const tobeHasActions = step.tobe?.actions?.length > 0;
+  if(tobeHasActions && !confirm('O TO BE já possui ações. Substituir pelo fluxo AS IS?')) return;
+  if(!step.tobe) step.tobe = {};
+  step.tobe.actions = JSON.parse(JSON.stringify(asisActions)); // deep copy
+  renderStep(p,si); markChanged();
+  showToast('⎘ Fluxo AS IS copiado para o TO BE.', 'success');
 }
 
 function clearCurrentFlow(p,si) {
