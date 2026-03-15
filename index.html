@@ -186,6 +186,13 @@
   .action-type-btn .atb-name{font-size:13px;font-weight:700;color:var(--cage-blue);}
   .action-type-btn .atb-desc{font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.3;}
   .action-form{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--cage-border);padding-top:16px;}
+  .act-extra-fields{border-top:1px solid var(--cage-border);margin-top:4px;padding-top:12px;}
+  .act-extra-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px;display:block;}
+  .act-extra-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .act-extra-grid .full{grid-column:1/-1;}
+  .clear-flow-btn{padding:4px 10px;font-size:11px;font-weight:700;border:1.5px solid #f87171;background:transparent;color:#ef4444;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .clear-flow-btn:hover{background:#fef2f2;}
+  .action-type-box{overflow-y:auto;max-height:90vh;}
   .decision-box{background:#fffbf0;border:1.5px solid #f0c840;border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
   .decision-box .dicon{font-size:18px;flex-shrink:0;}
   .decision-box .dtext{font-size:13px;color:#7a5e00;line-height:1.5;}
@@ -3811,11 +3818,53 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
         <label>Executor / Ator responsável <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
         <input class="modal-input" id="act-actor" type="text" placeholder="Ex: Seção de Apurações, Chefia DIR...">
       </div>
+      <div class="act-extra-fields">
+        <span class="act-extra-label">📋 Informações Complementares</span>
+        <div class="act-extra-grid">
+          <div>
+            <label>⏱ Prazo / Duração</label>
+            <input class="modal-input" id="act-duracao" type="text" placeholder="Ex: 2 dias úteis">
+          </div>
+          <div>
+            <label>💻 Sistemas Envolvidos</label>
+            <input class="modal-input" id="act-sistemas" type="text" placeholder="Ex: SAEWEB, SEI">
+          </div>
+          <div>
+            <label>📄 Documentos Utilizados</label>
+            <input class="modal-input" id="act-documentos" type="text" placeholder="Ex: Formulário X, Ofício Y">
+          </div>
+          <div>
+            <label>💬 Observações</label>
+            <textarea class="modal-input" id="act-observacoes" rows="2" placeholder="Observações sobre esta ação..."></textarea>
+          </div>
+          <div class="full">
+            <label>⚠️ Pontos de Melhoria</label>
+            <textarea class="modal-input" id="act-pontos" rows="2" placeholder="Pontos de melhoria identificados..."></textarea>
+          </div>
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn btn-outline" onclick="closeActionModal()">Cancelar</button>
         <button class="btn btn-success" onclick="saveActionModal()">💾 Salvar</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- IMPORT TARGET MODAL -->
+<div class="modal-overlay" id="import-target-modal" style="display:none;z-index:9999;">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <h3>🤖 Importar Fluxo com IA</h3>
+    <p style="color:var(--text-muted);margin-bottom:20px;">O fluxo importado será integrado em qual versão do processo?</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <button class="btn" style="padding:20px 12px;background:var(--cage-blue);color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.4;" onclick="setImportTarget('asis')">
+        📌 AS IS<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Atual</span>
+      </button>
+      <button class="btn" style="padding:20px 12px;background:#059669;color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.4;" onclick="setImportTarget('tobe')">
+        📋 TO BE<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Futuro</span>
+      </button>
+    </div>
+    <button class="btn btn-outline" onclick="document.getElementById('import-target-modal').style.display='none'">Cancelar</button>
   </div>
 </div>
 
@@ -4585,8 +4634,8 @@ const ACTION_TYPES = {
 
 function actionObj(a) {
   // Normalise: plain string → atividade object
-  if(typeof a === 'string') return { type:'atividade', text:a, actor:'' };
-  return { type: a.type||'atividade', text: a.text||'', actor: a.actor||'' };
+  if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'' };
+  return { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'' };
 }
 
 // ── Garante estrutura mínima de um POP antes de renderizar ──
@@ -4630,7 +4679,10 @@ function sanitizePop(p) {
     documentos:     s?.documentos     || '',
     pontosMelhoria: s?.pontosMelhoria || '',
     observacoes:    s?.observacoes    || '',
-    tobe:           (s?.tobe && typeof s.tobe === 'object') ? s.tobe : {}
+    tobe:           (s?.tobe && typeof s.tobe === 'object') ? {
+      ...s.tobe,
+      actions: Array.isArray(s.tobe?.actions) ? s.tobe.actions : []
+    } : { actions: [] }
   }));
   // Sanitizar roles
   d.roles = d.roles.map(r => ({
@@ -4666,11 +4718,13 @@ function renderStep(p, i) {
   const respSf     = isTobe ? 'tobe_responsible' : 'responsible';
   const noteSf     = isTobe ? 'tobe_note'        : 'note';
 
-  const actHTML = (s.actions||[]).map((a,ai)=>{
+  // AS IS and TO BE have independent action lists
+  const currentActions = isTobe ? (tb.actions || []) : (s.actions || []);
+  const actHTML = currentActions.map((a,ai)=>{
     const obj = actionObj(a);
     const t = ACTION_TYPES[obj.type] || ACTION_TYPES.atividade;
     const actorHTML = obj.actor ? `<span class="action-actor">👤 ${obj.actor}</span>` : '';
-    const editBtn = em ? `<button class="edit-rm-btn" style="margin-left:4px;" onclick="openActionModal('${p}',${i},${ai})" title="Editar tipo/executor">✏️</button>` : '';
+    const editBtn = em ? `<button class="edit-rm-btn" style="margin-left:4px;" onclick="openActionModal('${p}',${i},${ai})" title="Editar ação">✏️</button>` : '';
     const rmBtn = em ? `<button class="edit-rm-btn" onclick="rmStepAction('${p}',${i},${ai})">✕</button>` : '';
     const dragHandle = em ? `<span class="drag-handle" title="Arrastar para reordenar">⋮⋮</span>` : '';
     return `
@@ -4698,7 +4752,7 @@ function renderStep(p, i) {
     ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📋 TO BE</span>`
     : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📌 AS IS</span>`;
 
-  const detailsHTML = _buildStepDetailsHTML(p, i, s, em);
+
 
   const container = document.getElementById(p+'-step-panel');
   if(!container) { console.warn('renderStep: no DOM element for', p+'-step-panel'); return; }
@@ -4715,11 +4769,13 @@ function renderStep(p, i) {
       <div class="step-panel-body">
         <div class="resp-tag ${dispRespClass}" ${ce} data-sp="${p}" data-si="${i}" data-sf="${respSf}">👤 ${dispResp}</div>
         <ul class="step-actions ${em ? 'edit-mode-list' : ''}" id="${p}-actions-list-${i}">${actHTML}</ul>
-        <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
+        ${em ? `<div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+          <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
+          <button class="clear-flow-btn" onclick="clearCurrentFlow('${p}',${i})" title="Limpar todas as ações deste fluxo">🗑 Limpar fluxo ${isTobe ? 'TO BE' : 'AS IS'}</button>
+        </div>` : ''}
         ${decHTML}${noteHTML}
       </div>
-    </div>
-    ${detailsHTML}`;
+    </div>`;
   // ── Wire drag-and-drop for actions ─────────
   if(editMode) {
     const ul = container.querySelector('.step-actions');
@@ -4743,7 +4799,8 @@ function renderStep(p, i) {
         e.preventDefault();
         const toIdx = parseInt(li.dataset.ai);
         if(_dragIdx === null || _dragIdx === toIdx) return;
-        const actions = DATA[p].steps[i].actions;
+        const _s = DATA[p].steps[i];
+        const actions = flowMode === 'tobe' ? (_s.tobe.actions || []) : _s.actions;
         const moved = actions.splice(_dragIdx, 1)[0];
         actions.splice(toIdx, 0, moved);
         _dragIdx = null;
@@ -4799,9 +4856,18 @@ function renderStep(p, i) {
 }
 
 function addStepAction(p,si){
-  DATA[p].steps[si].actions.push({type:'atividade',text:'Nova ação',actor:''});
-  renderStep(p,si); markChanged();
-  openActionModal(p, si, DATA[p].steps[si].actions.length-1);
+  const step = DATA[p].steps[si];
+  if(flowMode === 'tobe') {
+    if(!step.tobe) step.tobe = {};
+    if(!Array.isArray(step.tobe.actions)) step.tobe.actions = [];
+    step.tobe.actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''});
+    renderStep(p,si); markChanged();
+    openActionModal(p, si, step.tobe.actions.length-1);
+  } else {
+    step.actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''});
+    renderStep(p,si); markChanged();
+    openActionModal(p, si, step.actions.length-1);
+  }
 }
 
 // Sync action text to matching role duties when action is saved
@@ -4819,7 +4885,29 @@ function syncActionToRole(p, actionText, responsible) {
     renderRoles(p);
   }
 }
-function rmStepAction(p,si,ai){ DATA[p].steps[si].actions.splice(ai,1); renderStep(p,si); markChanged(); }
+function rmStepAction(p,si,ai){
+  const step = DATA[p].steps[si];
+  if(flowMode === 'tobe') {
+    if(step.tobe && Array.isArray(step.tobe.actions)) step.tobe.actions.splice(ai,1);
+  } else {
+    step.actions.splice(ai,1);
+  }
+  renderStep(p,si); markChanged();
+}
+
+function clearCurrentFlow(p,si) {
+  const label = flowMode === 'tobe' ? 'TO BE' : 'AS IS';
+  if(!confirm(`Limpar todas as ações do fluxo ${label} desta etapa? Esta ação não pode ser desfeita.`)) return;
+  const step = DATA[p].steps[si];
+  if(flowMode === 'tobe') {
+    if(!step.tobe) step.tobe = {};
+    step.tobe.actions = [];
+  } else {
+    step.actions = [];
+  }
+  renderStep(p,si); markChanged();
+  showToast(`🗑 Fluxo ${label} limpo.`, 'success');
+}
 function navStep(p,dir){ const n=DATA[p].currentStep+dir; if(n>=0&&n<DATA[p].steps.length){DATA[p].currentStep=n;renderStep(p,n);} }
 
 // ── AS IS / TO BE mode toggle ──────────────────
@@ -5771,13 +5859,32 @@ function resetNpopFile() {
   if(dz) dz.style.display = '';
 }
 
+// ── Import target (asis | tobe) selected via dialog ──────────
+let _pendingIaPayload = null;
+window._npopImportTarget = 'asis';
+
+function showImportTargetModal(payload) {
+  _pendingIaPayload = payload;
+  document.getElementById('import-target-modal').style.display = 'flex';
+}
+
+function setImportTarget(target) {
+  window._npopImportTarget = target;
+  document.getElementById('import-target-modal').style.display = 'none';
+  if(_pendingIaPayload) {
+    const payload = _pendingIaPayload;
+    _pendingIaPayload = null;
+    applyIaResult(payload);
+  }
+}
+
 function confirmNovoPop() {
   if(_npopMethod === 'ia') {
     const raw = document.getElementById('npop-json-paste').value.trim();
     if(!raw) { showToast('Cole o JSON gerado pelo assistente.', 'warn'); document.getElementById('npop-json-paste').focus(); return; }
     try {
       const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
-      applyIaResult(parsed);
+      showImportTargetModal(parsed);
     } catch(e) {
       document.getElementById('npop-json-status').innerHTML = '<span style="color:#dc2626;">⚠️ JSON inválido — verifique e tente novamente.</span>';
     }
@@ -5794,7 +5901,7 @@ function confirmNovoPop() {
       if(v('nf-input'))     extracted.input     = v('nf-input');
       if(v('nf-output'))    extracted.output    = v('nf-output');
       if(v('nf-elaborado')) extracted.elaborado = v('nf-elaborado');
-      applyIaResult(extracted);
+      showImportTargetModal(extracted);
       return;
     }
     const nome = document.getElementById('nf-nome').value.trim();
@@ -6192,16 +6299,31 @@ function applyIaResult(parsed) {
   // Build DATA entry from parsed JSON
   const today = new Date().toLocaleDateString('pt-BR');
   const key = 'pop_' + Date.now();
-  const steps = (parsed.steps || []).map(s => ({
-    title: s.title || 'Etapa',
-    subtitle: s.subtitle || '',
-    responsible: s.responsible || '',
-    respClass: 'resp-green',
-    actions: (s.actions || []).map(a => typeof a === 'string' ? {type:'atividade',text:a,actor:''} : a),
-    note: s.note || null,
-    decision: s.decision || null,
-  }));
-  if(steps.length === 0) steps.push({title:'Etapa 1',subtitle:'',responsible:'',respClass:'resp-green',actions:[{type:'atividade',text:'Ação a definir',actor:''}]});
+  const importTarget = window._npopImportTarget || 'asis';
+  const rawActions = s => (s.actions || []).map(a => typeof a === 'string' ? {type:'atividade',text:a,actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''} : a);
+  const steps = (parsed.steps || []).map(s => {
+    const acts = rawActions(s);
+    const step = {
+      title: importTarget === 'tobe' ? 'Etapa' : (s.title || 'Etapa'),
+      subtitle: importTarget === 'tobe' ? '' : (s.subtitle || ''),
+      responsible: importTarget === 'tobe' ? '' : (s.responsible || ''),
+      respClass: 'resp-green',
+      actions: importTarget === 'tobe' ? [] : acts,
+      note: importTarget === 'tobe' ? null : (s.note || null),
+      decision: s.decision || null,
+      tobe: importTarget === 'tobe' ? {
+        title: s.title || 'Etapa',
+        subtitle: s.subtitle || '',
+        responsible: s.responsible || '',
+        actions: acts,
+        note: s.note || null,
+      } : {},
+    };
+    return step;
+  });
+  if(steps.length === 0) steps.push({title:'Etapa 1',subtitle:'',responsible:'',respClass:'resp-green',actions:[{type:'atividade',text:'Ação a definir',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''}],tobe:{}});
+  // Reset import target for next import
+  window._npopImportTarget = 'asis';
 
   DATA[key] = {
     currentStep: 0,
@@ -6342,20 +6464,32 @@ document.getElementById('npop-overlay').addEventListener('click', function(e) {
 });
 
 // ═══ ACTION TYPE MODAL ════════════════════════
-let _actP='', _actSi=-1, _actAi=-1;
+let _actP='', _actSi=-1, _actAi=-1, _actIsTobe=false;
 
 function openActionModal(p, si, ai) {
   _actP = p; _actSi = si; _actAi = ai;
-  const obj = actionObj(DATA[p].steps[si].actions[ai]);
+  _actIsTobe = (flowMode === 'tobe');
+  const step = DATA[p].steps[si];
+  const actArr = _actIsTobe ? (step.tobe?.actions || []) : (step.actions || []);
+  const obj = actionObj(actArr[ai]);
 
   // Set selected type button
   document.querySelectorAll('.action-type-btn').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.type === obj.type);
   });
 
-  // Set text and actor
-  document.getElementById('act-text').value  = obj.text;
-  document.getElementById('act-actor').value = obj.actor;
+  // Set text, actor and complementary fields
+  document.getElementById('act-text').value       = obj.text;
+  document.getElementById('act-actor').value      = obj.actor;
+  document.getElementById('act-duracao').value    = obj.duracao;
+  document.getElementById('act-sistemas').value   = obj.sistemas;
+  document.getElementById('act-documentos').value = obj.documentos;
+  document.getElementById('act-observacoes').value= obj.observacoes;
+  document.getElementById('act-pontos').value     = obj.pontosMelhoria;
+
+  // Update modal title to show which mode is being edited
+  const titleEl = document.querySelector('.action-type-title');
+  if(titleEl) titleEl.textContent = _actIsTobe ? 'Configurar Ação — TO BE' : 'Configurar Ação — AS IS';
 
   document.getElementById('action-type-modal').classList.add('open');
   document.getElementById('act-text').focus();
@@ -6373,13 +6507,26 @@ function selectActionType(type) {
 
 function saveActionModal() {
   const selectedBtn = document.querySelector('.action-type-btn.selected');
-  const type  = selectedBtn ? selectedBtn.dataset.type : 'atividade';
-  const text  = document.getElementById('act-text').value.trim() || 'Nova ação';
-  const actor = document.getElementById('act-actor').value.trim();
-  DATA[_actP].steps[_actSi].actions[_actAi] = { type, text, actor };
+  const type           = selectedBtn ? selectedBtn.dataset.type : 'atividade';
+  const text           = document.getElementById('act-text').value.trim() || 'Nova ação';
+  const actor          = document.getElementById('act-actor').value.trim();
+  const duracao        = document.getElementById('act-duracao').value.trim();
+  const sistemas       = document.getElementById('act-sistemas').value.trim();
+  const documentos     = document.getElementById('act-documentos').value.trim();
+  const observacoes    = document.getElementById('act-observacoes').value.trim();
+  const pontosMelhoria = document.getElementById('act-pontos').value.trim();
+  const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria };
+
+  const step = DATA[_actP].steps[_actSi];
+  if(_actIsTobe) {
+    if(!step.tobe) step.tobe = {};
+    if(!Array.isArray(step.tobe.actions)) step.tobe.actions = [];
+    step.tobe.actions[_actAi] = actionData;
+  } else {
+    step.actions[_actAi] = actionData;
+  }
   // Sync action text to responsible's duties list
-  const _step = DATA[_actP].steps[_actSi];
-  syncActionToRole(_actP, text, _step.responsible);
+  syncActionToRole(_actP, text, step.responsible);
   renderStep(_actP, _actSi);
   renderRoles(_actP);
   closeActionModal();
