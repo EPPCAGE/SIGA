@@ -192,11 +192,11 @@
   .act-extra-grid .full{grid-column:1/-1;}
   .step-flow-actions{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
   .clear-flow-btn,.copy-flow-btn{padding:4px 10px;font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
-  /* clear-flow-btn também usa edit-add-btn para controle de visibilidade no edit mode */
+  /* clear e copy usam edit-add-btn para controle de visibilidade — override de cor/borda */
   body.edit-mode .clear-flow-btn{background:transparent!important;color:#ef4444!important;border:1.5px solid #f87171!important;}
   .clear-flow-btn:hover{background:#fef2f2!important;}
-  .copy-flow-btn{border:1.5px solid #6366f1;background:transparent;color:#6366f1;}
-  .copy-flow-btn:hover{background:#eef2ff;}
+  body.edit-mode .copy-flow-btn{background:transparent!important;color:#6366f1!important;border:1.5px solid #6366f1!important;}
+  .copy-flow-btn:hover{background:#eef2ff!important;}
   .rm-step-btn{display:none;padding:4px 10px;font-size:11px;font-weight:700;border:1.5px solid rgba(255,255,255,.5);background:transparent;color:rgba(255,255,255,.85);border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
   .rm-step-btn:hover{background:rgba(255,0,0,.25);border-color:white;}
   body.edit-mode .rm-step-btn{display:inline-flex;}
@@ -4548,6 +4548,11 @@ function showSection(id, tab, silent) {
 
 // ═══ EDIT MODE ════════════════════════════════
 function toggleEditMode(forceState) {
+  // Bloquear modo edição para viewers — apenas força desativar é permitido
+  if(!isEditor && (forceState === undefined || forceState === true)) {
+    showToast('🔒 Apenas editores podem ativar o modo de edição.', 'warn');
+    return;
+  }
   editMode = forceState !== undefined ? forceState : !editMode;
   document.body.classList.toggle('edit-mode', editMode);
   document.getElementById('edit-toggle').textContent = editMode ? '👁 Visualização' : '✏️ Modo Edição';
@@ -4781,7 +4786,7 @@ function renderStep(p, i) {
         <div class="step-flow-actions">
           <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
           <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}')" title="Limpar o fluxo ${isTobe ? 'TO BE' : 'AS IS'} inteiro (todas as etapas)">🗑 Limpar todo ${isTobe ? 'TO BE' : 'AS IS'}</button>
-          <button class="copy-flow-btn" onclick="copyFlowAsIsToTobe('${p}',${i})" title="Copiar ações do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>
+          <button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}',${i})" title="Copiar ações do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>
         </div>
         ${decHTML}${noteHTML}
       </div>
@@ -4866,6 +4871,7 @@ function renderStep(p, i) {
 }
 
 function addStepAction(p,si){
+  if(!isEditor) { showToast('🔒 Apenas editores podem adicionar ações.', 'warn'); return; }
   const step = DATA[p].steps[si];
   if(flowMode === 'tobe') {
     if(!step.tobe) step.tobe = {};
@@ -4896,6 +4902,7 @@ function syncActionToRole(p, actionText, responsible) {
   }
 }
 function rmStepAction(p,si,ai){
+  if(!isEditor) { showToast('🔒 Apenas editores podem remover ações.', 'warn'); return; }
   const step = DATA[p].steps[si];
   if(flowMode === 'tobe') {
     if(step.tobe && Array.isArray(step.tobe.actions)) step.tobe.actions.splice(ai,1);
@@ -4906,6 +4913,7 @@ function rmStepAction(p,si,ai){
 }
 
 function copyFlowAsIsToTobe(p,si) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem copiar fluxos.', 'warn'); return; }
   const step = DATA[p].steps[si];
   const asisActions = step.actions || [];
   if(asisActions.length === 0) { showToast('O fluxo AS IS está vazio — nada a copiar.', 'warn'); return; }
@@ -4918,6 +4926,7 @@ function copyFlowAsIsToTobe(p,si) {
 }
 
 function clearCurrentFlow(p) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem limpar fluxos.', 'warn'); return; }
   const label = flowMode === 'tobe' ? 'TO BE' : 'AS IS';
   const total = DATA[p].steps.length;
   if(!confirm(`Limpar o fluxo ${label} inteiro — todas as ${total} etapa(s) e suas ações? Esta ação não pode ser desfeita.`)) return;
@@ -5083,8 +5092,8 @@ function renderRoles(p) {
   }).join('');
   if(editMode) enableEditables(true);
 }
-function addRoleDuty(p,ri){ DATA[p].roles[ri].duties.push('Nova atribuição'); renderRoles(p); markChanged(); }
-function rmRoleDuty(p,ri,di){ DATA[p].roles[ri].duties.splice(di,1); renderRoles(p); markChanged(); }
+function addRoleDuty(p,ri){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} DATA[p].roles[ri].duties.push('Nova atribuição'); renderRoles(p); markChanged(); }
+function rmRoleDuty(p,ri,di){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} DATA[p].roles[ri].duties.splice(di,1); renderRoles(p); markChanged(); }
 
 // ═══ INDICATORS ═══════════════════════════════
 function renderIndicators(p) {
@@ -5134,6 +5143,7 @@ function renderIndicators(p) {
   attachIndListeners(p);
 }
 function addIndicator(p){
+  if(!isEditor) { showToast('🔒 Apenas editores podem adicionar indicadores.', 'warn'); return; }
   DATA[p].indicators.push({icon:'📌',title:'Novo Indicador',desc:'Descrição do indicador.',tag:'perc',formula:'',fonte:'',periodicidade:'',responsavel:'',meta:''});
   renderIndicators(p); markChanged();
   // Open modal for the new indicator immediately
@@ -5291,6 +5301,7 @@ function openFaqModal(p, idx) {
   openModal('faq-modal');
 }
 function saveFaqModal() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar FAQs.', 'warn'); return; }
   const q = document.getElementById('nf-faq-q').value.trim();
   if(!q) { showToast('Informe a pergunta.','warn'); return; }
   const a = document.getElementById('nf-faq-a').value.trim();
@@ -5385,8 +5396,8 @@ function saveNorma() {
   markChanged();
   showToast('Norma salva!','success');
 }
-function addNorma(p){ _normaP=p; _normaIdx=null; openNormaModal(p,null); }
-function rmNorma(p,i){ DATA[p].normas.splice(i,1); renderNormas(p); markChanged(); }
+function addNorma(p){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} _normaP=p; _normaIdx=null; openNormaModal(p,null); }
+function rmNorma(p,i){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} DATA[p].normas.splice(i,1); renderNormas(p); markChanged(); }
 
 // ═══ LIST HELPERS ════════════════════════════
 function renderSiglas(p) {
@@ -5406,6 +5417,7 @@ function renderSiglas(p) {
 }
 
 function addSigla(gridId) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem adicionar siglas.', 'warn'); return; }
   const grid = document.getElementById(gridId);
   if(!grid) return;
   const div = document.createElement('div');
@@ -5785,6 +5797,7 @@ let _npopFile   = null;
 let _npopKey    = null; // key in DATA for the new pop
 
 function openNovoPop() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem criar mapeamentos.', 'warn'); return; }
   _npopMethod = 'manual';
   _npopFile   = null;
   window._npopExtractedFull   = null;
@@ -6293,6 +6306,7 @@ function mountNewPopTab(key, label, silent=false) {
 
 // ── Helper: add step ──────────────────────────
 function addStep(p) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem adicionar etapas.', 'warn'); return; }
   const n = DATA[p].steps.length + 1;
   DATA[p].steps.push({
     title: 'Etapa ' + n, subtitle: '', responsible: 'Responsável', respClass: 'resp-green',
@@ -6306,6 +6320,7 @@ function addStep(p) {
 
 // ── Helper: remove step ───────────────────────
 function rmStep(p, si) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem apagar etapas.', 'warn'); return; }
   if(DATA[p].steps.length <= 1) { showToast('O processo precisa ter pelo menos uma etapa.', 'warn'); return; }
   if(!confirm(`Apagar a Etapa ${si+1} — "${DATA[p].steps[si].title}"? Esta ação não pode ser desfeita.`)) return;
   DATA[p].steps.splice(si, 1);
@@ -6318,6 +6333,7 @@ function rmStep(p, si) {
 
 // ── Helper: add role ──────────────────────────
 function addRole(p) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem adicionar atores.', 'warn'); return; }
   DATA[p].roles.push({ cls:'role-green', icon:'👤', name:'Novo Ator', title:'Função', duties:['Atribuição a definir'] });
   renderRoles(p); markChanged();
 }
@@ -6504,6 +6520,7 @@ document.getElementById('npop-overlay').addEventListener('click', function(e) {
 let _actP='', _actSi=-1, _actAi=-1, _actIsTobe=false;
 
 function openActionModal(p, si, ai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar ações.', 'warn'); return; }
   _actP = p; _actSi = si; _actAi = ai;
   _actIsTobe = (flowMode === 'tobe');
   const step = DATA[p].steps[si];
@@ -6543,6 +6560,7 @@ function selectActionType(type) {
 }
 
 function saveActionModal() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar ações.', 'warn'); return; }
   const selectedBtn = document.querySelector('.action-type-btn.selected');
   const type           = selectedBtn ? selectedBtn.dataset.type : 'atividade';
   const text           = document.getElementById('act-text').value.trim() || 'Nova ação';
@@ -9952,6 +9970,7 @@ function updateRiskScore() {
 }
 
 function saveRisk() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar riscos.', 'warn'); return; }
   const title = document.getElementById('risk-title').value.trim();
   if(!title) { showToast('Informe o título do risco.','warn'); return; }
   if(!DATA[_riskPop].risks) DATA[_riskPop].risks = [];
