@@ -197,6 +197,41 @@
   .btn-warn{background:#f59e0b;color:white;}.btn-warn:hover{background:#d97706;}
   .btn-success{background:var(--cage-accent);color:white;}.btn-success:hover{background:#00875a;}
   .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* ── AS IS / TO BE FLOW MODE TOGGLE ─────────────────── */
+  .flow-mode-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;padding:12px 16px;background:linear-gradient(135deg,#f8faff,#eef3fb);border:1px solid var(--cage-border);border-radius:10px;}
+  .flow-mode-toggle{display:inline-flex;align-items:center;border:1.5px solid var(--cage-border);border-radius:10px;overflow:hidden;background:white;box-shadow:var(--shadow-sm);}
+  .flow-mode-btn{padding:7px 16px;font-size:12px;font-weight:700;border:none;background:transparent;cursor:pointer;transition:all .2s;color:var(--text-muted);letter-spacing:.2px;white-space:nowrap;}
+  .flow-mode-btn.active-asis{background:var(--cage-blue);color:white;}
+  .flow-mode-btn.active-tobe{background:#059669;color:white;}
+  /* TO BE step panel */
+  .step-panel.tobe-mode .step-panel-head{background:linear-gradient(135deg,#064e3b,#059669);}
+  body.edit-mode .step-panel.tobe-mode .step-panel-head{background:linear-gradient(135deg,#064e3b,#059669);}
+  .step-panel.tobe-mode{border-color:#a7f3d0;}
+
+  /* ── STEP DETAILS EXPANDABLE ─────────────────────────── */
+  .step-details-wrap{margin-top:10px;}
+  .step-details-toggle-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 16px;background:var(--cage-light);border:1.5px solid var(--cage-border);border-radius:10px;font-size:12.5px;font-weight:600;color:var(--cage-mid);cursor:pointer;transition:all .2s;text-align:left;}
+  .step-details-toggle-btn:hover{background:#e8f0fb;border-color:var(--cage-mid);}
+  .step-details-toggle-btn.open{border-radius:10px 10px 0 0;border-bottom-color:var(--cage-mid);}
+  .step-details-panel{background:white;border:1.5px solid var(--cage-mid);border-top:none;border-radius:0 0 10px 10px;padding:16px;display:none;}
+  .step-details-panel.open{display:block;animation:slideIn .2s ease;}
+  .step-details-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:680px){.step-details-grid{grid-template-columns:1fr;}}
+  .sdf-row{display:flex;flex-direction:column;gap:6px;}
+  .sdf-row.full-width{grid-column:1/-1;}
+  .sdf-label{font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:5px;}
+  .sdf-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .sdf-col{display:flex;flex-direction:column;gap:3px;}
+  .sdf-tag{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:.4px;}
+  .sdf-tag.asis{background:rgba(10,37,64,.1);color:var(--cage-blue);}
+  .sdf-tag.tobe{background:rgba(5,150,105,.12);color:#059669;}
+  .sdf-val{font-size:12.5px;color:var(--text-secondary);background:var(--cage-light);border-radius:6px;padding:7px 10px;min-height:34px;line-height:1.45;word-break:break-word;}
+  .sdf-val.tobe-val{background:#f0fdf4;border:1px solid #bbf7d0;}
+  .sdf-val.improv-val{background:#fff8e6;border:1px solid #fcd34d;}
+  .sdf-val[contenteditable="true"]{outline:2px dashed var(--edit-border);cursor:text;}
+  .sdf-val[contenteditable="true"]:focus{outline:2px solid var(--edit-color);background:white;}
+  .sdf-empty{color:var(--text-muted);font-style:italic;font-size:11.5px;}
   .step-pos{font-size:12px;color:var(--text-muted);}
 
   /* ROLES */
@@ -1856,6 +1891,16 @@
       </div>
       <button onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="flex-shrink:0;padding:8px 16px;background:var(--cage-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🎨 Abrir Editor de Fluxo</button>
     </div>
+    <div class="flow-mode-header">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Modo de Visualização do Fluxo</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Alterne entre o estado atual e o estado proposto do processo</div>
+      </div>
+      <div class="flow-mode-toggle">
+        <button class="flow-mode-btn active-asis" data-mode="asis" onclick="setFlowMode('asis')">📌 AS IS — Atual</button>
+        <button class="flow-mode-btn" data-mode="tobe" onclick="setFlowMode('tobe')">📋 TO BE — Futuro</button>
+      </div>
+    </div>
     <div id="d-step-tracker" class="step-tracker"></div>
     <div id="d-step-panel"></div>
     <div class="nav-buttons">
@@ -2173,6 +2218,16 @@
         </div>
       </div>
       <button onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="flex-shrink:0;padding:8px 16px;background:var(--cage-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🎨 Abrir Editor de Fluxo</button>
+    </div>
+    <div class="flow-mode-header">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Modo de Visualização do Fluxo</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Alterne entre o estado atual e o estado proposto do processo</div>
+      </div>
+      <div class="flow-mode-toggle">
+        <button class="flow-mode-btn active-asis" data-mode="asis" onclick="setFlowMode('asis')">📌 AS IS — Atual</button>
+        <button class="flow-mode-btn" data-mode="tobe" onclick="setFlowMode('tobe')">📋 TO BE — Futuro</button>
+      </div>
     </div>
     <div id="r-step-tracker" class="step-tracker"></div>
     <div id="r-step-panel"></div>
@@ -4217,6 +4272,7 @@ let editMode = false;
 // Ensure new arrays exist on legacy data
 let currentPop = '';
 let currentSection = 'visao-geral';
+let flowMode = 'asis'; // 'asis' | 'tobe'
 
 // ═══ POP SWITCHER ═════════════════════════════
 // pop = 'denuncias' | 'representacoes'  →  prefix = 'd' | 'r'
@@ -4296,10 +4352,19 @@ function harvestEditables() {
     if(!pp || isNaN(si) || !sf || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
     const val = el.innerText?.replace(/^👤\s*/, '').trim() || '';
     const step = DATA[pp].steps[si];
-    if(sf === 'title')       step.title = val;
+    if(sf.startsWith('tobe_')) {
+      if(!step.tobe) step.tobe = {};
+      step.tobe[sf.slice(5)] = val;
+    }
+    else if(sf === 'title')       step.title = val;
     else if(sf === 'subtitle')    step.subtitle = val;
     else if(sf === 'responsible') step.responsible = val;
     else if(sf === 'note')        step.note = val;
+    else if(sf === 'duracao')         step.duracao = val;
+    else if(sf === 'sistemas')        step.sistemas = val;
+    else if(sf === 'documentos')      step.documentos = val;
+    else if(sf === 'pontosMelhoria')  step.pontosMelhoria = val;
+    else if(sf === 'observacoes')     step.observacoes = val;
     else if(sf === 'dlabel' && step.decision) step.decision.label = val;
     else if(sf === 'dtext'  && step.decision) step.decision.text  = val;
   });
@@ -4553,13 +4618,19 @@ function sanitizePop(p) {
   if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
   // Sanitizar steps
   d.steps = d.steps.map(s => ({
-    title:       s?.title       || 'Etapa',
-    subtitle:    s?.subtitle    || '',
-    responsible: s?.responsible || '',
-    respClass:   s?.respClass   || 'resp-green',
-    actions:     Array.isArray(s?.actions) ? s.actions : [],
-    decision:    s?.decision    || null,
-    note:        s?.note        || ''
+    title:          s?.title          || 'Etapa',
+    subtitle:       s?.subtitle       || '',
+    responsible:    s?.responsible    || '',
+    respClass:      s?.respClass      || 'resp-green',
+    actions:        Array.isArray(s?.actions) ? s.actions : [],
+    decision:       s?.decision       || null,
+    note:           s?.note           || '',
+    duracao:        s?.duracao        || '',
+    sistemas:       s?.sistemas       || '',
+    documentos:     s?.documentos     || '',
+    pontosMelhoria: s?.pontosMelhoria || '',
+    observacoes:    s?.observacoes    || '',
+    tobe:           (s?.tobe && typeof s.tobe === 'object') ? s.tobe : {}
   }));
   // Sanitizar roles
   d.roles = d.roles.map(r => ({
@@ -4577,8 +4648,24 @@ function renderStep(p, i) {
     return;
   }
   const s = DATA[p].steps[i];
+  if(!s.tobe) s.tobe = {};
+  const tb = s.tobe;
   const em = editMode;
   const ce = em ? 'contenteditable="true"' : '';
+  const isTobe = flowMode === 'tobe';
+
+  // Display values: TO BE falls back to AS IS if TO BE field is empty
+  const dispTitle     = isTobe ? (tb.title      || s.title)      : s.title;
+  const dispSubtitle  = isTobe ? (tb.subtitle    !== undefined && tb.subtitle !== '' ? tb.subtitle : (s.subtitle||'')) : (s.subtitle||'');
+  const dispResp      = isTobe ? (tb.responsible || s.responsible) : s.responsible;
+  const dispRespClass = isTobe ? (tb.respClass   || s.respClass)   : s.respClass;
+  const dispNote      = isTobe ? (tb.note        || '')            : (s.note || '');
+
+  const titleSf    = isTobe ? 'tobe_title'       : 'title';
+  const subtitleSf = isTobe ? 'tobe_subtitle'    : 'subtitle';
+  const respSf     = isTobe ? 'tobe_responsible' : 'responsible';
+  const noteSf     = isTobe ? 'tobe_note'        : 'note';
+
   const actHTML = (s.actions||[]).map((a,ai)=>{
     const obj = actionObj(a);
     const t = ACTION_TYPES[obj.type] || ACTION_TYPES.atividade;
@@ -4601,28 +4688,38 @@ function renderStep(p, i) {
       <strong ${ce} data-sp="${p}" data-si="${i}" data-sf="dlabel">${s.decision.label}:</strong><br>
       <span ${ce} data-sp="${p}" data-si="${i}" data-sf="dtext">${s.decision.text}</span>
     </div></div>` : '';
-  const noteHTML = s.note ? `
+  const noteHTML = dispNote ? `
     <div class="note-box"><span>💬</span>
-      <span ${ce} data-sp="${p}" data-si="${i}" data-sf="note">${s.note}</span>
+      <span ${ce} data-sp="${p}" data-si="${i}" data-sf="${noteSf}">${dispNote}</span>
     </div>` : '';
+
+  // Mode badge shown in step header
+  const modeBadge = isTobe
+    ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📋 TO BE</span>`
+    : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📌 AS IS</span>`;
+
+  const detailsHTML = _buildStepDetailsHTML(p, i, s, em);
+
   const container = document.getElementById(p+'-step-panel');
   if(!container) { console.warn('renderStep: no DOM element for', p+'-step-panel'); return; }
   container.innerHTML = `
-    <div class="step-panel">
+    <div class="step-panel${isTobe ? ' tobe-mode' : ''}">
       <div class="step-panel-head">
         <div class="step-number">${i+1}</div>
-        <div class="step-info">
-          <h3 ${ce} data-sp="${p}" data-si="${i}" data-sf="title">${s.title}</h3>
-          <p ${ce} data-sp="${p}" data-si="${i}" data-sf="subtitle">${s.subtitle||''}</p>
+        <div class="step-info" style="flex:1;">
+          <h3 ${ce} data-sp="${p}" data-si="${i}" data-sf="${titleSf}">${dispTitle}</h3>
+          <p ${ce} data-sp="${p}" data-si="${i}" data-sf="${subtitleSf}">${dispSubtitle}</p>
         </div>
+        ${modeBadge}
       </div>
       <div class="step-panel-body">
-        <div class="resp-tag ${s.respClass}" ${ce} data-sp="${p}" data-si="${i}" data-sf="responsible">👤 ${s.responsible}</div>
+        <div class="resp-tag ${dispRespClass}" ${ce} data-sp="${p}" data-si="${i}" data-sf="${respSf}">👤 ${dispResp}</div>
         <ul class="step-actions ${em ? 'edit-mode-list' : ''}" id="${p}-actions-list-${i}">${actHTML}</ul>
         <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
         ${decHTML}${noteHTML}
       </div>
-    </div>`;
+    </div>
+    ${detailsHTML}`;
   // ── Wire drag-and-drop for actions ─────────
   if(editMode) {
     const ul = container.querySelector('.step-actions');
@@ -4661,12 +4758,25 @@ function renderStep(p, i) {
       const pp=this.dataset.sp, si=parseInt(this.dataset.si), sf=this.dataset.sf;
       const val = this.innerText.replace(/^👤\s*/,'').trim();
       const step = DATA[pp].steps[si];
-      if(sf==='title'){step.title=val;renderTracker(pp);}
-      else if(sf==='subtitle') step.subtitle=val;
-      else if(sf==='responsible') { step.responsible=val; renderRoles(pp); }
-      else if(sf==='note') step.note=val;
-      else if(sf==='dlabel') { if(step.decision) step.decision.label=val; }
-      else if(sf==='dtext')  { if(step.decision) step.decision.text=val;  }
+      if(!step) return;
+      if(sf.startsWith('tobe_')) {
+        if(!step.tobe) step.tobe = {};
+        const tobeField = sf.slice(5); // remove 'tobe_' prefix
+        step.tobe[tobeField] = val;
+        if(tobeField === 'title') renderTracker(pp);
+      } else {
+        if(sf==='title'){step.title=val;renderTracker(pp);}
+        else if(sf==='subtitle')     step.subtitle=val;
+        else if(sf==='responsible')  { step.responsible=val; renderRoles(pp); }
+        else if(sf==='note')         step.note=val;
+        else if(sf==='dlabel')       { if(step.decision) step.decision.label=val; }
+        else if(sf==='dtext')        { if(step.decision) step.decision.text=val;  }
+        else if(sf==='duracao')      step.duracao=val;
+        else if(sf==='sistemas')     step.sistemas=val;
+        else if(sf==='documentos')   step.documentos=val;
+        else if(sf==='pontosMelhoria') step.pontosMelhoria=val;
+        else if(sf==='observacoes')  step.observacoes=val;
+      }
       markChanged(true); // quick=true: salvar em 800ms após blur
     });
   });
@@ -4711,6 +4821,80 @@ function syncActionToRole(p, actionText, responsible) {
 }
 function rmStepAction(p,si,ai){ DATA[p].steps[si].actions.splice(ai,1); renderStep(p,si); markChanged(); }
 function navStep(p,dir){ const n=DATA[p].currentStep+dir; if(n>=0&&n<DATA[p].steps.length){DATA[p].currentStep=n;renderStep(p,n);} }
+
+// ── AS IS / TO BE mode toggle ──────────────────
+function setFlowMode(mode) {
+  flowMode = mode;
+  // Update all toggle buttons in DOM
+  document.querySelectorAll('.flow-mode-btn[data-mode]').forEach(btn => {
+    const m = btn.dataset.mode;
+    btn.className = 'flow-mode-btn' + (m === mode ? (mode === 'asis' ? ' active-asis' : ' active-tobe') : '');
+  });
+  const p = popPrefix(currentPop);
+  if(DATA[p] && Array.isArray(DATA[p].steps) && DATA[p].steps.length > 0) {
+    renderStep(p, DATA[p].currentStep || 0);
+  }
+}
+
+// ── Step details expand/collapse ───────────────
+function toggleStepDetails(btn) {
+  const panel = btn.nextElementSibling;
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+  const arrow = btn.querySelector('.details-arrow');
+  if(arrow) arrow.textContent = isOpen ? '▲' : '▼';
+}
+
+// ── Build expanded step details HTML ───────────
+function _buildStepDetailsHTML(p, i, s, em) {
+  if(!s.tobe) s.tobe = {};
+  const tb = s.tobe;
+  const ceAttr = (field) => em ? `contenteditable="true" data-sp="${p}" data-si="${i}" data-sf="${field}"` : '';
+  const emptySpan = '<span class="sdf-empty">—</span>';
+  const val = (v) => (v && v.trim()) ? v : emptySpan;
+
+  const rows = [
+    { label: '⏱ Prazo / Duração',        asIs: 'duracao',     tobe: 'tobe_duracao'     },
+    { label: '💻 Sistemas Envolvidos',    asIs: 'sistemas',    tobe: 'tobe_sistemas'    },
+    { label: '📄 Documentos Utilizados',  asIs: 'documentos',  tobe: 'tobe_documentos'  },
+    { label: '💬 Observações',            asIs: 'observacoes', tobe: 'tobe_observacoes' }
+  ];
+
+  const rowsHTML = rows.map(r => `
+    <div class="sdf-row">
+      <div class="sdf-label">${r.label}</div>
+      <div class="sdf-cols">
+        <div class="sdf-col">
+          <span class="sdf-tag asis">AS IS</span>
+          <div class="sdf-val" ${ceAttr(r.asIs)}>${val(s[r.asIs] || '')}</div>
+        </div>
+        <div class="sdf-col">
+          <span class="sdf-tag tobe">TO BE</span>
+          <div class="sdf-val tobe-val" ${ceAttr(r.tobe)}>${val(tb[r.tobe.slice(5)] || '')}</div>
+        </div>
+      </div>
+    </div>`).join('');
+
+  const pmHTML = `
+    <div class="sdf-row full-width">
+      <div class="sdf-label">⚠️ Pontos de Melhoria</div>
+      <div class="sdf-val improv-val" ${ceAttr('pontosMelhoria')}>${val(s.pontosMelhoria || '')}</div>
+    </div>`;
+
+  return `
+    <div class="step-details-wrap">
+      <button class="step-details-toggle-btn" onclick="toggleStepDetails(this)" type="button">
+        <span>📋 Detalhes da Etapa</span>
+        <span class="details-arrow">▼</span>
+      </button>
+      <div class="step-details-panel">
+        <div class="step-details-grid">
+          ${rowsHTML}
+          ${pmHTML}
+        </div>
+      </div>
+    </div>`;
+}
 
 // ═══ ROLES ════════════════════════════════════
 function renderRoles(p) {
@@ -5755,6 +5939,16 @@ function mountNewPopTab(key, label, silent=false) {
       </div>
     </div>
     <div id="${key}-fluxo" class="section">
+      <div class="flow-mode-header">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Modo de Visualização do Fluxo</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Alterne entre o estado atual e o estado proposto do processo</div>
+        </div>
+        <div class="flow-mode-toggle">
+          <button class="flow-mode-btn active-asis" data-mode="asis" onclick="setFlowMode('asis')">📌 AS IS — Atual</button>
+          <button class="flow-mode-btn" data-mode="tobe" onclick="setFlowMode('tobe')">📋 TO BE — Futuro</button>
+        </div>
+      </div>
       <div id="${key}-step-tracker" class="step-tracker"></div>
       <div id="${key}-step-panel"></div>
       <div class="nav-buttons">
@@ -5970,7 +6164,8 @@ function addStep(p) {
   const n = DATA[p].steps.length + 1;
   DATA[p].steps.push({
     title: 'Etapa ' + n, subtitle: '', responsible: 'Responsável', respClass: 'resp-green',
-    actions: [{type:'atividade', text:'Nova ação', actor:''}]
+    actions: [{type:'atividade', text:'Nova ação', actor:''}],
+    duracao: '', sistemas: '', documentos: '', pontosMelhoria: '', observacoes: '', tobe: {}
   });
   DATA[p].currentStep = DATA[p].steps.length - 1;
   renderStep(p, DATA[p].currentStep);
