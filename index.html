@@ -4965,16 +4965,24 @@ function navStep(p,dir){ const n=DATA[p].currentStep+dir; if(n>=0&&n<DATA[p].ste
 let _flowPickCb = null;
 function pickFlowMode(title, subtitle, callback) {
   _flowPickCb = callback;
+  const modal = document.getElementById('flow-pick-modal');
+  // Garantir que o modal está direto no body (nunca dentro de elemento display:none)
+  if(modal.parentElement !== document.body) document.body.appendChild(modal);
   document.getElementById('flow-pick-title').textContent = title || 'Qual fluxo usar?';
   document.getElementById('flow-pick-sub').textContent   = subtitle || '';
-  document.getElementById('flow-pick-modal').style.display = 'flex';
+  modal.style.display = 'flex';
+  modal.classList.add('open');
 }
 function _flowPickSelect(mode) {
-  document.getElementById('flow-pick-modal').style.display = 'none';
+  const modal = document.getElementById('flow-pick-modal');
+  modal.style.display = 'none';
+  modal.classList.remove('open');
   if(_flowPickCb) { const cb = _flowPickCb; _flowPickCb = null; cb(mode); }
 }
 function _flowPickCancel() {
-  document.getElementById('flow-pick-modal').style.display = 'none';
+  const modal = document.getElementById('flow-pick-modal');
+  modal.style.display = 'none';
+  modal.classList.remove('open');
   _flowPickCb = null;
 }
 
