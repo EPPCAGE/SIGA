@@ -10766,11 +10766,24 @@ function showAiAnalysis(tab) {
   const nome = (DATA[p] && DATA[p].meta && DATA[p].meta.name) ? DATA[p].meta.name : (currentPop || '—');
   document.getElementById('ai-pop-name').textContent = nome;
 
-  // Limpar resultado anterior se mudou de POP
-  if (mod._lastPop && mod._lastPop !== p) {
-    document.getElementById('ai-output').innerHTML = '';
+  const output = document.getElementById('ai-output');
+
+  // Restaurar ou limpar análise ao trocar de POP
+  if (mod._lastPop !== p) {
+    const saved = DATA[p] && DATA[p].aiAnalysis;
+    if (saved && saved.html) {
+      output.innerHTML = saved.html +
+        `<div style="margin-top:10px;font-size:11px;color:#94a3b8;text-align:right;">
+           📅 Análise gerada em ${saved.ts}
+         </div>`;
+    } else {
+      output.innerHTML = '';
+    }
   }
   mod._lastPop = p;
+
+  // Ajustar rótulo do botão conforme existência de análise salva
+  _updateAiRunBtn(p);
 }
 
 async function runAiAnalysis() {
@@ -10871,6 +10884,15 @@ ${fluxoTexto}`;
     }
 
     output.innerHTML = html;
+
+    // Persistir análise no DATA para sobreviver ao fechamento/reabertura
+    const ts = new Date().toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    DATA[p].aiAnalysis = { html, ts };
+    markChanged(true);
+
+    // Atualizar botão para indicar que análise já existe
+    _updateAiRunBtn(p);
+
   } catch (err) {
     output.innerHTML = `<div style="padding:20px;background:#fef2f2;border-radius:10px;color:#dc2626;font-size:13px;">
       <strong>Erro ao analisar:</strong> ${err.message}
@@ -10878,6 +10900,19 @@ ${fluxoTexto}`;
   } finally {
     btn.disabled = false;
     spinner.style.display = 'none';
+  }
+}
+
+function _updateAiRunBtn(p) {
+  const btn = document.getElementById('ai-run-btn');
+  if (!btn) return;
+  const analysis = DATA[p] && DATA[p].aiAnalysis;
+  if (analysis) {
+    btn.textContent = '↻ Regenerar Análise';
+    btn.title = 'Análise gerada em ' + analysis.ts + '. Clique para gerar uma nova análise.';
+  } else {
+    btn.textContent = '✨ Analisar Fluxo com IA';
+    btn.title = '';
   }
 }
 
