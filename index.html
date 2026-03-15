@@ -5204,7 +5204,7 @@ function addIndicator(p){
   // Open modal for the new indicator immediately
   openIndModal(p, DATA[p].indicators.length-1);
 }
-function rmIndicator(p,i){ DATA[p].indicators.splice(i,1); renderIndicators(p); markChanged(); } // kept for compatibility
+function rmIndicator(p,i){ if(!isEditor) { showToast('🔒 Apenas editores podem remover indicadores.', 'warn'); return; } DATA[p].indicators.splice(i,1); renderIndicators(p); markChanged(); } // kept for compatibility
 
 // ═══ INDICATOR GRID EVENT DELEGATION ════════════
 // Attach listeners directly after each render — most reliable approach
@@ -5213,6 +5213,7 @@ function attachIndListeners(p) {
   if (!grid) return;
   grid.querySelectorAll('.ind-rm-btn').forEach(btn => {
     btn.onclick = function() {
+      if(!isEditor) { showToast('🔒 Apenas editores podem remover indicadores.', 'warn'); return; }
       const idx = parseInt(this.dataset.idx);
       DATA[p].indicators.splice(idx, 1);
       renderIndicators(p);
@@ -5369,7 +5370,7 @@ function saveFaqModal() {
   showToast('Pergunta salva!','success');
 }
 function addFaq(p){ openFaqModal(p, null); }
-function rmFaq(p,i){ DATA[p].faqs.splice(i,1); renderFaq(p); markChanged(); }
+function rmFaq(p,i){ if(!isEditor) { showToast('🔒 Apenas editores podem remover perguntas.', 'warn'); return; } DATA[p].faqs.splice(i,1); renderFaq(p); markChanged(); }
 
 async function generateFaqIA(p) {
   pickFlowMode('Gerar FAQ de qual fluxo?', 'As perguntas serão baseadas nas etapas e ações do fluxo escolhido.', mode => _generateFaqIAWithMode(p, mode));
@@ -7165,6 +7166,7 @@ function openPatModal(idx = null) {
 }
 
 function savePat() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar atividades PAT.', 'warn'); return; }
   const titulo = document.getElementById('pat-titulo').value.trim();
   if(!titulo) { showToast('Informe o título da atividade.', 'warn'); return; }
   const item = {
@@ -10106,6 +10108,7 @@ function openPaModal(p, idx=-1) {
   openModal('pa-modal');
 }
 function savePa() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar planos de ação.', 'warn'); return; }
   const desc = document.getElementById('pa-desc').value.trim();
   const resp = document.getElementById('pa-resp').value.trim();
   if(!desc || !resp) { showToast('Preencha descrição e responsável.','warn'); return; }
@@ -10209,6 +10212,7 @@ function openMeetModal(p, idx=-1) {
   openModal('meet-modal');
 }
 function saveMeet() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar reuniões.', 'warn'); return; }
   const ata = document.getElementById('meet-ata').value.trim();
   const date = document.getElementById('meet-date').value;
   if(!ata || !date) { showToast('Preencha a data e a ata.','warn'); return; }
@@ -10451,6 +10455,7 @@ function arqRenderTable(filtered, all) {
 }
 
 function arqShowForm(idx = null) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar processos.', 'warn'); return; }
   const modal = document.getElementById('arq-form-modal');
   const title = document.getElementById('arq-form-title');
   document.getElementById('arq-form-idx').value = idx !== null ? idx : '';
@@ -10484,6 +10489,7 @@ function arqCloseForm() {
 }
 
 function arqSaveForm() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar processos.', 'warn'); return; }
   const macro = document.getElementById('arq-f-macro').value.trim();
   const proc  = document.getElementById('arq-f-processo').value.trim();
   if(!macro || !proc) { showToast('Macroprocesso e Processo são obrigatórios.', 'warn'); return; }
@@ -10522,6 +10528,7 @@ function arqSaveForm() {
 }
 
 function arqDelete(idx) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir processos.', 'warn'); return; }
   const r = arqGetData()[idx];
   if(!confirm(`Excluir "${r.processo}"?\nEsta ação não pode ser desfeita.`)) return;
   arqGetData().splice(idx, 1);
@@ -10533,6 +10540,7 @@ function arqDelete(idx) {
 
 // Toggle mapeado manualmente
 function arqToggleMapeado(idx) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem alterar o status de mapeamento.', 'warn'); return; }
   const data = arqGetData();
   const newVal = !data[idx].mapeado;
   data[idx].mapeado = newVal;
@@ -10545,6 +10553,7 @@ function arqToggleMapeado(idx) {
 
 // Toggle processo crítico
 function arqToggleCritico(idx) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem marcar processo como crítico.', 'warn'); return; }
   const data = arqGetData();
   data[idx].critico = !data[idx].critico;
   DATA._arqOverrides = data;
@@ -12206,6 +12215,7 @@ function repoRender() {
 }
 
 function repoOpenUpload() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem adicionar documentos.', 'warn'); return; }
   repoEditingId = null;
   repoPendingFile = null;
   ['repo-title','repo-desc','repo-version'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
@@ -12220,6 +12230,7 @@ function repoCloseUpload() {
 }
 
 function repoEditDoc(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar documentos.', 'warn'); return; }
   const d = REPO_DOCS.find(x => x.id === id);
   if(!d) return;
   repoEditingId = id;
@@ -12256,6 +12267,7 @@ function repoHandleDrop(e) {
 }
 
 async function repoSaveDoc() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar documentos.', 'warn'); return; }
   const title = document.getElementById('repo-title').value.trim();
   if(!title) { showToast('Informe o título do documento.', 'error'); return; }
 
@@ -12338,6 +12350,7 @@ async function repoSaveDoc() {
 }
 
 async function repoDeleteDoc(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir documentos.', 'warn'); return; }
   const d = REPO_DOCS.find(x => x.id === id);
   if(!confirm(`Excluir "${d?.title}"?`)) return;
   REPO_DOCS = REPO_DOCS.filter(x => x.id !== id);
