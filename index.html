@@ -10296,7 +10296,9 @@ function arqSyncFromPops() {
     .map(k => DATA[k].meta);
 
   data.forEach(r => {
-    const match = popMeta.find(m => {
+    // Mapeado somente se existe POP com status=concluido e nome correspondente ao processo
+    const concluido = popMeta.find(m => {
+      if(m.statusMap !== 'concluido') return false;
       const procMatch = m.processo && (
         m.processo.toLowerCase() === r.processo.toLowerCase() ||
         m.processo.toLowerCase() === (r.subprocesso||'').toLowerCase()
@@ -10305,18 +10307,12 @@ function arqSyncFromPops() {
         m.subprocesso.toLowerCase() === r.subprocesso?.toLowerCase() ||
         m.subprocesso.toLowerCase() === r.processo.toLowerCase()
       );
-      return procMatch || subMatch;
-    });
-    // Mapeado se: existe POP com nome correspondente (qualquer status)
-    // OU POP com status=concluido explicitamente vinculado a este processo
-    const concluido = popMeta.find(m => {
       const nameMatch = (m.name||'').toLowerCase() === (r.subprocesso||r.processo||'').toLowerCase();
-      return nameMatch && m.statusMap === 'concluido';
+      return procMatch || subMatch || nameMatch;
     });
     // Respeitar bloqueio manual: se usuário explicitamente desmarcou, não remarcar
     if(r.mapeadoLocked === true) return;
-    if(match && !r.mapeado) { r.mapeado = true; changed = true; }
-    else if(concluido && !r.mapeado) { r.mapeado = true; changed = true; }
+    if(concluido && !r.mapeado) { r.mapeado = true; changed = true; }
   });
 
   if(changed) {
