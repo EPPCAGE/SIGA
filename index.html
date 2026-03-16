@@ -205,7 +205,7 @@
   .decision-box .dicon{font-size:18px;flex-shrink:0;}
   .decision-box .dtext{font-size:13px;color:#7a5e00;line-height:1.5;}
   .note-box{background:#f0f7ff;border:1px solid #b3d4f5;border-radius:var(--radius-sm);padding:12px 14px;font-size:12.5px;color:#1a4a7a;line-height:1.5;display:flex;gap:8px;align-items:flex-start;}
-  .nav-buttons{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:20px;border-top:1px solid var(--cage-border);}
+  .nav-buttons{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:20px;padding-right:72px;border-top:1px solid var(--cage-border);}
   .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
   .btn-primary{background:var(--cage-blue);color:white;}.btn-primary:hover{background:var(--cage-mid);}
   .btn-outline{background:white;color:var(--cage-blue);border:1.5px solid var(--cage-border);}.btn-outline:hover{border-color:var(--cage-mid);}
@@ -1978,7 +1978,7 @@
         <span class="badge badge-green" id="d-rev-badge">Rev. 0 · Mar/2026</span>
       </div>
     </div>
-    <div class="overview-grid fade-up delay-1">
+    <div class="overview-grid fade-up delay-1" id="d-overview-grid">
       <div class="metric-card green"><div class="metric-icon">📊</div>
         <span class="metric-value" contenteditable="false" id="d-metric-vol-pre" oninput="calcHorasEcon('d');markChanged()">—</span>
         <span class="metric-label">Vol. Mensal Pré</span></div>
@@ -2303,7 +2303,7 @@
         <span class="badge badge-blue" id="r-rev-badge">Rev. 0 · Mar/2026</span>
       </div>
     </div>
-    <div class="overview-grid fade-up delay-1">
+    <div class="overview-grid fade-up delay-1" id="r-overview-grid">
       <div class="metric-card green"><div class="metric-icon">📊</div>
         <span class="metric-value" contenteditable="false" id="r-metric-vol-pre" oninput="calcHorasEcon('r');markChanged()">—</span>
         <span class="metric-label">Vol. Mensal Pré</span></div>
@@ -4723,6 +4723,11 @@ function toggleEditMode(forceState) {
   document.querySelectorAll('[id$="-add-faq"]').forEach(el => {
     el.style.display = editMode ? 'inline-flex' : 'none';
   });
+  // Atualizar visibilidade dos grids de métricas ao alternar modo
+  const _skipMetrics = new Set(['pat','audits','config','patrocinadores','indicadoresCage','_arqOverrides','_repoDocs','_drops','_logoUrl']);
+  Object.keys(DATA).filter(k => !k.startsWith('_') && !_skipMetrics.has(k)).forEach(k => {
+    try { renderMetrics(k); } catch(e) {}
+  });
   // Persistir estado do modo edição entre recarregamentos
   try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) {}
   if(forceState === undefined) {
@@ -6287,7 +6292,7 @@ function mountNewPopTab(key, label, silent=false) {
           <span class="rev-badge" id="${key}-rev-badge">Rev. 0 · ${today}</span>
         </div>
       </div>
-      <div class="overview-grid fade-up delay-1">
+      <div class="overview-grid fade-up delay-1" id="${key}-overview-grid">
         <div class="metric-card green"><div class="metric-icon">📊</div>
           <span class="metric-value" contenteditable="false" id="${key}-metric-vol-pre" oninput="calcHorasEcon('${key}');markChanged()">—</span>
           <span class="metric-label">Vol. Mensal Pré</span></div>
@@ -10992,6 +10997,12 @@ function renderMetrics(p) {
   setVal(p + '-metric-ciclo-pos', m.cicloPos || '—');
   calcHorasEcon(p);
   renderBanner(p);
+  // Em modo visualização, ocultar o grid se todos os valores estiverem em branco
+  const grid = document.getElementById(p + '-overview-grid');
+  if(grid) {
+    const hasValues = m.volPre || m.volPos || m.cicloPre || m.cicloPos;
+    grid.style.display = (editMode || hasValues) ? '' : 'none';
+  }
 }
 
 function renderBanner(p) {
