@@ -4285,7 +4285,8 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
       </div>
       <div>
         <label>Executor / Ator responsável <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
-        <input class="modal-input" id="act-actor" type="text" placeholder="Ex: Seção de Apurações, Chefia DIR...">
+        <input class="modal-input" id="act-actor" type="text" list="act-actor-list" placeholder="Selecione ou digite um novo ator...">
+        <datalist id="act-actor-list"></datalist>
       </div>
       <div id="act-natureza-wrap" style="display:none;">
         <label>Natureza da Atividade</label>
@@ -7359,6 +7360,13 @@ function openActionModal(p, si, ai) {
     btn.classList.toggle('selected', btn.dataset.type === obj.type);
   });
 
+  // Populate actor datalist with current atores from config
+  const actorList = document.getElementById('act-actor-list');
+  if(actorList) {
+    const atores = getConfig('atores');
+    actorList.innerHTML = atores.map(a => `<option value="${a.replace(/"/g,'&quot;')}">`).join('');
+  }
+
   // Set text, actor and complementary fields
   document.getElementById('act-text').value       = obj.text;
   document.getElementById('act-actor').value      = obj.actor;
@@ -7408,6 +7416,15 @@ function saveActionModal() {
   const type           = selectedBtn ? selectedBtn.dataset.type : 'atividade';
   const text           = document.getElementById('act-text').value.trim() || 'Nova ação';
   const actor          = document.getElementById('act-actor').value.trim();
+
+  // If actor is new, add it to config.atores so the lists feed each other
+  if(actor) {
+    const atores = getConfig('atores');
+    if(!atores.includes(actor)) {
+      setConfig('atores', [...atores, actor]);
+    }
+  }
+
   const duracao        = document.getElementById('act-duracao').value.trim();
   const sistemas       = document.getElementById('act-sistemas').value.trim();
   const documentos     = document.getElementById('act-documentos').value.trim();
@@ -7554,7 +7571,7 @@ const CONFIG_DEFAULTS = {
   areas:                ['DCO','DIR','DIE','DTTI','GAB','DAUD','DCON'],
   macroprocessos:       [...MACROPROCESSOS],
   tipoTrabalho:         ['Mapeamento de Processo Novo','Mapeamento de Processo Existente','Redesenho','Mapeamento e Redesenho','Criação de Documentação'],
-  cargos:               ['Auxiliar Administrativo','Analista','Auditor','Coordenador','Chefe de Divisão','Adjunto da CAGE','Contador','Auditor-Geral','Assessor','Auditor Setorial','Estagiário'],
+  atores:               ['Auxiliar Administrativo','Analista','Auditor','Coordenador','Chefe de Divisão','Adjunto da CAGE','Contador','Auditor-Geral','Assessor','Auditor Setorial','Estagiário'],
   naturezaProcesso:     ['Finalístico','Apoio','Governança'],
   categoriaDocumentos:  ['Instrução Normativa','Manual de Processo','Procedimento Operacional','Formulário','Fluxograma'],
   tipoAtividadePat:     ['Mapeamento de Processo','Monitoramento de Indicadores','Acompanhamento de Implementação','Auditoria','Controle Interno','Consultoria','Fiscalização','Normatização','Capacitação','Outro'],
@@ -7970,7 +7987,7 @@ const _CFG_TABLES = [
   { key:'macroprocessos',      title:'🗂️ Macroprocessos',            desc:'Macroprocessos disponíveis nos formulários.' },
   { key:'tipoTrabalho',        title:'🔧 Tipo de Trabalho',           desc:'Tipos de trabalho da ficha técnica de mapeamento.' },
   { key:'tipoAtividadePat',    title:'📅 Tipo de Atividade — PAT',    desc:'Tipos de atividade no Plano Anual de Trabalho.' },
-  { key:'cargos',              title:'🪪 Cargos',                     desc:'Cargos e funções dos servidores cadastrados no sistema.' },
+  { key:'atores',              title:'🎭 Atores',                     desc:'Atores que executam ações nos fluxos dos processos mapeados.' },
   { key:'naturezaProcesso',    title:'⚡ Natureza do Processo',       desc:'Classificação da natureza dos processos.' },
   { key:'categoriaDocumentos', title:'📄 Categoria de Documentos',    desc:'Categorias usadas na gestão de documentos.' },
   { key:'statusMapeamento',    title:'📊 Status do Mapeamento',       desc:'Status usados na ficha técnica de mapeamento.', typed:'status' },
