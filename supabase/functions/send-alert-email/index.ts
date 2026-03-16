@@ -1,17 +1,11 @@
-// Supabase Edge Function: send-alert-email
-// Envia e-mails de alerta via Brevo (https://brevo.com)
-//
-// Variáveis de ambiente necessárias no painel Supabase:
-//   BREVO_API_KEY — chave de API do Brevo
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
-const FROM_EMAIL    = 'f.ctourinho@gmail.com';
-const FROM_NAME     = 'EPP · CAGE-RS';
+const FROM_EMAIL = 'f.ctourinho@gmail.com';
+const FROM_NAME = 'EPP CAGE-RS';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -25,19 +19,18 @@ serve(async (req: Request) => {
   }
 
   if (!BREVO_API_KEY) {
-    console.error('[send-alert-email] BREVO_API_KEY não configurada');
     return new Response(
-      JSON.stringify({ error: 'Serviço de e-mail não configurado. Configure BREVO_API_KEY.' }),
+      JSON.stringify({ error: 'BREVO_API_KEY nao configurada' }),
       { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
-  let body: { to?: string; nome?: string; subject?: string; html?: string };
+  let body: { to?: string; subject?: string; html?: string };
   try {
     body = await req.json();
-  } catch {
+  } catch (_e) {
     return new Response(
-      JSON.stringify({ error: 'Corpo inválido — esperado JSON' }),
+      JSON.stringify({ error: 'Corpo invalido' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -46,47 +39,47 @@ serve(async (req: Request) => {
 
   if (!to || !subject || !html) {
     return new Response(
-      JSON.stringify({ error: 'Campos obrigatórios: to, subject, html' }),
+      JSON.stringify({ error: 'Campos obrigatorios: to, subject, html' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
     return new Response(
-      JSON.stringify({ error: `Endereço de e-mail inválido: ${to}` }),
+      JSON.stringify({ error: 'Email invalido: ' + to }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
-  const brevoPayload = {
-    sender:  { name: FROM_NAME, email: FROM_EMAIL },
-    to:      [{ email: to }],
+  const payload = {
+    sender: { name: FROM_NAME, email: FROM_EMAIL },
+    to: [{ email: to }],
     subject: subject,
     htmlContent: html,
   };
 
-  const brevoResp = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method:  'POST',
+  const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
     headers: {
-      'api-key':      BREVO_API_KEY,
+      'api-key': BREVO_API_KEY,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(brevoPayload),
+    body: JSON.stringify(payload),
   });
 
-  const brevoData = await brevoResp.json();
+  const data = await resp.json();
 
-  if (!brevoResp.ok) {
-    console.error('[send-alert-email] Brevo error:', brevoData);
+  if (!resp.ok) {
+    console.error('[send-alert-email] Brevo error:', data);
     return new Response(
-      JSON.stringify({ error: 'Falha ao enviar e-mail', details: brevoData }),
-      { status: brevoResp.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Falha ao enviar email', details: data }),
+      { status: resp.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
-  console.log(`[send-alert-email] Enviado para ${to} — MessageId: ${brevoData.messageId}`);
+  console.log('[send-alert-email] Enviado para ' + to + ' - MessageId: ' + data.messageId);
   return new Response(
-    JSON.stringify({ ok: true, id: brevoData.messageId }),
+    JSON.stringify({ ok: true, id: data.messageId }),
     { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
 });
