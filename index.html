@@ -1084,7 +1084,7 @@
   #indcage-modal .gmod-body { display:flex; flex-direction:column; gap:14px; }
   .indcage-nivel-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
-  /* ── Relatório Word tab ───────────────────────── */
+  /* ── Relatório PPT tab ───────────────────────── */
   .indrel-config-bar { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; background:#f8fafc; border:1.5px solid var(--cage-border); border-radius:var(--radius); padding:16px 18px; margin-bottom:24px; }
   .indrel-config-field { display:flex; flex-direction:column; gap:5px; }
   .indrel-list { display:flex; flex-direction:column; gap:8px; }
@@ -4118,7 +4118,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
     <div class="indcage-tabs">
       <button class="indcage-tab active" data-indcage-tab="indicadores" onclick="indcageTab('indicadores',this)">📋 Indicadores</button>
       <button class="indcage-tab" data-indcage-tab="resultados" onclick="indcageTab('resultados',this)">📊 Resultados</button>
-      <button class="indcage-tab" data-indcage-tab="relatorio" onclick="indcageTab('relatorio',this)">📄 Relatório Word</button>
+      <button class="indcage-tab" data-indcage-tab="relatorio" onclick="indcageTab('relatorio',this)">📊 Relatório PPT</button>
     </div>
   </div>
 </div>
@@ -4331,12 +4331,12 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
     </div>
   </div>
 
-  <!-- ─── TAB: RELATÓRIO WORD ──────────────────────────────────── -->
+  <!-- ─── TAB: RELATÓRIO PPT ──────────────────────────────────── -->
   <div id="indcage-sec-relatorio" class="indcage-section">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
       <div>
-        <div style="font-size:15px;font-weight:700;color:#0a2540;">📄 Gerar Relatório de Monitoramento</div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">Selecione os indicadores desejados e gere um relatório automático em formato Word (.docx) com dados e gráficos.</div>
+        <div style="font-size:15px;font-weight:700;color:#0a2540;">📊 Gerar Relatório de Monitoramento</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Selecione os indicadores desejados e gere uma apresentação PowerPoint (.pptx) com gráficos e análise automática por IA da variação temporal dos resultados.</div>
       </div>
     </div>
 
@@ -4359,8 +4359,14 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
         <label class="indcage-filter-label">Subtítulo / Órgão (opcional)</label>
         <input type="text" id="rel-subtitulo" class="indcage-filter-select" placeholder="Ex: CAGE-RS — Escritório de Processos" style="width:100%;">
       </div>
-      <button class="btn btn-primary" onclick="indcageGerarRelatorioWord()" id="rel-generate-btn" style="margin-top:auto;padding:10px 20px;font-size:13px;">
-        📄 Gerar Relatório Word
+      <div class="indrel-config-field" style="justify-content:flex-end;gap:6px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1e3a7a;font-weight:600;cursor:pointer;white-space:nowrap;">
+          <input type="checkbox" id="rel-usar-ia" checked style="accent-color:#0a2540;width:15px;height:15px;">
+          🤖 Análise IA por indicador
+        </label>
+      </div>
+      <button class="btn btn-primary" onclick="indcageGerarRelatorioPpt()" id="rel-generate-btn" style="margin-top:auto;padding:10px 20px;font-size:13px;">
+        📊 Gerar Relatório PPT
       </button>
     </div>
 
@@ -16335,7 +16341,7 @@ function saveStatusModal() {
     return Number(v).toLocaleString('pt-BR', { minimumFractionDigits:d, maximumFractionDigits:d });
   }
 
-  // ─── Aba Relatório Word ────────────────────────────────────────────
+  // ─── Aba Relatório PPT ────────────────────────────────────────────
 
   window.indcageRenderRelatorioTab = function() {
     ensureData();
@@ -16531,10 +16537,10 @@ function saveStatusModal() {
     });
   }
 
-  // ─── Gerar Relatório Word ──────────────────────────────────────────
-  window.indcageGerarRelatorioWord = async function() {
-    if(typeof docx === 'undefined') {
-      showToast('Biblioteca docx não carregada. Verifique a conexão e recarregue a página.', 'warn');
+  // ─── Gerar Relatório PPT com análise IA ───────────────────────────
+  window.indcageGerarRelatorioPpt = async function() {
+    if(typeof PptxGenJS === 'undefined') {
+      showToast('Biblioteca PptxGenJS não carregada. Verifique a conexão e recarregue a página.', 'warn');
       return;
     }
 
@@ -16547,261 +16553,193 @@ function saveStatusModal() {
     const trimestre = document.getElementById('rel-trimestre')?.value || '1';
     const ano = document.getElementById('rel-ano')?.value || '2026';
     const subtitulo = document.getElementById('rel-subtitulo')?.value.trim() || 'CAGE-RS — Controladoria-Geral do Estado do Rio Grande do Sul';
+    const usarIA = document.getElementById('rel-usar-ia')?.checked !== false;
     const trimestreNomes = ['1º','2º','3º','4º'];
     const trimestreLabel = trimestreNomes[parseInt(trimestre)-1] + ' Trimestre ' + ano;
-    const titulo = 'Relatório de Monitoramento de Indicadores: ' + trimestreLabel;
+    const titulo = 'Relatório de Monitoramento de Indicadores';
+    const hoje = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
 
     const btn = document.getElementById('rel-generate-btn');
     if(btn) { btn.disabled = true; btn.textContent = '⏳ Gerando…'; }
 
     try {
-      const {
-        Document, Packer, Paragraph, TextRun, ImageRun, Table, TableRow, TableCell,
-        HeadingLevel, AlignmentType, WidthType, BorderStyle, PageBreak, ShadingType,
-        VerticalAlign, convertInchesToTwip
-      } = docx;
-
       const selectedCodigos = Array.from(checkboxes).map(cb => cb.value).filter(Boolean);
       const allInds = getAllIndicators();
       const resultados = DATA.indicadoresCage.resultados || [];
-      const hoje = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
 
-      const noBorder = { top: { style: BorderStyle.NONE, size: 0 }, bottom: { style: BorderStyle.NONE, size: 0 }, left: { style: BorderStyle.NONE, size: 0 }, right: { style: BorderStyle.NONE, size: 0 } };
-      const thinBorder = { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC' };
-      const thinBorderAll = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
-      const headerBorder = { top: { style: BorderStyle.SINGLE, size: 6, color: '0a2540' }, bottom: { style: BorderStyle.SINGLE, size: 6, color: '0a2540' }, left: { style: BorderStyle.NONE, size: 0 }, right: { style: BorderStyle.NONE, size: 0 } };
+      const pres = new PptxGenJS();
+      pres.layout = 'LAYOUT_16x9';
+      pres.title  = titulo + ' — ' + trimestreLabel;
+      pres.author = 'GesProc-RS — CAGE-RS';
 
-      const docChildren = [];
+      const C = { navy:'0A2540', navyFull:'#0A2540', green:'00A86B', gold:'E8A020', white:'FFFFFF', light:'F4F7FB', muted:'8898AA', blue:'1E40AF' };
 
-      // ── Capa ──────────────────────────────────────────────────────
-      docChildren.push(
-        new Paragraph({ spacing: { before: 2400 } }),
-        new Paragraph({
-          children: [ new TextRun({ text: titulo, bold: true, size: 52, color: '0a2540', font: 'Calibri' }) ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 240 }
-        }),
-        new Paragraph({
-          children: [ new TextRun({ text: subtitulo, size: 26, color: '4a5568', font: 'Calibri' }) ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 120 }
-        }),
-        new Paragraph({
-          children: [ new TextRun({ text: 'Gerado em ' + hoje, size: 22, color: '8898aa', italics: true, font: 'Calibri' }) ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 2400 }
-        }),
-        new Paragraph({
-          children: [ new TextRun({ text: `Total de indicadores: ${selectedCodigos.length}`, size: 24, color: '0a2540', font: 'Calibri' }) ],
-          alignment: AlignmentType.CENTER,
-        }),
-      );
+      // helper: cabeçalho azul padrão
+      const addHdr = (slide, title, sub) => {
+        slide.addShape(pres.ShapeType.rect, { x:0, y:0, w:10, h:0.75, fill:{ color:C.navy } });
+        slide.addShape(pres.ShapeType.rect, { x:0, y:0.75, w:10, h:0.05, fill:{ color:C.green } });
+        slide.addText(title, { x:0.35, y:0, w:7.5, h:0.75, fontSize:15, color:C.white, bold:true, valign:'middle' });
+        if(sub) slide.addText(sub, { x:0, y:0, w:9.7, h:0.75, fontSize:10, color:'8CB8FF', align:'right', valign:'middle' });
+      };
 
-      // ── Seções por indicador ───────────────────────────────────────
-      for(const codigo of selectedCodigos) {
+      // ── Slide de capa ──────────────────────────────────────────────
+      const capa = pres.addSlide();
+      capa.addShape(pres.ShapeType.rect, { x:0, y:0, w:10, h:7.5, fill:{ color:C.navy } });
+      capa.addShape(pres.ShapeType.rect, { x:0, y:5.6, w:10, h:0.12, fill:{ color:C.gold } });
+      capa.addShape(pres.ShapeType.rect, { x:0, y:5.72, w:10, h:0.1, fill:{ color:C.green } });
+      capa.addText(titulo, { x:0.8, y:1.5, w:8.4, fontSize:30, color:C.white, bold:true, align:'center' });
+      capa.addText(trimestreLabel, { x:0.8, y:2.55, w:8.4, fontSize:20, color:C.gold, bold:true, align:'center' });
+      capa.addText(subtitulo, { x:0.8, y:3.3, w:8.4, fontSize:13, color:'8CB8FF', align:'center' });
+      capa.addText(`Gerado em ${hoje}  ·  ${selectedCodigos.length} indicador(es)`, { x:0.8, y:4.1, w:8.4, fontSize:11, color:C.muted, align:'center', italic:true });
+
+      // ── Slide por indicador ────────────────────────────────────────
+      for(let idx = 0; idx < selectedCodigos.length; idx++) {
+        const codigo = selectedCodigos[idx];
         const ind = allInds.find(i => i.codigo === codigo);
         const cfg = _getOverride(codigo);
         const resDoInd = resultados
           .filter(r => r.codigo === codigo)
+          .sort((a,b) => (a.periodo||'').localeCompare(b.periodo||''));
+        const resDesc = resultados
+          .filter(r => r.codigo === codigo)
           .sort((a,b) => (b.periodo||'').localeCompare(a.periodo||''));
 
-        // Quebra de página antes de cada indicador
-        docChildren.push(
-          new Paragraph({ children: [new PageBreak()], spacing: { before: 0, after: 0 } })
-        );
-
-        // Título do indicador
         const tituloInd = [codigo, ind?.enunciado].filter(Boolean).join(' — ');
-        docChildren.push(
-          new Paragraph({
-            children: [new TextRun({ text: tituloInd, bold: true, size: 36, color: '0a2540', font: 'Calibri' })],
-            spacing: { before: 240, after: 200 },
-            border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: 'e8a020' } }
-          })
-        );
+        showToast(`Processando ${idx+1}/${selectedCodigos.length}: ${codigo}…`, 'info');
 
-        // Tabela de informações do indicador
-        const infoRows = [
+        // ── Slide: Ficha do indicador + gráfico ─────────────────────
+        const sInd = pres.addSlide();
+        addHdr(sInd, tituloInd, `${idx+1} / ${selectedCodigos.length}`);
+
+        // Ficha de metadados (lado esquerdo)
+        const fichaRows = [
           ['Código', codigo || '—'],
-          ['Enunciado', ind?.enunciado || '—'],
-          ind?.divisao ? ['Divisão', ind.divisao] : null,
-          ind?.responsavel ? ['Responsável', ind.responsavel] : null,
-          ind?.periodicidade ? ['Periodicidade', ind.periodicidade] : null,
-          ind?.meta ? ['Meta', ind.meta] : null,
-          cfg?.unidade ? ['Unidade', cfg.unidade] : null,
-        ].filter(Boolean);
+          ['Divisão', ind?.divisao || '—'],
+          ['Responsável', ind?.responsavel || '—'],
+          ['Periodicidade', ind?.periodicidade || '—'],
+          ['Meta', ind?.meta ? String(ind.meta) : '—'],
+          ['Unidade', cfg?.unidade || '—'],
+        ];
+        const rowH = 0.36;
+        const fichaY = 0.95;
+        const fichaW = 3.5;
+        fichaRows.forEach(([lbl, val], ri) => {
+          const ry = fichaY + ri * rowH;
+          sInd.addShape(pres.ShapeType.rect, { x:0.2, y:ry, w:fichaW, h:rowH, fill:{ color: ri%2===0?'EFF6FF':'FFFFFF' }, line:{ color:'D1D9F0', pt:0.5 } });
+          sInd.addText(lbl, { x:0.25, y:ry, w:1.1, h:rowH, fontSize:9, bold:true, color:C.blue, valign:'middle' });
+          sInd.addText(val, { x:1.4, y:ry, w:fichaW-1.25, h:rowH, fontSize:9, color:'1E293B', valign:'middle', wrap:true });
+        });
 
-        if(infoRows.length > 0) {
-          const infoTable = new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: infoRows.map(([label, value]) => new TableRow({
-              children: [
-                new TableCell({
-                  width: { size: 22, type: WidthType.PERCENTAGE },
-                  borders: thinBorderAll,
-                  shading: { fill: 'EFF6FF', type: ShadingType.CLEAR },
-                  children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: 20, color: '1e40af', font: 'Calibri' })] })],
-                  verticalAlign: VerticalAlign.CENTER,
-                }),
-                new TableCell({
-                  width: { size: 78, type: WidthType.PERCENTAGE },
-                  borders: thinBorderAll,
-                  children: [new Paragraph({ children: [new TextRun({ text: String(value), size: 20, font: 'Calibri' })] })],
-                  verticalAlign: VerticalAlign.CENTER,
-                }),
-              ]
-            }))
+        // Gráfico de evolução (lado direito)
+        const imgB64 = await _chartToBase64(codigo, 'evo');
+        if(imgB64) {
+          sInd.addImage({ data: imgB64, x:3.85, y:0.9, w:5.95, h:3.1 });
+          sInd.addText('Evolução dos Resultados', { x:3.85, y:4.0, w:5.95, h:0.28, fontSize:9, italic:true, color:C.muted, align:'center' });
+        } else {
+          sInd.addText('Sem dados de resultados disponíveis para este indicador.', { x:3.85, y:2.5, w:5.95, h:1, fontSize:11, color:C.muted, align:'center', valign:'middle', italic:true });
+        }
+
+        // Tabela de últimos resultados (linha inferior)
+        if(resDesc.length > 0) {
+          const last6 = resDesc.slice(0, 6).reverse();
+          const unidade = cfg?.unidade || '';
+          const tblY = 4.35;
+          const colW = [1.5, 1.2, 1.2, 1.1, 4.8];
+          const hdrs = ['Período','Realizado','Meta','% Realiz.','Análise'];
+          let cx = 0.2;
+          hdrs.forEach((h, ci) => {
+            sInd.addShape(pres.ShapeType.rect, { x:cx, y:tblY, w:colW[ci], h:0.3, fill:{ color:C.navy } });
+            sInd.addText(h, { x:cx+0.03, y:tblY, w:colW[ci]-0.06, h:0.3, fontSize:8.5, bold:true, color:C.white, valign:'middle', align: ci>0&&ci<4?'center':'left' });
+            cx += colW[ci];
           });
-          docChildren.push(infoTable);
-          docChildren.push(new Paragraph({ spacing: { after: 200 } }));
+          last6.forEach((r, ri) => {
+            const ry = tblY + 0.3 + ri * 0.28;
+            const bg = ri%2===0 ? 'F8FAFC' : 'FFFFFF';
+            cx = 0.2;
+            const cells = [
+              _periodoLabel(r.periodo),
+              r.realizado !== null && r.realizado !== undefined ? _fmtNum(r.realizado)+(unidade?' '+unidade:'') : '—',
+              r.meta !== null && r.meta !== undefined ? _fmtNum(r.meta)+(unidade?' '+unidade:'') : '—',
+              r.pctRealizado !== null && r.pctRealizado !== undefined ? _fmtNum(r.pctRealizado)+'%' : '—',
+              r.analise || '—',
+            ];
+            cells.forEach((cell, ci) => {
+              sInd.addShape(pres.ShapeType.rect, { x:cx, y:ry, w:colW[ci], h:0.28, fill:{ color:bg }, line:{ color:'E2E8F0', pt:0.5 } });
+              sInd.addText(cell, { x:cx+0.03, y:ry, w:colW[ci]-0.06, h:0.28, fontSize:8, color:'1E293B', valign:'middle', align: ci>0&&ci<4?'center':'left', wrap:false });
+              cx += colW[ci];
+            });
+          });
         }
 
-        // Gráfico principal (evolução ou absoluto)
-        showToast(`Gerando gráfico de ${codigo}…`, 'info');
-        const imgEvoB64 = await _chartToBase64(codigo, 'evo');
-        if(imgEvoB64) {
-          docChildren.push(
-            new Paragraph({
-              children: [new TextRun({ text: 'Evolução dos Resultados', bold: true, size: 24, color: '0a2540', font: 'Calibri' })],
-              spacing: { before: 160, after: 100 }
-            }),
-            new Paragraph({
-              children: [new ImageRun({
-                data: imgEvoB64.split(',')[1],
-                transformation: { width: 620, height: 260 },
-                type: 'png'
-              })],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 160 }
-            })
-          );
-        }
-
-        // Gráfico YoY (se disponível)
+        // ── Slide: Gráfico YoY (se aplicável) ───────────────────────
         const hasPercentage = cfg.tipo !== 'numero' && cfg.tipo !== 'moeda' &&
           resDoInd.some(r => r.pctRealizado !== null && r.pctRealizado !== undefined && r.pctRealizado !== 0);
-        if(hasPercentage) {
-          const imgYoyB64 = await _chartToBase64(codigo, 'yoy');
-          if(imgYoyB64) {
-            docChildren.push(
-              new Paragraph({
-                children: [new TextRun({ text: 'Comparativo Anual (YoY)', bold: true, size: 24, color: '0a2540', font: 'Calibri' })],
-                spacing: { before: 160, after: 100 }
-              }),
-              new Paragraph({
-                children: [new ImageRun({
-                  data: imgYoyB64.split(',')[1],
-                  transformation: { width: 620, height: 260 },
-                  type: 'png'
-                })],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 160 }
-              })
-            );
+        if(hasPercentage && resDoInd.length > 0) {
+          const imgYoy = await _chartToBase64(codigo, 'yoy');
+          if(imgYoy) {
+            const sYoy = pres.addSlide();
+            addHdr(sYoy, tituloInd + ' — Comparativo Anual (YoY)', `${idx+1} / ${selectedCodigos.length}`);
+            sYoy.addImage({ data: imgYoy, x:1.5, y:0.95, w:7, h:5.5 });
           }
         }
 
-        // Tabela de resultados (últimos 12 meses)
-        if(resDoInd.length > 0) {
-          const last12 = resDoInd.slice(0, 12);
-          const unidade = cfg?.unidade || '';
-          const colHdr = (txt) => new TableCell({
-            borders: { top: { style: BorderStyle.SINGLE, size: 8, color: '0a2540' }, bottom: { style: BorderStyle.SINGLE, size: 8, color: '0a2540' }, left: { style: BorderStyle.NONE, size: 0 }, right: { style: BorderStyle.NONE, size: 0 } },
-            shading: { fill: '0a2540', type: ShadingType.CLEAR },
-            children: [new Paragraph({ children: [new TextRun({ text: txt, bold: true, size: 18, color: 'FFFFFF', font: 'Calibri' })], alignment: AlignmentType.CENTER })]
-          });
-          const colCell = (txt, right) => new TableCell({
-            borders: thinBorderAll,
-            children: [new Paragraph({ children: [new TextRun({ text: txt, size: 18, font: 'Calibri' })], alignment: right ? AlignmentType.RIGHT : AlignmentType.LEFT })]
-          });
+        // ── Slide: Análise IA da variação temporal ───────────────────
+        if(usarIA && resDoInd.length > 0) {
+          showToast(`Analisando variação de ${codigo} com IA…`, 'info');
 
-          docChildren.push(
-            new Paragraph({
-              children: [new TextRun({ text: 'Resultados Recentes (últimos 12 meses)', bold: true, size: 24, color: '0a2540', font: 'Calibri' })],
-              spacing: { before: 200, after: 100 }
-            }),
-            new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE },
-              rows: [
-                new TableRow({
-                  tableHeader: true,
-                  children: [colHdr('Período'), colHdr('Realizado'), colHdr('Meta'), colHdr('% Realizado'), colHdr('Análise')]
-                }),
-                ...last12.map(r => new TableRow({
-                  children: [
-                    colCell(_periodoLabel(r.periodo)),
-                    colCell(r.realizado !== null && r.realizado !== undefined ? _fmtNum(r.realizado) + (unidade ? ' ' + unidade : '') : '—', true),
-                    colCell(r.meta !== null && r.meta !== undefined ? _fmtNum(r.meta) + (unidade ? ' ' + unidade : '') : '—', true),
-                    colCell(r.pctRealizado !== null && r.pctRealizado !== undefined ? _fmtNum(r.pctRealizado) + '%' : '—', true),
-                    colCell(r.analise || '—'),
-                  ]
-                }))
-              ]
-            }),
-            new Paragraph({ spacing: { after: 200 } })
-          );
+          // Monta série temporal para o prompt
+          const serieTexto = resDoInd.slice(-18).map(r =>
+            `${_periodoLabel(r.periodo)}: realizado=${r.realizado !== null && r.realizado !== undefined ? _fmtNum(r.realizado) : '?'}${cfg?.unidade?' '+cfg.unidade:''}, meta=${r.meta !== null && r.meta !== undefined ? _fmtNum(r.meta) : '?'}, %realizado=${r.pctRealizado !== null && r.pctRealizado !== undefined ? _fmtNum(r.pctRealizado)+'%' : '?'}, análise="${r.analise||''}"`)
+            .join('\n');
+
+          const promptIA = `Você é um analista de indicadores de desempenho do setor público. Analise a variação temporal dos resultados do indicador abaixo e produza um texto conciso (4 a 6 frases) em português, apontando: (1) a tendência geral (melhora, piora, estabilidade); (2) os meses/períodos de melhor e pior desempenho; (3) se o indicador está atingindo a meta na maioria dos períodos; (4) alguma observação relevante sobre sazonalidade ou mudanças bruscas. Seja objetivo, claro e técnico.
+
+Indicador: ${ind?.enunciado || codigo}
+Código: ${codigo}
+Divisão: ${ind?.divisao || '—'}
+Meta: ${ind?.meta || '—'}
+Periodicidade: ${ind?.periodicidade || '—'}
+
+Série histórica (últimos 18 períodos):
+${serieTexto}
+
+Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.`;
+
+          let textoIA = '(Análise IA indisponível)';
+          try {
+            textoIA = await callGemini(promptIA);
+            textoIA = textoIA.trim();
+          } catch(e) {
+            console.warn('Erro na análise IA para', codigo, e);
+            textoIA = 'Não foi possível obter análise da IA para este indicador.';
+          }
+
+          const sIA = pres.addSlide();
+          addHdr(sIA, tituloInd + ' — Análise de Variação Temporal', `🤖 Análise IA · ${idx+1} / ${selectedCodigos.length}`);
+          sIA.addShape(pres.ShapeType.rect, { x:0.4, y:0.95, w:9.2, h:5.8, fill:{ color:'F0F7FF' }, line:{ color:'C7D7F5', pt:1 }, rectRadius:0.12 });
+          sIA.addText('🤖  Análise de Variação Temporal — Inteligência Artificial', { x:0.55, y:1.1, w:8.9, h:0.4, fontSize:12, bold:true, color:C.blue });
+          sIA.addText(textoIA, { x:0.55, y:1.6, w:8.9, h:4.8, fontSize:12, color:'1E293B', valign:'top', wrap:true });
         }
-
-        // Área de comentários / análise (espaço em branco com borda)
-        docChildren.push(
-          new Paragraph({
-            children: [new TextRun({ text: 'Análise / Comentários:', bold: true, size: 24, color: '0a2540', font: 'Calibri' })],
-            spacing: { before: 200, after: 100 }
-          }),
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [
-              new TableRow({
-                children: [
-                  new TableCell({
-                    borders: { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder },
-                    children: [
-                      new Paragraph({ spacing: { before: 40, after: 40 } }),
-                      new Paragraph({ spacing: { before: 40, after: 40 } }),
-                      new Paragraph({ spacing: { before: 40, after: 40 } }),
-                      new Paragraph({ spacing: { before: 40, after: 40 } }),
-                      new Paragraph({ spacing: { before: 40, after: 40 } }),
-                      new Paragraph({ spacing: { before: 40, after: 40 } }),
-                      new Paragraph({ spacing: { before: 40, after: 40 } }),
-                    ],
-                    margins: { top: convertInchesToTwip(0.1), bottom: convertInchesToTwip(0.1), left: convertInchesToTwip(0.1), right: convertInchesToTwip(0.1) }
-                  })
-                ]
-              })
-            ]
-          })
-        );
       }
 
-      // ── Gerar e baixar o arquivo ──────────────────────────────────
-      const document = new Document({
-        creator: 'GesProc-RS — CAGE-RS',
-        title: titulo,
-        sections: [{
-          properties: {
-            page: {
-              margin: { top: convertInchesToTwip(1.0), bottom: convertInchesToTwip(1.0), left: convertInchesToTwip(1.18), right: convertInchesToTwip(1.18) }
-            }
-          },
-          children: docChildren
-        }]
-      });
+      // ── Slide final ───────────────────────────────────────────────
+      const sFinal = pres.addSlide();
+      sFinal.addShape(pres.ShapeType.rect, { x:0, y:0, w:10, h:7.5, fill:{ color:C.navy } });
+      sFinal.addShape(pres.ShapeType.rect, { x:0, y:3.5, w:10, h:0.1, fill:{ color:C.gold } });
+      sFinal.addText('Relatório gerado automaticamente pelo GesProc-RS', { x:0.8, y:3.7, w:8.4, fontSize:14, color:C.white, align:'center' });
+      sFinal.addText(subtitulo, { x:0.8, y:4.35, w:8.4, fontSize:11, color:'8CB8FF', align:'center', italic:true });
+      sFinal.addText(hoje, { x:0.8, y:4.85, w:8.4, fontSize:10, color:C.muted, align:'center', italic:true });
 
-      const blob = await Packer.toBlob(document);
-      const fileName = `Relatorio_Monitoramento_${trimestreLabel.replace(/\s+/g,'_')}.docx`;
-      const url = URL.createObjectURL(blob);
-      const a = window.document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('Relatório Word gerado com sucesso! 📄', 'success');
+      // ── Download ──────────────────────────────────────────────────
+      const fileName = `Relatorio_Monitoramento_${trimestreLabel.replace(/\s+/g,'_')}.pptx`;
+      await pres.writeFile({ fileName });
+      showToast('Relatório PPT gerado com sucesso! 📊', 'success');
 
     } catch(err) {
-      console.error('Erro ao gerar relatório Word:', err);
+      console.error('Erro ao gerar relatório PPT:', err);
       showToast('Erro ao gerar relatório: ' + (err.message || err), 'warn');
     } finally {
-      if(btn) { btn.disabled = false; btn.textContent = '📄 Gerar Relatório Word'; }
+      if(btn) { btn.disabled = false; btn.textContent = '📊 Gerar Relatório PPT'; }
     }
   };
 
