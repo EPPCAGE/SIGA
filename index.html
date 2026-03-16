@@ -4924,6 +4924,9 @@ function _takeEditSnapshot() {
 function markChanged(quick=false) {
   document.getElementById('unsaved-dot').style.display = 'inline-block';
   clearTimeout(_autoSaveTimer);
+  // Enquanto o modo edição estiver ativo, NÃO auto-salvar.
+  // O usuário deve clicar em 💾 Salvar manualmente.
+  if(editMode) return;
   _autoSaveTimer = setTimeout(() => {
     // Só auto-salvar após app totalmente inicializado (evita salvar durante load)
     if(currentUser && window._appInitialized) saveToCloud();
@@ -4931,67 +4934,12 @@ function markChanged(quick=false) {
 }
 
 function discardChanges() {
-  if(!confirm('Descartar todas as alterações? Os dados serão revertidos ao estado de quando o modo edição foi ativado.')) return;
-
-  // Cancelar auto-save pendente para não sobrescrever com dados indesejados
+  if(!confirm('Descartar todas as alterações não salvas? Os dados serão recarregados da nuvem.')) return;
   clearTimeout(_autoSaveTimer);
-
-  if(!_editSnapshot) {
-    // Fallback: sem snapshot (ex: sessão antiga), recarrega da nuvem
-    loadFromCloud().then(() => {
-      showToast('↩ Alterações descartadas. Dados recarregados da nuvem.', 'success');
-      document.getElementById('unsaved-dot').style.display = 'none';
-    }).catch(e => { showToast('Erro ao recarregar dados: ' + e.message, 'warn'); });
-    return;
-  }
-
-  // ── 1. Remover POPs criados durante a sessão de edição ─────────────────
-  const snapKeys = new Set(Object.keys(_editSnapshot.DATA));
-  Object.keys(DATA).forEach(k => {
-    if(!snapKeys.has(k) && k.startsWith('pop_')) {
-      const el = document.getElementById('pop-' + k);
-      if(el) el.remove();
-      delete DATA[k];
-    }
-  });
-
-  // ── 2. Restaurar DATA do snapshot (deep copy) ───────────────────────────
-  const restored = JSON.parse(JSON.stringify(_editSnapshot.DATA));
-  // Limpar todas as chaves atuais e reaplicar do snapshot
-  Object.keys(DATA).forEach(k => delete DATA[k]);
-  Object.assign(DATA, restored);
-
-  // ── 3. Restaurar REPO_DOCS e DROPS ─────────────────────────────────────
-  REPO_DOCS = JSON.parse(JSON.stringify(_editSnapshot.REPO_DOCS));
-  DROPS     = JSON.parse(JSON.stringify(_editSnapshot.DROPS));
-
-  // ── 4. Invalidar cache da arquitetura ───────────────────────────────────
-  if(typeof _arqData !== 'undefined') _arqData = null;
-
-  // ── 5. Re-renderizar todo o conteúdo ────────────────────────────────────
-  const INTERNAL = new Set(['pat','audits','config','patrocinadores','indicadoresCage','_arqOverrides','_repoDocs','_drops','_logoUrl']);
-  Object.keys(DATA).filter(k => !INTERNAL.has(k) && !k.startsWith('_')).forEach(p => {
-    try {
-      sanitizePop(p);
-      renderStep(p, DATA[p].currentStep);
-      renderRoles(p); renderIndicators(p);
-      try { renderFaq(p);       } catch(e) {}
-      try { renderNormas(p);    } catch(e) {}
-      try { renderRevisions(p); } catch(e) {}
-      try { renderSiglas(p);    } catch(e) {}
-      try { renderMetrics(p);   } catch(e) {}
-      try { renderFicha(p);     } catch(e) {}
-      try { loadAcomp(p);       } catch(e) {}
-    } catch(e) { console.warn('discard re-render', p, e); }
-  });
-  try { dropsRender();            } catch(e) {}
-  try { applyConfigToDropdowns(); } catch(e) {}
-  try { renderSidebar();          } catch(e) {}
-  try { arqSyncFromPops();        } catch(e) {}
-  try { homeRefresh();            } catch(e) {}
-
-  document.getElementById('unsaved-dot').style.display = 'none';
-  showToast('↩ Alterações descartadas.', 'success');
+  loadFromCloud().then(() => {
+    showToast('↩ Alterações descartadas. Dados recarregados da nuvem.', 'success');
+    document.getElementById('unsaved-dot').style.display = 'none';
+  }).catch(e => { showToast('Erro ao recarregar dados: ' + e.message, 'warn'); });
 }
 
 // ═══ STEPS ════════════════════════════════════
