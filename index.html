@@ -1673,7 +1673,7 @@
     <div class="card-body" style="padding:20px;display:flex;gap:20px;align-items:flex-start;">
       <div style="flex:1;">
         <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">URL da Imagem</label>
-        <input class="modal-input" id="gp-logo-url" type="url" placeholder="https://..." oninput="saveGlobalParam('logoUrl',this.value);gpUpdateLogoPreview()">
+        <input class="modal-input" id="gp-logo-url" type="url" placeholder="https://..." oninput="saveGlobalParam('logoUrl',this.value);gpUpdateLogoPreview();applyGlobalParams()">
         <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Cole a URL de uma imagem PNG/SVG. Aparece no bloco de logo da página inicial.</div>
       </div>
       <div id="gp-logo-preview" style="width:80px;height:80px;border:2px dashed var(--cage-border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:24px;color:var(--text-muted);">🖼</div>
