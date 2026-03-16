@@ -750,6 +750,31 @@
   .epp-horas-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#334155;}
   .epp-horas-table tr:last-child td{border-bottom:none;}
 
+  /* ── MONITORING MODULE ── */
+  .mon-sub-btn{padding:7px 18px;border:none;border-bottom:3px solid transparent;background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-muted);transition:all .15s;white-space:nowrap;}
+  .mon-sub-btn.active{color:var(--cage-blue);border-bottom-color:var(--cage-blue);}
+  .mon-sub-btn:hover{color:var(--cage-blue);}
+  .mon-online-card{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;background:#f8fafc;}
+  .mon-online-dot{width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2);flex-shrink:0;}
+  .mon-online-dot.away{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.2);}
+  .mon-online-avatar{width:36px;height:36px;border-radius:50%;background:var(--cage-blue);color:white;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .mon-online-name{font-size:13px;font-weight:700;color:#0a2540;}
+  .mon-online-email{font-size:11px;color:var(--text-muted);}
+  .mon-online-time{font-size:11px;color:var(--text-muted);margin-left:auto;white-space:nowrap;}
+  .mon-log-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .mon-log-table th{text-align:left;padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);border-bottom:2px solid #e2e8f0;white-space:nowrap;}
+  .mon-log-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:top;}
+  .mon-log-table tr:last-child td{border-bottom:none;}
+  .mon-log-table tr:hover td{background:#f8fafc;}
+  .mon-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;}
+  .mon-badge-login{background:#dcfce7;color:#15803d;}
+  .mon-badge-logout{background:#fee2e2;color:#b91c1c;}
+  .mon-badge-save{background:#dbeafe;color:#1d4ed8;}
+  .mon-filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+  .mon-filter-row input,.mon-filter-row select{padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;color:#334155;}
+  .mon-empty{text-align:center;padding:32px 0;color:var(--text-muted);font-size:13px;}
+  .mon-load-more{width:100%;padding:8px;background:none;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;color:var(--text-muted);cursor:pointer;margin-top:10px;}
+  .mon-load-more:hover{background:#f8fafc;}
   /* ── AUDIT MODULE ── */
   .audit-tab{padding:8px 18px;border:none;border-bottom:3px solid transparent;background:none;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;white-space:nowrap;transition:all .15s;}
   .audit-tab.active{color:#0a2540;border-bottom-color:#0a2540;}
@@ -1471,6 +1496,7 @@
       <button class="epp-tab"        data-tab="config" onclick="eppTab('config',this)">⚙️ Tabelas de Referência</button>
       <button class="epp-tab"        data-tab="users"  onclick="eppTab('users',this)">👥 Usuários</button>
       <button class="epp-tab"        data-tab="params" onclick="eppTab('params',this)">🛠 Parâmetros Globais</button>
+      <button class="epp-tab"        data-tab="monitoring" onclick="eppTab('monitoring',this)" id="epp-tab-monitoring">📋 Monitoramento</button>
     </div>
   </div>
 </div>
@@ -1722,6 +1748,64 @@
     <div class="card-body" style="padding:16px;" id="gp-header-btns-list">
       <!-- rendered by eppRenderParams() -->
     </div>
+  </div>
+</div>
+
+<!-- EPP: Monitoring panel -->
+<div id="epp-monitoring-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
+  <div style="margin-bottom:16px;">
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#0a2540;margin:0 0 4px;">📋 Monitoramento do Sistema</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Usuários online, logs de alterações e relatórios de acesso.</p>
+  </div>
+  <!-- Sub-tabs -->
+  <div style="display:flex;gap:0;border-bottom:2px solid var(--cage-border);margin-bottom:20px;">
+    <button class="mon-sub-btn active" id="mon-sub-online"  onclick="eppMonTab('online',this)">🟢 Online Agora</button>
+    <button class="mon-sub-btn"        id="mon-sub-changes" onclick="eppMonTab('changes',this)">🔄 Logs de Alterações</button>
+    <button class="mon-sub-btn"        id="mon-sub-access"  onclick="eppMonTab('access',this)">🔐 Relatório de Acesso</button>
+  </div>
+
+  <!-- Online Now -->
+  <div id="mon-panel-online">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span style="font-size:12px;color:var(--text-muted);">Usuários com atividade nos últimos 5 minutos</span>
+      <button class="btn btn-outline" style="font-size:11px;padding:4px 12px;" onclick="eppLoadOnlineUsers()">↺ Atualizar</button>
+    </div>
+    <div id="mon-online-list"><div class="mon-empty">Carregando...</div></div>
+  </div>
+
+  <!-- Change logs -->
+  <div id="mon-panel-changes" style="display:none;">
+    <div class="mon-filter-row">
+      <input type="text" id="mon-changes-search" placeholder="Filtrar por usuário ou ação..." oninput="eppFilterChangeLogs()" style="flex:1;min-width:180px;">
+      <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="eppLoadChangeLogs(true)">↺ Recarregar</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="mon-log-table">
+        <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th></tr></thead>
+        <tbody id="mon-changes-tbody"></tbody>
+      </table>
+    </div>
+    <button class="mon-load-more" id="mon-changes-more" style="display:none;" onclick="eppLoadMoreChanges()">Carregar mais...</button>
+  </div>
+
+  <!-- Access logs -->
+  <div id="mon-panel-access" style="display:none;">
+    <div class="mon-filter-row">
+      <input type="text" id="mon-access-search" placeholder="Filtrar por usuário..." oninput="eppFilterAccessLogs()" style="flex:1;min-width:180px;">
+      <select id="mon-access-action" onchange="eppFilterAccessLogs()">
+        <option value="">Todos os eventos</option>
+        <option value="login">Login</option>
+        <option value="logout">Logout</option>
+      </select>
+      <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="eppLoadAccessLogs(true)">↺ Recarregar</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="mon-log-table">
+        <thead><tr><th>Data/Hora</th><th>Usuário</th><th>E-mail</th><th>Evento</th></tr></thead>
+        <tbody id="mon-access-tbody"></tbody>
+      </table>
+    </div>
+    <button class="mon-load-more" id="mon-access-more" style="display:none;" onclick="eppLoadMoreAccess()">Carregar mais...</button>
   </div>
 </div>
 
@@ -9479,6 +9563,9 @@ async function initSupabase() {
       await checkEditorPermission();
       await loadFromCloud();
       window._appInitialized = true;
+      // Log de acesso e presença
+      try { logAccessEvent('login'); } catch(e) {}
+      try { _startPresenceHeartbeat(); } catch(e) {}
     } finally {
       _loadingCloud = false;
     }
@@ -9554,6 +9641,9 @@ async function signOut() {
     return;
   }
   window._signoutPending = false;
+  try { _stopPresenceHeartbeat(); } catch(e) {}
+  try { await _clearPresence(); } catch(e) {}
+  try { await logAccessEvent('logout'); } catch(e) {}
   try { await supaClient.auth.signOut({ scope: 'local' }); } catch(e) {}
   try {
     sessionStorage.removeItem('gestpop_wsid');
@@ -13837,6 +13927,9 @@ function showEppModule(tab) {
   hideHome();
   hideAllModules();
   document.getElementById('epp-module').style.display = 'block';
+  // Mostrar aba Monitoramento apenas para admins
+  const monTab = document.getElementById('epp-tab-monitoring');
+  if(monTab) monTab.style.display = isAdmin ? '' : 'none';
   eppTab(tab);
 }
 
@@ -13846,17 +13939,19 @@ function eppTab(tab, el) {
   if(el) el.classList.add('active');
   else { const f=document.querySelector('.epp-tab[data-tab="'+tab+'"]'); if(f) f.classList.add('active'); }
 
-  const pat    = document.getElementById('pat-module');
-  const dash   = document.getElementById('epp-dash-panel');
-  const cfg    = document.getElementById('epp-config-panel');
-  const users  = document.getElementById('epp-users-panel');
-  const params = document.getElementById('epp-params-panel');
+  const pat        = document.getElementById('pat-module');
+  const dash       = document.getElementById('epp-dash-panel');
+  const cfg        = document.getElementById('epp-config-panel');
+  const users      = document.getElementById('epp-users-panel');
+  const params     = document.getElementById('epp-params-panel');
+  const monitoring = document.getElementById('epp-monitoring-panel');
 
-  if(pat)    { pat.style.display='none'; pat.classList.remove('active'); }
-  if(dash)   dash.style.display='none';
-  if(cfg)    cfg.style.display='none';
-  if(users)  users.style.display='none';
-  if(params) params.style.display='none';
+  if(pat)        { pat.style.display='none'; pat.classList.remove('active'); }
+  if(dash)       dash.style.display='none';
+  if(cfg)        cfg.style.display='none';
+  if(users)      users.style.display='none';
+  if(params)     params.style.display='none';
+  if(monitoring) monitoring.style.display='none';
 
   if(tab === 'pat') {
     if(pat)  { pat.style.display='block'; pat.classList.add('active'); }
@@ -13873,6 +13968,10 @@ function eppTab(tab, el) {
   } else if(tab === 'params') {
     if(params) params.style.display='block';
     eppRenderParams();
+  } else if(tab === 'monitoring') {
+    if(!isAdmin) { showToast('🔒 Acesso restrito a administradores.', 'warn'); eppTab('dash'); return; }
+    if(monitoring) monitoring.style.display='block';
+    eppMonTab('online');
   } else {
     if(dash) dash.style.display='block';
     eppRenderDashboard();
@@ -13882,6 +13981,183 @@ function eppTab(tab, el) {
 function eppSwitchUsersTab(tab) {
   _permCtx = 'epp';
   switchPermTab(tab);
+}
+
+// ── MONITORING: sub-tab switch ──────────────────────────────────────
+function eppMonTab(sub, el) {
+  ['online','changes','access'].forEach(s => {
+    const panel = document.getElementById('mon-panel-'+s);
+    const btn   = document.getElementById('mon-sub-'+s);
+    if(panel) panel.style.display = s === sub ? '' : 'none';
+    if(btn)   btn.classList.toggle('active', s === sub);
+  });
+  if(sub === 'online')  eppLoadOnlineUsers();
+  if(sub === 'changes') eppLoadChangeLogs();
+  if(sub === 'access')  eppLoadAccessLogs();
+}
+
+// ── PRESENCE: heartbeat ────────────────────────────────────────────
+let _presenceTimer = null;
+async function _upsertPresence() {
+  if(!supaClient || !currentUserEmail) return;
+  try {
+    await supaClient.from('gestpop_presence').upsert({
+      email: currentUserEmail,
+      name:  currentUserName || currentUserEmail,
+      last_seen: new Date().toISOString()
+    }, { onConflict: 'email' });
+  } catch(e) {}
+}
+async function _clearPresence() {
+  if(!supaClient || !currentUserEmail) return;
+  try { await supaClient.from('gestpop_presence').delete().eq('email', currentUserEmail); } catch(e) {}
+}
+function _startPresenceHeartbeat() {
+  _upsertPresence();
+  clearInterval(_presenceTimer);
+  _presenceTimer = setInterval(_upsertPresence, 30000);
+}
+function _stopPresenceHeartbeat() {
+  clearInterval(_presenceTimer);
+  _presenceTimer = null;
+}
+
+// ── ACCESS LOG ─────────────────────────────────────────────────────
+async function logAccessEvent(action) {
+  if(!supaClient || !currentUserEmail) return;
+  try {
+    await supaClient.from('gestpop_access_logs').insert({
+      email:  currentUserEmail,
+      name:   currentUserName || currentUserEmail,
+      action
+    });
+  } catch(e) {}
+}
+
+// ── MONITORING: online users ───────────────────────────────────────
+async function eppLoadOnlineUsers() {
+  const el = document.getElementById('mon-online-list');
+  if(!el) return;
+  el.innerHTML = '<div class="mon-empty">Carregando...</div>';
+  try {
+    const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data, error } = await supaClient.from('gestpop_presence')
+      .select('*').gte('last_seen', cutoff).order('last_seen', { ascending: false });
+    if(error) throw error;
+    if(!data?.length) { el.innerHTML = '<div class="mon-empty">Nenhum usuário online no momento.</div>'; return; }
+    el.innerHTML = data.map(u => {
+      const secsAgo = Math.floor((Date.now() - new Date(u.last_seen)) / 1000);
+      const label = secsAgo < 60 ? 'agora mesmo' : Math.floor(secsAgo/60) + ' min atrás';
+      const away  = secsAgo > 120;
+      const av    = (u.name||'?').charAt(0).toUpperCase();
+      return `<div class="mon-online-card">
+        <div class="mon-online-dot${away?' away':''}"></div>
+        <div class="mon-online-avatar">${av}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="mon-online-name">${u.name||u.email}</div>
+          <div class="mon-online-email">${u.email}</div>
+        </div>
+        <div class="mon-online-time">${label}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="mon-empty">Erro ao carregar presença: ' + e.message + '</div>';
+  }
+}
+
+// ── MONITORING: change logs ────────────────────────────────────────
+let _changeLogsData = [];
+let _changeLogsOffset = 0;
+const _CHANGE_PAGE = 50;
+
+async function eppLoadChangeLogs(reset=false) {
+  if(reset) { _changeLogsOffset = 0; _changeLogsData = []; }
+  const tbody = document.getElementById('mon-changes-tbody');
+  const more  = document.getElementById('mon-changes-more');
+  if(!tbody) return;
+  if(_changeLogsOffset === 0) tbody.innerHTML = '<tr><td colspan="3" style="color:var(--text-muted);padding:16px;text-align:center;">Carregando...</td></tr>';
+  try {
+    const { data, error } = await supaClient.from('gestpop_history')
+      .select('*').order('created_at', { ascending: false })
+      .range(_changeLogsOffset, _changeLogsOffset + _CHANGE_PAGE - 1);
+    if(error) throw error;
+    _changeLogsData = _changeLogsOffset === 0 ? (data||[]) : _changeLogsData.concat(data||[]);
+    _changeLogsOffset += (data||[]).length;
+    if(more) more.style.display = (data||[]).length === _CHANGE_PAGE ? '' : 'none';
+    eppFilterChangeLogs();
+  } catch(e) {
+    if(tbody) tbody.innerHTML = '<tr><td colspan="3" style="color:#dc2626;padding:16px;text-align:center;">Erro: ' + e.message + '</td></tr>';
+  }
+}
+function eppLoadMoreChanges() { eppLoadChangeLogs(); }
+
+function eppFilterChangeLogs() {
+  const q = (document.getElementById('mon-changes-search')?.value || '').toLowerCase();
+  const tbody = document.getElementById('mon-changes-tbody');
+  if(!tbody) return;
+  const rows = _changeLogsData.filter(h => !q || (h.updated_by_name||'').toLowerCase().includes(q) || (h.updated_by||'').toLowerCase().includes(q) || (h.action||'').toLowerCase().includes(q));
+  if(!rows.length) { tbody.innerHTML = '<tr><td colspan="3" class="mon-empty">Nenhum registro encontrado.</td></tr>'; return; }
+  tbody.innerHTML = rows.map(h => {
+    const dt = new Date(h.created_at).toLocaleString('pt-BR');
+    const av = (h.updated_by_name||'?').charAt(0).toUpperCase();
+    return `<tr>
+      <td style="white-space:nowrap;color:var(--text-muted);">${dt}</td>
+      <td><div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:var(--cage-blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${av}</div>
+        <div><div style="font-size:12px;font-weight:600;color:#0a2540;">${h.updated_by_name||'—'}</div><div style="font-size:10px;color:var(--text-muted);">${h.updated_by||''}</div></div>
+      </div></td>
+      <td>${h.action||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── MONITORING: access logs ────────────────────────────────────────
+let _accessLogsData = [];
+let _accessLogsOffset = 0;
+const _ACCESS_PAGE = 50;
+
+async function eppLoadAccessLogs(reset=false) {
+  if(reset) { _accessLogsOffset = 0; _accessLogsData = []; }
+  const tbody = document.getElementById('mon-access-tbody');
+  const more  = document.getElementById('mon-access-more');
+  if(!tbody) return;
+  if(_accessLogsOffset === 0) tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);padding:16px;text-align:center;">Carregando...</td></tr>';
+  try {
+    const { data, error } = await supaClient.from('gestpop_access_logs')
+      .select('*').order('created_at', { ascending: false })
+      .range(_accessLogsOffset, _accessLogsOffset + _ACCESS_PAGE - 1);
+    if(error) throw error;
+    _accessLogsData = _accessLogsOffset === 0 ? (data||[]) : _accessLogsData.concat(data||[]);
+    _accessLogsOffset += (data||[]).length;
+    if(more) more.style.display = (data||[]).length === _ACCESS_PAGE ? '' : 'none';
+    eppFilterAccessLogs();
+  } catch(e) {
+    if(tbody) tbody.innerHTML = '<tr><td colspan="4" style="color:#dc2626;padding:16px;text-align:center;">Erro: ' + e.message + '</td></tr>';
+  }
+}
+function eppLoadMoreAccess() { eppLoadAccessLogs(); }
+
+function eppFilterAccessLogs() {
+  const q      = (document.getElementById('mon-access-search')?.value || '').toLowerCase();
+  const action = document.getElementById('mon-access-action')?.value || '';
+  const tbody  = document.getElementById('mon-access-tbody');
+  if(!tbody) return;
+  const rows = _accessLogsData.filter(r =>
+    (!q      || (r.name||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q)) &&
+    (!action || (r.action||'') === action)
+  );
+  if(!rows.length) { tbody.innerHTML = '<tr><td colspan="4" class="mon-empty">Nenhum registro encontrado.</td></tr>'; return; }
+  tbody.innerHTML = rows.map(r => {
+    const dt = new Date(r.created_at).toLocaleString('pt-BR');
+    const badgeClass = r.action === 'login' ? 'mon-badge-login' : r.action === 'logout' ? 'mon-badge-logout' : 'mon-badge-save';
+    const label = r.action === 'login' ? 'Login' : r.action === 'logout' ? 'Logout' : r.action;
+    return `<tr>
+      <td style="white-space:nowrap;color:var(--text-muted);">${dt}</td>
+      <td style="font-weight:600;color:#0a2540;">${r.name||'—'}</td>
+      <td style="color:var(--text-muted);font-size:11px;">${r.email||'—'}</td>
+      <td><span class="mon-badge ${badgeClass}">${label}</span></td>
+    </tr>`;
+  }).join('');
 }
 
 function eppToggleHorasDetail() {
