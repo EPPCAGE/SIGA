@@ -12117,19 +12117,25 @@ function arqSyncFromPops() {
     .map(k => DATA[k].meta);
 
   data.forEach(r => {
-    // Mapeado somente se existe POP com status=concluido e nome correspondente ao processo
+    // Mapeado somente se existe POP com status=concluido e nome correspondente EXATO ao processo/subprocesso
     const concluido = popMeta.find(m => {
       if(m.statusMap !== 'concluido') return false;
-      const procMatch = m.processo && (
-        m.processo.toLowerCase() === r.processo.toLowerCase() ||
-        m.processo.toLowerCase() === (r.subprocesso||'').toLowerCase()
-      );
-      const subMatch = m.subprocesso && (
-        m.subprocesso.toLowerCase() === r.subprocesso?.toLowerCase() ||
-        m.subprocesso.toLowerCase() === r.processo.toLowerCase()
-      );
-      const nameMatch = (m.name||'').toLowerCase() === (r.subprocesso||r.processo||'').toLowerCase();
-      return procMatch || subMatch || nameMatch;
+      const rProc = (r.processo||'').toLowerCase();
+      const rSub  = (r.subprocesso||'').toLowerCase();
+      const mProc = (m.processo||'').toLowerCase();
+      const mSub  = (m.subprocesso||'').toLowerCase();
+      const mName = (m.name||'').toLowerCase();
+
+      if(rSub) {
+        // Linha da arquitetura é um SUBPROCESSO — exige match no nível do subprocesso
+        // para não contaminar irmãos com o mesmo processo pai
+        const subMatch = (mSub && mSub === rSub) || (mName && mName === rSub);
+        const procOk   = !mProc || !rProc || mProc === rProc;
+        return subMatch && procOk;
+      } else {
+        // Linha da arquitetura é um PROCESSO (sem subprocesso) — match no processo
+        return (mProc && mProc === rProc) || (mName && mName === rProc);
+      }
     });
     // Respeitar bloqueio manual: se usuário explicitamente desmarcou, não remarcar
     if(r.mapeadoLocked === true) return;
