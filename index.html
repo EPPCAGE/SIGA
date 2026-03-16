@@ -478,7 +478,8 @@
   .risk-card.risco{border-left-color:#ef4444;background:#fff5f5;}
   .risk-card.oportunidade{border-left-color:#10b981;background:#f0faf5;}
   .risk-score{font-size:22px;font-weight:800;font-family:"JetBrains Mono",monospace;}
-  .risk-score.alto{color:#dc2626;} .risk-score.medio{color:#f59e0b;} .risk-score.baixo{color:#16a34a;}
+  .risk-score.critico{color:#7c1d1d;} .risk-score.alto{color:#dc2626;} .risk-score.medio{color:#f59e0b;} .risk-score.baixo{color:#16a34a;}
+  .risk-level-badge{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;opacity:.85;}
   .risk-type-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;text-transform:uppercase;display:inline-block;margin-bottom:6px;}
   .risk-type-badge.risco{background:#fee2e2;color:#b91c1c;}
   .risk-type-badge.oportunidade{background:#d1fae5;color:#065f46;}
@@ -1210,9 +1211,10 @@
   .rel-table td { padding:8px 12px; border-bottom:1px solid #e2e8f0; color:#1e293b; vertical-align:top; }
   .rel-table tr:nth-child(even) td { background:#f8fafc; }
   .rel-tag-risk { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
-  .rel-tag-risk.alto  { background:#fee2e2; color:#991b1b; }
-  .rel-tag-risk.medio { background:#fef3c7; color:#92400e; }
-  .rel-tag-risk.baixo { background:#d1fae5; color:#065f46; }
+  .rel-tag-risk.critico { background:#fecaca; color:#7c1d1d; }
+  .rel-tag-risk.alto    { background:#fee2e2; color:#991b1b; }
+  .rel-tag-risk.medio   { background:#fef3c7; color:#92400e; }
+  .rel-tag-risk.baixo   { background:#d1fae5; color:#065f46; }
   .rel-status { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
   .rel-status.concluido { background:#d1fae5; color:#065f46; }
   .rel-status.pendente  { background:#fef3c7; color:#92400e; }
@@ -10897,7 +10899,7 @@ async function buildPptx(D, _pptFlowMode) {
       const col = ri%cols, row = Math.floor(ri/cols);
       const x = 0.3+col*(cardW+0.2), y = 1.1+row*2.1;
       const ac = r.type==='risco' ? 'EF4444' : '10B981';
-      const sc = r.score>=15 ? 'DC2626' : r.score>=8 ? 'F59E0B' : '16A34A';
+      const sc = r.score>=15 ? '7C1D1D' : r.score>=8 ? 'DC2626' : r.score>=4 ? 'F59E0B' : '16A34A';
       s.addShape(pres.ShapeType.rect, { x, y, w:cardW, h:1.9, fill:{ color:C.white }, shadow:mks() });
       s.addShape(pres.ShapeType.rect, { x, y, w:0.08, h:1.9, fill:{ color:ac } });
       s.addText(r.type==='risco'?'⚠️ Risco':'✅ Oportunidade', { x:x+0.15, y:y+0.08, w:cardW-0.4, h:0.28, fontSize:9, color:ac, bold:true, margin:0 });
@@ -11528,8 +11530,17 @@ function selectTreat(t) {
 function updateRiskScore() {
   const score = _riskImpact * _riskProb;
   const el = document.getElementById('risk-score-display');
-  el.textContent = score || '—';
-  el.style.color = score >= 15 ? '#dc2626' : score >= 8 ? '#f59e0b' : '#16a34a';
+  const lvl = riskLevel(score);
+  el.textContent = score ? `${score} — ${lvl.label}` : '—';
+  el.style.color = lvl.color;
+}
+
+function riskLevel(score) {
+  if(score >= 15) return { label:'Crítico',  cls:'critico', color:'#7c1d1d' };
+  if(score >= 8)  return { label:'Alto',      cls:'alto',    color:'#dc2626' };
+  if(score >= 4)  return { label:'Moderado',  cls:'medio',   color:'#f59e0b' };
+  if(score >= 1)  return { label:'Baixo',     cls:'baixo',   color:'#16a34a' };
+  return                  { label:'',         cls:'',        color:'var(--cage-blue)' };
 }
 
 function saveRisk() {
@@ -11565,11 +11576,14 @@ function renderRisks(p) {
   }
   el.innerHTML = risks.map((r,i) => {
     const realIdx = (DATA[p].risks||[]).indexOf(r);
-    const scoreClass = r.score >= 15 ? 'alto' : r.score >= 8 ? 'medio' : 'baixo';
+    const lvl = riskLevel(r.score);
     return `<div class="risk-card ${r.type}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
         <span class="risk-type-badge ${r.type}">${r.type === 'risco' ? '⚠️ Risco' : '✅ Oportunidade'}</span>
-        <span class="risk-score ${scoreClass}">${r.score || '—'}</span>
+        <div style="text-align:right;line-height:1.2;">
+          <span class="risk-score ${lvl.cls}">${r.score || '—'}</span>
+          ${lvl.label ? `<div class="risk-level-badge" style="color:${lvl.color};">${lvl.label}</div>` : ''}
+        </div>
       </div>
       <div class="risk-title">${r.title}</div>
       ${r.desc ? `<div class="risk-desc">${r.desc}</div>` : ''}
@@ -13389,6 +13403,7 @@ body{font-family:'Inter',sans-serif;color:#1e293b;padding:40px 52px;max-width:92
 .rel-table td{padding:7px 10px;border-bottom:1px solid #e2e8f0;vertical-align:top}
 .rel-table tr:nth-child(even) td{background:#f8fafc}
 .rel-tag-risk{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.rel-tag-risk.critico{background:#fecaca;color:#7c1d1d}
 .rel-tag-risk.alto{background:#fee2e2;color:#991b1b}
 .rel-tag-risk.medio{background:#fef3c7;color:#92400e}
 .rel-tag-risk.baixo{background:#d1fae5;color:#065f46}
