@@ -3421,7 +3421,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
   <div id="audit-tab-plans" class="audit-tab-panel">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:14px;font-weight:600;color:#0a2540;">Planos de Auditoria</div>
-      <button class="btn btn-primary" onclick="auditOpenPlanModal()" style="font-size:12px;">＋ Novo Plano</button>
+      <button class="btn btn-primary audit-edit-only" onclick="auditOpenPlanModal()" style="font-size:12px;">＋ Novo Plano</button>
     </div>
     <div id="audit-plans-list"></div>
     <div id="audit-plans-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
@@ -3435,7 +3435,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
   <div id="audit-tab-exec" class="audit-tab-panel" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:14px;font-weight:600;color:#0a2540;">Execução de Auditorias</div>
-      <button class="btn btn-primary" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Nova Execução</button>
+      <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Nova Execução</button>
     </div>
     <div id="audit-exec-list"></div>
     <div id="audit-exec-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
@@ -3449,7 +3449,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
   <div id="audit-tab-nc" class="audit-tab-panel" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:14px;font-weight:600;color:#0a2540;">Não Conformidades</div>
-      <button class="btn btn-primary" onclick="auditOpenNcModal()" style="font-size:12px;background:#dc2626;border-color:#dc2626;">＋ Registrar NC</button>
+      <button class="btn btn-primary audit-edit-only" onclick="auditOpenNcModal()" style="font-size:12px;background:#dc2626;border-color:#dc2626;">＋ Registrar NC</button>
     </div>
     <!-- Filtros NC -->
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
@@ -3470,7 +3470,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
   <div id="audit-tab-actions" class="audit-tab-panel" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:14px;font-weight:600;color:#0a2540;">Plano de Ação — Correções</div>
-      <button class="btn btn-primary" onclick="auditOpenActionModal()" style="font-size:12px;background:#0a2540;border-color:#0a2540;">＋ Nova Ação</button>
+      <button class="btn btn-primary audit-edit-only" onclick="auditOpenActionModal()" style="font-size:12px;background:#0a2540;border-color:#0a2540;">＋ Nova Ação</button>
     </div>
     <!-- Filtros ação -->
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
@@ -7012,11 +7012,11 @@ const _MODULES_NAV = [
 ];
 
 const _HEADER_BTNS_DEF = [
-  { key:'new-pop', id:'new-pop-btn', label:'＋ Novo Mapeamento' },
-  { key:'backup',  id:'backup-btn',  label:'💾 Backup' },
-  { key:'ppt',     id:'ppt-btn',     label:'📊 Exportar PPT' },
-  { key:'save',    id:'save-btn',    label:'☁️ Salvar' },
-  { key:'edit',    id:'edit-toggle', label:'✏️ Modo Edição' },
+  { key:'new-pop', id:'new-pop-btn', label:'＋ Novo Mapeamento', defBg:'rgba(245,158,11,.2)',  defColor:'#fcd34d' },
+  { key:'backup',  id:'backup-btn',  label:'💾 Backup',          defBg:'rgba(96,165,250,.15)', defColor:'#93c5fd' },
+  { key:'ppt',     id:'ppt-btn',     label:'📊 Exportar PPT',    defBg:'rgba(232,160,32,.22)', defColor:'#fcd34d' },
+  { key:'save',    id:'save-btn',    label:'☁️ Salvar',          defBg:'rgba(0,168,107,.25)',  defColor:'#4ade80' },
+  { key:'edit',    id:'edit-toggle', label:'✏️ Modo Edição',     defBg:'rgba(255,255,255,.1)', defColor:'#ffffff' },
 ];
 
 function _gpGet() { return getConfig('parametrosGlobais') || {}; }
@@ -7100,12 +7100,51 @@ function applySidebarNav() {
 
 function applyHeaderBtns() {
   const vis = getConfig('botoesBarraVisiveis');
-  if(!Array.isArray(vis) || vis.length === 0) return;
+  if(Array.isArray(vis) && vis.length > 0) {
+    _HEADER_BTNS_DEF.forEach(b => {
+      const el = document.getElementById(b.id);
+      if(!el) return;
+      el.style.display = vis.includes(b.key) ? '' : 'none';
+    });
+  }
+  applyHeaderBtnColors();
+}
+
+function applyHeaderBtnColors() {
+  const saved = getConfig('headerBtnColors') || {};
   _HEADER_BTNS_DEF.forEach(b => {
     const el = document.getElementById(b.id);
     if(!el) return;
-    el.style.display = vis.includes(b.key) ? '' : 'none';
+    // Se temos uma cor hex customizada, usamos ela com alpha; caso contrário, default original
+    const bgHex  = saved[b.key + '_bg_hex'];
+    const clrHex = saved[b.key + '_color_hex'];
+    if(bgHex)  el.style.background = _hexToRgbaStr(bgHex, 0.25);
+    else       el.style.background = b.defBg;
+    if(clrHex) el.style.color = _hexToLight(clrHex);
+    else       el.style.color = b.defColor;
   });
+  // Logo EPP no header
+  const gp = _gpGet();
+  const logoDiv = document.querySelector('.header-logo');
+  if(logoDiv) {
+    if(gp.logoHeaderUrl) {
+      logoDiv.innerHTML = `<img src="${gp.logoHeaderUrl}" style="width:34px;height:34px;object-fit:contain;border-radius:6px;" onerror="this.style.display='none'">`;
+    } else if(gp.logoHeaderBg || gp.logoHeaderColor || gp.logoHeaderText) {
+      const bg    = gp.logoHeaderBg    || '#0a2540';
+      const color = gp.logoHeaderColor || '#00a86b';
+      const text  = gp.logoHeaderText  || 'EPP';
+      logoDiv.innerHTML = `<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="34" height="34" rx="5" fill="${bg}" stroke="${color}" stroke-width="2"/><text x="18" y="24" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="${color}" text-anchor="middle">${text}</text></svg>`;
+    }
+  }
+}
+
+function eppSetHeaderBtnColor(key, type, hexVal) {
+  const saved = { ...(getConfig('headerBtnColors') || {}) };
+  // Guardar o hex para recarregar no picker, e aplicar o estilo customizado
+  saved[key + '_' + type + '_hex'] = hexVal;
+  setConfig('headerBtnColors', saved);
+  markChanged(true);
+  applyHeaderBtnColors();
 }
 
 function resetGlobalColors() {
@@ -7200,12 +7239,57 @@ function eppRenderParams() {
   // Botões da barra
   const btnList = document.getElementById('gp-header-btns-list');
   if(btnList) {
-    const savedVis = getConfig('botoesBarraVisiveis');
+    const savedVis    = getConfig('botoesBarraVisiveis');
+    const savedColors = getConfig('headerBtnColors') || {};
     const vis = Array.isArray(savedVis) ? savedVis : _HEADER_BTNS_DEF.map(b => b.key);
-    btnList.innerHTML = _HEADER_BTNS_DEF.map(b => {
-      const isVis = vis.includes(b.key);
-      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cage-light);border-radius:8px;border:1px solid var(--cage-border);margin-bottom:6px;">
-        <span style="font-size:13px;flex:1;">${b.label}</span>
+    // Logo EPP na barra superior
+    const gp = _gpGet();
+    const logoSection = `<div style="padding:12px 14px;background:var(--cage-light);border-radius:8px;border:1px solid var(--cage-border);margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🔵 Logo EPP — Barra Superior</div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+        <div style="flex:1;min-width:160px;">
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">URL da Imagem (opcional)</label>
+          <input class="modal-input" id="gp-logo-header-url" type="url" value="${gp.logoHeaderUrl||''}" placeholder="https://... (deixe vazio para usar texto)"
+            oninput="saveGlobalParam('logoHeaderUrl',this.value);applyHeaderBtnColors();" style="font-size:12px;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Fundo</label>
+          <input type="color" value="${gp.logoHeaderBg||'#0a2540'}" title="Cor de fundo do logo"
+            style="width:36px;height:36px;border:none;border-radius:6px;cursor:pointer;padding:2px;background:none;"
+            oninput="saveGlobalParam('logoHeaderBg',this.value);applyHeaderBtnColors();">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Cor do texto</label>
+          <input type="color" value="${gp.logoHeaderColor||'#00a86b'}" title="Cor do texto EPP"
+            style="width:36px;height:36px;border:none;border-radius:6px;cursor:pointer;padding:2px;background:none;"
+            oninput="saveGlobalParam('logoHeaderColor',this.value);applyHeaderBtnColors();">
+        </div>
+        <div style="flex:1;min-width:100px;">
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Texto do logo</label>
+          <input class="modal-input" id="gp-logo-header-text" type="text" maxlength="4" value="${gp.logoHeaderText||'EPP'}" placeholder="EPP"
+            oninput="saveGlobalParam('logoHeaderText',this.value);applyHeaderBtnColors();" style="font-size:12px;">
+        </div>
+      </div>
+    </div>`;
+    btnList.innerHTML = logoSection + _HEADER_BTNS_DEF.map(b => {
+      const isVis  = vis.includes(b.key);
+      const bgVal  = savedColors[b.key + '_bg']    || b.defBg;
+      const clrVal = savedColors[b.key + '_color'] || b.defColor;
+      // Convert rgba default to a hex-like color for the color picker (use a neutral fallback)
+      const bgHex  = savedColors[b.key + '_bg_hex']    || '#1e3a5f';
+      const clrHex = savedColors[b.key + '_color_hex'] || '#ffffff';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--cage-light);border-radius:8px;border:1px solid var(--cage-border);margin-bottom:6px;flex-wrap:wrap;">
+        <span style="font-size:13px;flex:1;min-width:120px;">${b.label}</span>
+        <label style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">Fundo
+          <input type="color" value="${bgHex}" title="Cor de fundo do botão"
+            style="width:28px;height:28px;border:none;border-radius:4px;cursor:pointer;padding:1px;background:none;"
+            oninput="eppSetHeaderBtnColor('${b.key}','bg',this.value)">
+        </label>
+        <label style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">Texto
+          <input type="color" value="${clrHex}" title="Cor do texto do botão"
+            style="width:28px;height:28px;border:none;border-radius:4px;cursor:pointer;padding:1px;background:none;"
+            oninput="eppSetHeaderBtnColor('${b.key}','color',this.value)">
+        </label>
         <button onclick="eppToggleHeaderBtn('${b.key}')"
           style="background:${isVis?'#dcfce7':'#f1f5f9'};color:${isVis?'#16a34a':'#94a3b8'};border:1px solid ${isVis?'#bbf7d0':'#e2e8f0'};border-radius:6px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:700;">
           ${isVis?'👁 Visível':'🚫 Oculto'}</button>
@@ -10907,6 +10991,24 @@ function renderMetrics(p) {
   setVal(p + '-metric-ciclo-pre', m.cicloPre || '—');
   setVal(p + '-metric-ciclo-pos', m.cicloPos || '—');
   calcHorasEcon(p);
+  renderBanner(p);
+}
+
+function renderBanner(p) {
+  const m = DATA[p]?.meta || {};
+  if(!m.bannerIcon && !m.bannerSub && !m.name) return;
+  const _popId = p === 'd' ? 'denuncias' : p === 'r' ? 'representacoes' : p;
+  const popEl  = document.getElementById('pop-' + _popId);
+  if(!popEl) return;
+  const bannerTitle = popEl.querySelector('.pop-banner-title');
+  const bannerSub   = popEl.querySelector('.pop-banner-sub');
+  const bannerIcon  = popEl.querySelector('.pop-banner-icon');
+  if(bannerTitle && m.name)       bannerTitle.textContent = m.name;
+  if(bannerSub   && m.bannerSub)  bannerSub.textContent   = m.bannerSub;
+  else if(bannerSub && (m.macro || m.processo)) {
+    bannerSub.textContent = [m.macro, m.processo, m.name].filter(Boolean).join(' · ');
+  }
+  if(bannerIcon && m.bannerIcon)  bannerIcon.textContent  = m.bannerIcon;
 }
 
 // ═══ FICHA TÉCNICA ════════════════════════════════════
@@ -13832,6 +13934,9 @@ function showAuditModule(show=true) {
   hideAllModules();
   auditEnsure();
   document.getElementById('audit-module').style.display = 'block';
+  // Ocultar botões de criação para viewers
+  const editOnlyBtns = document.querySelectorAll('#audit-module .audit-edit-only');
+  editOnlyBtns.forEach(b => b.style.display = isEditor ? '' : 'none');
   auditTab(_auditCurrentTab);
 }
 
@@ -13911,6 +14016,7 @@ function auditRenderPlans() {
 }
 
 function auditOpenPlanModal(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem criar/editar planos de auditoria.','warn'); return; }
   auditEnsure();
   _auditEditPlanId = id || null;
   const plan = id ? DATA.audits.plans.find(p=>p.id===id) : null;
@@ -13941,6 +14047,7 @@ function auditClosePlanModal() { document.getElementById('audit-plan-modal').sty
 function auditPlanProcessoChange() {}
 
 function auditSavePlan() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar planos.','warn'); return; }
   auditEnsure();
   const processo = document.getElementById('ap-processo').value;
   const objetivo = document.getElementById('ap-objetivo').value.trim();
@@ -13981,6 +14088,7 @@ function auditSavePlan() {
   showToast('✅ Plano salvo!', 'success');
 }
 function auditDeletePlan() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir planos.','warn'); return; }
   const p = DATA.audits.plans.find(x=>x.id===_auditEditPlanId);
   if(!confirm('Excluir o plano "'+(p?.processoNome||p?.objetivo)+'"?')) return;
   DATA.audits.plans = DATA.audits.plans.filter(x=>x.id!==_auditEditPlanId);
@@ -14020,6 +14128,7 @@ function auditRenderExec() {
 }
 
 function auditOpenExecModal(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem criar/editar execuções.','warn'); return; }
   auditEnsure();
   _auditEditExecId = id || null;
   const exec = id ? DATA.audits.executions.find(e=>e.id===id) : null;
@@ -14201,6 +14310,7 @@ function auditAddChecklistItem() {
 }
 
 function auditSaveExec() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar execuções.','warn'); return; }
   auditEnsure();
   const planId = document.getElementById('ae-plan').value;
   if(!planId) { showToast('Selecione o plano de auditoria.', 'error'); return; }
@@ -14222,6 +14332,7 @@ function auditSaveExec() {
   showToast('✅ Execução salva!', 'success');
 }
 function auditDeleteExec() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir execuções.','warn'); return; }
   if(!confirm('Excluir esta execução?')) return;
   DATA.audits.executions = DATA.audits.executions.filter(e=>e.id!==_auditEditExecId);
   auditCloseExecModal(); auditRenderExec(); saveToCloud();
@@ -14261,6 +14372,7 @@ function auditFilterNc(g, el) {
 }
 
 function auditOpenNcModal(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem criar/editar não conformidades.','warn'); return; }
   auditEnsure();
   _auditEditNcId = id||null;
   const nc = id ? DATA.audits.nonconformities.find(n=>n.id===id) : null;
@@ -14281,6 +14393,7 @@ function auditOpenNcModal(id) {
 function auditCloseNcModal() { document.getElementById('audit-nc-modal').style.display='none'; }
 
 function auditSaveNc() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar não conformidades.','warn'); return; }
   auditEnsure();
   const descricao = document.getElementById('nc-descricao').value.trim();
   if(!descricao) { showToast('Descreva a não conformidade.', 'error'); return; }
@@ -14304,6 +14417,7 @@ function auditSaveNc() {
   showToast('✅ NC registrada!', 'success');
 }
 function auditDeleteNc() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir NCs.','warn'); return; }
   if(!confirm('Excluir esta não conformidade?')) return;
   DATA.audits.nonconformities = DATA.audits.nonconformities.filter(n=>n.id!==_auditEditNcId);
   auditCloseNcModal(); auditRenderNc(); saveToCloud();
@@ -14345,6 +14459,7 @@ function auditFilterAction(s, el) {
 }
 
 function auditOpenActionModal(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem criar/editar ações corretivas.','warn'); return; }
   auditEnsure();
   _auditEditActId = id||null;
   const ac = id ? DATA.audits.actions.find(a=>a.id===id) : null;
@@ -14363,6 +14478,7 @@ function auditOpenActionModal(id) {
 function auditCloseActionModal() { document.getElementById('audit-action-modal').style.display='none'; }
 
 function auditSaveAction() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar ações.','warn'); return; }
   auditEnsure();
   const acao = document.getElementById('ac-acao').value.trim();
   const responsavel = document.getElementById('ac-responsavel').value.trim();
@@ -14386,6 +14502,7 @@ function auditSaveAction() {
   showToast('✅ Ação salva!', 'success');
 }
 function auditDeleteAction() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir ações.','warn'); return; }
   if(!confirm('Excluir esta ação?')) return;
   DATA.audits.actions = DATA.audits.actions.filter(a=>a.id!==_auditEditActId);
   auditCloseActionModal(); auditRenderActions(); saveToCloud();
@@ -14868,6 +14985,9 @@ function openStatusModal(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
   const m = DATA[p]?.meta || {};
   document.getElementById('status-modal-pop').value = p;
+  // Capa
+  document.getElementById('status-modal-icon').value       = m.bannerIcon   || '';
+  document.getElementById('status-modal-banner-sub').value = m.bannerSub    || '';
   // Identificação
   document.getElementById('status-modal-nome').value       = m.name         || '';
   document.getElementById('status-modal-macro').value      = m.macro        || '';
@@ -14916,6 +15036,11 @@ function saveStatusModal() {
   if(!DATA[p]) return;
   if(!DATA[p].meta) DATA[p].meta = {};
   const m = DATA[p].meta;
+  // Capa
+  const newIcon   = document.getElementById('status-modal-icon').value.trim();
+  const newSub    = document.getElementById('status-modal-banner-sub').value.trim();
+  if(newIcon) m.bannerIcon = newIcon; else delete m.bannerIcon;
+  if(newSub)  m.bannerSub  = newSub;  else delete m.bannerSub;
   // Identificação
   const newName = document.getElementById('status-modal-nome').value.trim();
   if(newName) m.name = newName;
@@ -14958,9 +15083,19 @@ function saveStatusModal() {
     const nw = DATA.pat.find(i => i.id === newPatVinc);
     if(nw) nw.popVinc = p;
   }
-  // Sync visible fields
-  const bannerTitle = document.querySelector('#pop-' + (p === 'd' ? 'denuncias' : p === 'r' ? 'representacoes' : p) + ' .pop-banner-title');
-  if(bannerTitle && newName) bannerTitle.textContent = newName;
+  // Sync capa (banner) visível no DOM
+  const _popId = p === 'd' ? 'denuncias' : p === 'r' ? 'representacoes' : p;
+  const _popEl = document.getElementById('pop-' + _popId);
+  if(_popEl) {
+    const bannerTitle = _popEl.querySelector('.pop-banner-title');
+    const bannerSub   = _popEl.querySelector('.pop-banner-sub');
+    const bannerIcon  = _popEl.querySelector('.pop-banner-icon');
+    if(bannerTitle && newName) bannerTitle.textContent = newName;
+    if(bannerSub) {
+      bannerSub.textContent = newSub || [m.macro, m.processo, newName].filter(Boolean).join(' · ');
+    }
+    if(bannerIcon && newIcon) bannerIcon.textContent = newIcon;
+  }
   closeModal('status-map-modal');
   renderFicha(p);
   // Sincronizar com Arquitetura: concluido → mapeado=true
@@ -17142,14 +17277,31 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
     <div class="gmod-body" style="display:flex;flex-direction:column;gap:14px;">
       <input type="hidden" id="status-modal-pop">
 
+      <!-- Capa (Apresentação) -->
+      <div style="background:linear-gradient(135deg,rgba(0,168,107,.08),rgba(0,168,107,.03));border:1.5px solid rgba(0,168,107,.2);border-radius:8px;padding:12px 14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🖼 Capa — Apresentação do Módulo</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="gmod-row">
+            <div style="flex:0 0 90px;">
+              <label class="gmod-label">Ícone (emoji)</label>
+              <input class="modal-input" id="status-modal-icon" type="text" maxlength="4" placeholder="📋" style="font-size:22px;text-align:center;padding:6px;">
+            </div>
+            <div style="flex:1;">
+              <label class="gmod-label">Nome do Subprocesso *</label>
+              <input class="modal-input" id="status-modal-nome" type="text" placeholder="Nome do subprocesso">
+            </div>
+          </div>
+          <div>
+            <label class="gmod-label">Subtítulo da Capa (deixe vazio para gerar automaticamente)</label>
+            <input class="modal-input" id="status-modal-banner-sub" type="text" placeholder="Ex: Macroprocesso: ... · Processo: ...">
+          </div>
+        </div>
+      </div>
+
       <!-- Identificação -->
       <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;">
         <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🏷 Identificação</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <div>
-            <label class="gmod-label">Nome do Subprocesso *</label>
-            <input class="modal-input" id="status-modal-nome" type="text" placeholder="Nome do subprocesso">
-          </div>
           <div class="gmod-row">
             <div>
               <label class="gmod-label">Macroprocesso</label>
