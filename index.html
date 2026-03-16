@@ -2713,10 +2713,7 @@ Fim"></textarea>
         <div class="rel-quant-field"><label>Execuções médias / mês</label><input type="text" id="rq-vol-mensal" placeholder="ex: 120" oninput="saveRelQuant()"></div>
         <div class="rel-quant-field"><label>Execuções anuais estimadas</label><input type="text" id="rq-vol-anual" placeholder="ex: 1.440" oninput="saveRelQuant()"></div>
         <div class="rel-quant-field"><label>Variação sazonal</label><input type="text" id="rq-sazonalidade" placeholder="ex: maior no 1º trimestre" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Nº de participantes nas reuniões</label><input type="text" id="rq-participantes" placeholder="ex: 8 pessoas" oninput="saveRelQuant()"></div>
         <div class="rel-quant-field"><label>Tempo médio de execução</label><input type="text" id="rq-tempo-medio" placeholder="ex: 12 dias úteis" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Tempo mínimo</label><input type="text" id="rq-tempo-min" placeholder="ex: 5 dias" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Tempo máximo</label><input type="text" id="rq-tempo-max" placeholder="ex: 30 dias" oninput="saveRelQuant()"></div>
         <div class="rel-quant-field"><label>Tempo médio de espera</label><input type="text" id="rq-tempo-espera" placeholder="ex: 3 dias" oninput="saveRelQuant()"></div>
       </div>
     </div>
@@ -12024,10 +12021,7 @@ function showAiRelatorio(tab) {
   document.getElementById('rq-vol-mensal').value    = meta.volumetria_mensal  || '';
   document.getElementById('rq-vol-anual').value     = meta.volumetria_anual   || '';
   document.getElementById('rq-sazonalidade').value  = meta.variacao_sazonal   || '';
-  document.getElementById('rq-participantes').value = meta.rel_participantes   || '';
   document.getElementById('rq-tempo-medio').value   = meta.tempo_medio        || '';
-  document.getElementById('rq-tempo-min').value     = meta.tempo_minimo       || '';
-  document.getElementById('rq-tempo-max').value     = meta.tempo_maximo       || '';
   document.getElementById('rq-tempo-espera').value  = meta.tempo_espera       || '';
 
   if (mod._lastPop && mod._lastPop !== p) {
@@ -12044,10 +12038,7 @@ function saveRelQuant() {
   m.volumetria_mensal = document.getElementById('rq-vol-mensal').value;
   m.volumetria_anual  = document.getElementById('rq-vol-anual').value;
   m.variacao_sazonal  = document.getElementById('rq-sazonalidade').value;
-  m.rel_participantes = document.getElementById('rq-participantes').value;
   m.tempo_medio       = document.getElementById('rq-tempo-medio').value;
-  m.tempo_minimo      = document.getElementById('rq-tempo-min').value;
-  m.tempo_maximo      = document.getElementById('rq-tempo-max').value;
   m.tempo_espera      = document.getElementById('rq-tempo-espera').value;
   markChanged(true);
 }
@@ -12101,8 +12092,6 @@ async function _runAiRelatorioWithMode(p, pop, mode) {
     volumetria_anual: meta.volumetria_anual || '',
     variacao_sazonal: meta.variacao_sazonal || '',
     tempo_medio: meta.tempo_medio || '',
-    tempo_minimo: meta.tempo_minimo || '',
-    tempo_maximo: meta.tempo_maximo || '',
     tempo_espera: meta.tempo_espera || '',
     atores: roles.map(r => ({ nome: r.name || '', cargo: r.title || '', atribuicoes: (r.duties || []).filter(Boolean) })),
     fluxo_analisado: modeLabel,
@@ -12255,12 +12244,10 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
   }
 
   // 4.3 Tempo
-  if (meta.tempo_medio || meta.tempo_minimo || meta.tempo_maximo) {
+  if (meta.tempo_medio || meta.tempo_espera) {
     h += `<h3 class="rel-h2">4.3 Tempo do Processo</h3>
     <table class="rel-ficha">
       ${row('Tempo médio de execução', meta.tempo_medio)}
-      ${row('Tempo mínimo',            meta.tempo_minimo)}
-      ${row('Tempo máximo',            meta.tempo_maximo)}
       ${row('Tempo médio de espera',   meta.tempo_espera)}
     </table>`;
   }
