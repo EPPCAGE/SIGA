@@ -2308,6 +2308,7 @@
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
               <div style="background:#0a2540;color:#00a86b;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px;border:1.5px solid #00a86b;">6 MESES</div>
               <div style="font-size:15px;font-weight:600;color:#0a2540;">1ª Reunião de Acompanhamento</div>
+              <button onclick="gerarAtaAcomp('d','6m')" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="Gerar Ata da 1ª Reunião">📄 Gerar Ata</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
               <div>
@@ -2353,6 +2354,7 @@
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
               <div style="background:#0a2540;color:#e8a020;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px;border:1.5px solid #e8a020;">1 ANO</div>
               <div style="font-size:15px;font-weight:600;color:#0a2540;">2ª Reunião de Acompanhamento</div>
+              <button onclick="gerarAtaAcomp('d','1a')" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="Gerar Ata da 2ª Reunião">📄 Gerar Ata</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
               <div>
@@ -2646,6 +2648,7 @@
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
               <div style="background:#0a2540;color:#00a86b;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px;border:1.5px solid #00a86b;">6 MESES</div>
               <div style="font-size:15px;font-weight:600;color:#0a2540;">1ª Reunião de Acompanhamento</div>
+              <button onclick="gerarAtaAcomp('r','6m')" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="Gerar Ata da 1ª Reunião">📄 Gerar Ata</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
               <div>
@@ -2691,6 +2694,7 @@
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
               <div style="background:#0a2540;color:#e8a020;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px;border:1.5px solid #e8a020;">1 ANO</div>
               <div style="font-size:15px;font-weight:600;color:#0a2540;">2ª Reunião de Acompanhamento</div>
+              <button onclick="gerarAtaAcomp('r','1a')" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="Gerar Ata da 2ª Reunião">📄 Gerar Ata</button>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
               <div>
@@ -4003,6 +4007,23 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
 </div>
 
 <!-- ═══ MODAL REUNIÃO ═══════════════════════ -->
+<!-- ATA DE REUNIÃO DE ACOMPANHAMENTO MODAL -->
+<div class="gmod-overlay" id="ata-acomp-modal" style="align-items:flex-start;padding:24px 0;overflow-y:auto;">
+  <div class="gmod-box" style="max-width:720px;width:100%;margin:auto;">
+    <div class="gmod-head" style="position:sticky;top:0;background:white;z-index:1;border-bottom:2px solid #e2e8f0;padding-bottom:12px;">
+      <h3 id="ata-acomp-modal-title">📄 Ata de Reunião de Acompanhamento</h3>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="printAtaAcomp()" style="padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">🖨️ Imprimir / PDF</button>
+        <button onclick="copyAtaAcomp()" style="padding:6px 14px;background:#f1f5f9;color:#334155;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">📋 Copiar texto</button>
+        <button class="gmod-close" onclick="closeModal('ata-acomp-modal')">✕</button>
+      </div>
+    </div>
+    <div class="gmod-body" style="padding:0;">
+      <div id="ata-acomp-content" style="padding:32px 40px;font-family:'Inter',sans-serif;color:#1e293b;line-height:1.7;"></div>
+    </div>
+  </div>
+</div>
+
 <div class="gmod-overlay" id="meet-modal">
   <div class="gmod-box">
     <div class="gmod-head">
@@ -6701,6 +6722,7 @@ function mountNewPopTab(key, label, silent=false) {
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
                 <div style="background:#0a2540;color:#00a86b;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px;border:1.5px solid #00a86b;">6 MESES</div>
                 <div style="font-size:15px;font-weight:600;color:#0a2540;">1ª Reunião de Acompanhamento</div>
+                <button onclick="gerarAtaAcomp('${key}','6m')" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="Gerar Ata da 1ª Reunião">📄 Gerar Ata</button>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                 <div>
@@ -6744,6 +6766,7 @@ function mountNewPopTab(key, label, silent=false) {
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
                 <div style="background:#0a2540;color:#e8a020;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px;border:1.5px solid #e8a020;">1 ANO</div>
                 <div style="font-size:15px;font-weight:600;color:#0a2540;">2ª Reunião de Acompanhamento</div>
+                <button onclick="gerarAtaAcomp('${key}','1a')" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="Gerar Ata da 2ª Reunião">📄 Gerar Ata</button>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                 <div>
@@ -11624,6 +11647,104 @@ function loadAcomp(pop) {
   });
 }
 
+// ── ATA DE REUNIÃO DE ACOMPANHAMENTO ───────────────────────────────
+function gerarAtaAcomp(pop, period) {
+  saveAcomp(pop); // garante dados atualizados
+  const acomp = DATA[pop]?.acompanhamento?.[period] || {};
+  const gp    = DATA.config?.globalParams || {};
+  const inst  = gp.nomeSistema || 'GesProc-RS';
+  const sub   = gp.subtitulo   || 'Escritório de Processos · CAGE-RS';
+  const nomeProcesso = DATA[pop]?.meta?.name || DATA[pop]?.ficha?.nome || pop.toUpperCase();
+
+  const isSegunda = period === '1a';
+  const numReuniao = isSegunda ? '2ª' : '1ª';
+  const periodoLabel = isSegunda ? '1 Ano' : '6 Meses';
+
+  const situacaoMap = {
+    de_acordo:       '✅ De acordo com o processo definido',
+    parcialmente:    '⚠️ Parcialmente implementado',
+    nao_implementado:'❌ Não implementado'
+  };
+
+  const fmtData = (iso) => {
+    if(!iso) return '—';
+    const [y,m,d] = iso.split('-');
+    return new Date(+y,+m-1,+d).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  };
+
+  const sec = (titulo, conteudo, cor='#0a2540') => {
+    if(!conteudo?.trim()) return '';
+    return `<div style="margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:${cor};border-left:3px solid ${cor};padding-left:8px;margin-bottom:6px;">${titulo}</div>
+      <div style="white-space:pre-wrap;font-size:13.5px;color:#334155;padding-left:11px;">${conteudo.trim()}</div>
+    </div>`;
+  };
+
+  const justifHtml = (acomp.situacao === 'parcialmente' || acomp.situacao === 'nao_implementado') && acomp.justif
+    ? sec('Justificativa', acomp.justif, '#c0392b') : '';
+
+  const dataGeracao = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+
+  const html = `
+    <div id="ata-print-area" style="font-family:'Inter',sans-serif;color:#1e293b;">
+      <!-- Cabeçalho -->
+      <div style="text-align:center;border-bottom:3px solid #0a2540;padding-bottom:20px;margin-bottom:28px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#64748b;margin-bottom:6px;">${inst} · ${sub}</div>
+        <div style="font-size:20px;font-weight:800;color:#0a2540;margin-bottom:4px;">ATA DE REUNIÃO DE ACOMPANHAMENTO PÓS-MAPEAMENTO</div>
+        <div style="font-size:14px;color:#475569;">${numReuniao} Reunião · Prazo de ${periodoLabel}</div>
+      </div>
+
+      <!-- Identificação -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.05em;margin-bottom:3px;">Processo</div><div style="font-size:14px;font-weight:700;color:#0a2540;">${nomeProcesso}</div></div>
+        <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.05em;margin-bottom:3px;">Data de Realização</div><div style="font-size:14px;font-weight:600;color:#334155;">${fmtData(acomp.data)}</div></div>
+        <div style="grid-column:1/-1;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.05em;margin-bottom:3px;">Situação da Implementação</div><div style="font-size:14px;font-weight:600;color:#334155;">${situacaoMap[acomp.situacao] || '—'}</div></div>
+      </div>
+
+      <!-- Participantes -->
+      ${sec('Participantes', acomp.participantes)}
+      ${justifHtml}
+      ${sec('Inconformidades Identificadas', acomp.inconformidades, '#b45309')}
+      ${sec('Recomendações de Melhorias', acomp.recomendacoes, '#0369a1')}
+      ${sec('Encaminhamentos', acomp.encaminhamentos, '#15803d')}
+
+      <!-- Rodapé -->
+      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;">
+        <span>${inst} · ${sub}</span>
+        <span>Documento gerado em ${dataGeracao}</span>
+      </div>
+    </div>`;
+
+  document.getElementById('ata-acomp-modal-title').textContent = `📄 Ata — ${nomeProcesso} · ${numReuniao} Reunião`;
+  document.getElementById('ata-acomp-content').innerHTML = html;
+  openModal('ata-acomp-modal');
+}
+
+function printAtaAcomp() {
+  const content = document.getElementById('ata-print-area')?.innerHTML;
+  if(!content) return;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ata de Acompanhamento</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:'Inter',sans-serif;color:#1e293b;padding:32px 48px;max-width:800px;margin:auto;}
+      @page{margin:20mm 18mm;}
+      @media print{body{padding:0;}}
+    </style>
+  </head><body>${content}</body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 400);
+}
+
+function copyAtaAcomp() {
+  const el = document.getElementById('ata-print-area');
+  if(!el) return;
+  const text = el.innerText || el.textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Texto da ata copiado!', 'success')).catch(() => showToast('Não foi possível copiar.', 'warn'));
+}
+
 function openMeetModal(p, idx=-1) {
   _meetPop = p; _meetIdx = idx;
   const item = idx >= 0 ? (DATA[p].meetings || [])[idx] : null;
@@ -14035,6 +14156,43 @@ async function logAccessEvent(action) {
 }
 
 // ── MONITORING: online users ───────────────────────────────────────
+function _isTableMissing(e) {
+  return e?.message && (e.message.includes('schema cache') || e.message.includes('relation') || e.message.includes('does not exist') || e.message.includes('Could not find'));
+}
+
+const _MON_SETUP_SQL = `-- Execute no SQL Editor do Supabase (https://supabase.com/dashboard)
+
+create table if not exists public.gestpop_presence (
+  email     text primary key,
+  name      text,
+  last_seen timestamptz default now()
+);
+alter table public.gestpop_presence enable row level security;
+create policy "auth users full access" on public.gestpop_presence
+  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+create table if not exists public.gestpop_access_logs (
+  id         bigserial primary key,
+  email      text,
+  name       text,
+  action     text,
+  created_at timestamptz default now()
+);
+alter table public.gestpop_access_logs enable row level security;
+create policy "auth users insert" on public.gestpop_access_logs
+  for insert with check (auth.role() = 'authenticated');
+create policy "auth users select" on public.gestpop_access_logs
+  for select using (auth.role() = 'authenticated');`;
+
+function _monSetupBanner() {
+  return `<div style="background:#fefce8;border:1.5px solid #fbbf24;border-radius:10px;padding:16px 20px;margin-bottom:4px;">
+    <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:8px;">⚙️ Configuração necessária — tabelas não encontradas</div>
+    <div style="font-size:12px;color:#78350f;margin-bottom:12px;">Execute o SQL abaixo no <a href="https://supabase.com/dashboard" target="_blank" style="color:#b45309;font-weight:700;">SQL Editor do Supabase</a> e recarregue esta aba:</div>
+    <pre style="background:#1e293b;color:#e2e8f0;border-radius:8px;padding:14px;font-size:11px;overflow-x:auto;white-space:pre;line-height:1.5;">${_MON_SETUP_SQL}</pre>
+    <button onclick="navigator.clipboard.writeText(_MON_SETUP_SQL).then(()=>showToast('SQL copiado!','success'))" style="margin-top:10px;padding:6px 14px;background:#92400e;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">📋 Copiar SQL</button>
+  </div>`;
+}
+
 async function eppLoadOnlineUsers() {
   const el = document.getElementById('mon-online-list');
   if(!el) return;
@@ -14061,7 +14219,7 @@ async function eppLoadOnlineUsers() {
       </div>`;
     }).join('');
   } catch(e) {
-    el.innerHTML = '<div class="mon-empty">Erro ao carregar presença: ' + e.message + '</div>';
+    el.innerHTML = _isTableMissing(e) ? _monSetupBanner() : '<div class="mon-empty">Erro: ' + e.message + '</div>';
   }
 }
 
@@ -14132,7 +14290,9 @@ async function eppLoadAccessLogs(reset=false) {
     if(more) more.style.display = (data||[]).length === _ACCESS_PAGE ? '' : 'none';
     eppFilterAccessLogs();
   } catch(e) {
-    if(tbody) tbody.innerHTML = '<tr><td colspan="4" style="color:#dc2626;padding:16px;text-align:center;">Erro: ' + e.message + '</td></tr>';
+    if(tbody) tbody.innerHTML = _isTableMissing(e)
+      ? `<tr><td colspan="4">${_monSetupBanner()}</td></tr>`
+      : '<tr><td colspan="4" style="color:#dc2626;padding:16px;text-align:center;">Erro: ' + e.message + '</td></tr>';
   }
 }
 function eppLoadMoreAccess() { eppLoadAccessLogs(); }
@@ -18010,7 +18170,7 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
 // ─── Service Worker — cache-busting (network-first para HTML) ────────────────
 // SW_VERSION: incremente este número a cada deploy para forçar atualização em todos os usuários.
 // NÃO use Date.now() aqui — causaria um SW novo a cada milissegundo (loop infinito).
-const SW_VERSION = '3';
+const SW_VERSION = '4';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/processoscage/sw.js?v=' + SW_VERSION).then(reg => {
