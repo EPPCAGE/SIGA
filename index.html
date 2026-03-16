@@ -11880,33 +11880,14 @@ function eppLogoClick() {
 }
 
 function showHome() {
-  const home = document.getElementById('home-page');
-  const pat  = document.getElementById('pat-module');
-  const bi   = document.getElementById('bi-module');
-  const qu   = document.getElementById('quadro-module');
-  const arq  = document.getElementById('arq-module');
-  const aud  = document.getElementById('audit-module');
-  const epp  = document.getElementById('epp-module');
-  const eppd = document.getElementById('epp-dash-panel');
-
-  // Hide all modules and pops
-  document.querySelectorAll('.pop-content').forEach(el => el.classList.remove('active'));
-  if(pat)  pat.style.display  = 'none';
-  if(bi)   bi.style.display   = 'none';
-  if(qu)   qu.style.display   = 'none';
-  if(arq)  arq.style.display  = 'none';
-  if(aud)  aud.style.display  = 'none';
-  if(epp)  epp.style.display  = 'none';
-  if(eppd) eppd.style.display = 'none';
+  // Hide every module and pop-content in one shot
+  hideAllModules();
 
   // Turn off edit mode if active
   if(editMode) toggleEditMode();
 
+  const home = document.getElementById('home-page');
   home.style.display = 'block';
-  // Hide tab bars — irrelevant on home page
-  document.querySelector('.nav-tabs').style.display = 'none';
-  const switcherBar = document.getElementById('pop-switcher-bar');
-  if(switcherBar) switcherBar.style.display = 'none';
   homeRefresh();
 }
 
@@ -14979,16 +14960,15 @@ function saveStatusModal() {
 
   // ── Show tab (entry point) ────────────────────────────────────
   window.showFlowDesigner = function(tab) {
-    hideBpmnIfNeeded();
     hideHome();
-    document.querySelectorAll('.pop-content').forEach(e => e.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(e => e.classList.remove('active'));
+    hideAllModules();
+    // Restore nav-tabs visibility (hideAllModules hides them, but fd-module lives within the POP nav context)
+    const nav = document.querySelector('.nav-tabs');
+    const sw  = document.getElementById('pop-switcher-bar');
+    if(nav) nav.style.display = '';
+    if(sw)  sw.style.display  = '';
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     if (tab) tab.classList.add('active');
-    ['repo-module','drops-module','pat-module','bi-module','quadro-module','arq-module','ai-module','ai-relatorio-module'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) { el.style.display = 'none'; el.classList.remove('active'); }
-    });
     document.getElementById('fd-module').style.display = 'block';
     // Always open in mermaid mode; load saved mermaid diagram
     fdSetMode('mermaid');
