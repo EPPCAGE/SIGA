@@ -14156,6 +14156,43 @@ async function logAccessEvent(action) {
 }
 
 // ── MONITORING: online users ───────────────────────────────────────
+function _isTableMissing(e) {
+  return e?.message && (e.message.includes('schema cache') || e.message.includes('relation') || e.message.includes('does not exist') || e.message.includes('Could not find'));
+}
+
+const _MON_SETUP_SQL = `-- Execute no SQL Editor do Supabase (https://supabase.com/dashboard)
+
+create table if not exists public.gestpop_presence (
+  email     text primary key,
+  name      text,
+  last_seen timestamptz default now()
+);
+alter table public.gestpop_presence enable row level security;
+create policy "auth users full access" on public.gestpop_presence
+  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+create table if not exists public.gestpop_access_logs (
+  id         bigserial primary key,
+  email      text,
+  name       text,
+  action     text,
+  created_at timestamptz default now()
+);
+alter table public.gestpop_access_logs enable row level security;
+create policy "auth users insert" on public.gestpop_access_logs
+  for insert with check (auth.role() = 'authenticated');
+create policy "auth users select" on public.gestpop_access_logs
+  for select using (auth.role() = 'authenticated');`;
+
+function _monSetupBanner() {
+  return `<div style="background:#fefce8;border:1.5px solid #fbbf24;border-radius:10px;padding:16px 20px;margin-bottom:4px;">
+    <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:8px;">⚙️ Configuração necessária — tabelas não encontradas</div>
+    <div style="font-size:12px;color:#78350f;margin-bottom:12px;">Execute o SQL abaixo no <a href="https://supabase.com/dashboard" target="_blank" style="color:#b45309;font-weight:700;">SQL Editor do Supabase</a> e recarregue esta aba:</div>
+    <pre style="background:#1e293b;color:#e2e8f0;border-radius:8px;padding:14px;font-size:11px;overflow-x:auto;white-space:pre;line-height:1.5;">${_MON_SETUP_SQL}</pre>
+    <button onclick="navigator.clipboard.writeText(_MON_SETUP_SQL).then(()=>showToast('SQL copiado!','success'))" style="margin-top:10px;padding:6px 14px;background:#92400e;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">📋 Copiar SQL</button>
+  </div>`;
+}
+
 async function eppLoadOnlineUsers() {
   const el = document.getElementById('mon-online-list');
   if(!el) return;
@@ -14182,7 +14219,7 @@ async function eppLoadOnlineUsers() {
       </div>`;
     }).join('');
   } catch(e) {
-    el.innerHTML = '<div class="mon-empty">Erro ao carregar presença: ' + e.message + '</div>';
+    el.innerHTML = _isTableMissing(e) ? _monSetupBanner() : '<div class="mon-empty">Erro: ' + e.message + '</div>';
   }
 }
 
@@ -14253,7 +14290,9 @@ async function eppLoadAccessLogs(reset=false) {
     if(more) more.style.display = (data||[]).length === _ACCESS_PAGE ? '' : 'none';
     eppFilterAccessLogs();
   } catch(e) {
-    if(tbody) tbody.innerHTML = '<tr><td colspan="4" style="color:#dc2626;padding:16px;text-align:center;">Erro: ' + e.message + '</td></tr>';
+    if(tbody) tbody.innerHTML = _isTableMissing(e)
+      ? `<tr><td colspan="4">${_monSetupBanner()}</td></tr>`
+      : '<tr><td colspan="4" style="color:#dc2626;padding:16px;text-align:center;">Erro: ' + e.message + '</td></tr>';
   }
 }
 function eppLoadMoreAccess() { eppLoadAccessLogs(); }
