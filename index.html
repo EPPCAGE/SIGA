@@ -4648,7 +4648,7 @@ function renderTracker(p) {
   DATA[p].steps.forEach((s,i) => {
     const dot = document.createElement('div');
     dot.className = 'step-dot'+(i===cur?' active':i<cur?' done':'');
-    dot.innerHTML = `<div class="step-dot-circle">${i<cur?'✓':i+1}</div><div class="step-dot-label">${s.title}</div>`;
+    dot.innerHTML = `<div class="step-dot-circle">${i<cur?'✓':i+1}</div><div class="step-dot-label">${resolveStep(s, flowMode).title}</div>`;
     dot.onclick = () => { DATA[p].currentStep=i; renderStep(p,i); };
     el.appendChild(dot);
     if(i<DATA[p].steps.length-1){
