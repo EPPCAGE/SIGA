@@ -5096,7 +5096,10 @@ function renderStep(p, i) {
         <div class="step-flow-actions">
           <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
           <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}')" title="Limpar o fluxo ${isTobe ? 'TO BE' : 'AS IS'} inteiro (todas as etapas)">🗑 Limpar todo ${isTobe ? 'TO BE' : 'AS IS'}</button>
-          <button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}',${i})" title="Copiar ações do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>
+          ${isTobe
+            ? `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowTobeToAsis('${p}',${i})" title="Copiar ações do TO BE para o AS IS">⎘ Copiar TO BE → AS IS</button>`
+            : `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}',${i})" title="Copiar ações do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>`
+          }
         </div>
         ${decHTML}${noteHTML}
       </div>
@@ -5244,6 +5247,18 @@ function copyFlowAsIsToTobe(p,si) {
   step.tobe.actions = JSON.parse(JSON.stringify(asisActions)); // deep copy
   renderStep(p,si); markChanged();
   showToast('⎘ Fluxo AS IS copiado para o TO BE.', 'success');
+}
+
+function copyFlowTobeToAsis(p,si) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem copiar fluxos.', 'warn'); return; }
+  const step = DATA[p].steps[si];
+  const tobeActions = step.tobe?.actions || [];
+  if(tobeActions.length === 0) { showToast('O fluxo TO BE está vazio — nada a copiar.', 'warn'); return; }
+  const asisHasActions = (step.actions||[]).length > 0;
+  if(asisHasActions && !confirm('O AS IS já possui ações. Substituir pelo fluxo TO BE?')) return;
+  step.actions = JSON.parse(JSON.stringify(tobeActions)); // deep copy
+  renderStep(p,si); markChanged();
+  showToast('⎘ Fluxo TO BE copiado para o AS IS.', 'success');
 }
 
 function clearCurrentFlow(p) {
@@ -8605,7 +8620,7 @@ let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
 let workspaceId = sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
-  ['repo-module','drops-module','pat-module','bi-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','indicadores-cage-module','indcage-panel'].forEach(id => {
+  ['repo-module','drops-module','pat-module','bi-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel'].forEach(id => {
     const el = document.getElementById(id);
     if(el) { el.style.display = 'none'; el.classList.remove('active'); }
   });
