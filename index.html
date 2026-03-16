@@ -5543,9 +5543,11 @@ function renderIndicators(p) {
           <button class="ind-rm-btn" data-pop="${p}" data-idx="${i}">✕ Remover</button>
         </div>
       </div>
+      ${_buildIndSisplanSection(ind, p, i)}
     </div>`; }).join('');
   if(editMode) enableEditables(true);
   attachIndListeners(p);
+  _initIndMiniCharts(p);
 }
 function addIndicator(p){
   if(!isEditor) { showToast('🔒 Apenas editores podem adicionar indicadores.', 'warn'); return; }
