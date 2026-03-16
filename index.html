@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17/dist/assets/bpmn-font/css/bpmn.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -1257,7 +1257,7 @@
         <button class="search-clear" id="search-clear-btn" onclick="clearSearch()">✕</button>
       </div>
       <button class="edit-toggle" id="new-pop-btn" onclick="openNovoPop()" style="background:rgba(245,158,11,.2);color:#fcd34d;display:none;" title="Criar novo mapeamento">＋ Novo Mapeamento</button>
-      <button class="edit-toggle" onclick="openBackupModal()" title="Exportar/Importar backup dos dados" style="background:rgba(96,165,250,.15);color:#93c5fd;">💾 Backup</button>
+      <button id="backup-btn" class="edit-toggle" onclick="openBackupModal()" title="Exportar/Importar backup dos dados" style="background:rgba(96,165,250,.15);color:#93c5fd;">💾 Backup</button>
       <button class="edit-toggle" onclick="exportPptx()" id="ppt-btn" style="background:rgba(232,160,32,.22);color:#fcd34d;" title="Exportar apresentação PowerPoint">📊 Exportar PPT</button>
       <button class="edit-toggle" onclick="saveToCloud()" id="save-btn" style="background:rgba(0,168,107,.25);color:#4ade80;" title="Salvar na nuvem (Ctrl+S)">☁️ Salvar</button>
       <button class="edit-toggle" onclick="toggleEditMode()" id="edit-toggle">✏️ Modo Edição</button>
@@ -1286,15 +1286,17 @@
 <div class="sidebar" id="sidebar">
   <div class="sidebar-head">
     <div class="sidebar-title">Processos</div>
-    <button class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:rgba(0,168,107,.15);color:#6ee7b7;border-color:rgba(0,168,107,.3);">🏠 Página Inicial</button>
-    <button class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:rgba(225,29,72,.12);color:#fda4af;border-color:rgba(225,29,72,.3);">📚 Documentos e Manuais</button>
-    <button class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">💧 Drops de Conhecimento</button>
-    <button class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:rgba(220,38,38,.12);color:#fca5a5;border-color:rgba(220,38,38,.3);">🔍 Auditoria de Processos</button>
-        <button class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.3);">🏢 Gestão Escritório de Processos</button>
-    <button class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:rgba(234,179,8,.12);color:#fde047;border-color:rgba(234,179,8,.25);">📊 Cadeia de Valor e Mapa Estratégico</button>
-    <button class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.25);">🗒 Quadro de Esboço</button>
-    <button class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
-    <button class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:rgba(232,160,32,.12);color:#fcd34d;border-color:rgba(232,160,32,.3);">📈 Indicadores CAGE</button>
+    <div id="sidebar-nav-btns">
+      <button data-mod="home"     class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:rgba(0,168,107,.15);color:#6ee7b7;border-color:rgba(0,168,107,.3);">🏠 Página Inicial</button>
+      <button data-mod="repo"     class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:rgba(225,29,72,.12);color:#fda4af;border-color:rgba(225,29,72,.3);">📚 Documentos e Manuais</button>
+      <button data-mod="drops"    class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">💧 Drops de Conhecimento</button>
+      <button data-mod="audit"    class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:rgba(220,38,38,.12);color:#fca5a5;border-color:rgba(220,38,38,.3);">🔍 Auditoria de Processos</button>
+      <button data-mod="epp"      class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.3);">🏢 Gestão Escritório de Processos</button>
+      <button data-mod="bi"       class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:rgba(234,179,8,.12);color:#fde047;border-color:rgba(234,179,8,.25);">📊 Cadeia de Valor e Mapa Estratégico</button>
+      <button data-mod="quadro"   class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.25);">🗒 Quadro de Esboço</button>
+      <button data-mod="arq"      class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
+      <button data-mod="ind-cage" class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:rgba(232,160,32,.12);color:#fcd34d;border-color:rgba(232,160,32,.3);">📈 Indicadores CAGE</button>
+    </div>
   </div>
   <div class="sidebar-list" id="sidebar-list"></div>
 </div>
@@ -1451,6 +1453,7 @@
       <button class="epp-tab"        data-tab="dash"   onclick="eppTab('dash',this)">📊 Dashboard EPP</button>
       <button class="epp-tab"        data-tab="config" onclick="eppTab('config',this)">⚙️ Tabelas de Referência</button>
       <button class="epp-tab"        data-tab="users"  onclick="eppTab('users',this)">👥 Usuários</button>
+      <button class="epp-tab"        data-tab="params" onclick="eppTab('params',this)">🛠 Parâmetros Globais</button>
     </div>
   </div>
 </div>
@@ -1639,6 +1642,69 @@
   <!-- Histórico -->
   <div id="epp-u-history-panel" style="display:none;">
     <div class="history-list" id="epp-u-history-list"></div>
+  </div>
+</div>
+
+<!-- EPP: Params panel (shown when params tab is active) -->
+<div id="epp-params-panel" style="display:none;max-width:900px;margin:0 auto;padding:24px 32px 80px;">
+  <div style="margin-bottom:20px;">
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#0a2540;margin:0 0 4px;">🛠 Parâmetros Globais</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Configure a identidade visual, cores, módulos e botões de navegação do sistema. As alterações são aplicadas imediatamente.</p>
+  </div>
+
+  <!-- Identidade -->
+  <div class="card fade-up" style="margin-bottom:20px;">
+    <div class="card-header"><span class="card-title">🏷 Identidade do Sistema</span></div>
+    <div class="card-body" style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Nome do Sistema</label>
+        <input class="modal-input" id="gp-nome-sistema" type="text" placeholder="GesProc-RS" oninput="saveGlobalParam('nomeSistema',this.value);applyGlobalParams()">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Subtítulo Institucional</label>
+        <input class="modal-input" id="gp-subtitulo" type="text" placeholder="Contadoria e Auditoria-Geral do Estado" oninput="saveGlobalParam('subtitulo',this.value);applyGlobalParams()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Logotipo -->
+  <div class="card fade-up" style="margin-bottom:20px;">
+    <div class="card-header"><span class="card-title">🖼 Logotipo (Página Inicial)</span></div>
+    <div class="card-body" style="padding:20px;display:flex;gap:20px;align-items:flex-start;">
+      <div style="flex:1;">
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">URL da Imagem</label>
+        <input class="modal-input" id="gp-logo-url" type="url" placeholder="https://..." oninput="saveGlobalParam('logoUrl',this.value);gpUpdateLogoPreview()">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Cole a URL de uma imagem PNG/SVG. Aparece no bloco de logo da página inicial.</div>
+      </div>
+      <div id="gp-logo-preview" style="width:80px;height:80px;border:2px dashed var(--cage-border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:24px;color:var(--text-muted);">🖼</div>
+    </div>
+  </div>
+
+  <!-- Cores -->
+  <div class="card fade-up" style="margin-bottom:20px;">
+    <div class="card-header">
+      <span class="card-title">🎨 Cores do Sistema</span>
+      <button class="edit-add-btn" onclick="resetGlobalColors()" style="font-size:11px;">↺ Restaurar padrão</button>
+    </div>
+    <div class="card-body" style="padding:20px;" id="gp-colors-grid">
+      <!-- rendered by eppRenderParams() -->
+    </div>
+  </div>
+
+  <!-- Módulos -->
+  <div class="card fade-up" style="margin-bottom:20px;">
+    <div class="card-header"><span class="card-title">📱 Módulos — Visibilidade e Ordem</span></div>
+    <div class="card-body" style="padding:16px;" id="gp-modules-list">
+      <!-- rendered by eppRenderParams() -->
+    </div>
+  </div>
+
+  <!-- Botões da barra superior -->
+  <div class="card fade-up">
+    <div class="card-header"><span class="card-title">🔘 Botões da Barra Superior</span></div>
+    <div class="card-body" style="padding:16px;" id="gp-header-btns-list">
+      <!-- rendered by eppRenderParams() -->
+    </div>
   </div>
 </div>
 
@@ -6914,6 +6980,236 @@ function applyConfigToDropdowns() {
   ['pat-unidade','status-modal-unidade','nf-unidade'].forEach(id => populateConfigSelect(id,'areas'));
   ['pat-tipo','nf-tipo'].forEach(id => populateConfigSelect(id,'tipoAtividadePat'));
   populateConfigSelect('status-modal-tipo','tipoTrabalho');
+  try { applyGlobalParams(); } catch(e) {}
+}
+
+// ── Parâmetros Globais ──────────────────────────────────────────────────────
+const _PARAMS_COLORS = [
+  { key:'corPrimaria',   css:'--cage-blue',   label:'Cor Primária',          def:'#0a2540' },
+  { key:'corSecundaria', css:'--cage-mid',    label:'Cor Secundária',        def:'#1a4a7a' },
+  { key:'corAcento',     css:'--cage-accent', label:'Cor de Acento',         def:'#00a86b' },
+  { key:'corDestaque',   css:'--cage-gold',   label:'Cor de Destaque',       def:'#e8a020' },
+  { key:'corFundo',      css:'--cage-light',  label:'Cor de Fundo',          def:'#f4f7fb' },
+  { key:'corBorda',      css:'--cage-border', label:'Cor de Borda',          def:'#dde4ef' },
+];
+
+const _MODULES_NAV = [
+  { key:'home',     label:'🏠 Página Inicial' },
+  { key:'repo',     label:'📚 Documentos e Manuais' },
+  { key:'drops',    label:'💧 Drops de Conhecimento' },
+  { key:'audit',    label:'🔍 Auditoria de Processos' },
+  { key:'epp',      label:'🏢 Gestão Escritório de Processos' },
+  { key:'bi',       label:'📊 Cadeia de Valor e Mapa Estratégico' },
+  { key:'quadro',   label:'🗒 Quadro de Esboço' },
+  { key:'arq',      label:'🏛 Arquitetura de Processos' },
+  { key:'ind-cage', label:'📈 Indicadores CAGE' },
+];
+
+const _HEADER_BTNS_DEF = [
+  { key:'new-pop', id:'new-pop-btn', label:'＋ Novo Mapeamento' },
+  { key:'backup',  id:'backup-btn',  label:'💾 Backup' },
+  { key:'ppt',     id:'ppt-btn',     label:'📊 Exportar PPT' },
+  { key:'save',    id:'save-btn',    label:'☁️ Salvar' },
+  { key:'edit',    id:'edit-toggle', label:'✏️ Modo Edição' },
+];
+
+function _gpGet() { return getConfig('parametrosGlobais') || {}; }
+function saveGlobalParam(key, value) {
+  const gp = { ..._gpGet(), [key]: value };
+  setConfig('parametrosGlobais', gp);
+  markChanged(true);
+}
+
+function applyGlobalParams() {
+  const gp = _gpGet();
+  // Identidade
+  if(gp.nomeSistema) {
+    const el = document.querySelector('.header-title strong');
+    if(el) el.textContent = gp.nomeSistema;
+    document.title = gp.nomeSistema + ' — ' + (gp.subtitulo || 'Gestão de Processos CAGE-RS');
+  }
+  if(gp.subtitulo) {
+    const el = document.querySelector('.cage-banner-sub');
+    if(el) el.textContent = gp.subtitulo;
+  }
+  // Cores
+  _PARAMS_COLORS.forEach(c => {
+    if(gp[c.key]) document.documentElement.style.setProperty(c.css, gp[c.key]);
+  });
+  // Logo
+  if(gp.logoUrl && DATA) { DATA._logoUrl = gp.logoUrl; try { eppLogoRefresh(); } catch(e) {} }
+  // Sidebar nav order/visibility
+  applySidebarNav();
+  // Header buttons visibility
+  applyHeaderBtns();
+}
+
+function applySidebarNav() {
+  const container = document.getElementById('sidebar-nav-btns');
+  if(!container) return;
+  const order = getConfig('modulosOrdem');
+  if(!Array.isArray(order) || order.length === 0) return;
+  order.forEach(({key, visible}) => {
+    const btn = container.querySelector(`[data-mod="${key}"]`);
+    if(!btn) return;
+    btn.style.display = visible === false ? 'none' : '';
+    container.appendChild(btn);
+  });
+}
+
+function applyHeaderBtns() {
+  const vis = getConfig('botoesBarraVisiveis');
+  if(!Array.isArray(vis) || vis.length === 0) return;
+  _HEADER_BTNS_DEF.forEach(b => {
+    const el = document.getElementById(b.id);
+    if(!el) return;
+    el.style.display = vis.includes(b.key) ? '' : 'none';
+  });
+}
+
+function resetGlobalColors() {
+  if(!confirm('Restaurar todas as cores para o padrão?')) return;
+  const gp = { ..._gpGet() };
+  _PARAMS_COLORS.forEach(c => {
+    delete gp[c.key];
+    document.documentElement.style.removeProperty(c.css);
+  });
+  setConfig('parametrosGlobais', gp);
+  markChanged(true);
+  eppRenderParams();
+  showToast('Cores restauradas ao padrão.', 'success');
+}
+
+function gpUpdateLogoPreview() {
+  const url = document.getElementById('gp-logo-url')?.value || '';
+  const preview = document.getElementById('gp-logo-preview');
+  if(!preview) return;
+  if(url) {
+    preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentElement.innerHTML='❌'">`;
+  } else {
+    preview.innerHTML = '🖼';
+  }
+}
+
+function eppRenderParams() {
+  if(document.getElementById('epp-params-panel')?.style.display === 'none') return;
+  const gp = _gpGet();
+
+  // Preencher campos de identidade
+  const nomEl = document.getElementById('gp-nome-sistema');
+  if(nomEl) nomEl.value = gp.nomeSistema || '';
+  const subEl = document.getElementById('gp-subtitulo');
+  if(subEl) subEl.value = gp.subtitulo || '';
+
+  // Logo
+  const logoEl = document.getElementById('gp-logo-url');
+  if(logoEl) logoEl.value = gp.logoUrl || '';
+  gpUpdateLogoPreview();
+
+  // Cores
+  const colorsGrid = document.getElementById('gp-colors-grid');
+  if(colorsGrid) {
+    colorsGrid.style.cssText = 'padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;';
+    colorsGrid.innerHTML = _PARAMS_COLORS.map(c => {
+      const val = gp[c.key] || c.def;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--cage-light);border-radius:8px;border:1px solid var(--cage-border);">
+        <input type="color" value="${val}" title="${c.label}"
+          style="width:36px;height:36px;border:none;border-radius:6px;cursor:pointer;padding:2px;background:none;"
+          oninput="saveGlobalParam('${c.key}',this.value);document.documentElement.style.setProperty('${c.css}',this.value);this.nextElementSibling.querySelector('span').textContent=this.value">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:600;color:var(--cage-blue);">${c.label}</div>
+          <div style="font-size:11px;color:var(--text-muted);font-family:monospace;"><span>${val}</span></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Módulos
+  const modList = document.getElementById('gp-modules-list');
+  if(modList) {
+    const savedOrder = getConfig('modulosOrdem');
+    // Build ordered list: saved order first, then any missing keys appended
+    const savedKeys = Array.isArray(savedOrder) ? savedOrder.map(m => m.key) : [];
+    const ordered = [
+      ...( Array.isArray(savedOrder) ? savedOrder : [] ),
+      ..._MODULES_NAV.filter(m => !savedKeys.includes(m.key)).map(m => ({key:m.key, visible:true}))
+    ];
+    modList.innerHTML = ordered.map((m, idx) => {
+      const def = _MODULES_NAV.find(n => n.key === m.key);
+      if(!def) return '';
+      const vis = m.visible !== false;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cage-light);border-radius:8px;border:1px solid var(--cage-border);margin-bottom:6px;">
+        <span style="font-size:13px;flex:1;">${def.label}</span>
+        <button onclick="eppMoveModule('${m.key}',-1)" ${idx===0?'disabled':''} title="Mover para cima"
+          style="background:none;border:1px solid var(--cage-border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;${idx===0?'opacity:.3;':''}">&uarr;</button>
+        <button onclick="eppMoveModule('${m.key}',1)" ${idx===ordered.length-1?'disabled':''} title="Mover para baixo"
+          style="background:none;border:1px solid var(--cage-border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;${idx===ordered.length-1?'opacity:.3;':''}">&darr;</button>
+        <button onclick="eppToggleModule('${m.key}')"
+          style="background:${vis?'#dcfce7':'#f1f5f9'};color:${vis?'#16a34a':'#94a3b8'};border:1px solid ${vis?'#bbf7d0':'#e2e8f0'};border-radius:6px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:700;">
+          ${vis?'👁 Visível':'🚫 Oculto'}</button>
+      </div>`;
+    }).join('');
+  }
+
+  // Botões da barra
+  const btnList = document.getElementById('gp-header-btns-list');
+  if(btnList) {
+    const savedVis = getConfig('botoesBarraVisiveis');
+    const vis = Array.isArray(savedVis) ? savedVis : _HEADER_BTNS_DEF.map(b => b.key);
+    btnList.innerHTML = _HEADER_BTNS_DEF.map(b => {
+      const isVis = vis.includes(b.key);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cage-light);border-radius:8px;border:1px solid var(--cage-border);margin-bottom:6px;">
+        <span style="font-size:13px;flex:1;">${b.label}</span>
+        <button onclick="eppToggleHeaderBtn('${b.key}')"
+          style="background:${isVis?'#dcfce7':'#f1f5f9'};color:${isVis?'#16a34a':'#94a3b8'};border:1px solid ${isVis?'#bbf7d0':'#e2e8f0'};border-radius:6px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:700;">
+          ${isVis?'👁 Visível':'🚫 Oculto'}</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+function eppMoveModule(key, dir) {
+  const savedOrder = getConfig('modulosOrdem');
+  const savedKeys = Array.isArray(savedOrder) ? savedOrder.map(m => m.key) : [];
+  let order = [
+    ...( Array.isArray(savedOrder) ? savedOrder : [] ),
+    ..._MODULES_NAV.filter(m => !savedKeys.includes(m.key)).map(m => ({key:m.key, visible:true}))
+  ];
+  const idx = order.findIndex(m => m.key === key);
+  if(idx < 0) return;
+  const newIdx = idx + dir;
+  if(newIdx < 0 || newIdx >= order.length) return;
+  [order[idx], order[newIdx]] = [order[newIdx], order[idx]];
+  setConfig('modulosOrdem', order);
+  markChanged(true);
+  applySidebarNav();
+  eppRenderParams();
+}
+
+function eppToggleModule(key) {
+  const savedOrder = getConfig('modulosOrdem');
+  const savedKeys = Array.isArray(savedOrder) ? savedOrder.map(m => m.key) : [];
+  let order = [
+    ...( Array.isArray(savedOrder) ? savedOrder : [] ),
+    ..._MODULES_NAV.filter(m => !savedKeys.includes(m.key)).map(m => ({key:m.key, visible:true}))
+  ];
+  const entry = order.find(m => m.key === key);
+  if(entry) entry.visible = !(entry.visible !== false);
+  setConfig('modulosOrdem', order);
+  markChanged(true);
+  applySidebarNav();
+  eppRenderParams();
+}
+
+function eppToggleHeaderBtn(key) {
+  const savedVis = getConfig('botoesBarraVisiveis');
+  let vis = Array.isArray(savedVis) ? [...savedVis] : _HEADER_BTNS_DEF.map(b => b.key);
+  if(vis.includes(key)) vis = vis.filter(k => k !== key);
+  else vis.push(key);
+  setConfig('botoesBarraVisiveis', vis);
+  markChanged(true);
+  applyHeaderBtns();
+  eppRenderParams();
 }
 
 // ── Config Panel rendering ───────────────────────────────────────────────────
@@ -13221,11 +13517,13 @@ function eppTab(tab, el) {
   const dash   = document.getElementById('epp-dash-panel');
   const cfg    = document.getElementById('epp-config-panel');
   const users  = document.getElementById('epp-users-panel');
+  const params = document.getElementById('epp-params-panel');
 
-  if(pat)   { pat.style.display='none'; pat.classList.remove('active'); }
-  if(dash)  dash.style.display='none';
-  if(cfg)   cfg.style.display='none';
-  if(users) users.style.display='none';
+  if(pat)    { pat.style.display='none'; pat.classList.remove('active'); }
+  if(dash)   dash.style.display='none';
+  if(cfg)    cfg.style.display='none';
+  if(users)  users.style.display='none';
+  if(params) params.style.display='none';
 
   if(tab === 'pat') {
     if(pat)  { pat.style.display='block'; pat.classList.add('active'); }
@@ -13239,6 +13537,9 @@ function eppTab(tab, el) {
     eppSwitchUsersTab('editors');
     loadEditorList();
     if(isAdmin) loadRequestsList();
+  } else if(tab === 'params') {
+    if(params) params.style.display='block';
+    eppRenderParams();
   } else {
     if(dash) dash.style.display='block';
     eppRenderDashboard();
