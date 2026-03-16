@@ -3421,7 +3421,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
   <div id="audit-tab-plans" class="audit-tab-panel">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:14px;font-weight:600;color:#0a2540;">Planos de Auditoria</div>
-      <button class="btn btn-primary" onclick="auditOpenPlanModal()" style="font-size:12px;">＋ Novo Plano</button>
+      <button class="btn btn-primary audit-edit-only" onclick="auditOpenPlanModal()" style="font-size:12px;">＋ Novo Plano</button>
     </div>
     <div id="audit-plans-list"></div>
     <div id="audit-plans-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
@@ -3435,7 +3435,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
   <div id="audit-tab-exec" class="audit-tab-panel" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:14px;font-weight:600;color:#0a2540;">Execução de Auditorias</div>
-      <button class="btn btn-primary" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Nova Execução</button>
+      <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Nova Execução</button>
     </div>
     <div id="audit-exec-list"></div>
     <div id="audit-exec-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
@@ -3449,7 +3449,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
   <div id="audit-tab-nc" class="audit-tab-panel" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:14px;font-weight:600;color:#0a2540;">Não Conformidades</div>
-      <button class="btn btn-primary" onclick="auditOpenNcModal()" style="font-size:12px;background:#dc2626;border-color:#dc2626;">＋ Registrar NC</button>
+      <button class="btn btn-primary audit-edit-only" onclick="auditOpenNcModal()" style="font-size:12px;background:#dc2626;border-color:#dc2626;">＋ Registrar NC</button>
     </div>
     <!-- Filtros NC -->
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
@@ -3470,7 +3470,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
   <div id="audit-tab-actions" class="audit-tab-panel" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:14px;font-weight:600;color:#0a2540;">Plano de Ação — Correções</div>
-      <button class="btn btn-primary" onclick="auditOpenActionModal()" style="font-size:12px;background:#0a2540;border-color:#0a2540;">＋ Nova Ação</button>
+      <button class="btn btn-primary audit-edit-only" onclick="auditOpenActionModal()" style="font-size:12px;background:#0a2540;border-color:#0a2540;">＋ Nova Ação</button>
     </div>
     <!-- Filtros ação -->
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
@@ -7012,11 +7012,11 @@ const _MODULES_NAV = [
 ];
 
 const _HEADER_BTNS_DEF = [
-  { key:'new-pop', id:'new-pop-btn', label:'＋ Novo Mapeamento' },
-  { key:'backup',  id:'backup-btn',  label:'💾 Backup' },
-  { key:'ppt',     id:'ppt-btn',     label:'📊 Exportar PPT' },
-  { key:'save',    id:'save-btn',    label:'☁️ Salvar' },
-  { key:'edit',    id:'edit-toggle', label:'✏️ Modo Edição' },
+  { key:'new-pop', id:'new-pop-btn', label:'＋ Novo Mapeamento', defBg:'rgba(245,158,11,.2)',  defColor:'#fcd34d' },
+  { key:'backup',  id:'backup-btn',  label:'💾 Backup',          defBg:'rgba(96,165,250,.15)', defColor:'#93c5fd' },
+  { key:'ppt',     id:'ppt-btn',     label:'📊 Exportar PPT',    defBg:'rgba(232,160,32,.22)', defColor:'#fcd34d' },
+  { key:'save',    id:'save-btn',    label:'☁️ Salvar',          defBg:'rgba(0,168,107,.25)',  defColor:'#4ade80' },
+  { key:'edit',    id:'edit-toggle', label:'✏️ Modo Edição',     defBg:'rgba(255,255,255,.1)', defColor:'#ffffff' },
 ];
 
 function _gpGet() { return getConfig('parametrosGlobais') || {}; }
@@ -13832,6 +13832,9 @@ function showAuditModule(show=true) {
   hideAllModules();
   auditEnsure();
   document.getElementById('audit-module').style.display = 'block';
+  // Ocultar botões de criação para viewers
+  const editOnlyBtns = document.querySelectorAll('#audit-module .audit-edit-only');
+  editOnlyBtns.forEach(b => b.style.display = isEditor ? '' : 'none');
   auditTab(_auditCurrentTab);
 }
 
@@ -13911,6 +13914,7 @@ function auditRenderPlans() {
 }
 
 function auditOpenPlanModal(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem criar/editar planos de auditoria.','warn'); return; }
   auditEnsure();
   _auditEditPlanId = id || null;
   const plan = id ? DATA.audits.plans.find(p=>p.id===id) : null;
@@ -13941,6 +13945,7 @@ function auditClosePlanModal() { document.getElementById('audit-plan-modal').sty
 function auditPlanProcessoChange() {}
 
 function auditSavePlan() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar planos.','warn'); return; }
   auditEnsure();
   const processo = document.getElementById('ap-processo').value;
   const objetivo = document.getElementById('ap-objetivo').value.trim();
@@ -13981,6 +13986,7 @@ function auditSavePlan() {
   showToast('✅ Plano salvo!', 'success');
 }
 function auditDeletePlan() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir planos.','warn'); return; }
   const p = DATA.audits.plans.find(x=>x.id===_auditEditPlanId);
   if(!confirm('Excluir o plano "'+(p?.processoNome||p?.objetivo)+'"?')) return;
   DATA.audits.plans = DATA.audits.plans.filter(x=>x.id!==_auditEditPlanId);
@@ -14020,6 +14026,7 @@ function auditRenderExec() {
 }
 
 function auditOpenExecModal(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem criar/editar execuções.','warn'); return; }
   auditEnsure();
   _auditEditExecId = id || null;
   const exec = id ? DATA.audits.executions.find(e=>e.id===id) : null;
@@ -14201,6 +14208,7 @@ function auditAddChecklistItem() {
 }
 
 function auditSaveExec() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar execuções.','warn'); return; }
   auditEnsure();
   const planId = document.getElementById('ae-plan').value;
   if(!planId) { showToast('Selecione o plano de auditoria.', 'error'); return; }
@@ -14222,6 +14230,7 @@ function auditSaveExec() {
   showToast('✅ Execução salva!', 'success');
 }
 function auditDeleteExec() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir execuções.','warn'); return; }
   if(!confirm('Excluir esta execução?')) return;
   DATA.audits.executions = DATA.audits.executions.filter(e=>e.id!==_auditEditExecId);
   auditCloseExecModal(); auditRenderExec(); saveToCloud();
@@ -14261,6 +14270,7 @@ function auditFilterNc(g, el) {
 }
 
 function auditOpenNcModal(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem criar/editar não conformidades.','warn'); return; }
   auditEnsure();
   _auditEditNcId = id||null;
   const nc = id ? DATA.audits.nonconformities.find(n=>n.id===id) : null;
@@ -14281,6 +14291,7 @@ function auditOpenNcModal(id) {
 function auditCloseNcModal() { document.getElementById('audit-nc-modal').style.display='none'; }
 
 function auditSaveNc() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar não conformidades.','warn'); return; }
   auditEnsure();
   const descricao = document.getElementById('nc-descricao').value.trim();
   if(!descricao) { showToast('Descreva a não conformidade.', 'error'); return; }
@@ -14304,6 +14315,7 @@ function auditSaveNc() {
   showToast('✅ NC registrada!', 'success');
 }
 function auditDeleteNc() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir NCs.','warn'); return; }
   if(!confirm('Excluir esta não conformidade?')) return;
   DATA.audits.nonconformities = DATA.audits.nonconformities.filter(n=>n.id!==_auditEditNcId);
   auditCloseNcModal(); auditRenderNc(); saveToCloud();
@@ -14345,6 +14357,7 @@ function auditFilterAction(s, el) {
 }
 
 function auditOpenActionModal(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem criar/editar ações corretivas.','warn'); return; }
   auditEnsure();
   _auditEditActId = id||null;
   const ac = id ? DATA.audits.actions.find(a=>a.id===id) : null;
@@ -14363,6 +14376,7 @@ function auditOpenActionModal(id) {
 function auditCloseActionModal() { document.getElementById('audit-action-modal').style.display='none'; }
 
 function auditSaveAction() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar ações.','warn'); return; }
   auditEnsure();
   const acao = document.getElementById('ac-acao').value.trim();
   const responsavel = document.getElementById('ac-responsavel').value.trim();
@@ -14386,6 +14400,7 @@ function auditSaveAction() {
   showToast('✅ Ação salva!', 'success');
 }
 function auditDeleteAction() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir ações.','warn'); return; }
   if(!confirm('Excluir esta ação?')) return;
   DATA.audits.actions = DATA.audits.actions.filter(a=>a.id!==_auditEditActId);
   auditCloseActionModal(); auditRenderActions(); saveToCloud();
