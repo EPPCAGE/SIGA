@@ -17791,7 +17791,6 @@ function statusModalUpdateSubList() {
     if(hasPercentage) {
       // ── Exibir gráficos percentuais, ocultar gráfico absoluto ──
       if(cardEvo) cardEvo.style.display = '';
-      if(cardYoy) cardYoy.style.display = '';
       if(cardAbs) cardAbs.style.display = 'none';
 
       // ── Chart 1: Evolução (últimos 18 meses) ──────────────────────
@@ -17829,6 +17828,10 @@ function statusModalUpdateSubList() {
         byYearMonth[yr][mo] = r.pctRealizado;
       });
       const years = Object.keys(byYearMonth).sort().slice(-3);
+
+      // Ocultar comparativo quando há dados de apenas um ano
+      if(cardYoy) cardYoy.style.display = years.length >= 2 ? '' : 'none';
+
       const months = [...new Set(all.map(r => r.periodo?.slice(5,7)).filter(Boolean))].sort();
       const monthLabels = months.map(m => { const d=new Date(2000,parseInt(m)-1,1); return d.toLocaleString('pt-BR',{month:'short'}); });
       const palette = ['#0a2540','#00a86b','#e8a020'];
