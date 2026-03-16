@@ -5186,7 +5186,7 @@ const ACTION_TYPES = {
 function actionObj(a) {
   // Normalise: plain string → atividade object
   if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'' };
-  return { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'' };
+  return { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'', natureza: a.natureza||'' };
 }
 
 // ── Garante estrutura mínima de um POP antes de renderizar ──
