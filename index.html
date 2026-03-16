@@ -7000,15 +7000,15 @@ const _PARAMS_COLORS = [
 ];
 
 const _MODULES_NAV = [
-  { key:'home',     label:'🏠 Página Inicial' },
-  { key:'repo',     label:'📚 Documentos e Manuais' },
-  { key:'drops',    label:'💧 Drops de Conhecimento' },
-  { key:'audit',    label:'🔍 Auditoria de Processos' },
-  { key:'epp',      label:'🏢 Gestão Escritório de Processos' },
-  { key:'bi',       label:'📊 Cadeia de Valor e Mapa Estratégico' },
-  { key:'quadro',   label:'🗒 Quadro de Esboço' },
-  { key:'arq',      label:'🏛 Arquitetura de Processos' },
-  { key:'ind-cage', label:'📈 Indicadores CAGE' },
+  { key:'home',     label:'🏠 Página Inicial',                     color:'#00a86b' },
+  { key:'repo',     label:'📚 Documentos e Manuais',               color:'#e11d48' },
+  { key:'drops',    label:'💧 Drops de Conhecimento',              color:'#0ea5e9' },
+  { key:'audit',    label:'🔍 Auditoria de Processos',             color:'#dc2626' },
+  { key:'epp',      label:'🏢 Gestão Escritório de Processos',     color:'#3b82f6' },
+  { key:'bi',       label:'📊 Cadeia de Valor e Mapa Estratégico', color:'#eab308' },
+  { key:'quadro',   label:'🗒 Quadro de Esboço',                   color:'#10b981' },
+  { key:'arq',      label:'🏛 Arquitetura de Processos',           color:'#8b5cf6' },
+  { key:'ind-cage', label:'📈 Indicadores CAGE',                   color:'#e8a020' },
 ];
 
 const _HEADER_BTNS_DEF = [
@@ -7020,6 +7020,38 @@ const _HEADER_BTNS_DEF = [
 ];
 
 function _gpGet() { return getConfig('parametrosGlobais') || {}; }
+
+function _hexToRgbaStr(hex, alpha) {
+  if(!hex || hex.length < 7) return `rgba(128,128,128,${alpha})`;
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function _hexToLight(hex) {
+  if(!hex || hex.length < 7) return '#aaaaaa';
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.round(r*.35+255*.65)},${Math.round(g*.35+255*.65)},${Math.round(b*.35+255*.65)})`;
+}
+
+function applySidebarBtnColors() {
+  const saved = getConfig('sidebarBtnColors') || {};
+  _MODULES_NAV.forEach(m => {
+    const btn = document.querySelector(`#sidebar-nav-btns [data-mod="${m.key}"]`);
+    if(!btn) return;
+    const color = saved[m.key] || m.color;
+    btn.style.background   = _hexToRgbaStr(color, 0.15);
+    btn.style.color        = _hexToLight(color);
+    btn.style.borderColor  = _hexToRgbaStr(color, 0.3);
+  });
+}
+
+function eppSetModuleColor(key, color) {
+  const saved = { ...(getConfig('sidebarBtnColors') || {}) };
+  saved[key] = color;
+  setConfig('sidebarBtnColors', saved);
+  markChanged(true);
+  applySidebarBtnColors();
+}
+
 function saveGlobalParam(key, value) {
   const gp = { ..._gpGet(), [key]: value };
   setConfig('parametrosGlobais', gp);
@@ -7046,6 +7078,8 @@ function applyGlobalParams() {
   if(gp.logoUrl && DATA) { DATA._logoUrl = gp.logoUrl; try { eppLogoRefresh(); } catch(e) {} }
   // Sidebar nav order/visibility
   applySidebarNav();
+  // Sidebar button colors
+  applySidebarBtnColors();
   // Header buttons visibility
   applyHeaderBtns();
 }
@@ -7061,6 +7095,7 @@ function applySidebarNav() {
     btn.style.display = visible === false ? 'none' : '';
     container.appendChild(btn);
   });
+  applySidebarBtnColors();
 }
 
 function applyHeaderBtns() {
@@ -7134,6 +7169,7 @@ function eppRenderParams() {
   const modList = document.getElementById('gp-modules-list');
   if(modList) {
     const savedOrder = getConfig('modulosOrdem');
+    const savedColors = getConfig('sidebarBtnColors') || {};
     // Build ordered list: saved order first, then any missing keys appended
     const savedKeys = Array.isArray(savedOrder) ? savedOrder.map(m => m.key) : [];
     const ordered = [
@@ -7144,7 +7180,11 @@ function eppRenderParams() {
       const def = _MODULES_NAV.find(n => n.key === m.key);
       if(!def) return '';
       const vis = m.visible !== false;
-      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cage-light);border-radius:8px;border:1px solid var(--cage-border);margin-bottom:6px;">
+      const color = savedColors[m.key] || def.color || '#3b82f6';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--cage-light);border-radius:8px;border:1px solid var(--cage-border);margin-bottom:6px;">
+        <input type="color" value="${color}" title="Cor do botão na sidebar"
+          style="width:28px;height:28px;flex-shrink:0;border:none;border-radius:6px;cursor:pointer;padding:1px;background:none;"
+          oninput="eppSetModuleColor('${m.key}',this.value)">
         <span style="font-size:13px;flex:1;">${def.label}</span>
         <button onclick="eppMoveModule('${m.key}',-1)" ${idx===0?'disabled':''} title="Mover para cima"
           style="background:none;border:1px solid var(--cage-border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;${idx===0?'opacity:.3;':''}">&uarr;</button>
