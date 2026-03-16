@@ -4465,10 +4465,19 @@ function harvestEditables() {
     const ai = parseInt(el.dataset.ai);
     if(!pp || isNaN(si) || isNaN(ai) || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
     const step = DATA[pp].steps[si];
-    if(!step.actions || !step.actions[ai]) return;
-    const cur = actionObj(step.actions[ai]);
-    cur.text = el.innerText?.trim() || '';
-    step.actions[ai] = cur;
+    const isTb = el.dataset.tobe === 'true';
+    if(isTb) {
+      if(!step.tobe) step.tobe = {};
+      if(!Array.isArray(step.tobe.actions) || !step.tobe.actions[ai]) return;
+      const cur = actionObj(step.tobe.actions[ai]);
+      cur.text = el.innerText?.trim() || '';
+      step.tobe.actions[ai] = cur;
+    } else {
+      if(!step.actions || !step.actions[ai]) return;
+      const cur = actionObj(step.actions[ai]);
+      cur.text = el.innerText?.trim() || '';
+      step.actions[ai] = cur;
+    }
   });
 }
 
@@ -4766,7 +4775,7 @@ function renderStep(p, i) {
       ${dragHandle}
       <span class="action-icon" style="color:${t.color}">${t.icon}</span>
       <div class="action-body">
-        <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}">${obj.text}</span>
+        <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>
         ${actorHTML}
       </div>
       ${editBtn}${rmBtn}
