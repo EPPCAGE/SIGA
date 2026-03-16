@@ -13701,13 +13701,28 @@ ${fluxoTexto}`;
       html += `<div class="ai-summary" style="margin-top:16px;padding:0;overflow:hidden;border-radius:12px;border:1.5px solid #c7d2fe;">
         <div style="padding:14px 18px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
           <strong style="color:#4338ca;">🗺 Sugestão de Novo Fluxo (v2)</strong>
-          <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;color:#4338ca;border-color:#4338ca;"
-            onclick="navigator.clipboard.writeText(this.closest('.ai-summary').querySelector('pre').textContent);showToast('Código Mermaid copiado!','success')">
-            📋 Copiar Mermaid
-          </button>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:2px;background:white;border:1px solid #c7d2fe;border-radius:8px;padding:2px 4px;">
+              <button onclick="zoomMermaid('${mermaidId}',-0.15)" title="Diminuir zoom"
+                style="background:none;border:none;cursor:pointer;font-size:15px;padding:0 4px;line-height:1;color:#4338ca;">−</button>
+              <span id="${mermaidId}-zoom-lbl" style="font-size:11px;font-weight:700;color:#4338ca;min-width:36px;text-align:center;">100%</span>
+              <button onclick="zoomMermaid('${mermaidId}',0.15)" title="Aumentar zoom"
+                style="background:none;border:none;cursor:pointer;font-size:15px;padding:0 4px;line-height:1;color:#4338ca;">+</button>
+              <button onclick="zoomMermaid('${mermaidId}',0)" title="Resetar zoom"
+                style="background:none;border:none;cursor:pointer;font-size:10px;padding:0 4px;line-height:1.6;color:#6366f1;">↺</button>
+            </div>
+            <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;color:#4338ca;border-color:#4338ca;"
+              onclick="navigator.clipboard.writeText(this.closest('.ai-summary').querySelector('pre').textContent);showToast('Código Mermaid copiado!','success')">
+              📋 Copiar Mermaid
+            </button>
+          </div>
         </div>
         <div style="padding:16px 18px;">
-          <div id="${mermaidId}" style="text-align:center;"></div>
+          <div style="overflow:auto;max-height:480px;border:1px solid #e0e7ff;border-radius:8px;background:#fafafa;">
+            <div id="${mermaidId}-inner" style="transform-origin:top left;display:inline-block;min-width:100%;padding:12px;">
+              <div id="${mermaidId}"></div>
+            </div>
+          </div>
           <details style="margin-top:12px;">
             <summary style="font-size:11px;color:#6366f1;cursor:pointer;">Ver código Mermaid</summary>
             <pre style="font-size:11px;background:#f8fafc;border-radius:8px;padding:10px;overflow-x:auto;margin-top:8px;">${mermaidCode.replace(/</g,'&lt;')}</pre>
@@ -13750,6 +13765,24 @@ ${fluxoTexto}`;
     btn.disabled = false;
     spinner.style.display = 'none';
   }
+}
+
+function zoomMermaid(id, delta) {
+  const inner = document.getElementById(id + '-inner');
+  const lbl   = document.getElementById(id + '-zoom-lbl');
+  if (!inner) return;
+  let scale = parseFloat(inner.dataset.scale || '1');
+  scale = delta === 0 ? 1 : Math.min(3, Math.max(0.2, scale + delta));
+  scale = Math.round(scale * 100) / 100;
+  inner.dataset.scale = scale;
+  inner.style.transform = `scale(${scale})`;
+  // Ajustar altura do wrapper para evitar sobreposição
+  const svg = inner.querySelector('svg');
+  if (svg) {
+    const h = svg.getBoundingClientRect().height * scale;
+    inner.style.height = h + 'px';
+  }
+  if (lbl) lbl.textContent = Math.round(scale * 100) + '%';
 }
 
 function _updateAiRunBtn(p) {
