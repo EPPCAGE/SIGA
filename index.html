@@ -4885,9 +4885,20 @@ function renderStep(p, i) {
   container.querySelectorAll('[data-ai]').forEach(el => {
     el.addEventListener('blur', function() {
       const pp=this.dataset.sp, si=parseInt(this.dataset.si), ai=parseInt(this.dataset.ai);
-      const cur = actionObj(DATA[pp].steps[si].actions[ai]);
-      cur.text = this.innerText.trim();
-      DATA[pp].steps[si].actions[ai] = cur;
+      const step = DATA[pp].steps[si];
+      if(!step) return;
+      if(this.dataset.tobe === 'true') {
+        if(!step.tobe) step.tobe = {};
+        if(!Array.isArray(step.tobe.actions) || !step.tobe.actions[ai]) return;
+        const cur = actionObj(step.tobe.actions[ai]);
+        cur.text = this.innerText.trim();
+        step.tobe.actions[ai] = cur;
+      } else {
+        if(!step.actions || !step.actions[ai]) return;
+        const cur = actionObj(step.actions[ai]);
+        cur.text = this.innerText.trim();
+        step.actions[ai] = cur;
+      }
       markChanged(true); // quick=true: salvar em 800ms após blur
     });
   });
