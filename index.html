@@ -13612,7 +13612,7 @@ async function _runAiAnalysisWithMode(p, pop, mode) {
   linhas.push(`ETAPAS DO FLUXO (${modeLabel}):`);
   pop.steps.forEach((step, i) => {
     const rs = resolveStep(step, mode);
-    linhas.push(`\nEtapa ${i + 1}: ${rs.title || '(sem título)'}`);
+    linhas.push(`\n[${i + 1}] "${rs.title || '(sem título)'}"`);
     if (rs.subtitle)    linhas.push(`  Subtítulo: ${rs.subtitle}`);
     if (rs.responsible) linhas.push(`  Responsável: ${rs.responsible}`);
     if (rs.note)        linhas.push(`  Observação: ${rs.note}`);
@@ -13651,6 +13651,7 @@ Regras:
 - "melhorias_v2": liste melhorias concretas para uma futura versão do processo (mudanças de fluxo, eliminação de etapas, redistribuição de responsabilidades, novos controles).
 - "resumo": 2-3 frases avaliando o processo como um todo e sugerindo prioridade de melhoria.
 - "fluxo_sugerido_mermaid": diagrama Mermaid (flowchart LR) representando o fluxo MELHORADO do processo, incorporando as principais melhorias identificadas. Use nomes curtos para os nós. Inclua apenas o código Mermaid puro, sem blocos de código.
+- Ao referenciar etapas, use SEMPRE o nome da etapa entre aspas (ex: "Aprovação de orçamento"), nunca apenas "Etapa 1" ou "Etapa 2".
 - Se não identificar itens numa categoria, retorne array vazio.
 
 FLUXO DO PROCESSO:
