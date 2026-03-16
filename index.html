@@ -5279,8 +5279,11 @@ function renderStep(p, i) {
     const obj = actionObj(a);
     const t = ACTION_TYPES[obj.type] || ACTION_TYPES.atividade;
     const actorHTML = obj.actor ? `<span class="action-actor">👤 ${obj.actor}</span>` : '';
-    const natLabels = { execucao:'Execução', revisao:'Revisão', aprovacao:'Aprovação', distribuicao:'Distribuição', comunicacao:'Comunicação' };
-    const natBadge = (obj.type === 'atividade' && obj.natureza) ? `<span class="natureza-badge nat-${obj.natureza}">${natLabels[obj.natureza]||obj.natureza}</span>` : '';
+    const _natMap = getNatMap();
+    const _natCfg = obj.natureza ? _natMap[obj.natureza] : null;
+    const natBadge = (obj.type === 'atividade' && _natCfg)
+      ? `<span class="natureza-badge" style="background:${_natCfg.bg};color:${_natCfg.color};">${_natCfg.icon ? _natCfg.icon+' ' : ''}${_natCfg.label}</span>`
+      : '';
     const editBtn = em ? `<button class="edit-rm-btn" style="margin-left:4px;" onclick="openActionModal('${p}',${i},${ai})" title="Editar ação">✏️</button>` : '';
     const rmBtn = em ? `<button class="edit-rm-btn" onclick="rmStepAction('${p}',${i},${ai})">✕</button>` : '';
     const dragHandle = em ? `<span class="drag-handle" title="Arrastar para reordenar">⋮⋮</span>` : '';
@@ -7368,12 +7371,17 @@ function openActionModal(p, si, ai) {
   document.getElementById('act-observacoes').value= obj.observacoes;
   document.getElementById('act-pontos').value     = obj.pontosMelhoria;
 
-  // Natureza — só para atividades
+  // Natureza — só para atividades (botões reconstruídos do config)
   const natWrap = document.getElementById('act-natureza-wrap');
   if(natWrap) natWrap.style.display = obj.type === 'atividade' ? 'block' : 'none';
-  document.querySelectorAll('.natureza-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.nat === (obj.natureza || 'execucao'));
-  });
+  const natList = getConfig('naturezaAtividade');
+  const defaultNat = natList[0]?.key || 'execucao';
+  const selectedNat = obj.natureza || defaultNat;
+  const grid = document.querySelector('#act-natureza-wrap .natureza-grid');
+  if(grid) grid.innerHTML = natList.map(n =>
+    `<button class="natureza-btn${n.key === selectedNat ? ' selected' : ''}" data-nat="${n.key}"
+      onclick="selectNatureza('${n.key}')">${n.icon ? n.icon+' ' : ''}${n.label}</button>`
+  ).join('');
 
   // Update modal title to show which mode is being edited
   const titleEl = document.querySelector('.action-type-title');
@@ -7572,6 +7580,13 @@ const CONFIG_DEFAULTS = {
   alertasEnviados: {},
   statusMapeamento:     [{value:'planejado',label:'📋 Planejado'},{value:'em_andamento',label:'🔄 Em Andamento'},{value:'concluido',label:'✅ Concluído'},{value:'atrasado',label:'⚠️ Atrasado'},{value:'suspenso',label:'⏸ Suspenso'}],
   statusAuditoria:      [{value:'planejada',label:'📋 Planejada'},{value:'em_execucao',label:'🔄 Em Execução'},{value:'concluida',label:'✅ Concluída'},{value:'cancelada',label:'⛔ Cancelada'}],
+  naturezaAtividade: [
+    { key:'execucao',     label:'Execução',     icon:'▶',  bg:'#dcfce7', color:'#166534' },
+    { key:'revisao',      label:'Revisão',      icon:'🔍', bg:'#dbeafe', color:'#1e40af' },
+    { key:'aprovacao',    label:'Aprovação',    icon:'✅', bg:'#fef9c3', color:'#854d0e' },
+    { key:'distribuicao', label:'Distribuição', icon:'📤', bg:'#f3e8ff', color:'#6b21a8' },
+    { key:'comunicacao',  label:'Comunicação',  icon:'📢', bg:'#ffedd5', color:'#9a3412' },
+  ],
 };
 
 function getConfig(key) {
@@ -7591,6 +7606,14 @@ function setConfig(key, val) {
   DATA.config[key] = val;
 }
 function getMacroprocessos() { return getConfig('macroprocessos'); }
+
+// Retorna map { key → {label,icon,bg,color} } para natureza da atividade
+function getNatMap() {
+  const list = getConfig('naturezaAtividade');
+  const map = {};
+  list.forEach(n => { map[n.key] = n; });
+  return map;
+}
 
 function populateConfigSelect(selectId, configKey, selected) {
   const el = document.getElementById(selectId);
@@ -7975,6 +7998,7 @@ const _CFG_TABLES = [
   { key:'categoriaDocumentos', title:'📄 Categoria de Documentos',    desc:'Categorias usadas na gestão de documentos.' },
   { key:'statusMapeamento',    title:'📊 Status do Mapeamento',       desc:'Status usados na ficha técnica de mapeamento.', typed:'status' },
   { key:'statusAuditoria',     title:'🔍 Status de Auditoria',        desc:'Status usados nos planos de auditoria.', typed:'status' },
+  { key:'naturezaAtividade',   title:'🏷️ Natureza da Atividade',      desc:'Tipos de natureza exibidos como badge nas atividades dos fluxos.', typed:'natureza' },
 ];
 
 const _ALERT_TYPES = [
@@ -7999,6 +8023,7 @@ function renderConfigPanel() {
 function _renderCfgCard({key, title, desc, typed=false}) {
   if(typed === 'servidor') return _renderCfgCardServidor(title, desc);
   if(typed === 'alertas')  return _renderCfgCardAlertas(title, desc);
+  if(typed === 'natureza') return _renderCfgCardNatureza(title, desc);
 
   const items = getConfig(key);
   const empty = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum item cadastrado.</div>';
@@ -8073,6 +8098,128 @@ function _renderCfgCardServidor(title, desc) {
       <button onclick="configAddServidor()" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
     </div>
   </div>`;
+}
+
+function _renderCfgCardNatureza(title, desc) {
+  const items = getConfig('naturezaAtividade');
+  const empty = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhuma natureza cadastrada.</div>';
+
+  const rows = items.map((n, i) => {
+    const keyEsc   = (n.key   ||'').replace(/"/g,'&quot;');
+    const labelEsc = (n.label ||'').replace(/"/g,'&quot;');
+    const iconEsc  = (n.icon  ||'').replace(/"/g,'&quot;');
+    return `<div style="display:grid;grid-template-columns:56px 1fr 52px 52px auto;gap:8px;align-items:center;padding:8px 10px;background:#f8fafc;border-radius:7px;margin-bottom:6px;">
+      <input class="modal-input" style="margin:0;font-size:13px;padding:5px 6px;text-align:center;" value="${iconEsc}"
+        placeholder="▶" title="Ícone (emoji)"
+        onchange="configSaveNatureza(${i},'icon',this.value)">
+      <input class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" value="${labelEsc}"
+        placeholder="Nome da natureza"
+        onchange="configSaveNatureza(${i},'label',this.value)">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+        <span style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;">Fundo</span>
+        <input type="color" value="${n.bg||'#e2e8f0'}" title="Cor de fundo do badge"
+          style="width:36px;height:26px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;padding:1px;"
+          onchange="configSaveNatureza(${i},'bg',this.value)">
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+        <span style="font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;">Texto</span>
+        <input type="color" value="${n.color||'#334155'}" title="Cor do texto do badge"
+          style="width:36px;height:26px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;padding:1px;"
+          onchange="configSaveNatureza(${i},'color',this.value)">
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="natureza-badge" style="background:${n.bg||'#e2e8f0'};color:${n.color||'#334155'};">${n.icon||''} ${n.label||''}</span>
+        <button onclick="configRemoveNatureza(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;" title="Remover">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">${desc}</div>
+    <div style="display:grid;grid-template-columns:56px 1fr 52px 52px auto;gap:8px;padding:0 10px 6px;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">
+      <span>Ícone</span><span>Label</span><span style="text-align:center;">Fundo</span><span style="text-align:center;">Texto</span><span>Preview</span>
+    </div>
+    <div id="cfg-list-naturezaAtividade">${rows || empty}</div>
+    <div style="display:grid;grid-template-columns:56px 1fr 52px 52px auto;gap:8px;margin-top:10px;align-items:center;">
+      <input id="cfg-new-nat-icon"  class="modal-input" style="margin:0;font-size:13px;padding:5px 6px;text-align:center;" placeholder="▶"
+        onkeydown="if(event.key==='Enter') configAddNatureza()">
+      <input id="cfg-new-nat-label" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" placeholder="Nome da natureza..."
+        onkeydown="if(event.key==='Enter') configAddNatureza()">
+      <input id="cfg-new-nat-bg"    type="color" value="#e2e8f0" title="Cor de fundo"
+        style="width:36px;height:34px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;padding:1px;margin:0 auto;display:block;">
+      <input id="cfg-new-nat-color" type="color" value="#334155" title="Cor do texto"
+        style="width:36px;height:34px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;padding:1px;margin:0 auto;display:block;">
+      <button onclick="configAddNatureza()" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
+    </div>
+  </div>`;
+}
+
+function configAddNatureza() {
+  const icon  = (document.getElementById('cfg-new-nat-icon')?.value  || '').trim();
+  const label = (document.getElementById('cfg-new-nat-label')?.value || '').trim();
+  const bg    =  document.getElementById('cfg-new-nat-bg')?.value    || '#e2e8f0';
+  const color =  document.getElementById('cfg-new-nat-color')?.value || '#334155';
+  if (!label) { showToast('Informe o nome da natureza.', 'warn'); return; }
+  // Gerar key: slug do label
+  let key = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  const list = getConfig('naturezaAtividade');
+  // Garantir key único
+  let base = key, n = 2;
+  while (list.some(x => x.key === key)) key = base + '_' + (n++);
+  list.push({ key, label, icon, bg, color });
+  setConfig('naturezaAtividade', list);
+  markChanged();
+  renderConfigPanel();
+  _rebuildNaturezaBtns();
+  showToast('✅ Natureza adicionada!', 'success');
+}
+
+function configRemoveNatureza(idx) {
+  const list = getConfig('naturezaAtividade');
+  if (list.length <= 1) { showToast('Mantenha ao menos uma natureza.', 'warn'); return; }
+  list.splice(idx, 1);
+  setConfig('naturezaAtividade', list);
+  markChanged();
+  renderConfigPanel();
+  _rebuildNaturezaBtns();
+  showToast('Natureza removida.', 'success');
+}
+
+function configSaveNatureza(idx, field, value) {
+  const list = getConfig('naturezaAtividade');
+  if (!list[idx]) return;
+  list[idx][field] = value;
+  setConfig('naturezaAtividade', list);
+  markChanged();
+  // Atualizar preview inline sem re-renderizar o painel inteiro
+  const container = document.getElementById('cfg-list-naturezaAtividade');
+  if (container) {
+    const rows = container.querySelectorAll('div[style*="grid"]');
+    const row = rows[idx];
+    if (row) {
+      const preview = row.querySelector('.natureza-badge');
+      if (preview) {
+        const n = list[idx];
+        preview.style.background = n.bg || '#e2e8f0';
+        preview.style.color      = n.color || '#334155';
+        preview.textContent      = (n.icon ? n.icon + ' ' : '') + (n.label || '');
+      }
+    }
+  }
+  _rebuildNaturezaBtns();
+}
+
+// Reconstrói os botões de natureza no modal de ação a partir do config
+function _rebuildNaturezaBtns() {
+  const grid = document.querySelector('#act-natureza-wrap .natureza-grid');
+  if (!grid) return;
+  const list = getConfig('naturezaAtividade');
+  const currentSelected = document.querySelector('.natureza-btn.selected')?.dataset?.nat || list[0]?.key || '';
+  grid.innerHTML = list.map(n =>
+    `<button class="natureza-btn${n.key === currentSelected ? ' selected' : ''}" data-nat="${n.key}"
+      onclick="selectNatureza('${n.key}')">${n.icon ? n.icon + ' ' : ''}${n.label}</button>`
+  ).join('');
 }
 
 function _renderCfgCardAlertas(title, desc) {
