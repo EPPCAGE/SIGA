@@ -11038,6 +11038,7 @@ function renderFicha(p) {
     { label:'Subprocesso',           icon:'📋', value: m.name,         group:'Identificação' },
     { label:'Macroprocesso',         icon:'🗂', value: m.macro,        group:'Identificação' },
     { label:'Processo Pai',          icon:'🔗', value: m.processo,     group:'Identificação' },
+    { label:'Subprocesso (Arq.)',    icon:'📂', value: m.sub,          group:'Identificação' },
     { label:'Unidade Responsável',   icon:'🏛', value: m.unidade,      group:'Identificação' },
     { label:'Tipo de Trabalho',      icon:'🔧', value: m.tipo,         group:'Identificação' },
     { label:'Dificuldade',           icon:'📶', value: m.dificuldade,  group:'Identificação' },
@@ -14990,8 +14991,19 @@ function openStatusModal(p) {
   document.getElementById('status-modal-banner-sub').value = m.bannerSub    || '';
   // Identificação
   document.getElementById('status-modal-nome').value       = m.name         || '';
-  document.getElementById('status-modal-macro').value      = m.macro        || '';
+  // Populate macro dropdown from architecture data
+  (function() {
+    const macroSel = document.getElementById('status-modal-macro');
+    if(!macroSel) return;
+    const macros = [...new Set((arqGetData ? arqGetData() : []).map(r => r.macroprocesso).filter(Boolean))].sort();
+    macroSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>'
+      + macros.map(m2 => `<option value="${m2}">${m2}</option>`).join('');
+    macroSel.value = m.macro || '';
+  })();
+  statusModalUpdateProcessoList();
   document.getElementById('status-modal-processo').value   = m.processo     || '';
+  statusModalUpdateSubList();
+  document.getElementById('status-modal-sub').value        = m.sub          || '';
   populateConfigSelect('status-modal-unidade', 'areas', m.unidade || '');
   populateConfigSelect('status-modal-tipo', 'tipoTrabalho', m.tipo || '');
   document.getElementById('status-modal-dificuldade').value= m.dificuldade  || '';
@@ -15044,8 +15056,9 @@ function saveStatusModal() {
   // Identificação
   const newName = document.getElementById('status-modal-nome').value.trim();
   if(newName) m.name = newName;
-  m.macro        = document.getElementById('status-modal-macro').value.trim();
+  m.macro        = document.getElementById('status-modal-macro').value;
   m.processo     = document.getElementById('status-modal-processo').value.trim();
+  m.sub          = document.getElementById('status-modal-sub').value.trim();
   m.unidade      = document.getElementById('status-modal-unidade').value;
   m.tipo         = document.getElementById('status-modal-tipo').value;
   m.dificuldade  = document.getElementById('status-modal-dificuldade').value;
@@ -15104,6 +15117,34 @@ function saveStatusModal() {
   }
   markChanged();
   showToast('✅ Status atualizado!', 'success');
+}
+
+function statusModalUpdateProcessoList() {
+  const data  = arqGetData ? arqGetData() : [];
+  const macro = document.getElementById('status-modal-macro')?.value || '';
+  const procList = document.getElementById('status-modal-processo-list');
+  if(!procList) return;
+  const procs = [...new Set(
+    data.filter(r => !macro || r.macroprocesso === macro).map(r => r.processo).filter(Boolean)
+  )].sort();
+  procList.innerHTML = procs.map(p2 => `<option value="${p2}">`).join('');
+  // Reset subprocesso list too
+  statusModalUpdateSubList();
+}
+
+function statusModalUpdateSubList() {
+  const data  = arqGetData ? arqGetData() : [];
+  const macro = document.getElementById('status-modal-macro')?.value || '';
+  const proc  = document.getElementById('status-modal-processo')?.value || '';
+  const subList = document.getElementById('status-modal-sub-list');
+  if(!subList) return;
+  const subs = [...new Set(
+    data.filter(r =>
+      (!macro || r.macroprocesso === macro) &&
+      (!proc  || r.processo === proc)
+    ).map(r => r.subprocesso).filter(Boolean)
+  )].sort();
+  subList.innerHTML = subs.map(s => `<option value="${s}">`).join('');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -17305,12 +17346,20 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
           <div class="gmod-row">
             <div>
               <label class="gmod-label">Macroprocesso</label>
-              <input class="modal-input" id="status-modal-macro" type="text" placeholder="Macroprocesso">
+              <select class="modal-input" id="status-modal-macro" onchange="statusModalUpdateProcessoList()">
+                <option value="">Selecione o macroprocesso...</option>
+              </select>
             </div>
             <div>
               <label class="gmod-label">Processo Pai</label>
-              <input class="modal-input" id="status-modal-processo" type="text" placeholder="Processo pai">
+              <input class="modal-input" id="status-modal-processo" type="text" placeholder="Digite para filtrar processos..." list="status-modal-processo-list" autocomplete="off" oninput="statusModalUpdateSubList()">
+              <datalist id="status-modal-processo-list"></datalist>
             </div>
+          </div>
+          <div>
+            <label class="gmod-label">Subprocesso</label>
+            <input class="modal-input" id="status-modal-sub" type="text" placeholder="Digite para filtrar subprocessos..." list="status-modal-sub-list" autocomplete="off">
+            <datalist id="status-modal-sub-list"></datalist>
           </div>
           <div class="gmod-row">
             <div>
