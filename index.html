@@ -18170,7 +18170,7 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
 // ─── Service Worker — cache-busting (network-first para HTML) ────────────────
 // SW_VERSION: incremente este número a cada deploy para forçar atualização em todos os usuários.
 // NÃO use Date.now() aqui — causaria um SW novo a cada milissegundo (loop infinito).
-const SW_VERSION = '3';
+const SW_VERSION = '4';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/processoscage/sw.js?v=' + SW_VERSION).then(reg => {
