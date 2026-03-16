@@ -286,6 +286,23 @@
   .ind-edit-btn:hover{border-color:var(--cage-mid);background:var(--cage-light);}
   .ind-rm-btn{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #fecaca;background:#fff5f5;color:#b91c1c;transition:all .15s;display:inline-flex;align-items:center;gap:4px;}
   .ind-rm-btn:hover{background:#fee2e2;border-color:#f87171;}
+  /* Mini SISPLAN results section inside indicator card */
+  .ind-sisplan-results{border-top:1.5px solid #bae6fd;padding:12px 16px 10px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe22);}
+  .ind-sisplan-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .ind-sisplan-badge{font-size:10px;font-weight:700;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;border-radius:6px;padding:2px 8px;letter-spacing:.04em;}
+  .ind-mini-kpi-row{display:flex;gap:6px;margin-bottom:8px;}
+  .ind-mini-kpi{flex:1;text-align:center;background:white;border-radius:6px;padding:5px 4px;border:1px solid #e2e8f0;}
+  .ind-mini-kpi-val{font-size:15px;font-weight:700;color:var(--cage-blue);line-height:1.2;}
+  .ind-mini-kpi-val.pct-verde{color:#16a34a;}.ind-mini-kpi-val.pct-amarelo{color:#ca8a04;}.ind-mini-kpi-val.pct-vermelho{color:#dc2626;}
+  .ind-mini-kpi-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:1px;}
+  .ind-mini-chart-wrap{position:relative;height:90px;margin:6px 0 8px;}
+  .ind-mini-table{width:100%;border-collapse:collapse;font-size:11px;}
+  .ind-mini-table th{font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;padding:3px 4px;text-align:right;border-bottom:1px solid var(--cage-border);}
+  .ind-mini-table th:first-child{text-align:left;}
+  .ind-mini-table td{padding:3px 4px;text-align:right;border-bottom:1px solid rgba(0,0,0,.04);color:var(--text-secondary);font-size:11px;}
+  .ind-mini-table td:first-child{text-align:left;color:var(--text-muted);}
+  .ind-mini-table tr:last-child td{border-bottom:none;}
+  .ind-mini-no-data{font-size:11px;color:var(--text-muted);text-align:center;padding:8px 0;font-style:italic;}
   .btn-add-ind{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:var(--cage-accent);color:white;transition:all .2s;}
   .btn-add-ind:hover{background:#00875a;box-shadow:0 2px 8px rgba(0,168,107,.3);}
 
@@ -2074,6 +2091,16 @@
         </div>
       </div>
     </div>
+    <div class="flow-mode-header" style="margin-bottom:16px;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Responsáveis por Modo</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Exibir responsáveis do fluxo AS IS ou TO BE</div>
+      </div>
+      <div class="flow-mode-toggle">
+        <button class="flow-mode-btn active-asis" data-mode="asis" onclick="setFlowMode('asis')">📌 AS IS — Atual</button>
+        <button class="flow-mode-btn" data-mode="tobe" onclick="setFlowMode('tobe')">📋 TO BE — Futuro</button>
+      </div>
+    </div>
     <div class="role-grid fade-up delay-1" id="d-role-grid"></div>
   </section>
 
@@ -2400,6 +2427,16 @@
             <div style="font-size:12px;color:var(--text-muted);" contenteditable="false" data-key="r:ger_desc">Responsável pelo gerenciamento e monitoramento do subprocesso</div>
           </div>
         </div>
+      </div>
+    </div>
+    <div class="flow-mode-header" style="margin-bottom:16px;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Responsáveis por Modo</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Exibir responsáveis do fluxo AS IS ou TO BE</div>
+      </div>
+      <div class="flow-mode-toggle">
+        <button class="flow-mode-btn active-asis" data-mode="asis" onclick="setFlowMode('asis')">📌 AS IS — Atual</button>
+        <button class="flow-mode-btn" data-mode="tobe" onclick="setFlowMode('tobe')">📋 TO BE — Futuro</button>
       </div>
     </div>
     <div class="role-grid fade-up delay-1" id="r-role-grid"></div>
@@ -5181,6 +5218,7 @@ function setFlowMode(mode) {
   if(DATA[p] && Array.isArray(DATA[p].steps) && DATA[p].steps.length > 0) {
     renderStep(p, DATA[p].currentStep || 0);
   }
+  try { renderRoles(p); } catch(e) {}
 }
 
 // ── Step details expand/collapse ───────────────
@@ -5261,8 +5299,9 @@ function renderRoles(p) {
     if(!seen.has(key)) { seen.add(key); flowActors.push(norm); }
   };
   steps.forEach(s => {
-    _addActor(s.responsible);
-    (s.actions || []).forEach(a => { if(a.type !== 'observacao') _addActor(a.actor); });
+    const rs = resolveStep(s, flowMode);
+    _addActor(rs.responsible);
+    (rs.actions || []).forEach(a => { if(a.type !== 'observacao') _addActor(a.actor); });
   });
 
   // === 2. Sincronizar DATA[p].roles com os atores do fluxo (preserva metadados) ===
@@ -5286,11 +5325,12 @@ function renderRoles(p) {
     const key = name.trim().toLowerCase();
     const result = [];
     steps.forEach(s => {
-      const isResp = (s.responsible || '').trim().toLowerCase() === key;
-      const matched = (s.actions || []).filter(a =>
+      const rs = resolveStep(s, flowMode);
+      const isResp = (rs.responsible || '').trim().toLowerCase() === key;
+      const matched = (rs.actions || []).filter(a =>
         (a.actor || '').trim().toLowerCase() === key && a.type !== 'observacao'
       );
-      if(isResp || matched.length) result.push({ stepTitle: s.title || '', actions: matched, isResp });
+      if(isResp || matched.length) result.push({ stepTitle: rs.title || '', actions: matched, isResp });
     });
     return result;
   }
@@ -5338,6 +5378,129 @@ function addRoleDuty(p,ri){ if(!isEditor){showToast('🔒 Apenas editores.','war
 function rmRoleDuty(p,ri,di){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} DATA[p].roles[ri].duties.splice(di,1); renderRoles(p); markChanged(); }
 
 // ═══ INDICATORS ═══════════════════════════════
+// ═══ SISPLAN MINI-CHART HELPERS ════════════════
+function _periodoLabelSimple(p) {
+  if(!p) return '—';
+  const m = p.match(/^(\d{4})-(\d{2})$/);
+  if(m) { const ms=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']; return ms[parseInt(m[2])-1]+'/'+m[1]; }
+  return p;
+}
+
+function _fmtNumSimple(v) {
+  if(v === null || v === undefined || v === '') return '—';
+  if(Number.isInteger(Number(v))) return Number(v).toLocaleString('pt-BR');
+  return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:2});
+}
+
+function _buildIndSisplanSection(ind, p, i) {
+  if(!ind.sisplanId) return '';
+  const cageInd = (DATA.indicadoresCage?.indicadores || []).find(ci => ci.id === ind.sisplanId);
+  if(!cageInd) return '';
+  const codigo = cageInd.codigo;
+  if(!codigo) return '';
+  const resultados = (DATA.indicadoresCage?.resultados || [])
+    .filter(r => r.codigo === codigo)
+    .sort((a,b) => (b.periodo||'').localeCompare(a.periodo||''));
+
+  const headerHtml = `<div class="ind-sisplan-header">
+    <span class="ind-sisplan-badge">🔗 SISPLAN · ${codigo}</span>
+    ${resultados.length ? `<span style="font-size:10px;color:var(--text-muted);">${_periodoLabelSimple(resultados[0]?.periodo)}</span>` : ''}
+  </div>`;
+
+  if(!resultados.length) {
+    return `<div class="ind-sisplan-results">${headerHtml}<div class="ind-mini-no-data">Sem resultados importados para este indicador.</div></div>`;
+  }
+
+  const latest = resultados[0];
+  const pct = latest.pctRealizado;
+  const pctColor = pct === null || pct === undefined ? '' : pct >= 100 ? 'pct-verde' : pct >= 80 ? 'pct-amarelo' : 'pct-vermelho';
+
+  const kpisHtml = `<div class="ind-mini-kpi-row">
+    <div class="ind-mini-kpi">
+      <div class="ind-mini-kpi-val ${pctColor}">${pct !== null && pct !== undefined ? _fmtNumSimple(pct)+'%' : '—'}</div>
+      <div class="ind-mini-kpi-label">% Realizado</div>
+    </div>
+    <div class="ind-mini-kpi">
+      <div class="ind-mini-kpi-val">${_fmtNumSimple(latest.realizado)}</div>
+      <div class="ind-mini-kpi-label">Realizado</div>
+    </div>
+    <div class="ind-mini-kpi">
+      <div class="ind-mini-kpi-val">${_fmtNumSimple(latest.meta)}</div>
+      <div class="ind-mini-kpi-label">Meta</div>
+    </div>
+  </div>`;
+
+  const last6 = resultados.slice(0, 6);
+  const tableRows = last6.map(r => {
+    const rp = r.pctRealizado;
+    const rStyle = rp === null || rp === undefined ? '' : rp >= 100 ? 'color:#16a34a;' : rp >= 80 ? 'color:#ca8a04;' : 'color:#dc2626;';
+    return `<tr>
+      <td>${_periodoLabelSimple(r.periodo)}</td>
+      <td>${_fmtNumSimple(r.realizado)}</td>
+      <td>${_fmtNumSimple(r.meta)}</td>
+      <td style="${rStyle}font-weight:600;">${rp !== null && rp !== undefined ? _fmtNumSimple(rp)+'%' : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="ind-sisplan-results">
+    ${headerHtml}
+    ${kpisHtml}
+    <div class="ind-mini-chart-wrap"><canvas id="ind-mini-chart-${p}-${i}"></canvas></div>
+    <table class="ind-mini-table">
+      <thead><tr><th>Período</th><th>Realizado</th><th>Meta</th><th>%</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+  </div>`;
+}
+
+const _indMiniCharts = {};
+function _initIndMiniCharts(p) {
+  (DATA[p]?.indicators || []).forEach((ind, i) => {
+    if(!ind.sisplanId) return;
+    const chartId = `ind-mini-chart-${p}-${i}`;
+    if(_indMiniCharts[chartId]) { try { _indMiniCharts[chartId].destroy(); } catch(e) {} delete _indMiniCharts[chartId]; }
+    const ctx = document.getElementById(chartId);
+    if(!ctx) return;
+    const cageInd = (DATA.indicadoresCage?.indicadores || []).find(ci => ci.id === ind.sisplanId);
+    if(!cageInd?.codigo) return;
+    const resultados = (DATA.indicadoresCage?.resultados || [])
+      .filter(r => r.codigo === cageInd.codigo)
+      .sort((a,b) => (a.periodo||'').localeCompare(b.periodo||''));
+    if(!resultados.length) return;
+    const hasPercentage = resultados.some(r => r.pctRealizado !== null && r.pctRealizado !== undefined && r.pctRealizado !== 0);
+    const last12 = resultados.slice(-12);
+    const labels = last12.map(r => _periodoLabelSimple(r.periodo));
+    const data = hasPercentage ? last12.map(r => r.pctRealizado ?? null) : last12.map(r => r.realizado ?? null);
+    const bgColors = hasPercentage
+      ? data.map(v => v === null ? '#cbd5e1' : v >= 100 ? 'rgba(22,163,74,.75)' : v >= 80 ? 'rgba(234,179,8,.75)' : 'rgba(220,38,38,.75)')
+      : data.map(v => v === null ? '#cbd5e1' : 'rgba(10,37,64,.65)');
+    const metaLine = hasPercentage ? last12.map(() => 100) : last12.map(r => r.meta ?? null);
+    try {
+      _indMiniCharts[chartId] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { data, backgroundColor: bgColors, borderRadius: 3, order: 2 },
+            { data: metaLine, type: 'line', borderColor: '#0a2540', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: .3, order: 1 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx2 => ctx2.raw !== null ? (hasPercentage ? _fmtNumSimple(ctx2.raw)+'%' : _fmtNumSimple(ctx2.raw)) : '—' } }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { font:{size:8}, callback: v => hasPercentage ? v+'%' : _fmtNumSimple(v) }, grid: { color:'rgba(0,0,0,.05)' } },
+            x: { ticks: { font:{size:8}, maxRotation: 45 } }
+          }
+        }
+      });
+    } catch(e) { console.warn('ind mini chart error', chartId, e); }
+  });
+}
+
 function renderIndicators(p) {
   const _indGrid = document.getElementById(p+'-indicator-grid');
   if(!_indGrid) return;
@@ -6352,6 +6515,16 @@ function mountNewPopTab(key, label, silent=false) {
       <button id="${key}-add-step-btn" class="edit-add-btn" style="display:none;" onclick="addStep('${key}')">+ Etapa</button>
     </div>
     <div id="${key}-responsabilidades" class="section">
+      <div class="flow-mode-header" style="margin-bottom:16px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Responsáveis por Modo</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Exibir responsáveis do fluxo AS IS ou TO BE</div>
+        </div>
+        <div class="flow-mode-toggle">
+          <button class="flow-mode-btn active-asis" data-mode="asis" onclick="setFlowMode('asis')">📌 AS IS — Atual</button>
+          <button class="flow-mode-btn" data-mode="tobe" onclick="setFlowMode('tobe')">📋 TO BE — Futuro</button>
+        </div>
+      </div>
       <div id="${key}-role-grid" class="role-grid"></div>
     </div>
     <div id="${key}-indicadores" class="section">
