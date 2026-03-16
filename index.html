@@ -1450,6 +1450,7 @@
       <button class="epp-tab active" data-tab="pat"    onclick="eppTab('pat',this)">📅 Plano Anual de Trabalho</button>
       <button class="epp-tab"        data-tab="dash"   onclick="eppTab('dash',this)">📊 Dashboard EPP</button>
       <button class="epp-tab"        data-tab="config" onclick="eppTab('config',this)">⚙️ Tabelas de Referência</button>
+      <button class="epp-tab"        data-tab="users"  onclick="eppTab('users',this)">👥 Usuários</button>
     </div>
   </div>
 </div>
@@ -1575,6 +1576,69 @@
   </div>
   <div id="epp-config-tables-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
     <!-- Preenchido por renderConfigPanel() -->
+  </div>
+</div>
+
+<!-- EPP: Users panel (shown when users tab is active) -->
+<div id="epp-users-panel" style="display:none;max-width:760px;margin:0 auto;padding:24px 32px 80px;">
+  <div style="margin-bottom:20px;">
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#0a2540;margin:0 0 4px;">👥 Controle de Usuários</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Gerencie usuários, perfis de acesso e solicitações de entrada no sistema.</p>
+  </div>
+  <!-- Sub-tabs -->
+  <div style="display:flex;gap:0;border-bottom:2px solid var(--cage-border);margin-bottom:16px;">
+    <button id="epp-utab-editors"  onclick="eppSwitchUsersTab('editors')"
+      style="padding:8px 20px;border:none;background:none;font-weight:700;font-size:13px;color:var(--cage-blue);border-bottom:3px solid var(--cage-blue);cursor:pointer;">
+      👤 Editores
+    </button>
+    <button id="epp-utab-requests" onclick="eppSwitchUsersTab('requests')"
+      style="padding:8px 20px;border:none;background:none;font-weight:600;font-size:13px;color:var(--text-muted);cursor:pointer;">
+      📨 Solicitações <span id="epp-u-req-badge" style="display:none;background:#e11d48;color:white;border-radius:20px;padding:1px 6px;font-size:10px;margin-left:2px;">0</span>
+    </button>
+    <button id="epp-utab-history"  onclick="eppSwitchUsersTab('history')"
+      style="padding:8px 20px;border:none;background:none;font-weight:600;font-size:13px;color:var(--text-muted);cursor:pointer;">
+      🕐 Histórico
+    </button>
+  </div>
+  <!-- Editores -->
+  <div id="epp-u-editors-panel">
+    <div id="epp-u-editor-list" style="margin-bottom:12px;"></div>
+    <div id="epp-u-add-row" style="display:none;gap:8px;flex-direction:column;">
+      <div class="gmod-row">
+        <div>
+          <label class="gmod-label">E-mail *</label>
+          <input class="modal-input" id="epp-u-new-email" type="email" placeholder="usuario@email.com">
+        </div>
+        <div>
+          <label class="gmod-label">Nome</label>
+          <input class="modal-input" id="epp-u-new-name" type="text" placeholder="Nome do usuário">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div>
+          <label class="gmod-label">Perfil</label>
+          <select id="epp-u-new-role" style="padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;">
+            <option value="viewer">Visualizador</option>
+            <option value="editor">Editor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <button class="btn btn-success" style="margin-left:auto;font-size:12px;align-self:flex-end;" onclick="saveNewEditor()">Adicionar</button>
+        <button class="btn btn-outline" style="font-size:12px;align-self:flex-end;"
+          onclick="document.getElementById('epp-u-add-row').style.display='none';document.getElementById('epp-u-add-btn-row').style.display=''">Cancelar</button>
+      </div>
+    </div>
+    <div id="epp-u-add-btn-row">
+      <button class="btn btn-primary" style="font-size:12px;width:100%;" onclick="showAddEditor()">＋ Adicionar Usuário</button>
+    </div>
+  </div>
+  <!-- Solicitações -->
+  <div id="epp-u-requests-panel" style="display:none;">
+    <div id="epp-u-requests-list"></div>
+  </div>
+  <!-- Histórico -->
+  <div id="epp-u-history-panel" style="display:none;">
+    <div class="history-list" id="epp-u-history-list"></div>
   </div>
 </div>
 
@@ -6799,6 +6863,7 @@ const CONFIG_DEFAULTS = {
   areas:                ['DCO','DIR','DIE','DTTI','GAB','DAUD','DCON'],
   macroprocessos:       [...MACROPROCESSOS],
   tipoTrabalho:         ['Mapeamento de Processo Novo','Mapeamento de Processo Existente','Redesenho','Mapeamento e Redesenho','Criação de Documentação'],
+  cargos:               ['Auxiliar Administrativo','Analista','Auditor','Coordenador','Chefe de Divisão','Adjunto da CAGE','Contador','Auditor-Geral','Assessor','Auditor Setorial','Estagiário'],
   naturezaProcesso:     ['Finalístico','Apoio','Governança'],
   categoriaDocumentos:  ['Instrução Normativa','Manual de Processo','Procedimento Operacional','Formulário','Fluxograma'],
   tipoAtividadePat:     ['Mapeamento de Processo','Monitoramento de Indicadores','Acompanhamento de Implementação','Auditoria','Controle Interno','Consultoria','Fiscalização','Normatização','Capacitação','Outro'],
@@ -6860,6 +6925,7 @@ const _CFG_TABLES = [
   { key:'macroprocessos',      title:'🗂️ Macroprocessos',            desc:'Macroprocessos disponíveis nos formulários.' },
   { key:'tipoTrabalho',        title:'🔧 Tipo de Trabalho',           desc:'Tipos de trabalho da ficha técnica de mapeamento.' },
   { key:'tipoAtividadePat',    title:'📅 Tipo de Atividade — PAT',    desc:'Tipos de atividade no Plano Anual de Trabalho.' },
+  { key:'cargos',              title:'🪪 Cargos',                     desc:'Cargos e funções dos servidores cadastrados no sistema.' },
   { key:'naturezaProcesso',    title:'⚡ Natureza do Processo',       desc:'Classificação da natureza dos processos.' },
   { key:'categoriaDocumentos', title:'📄 Categoria de Documentos',    desc:'Categorias usadas na gestão de documentos.' },
   { key:'statusMapeamento',    title:'📊 Status do Mapeamento',       desc:'Status usados na ficha técnica de mapeamento.', typed:'status' },
@@ -8485,7 +8551,15 @@ async function logHistory(action) {
 }
 
 // ── PERMISSIONS MODAL ──────────────────────────────────────
+// _permCtx: 'modal' | 'epp' — controla qual conjunto de IDs usar
+let _permCtx = 'modal';
+// Retorna o ID correto conforme o contexto atual
+function _pid(name) {
+  return _permCtx === 'epp' ? 'epp-u-' + name : 'perm-' + name;
+}
+
 function openPermModal() {
+  _permCtx = 'modal';
   switchPermTab('editors');
   loadEditorList();
   if(isAdmin) loadRequestsList();
@@ -8494,8 +8568,8 @@ function openPermModal() {
 
 function switchPermTab(tab) {
   ['editors','requests','history'].forEach(t => {
-    const panel = document.getElementById('perm-'+t+'-panel');
-    const btn   = document.getElementById('ptab-'+t);
+    const panel = document.getElementById(_pid(t+'-panel'));
+    const btn   = document.getElementById(_permCtx === 'epp' ? 'epp-utab-'+t : 'ptab-'+t);
     if(panel) panel.style.display = t === tab ? '' : 'none';
     if(btn) {
       btn.style.borderBottom = t === tab ? '3px solid var(--cage-blue)' : 'none';
@@ -8509,14 +8583,17 @@ function switchPermTab(tab) {
 
 async function loadRequestsList() {
   if(!isAdmin) return;
-  const el = document.getElementById('perm-requests-list');
+  const el = document.getElementById(_pid('requests-list'));
   if(!el) return;
   el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Carregando...</div>';
   const { data } = await supaClient.from('gestpop_requests').select('*').order('requested_at', { ascending: false });
   const pending = (data||[]).filter(r => r.status === 'pendente');
-  const badge = document.getElementById('req-badge');
-  if(badge) { badge.style.display = pending.length ? '' : 'none'; badge.textContent = pending.length; }
-  if(!data?.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px 0;">Nenhuma solicitacao.</div>'; return; }
+  // Atualiza badges nos dois contextos
+  ['req-badge','epp-u-req-badge'].forEach(id => {
+    const badge = document.getElementById(id);
+    if(badge) { badge.style.display = pending.length ? '' : 'none'; badge.textContent = pending.length; }
+  });
+  if(!data?.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px 0;">Nenhuma solicitação.</div>'; return; }
   el.innerHTML = data.map(r => {
     const isPending = r.status === 'pendente';
     const statusColor = r.status === 'aprovado' ? '#16a34a' : r.status === 'rejeitado' ? '#dc2626' : '#d97706';
@@ -8552,7 +8629,8 @@ async function handleRequest(email, name, action) {
 }
 
 async function loadEditorList() {
-  const el = document.getElementById('perm-editor-list');
+  const el = document.getElementById(_pid('editor-list'));
+  if(!el) return;
   el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Carregando...</div>';
   const { data } = await supaClient.from('gestpop_editors').select('*').order('added_at');
   if(!data?.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:16px 0;">Nenhum usuário cadastrado.</div>'; return; }
@@ -8560,7 +8638,6 @@ async function loadEditorList() {
     const isSelf    = e.email === currentUserEmail;
     const safeEmail = e.email.replace(/'/g,"\'");
     const canManage = isAdmin && !isSelf;
-    // Determinar role atual
     const role = e.is_admin ? 'admin' : (e.role || 'editor');
     const roleLabel = { admin:'Admin', editor:'Editor', viewer:'Visualizador' };
     const roleBg    = { admin:'#fef9c3', editor:'#dbeafe', viewer:'#f0fdf4' };
@@ -8581,11 +8658,11 @@ async function loadEditorList() {
       </div>` : ''}
     </div>`;
   }).join('');
-  document.getElementById('perm-add-btn-row').style.display = isAdmin ? '' : 'none';
+  const addBtnRow = document.getElementById(_pid('add-btn-row'));
+  if(addBtnRow) addBtnRow.style.display = isAdmin ? '' : 'none';
 }
 
 async function setEditorRole(email, role) {
-  // role: 'viewer' | 'editor' | 'admin'
   const labels = { viewer: 'Visualizador', editor: 'Editor', admin: 'Admin' };
   if(!confirm(`Alterar perfil de ${email} para ${labels[role]}?`)) return;
   const is_admin = role === 'admin';
@@ -8600,14 +8677,14 @@ async function toggleEditorRole(email, makeAdmin) {
 }
 
 function showAddEditor() {
-  document.getElementById('perm-add-row').style.display = 'flex';
-  document.getElementById('perm-add-btn-row').style.display = 'none';
+  document.getElementById(_pid('add-row')).style.display = 'flex';
+  document.getElementById(_pid('add-btn-row')).style.display = 'none';
 }
 
 async function saveNewEditor() {
-  const email = document.getElementById('perm-new-email').value.trim();
-  const name  = document.getElementById('perm-new-name').value.trim();
-  const role  = document.getElementById('perm-new-role')?.value || 'viewer';
+  const email = document.getElementById(_pid('new-email')).value.trim();
+  const name  = document.getElementById(_pid('new-name')).value.trim();
+  const role  = document.getElementById(_pid('new-role'))?.value || 'viewer';
   const is_admin = role === 'admin';
   if(!email) { showToast('Informe o e-mail.','warn'); return; }
   const { error } = await supaClient.from('gestpop_editors').upsert(
@@ -8616,10 +8693,10 @@ async function saveNewEditor() {
   if(error) { showToast('Erro: ' + error.message,'warn'); return; }
   await logHistory('Adicionou editor: ' + email);
   showToast('Editor adicionado!','success');
-  document.getElementById('perm-add-row').style.display = 'none';
-  document.getElementById('perm-add-btn-row').style.display = '';
-  document.getElementById('perm-new-email').value = '';
-  document.getElementById('perm-new-name').value  = '';
+  document.getElementById(_pid('add-row')).style.display = 'none';
+  document.getElementById(_pid('add-btn-row')).style.display = '';
+  document.getElementById(_pid('new-email')).value = '';
+  document.getElementById(_pid('new-name')).value  = '';
   loadEditorList();
 }
 
@@ -8632,7 +8709,7 @@ async function removeEditor(email) {
 }
 
 async function loadHistoryList() {
-  const el = document.getElementById('perm-history-list');
+  const el = document.getElementById(_pid('history-list'));
   el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0;">Carregando...</div>';
   const { data } = await supaClient.from('gestpop_history')
     .select('*').order('created_at', { ascending: false }).limit(30);
@@ -13143,10 +13220,12 @@ function eppTab(tab, el) {
   const pat    = document.getElementById('pat-module');
   const dash   = document.getElementById('epp-dash-panel');
   const cfg    = document.getElementById('epp-config-panel');
+  const users  = document.getElementById('epp-users-panel');
 
-  if(pat)  { pat.style.display='none'; pat.classList.remove('active'); }
-  if(dash) dash.style.display='none';
-  if(cfg)  cfg.style.display='none';
+  if(pat)   { pat.style.display='none'; pat.classList.remove('active'); }
+  if(dash)  dash.style.display='none';
+  if(cfg)   cfg.style.display='none';
+  if(users) users.style.display='none';
 
   if(tab === 'pat') {
     if(pat)  { pat.style.display='block'; pat.classList.add('active'); }
@@ -13154,10 +13233,21 @@ function eppTab(tab, el) {
   } else if(tab === 'config') {
     if(cfg) cfg.style.display='block';
     try { renderConfigPanel(); } catch(e) { console.error('renderConfigPanel', e); }
+  } else if(tab === 'users') {
+    if(users) users.style.display='block';
+    _permCtx = 'epp';
+    eppSwitchUsersTab('editors');
+    loadEditorList();
+    if(isAdmin) loadRequestsList();
   } else {
     if(dash) dash.style.display='block';
     eppRenderDashboard();
   }
+}
+
+function eppSwitchUsersTab(tab) {
+  _permCtx = 'epp';
+  switchPermTab(tab);
 }
 
 function eppToggleHorasDetail() {
