@@ -489,7 +489,22 @@
   .risk-actions-row{display:flex;gap:6px;margin-top:10px;}
   .treat-badge{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;background:var(--cage-light);color:var(--cage-blue);}
 
-  /* ── PLANO DE AÇÃO ───────────────────────── */
+  /* ── VERSIONAMENTO ───────────────────────── */
+  .ver-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;font-family:"JetBrains Mono",monospace;background:rgba(0,168,107,.15);color:#00a86b;border:1px solid rgba(0,168,107,.25);cursor:pointer;transition:background .15s;}
+  .ver-badge:hover{background:rgba(0,168,107,.28);}
+  .ver-badge.viewing-old{background:rgba(245,158,11,.15);color:#d97706;border-color:rgba(245,158,11,.3);}
+  .version-bar{position:sticky;top:0;z-index:30;padding:6px 20px;font-size:12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(0,0,0,.06);}
+  .version-ro-bar{background:linear-gradient(135deg,#fef3c7,#fffbeb);color:#92400e;}
+  .version-inherit-bar{background:linear-gradient(135deg,#e0f2fe,#f0f9ff);color:#0369a1;}
+  .version-bar button{font-size:11px;padding:4px 12px;border-radius:8px;border:1.5px solid currentColor;background:transparent;color:inherit;cursor:pointer;font-weight:600;transition:background .15s;}
+  .version-bar button:hover{background:rgba(0,0,0,.07);}
+  .version-selector-panel{position:absolute;top:100%;right:0;z-index:200;min-width:280px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:12px 0;overflow:hidden;}
+  .version-selector-panel .vs-item{padding:9px 16px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:10px;transition:background .1s;}
+  .version-selector-panel .vs-item:hover{background:#f8fafc;}
+  .version-selector-panel .vs-item.active{background:#f0f9ff;font-weight:700;color:#0369a1;}
+  .version-selector-panel .vs-item.vs-new{color:#059669;font-weight:600;border-top:1px solid #e2e8f0;margin-top:4px;padding-top:12px;}
+  .version-selector-panel .vs-meta{font-size:11px;color:var(--text-muted);margin-top:1px;}
+  .version-badge-wrap{position:relative;display:inline-block;}
   .pa-table{width:100%;border-collapse:collapse;font-size:13px;}
   .pa-table th{background:var(--cage-blue);color:white;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
   .pa-table td{padding:10px 12px;border-bottom:1px solid var(--cage-border);vertical-align:top;}
@@ -1319,6 +1334,7 @@
   <div style="display:flex;gap:8px;align-items:center;">
     <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;" onclick="discardChanges()">↩ Descartar</button>
     <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="saveToStorage()">💾 Salvar</button>
+    <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;color:#059669;border-color:#059669;" onclick="openNewVersionModal()">📌 Nova Versão</button>
     <button class="btn btn-success" style="font-size:12px;padding:7px 14px;" onclick="exportHTML()">⬇ Exportar HTML</button>
   </div>
 </div>
@@ -1373,6 +1389,17 @@
     <div class="nav-tab nav-tab-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
   </div>
 </nav>
+
+<!-- BARRA SOMENTE-LEITURA (versão antiga) -->
+<div class="version-bar version-ro-bar" id="version-ro-bar" style="display:none;">
+  🕑 <span id="version-ro-label">Visualizando v1</span>
+  <button onclick="backToCurrentVersion()">← Voltar para versão atual</button>
+</div>
+<!-- BARRA HERDAR (edição de versão > 1) -->
+<div class="version-bar version-inherit-bar" id="version-inherit-bar" style="display:none;">
+  📋 <span id="version-inherit-label">Repetir conteúdo da versão anterior</span>
+  <button id="version-inherit-btn" onclick="_repeatCurrentSection()">↩ Repetir versão anterior</button>
+</div>
 
 <main class="main">
 
@@ -2079,6 +2106,9 @@
       </div>
       <div class="pop-banner-meta">
         <span class="badge badge-green" id="d-rev-badge">Rev. 0 · Mar/2026</span>
+        <div class="version-badge-wrap" style="margin-top:4px;">
+          <span class="ver-badge" id="d-ver-badge" onclick="openVersionSelector('d',this)">v1</span>
+        </div>
       </div>
     </div>
     <div class="overview-grid fade-up delay-1" id="d-overview-grid">
@@ -2416,6 +2446,9 @@
       </div>
       <div class="pop-banner-meta">
         <span class="badge badge-blue" id="r-rev-badge">Rev. 0 · Mar/2026</span>
+        <div class="version-badge-wrap" style="margin-top:4px;">
+          <span class="ver-badge" id="r-ver-badge" onclick="openVersionSelector('r',this)">v1</span>
+        </div>
       </div>
     </div>
     <div class="overview-grid fade-up delay-1" id="r-overview-grid">
@@ -3892,6 +3925,30 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
 </div>
 
 <!-- ═══ MODAL RISCOS ═══════════════════════ -->
+<!-- MODAL NOVA VERSÃO -->
+<div class="gmod-overlay" id="new-version-modal">
+  <div class="gmod-box" style="max-width:440px;">
+    <div class="gmod-head">
+      <h3>📌 Criar Nova Versão</h3>
+      <button class="gmod-close" onclick="closeModal('new-version-modal')">✕</button>
+    </div>
+    <div class="gmod-body">
+      <div id="new-version-info" style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;padding:10px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"></div>
+      <div>
+        <label class="gmod-label">Nota / Descrição da versão (opcional)</label>
+        <input class="modal-input" id="new-version-note" type="text" placeholder="Ex: Revisão após alinhamento com equipe">
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--text-muted);">
+        💡 Cada aba da nova versão começa vazia. Use o botão <strong>"↩ Repetir versão anterior"</strong> em cada seção para copiar o conteúdo da versão anterior.
+      </div>
+    </div>
+    <div class="gmod-footer">
+      <button class="btn btn-outline" onclick="closeModal('new-version-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="_doCreateVersion()">📌 Criar v<span id="new-version-num">2</span></button>
+    </div>
+  </div>
+</div>
+
 <div class="gmod-overlay" id="risk-modal">
   <div class="gmod-box">
     <div class="gmod-head">
@@ -4793,6 +4850,17 @@ function switchPop(pop, tabEl) {
   // Esconder galeria se estiver ativa
   const gal = document.getElementById('pop-gallery-panel');
   if(gal) gal.classList.remove('active');
+  // Se estava visualizando versão antiga do pop anterior, restaurar versão atual antes de trocar
+  try {
+    const prevPrefix = popPrefix(currentPop);
+    const prevD = DATA[prevPrefix];
+    if(prevD && prevD._viewingVersion) {
+      const curSnap = prevD._viewBuf;
+      if(curSnap) { VERSIONABLE_FIELDS.forEach(f => { if(curSnap[f] !== undefined) prevD[f] = curSnap[f]; }); delete prevD._viewBuf; }
+      delete prevD._viewingVersion;
+      renderVersionBadge(prevPrefix);
+    }
+  } catch(e) {}
   const key    = popKey(pop);
   const domId  = popDomId(pop);
   const prefix = popPrefix(pop);
@@ -4826,6 +4894,7 @@ function switchPop(pop, tabEl) {
   }
 
   if(editMode) enableEditables(true);
+  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) {}
 }
 
 // ═══ NAV ══════════════════════════════════════
@@ -4851,6 +4920,7 @@ function showSection(id, tab, silent) {
   }
   if(id === 'fluxo') renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
   if(!silent && editMode) enableEditables(true);
+  try { _updateVersionBars(); } catch(e) {}
 }
 
 // ═══ EDIT MODE ════════════════════════════════
@@ -4874,6 +4944,7 @@ function toggleEditMode(forceState) {
   });
   // Snapshot ao entrar no modo edição — base para o "Descartar alterações"
   if(editMode) _takeEditSnapshot();
+  try { _updateVersionBars(); } catch(e) {}
   // Persistir estado do modo edição entre recarregamentos
   try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) {}
   if(forceState === undefined) {
@@ -5001,6 +5072,8 @@ function sanitizePop(p) {
   }
   if(!d.ficha)                     d.ficha = {};
   if(!d.meta)                      d.meta = {};
+  if(!d.versionNum)                d.versionNum = 1;
+  if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
   if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
   if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
   if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
@@ -6631,6 +6704,9 @@ function mountNewPopTab(key, label, silent=false) {
         </div>
         <div class="pop-banner-meta">
           <span class="rev-badge" id="${key}-rev-badge">Rev. 0 · ${today}</span>
+          <div class="version-badge-wrap" style="margin-top:4px;">
+            <span class="ver-badge" id="${key}-ver-badge" onclick="openVersionSelector('${key}',this)">v1</span>
+          </div>
         </div>
       </div>
       <div class="overview-grid fade-up delay-1" id="${key}-overview-grid">
@@ -9238,6 +9314,7 @@ async function loadFromCloud() {
           mountNewPopTab(key, pd.meta?.name || 'POP', true);
         }
         try { loadAcomp(key); } catch(e) { console.warn('loadAcomp', key, e); }
+        try { renderVersionBadge(key); } catch(e) {}
       });
     }
 
@@ -9255,6 +9332,7 @@ async function loadFromCloud() {
         try { renderMetrics(p); }   catch(e) { console.warn('renderMetrics',p,e); }
         try { renderFicha(p); }     catch(e) { console.warn('renderFicha',p,e); }
         try { loadAcomp(p); }       catch(e) { console.warn('loadAcomp',p,e); }
+        try { renderVersionBadge(p); } catch(e) {}
       } catch(e) { console.warn('Render error for', p, e); }
     });
 
@@ -11604,6 +11682,270 @@ function deleteRisk(p,i) {
   if(!confirm('Remover este item?')) return;
   DATA[p].risks.splice(i,1);
   renderRisks(p); markChanged();
+}
+
+// ═══ VERSIONAMENTO ════════════════════════════════════════════════
+
+// Campos do POP que são versionados (meta/revisions são compartilhados entre versões)
+const VERSIONABLE_FIELDS = ['steps','currentStep','roles','indicators','faqs','normas','risks','actions_plan','meetings','siglas','flowDiagram','ficha'];
+
+// Mapeamento de seção → campos versionados
+const SECTION_VERSION_FIELDS = {
+  'fluxo':             ['steps','currentStep'],
+  'responsabilidades': ['roles'],
+  'indicadores':       ['indicators'],
+  'faq':               ['faqs'],
+  'normas':            ['normas','siglas'],
+  'riscos':            ['risks'],
+  'plano-acao':        ['actions_plan'],
+  'reunioes':          ['meetings'],
+  'visao-geral':       ['ficha'],
+};
+
+const SECTION_VERSION_LABELS = {
+  'fluxo':             'Fluxo',
+  'responsabilidades': 'Responsabilidades',
+  'indicadores':       'Indicadores',
+  'faq':               'FAQ',
+  'normas':            'Normas & Siglas',
+  'riscos':            'Riscos',
+  'plano-acao':        'Plano de Ação',
+  'reunioes':          'Reuniões',
+  'visao-geral':       'Visão Geral (métricas)',
+};
+
+// Captura snapshot de todos os campos versionáveis do POP
+function _captureVersionSnapshot(p, vNum, note) {
+  const d = DATA[p];
+  const snap = { v: vNum, date: new Date().toLocaleDateString('pt-BR'), note: note || '' };
+  VERSIONABLE_FIELDS.forEach(f => {
+    snap[f] = JSON.parse(JSON.stringify(d[f] ?? (Array.isArray(d[f]) ? [] : null)));
+  });
+  return snap;
+}
+
+// Abre modal de nova versão
+function openNewVersionModal() {
+  const p = popPrefix(currentPop);
+  const d = DATA[p];
+  if(!d) return;
+  const nextV = (d.versionNum || 1) + 1;
+  document.getElementById('new-version-num').textContent = nextV;
+  document.getElementById('new-version-note').value = '';
+  document.getElementById('new-version-info').innerHTML =
+    `Processo: <strong>${d.meta?.name || p}</strong><br>` +
+    `Versão atual: <strong>v${d.versionNum || 1}</strong> → Nova versão: <strong>v${nextV}</strong><br>` +
+    `A versão atual (v${d.versionNum || 1}) será preservada como histórico.`;
+  openModal('new-version-modal');
+}
+
+// Executa a criação da nova versão
+function _doCreateVersion() {
+  const p = popPrefix(currentPop);
+  const d = DATA[p];
+  if(!d) return;
+  const note = document.getElementById('new-version-note').value.trim();
+  const curV = d.versionNum || 1;
+  // Salvar snapshot da versão atual no histórico
+  if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
+  // Só salva se ainda não foi salvo (evita duplicatas)
+  if(!d.versionHistory.find(s => s.v === curV)) {
+    d.versionHistory.push(_captureVersionSnapshot(p, curV, d._versionNote || ''));
+  }
+  // Limpar campos versionáveis para começar a nova versão em branco
+  const nextV = curV + 1;
+  d.versionNum = nextV;
+  d._versionNote = note;
+  // Campos começam vazios — usuário usa "Repetir versão anterior" por seção
+  d.steps = []; d.currentStep = 0;
+  d.roles = []; d.indicators = []; d.faqs = []; d.normas = [];
+  d.risks = []; d.actions_plan = []; d.meetings = []; d.siglas = [];
+  d.flowDiagram = null; d.ficha = {};
+
+  closeModal('new-version-modal');
+  // Re-renderizar tudo
+  sanitizePop(p);
+  try { renderStep(p, 0); }       catch(e) {}
+  try { renderRoles(p); }         catch(e) {}
+  try { renderIndicators(p); }    catch(e) {}
+  try { renderFaq(p); }           catch(e) {}
+  try { renderNormas(p); }        catch(e) {}
+  try { renderSiglas(p); }        catch(e) {}
+  try { renderRisks(p); }         catch(e) {}
+  try { renderPa(p); }            catch(e) {}
+  try { renderMetrics(p); }       catch(e) {}
+  try { renderFicha(p); }         catch(e) {}
+  renderVersionBadge(p);
+  _updateVersionBars();
+  markChanged();
+  showToast(`📌 v${nextV} criada! Use "↩ Repetir versão anterior" nas abas que quiser herdar da v${curV}.`, 'success');
+}
+
+// Atualiza o badge de versão no banner do POP
+function renderVersionBadge(p) {
+  const el = document.getElementById(p + '-ver-badge');
+  if(!el) return;
+  const d = DATA[p];
+  if(!d) return;
+  const viewing = d._viewingVersion;
+  const cur = d.versionNum || 1;
+  const isOld = viewing && viewing < cur;
+  el.textContent = isOld ? `v${viewing} 👁` : `v${cur}`;
+  el.className = 'ver-badge' + (isOld ? ' viewing-old' : '');
+}
+
+// Abre o seletor dropdown de versões
+function openVersionSelector(p, badgeEl) {
+  // Fechar qualquer seletor aberto
+  document.querySelectorAll('.version-selector-panel').forEach(el => el.remove());
+  const d = DATA[p];
+  if(!d) return;
+  const cur = d.versionNum || 1;
+  const viewing = d._viewingVersion || cur;
+  const history = d.versionHistory || [];
+
+  const panel = document.createElement('div');
+  panel.className = 'version-selector-panel';
+  // Listar versões do histórico + versão atual
+  const allVersions = [];
+  history.forEach(s => allVersions.push({ v: s.v, date: s.date, note: s.note, isCurrent: false }));
+  allVersions.push({ v: cur, date: new Date().toLocaleDateString('pt-BR'), note: d._versionNote || '', isCurrent: true });
+  allVersions.sort((a,b) => b.v - a.v);
+
+  panel.innerHTML = allVersions.map(item => {
+    const isActive = item.v === viewing;
+    return `<div class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();">
+      <div>
+        <div>${item.isCurrent ? '✏️' : '📄'} <strong>v${item.v}</strong>${item.isCurrent ? ' <span style="font-size:10px;color:#059669;">(atual)</span>' : ''}</div>
+        <div class="vs-meta">${item.date}${item.note ? ' · ' + item.note : ''}</div>
+      </div>
+    </div>`;
+  }).join('') +
+  (editMode && !d._viewingVersion || d._viewingVersion === cur ?
+    `<div class="vs-item vs-new" onclick="openNewVersionModal();this.closest('.version-selector-panel').remove();">＋ Nova Versão</div>` : '');
+
+  badgeEl.closest('.version-badge-wrap').appendChild(panel);
+  // Fechar ao clicar fora
+  setTimeout(() => document.addEventListener('click', function _close(e) {
+    if(!panel.contains(e.target) && e.target !== badgeEl) { panel.remove(); document.removeEventListener('click',_close); }
+  }), 50);
+}
+
+// Alterna para visualizar uma versão (read-only se não for a atual)
+function switchViewVersion(p, v) {
+  const d = DATA[p];
+  if(!d) return;
+  const cur = d.versionNum || 1;
+  if(v === cur) {
+    // Voltar para versão atual
+    if(d._viewingVersion && d._viewingVersion < cur) {
+      // Restaurar campos da versão atual (estavam sendo sobrescritos temporariamente)
+      const curSnap = d._viewBuf;
+      if(curSnap) {
+        VERSIONABLE_FIELDS.forEach(f => { if(curSnap[f] !== undefined) d[f] = curSnap[f]; });
+        delete d._viewBuf;
+      }
+    }
+    delete d._viewingVersion;
+    renderVersionBadge(p);
+    _reRenderPop(p);
+    _updateVersionBars();
+    return;
+  }
+  // Buscar snapshot da versão solicitada
+  const snap = (d.versionHistory || []).find(s => s.v === v);
+  if(!snap) { showToast('Versão não encontrada.','warn'); return; }
+  // Sair do modo edição ao visualizar histórico (evita edições acidentais no snapshot)
+  if(editMode) toggleEditMode(false);
+  // Bufferizar dados atuais (para restaurar ao voltar)
+  if(!d._viewBuf) d._viewBuf = _captureVersionSnapshot(p, cur, '');
+  // Aplicar snapshot temporariamente
+  VERSIONABLE_FIELDS.forEach(f => { if(snap[f] !== undefined) d[f] = JSON.parse(JSON.stringify(snap[f])); });
+  d._viewingVersion = v;
+  renderVersionBadge(p);
+  _reRenderPop(p);
+  _updateVersionBars();
+  showToast(`👁 Visualizando v${v} — somente leitura`, 'warn');
+}
+
+function backToCurrentVersion() {
+  const p = popPrefix(currentPop);
+  const d = DATA[p];
+  if(!d) return;
+  switchViewVersion(p, d.versionNum || 1);
+}
+
+// Repete campos de uma seção da versão anterior para a versão atual
+function repeatPrevVersion(p, sectionId) {
+  const d = DATA[p];
+  if(!d) return;
+  const cur = d.versionNum || 1;
+  if(cur <= 1) { showToast('Não há versão anterior.','warn'); return; }
+  const snap = (d.versionHistory || []).find(s => s.v === cur - 1);
+  if(!snap) { showToast('Versão anterior não encontrada.','warn'); return; }
+  const fields = SECTION_VERSION_FIELDS[sectionId];
+  if(!fields || !fields.length) { showToast('Esta seção não possui conteúdo versionável.','warn'); return; }
+  const label = SECTION_VERSION_LABELS[sectionId] || sectionId;
+  if(!confirm(`Copiar "${label}" da v${cur-1} para a v${cur}? O conteúdo atual desta seção será substituído.`)) return;
+  fields.forEach(f => {
+    if(snap[f] !== undefined) d[f] = JSON.parse(JSON.stringify(snap[f]));
+  });
+  _reRenderPop(p);
+  markChanged();
+  showToast(`↩ "${label}" copiado da v${cur-1}.`, 'success');
+}
+
+// Chamado pelo botão na barra de herança (usa currentPop e currentSection)
+function _repeatCurrentSection() {
+  const p = popPrefix(currentPop);
+  repeatPrevVersion(p, currentSection);
+}
+
+// Re-renderiza todas as seções do POP
+function _reRenderPop(p) {
+  sanitizePop(p);
+  try { renderStep(p, DATA[p].currentStep || 0); } catch(e) {}
+  try { renderRoles(p); }         catch(e) {}
+  try { renderIndicators(p); }    catch(e) {}
+  try { renderFaq(p); }           catch(e) {}
+  try { renderNormas(p); }        catch(e) {}
+  try { renderRevisions(p); }     catch(e) {}
+  try { renderSiglas(p); }        catch(e) {}
+  try { renderRisks(p); }         catch(e) {}
+  try { renderPa(p); }            catch(e) {}
+  try { renderMetrics(p); }       catch(e) {}
+  try { renderFicha(p); }         catch(e) {}
+  try { loadAcomp(p); }           catch(e) {}
+}
+
+// Atualiza as barras de readonly e herança conforme contexto atual
+function _updateVersionBars() {
+  const p = popPrefix(currentPop);
+  const d = DATA[p];
+  const roBar      = document.getElementById('version-ro-bar');
+  const inheritBar = document.getElementById('version-inherit-bar');
+  if(!d || !roBar || !inheritBar) return;
+  const cur     = d.versionNum || 1;
+  const viewing = d._viewingVersion || cur;
+  const isOld   = viewing < cur;
+  // Barra somente-leitura
+  if(isOld) {
+    document.getElementById('version-ro-label').textContent =
+      `Visualizando v${viewing} — somente leitura · Versão atual: v${cur}`;
+    roBar.style.display = 'flex';
+  } else {
+    roBar.style.display = 'none';
+  }
+  // Barra de herança (só em modo edição, versão atual, e se há histórico)
+  const sectionHasFields = SECTION_VERSION_FIELDS[currentSection];
+  if(!isOld && editMode && cur > 1 && sectionHasFields) {
+    const label = SECTION_VERSION_LABELS[currentSection] || currentSection;
+    document.getElementById('version-inherit-label').textContent =
+      `Esta é a v${cur} — seção "${label}" está vazia nesta versão`;
+    inheritBar.style.display = 'flex';
+  } else {
+    inheritBar.style.display = 'none';
+  }
 }
 
 // ═══ PLANO DE AÇÃO ════════════════════════
