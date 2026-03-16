@@ -5097,8 +5097,8 @@ function renderStep(p, i) {
           <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
           <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}')" title="Limpar o fluxo ${isTobe ? 'TO BE' : 'AS IS'} inteiro (todas as etapas)">🗑 Limpar todo ${isTobe ? 'TO BE' : 'AS IS'}</button>
           ${isTobe
-            ? `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowTobeToAsis('${p}',${i})" title="Copiar ações do TO BE para o AS IS">⎘ Copiar TO BE → AS IS</button>`
-            : `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}',${i})" title="Copiar ações do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>`
+            ? `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowTobeToAsis('${p}')" title="Copiar todas as etapas do TO BE para o AS IS">⎘ Copiar TO BE → AS IS</button>`
+            : `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}')" title="Copiar todas as etapas do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>`
           }
         </div>
         ${decHTML}${noteHTML}
@@ -5236,29 +5236,52 @@ function rmStepAction(p,si,ai){
   renderStep(p,si); markChanged();
 }
 
-function copyFlowAsIsToTobe(p,si) {
+function copyFlowAsIsToTobe(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem copiar fluxos.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  const asisActions = step.actions || [];
-  if(asisActions.length === 0) { showToast('O fluxo AS IS está vazio — nada a copiar.', 'warn'); return; }
-  const tobeHasActions = step.tobe?.actions?.length > 0;
-  if(tobeHasActions && !confirm('O TO BE já possui ações. Substituir pelo fluxo AS IS?')) return;
-  if(!step.tobe) step.tobe = {};
-  step.tobe.actions = JSON.parse(JSON.stringify(asisActions)); // deep copy
-  renderStep(p,si); markChanged();
-  showToast('⎘ Fluxo AS IS copiado para o TO BE.', 'success');
+  const steps = DATA[p].steps;
+  const hasAsis = steps.some(s => (s.actions||[]).length > 0);
+  if(!hasAsis) { showToast('O fluxo AS IS está vazio — nada a copiar.', 'warn'); return; }
+  const tobeHasData = steps.some(s => (s.tobe?.actions||[]).length > 0);
+  if(tobeHasData && !confirm('O TO BE já possui ações. Substituir todo o TO BE pelo AS IS?')) return;
+  steps.forEach(s => {
+    if(!s.tobe) s.tobe = {};
+    s.tobe.actions     = JSON.parse(JSON.stringify(s.actions || []));
+    s.tobe.title       = s.title       || '';
+    s.tobe.subtitle    = s.subtitle    || '';
+    s.tobe.responsible = s.responsible || '';
+    s.tobe.respClass   = s.respClass   || '';
+    s.tobe.note        = s.note        || '';
+    s.tobe.duracao     = s.duracao     || '';
+    s.tobe.sistemas    = s.sistemas    || '';
+    s.tobe.documentos  = s.documentos  || '';
+    s.tobe.observacoes = s.observacoes || '';
+  });
+  renderStep(p, DATA[p].currentStep); markChanged();
+  showToast('⎘ AS IS copiado para o TO BE (' + steps.length + ' etapa(s)).', 'success');
 }
 
-function copyFlowTobeToAsis(p,si) {
+function copyFlowTobeToAsis(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem copiar fluxos.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  const tobeActions = step.tobe?.actions || [];
-  if(tobeActions.length === 0) { showToast('O fluxo TO BE está vazio — nada a copiar.', 'warn'); return; }
-  const asisHasActions = (step.actions||[]).length > 0;
-  if(asisHasActions && !confirm('O AS IS já possui ações. Substituir pelo fluxo TO BE?')) return;
-  step.actions = JSON.parse(JSON.stringify(tobeActions)); // deep copy
-  renderStep(p,si); markChanged();
-  showToast('⎘ Fluxo TO BE copiado para o AS IS.', 'success');
+  const steps = DATA[p].steps;
+  const hasTobe = steps.some(s => (s.tobe?.actions||[]).length > 0);
+  if(!hasTobe) { showToast('O fluxo TO BE está vazio — nada a copiar.', 'warn'); return; }
+  const asisHasData = steps.some(s => (s.actions||[]).length > 0);
+  if(asisHasData && !confirm('O AS IS já possui ações. Substituir todo o AS IS pelo TO BE?')) return;
+  steps.forEach(s => {
+    const tb = s.tobe || {};
+    s.actions = JSON.parse(JSON.stringify(tb.actions || []));
+    if(tb.title)                                     s.title       = tb.title;
+    if(tb.subtitle !== undefined && tb.subtitle !== '') s.subtitle  = tb.subtitle;
+    if(tb.responsible)                               s.responsible = tb.responsible;
+    if(tb.respClass)                                 s.respClass   = tb.respClass;
+    if(tb.note)                                      s.note        = tb.note;
+    if(tb.duracao)                                   s.duracao     = tb.duracao;
+    if(tb.sistemas)                                  s.sistemas    = tb.sistemas;
+    if(tb.documentos)                                s.documentos  = tb.documentos;
+    if(tb.observacoes)                               s.observacoes = tb.observacoes;
+  });
+  renderStep(p, DATA[p].currentStep); markChanged();
+  showToast('⎘ TO BE copiado para o AS IS (' + steps.length + ' etapa(s)).', 'success');
 }
 
 function clearCurrentFlow(p) {
