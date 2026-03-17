@@ -1429,6 +1429,7 @@
     <div class="nav-tab" onclick="showSection('raci',this)">📊 RACI</div>
     <div class="nav-tab nav-tab-bpmn" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
     <div class="nav-tab nav-tab-fd" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
+    <div class="nav-tab" onclick="showSection('maturidade',this)">📊 Maturidade</div>
     <div class="nav-tab nav-tab-ai" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
     <div class="nav-tab nav-tab-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
   </div>
@@ -2498,6 +2499,14 @@
       </div>
     </div>
   </section>
+
+  <!-- MATURIDADE -->
+  <section id="d-maturidade" class="section">
+    <div class="section-inner">
+      <div id="d-maturidade-body"></div>
+    </div>
+  </section>
+
 </div><!-- /pop-denuncias -->
 
 
@@ -2867,6 +2876,14 @@
       </div>
     </div>
   </section>
+
+  <!-- MATURIDADE -->
+  <section id="r-maturidade" class="section">
+    <div class="section-inner">
+      <div id="r-maturidade-body"></div>
+    </div>
+  </section>
+
 </div><!-- /pop-representacoes -->
 
 
@@ -5058,9 +5075,10 @@ function showSection(id, tab, silent) {
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
   }
-  if(id === 'fluxo')      renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
-  if(id === 'checklists') try { renderChecklists(popPrefix(currentPop)); } catch(e) {}
-  if(id === 'raci')       try { renderRaci(popPrefix(currentPop)); } catch(e) {}
+  if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
+  if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) {}
+  if(id === 'raci')        try { renderRaci(popPrefix(currentPop)); } catch(e) {}
+  if(id === 'maturidade')  try { matRender(popPrefix(currentPop)); } catch(e) {}
   if(!silent && editMode) enableEditables(true);
   try { _updateVersionBars(); } catch(e) {}
 }
@@ -18695,6 +18713,407 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
   };
 
 })(); // end Indicadores CAGE IIFE
+
+// ═══════════════════════════════════════════════════════════════════
+// MÓDULO: MATURIDADE DE PROCESSOS
+// ═══════════════════════════════════════════════════════════════════
+
+const MAT_QUESTIONS = [
+  { text: 'Mesmo com o fluxo definido, você ainda precisa tirar dúvidas para executar o processo?', inverted: false },
+  { text: 'Existem situações em que você não sabe qual decisão tomar?', inverted: false },
+  { text: 'O processo funciona bem quando surgem casos fora do padrão?', inverted: true },
+  { text: 'Existem muitas exceções que não estão representadas no fluxo?', inverted: false },
+  { text: 'Você precisa refazer atividades com frequência?', inverted: false },
+  { text: 'Problemas em etapas anteriores impactam seu trabalho?', inverted: false },
+  { text: 'As informações que você recebe chegam completas para executar sua etapa?', inverted: true },
+  { text: 'Você precisa buscar dados adicionais fora do processo?', inverted: false },
+  { text: 'O processo depende de conhecimento informal (não documentado)?', inverted: false },
+  { text: 'Existem diferenças relevantes entre o processo desenhado e o que acontece na prática?', inverted: false },
+];
+
+function matGetData(p) {
+  if(!DATA[p]) return { answers: new Array(10).fill(null), indispensaveis: 0, geminiAnalysis: '', lastAnalysis: '' };
+  if(!DATA[p].maturity) DATA[p].maturity = { answers: new Array(10).fill(null), indispensaveis: 0, geminiAnalysis: '', lastAnalysis: '' };
+  return DATA[p].maturity;
+}
+
+function matComputeMetrics(p) {
+  const steps = (DATA[p] && DATA[p].steps) || [];
+  let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0;
+  const allActors = new Set();
+  const LOOP_KW = ['complementa', 'revisão', 'revisao', 'aprovação', 'aprovacao', 'autorização', 'autorizacao', 'devolver', 'retornar', 'reenviar', 'aguardar aprovação', 'aguardar revisão'];
+
+  steps.forEach((step) => {
+    const actions = step.actions || [];
+    let prevActor = step.responsible || '';
+    if(step.responsible) allActors.add(step.responsible);
+
+    actions.forEach(action => {
+      const type    = action.type || 'atividade';
+      const nat     = action.natureza || '';
+      const actor   = action.actor || step.responsible || '';
+      const textLow = (action.text || '').toLowerCase();
+
+      if(type === 'atividade') totalActivities++;
+      if(type === 'decisao')   totalDecisions++;
+      if(nat === 'aprovacao')  totalApprovals++;
+      if(nat === 'revisao' || nat === 'aprovacao' || LOOP_KW.some(k => textLow.includes(k))) totalLoops++;
+      if(actor && prevActor && actor !== prevActor) totalHandoffs++;
+      if(actor) { prevActor = actor; allActors.add(actor); }
+    });
+  });
+
+  for(let i = 1; i < steps.length; i++) {
+    const a = steps[i-1].responsible || '', b = steps[i].responsible || '';
+    if(a && b && a !== b) totalHandoffs++;
+  }
+
+  const totalActors   = allActors.size;
+  const complexScore  = totalActivities * 1 + totalDecisions * 2 + totalActors * 1.5 + totalLoops * 3;
+
+  let complexLabel, complexCls;
+  if(complexScore <= 20)      { complexLabel = 'Simples';        complexCls = '#22c55e'; }
+  else if(complexScore <= 40) { complexLabel = 'Moderado';       complexCls = '#eab308'; }
+  else if(complexScore <= 70) { complexLabel = 'Complexo';       complexCls = '#f97316'; }
+  else                        { complexLabel = 'Muito Complexo'; complexCls = '#ef4444'; }
+
+  const burocracia = totalActivities > 0 ? totalApprovals / totalActivities : 0;
+  let burocLabel, burocCls;
+  if(burocracia < 0.15)       { burocLabel = 'Saudável';    burocCls = '#22c55e'; }
+  else if(burocracia <= 0.30) { burocLabel = 'Moderado';    burocCls = '#eab308'; }
+  else                        { burocLabel = 'Burocrático'; burocCls = '#ef4444'; }
+
+  return { totalActivities, totalDecisions, totalActors, totalLoops, totalHandoffs, totalApprovals,
+           complexScore, complexLabel, complexCls, burocracia, burocLabel, burocCls };
+}
+
+function matComputeRisco(metrics, indispensaveis) {
+  const score = (metrics.totalDecisions * 2) + (metrics.totalHandoffs * 2) + (indispensaveis * 5);
+  let label, cls;
+  if(score <= 15)      { label = 'Baixo'; cls = '#22c55e'; }
+  else if(score <= 35) { label = 'Médio'; cls = '#eab308'; }
+  else                 { label = 'Alto';  cls = '#ef4444'; }
+  return { score, label, cls };
+}
+
+function matScoreEquipe(answers) {
+  let total = 0, count = 0;
+  (answers || []).forEach((ans, i) => {
+    if(ans === null || ans === undefined) return;
+    const q   = MAT_QUESTIONS[i];
+    let pts;
+    if(q.inverted) pts = ans === 'sim' ? 100 : ans === 'talvez' ? 50 : 0;
+    else           pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
+    total += pts; count++;
+  });
+  return count > 0 ? total / count : null;
+}
+
+function matComputeFinal(p) {
+  const mat     = matGetData(p);
+  const metrics = matComputeMetrics(p);
+  const ind     = parseInt(mat.indispensaveis) || 0;
+  const { score: riscoRaw } = matComputeRisco(metrics, ind);
+  const equipe  = matScoreEquipe(mat.answers);
+  if(equipe === null) return null;
+
+  // Normalise all to 0–100 where 100 = most mature
+  const normComplex = Math.max(0, Math.min(100, 100 - metrics.complexScore));
+  const normBuroc   = Math.max(0, Math.min(100, (1 - metrics.burocracia / 0.5) * 100));
+  const normRisco   = Math.max(0, Math.min(100, (1 - riscoRaw / 70) * 100));
+
+  const final = equipe * 0.40 + normBuroc * 0.20 + normComplex * 0.15 + normRisco * 0.25;
+  const f = Math.round(final);
+
+  let level, levelColor, levelIcon;
+  if(f <= 20)      { level = 'Inicial';    levelColor = '#ef4444'; levelIcon = '🔴'; }
+  else if(f <= 40) { level = 'Gerenciado'; levelColor = '#f97316'; levelIcon = '🟠'; }
+  else if(f <= 60) { level = 'Definido';   levelColor = '#eab308'; levelIcon = '🟡'; }
+  else if(f <= 80) { level = 'Previsível'; levelColor = '#22c55e'; levelIcon = '🟢'; }
+  else             { level = 'Otimizado';  levelColor = '#10b981'; levelIcon = '💚'; }
+
+  return { final: f, level, levelColor, levelIcon,
+           equipe: Math.round(equipe), normComplex: Math.round(normComplex),
+           normBuroc: Math.round(normBuroc), normRisco: Math.round(normRisco) };
+}
+
+function matSetAnswer(p, idx, val) {
+  const mat = matGetData(p);
+  if(!Array.isArray(mat.answers)) mat.answers = new Array(10).fill(null);
+  mat.answers[idx] = val;
+  markChanged();
+  matRender(p);
+}
+
+function matSetIndispensaveis(p, val) {
+  const mat = matGetData(p);
+  mat.indispensaveis = parseInt(val) || 0;
+  markChanged();
+  matRender(p);
+}
+
+function matRender(p) {
+  const container = document.getElementById(p + '-maturidade-body');
+  if(!container) return;
+
+  const mat         = matGetData(p);
+  const metrics     = matComputeMetrics(p);
+  const ind         = parseInt(mat.indispensaveis) || 0;
+  const risco       = matComputeRisco(metrics, ind);
+  const final       = matComputeFinal(p);
+  const answers     = Array.isArray(mat.answers) ? mat.answers : new Array(10).fill(null);
+  const answered    = answers.filter(a => a !== null).length;
+  const procName    = p === 'd' ? 'Denúncias' : 'Representações';
+
+  // ── helpers ─────────────────────────────────────────────────────
+  const metricCard = (icon, label, value, sub) =>
+    `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;min-width:110px;flex:1;text-align:center;">
+      <div style="font-size:22px;margin-bottom:4px;">${icon}</div>
+      <div style="font-size:26px;font-weight:800;color:#0a2540;">${value}</div>
+      <div style="font-size:12px;color:#64748b;">${label}</div>
+      ${sub ? `<div style="font-size:11px;color:#94a3b8;margin-top:2px;">${sub}</div>` : ''}
+    </div>`;
+
+  const indexCard = (title, raw, label, lColor, detail) =>
+    `<div style="background:#fff;border:1px solid #e2e8f0;border-top:4px solid ${lColor};border-radius:10px;padding:16px;flex:1;min-width:160px;">
+      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">${title}</div>
+      <div style="font-size:28px;font-weight:800;color:#0a2540;margin-bottom:6px;">${raw}</div>
+      <div style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#fff;background:${lColor};">${label}</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:8px;">${detail}</div>
+    </div>`;
+
+  const ansBtn = (pi, idx, val, lbl, cur) => {
+    const sel  = cur === val;
+    const cols = { sim:'#22c55e', talvez:'#eab308', nao:'#ef4444' };
+    return `<button onclick="matSetAnswer('${pi}',${idx},'${val}')"
+      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${sel ? cols[val] : '#e2e8f0'};
+             background:${sel ? cols[val] : '#f8fafc'};color:${sel ? '#fff' : '#64748b'};
+             font-size:12px;font-weight:${sel ? '700' : '400'};cursor:pointer;">${lbl}</button>`;
+  };
+
+  // ── sections ────────────────────────────────────────────────────
+  const metricsHtml = `
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:10px;">📐 Métricas do Processo — <span style="color:#6366f1;">${procName}</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;">
+      ${metricCard('▶', 'Atividades',   metrics.totalActivities)}
+      ${metricCard('◆', 'Decisões',     metrics.totalDecisions)}
+      ${metricCard('👤','Atores',        metrics.totalActors)}
+      ${metricCard('🔄','Loops',         metrics.totalLoops,    'revisão/aprovação')}
+      ${metricCard('🔀','Handoffs',      metrics.totalHandoffs,  'trocas de ator')}
+      ${metricCard('✅','Aprovações',    metrics.totalApprovals)}
+    </div>`;
+
+  const indicesHtml = `
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:10px;">📊 Índices Calculados</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+      ${indexCard('Complexidade', metrics.complexScore.toFixed(1), metrics.complexLabel, metrics.complexCls,
+        `atividades×1 + decisões×2 + atores×1,5 + loops×3`)}
+      ${indexCard('Burocracia', (metrics.burocracia * 100).toFixed(1)+'%', metrics.burocLabel, metrics.burocCls,
+        `${metrics.totalApprovals} aprovações ÷ ${metrics.totalActivities} atividades`)}
+      ${indexCard('Risco Operacional', risco.score, risco.label, risco.cls,
+        `decisões×2 + handoffs×2 + indispensáveis×5`)}
+    </div>`;
+
+  const manualHtml = `
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;">
+        <div style="font-weight:700;color:#0a2540;font-size:14px;margin-bottom:2px;">👤 Pessoas indispensáveis ao processo</div>
+        <div style="font-size:12px;color:#94a3b8;">Quantas pessoas são insubstituíveis para o processo funcionar? (usadas no risco)</div>
+      </div>
+      <input type="number" min="0" max="50" value="${ind}"
+        style="width:80px;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:20px;font-weight:800;text-align:center;color:#0a2540;"
+        onchange="matSetIndispensaveis('${p}', this.value)" oninput="matSetIndispensaveis('${p}', this.value)">
+    </div>`;
+
+  const qHtml = MAT_QUESTIONS.map((q, i) => {
+    const cur = answers[i];
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${cur !== null ? '#f0fdf4' : '#f8fafc'};border-radius:8px;margin-bottom:8px;border:1px solid ${cur !== null ? '#bbf7d0' : '#f1f5f9'};flex-wrap:wrap;">
+        <div style="min-width:22px;font-size:12px;font-weight:800;color:#94a3b8;">${i+1}</div>
+        <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}${q.inverted ? ' <span style="font-size:10px;color:#6366f1;font-weight:600;">(invertida)</span>' : ''}</div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          ${ansBtn(p, i, 'sim',    'Sim',    cur)}
+          ${ansBtn(p, i, 'talvez', 'Talvez', cur)}
+          ${ansBtn(p, i, 'nao',    'Não',    cur)}
+        </div>
+      </div>`;
+  }).join('');
+
+  let resultHtml = '';
+  if(answered < 10) {
+    resultHtml = `
+      <div style="text-align:center;padding:28px;background:#f8fafc;border-radius:10px;border:1.5px dashed #e2e8f0;">
+        <div style="font-size:36px;">📋</div>
+        <div style="font-size:14px;color:#64748b;margin-top:8px;">Responda todas as <strong>10 perguntas</strong> para ver o score final.</div>
+        <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${answered}/10 respondidas</div>
+      </div>`;
+  } else {
+    const scoreCard = (title, score, weight, color) =>
+      `<div style="background:#fff;border-top:4px solid ${color};border:1px solid ${color}33;border-radius:10px;padding:14px;flex:1;min-width:120px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">${title}</div>
+        <div style="font-size:34px;font-weight:900;color:${color};margin:6px 0;">${score}</div>
+        <div style="font-size:11px;color:#94a3b8;">peso ${weight}</div>
+      </div>`;
+
+    resultHtml = `
+      <div style="text-align:center;padding:28px 20px;background:linear-gradient(135deg,#f8fafc,#fff);border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;">
+        <div style="font-size:48px;margin-bottom:6px;">${final.levelIcon}</div>
+        <div style="font-size:56px;font-weight:900;color:${final.levelColor};line-height:1;">${final.final}</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px;">Score de Maturidade (0–100)</div>
+        <div style="display:inline-block;padding:5px 20px;border-radius:20px;background:${final.levelColor};color:#fff;font-size:17px;font-weight:800;margin-top:8px;">${final.levelIcon} ${final.level}</div>
+        <div style="margin-top:16px;background:#f1f5f9;border-radius:8px;height:14px;overflow:hidden;">
+          <div style="height:100%;width:${final.final}%;background:linear-gradient(90deg,${final.levelColor}88,${final.levelColor});border-radius:8px;"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        ${scoreCard('Equipe',       final.equipe,      '40%', '#6366f1')}
+        ${scoreCard('Burocracia',   final.normBuroc,   '20%', '#f97316')}
+        ${scoreCard('Complexidade', final.normComplex, '15%', '#a78bfa')}
+        ${scoreCard('Risco',        final.normRisco,   '25%', '#ef4444')}
+      </div>
+      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:20px;">
+        Score final = Equipe×40% + Burocracia×20% + Complexidade×15% + Risco×25% (todos normalizados 0–100, quanto maior melhor)
+      </div>`;
+  }
+
+  const cachedResult = mat.geminiAnalysis
+    ? `<div style="white-space:pre-wrap;font-size:13px;line-height:1.8;color:#1e293b;">${
+        mat.geminiAnalysis
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/^### (.*$)/gm, '<div style="font-size:14px;font-weight:800;color:#0a2540;margin:14px 0 4px;border-left:3px solid #6366f1;padding-left:8px;">$1</div>')
+          .replace(/^## (.*$)/gm, '<div style="font-size:15px;font-weight:800;color:#0a2540;margin:16px 0 6px;">$1</div>')
+          .replace(/^# (.*$)/gm, '<div style="font-size:16px;font-weight:900;color:#0a2540;margin:16px 0 6px;">$1</div>')
+          .replace(/\n/g, '<br>')
+      }</div>`
+    : '<span style="color:#94a3b8;">O resultado da análise aparecerá aqui.</span>';
+
+  const geminiHtml = `
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-top:4px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <div>
+          <div style="font-weight:700;color:#0a2540;font-size:15px;">🤖 Análise Inteligente — Gemini</div>
+          <div style="font-size:12px;color:#94a3b8;">${mat.lastAnalysis ? 'Última análise: ' + mat.lastAnalysis : 'Nenhuma análise realizada ainda.'}</div>
+        </div>
+        <button onclick="matGeminiAnalyze('${p}')" id="mat-gemini-btn-${p}" class="btn btn-primary"
+          style="font-size:13px;" ${answered < 10 ? 'disabled title="Responda o questionário primeiro"' : ''}>
+          ✨ Analisar com IA
+        </button>
+      </div>
+      <div id="mat-gemini-result-${p}" style="font-size:13px;color:#334155;line-height:1.7;">
+        ${cachedResult}
+      </div>
+    </div>`;
+
+  container.innerHTML = `
+    ${metricsHtml}
+    ${indicesHtml}
+    ${manualHtml}
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:10px;">
+      📋 Questionário de Percepção da Equipe
+      <span style="color:#94a3b8;font-size:12px;font-weight:400;margin-left:6px;">${answered}/10 respondidas</span>
+    </div>
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:24px;">${qHtml}</div>
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:12px;">🏆 Score de Maturidade</div>
+    ${resultHtml}
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin:20px 0 12px;">🤖 Análise com IA</div>
+    ${geminiHtml}`;
+}
+
+async function matGeminiAnalyze(p) {
+  const btn       = document.getElementById('mat-gemini-btn-' + p);
+  const resultDiv = document.getElementById('mat-gemini-result-' + p);
+  if(!btn || !resultDiv) return;
+
+  btn.disabled    = true;
+  btn.textContent = '⏳ Analisando...';
+  resultDiv.innerHTML = '<span style="color:#94a3b8;">Aguardando resposta da IA...</span>';
+
+  try {
+    const mat     = matGetData(p);
+    const metrics = matComputeMetrics(p);
+    const ind     = parseInt(mat.indispensaveis) || 0;
+    const risco   = matComputeRisco(metrics, ind);
+    const equipe  = matScoreEquipe(mat.answers);
+    const final   = matComputeFinal(p);
+    const popMeta = (DATA[p] && DATA[p].meta) ? DATA[p].meta : {};
+    const procName = p === 'd' ? 'Denúncias' : 'Representações';
+
+    const answersText = MAT_QUESTIONS.map((q, i) => {
+      const a = mat.answers[i];
+      const label = a === 'sim' ? 'Sim' : a === 'nao' ? 'Não' : 'Talvez';
+      return `${i+1}. [${label}] ${q.text}${q.inverted ? ' (pergunta invertida)' : ''}`;
+    }).join('\n');
+
+    const prompt = `Você é um especialista em gestão por processos e maturidade organizacional. Analise os dados abaixo do processo "${procName}" e gere insights práticos e acionáveis em português brasileiro.
+
+## PROCESSO
+Nome: ${popMeta.name || procName}
+Descrição: ${popMeta.desc || 'Não informado'}
+
+## MÉTRICAS ESTRUTURAIS
+- Atividades: ${metrics.totalActivities}
+- Decisões: ${metrics.totalDecisions}
+- Atores distintos: ${metrics.totalActors}
+- Loops detectados (revisão/aprovação no fluxo): ${metrics.totalLoops}
+- Handoffs (trocas de responsável): ${metrics.totalHandoffs}
+- Aprovações: ${metrics.totalApprovals}
+- Pessoas indispensáveis (informado pelo usuário): ${ind}
+
+## ÍNDICES
+- Complexidade: ${metrics.complexScore.toFixed(1)} → ${metrics.complexLabel} (escala: 0–20 simples, 21–40 moderado, 41–70 complexo, 70+ muito complexo)
+- Burocracia: ${(metrics.burocracia*100).toFixed(1)}% → ${metrics.burocLabel} (escala: <15% saudável, 15–30% moderado, >30% burocrático)
+- Risco Operacional: ${risco.score} → ${risco.label} (escala: 0–15 baixo, 16–35 médio, 36+ alto)
+
+## QUESTIONÁRIO DA EQUIPE (Sim=maduro nessa pergunta / Talvez=incerto / Não=imaduro)
+${answersText}
+
+## SCORES FINAIS (0–100, quanto maior melhor)
+- Score da Equipe: ${equipe !== null ? Math.round(equipe) : '—'}
+- Burocracia normalizada: ${final ? final.normBuroc : '—'}
+- Complexidade normalizada: ${final ? final.normComplex : '—'}
+- Risco normalizado: ${final ? final.normRisco : '—'}
+- **SCORE GERAL DE MATURIDADE: ${final ? final.final : '—'}/100**
+- **NÍVEL: ${final ? final.level : '—'}** (Inicial→Gerenciado→Definido→Previsível→Otimizado)
+
+## TAREFA
+Gere uma análise estruturada com exatamente estas seções:
+
+### 1. Diagnóstico Geral
+(2-3 frases resumindo o estado atual do processo)
+
+### 2. Pontos Críticos
+(Liste os 3 principais problemas identificados nos dados)
+
+### 3. Insights Cruzados
+(Combine os índices para gerar observações não óbvias. Exemplos de padrões: baixa maturidade + alto risco = prioridade máxima; boa equipe + alta burocracia = processo engessado mas equipe adaptada; alta complexidade + poucos atores = gargalo de conhecimento; muitos loops + burocracia alta = fluxo ineficiente)
+
+### 4. Prioridade de Intervenção
+(Urgente / Moderada / Baixa — com justificativa baseada nos dados)
+
+### 5. Top 3 Recomendações
+(Ações práticas e específicas para elevar o nível de maturidade)
+
+Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas as observações nos dados fornecidos.`;
+
+    const text = await callGemini(prompt);
+    mat.geminiAnalysis = text;
+    mat.lastAnalysis   = new Date().toLocaleString('pt-BR');
+    markChanged();
+
+    resultDiv.innerHTML = `<div style="white-space:pre-wrap;font-size:13px;line-height:1.8;color:#1e293b;">${
+      text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^### (.*$)/gm, '<div style="font-size:14px;font-weight:800;color:#0a2540;margin:14px 0 4px;border-left:3px solid #6366f1;padding-left:8px;">$1</div>')
+        .replace(/^## (.*$)/gm, '<div style="font-size:15px;font-weight:800;color:#0a2540;margin:16px 0 6px;">$1</div>')
+        .replace(/\n/g, '<br>')
+    }</div>`;
+  } catch(e) {
+    resultDiv.innerHTML = `<span style="color:#ef4444;">Erro: ${e.message}</span>`;
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '✨ Analisar com IA';
+  }
+}
 
 </script>
 
