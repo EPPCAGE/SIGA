@@ -1429,6 +1429,7 @@
     <div class="nav-tab" onclick="showSection('raci',this)">📊 RACI</div>
     <div class="nav-tab nav-tab-bpmn" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
     <div class="nav-tab nav-tab-fd" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
+    <div class="nav-tab" onclick="showSection('competencias',this)">🎓 Competências</div>
     <div class="nav-tab" onclick="showSection('maturidade',this)">📊 Maturidade</div>
     <div class="nav-tab nav-tab-ai" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
     <div class="nav-tab nav-tab-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
@@ -2500,6 +2501,13 @@
     </div>
   </section>
 
+  <!-- COMPETÊNCIAS -->
+  <section id="d-competencias" class="section">
+    <div class="section-inner">
+      <div id="d-competencias-body"></div>
+    </div>
+  </section>
+
   <!-- MATURIDADE -->
   <section id="d-maturidade" class="section">
     <div class="section-inner">
@@ -2874,6 +2882,13 @@
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- COMPETÊNCIAS -->
+  <section id="r-competencias" class="section">
+    <div class="section-inner">
+      <div id="r-competencias-body"></div>
     </div>
   </section>
 
@@ -5052,7 +5067,8 @@ function switchPop(pop, tabEl) {
 
   if(editMode) enableEditables(true);
   try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) {}
-  if(currentSection === 'maturidade') try { matRender(prefix); } catch(e) { console.error('[matRender switchPop]', e); }
+  if(currentSection === 'competencias') try { compRender(prefix); } catch(e) { console.error('[compRender switchPop]',e); }
+  if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { console.error('[matRender switchPop]', e); }
 }
 
 // ═══ NAV ══════════════════════════════════════
@@ -5079,6 +5095,7 @@ function showSection(id, tab, silent) {
   if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
   if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) {}
   if(id === 'raci')        try { renderRaci(popPrefix(currentPop)); } catch(e) {}
+  if(id === 'competencias') try { compRender(popPrefix(currentPop)); } catch(e) { console.error('[compRender]',e); }
   if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { console.error('[matRender]', e); const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) c.innerHTML = '<p style="color:red;padding:20px;">Erro ao renderizar: ' + e.message + '</p>'; } }
   if(!silent && editMode) enableEditables(true);
   try { _updateVersionBars(); } catch(e) {}
@@ -7448,7 +7465,7 @@ function saveActionModal() {
   // If actor is new, add it to config.atores so the lists feed each other
   if(actor) {
     const atores = getConfig('atores');
-    if(!atores.includes(actor)) {
+    if(!atores.some(a => a.toLowerCase() === actor.toLowerCase())) {
       setConfig('atores', [...atores, actor]);
     }
   }
@@ -7600,6 +7617,10 @@ const CONFIG_DEFAULTS = {
   macroprocessos:       [...MACROPROCESSOS],
   tipoTrabalho:         ['Mapeamento de Processo Novo','Mapeamento de Processo Existente','Redesenho','Mapeamento e Redesenho','Criação de Documentação'],
   atores:               ['Auxiliar Administrativo','Analista','Auditor','Coordenador','Chefe de Divisão','Adjunto da CAGE','Contador','Auditor-Geral','Assessor','Auditor Setorial','Estagiário'],
+  equipes:              [],
+  hardSkills:           ['Modelagem de Processos (BPMN)','Mapeamento de Processos','Excel Avançado','Power BI','SQL','Análise de Dados','Gestão de Projetos','Desenho de Fluxogramas','SEI (Sistema Eletrônico de Informações)','SAEWEB','SIAFEM','Word / Writer','PowerPoint / Impress'],
+  softSkills:           ['Comunicação','Trabalho em equipe','Organização','Atenção a detalhes','Proatividade','Resolução de problemas','Gestão do tempo','Adaptabilidade','Pensamento crítico','Escuta ativa','Liderança','Negociação','Criatividade'],
+  conhecimentosNormativos: ['Lei de Responsabilidade Fiscal','Decreto Estadual de Controle Interno','INTOSAI GOV 9100','COSO — Controle Interno','NBC T SP 400','Lei de Acesso à Informação (LAI)','LGPD','Lei 14.133/2021 (Nova Lei de Licitações)','IN 01/2001 — TCU','Regulamentação do TCE-RS','Normas CAGE-RS'],
   naturezaProcesso:     ['Finalístico','Apoio','Governança'],
   categoriaDocumentos:  ['Instrução Normativa','Manual de Processo','Procedimento Operacional','Formulário','Fluxograma'],
   tipoAtividadePat:     ['Mapeamento de Processo','Monitoramento de Indicadores','Acompanhamento de Implementação','Auditoria','Controle Interno','Consultoria','Fiscalização','Normatização','Capacitação','Outro'],
@@ -7665,6 +7686,8 @@ function applyConfigToDropdowns() {
   ['pat-unidade','status-modal-unidade','nf-unidade'].forEach(id => populateConfigSelect(id,'areas'));
   ['pat-tipo','nf-tipo'].forEach(id => populateConfigSelect(id,'tipoAtividadePat'));
   populateConfigSelect('status-modal-tipo','tipoTrabalho');
+  // Refresh equipe-resp datalist
+  (function(){ const dl = document.getElementById('status-modal-equipe-resp-list'); if(dl) dl.innerHTML = getConfig('equipes').map(e => `<option value="${e.replace(/"/g,'&quot;')}">`).join(''); })();
   try { applyGlobalParams(); } catch(e) {}
 }
 
@@ -8031,6 +8054,10 @@ const _CFG_TABLES = [
   { key:'tipoTrabalho',        title:'🔧 Tipo de Trabalho',           desc:'Tipos de trabalho da ficha técnica de mapeamento.' },
   { key:'tipoAtividadePat',    title:'📅 Tipo de Atividade — PAT',    desc:'Tipos de atividade no Plano Anual de Trabalho.' },
   { key:'atores',              title:'🎭 Atores',                     desc:'Atores que executam ações nos fluxos dos processos mapeados.' },
+  { key:'equipes',             title:'🫂 Equipes Responsáveis',       desc:'Equipes da CAGE que aparecem na ficha técnica dos mapeamentos.' },
+  { key:'hardSkills',          title:'🛠 Hard Skills',                desc:'Habilidades técnicas sugeridas na aba de Competências.' },
+  { key:'softSkills',          title:'💬 Soft Skills',                desc:'Habilidades comportamentais sugeridas na aba de Competências.' },
+  { key:'conhecimentosNormativos', title:'📜 Conhecimentos Normativos', desc:'Conhecimentos legais/normativos sugeridos na aba de Competências.' },
   { key:'naturezaProcesso',    title:'⚡ Natureza do Processo',       desc:'Classificação da natureza dos processos.' },
   { key:'categoriaDocumentos', title:'📄 Categoria de Documentos',    desc:'Categorias usadas na gestão de documentos.' },
   { key:'statusMapeamento',    title:'📊 Status do Mapeamento',       desc:'Status usados na ficha técnica de mapeamento.', typed:'status' },
@@ -8323,7 +8350,8 @@ function configAddItem(key) {
   const val = input.value.trim();
   if(!val) return;
   const items = [...getConfig(key)];
-  if(items.includes(val)) { showToast('Item já existe na lista.','warn'); return; }
+  const valLow = val.toLowerCase();
+  if(key === 'atores' ? items.some(i => i.toLowerCase() === valLow) : items.includes(val)) { showToast('Item já existe na lista.','warn'); return; }
   items.push(val);
   setConfig(key, items);
   input.value = '';
@@ -11856,8 +11884,9 @@ function renderFicha(p) {
     { label:'Macroprocesso',         icon:'🗂', value: m.macro,        group:'Identificação' },
     { label:'Processo Pai',          icon:'🔗', value: m.processo,     group:'Identificação' },
     { label:'Subprocesso (Arq.)',    icon:'📂', value: m.sub,          group:'Identificação' },
-    { label:'Unidade Responsável',   icon:'🏛', value: m.unidade,      group:'Identificação' },
-    { label:'Tipo de Trabalho',      icon:'🔧', value: m.tipo,         group:'Identificação' },
+    { label:'Unidade Responsável',   icon:'🏛', value: m.unidade,           group:'Identificação' },
+    { label:'Equipe Responsável',    icon:'🫂', value: m.equipeResponsavel, group:'Identificação' },
+    { label:'Tipo de Trabalho',      icon:'🔧', value: m.tipo,              group:'Identificação' },
     { label:'Dificuldade',           icon:'📶', value: m.dificuldade,  group:'Identificação' },
     // Datas
     { label:'Data de Início',        icon:'📅', value: fmt(m.dataInicio),    group:'Datas' },
@@ -16777,6 +16806,13 @@ function openStatusModal(p) {
   document.getElementById('status-modal-sub').value        = m.sub          || '';
   populateConfigSelect('status-modal-unidade', 'areas', m.unidade || '');
   populateConfigSelect('status-modal-tipo', 'tipoTrabalho', m.tipo || '');
+  // Equipe Responsável — datalist dinâmico
+  (function() {
+    const dl = document.getElementById('status-modal-equipe-resp-list');
+    if(dl) dl.innerHTML = getConfig('equipes').map(e => `<option value="${e.replace(/"/g,'&quot;')}">`).join('');
+    const inp = document.getElementById('status-modal-equipe-resp');
+    if(inp) inp.value = m.equipeResponsavel || '';
+  })();
   document.getElementById('status-modal-dificuldade').value= m.dificuldade  || '';
   // Status e Datas
   document.getElementById('status-modal-status').value     = m.statusMap    || '';
@@ -16830,9 +16866,17 @@ function saveStatusModal() {
   m.macro        = document.getElementById('status-modal-macro').value;
   m.processo     = document.getElementById('status-modal-processo').value.trim();
   m.sub          = document.getElementById('status-modal-sub').value.trim();
-  m.unidade      = document.getElementById('status-modal-unidade').value;
-  m.tipo         = document.getElementById('status-modal-tipo').value;
-  m.dificuldade  = document.getElementById('status-modal-dificuldade').value;
+  m.unidade           = document.getElementById('status-modal-unidade').value;
+  m.equipeResponsavel = (document.getElementById('status-modal-equipe-resp')?.value || '').trim();
+  m.tipo              = document.getElementById('status-modal-tipo').value;
+  m.dificuldade       = document.getElementById('status-modal-dificuldade').value;
+  // Gravar equipe na tabela de equipes da CAGE se for nova
+  if(m.equipeResponsavel) {
+    const equipes = getConfig('equipes');
+    if(!equipes.some(e => e.toLowerCase() === m.equipeResponsavel.toLowerCase())) {
+      setConfig('equipes', [...equipes, m.equipeResponsavel]);
+    }
+  }
   // Status e Datas
   m.statusMap    = document.getElementById('status-modal-status').value;
   m.dataInicio   = document.getElementById('status-modal-inicio').value;
@@ -18716,6 +18760,119 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
 })(); // end Indicadores CAGE IIFE
 
 // ═══════════════════════════════════════════════════════════════════
+// MÓDULO: COMPETÊNCIAS NECESSÁRIAS
+// ═══════════════════════════════════════════════════════════════════
+
+const COMP_CATS = [
+  { key:'hard',      label:'🛠 Hard Skills',             configKey:'hardSkills',           desc:'Habilidades técnicas e ferramentas necessárias para executar o processo.' },
+  { key:'soft',      label:'💬 Soft Skills',             configKey:'softSkills',           desc:'Habilidades comportamentais e interpessoais necessárias.' },
+  { key:'normativo', label:'📜 Conhecimentos Normativos', configKey:'conhecimentosNormativos', desc:'Legislação, normas e regulamentações que o executor precisa conhecer.' },
+];
+
+function compGetData(p) {
+  if(!DATA[p]) return { hard:[], soft:[], normativo:[] };
+  if(!DATA[p].competencias) DATA[p].competencias = { hard:[], soft:[], normativo:[] };
+  // Garantir que as três categorias existam
+  COMP_CATS.forEach(c => { if(!Array.isArray(DATA[p].competencias[c.key])) DATA[p].competencias[c.key] = []; });
+  return DATA[p].competencias;
+}
+
+function compToggle(p, cat, val) {
+  const comp = compGetData(p);
+  const idx = comp[cat].indexOf(val);
+  if(idx >= 0) comp[cat].splice(idx, 1);
+  else          comp[cat].push(val);
+  markChanged();
+  compRender(p);
+}
+
+function compAddCustom(p, cat) {
+  const inp = document.getElementById(`comp-custom-${p}-${cat}`);
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val) return;
+  const comp = compGetData(p);
+  if(comp[cat].some(v => v.toLowerCase() === val.toLowerCase())) {
+    showToast('Competência já adicionada.','warn'); return;
+  }
+  comp[cat].push(val);
+  inp.value = '';
+  markChanged();
+  compRender(p);
+}
+
+function compRemove(p, cat, idx) {
+  const comp = compGetData(p);
+  comp[cat].splice(idx, 1);
+  markChanged();
+  compRender(p);
+}
+
+function compRender(p) {
+  const container = document.getElementById(p + '-competencias-body');
+  if(!container) return;
+
+  const comp      = compGetData(p);
+  const procName  = p === 'd' ? 'Denúncias' : 'Representações';
+  const em        = isEditor;
+
+  const catHtml = COMP_CATS.map(cat => {
+    const suggestions = getConfig(cat.configKey);
+    const selected    = comp[cat.key] || [];
+
+    // Tags de sugestões
+    const tagsHtml = suggestions.map(sug => {
+      const on = selected.includes(sug);
+      return `<button onclick="compToggle('${p}','${cat.key}',${JSON.stringify(sug)})"
+        style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${on?'#6366f1':'#e2e8f0'};
+               background:${on?'#6366f1':'#f8fafc'};color:${on?'#fff':'#475569'};font-weight:${on?'700':'400'};
+               margin:3px;transition:all .15s;">${on?'✓ ':''} ${sug}</button>`;
+    }).join('');
+
+    // Lista de competências selecionadas (inclui customizadas)
+    const selectedHtml = selected.length
+      ? selected.map((v, i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f0f4ff;border-radius:7px;margin-bottom:4px;">
+            <span style="flex:1;font-size:13px;color:#1e293b;">${v}</span>
+            ${em ? `<button onclick="compRemove('${p}','${cat.key}',${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;" title="Remover">✕</button>` : ''}
+          </div>`).join('')
+      : '<div style="color:#94a3b8;font-size:12px;padding:6px 0;">Nenhuma competência selecionada.</div>';
+
+    return `
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-bottom:16px;">
+        <div style="font-size:15px;font-weight:800;color:#0a2540;margin-bottom:3px;">${cat.label}</div>
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:14px;">${cat.desc}</div>
+
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Sugestões — clique para selecionar</div>
+        <div style="display:flex;flex-wrap:wrap;gap:2px;margin-bottom:16px;padding:10px;background:#f8fafc;border-radius:8px;">
+          ${tagsHtml || '<span style="color:#94a3b8;font-size:12px;">Nenhuma sugestão cadastrada.</span>'}
+        </div>
+
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Competências selecionadas</div>
+        <div style="margin-bottom:${em?'12px':'0'};">${selectedHtml}</div>
+
+        ${em ? `
+        <div style="display:flex;gap:8px;">
+          <input id="comp-custom-${p}-${cat.key}" class="modal-input" type="text"
+            placeholder="Adicionar competência não listada..."
+            style="flex:1;font-size:13px;"
+            onkeydown="if(event.key==='Enter') compAddCustom('${p}','${cat.key}')">
+          <button onclick="compAddCustom('${p}','${cat.key}')" class="btn btn-primary" style="font-size:12px;padding:6px 14px;">＋</button>
+        </div>` : ''}
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:16px;">
+      🎓 Competências Necessárias — <span style="color:#6366f1;">${procName}</span>
+    </div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:20px;padding:12px 14px;background:#f8fafc;border-radius:8px;border-left:3px solid #6366f1;">
+      Selecione as competências exigidas dos executores deste processo. As sugestões vêm das listas configuradas no módulo de Gestão do Sistema.
+    </div>
+    ${catHtml}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // MÓDULO: MATURIDADE DE PROCESSOS
 // ═══════════════════════════════════════════════════════════════════
 
@@ -19554,6 +19711,15 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
               </select>
             </div>
             <div>
+              <label class="gmod-label">Equipe Responsável</label>
+              <input class="modal-input" id="status-modal-equipe-resp" type="text"
+                list="status-modal-equipe-resp-list" autocomplete="off"
+                placeholder="Selecione ou cadastre nova equipe...">
+              <datalist id="status-modal-equipe-resp-list"></datalist>
+            </div>
+          </div>
+          <div class="gmod-row">
+            <div>
               <label class="gmod-label">Tipo de Trabalho</label>
               <select class="modal-input" id="status-modal-tipo">
                 <option value="">Selecione...</option>
@@ -19564,13 +19730,13 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
                 <option>Criação de Documentação</option>
               </select>
             </div>
-          </div>
-          <div>
-            <label class="gmod-label">Dificuldade</label>
-            <select class="modal-input" id="status-modal-dificuldade" style="max-width:200px;">
-              <option value="">Selecione...</option>
-              <option>Baixa</option><option>Média</option><option>Alta</option>
-            </select>
+            <div>
+              <label class="gmod-label">Dificuldade</label>
+              <select class="modal-input" id="status-modal-dificuldade">
+                <option value="">Selecione...</option>
+                <option>Baixa</option><option>Média</option><option>Alta</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
