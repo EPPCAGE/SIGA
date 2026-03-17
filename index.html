@@ -1398,7 +1398,6 @@
       <button data-mod="quadro"   class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.25);">🗒 Quadro de Esboço</button>
       <button data-mod="arq"      class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
       <button data-mod="ind-cage" class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:rgba(232,160,32,.12);color:#fcd34d;border-color:rgba(232,160,32,.3);">📈 Indicadores CAGE</button>
-      <button data-mod="maturity" class="sidebar-pat-btn" onclick="closeSidebar();showMaturityModule();" style="margin-top:4px;background:rgba(99,102,241,.12);color:#a5b4fc;border-color:rgba(99,102,241,.3);">📊 Maturidade de Processos</button>
     </div>
   </div>
   <div class="sidebar-list" id="sidebar-list"></div>
@@ -1430,6 +1429,7 @@
     <div class="nav-tab" onclick="showSection('raci',this)">📊 RACI</div>
     <div class="nav-tab nav-tab-bpmn" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
     <div class="nav-tab nav-tab-fd" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
+    <div class="nav-tab" onclick="showSection('maturidade',this)">📊 Maturidade</div>
     <div class="nav-tab nav-tab-ai" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
     <div class="nav-tab nav-tab-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
   </div>
@@ -2499,6 +2499,14 @@
       </div>
     </div>
   </section>
+
+  <!-- MATURIDADE -->
+  <section id="d-maturidade" class="section">
+    <div class="section-inner">
+      <div id="d-maturidade-body"></div>
+    </div>
+  </section>
+
 </div><!-- /pop-denuncias -->
 
 
@@ -2868,6 +2876,14 @@
       </div>
     </div>
   </section>
+
+  <!-- MATURIDADE -->
+  <section id="r-maturidade" class="section">
+    <div class="section-inner">
+      <div id="r-maturidade-body"></div>
+    </div>
+  </section>
+
 </div><!-- /pop-representacoes -->
 
 
@@ -5059,9 +5075,10 @@ function showSection(id, tab, silent) {
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
   }
-  if(id === 'fluxo')      renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
-  if(id === 'checklists') try { renderChecklists(popPrefix(currentPop)); } catch(e) {}
-  if(id === 'raci')       try { renderRaci(popPrefix(currentPop)); } catch(e) {}
+  if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
+  if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) {}
+  if(id === 'raci')        try { renderRaci(popPrefix(currentPop)); } catch(e) {}
+  if(id === 'maturidade')  try { matRender(popPrefix(currentPop)); } catch(e) {}
   if(!silent && editMode) enableEditables(true);
   try { _updateVersionBars(); } catch(e) {}
 }
@@ -7646,7 +7663,6 @@ const _MODULES_NAV = [
   { key:'quadro',   label:'🗒 Quadro de Esboço',                   color:'#10b981' },
   { key:'arq',      label:'🏛 Arquitetura de Processos',           color:'#8b5cf6' },
   { key:'ind-cage', label:'📈 Indicadores CAGE',                   color:'#e8a020' },
-  { key:'maturity', label:'📊 Maturidade de Processos',           color:'#6366f1' },
 ];
 
 const _HEADER_BTNS_DEF = [
@@ -8939,7 +8955,7 @@ let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
 let workspaceId = sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
-  ['repo-module','drops-module','pat-module','bi-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel','maturity-module'].forEach(id => {
+  ['repo-module','drops-module','pat-module','bi-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel'].forEach(id => {
     const el = document.getElementById(id);
     if(el) { el.style.display = 'none'; el.classList.remove('active'); }
   });
@@ -18467,32 +18483,6 @@ const MAT_QUESTIONS = [
   { text: 'Existem diferenças relevantes entre o processo desenhado e o que acontece na prática?', inverted: false },
 ];
 
-let _matP = 'd';
-
-function showMaturityModule(show = true) {
-  if(!show) { showHome(); return; }
-  hideHome();
-  hideAllModules();
-  document.getElementById('maturity-module').style.display = 'block';
-  matSwitchProcess(_matP);
-}
-
-function matSwitchProcess(p) {
-  _matP = p;
-  ['d','r'].forEach(key => {
-    const tab = document.getElementById('mat-tab-' + key);
-    if(tab) {
-      const active = key === p;
-      tab.style.background   = active ? '#6366f1' : '#fff';
-      tab.style.color        = active ? '#fff' : '#64748b';
-      tab.style.borderColor  = active ? '#6366f1' : '#e2e8f0';
-    }
-    const content = document.getElementById('mat-content-' + key);
-    if(content) content.style.display = key === p ? 'block' : 'none';
-  });
-  matRender(p);
-}
-
 function matGetData(p) {
   if(!DATA[p]) return { answers: new Array(10).fill(null), indispensaveis: 0, geminiAnalysis: '', lastAnalysis: '' };
   if(!DATA[p].maturity) DATA[p].maturity = { answers: new Array(10).fill(null), indispensaveis: 0, geminiAnalysis: '', lastAnalysis: '' };
@@ -18615,7 +18605,7 @@ function matSetIndispensaveis(p, val) {
 }
 
 function matRender(p) {
-  const container = document.getElementById('mat-content-' + p);
+  const container = document.getElementById(p + '-maturidade-body');
   if(!container) return;
 
   const mat         = matGetData(p);
@@ -19462,32 +19452,6 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════ -->
-<!-- MÓDULO: MATURIDADE DE PROCESSOS                               -->
-<!-- ═══════════════════════════════════════════════════════════════ -->
-<div id="maturity-module" style="display:none;position:fixed;inset:0;z-index:900;background:#f0f2f7;overflow:auto;">
-  <div style="max-width:1100px;margin:0 auto;padding:28px 24px 60px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
-      <div>
-        <h2 style="font-size:22px;font-weight:800;color:#0a2540;margin:0;">📊 Análise de Maturidade do Processo</h2>
-        <p style="color:#64748b;font-size:13px;margin:4px 0 0;">Avaliação multidimensional: complexidade, burocracia, risco operacional e percepção da equipe.</p>
-      </div>
-      <button onclick="showMaturityModule(false)" class="btn btn-outline" style="font-size:13px;">← Voltar</button>
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:24px;" id="mat-tabs">
-      <button id="mat-tab-d" onclick="matSwitchProcess('d')"
-        style="padding:10px 24px;border-radius:8px;border:2px solid #6366f1;background:#6366f1;color:#fff;font-weight:700;font-size:13px;cursor:pointer;">
-        📂 Denúncias
-      </button>
-      <button id="mat-tab-r" onclick="matSwitchProcess('r')"
-        style="padding:10px 24px;border-radius:8px;border:2px solid #e2e8f0;background:#fff;color:#64748b;font-weight:600;font-size:13px;cursor:pointer;">
-        📂 Representações
-      </button>
-    </div>
-    <div id="mat-content-d"></div>
-    <div id="mat-content-r" style="display:none;"></div>
-  </div>
-</div>
 
 <script>
 // ─── Service Worker — cache-busting (network-first para HTML) ────────────────
