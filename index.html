@@ -10561,6 +10561,10 @@ async function initSupabase() {
       },
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      // PKCE: impede que o Microsoft Safe Links (Outlook) consuma o token
+      // de uso único antes do usuário clicar — o scanner não consegue
+      // completar a troca sem o code_verifier guardado no localStorage.
+      flowType: 'pkce',
       // Bypass Web Locks API — evita deadlock onde queries ficam esperando
       // um refresh de token que nunca libera o lock (causa queries travadas)
       lock: (name, acquireTimeout, fn) => fn(),
@@ -10692,6 +10696,7 @@ async function signInGoogle() {
   }
 }
 
+let _emailCooldownUntil = 0;
 async function signInEmail() {
   const email = document.getElementById('auth-email').value.trim().toLowerCase();
   const statusEl = document.getElementById('auth-status');
@@ -10700,10 +10705,20 @@ async function signInEmail() {
     statusEl.textContent = '⛔ Acesso restrito a e-mails @sefaz.rs.gov.br';
     return;
   }
+  const now = Date.now();
+  if(now < _emailCooldownUntil) {
+    const secsLeft = Math.ceil((_emailCooldownUntil - now) / 1000);
+    statusEl.textContent = `⏳ Aguarde ${secsLeft}s antes de reenviar.`;
+    return;
+  }
   statusEl.textContent = 'Enviando link...';
   const { error } = await supaClient.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
-  if(error) statusEl.textContent = '⚠️ ' + error.message;
-  else statusEl.textContent = '✅ Link enviado! Verifique seu e-mail institucional.';
+  if(error) {
+    statusEl.textContent = '⚠️ ' + error.message;
+  } else {
+    _emailCooldownUntil = Date.now() + 60_000;
+    statusEl.textContent = '✅ Link enviado! Verifique seu e-mail institucional. (aguarde 60s para reenviar)';
+  }
 }
 
 async function signOut() {
