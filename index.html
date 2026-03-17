@@ -11455,22 +11455,52 @@ async function exportPptx() {
   });
 }
 
+// ── Helper compartilhado: carrega o logo CAGE como base64 (com cache e fallback) ──
+async function _loadCageLogoB64() {
+  if(window._cageLogoB64Cache) return window._cageLogoB64Cache;
+  const url = 'https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png';
+  // Tentativa 1: fetch (funciona em mesmo domínio ou se CORS estiver habilitado)
+  try {
+    const resp = await fetch(url);
+    if(resp.ok) {
+      const ct = resp.headers.get('content-type') || '';
+      if(ct.startsWith('image/')) {
+        const blob = await resp.blob();
+        const b64 = await new Promise(res => { const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
+        window._cageLogoB64Cache = b64;
+        return b64;
+      }
+    }
+  } catch(e) { /* ignora erro de CORS ou rede, tenta fallback */ }
+  // Tentativa 2: Image + canvas com crossOrigin (funciona se servidor enviar cabeçalhos CORS)
+  try {
+    const b64 = await new Promise(resolve => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || 165; c.height = img.naturalHeight || 50;
+          c.getContext('2d').drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        } catch(e) { resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url + '?_t=' + Date.now();
+    });
+    if(b64) { window._cageLogoB64Cache = b64; return b64; }
+  } catch(e) { /* canvas tainted ou erro */ }
+  console.warn('Não foi possível carregar logo CAGE para o PPT');
+  return null;
+}
+
 async function buildPptx(D, _pptFlowMode) {
   const _pptMode = _pptFlowMode || 'asis';
   const pres = new PptxGenJS();
   pres.layout = 'LAYOUT_16x9';
   pres.title  = 'GesProc-RS · ' + (D.meta?.name || 'POP');
 
-  // Buscar logo oficial da CAGE como base64 (com cache)
-  let cageLogoB64 = null;
-  try {
-    if(!window._cageLogoB64Cache) {
-      const resp = await fetch('https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png');
-      const blob = await resp.blob();
-      window._cageLogoB64Cache = await new Promise(res => { const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
-    }
-    cageLogoB64 = window._cageLogoB64Cache;
-  } catch(e) { console.warn('Não foi possível carregar logo CAGE para o PPT', e); }
+  const cageLogoB64 = await _loadCageLogoB64();
 
   const C = {
     navy:'0A2540', mid:'1A4A7A', green:'00A86B', gold:'E8A020',
@@ -11754,15 +11784,8 @@ async function _buildEppStatusReport() {
   pres.layout = 'LAYOUT_16x9'; // 10" × 5.625"
 
   // ── Logos ──────────────────────────────────────────────
-  let cageLogoB64 = null, eppLogoB64 = null;
-  try {
-    if(!window._cageLogoB64Cache) {
-      const resp = await fetch('https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png');
-      const blob = await resp.blob();
-      window._cageLogoB64Cache = await new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
-    }
-    cageLogoB64 = window._cageLogoB64Cache;
-  } catch(e) {}
+  let eppLogoB64 = null;
+  const cageLogoB64 = await _loadCageLogoB64();
   if(DATA._logoUrl) {
     try {
       const resp = await fetch(DATA._logoUrl);
@@ -13846,11 +13869,16 @@ function logo2FileSelected(file) {
   if(!file) return;
   if(!file.type.startsWith('image/')) { showToast('⚠️ Selecione um arquivo de imagem.', 'warn'); return; }
   if(file.size > 5 * 1024 * 1024) { showToast('⚠️ Imagem muito grande. Máximo 5MB.', 'warn'); return; }
-  // Preview imediato via object URL
-  DATA._logo2Url = URL.createObjectURL(file);
-  logo2Refresh();
-  // Upload para storage em background
-  uploadLogo2ToStorage(file);
+  // Converte para base64 imediatamente — persiste ao recarregar sem depender de cloud storage
+  const reader = new FileReader();
+  reader.onload = () => {
+    DATA._logo2Url = reader.result; // data URL base64
+    logo2Refresh();
+    markChanged();
+    // Tenta também enviar para storage (substitui pelo URL permanente se bem-sucedido)
+    uploadLogo2ToStorage(file);
+  };
+  reader.readAsDataURL(file);
 }
 
 async function uploadLogo2ToStorage(file) {
@@ -18959,16 +18987,7 @@ function statusModalUpdateSubList() {
       pres.title  = titulo + ' — ' + trimestreLabel;
       pres.author = 'GesProc-RS — CAGE-RS';
 
-      // Buscar logo oficial da CAGE como base64 (com cache)
-      let cageLogoB64 = null;
-      try {
-        if(!window._cageLogoB64Cache) {
-          const resp = await fetch('https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png');
-          const blob = await resp.blob();
-          window._cageLogoB64Cache = await new Promise(res => { const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
-        }
-        cageLogoB64 = window._cageLogoB64Cache;
-      } catch(e) { console.warn('Não foi possível carregar logo CAGE para o PPT', e); }
+      const cageLogoB64 = await _loadCageLogoB64();
 
       const C = { navy:'0A2540', navyFull:'#0A2540', green:'00A86B', gold:'E8A020', white:'FFFFFF', light:'F4F7FB', muted:'8898AA', blue:'1E40AF' };
 
