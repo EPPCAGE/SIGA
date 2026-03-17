@@ -19982,8 +19982,9 @@ const MAT_QUESTIONS = [
 ];
 
 function matGetData(p) {
-  if(!DATA[p]) return { answers: new Array(10).fill(null), indispensaveis: 0, version: 'asis', geminiAnalysis: '', lastAnalysis: '' };
-  if(!DATA[p].maturity) DATA[p].maturity = { answers: new Array(10).fill(null), indispensaveis: 0, version: 'asis', geminiAnalysis: '', lastAnalysis: '' };
+  if(!DATA[p]) return { answers: new Array(10).fill(null), indispensaveis: 0, sistIndispensaveis: 0, version: 'asis', geminiAnalysis: '', lastAnalysis: '' };
+  if(!DATA[p].maturity) DATA[p].maturity = { answers: new Array(10).fill(null), indispensaveis: 0, sistIndispensaveis: 0, version: 'asis', geminiAnalysis: '', lastAnalysis: '' };
+  if(DATA[p].maturity.sistIndispensaveis === undefined) DATA[p].maturity.sistIndispensaveis = 0;
   if(!DATA[p].maturity.version) DATA[p].maturity.version = 'asis';
   return DATA[p].maturity;
 }
@@ -20060,10 +20061,10 @@ function matComputeMetrics(p, version='asis') {
            complexScore, complexLabel, complexCls, burocracia, burocLabel, burocCls };
 }
 
-function matComputeRisco(metrics, indispensaveis) {
-  // decisões×2 + handoffs×2 + pessoas_indispensáveis×5 + sistemas_únicos×3
+function matComputeRisco(metrics, indispensaveis, sistIndispensaveis) {
+  // decisões×2 + handoffs×2 + pessoas_indispensáveis×5 + sistemas_indispensáveis×3
   const score = (metrics.totalDecisions * 2) + (metrics.totalHandoffs * 2)
-              + (indispensaveis * 5) + ((metrics.totalSistemas || 0) * 3);
+              + (indispensaveis * 5) + ((sistIndispensaveis || 0) * 3);
   let label, cls;
   if(score <= 15)      { label = 'Baixo'; cls = '#22c55e'; }
   else if(score <= 35) { label = 'Médio'; cls = '#eab308'; }
@@ -20089,7 +20090,8 @@ function matComputeFinal(p) {
   const version = mat.version || 'asis';
   const metrics = matComputeMetrics(p, version);
   const ind     = parseInt(mat.indispensaveis) || 0;
-  const { score: riscoRaw } = matComputeRisco(metrics, ind);
+  const sist    = parseInt(mat.sistIndispensaveis) || 0;
+  const { score: riscoRaw } = matComputeRisco(metrics, ind, sist);
   const equipe  = matScoreEquipe(mat.answers);
   if(equipe === null) return null;
 
@@ -20128,6 +20130,13 @@ function matSetIndispensaveis(p, val) {
   matRender(p);
 }
 
+function matSetSistIndispensaveis(p, val) {
+  const mat = matGetData(p);
+  mat.sistIndispensaveis = parseInt(val) || 0;
+  markChanged();
+  matRender(p);
+}
+
 function matRender(p) {
   const container = document.getElementById(p + '-maturidade-body');
   if(!container) { console.warn('[matRender] container not found for p=', p); return; }
@@ -20139,7 +20148,8 @@ function matRender(p) {
   const version     = mat.version || 'asis';
   const metrics     = matComputeMetrics(p, version);
   const ind         = parseInt(mat.indispensaveis) || 0;
-  const risco       = matComputeRisco(metrics, ind);
+  const sist        = parseInt(mat.sistIndispensaveis) || 0;
+  const risco       = matComputeRisco(metrics, ind, sist);
   const final       = matComputeFinal(p);
   const answers     = Array.isArray(mat.answers) ? mat.answers : new Array(10).fill(null);
   const answered    = answers.filter(a => a !== null).length;
@@ -20170,8 +20180,6 @@ function matRender(p) {
              background:${sel ? cols[val] : '#f8fafc'};color:${sel ? '#fff' : '#64748b'};
              font-size:12px;font-weight:${sel ? '700' : '400'};cursor:pointer;">${lbl}</button>`;
   };
-
-  const version  = mat.version || 'asis';
 
   // ── AS IS / TO BE toggle (issue #6) ─────────────────────────────
   const versionToggle = `
@@ -20212,20 +20220,29 @@ function matRender(p) {
       ${indexCard('Burocracia ↓', (metrics.burocracia * 100).toFixed(1)+'%', metrics.burocLabel, metrics.burocCls,
         `(aprovações + revisões) ÷ total de atividades<br>Escala: &lt;15% saudável · 15–30% moderado · &gt;30% burocrático<br><span style="color:#64748b;">Fontes: natureza da ação + palavras-chave no texto</span>`)}
       ${indexCard('Risco Operacional ↓', risco.score, risco.label, risco.cls,
-        `decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas únicos×3<br>Escala: ≤15 baixo · ≤35 médio · &gt;35 alto<br><span style="color:#64748b;">Sistemas: detectados automaticamente do campo "Sistemas" das ações</span>`)}
+        `decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3<br>Escala: ≤15 baixo · ≤35 médio · &gt;35 alto`)}
     </div>`;
 
-  // issue #2: clarificar "pessoas indispensáveis" e mostrar sistemas auto-detectados
   const manualHtml = `
-    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:200px;">
-        <div style="font-weight:700;color:#0a2540;font-size:14px;margin-bottom:2px;">👤 Pessoas-chave indispensáveis</div>
-        <div style="font-size:12px;color:#94a3b8;">Quantas pessoas são insubstituíveis para o processo funcionar? Cada uma adiciona 5 pontos ao risco operacional.</div>
-        ${metrics.totalSistemas > 0 ? `<div style="font-size:12px;color:#6366f1;margin-top:4px;">💻 ${metrics.totalSistemas} sistema(s) detectado(s) no fluxo (campo "Sistemas" das ações) — cada um adiciona 3 pontos ao risco.</div>` : '<div style="font-size:12px;color:#94a3b8;margin-top:4px;">💻 Nenhum sistema informado nas ações do fluxo.</div>'}
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;margin-bottom:24px;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-weight:700;color:#0a2540;font-size:14px;margin-bottom:2px;">👤 Existem pessoas insubstituíveis neste processo?</div>
+          <div style="font-size:12px;color:#94a3b8;">Quantas pessoas são tão específicas ao processo que, sem elas, a execução seria interrompida ou severamente prejudicada? Cada uma adiciona <strong>5 pontos</strong> ao risco operacional.</div>
+        </div>
+        <input type="number" min="0" max="50" value="${ind}"
+          style="width:80px;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:20px;font-weight:800;text-align:center;color:#0a2540;"
+          onchange="matSetIndispensaveis('${p}', this.value)" oninput="matSetIndispensaveis('${p}', this.value)">
       </div>
-      <input type="number" min="0" max="50" value="${ind}"
-        style="width:80px;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:20px;font-weight:800;text-align:center;color:#0a2540;"
-        onchange="matSetIndispensaveis('${p}', this.value)" oninput="matSetIndispensaveis('${p}', this.value)">
+      <div style="border-top:1px solid #f1f5f9;padding-top:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-weight:700;color:#0a2540;font-size:14px;margin-bottom:2px;">💻 Existe dependência de sistema específico e indispensável?</div>
+          <div style="font-size:12px;color:#94a3b8;">Quantos sistemas são tão críticos que, sem eles, a execução deste processo seria interrompida completamente? Cada um adiciona <strong>3 pontos</strong> ao risco operacional.</div>
+        </div>
+        <input type="number" min="0" max="50" value="${sist}"
+          style="width:80px;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:20px;font-weight:800;text-align:center;color:#0a2540;"
+          onchange="matSetSistIndispensaveis('${p}', this.value)" oninput="matSetSistIndispensaveis('${p}', this.value)">
+      </div>
     </div>`;
 
   const qHtml = MAT_QUESTIONS.map((q, i) => {
@@ -20367,7 +20384,8 @@ async function matGeminiAnalyze(p) {
     const version = mat.version || 'asis';
     const metrics = matComputeMetrics(p, version);
     const ind     = parseInt(mat.indispensaveis) || 0;
-    const risco   = matComputeRisco(metrics, ind);
+    const sist    = parseInt(mat.sistIndispensaveis) || 0;
+    const risco   = matComputeRisco(metrics, ind, sist);
     const equipe  = matScoreEquipe(mat.answers);
     const final   = matComputeFinal(p);
     const popMeta = (DATA[p] && DATA[p].meta) ? DATA[p].meta : {};
