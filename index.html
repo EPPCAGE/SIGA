@@ -7656,6 +7656,7 @@ const CONFIG_DEFAULTS = {
   contadorGeral:        '',
   adjuntosCage:         [],
   equipeUnidade:        [],
+  equipeCompetencias:   [],
   hardSkills:           ['Modelagem de Processos (BPMN)','Mapeamento de Processos','Excel Avançado','Power BI','SQL','Análise de Dados','Gestão de Projetos','Desenho de Fluxogramas','SEI (Sistema Eletrônico de Informações)','SAEWEB','SIAFEM','Word / Writer','PowerPoint / Impress'],
   softSkills:           ['Comunicação','Trabalho em equipe','Organização','Atenção a detalhes','Proatividade','Resolução de problemas','Gestão do tempo','Adaptabilidade','Pensamento crítico','Escuta ativa','Liderança','Negociação','Criatividade'],
   conhecimentosNormativos: ['Lei de Responsabilidade Fiscal','Decreto Estadual de Controle Interno','INTOSAI GOV 9100','COSO — Controle Interno','NBC T SP 400','Lei de Acesso à Informação (LAI)','LGPD','Lei 14.133/2021 (Nova Lei de Licitações)','IN 01/2001 — TCU','Regulamentação do TCE-RS','Normas CAGE-RS'],
@@ -8096,6 +8097,7 @@ const _CFG_TABLES = [
   { key:'contadorGeral',       title:'🏛 Contador-Geral',             desc:'Nome do Contador-Geral da CAGE para o organograma.', typed:'contador-geral' },
   { key:'adjuntosCage',        title:'👔 Adjuntos da CAGE',           desc:'Adjuntos da CAGE (nível hierárquico abaixo do Contador-Geral).' },
   { key:'equipeUnidade',       title:'🔗 Equipes por Unidade',        desc:'Relaciona cada equipe à sua unidade/divisão na estrutura da CAGE.', typed:'equipe-unidade' },
+  { key:'equipeCompetencias',  title:'🎯 Competências por Equipe',    desc:'Define as competências (Hard Skills, Soft Skills, Normativos) exigidas por cada equipe.', typed:'equipe-competencias' },
   { key:'hardSkills',          title:'🛠 Hard Skills',                desc:'Habilidades técnicas sugeridas na aba de Competências.' },
   { key:'softSkills',          title:'💬 Soft Skills',                desc:'Habilidades comportamentais sugeridas na aba de Competências.' },
   { key:'conhecimentosNormativos', title:'📜 Conhecimentos Normativos', desc:'Conhecimentos legais/normativos sugeridos na aba de Competências.' },
@@ -8128,9 +8130,10 @@ function renderConfigPanel() {
 function _renderCfgCard({key, title, desc, typed=false}) {
   if(typed === 'servidor')       return _renderCfgCardServidor(title, desc);
   if(typed === 'alertas')        return _renderCfgCardAlertas(title, desc);
-  if(typed === 'natureza')       return _renderCfgCardNatureza(title, desc);
-  if(typed === 'contador-geral') return _renderCfgCardContador(title, desc);
-  if(typed === 'equipe-unidade') return _renderCfgCardEquipeUnidade(title, desc);
+  if(typed === 'natureza')            return _renderCfgCardNatureza(title, desc);
+  if(typed === 'contador-geral')      return _renderCfgCardContador(title, desc);
+  if(typed === 'equipe-unidade')      return _renderCfgCardEquipeUnidade(title, desc);
+  if(typed === 'equipe-competencias') return _renderCfgCardEquipeCompetencias(title, desc);
 
   const items = getConfig(key);
   const empty = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum item cadastrado.</div>';
@@ -8259,6 +8262,75 @@ function configRemoveEquipeUnidade(i) {
   renderConfigPanel();
   saveToCloud();
   showToast('Vínculo removido.','success');
+}
+
+function _renderCfgCardEquipeCompetencias(title, desc) {
+  const equipes    = getConfig('equipes');
+  const hardAll    = getConfig('hardSkills');
+  const softAll    = getConfig('softSkills');
+  const normasAll  = getConfig('conhecimentosNormativos');
+  const equipeComp = getConfig('equipeCompetencias');
+
+  if(equipes.length === 0) {
+    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;grid-column:1/-1;">
+      <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">${desc}</div>
+      <div style="color:#94a3b8;font-size:12px;text-align:center;padding:20px;">Cadastre equipes primeiro na tabela "🫂 Equipes Responsáveis".</div>
+    </div>`;
+  }
+
+  function chips(all, selected, equipe, tipo) {
+    if(!all.length) return '<span style="color:#94a3b8;font-size:11px;">—</span>';
+    return all.map(sk => {
+      const active = selected.includes(sk);
+      const eq = equipe.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const s  = sk.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<span onclick="toggleEquipeSkill('${eq}','${s}','${tipo}')" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#0a2540;color:white;border:1px solid #0a2540;' : 'background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;'}">${sk}</span>`;
+    }).join('');
+  }
+
+  const rows = equipes.map(eq => {
+    const rec  = equipeComp.find(e => e.equipe === eq) || {equipe:eq, hard:[], soft:[], normas:[]};
+    return `<tr style="border-top:1px solid #f1f5f9;vertical-align:top;">
+      <td style="padding:10px 12px;font-size:13px;font-weight:600;color:#1e293b;min-width:130px;white-space:nowrap;">${eq}</td>
+      <td style="padding:8px 10px;">${chips(hardAll,  rec.hard  || [], eq, 'hard')}</td>
+      <td style="padding:8px 10px;">${chips(softAll,  rec.soft  || [], eq, 'soft')}</td>
+      <td style="padding:8px 10px;">${chips(normasAll, rec.normas || [], eq, 'normas')}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;grid-column:1/-1;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">${desc}</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f8fafc;">
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">Equipe</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">🛠 Hard Skills</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">💬 Soft Skills</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">📜 Conhecimentos Normativos</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:#94a3b8;">ℹ️ Clique em uma competência para ativar/desativar para a equipe. As alterações são salvas automaticamente.</div>
+  </div>`;
+}
+
+function toggleEquipeSkill(equipe, skill, tipo) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const items = [...getConfig('equipeCompetencias')];
+  let rec = items.find(e => e.equipe === equipe);
+  if(!rec) { rec = {equipe, hard:[], soft:[], normas:[]}; items.push(rec); }
+  const arr = rec[tipo] ? [...rec[tipo]] : [];
+  const idx = arr.indexOf(skill);
+  if(idx >= 0) arr.splice(idx, 1); else arr.push(skill);
+  rec[tipo] = arr;
+  setConfig('equipeCompetencias', items);
+  renderConfigPanel();
+  saveToCloud();
 }
 
 function _renderCfgCardServidor(title, desc) {
