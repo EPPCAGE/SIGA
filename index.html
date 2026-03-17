@@ -2033,7 +2033,7 @@
     <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.1);border:1px solid var(--cage-border);margin-bottom:20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div style="font-size:16px;font-weight:700;color:#0a2540;">🔗 Imagem — Cadeia de Valor</div>
-        <div id="bi-cadeia-actions" style="display:flex;gap:8px;">
+        <div id="bi-cadeia-actions" class="editor-only" style="display:flex;gap:8px;">
           <button id="bi-cadeia-upload-btn" class="btn btn-primary" style="font-size:13px;" onclick="biImgClick('cadeia')">📤 Carregar imagem</button>
           <button id="bi-cadeia-remove-btn" class="btn btn-outline" style="font-size:13px;display:none;" onclick="biImgRemove('cadeia')">✕ Remover</button>
         </div>
@@ -2051,7 +2051,7 @@
     <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.1);border:1px solid var(--cage-border);margin-bottom:20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div style="font-size:16px;font-weight:700;color:#0a2540;">🧭 Imagem — Mapa Estratégico</div>
-        <div id="bi-mapa-actions" style="display:flex;gap:8px;">
+        <div id="bi-mapa-actions" class="editor-only" style="display:flex;gap:8px;">
           <button id="bi-mapa-upload-btn" class="btn btn-primary" style="font-size:13px;" onclick="biImgClick('mapa')">📤 Carregar imagem</button>
           <button id="bi-mapa-remove-btn" class="btn btn-outline" style="font-size:13px;display:none;" onclick="biImgRemove('mapa')">✕ Remover</button>
         </div>
@@ -2113,8 +2113,8 @@
       <div class="q-color-dot" data-color="#fed7aa" style="background:#fed7aa;" onclick="setQuadroColor('#fed7aa',this)" title="Laranja"></div>
     </div>
     <div class="quadro-tool-group">
-      <button class="q-btn" onclick="quadroUndo()" title="Desfazer (Ctrl+Z)">↩ Desfazer</button>
-      <button class="q-btn" onclick="quadroClear()" title="Limpar tudo">🗑 Limpar</button>
+      <button class="q-btn editor-only" onclick="quadroUndo()" title="Desfazer (Ctrl+Z)">↩ Desfazer</button>
+      <button class="q-btn editor-only" onclick="quadroClear()" title="Limpar tudo">🗑 Limpar</button>
     </div>
     <div class="quadro-tool-group">
       <button class="q-btn" onclick="quadroExportImg()">⬇ Exportar PNG</button>
@@ -3603,7 +3603,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-outline" onclick="showHome()" style="font-size:13px;">← Início</button>
-      <button class="btn btn-primary" onclick="repoOpenUpload()" style="font-size:13px;background:#e11d48;border-color:#e11d48;">＋ Adicionar Documento</button>
+      <button class="btn btn-primary editor-only" onclick="repoOpenUpload()" style="font-size:13px;background:#e11d48;border-color:#e11d48;">＋ Adicionar Documento</button>
     </div>
   </div>
 
@@ -3715,7 +3715,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-outline" onclick="showHome()" style="font-size:13px;">← Início</button>
-      <button class="btn btn-primary" onclick="dropsOpenNew()" style="font-size:13px;background:#0ea5e9;border-color:#0ea5e9;">＋ Novo Drop</button>
+      <button class="btn btn-primary editor-only" onclick="dropsOpenNew()" style="font-size:13px;background:#0ea5e9;border-color:#0ea5e9;">＋ Novo Drop</button>
     </div>
   </div>
 
@@ -9692,6 +9692,11 @@ function _applyPermissionsCore() {
     // Viewer e Editor: removem overlay de bloqueio
     document.getElementById('access-request-overlay')?.remove();
 
+    // Mostrar/ocultar todos os elementos marcados como editor-only
+    document.querySelectorAll('.editor-only').forEach(el => {
+      el.style.display = isEditor ? '' : 'none';
+    });
+
     if(isEditor) {
       // Editor/Admin: acesso completo
       banner.classList.remove('show');
@@ -10921,12 +10926,14 @@ function qSaveHistory(){
   if(_qHistory.length>40) _qHistory.shift();
 }
 function quadroUndo(){
+  if(!isEditor) return;
   if(!_qHistory.length) return;
   const s=JSON.parse(_qHistory.pop());
   _qItems=s.items; _qArrows=s.arrows; _qSelected=null; _qArrowSrc=null;
   reRenderQuadro();
 }
 function quadroClear(){
+  if(!isEditor) { showToast('🔒 Apenas editores podem limpar o quadro.', 'warn'); return; }
   if(!confirm('Limpar todo o quadro?')) return;
   qSaveHistory(); _qItems=[]; _qArrows=[]; _qSelected=null; _qArrowSrc=null;
   reRenderQuadro();
@@ -13655,9 +13662,9 @@ function arqRenderTable(filtered, all) {
           title="Clique para alternar">${toggleLabel}</button>
       </td>
       <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()">
-        ${!mapped ? `<button onclick="arqAbrirMapeamento(${realIdx})" style="background:#dcfce7;color:#166534;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Iniciar mapeamento deste processo">📝 Mapear</button>` : ''}
-        <button onclick="arqShowForm(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Editar">✏️</button>
-        <button onclick="arqDelete(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Excluir">🗑</button>
+        ${isEditor && !mapped ? `<button onclick="arqAbrirMapeamento(${realIdx})" style="background:#dcfce7;color:#166534;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Iniciar mapeamento deste processo">📝 Mapear</button>` : ''}
+        ${isEditor ? `<button onclick="arqShowForm(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Editar">✏️</button>` : ''}
+        ${isEditor ? `<button onclick="arqDelete(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Excluir">🗑</button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -15615,11 +15622,11 @@ function repoRender() {
       <div style="font-size:11px;color:#94a3b8;">${d.fileName || ''} · ${new Date(d.uploadedAt).toLocaleDateString('pt-BR')}${d.textContent ? ' · <span style="color:#00a86b;">✓ indexado</span>' : ''}</div>
       <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
         ${d.fileUrl ? `<a href="${d.fileUrl}" target="_blank" class="btn btn-outline" style="font-size:12px;text-decoration:none;flex:1;text-align:center;">⬇ Baixar</a>` : ''}
-        ${(d.fileType==='pdf' && d.fileUrl && !d.textContent) ? `<button class="btn btn-outline" onclick="repoIndexPdf('${d.id}')" style="font-size:12px;flex:1;" title="Indexar conteúdo para pesquisa">🔍 Indexar</button>` : ''}
-        ${(d.fileType==='pdf' && d.fileUrl && d.textContent) ? `<button class="btn btn-outline" onclick="repoIndexPdf('${d.id}')" style="font-size:12px;flex:1;" title="Reindexar conteúdo (páginas completas)">🔄 Reindexar</button>` : ''}
-        ${(d.fileType==='pdf' && d.fileUrl && !(d.faqs && d.faqs.length)) ? `<button class="btn btn-outline" onclick="repoGenerateFaqsFromPdf('${d.id}')" id="repo-faq-btn-${d.id}" style="font-size:12px;flex:1;color:#2563eb;border-color:#93c5fd;" title="Gerar FAQs com IA">🤖 Gerar FAQs</button>` : ''}
-        <button class="btn btn-outline" onclick="repoEditDoc('${d.id}')" style="font-size:12px;flex:1;">✏️ Editar</button>
-        <button class="btn btn-outline" onclick="repoDeleteDoc('${d.id}')" style="font-size:12px;color:#e11d48;border-color:#fda4af;">🗑</button>
+        ${isEditor && (d.fileType==='pdf' && d.fileUrl && !d.textContent) ? `<button class="btn btn-outline" onclick="repoIndexPdf('${d.id}')" style="font-size:12px;flex:1;" title="Indexar conteúdo para pesquisa">🔍 Indexar</button>` : ''}
+        ${isEditor && (d.fileType==='pdf' && d.fileUrl && d.textContent) ? `<button class="btn btn-outline" onclick="repoIndexPdf('${d.id}')" style="font-size:12px;flex:1;" title="Reindexar conteúdo (páginas completas)">🔄 Reindexar</button>` : ''}
+        ${isEditor && (d.fileType==='pdf' && d.fileUrl && !(d.faqs && d.faqs.length)) ? `<button class="btn btn-outline" onclick="repoGenerateFaqsFromPdf('${d.id}')" id="repo-faq-btn-${d.id}" style="font-size:12px;flex:1;color:#2563eb;border-color:#93c5fd;" title="Gerar FAQs com IA">🤖 Gerar FAQs</button>` : ''}
+        ${isEditor ? `<button class="btn btn-outline" onclick="repoEditDoc('${d.id}')" style="font-size:12px;flex:1;">✏️ Editar</button>` : ''}
+        ${isEditor ? `<button class="btn btn-outline" onclick="repoDeleteDoc('${d.id}')" style="font-size:12px;color:#e11d48;border-color:#fda4af;">🗑</button>` : ''}
       </div>
       </div>
     </div>`).join('');
@@ -15817,7 +15824,7 @@ function dropsRender() {
         <div style="font-size:11px;color:#94a3b8;">${dateLabel}</div>
         <div style="display:flex;gap:8px;margin-top:4px;">
           ${d.link ? `<a href="${d.link}" target="_blank" class="btn btn-primary" style="font-size:12px;flex:1;text-align:center;text-decoration:none;background:#0ea5e9;border-color:#0ea5e9;">📖 Acessar</a>` : ''}
-          <button class="btn btn-outline" onclick="dropsOpenEdit('${d.id}')" style="font-size:12px;">✏️</button>
+          ${isEditor ? `<button class="btn btn-outline" onclick="dropsOpenEdit('${d.id}')" style="font-size:12px;">✏️</button>` : ''}
         </div>
       </div>
     </div>`;
@@ -15825,6 +15832,7 @@ function dropsRender() {
 }
 
 function dropsOpenNew() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem criar Drops.', 'warn'); return; }
   dropsEditingId = null;
   ['drop-title','drop-edicao','drop-tag','drop-resumo','drop-link','drop-cover-url'].forEach(id => {
     const el=document.getElementById(id); if(el) el.value='';
@@ -15842,6 +15850,7 @@ function dropsOpenNew() {
 }
 
 function dropsOpenEdit(id) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar Drops.', 'warn'); return; }
   const d = DROPS.find(x => x.id === id);
   if(!d) return;
   dropsEditingId = id;
@@ -15887,6 +15896,7 @@ async function dropCoverSelected(file) {
 }
 
 function dropSave() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar Drops.', 'warn'); return; }
   const title = document.getElementById('drop-title').value.trim();
   if(!title) { showToast('Informe o título do Drop.', 'error'); return; }
   // Build publishedAt from date input (YYYY-MM-DD → ISO at noon UTC to avoid day-shift)
@@ -15915,6 +15925,7 @@ function dropSave() {
 }
 
 function dropDelete() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir Drops.', 'warn'); return; }
   const d = DROPS.find(x => x.id === dropsEditingId);
   if(!confirm(`Excluir o Drop "${d?.title}"?`)) return;
   DROPS = DROPS.filter(x => x.id !== dropsEditingId);
@@ -20362,8 +20373,8 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <div style="font-size:13px;color:#64748b;margin-top:2px;">Gerencie macroprocessos, processos e subprocessos</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="arqShowForm()">＋ Novo Processo</button>
-        <button class="btn btn-outline" onclick="showPatrocinadoresModal()">🤝 Patrocinadores</button>
+        <button class="btn btn-primary editor-only" onclick="arqShowForm()">＋ Novo Processo</button>
+        <button class="btn btn-outline editor-only" onclick="showPatrocinadoresModal()">🤝 Patrocinadores</button>
         <button class="btn btn-outline" onclick="showArqModule(false)">✕ Fechar</button>
       </div>
     </div>
