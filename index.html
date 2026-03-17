@@ -10561,6 +10561,10 @@ async function initSupabase() {
       },
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      // PKCE: impede que o Microsoft Safe Links (Outlook) consuma o token
+      // de uso único antes do usuário clicar — o scanner não consegue
+      // completar a troca sem o code_verifier guardado no localStorage.
+      flowType: 'pkce',
       // Bypass Web Locks API — evita deadlock onde queries ficam esperando
       // um refresh de token que nunca libera o lock (causa queries travadas)
       lock: (name, acquireTimeout, fn) => fn(),
