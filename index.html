@@ -10570,10 +10570,6 @@ async function initSupabase() {
       },
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      // PKCE: impede que o Microsoft Safe Links (Outlook) consuma o token
-      // de uso único antes do usuário clicar — o scanner não consegue
-      // completar a troca sem o code_verifier guardado no localStorage.
-      flowType: 'pkce',
       // Bypass Web Locks API — evita deadlock onde queries ficam esperando
       // um refresh de token que nunca libera o lock (causa queries travadas)
       lock: (name, acquireTimeout, fn) => fn(),
@@ -10654,6 +10650,10 @@ async function initSupabase() {
   const { data: { session: existingSession }, error: sessionErr } = await supaClient.auth.getSession();
   console.log('[initSupabase] getSession:', existingSession ? 'sessão OK user='+existingSession.user?.email : 'sem sessão', sessionErr ? 'err='+sessionErr.message : '');
   if(existingSession?.access_token) currentAccessToken = existingSession.access_token;
+  // Limpar URL após login (remove ?code=... ou #access_token=... da barra de endereço)
+  if(window.location.search || window.location.hash) {
+    try { window.history.replaceState(null, '', window.location.pathname); } catch(e) {}
+  }
   if(existingSession?.user) {
     await _handleSession(existingSession.user);
   } else {
