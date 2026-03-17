@@ -10580,22 +10580,6 @@ async function initSupabase() {
       return;
     }
 
-    // Restrição de domínio: apenas @sefaz.rs.gov.br (+ admin)
-    const ALLOWED_DOMAIN = '@sefaz.rs.gov.br';
-    const userEmail = user.email || '';
-    if(userEmail !== ADMIN_EMAIL && !userEmail.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
-      try { await supaClient.auth.signOut({ scope: 'local' }); } catch(e) {}
-      try {
-        Object.keys(localStorage)
-          .filter(k => k.includes('supabase') || k.includes('gestpop_auth'))
-          .forEach(k => localStorage.removeItem(k));
-      } catch(e) {}
-      document.getElementById('auth-overlay').style.display = 'flex';
-      document.getElementById('auth-status').textContent =
-        '⛔ Acesso restrito. Use seu e-mail institucional @sefaz.rs.gov.br';
-      return;
-    }
-
     currentUser = user;
     showUserUI(user);
     document.getElementById('auth-overlay').style.display = 'none';
