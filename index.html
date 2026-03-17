@@ -1457,14 +1457,27 @@
       <div style="font-family:'DM Serif Display',serif;font-size:32px;color:#0a2540;line-height:1.2;">Bem-vindo ao <span style="color:#00a86b;">GesProc-RS</span></div>
       <div style="font-size:15px;color:#64748b;margin-top:8px;">Gestão de Processos CAGE-RS — selecione um módulo para começar</div>
     </div>
-    <!-- EPP Logo -->
-    <div id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);flex-shrink:0;cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()">
-      <img id="epp-logo-img" src="" alt="Logo EPP" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
-      <div id="epp-logo-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
-        <span style="font-size:22px;">🖼</span>
-        <span>Logo EPP<br><span style="font-size:10px;">(clique para configurar)</span></span>
+    <!-- Logos -->
+    <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+      <!-- EPP Logo -->
+      <div id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()">
+        <img id="epp-logo-img" src="" alt="Logo EPP" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
+        <div id="epp-logo-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
+          <span style="font-size:22px;">🖼</span>
+          <span>Logo EPP<br><span style="font-size:10px;">(clique para configurar)</span></span>
+        </div>
+        <div id="epp-logo-editor-hint" style="display:none;position:absolute;top:4px;right:6px;font-size:10px;color:#94a3b8;">✎</div>
       </div>
-      <div id="epp-logo-editor-hint" style="display:none;position:absolute;top:4px;right:6px;font-size:10px;color:#94a3b8;">✎</div>
+      <!-- Segundo Logo (upload) -->
+      <div id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()">
+        <img id="logo2-img" src="" alt="Segundo Logo" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
+        <div id="logo2-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
+          <span style="font-size:22px;">📤</span>
+          <span>Segundo logo<br><span style="font-size:10px;">(clique para upload)</span></span>
+        </div>
+        <div id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#94a3b8;background:#f1f5f9;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo">✕</div>
+        <input type="file" id="logo2-file-input" accept="image/*" style="display:none;" onchange="logo2FileSelected(this.files[0])">
+      </div>
     </div>
   </div>
   <div id="home-stats" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:hidden;margin-bottom:28px;"></div>
@@ -13798,6 +13811,80 @@ function eppLogoClick() {
   markChanged();
 }
 
+// ═══ SEGUNDO LOGO (upload) ══════════════════════════════════════
+function logo2Refresh() {
+  const img    = document.getElementById('logo2-img');
+  const ph     = document.getElementById('logo2-placeholder');
+  const rmBtn  = document.getElementById('logo2-remove-btn');
+  if(!img || !ph) return;
+  const url = DATA._logo2Url || '';
+  if(url) {
+    img.src = url;
+    img.style.display = 'block';
+    ph.style.display  = 'none';
+    if(rmBtn) rmBtn.style.display = isEditor ? 'block' : 'none';
+  } else {
+    img.style.display = 'none';
+    ph.style.display  = 'flex';
+    if(rmBtn) rmBtn.style.display = 'none';
+  }
+}
+
+function logo2Click() {
+  if(!isEditor) return;
+  document.getElementById('logo2-file-input').click();
+}
+
+function logo2Remove() {
+  if(!isEditor) return;
+  DATA._logo2Url = '';
+  logo2Refresh();
+  markChanged();
+}
+
+function logo2FileSelected(file) {
+  if(!file) return;
+  if(!file.type.startsWith('image/')) { showToast('⚠️ Selecione um arquivo de imagem.', 'warn'); return; }
+  if(file.size > 5 * 1024 * 1024) { showToast('⚠️ Imagem muito grande. Máximo 5MB.', 'warn'); return; }
+  // Preview imediato via object URL
+  DATA._logo2Url = URL.createObjectURL(file);
+  logo2Refresh();
+  // Upload para storage em background
+  uploadLogo2ToStorage(file);
+}
+
+async function uploadLogo2ToStorage(file) {
+  if(!supaClient || !currentUser) {
+    showToast('⚠️ Faça login para salvar o logo na nuvem. Ele ficará disponível só nesta sessão.', 'warn');
+    return;
+  }
+  showToast('⏳ Enviando logo para o storage...', 'success');
+  try {
+    const ext  = file.name.split('.').pop().toLowerCase() || 'png';
+    const path = `logo2-${Date.now()}.${ext}`;
+    const { error } = await supaClient.storage
+      .from('gestpop-images')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if(error) {
+      if(error.message && error.message.includes('Bucket not found')) {
+        showToast('⚠️ Bucket "gestpop-images" não encontrado no Supabase Storage.', 'warn');
+      } else {
+        showToast('⚠️ Erro no storage: ' + error.message, 'warn');
+      }
+      return;
+    }
+    const { data } = supaClient.storage.from('gestpop-images').getPublicUrl(path);
+    if(data?.publicUrl) {
+      DATA._logo2Url = data.publicUrl;
+      logo2Refresh();
+      showToast('✅ Segundo logo salvo com sucesso!', 'success');
+      markChanged();
+    }
+  } catch(e) {
+    showToast('⚠️ Erro inesperado no storage: ' + e.message, 'warn');
+  }
+}
+
 function showHome() {
   // Hide every module and pop-content in one shot
   hideAllModules();
@@ -13999,6 +14086,7 @@ function popDeleteWork(key) {
 function homeRefresh() {
   checkAllAutoStatus();
   eppLogoRefresh();
+  logo2Refresh();
   const data = arqGetData();
 
   // Stats
