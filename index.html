@@ -4055,12 +4055,25 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
 
 <!-- ═══ MODAL: Não Conformidade ═══ -->
 <div id="audit-nc-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;width:640px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);">
+  <div style="background:white;border-radius:16px;width:720px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);">
     <div style="background:#991b1b;border-radius:16px 16px 0 0;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
       <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;" id="audit-nc-modal-title">⚠️ Registrar Não Conformidade</h3>
       <button onclick="auditCloseNcModal()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;">✕</button>
     </div>
-    <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
+    <div style="padding:24px;display:flex;flex-direction:column;gap:16px;">
+
+      <!-- CATÁLOGO DE APONTAMENTOS -->
+      <div style="border:1px solid #fca5a5;border-radius:10px;padding:14px;background:#fff7f7;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <label style="font-weight:700;color:#991b1b;font-size:13px;">📋 Apontamentos Padrão <span id="nc-cat-count" style="font-weight:400;color:#64748b;"></span></label>
+          <button onclick="_ncNewCatalogItem()" style="font-size:11px;background:#991b1b;color:white;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;">➕ Novo apontamento</button>
+        </div>
+        <input id="nc-cat-search" type="text" placeholder="Buscar por apontamento ou categoria..." oninput="_ncFilterCatalog()" style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;margin-bottom:8px;box-sizing:border-box;">
+        <div id="nc-cat-list" style="max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;"></div>
+        <div style="margin-top:8px;font-size:11px;color:#94a3b8;">Selecione um ou mais apontamentos para pré-preencher descrição e recomendações.</div>
+      </div>
+
+      <!-- CAMPOS DO REGISTRO -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
           <label class="audit-label">Plano / Auditoria</label>
@@ -4105,6 +4118,17 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
           </select>
         </div>
       </div>
+
+      <!-- RECOMENDAÇÕES -->
+      <div style="border:1px solid #bbf7d0;border-radius:10px;padding:14px;background:#f0fdf4;">
+        <label style="font-weight:700;color:#15803d;font-size:13px;display:block;margin-bottom:10px;">💡 Recomendações</label>
+        <div id="nc-rec-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;min-height:32px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input id="nc-rec-input" type="text" placeholder="Adicionar recomendação..." style="flex:1;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;" onkeydown="if(event.key==='Enter'){event.preventDefault();_ncAddRec();}">
+          <button onclick="_ncAddRec()" style="background:#15803d;color:white;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:16px;line-height:1;">+</button>
+        </div>
+      </div>
+
     </div>
     <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
       <button id="nc-delete-btn" class="btn btn-outline" style="color:#e11d48;border-color:#fda4af;display:none;" onclick="auditDeleteNc()">🗑 Excluir</button>
@@ -16425,6 +16449,124 @@ function eppSetValorHora() {
 
 if(!DATA.audits) DATA.audits = { plans:[], executions:[], nonconformities:[], actions:[] };
 
+// ── CATÁLOGO DE APONTAMENTOS PADRÃO ──────────────────────
+const APT_CATALOG_BUILTIN = [
+  { id:'APT-001', categoria:'Governança', criticidade:'Alta', apontamento:'Processo não possui responsável formal definido', descricao:'Não há definição clara de quem responde pelo desempenho do processo', impacto:'Baixa accountability e dificuldade de melhoria contínua', recomendacoes:['Definir formalmente um dono do processo','Registrar responsabilidade em normativo interno','Comunicar o responsável a toda a equipe','Vincular indicadores ao responsável'] },
+  { id:'APT-002', categoria:'Governança', criticidade:'Alta', apontamento:'Papéis e responsabilidades não estão claros', descricao:'Os participantes do processo não sabem exatamente suas atribuições', impacto:'Erros, retrabalho e conflitos operacionais', recomendacoes:['Criar matriz RACI','Documentar responsabilidades no processo','Treinar equipe sobre papéis definidos','Revisar responsabilidades periodicamente'] },
+  { id:'APT-003', categoria:'Eficiência', criticidade:'Alta', apontamento:'Existência de retrabalho frequente', descricao:'Atividades precisam ser refeitas devido a erros ou inconsistências', impacto:'Aumento de tempo e custo do processo', recomendacoes:['Identificar causas do retrabalho','Padronizar atividades críticas','Implantar validações automáticas','Treinar equipe envolvida','Revisar pontos de controle do processo'] },
+  { id:'APT-004', categoria:'Eficiência', criticidade:'Média', apontamento:'Processo possui etapas redundantes', descricao:'Existem atividades duplicadas ou desnecessárias', impacto:'Ineficiência operacional', recomendacoes:['Mapear fluxo ponta a ponta','Eliminar etapas sem valor agregado','Consolidar atividades similares','Aplicar princípios Lean'] },
+  { id:'APT-005', categoria:'Tecnologia', criticidade:'Alta', apontamento:'Dependência de planilhas para execução', descricao:'Processo executado majoritariamente em planilhas manuais', impacto:'Risco de erro e baixa escalabilidade', recomendacoes:['Implantar sistema BPMS','Automatizar entradas de dados','Centralizar dados em sistema único','Eliminar controles paralelos em Excel'] },
+  { id:'APT-006', categoria:'Riscos', criticidade:'Alta', apontamento:'Ausência de controles internos', descricao:'Processo não possui mecanismos de controle formalizados', impacto:'Risco elevado de erros e fraudes', recomendacoes:['Implantar controles preventivos','Criar pontos de verificação no fluxo','Formalizar controles em normativo','Monitorar execução dos controles'] },
+  { id:'APT-007', categoria:'Riscos', criticidade:'Alta', apontamento:'Falta de segregação de funções', descricao:'Mesma pessoa executa atividades incompatíveis', impacto:'Risco de fraude ou erro não detectado', recomendacoes:['Separar funções críticas','Definir níveis de acesso','Criar validações independentes','Auditar atividades sensíveis'] },
+  { id:'APT-008', categoria:'Dados', criticidade:'Alta', apontamento:'Dados inconsistentes', descricao:'Informações divergentes em diferentes etapas ou sistemas', impacto:'Decisões incorretas e retrabalho', recomendacoes:['Padronizar estrutura de dados','Criar validações automáticas','Integrar sistemas','Estabelecer governança de dados'] },
+  { id:'APT-009', categoria:'Documentação', criticidade:'Alta', apontamento:'Processo não documentado', descricao:'Fluxo não formalizado em nenhum documento oficial', impacto:'Dependência de conhecimento tácito', recomendacoes:['Documentar processo ponta a ponta','Criar POP','Publicar em repositório oficial','Atualizar periodicamente'] },
+  { id:'APT-010', categoria:'Pessoas', criticidade:'Média', apontamento:'Falta de treinamento dos executores', descricao:'Equipe não possui capacitação adequada', impacto:'Erros operacionais e baixa produtividade', recomendacoes:['Criar trilha de capacitação','Realizar treinamentos periódicos','Disponibilizar manuais operacionais','Avaliar desempenho da equipe'] },
+  { id:'APT-011', categoria:'Eficiência', criticidade:'Alta', apontamento:'Tempo de execução elevado', descricao:'Processo demora mais do que o esperado', impacto:'Baixa produtividade e insatisfação', recomendacoes:['Mapear gargalos','Reduzir etapas desnecessárias','Automatizar atividades','Implantar SLA','Paralelizar atividades'] },
+  { id:'APT-012', categoria:'Tecnologia', criticidade:'Alta', apontamento:'Sistemas não integrados', descricao:'Necessidade de múltiplos lançamentos', impacto:'Retrabalho e erros', recomendacoes:['Integrar sistemas via API','Criar base única de dados','Eliminar duplicidade de lançamentos','Automatizar sincronização'] },
+  { id:'APT-013', categoria:'Cliente', criticidade:'Média', apontamento:'Processo não orientado ao usuário', descricao:'Fluxo pensado internamente sem foco no cliente', impacto:'Baixa satisfação do usuário', recomendacoes:['Mapear jornada do usuário','Simplificar etapas para o cliente','Reduzir exigências desnecessárias','Criar canais de feedback'] },
+  { id:'APT-014', categoria:'Conformidade', criticidade:'Alta', apontamento:'Não conformidade com normas', descricao:'Processo não segue regulamentações aplicáveis', impacto:'Riscos legais e institucionais', recomendacoes:['Revisar legislação aplicável','Adequar processo às normas','Criar checklist de conformidade','Realizar auditorias periódicas'] },
+  { id:'APT-015', categoria:'Complexidade', criticidade:'Alta', apontamento:'Processo excessivamente complexo', descricao:'Grande número de etapas e exceções', impacto:'Dificuldade de execução e controle', recomendacoes:['Simplificar fluxo','Reduzir exceções','Consolidar etapas','Padronizar decisões'] },
+];
+
+function _ncGetFullCatalog() {
+  const custom = Array.isArray(DATA.aptCatalog) ? DATA.aptCatalog : [];
+  return [...APT_CATALOG_BUILTIN, ...custom];
+}
+
+let _ncSelectedAptIds = [];
+let _ncRecomendacoes  = [];
+
+function _ncFilterCatalog() {
+  const q = (document.getElementById('nc-cat-search')?.value || '').toLowerCase();
+  const all = _ncGetFullCatalog();
+  const filtered = q ? all.filter(a => (a.apontamento+a.categoria+a.id).toLowerCase().includes(q)) : all;
+  const countEl = document.getElementById('nc-cat-count');
+  if(countEl) countEl.textContent = '(' + all.length + ' itens)';
+  const list = document.getElementById('nc-cat-list');
+  if(!list) return;
+  const critColor = {Alta:'#dc2626', Média:'#d97706', Media:'#d97706', Baixa:'#16a34a'};
+  list.innerHTML = filtered.map(a => {
+    const sel = _ncSelectedAptIds.includes(a.id);
+    return '<div onclick="_ncToggleApt(\''+a.id+'\')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;background:'+(sel?'#fee2e2':'#fff')+';border:1px solid '+(sel?'#fca5a5':'#e2e8f0')+';">'+
+      '<input type="checkbox" '+(sel?'checked':'')+' onclick="event.stopPropagation();_ncToggleApt(\''+a.id+'\')" style="cursor:pointer;accent-color:#991b1b;width:15px;height:15px;flex-shrink:0;">'+
+      '<div style="flex:1;min-width:0;">'+
+        '<div style="font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+a.apontamento+'</div>'+
+        '<div style="font-size:11px;color:#64748b;">'+(a.categoria||'')+(a.criticidade?' · <span style="color:'+(critColor[a.criticidade]||'#64748b')+'">'+a.criticidade+'</span>':'')+' · <span style="color:#94a3b8;">'+a.id+'</span></div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function _ncToggleApt(id) {
+  const idx = _ncSelectedAptIds.indexOf(id);
+  if(idx >= 0) {
+    _ncSelectedAptIds.splice(idx, 1);
+    // Remove recommendations from this apt that were not manually added (those added via other apt selections or manually stay unless exact match)
+    const apt = _ncGetFullCatalog().find(a=>a.id===id);
+    if(apt) {
+      apt.recomendacoes.forEach(r => {
+        const ri = _ncRecomendacoes.indexOf(r);
+        if(ri >= 0) _ncRecomendacoes.splice(ri, 1);
+      });
+    }
+  } else {
+    _ncSelectedAptIds.push(id);
+    const apt = _ncGetFullCatalog().find(a=>a.id===id);
+    if(apt) {
+      // Auto-fill descricao if empty
+      const desc = document.getElementById('nc-descricao');
+      if(desc && !desc.value.trim()) desc.value = apt.apontamento;
+      // Merge recommendations (avoid duplicates)
+      apt.recomendacoes.forEach(r => { if(!_ncRecomendacoes.includes(r)) _ncRecomendacoes.push(r); });
+    }
+  }
+  _ncRenderRecs();
+  _ncFilterCatalog();
+}
+
+function _ncRenderRecs() {
+  const list = document.getElementById('nc-rec-list');
+  if(!list) return;
+  if(!_ncRecomendacoes.length) {
+    list.innerHTML = '<span style="font-size:12px;color:#94a3b8;font-style:italic;">Nenhuma recomendação adicionada.</span>';
+    return;
+  }
+  list.innerHTML = _ncRecomendacoes.map((r,i) =>
+    '<span style="display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;border-radius:20px;padding:4px 10px;font-size:12px;max-width:100%;word-break:break-word;">'+
+      '<span>'+r+'</span>'+
+      '<button onclick="_ncRemoveRec('+i+')" style="background:none;border:none;color:#15803d;cursor:pointer;font-size:14px;line-height:1;padding:0;flex-shrink:0;">×</button>'+
+    '</span>'
+  ).join('');
+}
+
+function _ncAddRec() {
+  const inp = document.getElementById('nc-rec-input');
+  const v = (inp?.value || '').trim();
+  if(!v) return;
+  if(!_ncRecomendacoes.includes(v)) _ncRecomendacoes.push(v);
+  if(inp) inp.value = '';
+  _ncRenderRecs();
+}
+
+function _ncRemoveRec(i) {
+  _ncRecomendacoes.splice(i, 1);
+  _ncRenderRecs();
+}
+
+function _ncNewCatalogItem() {
+  const apontamento = prompt('Texto do novo apontamento padrão:');
+  if(!apontamento?.trim()) return;
+  auditEnsure();
+  const id = 'APT-C' + String(Date.now()).slice(-6);
+  const categoria = prompt('Categoria (ex: Governança, Eficiência, Riscos):') || 'Personalizado';
+  const item = { id, categoria, criticidade:'Alta', apontamento:apontamento.trim(), descricao:apontamento.trim(), impacto:'', recomendacoes:[] };
+  DATA.aptCatalog.push(item);
+  saveToCloud();
+  showToast('✅ Apontamento adicionado ao catálogo!', 'success');
+  _ncToggleApt(id);
+  _ncFilterCatalog();
+}
+
 let _auditCurrentTab = 'plans';
 let _auditEditPlanId = null;
 let _auditEditExecId = null;
@@ -16439,6 +16581,7 @@ function auditEnsure() {
   if(!Array.isArray(DATA.audits.executions))      DATA.audits.executions = [];
   if(!Array.isArray(DATA.audits.nonconformities)) DATA.audits.nonconformities = [];
   if(!Array.isArray(DATA.audits.actions))         DATA.audits.actions = [];
+  if(!Array.isArray(DATA.aptCatalog))             DATA.aptCatalog = [];
 }
 
 function showAuditModule(show=true) {
@@ -16863,15 +17006,22 @@ function auditRenderNc() {
   empty.style.display='none';
   list.innerHTML = ncs.map(nc => {
     const hasAction = DATA.audits.actions.some(a=>a.ncId===nc.id);
+    const aptLabels = (nc.aptIds||[]).map(aid => {
+      const a = _ncGetFullCatalog().find(x=>x.id===aid);
+      return a ? '<span style="background:#fee2e2;color:#991b1b;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;">'+a.id+'</span>' : '';
+    }).join(' ');
+    const recCount = (nc.recomendacoes||[]).length;
     return '<div class="audit-card audit-nc-'+(nc.gravidade||'leve')+'" onclick="auditOpenNcModal(\''+nc.id+'\')">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'+
         '<div class="audit-card-title">⚠️ '+(nc.processo||'Processo não informado')+(nc.etapa?' — '+nc.etapa:'')+' </div>'+
         '<div style="display:flex;gap:6px;">'+_auditGravBadge(nc.gravidade||'leve')+' '+_auditBadge(nc.status||'aberta')+'</div>'+
       '</div>'+
+      (aptLabels ? '<div style="margin-bottom:6px;display:flex;gap:4px;flex-wrap:wrap;">'+aptLabels+'</div>' : '')+
       '<div style="font-size:13px;color:#475569;margin-bottom:8px;">'+(nc.descricao||'—')+'</div>'+
       '<div class="audit-card-meta">'+
         (nc.causaProvavel?'<span>🔎 '+nc.causaProvavel+'</span>':'')+
         '<span>👤 '+(nc.responsavel||'—')+'</span>'+
+        (recCount?'<span style="color:#15803d;">💡 '+recCount+' recomendação(ões)</span>':'')+
         (hasAction?'<span style="color:#15803d;">✅ Com ação</span>':'<span style="color:#dc2626;">⚡ Sem ação</span>')+
       '</div></div>';
   }).join('');
@@ -16889,6 +17039,14 @@ function auditOpenNcModal(id) {
   auditEnsure();
   _auditEditNcId = id||null;
   const nc = id ? DATA.audits.nonconformities.find(n=>n.id===id) : null;
+  // Init catalog state
+  _ncSelectedAptIds = nc?.aptIds ? [...nc.aptIds] : [];
+  _ncRecomendacoes  = nc?.recomendacoes ? [...nc.recomendacoes] : [];
+  // Catalog picker
+  document.getElementById('nc-cat-search').value = '';
+  _ncFilterCatalog();
+  _ncRenderRecs();
+  // Plan select
   const planSel = document.getElementById('nc-plan');
   planSel.innerHTML = '<option value="">— Sem vínculo —</option>' +
     DATA.audits.plans.map(p=>'<option value="'+p.id+'"'+(nc?.planId===p.id?' selected':'')+'>'+( p.processoNome||p.objetivo)+'</option>').join('');
@@ -16920,6 +17078,8 @@ function auditSaveNc() {
     causaProvavel:document.getElementById('nc-causa').value.trim(),
     responsavel:  document.getElementById('nc-responsavel').value.trim(),
     status:       document.getElementById('nc-status').value,
+    aptIds:       [..._ncSelectedAptIds],
+    recomendacoes:[..._ncRecomendacoes],
     criadoEm:     _auditEditNcId ? (DATA.audits.nonconformities.find(n=>n.id===_auditEditNcId)?.criadoEm||new Date().toISOString()) : new Date().toISOString(),
   };
   if(_auditEditNcId) {
