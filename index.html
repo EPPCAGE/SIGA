@@ -8308,6 +8308,7 @@ const _CFG_TABLES = [
   { key:'statusMapeamento',    title:'📊 Status do Mapeamento',       desc:'Status usados na ficha técnica de mapeamento.', typed:'status' },
   { key:'statusAuditoria',     title:'🔍 Status de Auditoria',        desc:'Status usados nos planos de auditoria.', typed:'status' },
   { key:'naturezaAtividade',   title:'🏷️ Natureza da Atividade',      desc:'Tipos de natureza exibidos como badge nas atividades dos fluxos.', typed:'natureza' },
+  { key:'aptCatalog', title:'⚠️ Catálogo de Não Conformidades', desc:'Apontamentos padrão usados nas auditorias, com suas recomendações vinculadas. Editável livremente.', typed:'apt-catalog' },
 ];
 
 const _ALERT_TYPES = [
@@ -8336,6 +8337,7 @@ function _renderCfgCard({key, title, desc, typed=false}) {
   if(typed === 'contador-geral')      return _renderCfgCardContador(title, desc);
   if(typed === 'equipe-unidade')      return _renderCfgCardEquipeUnidade(title, desc);
   if(typed === 'equipe-competencias') return _renderCfgCardEquipeCompetencias(title, desc);
+  if(typed === 'apt-catalog')         return _renderCfgCardAptCatalog(title, desc);
 
   const items = getConfig(key);
   const empty = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum item cadastrado.</div>';
@@ -8533,6 +8535,161 @@ function toggleEquipeSkill(equipe, skill, tipo) {
   setConfig('equipeCompetencias', items);
   renderConfigPanel();
   saveToCloud();
+}
+
+// ── Catálogo de Não Conformidades (APT Catalog) ──────────────────────────────
+function _renderCfgCardAptCatalog(title, desc) {
+  auditEnsure();
+  const items = DATA.aptCatalog;
+  const critOpts = ['Alta','Média','Baixa'].map(c => `<option value="${c}">${c}</option>`).join('');
+  const catOpts  = ['Governança','Eficiência','Tecnologia','Riscos','Dados','Documentação','Pessoas','Cliente','Conformidade','Complexidade','Personalizado']
+    .map(c => `<option value="${c}">${c}</option>`).join('');
+
+  const rows = items.map((a, i) => {
+    const critColor = {Alta:'#dc2626',Média:'#d97706',Baixa:'#16a34a'}[a.criticidade] || '#64748b';
+    const recs = Array.isArray(a.recomendacoes) ? a.recomendacoes : [];
+    const recsHtml = recs.map((r, ri) =>
+      `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <input class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;flex:1;"
+          value="${r.replace(/"/g,'&quot;')}"
+          onchange="cfgAptRecSave(${i},${ri},this.value)">
+        <button onclick="cfgAptRecDel(${i},${ri})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;padding:0 4px;line-height:1;" title="Remover">✕</button>
+      </div>`).join('');
+
+    return `<div style="border:1px solid #e2e8f0;border-radius:9px;margin-bottom:8px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:70px 120px 70px 1fr auto;gap:8px;align-items:center;padding:8px 12px;background:#f8fafc;cursor:pointer;"
+           onclick="cfgAptToggle(${i})">
+        <span style="font-size:11px;font-family:monospace;color:#64748b;font-weight:600;">${a.id}</span>
+        <span style="font-size:12px;color:#475569;">${a.categoria||'—'}</span>
+        <span style="font-size:11px;font-weight:700;color:${critColor};">${a.criticidade||'—'}</span>
+        <span style="font-size:13px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(a.apontamento||'').replace(/"/g,'&quot;')}">${a.apontamento||'—'}</span>
+        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
+          <button onclick="cfgAptToggle(${i})" style="background:none;border:none;cursor:pointer;color:#0a2540;font-size:14px;padding:2px 6px;" title="Editar">✏️</button>
+          <button onclick="cfgAptDel(${i})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px;padding:2px 6px;" title="Excluir">🗑</button>
+        </div>
+      </div>
+      <div id="cfg-apt-edit-${i}" style="display:none;padding:12px 16px;border-top:1px solid #e2e8f0;background:white;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Categoria</label>
+            <select class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;"
+              onchange="cfgAptField(${i},'categoria',this.value)">
+              ${catOpts.replace(`value="${a.categoria||''}"`,`value="${a.categoria||''}" selected`)}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Criticidade</label>
+            <select class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;"
+              onchange="cfgAptField(${i},'criticidade',this.value)">
+              ${critOpts.replace(`value="${a.criticidade||''}"`,`value="${a.criticidade||''}" selected`)}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">ID</label>
+            <input class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;" value="${(a.id||'').replace(/"/g,'&quot;')}"
+              onchange="cfgAptField(${i},'id',this.value)">
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Apontamento</label>
+          <input class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;width:100%;box-sizing:border-box;"
+            value="${(a.apontamento||'').replace(/"/g,'&quot;')}"
+            onchange="cfgAptField(${i},'apontamento',this.value)">
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Impacto</label>
+          <input class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;width:100%;box-sizing:border-box;"
+            value="${(a.impacto||'').replace(/"/g,'&quot;')}"
+            onchange="cfgAptField(${i},'impacto',this.value)">
+        </div>
+        <div>
+          <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:6px;">💡 Recomendações (${recs.length})</label>
+          <div id="cfg-apt-recs-${i}">${recsHtml}</div>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <input id="cfg-apt-rec-new-${i}" class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;flex:1;"
+              placeholder="Nova recomendação..."
+              onkeydown="if(event.key==='Enter'){event.preventDefault();cfgAptRecAdd(${i});}">
+            <button onclick="cfgAptRecAdd(${i})" style="background:#15803d;color:white;border:none;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:13px;">+</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;grid-column:1/-1;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#0a2540;">${title}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${desc}</div>
+      </div>
+      <button onclick="cfgAptAdd()" style="background:#991b1b;color:white;border:none;border-radius:7px;padding:6px 14px;font-size:12px;cursor:pointer;white-space:nowrap;">➕ Novo apontamento</button>
+    </div>
+    <div style="display:grid;grid-template-columns:70px 120px 70px 1fr auto;gap:8px;padding:4px 12px 6px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">
+      <span>ID</span><span>Categoria</span><span>Criticidade</span><span>Apontamento</span><span></span>
+    </div>
+    <div id="cfg-apt-list">${rows || '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:20px;">Nenhum item cadastrado.</div>'}</div>
+  </div>`;
+}
+
+function cfgAptToggle(i) {
+  const el = document.getElementById('cfg-apt-edit-'+i);
+  if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function cfgAptField(i, field, val) {
+  if(!isEditor) return;
+  auditEnsure();
+  DATA.aptCatalog[i][field] = val;
+  saveToCloud();
+}
+function cfgAptRecSave(i, ri, val) {
+  if(!isEditor) return;
+  auditEnsure();
+  DATA.aptCatalog[i].recomendacoes[ri] = val;
+  saveToCloud();
+}
+function cfgAptRecDel(i, ri) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  auditEnsure();
+  DATA.aptCatalog[i].recomendacoes.splice(ri, 1);
+  saveToCloud();
+  renderConfigPanel();
+}
+function cfgAptRecAdd(i) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  auditEnsure();
+  const inp = document.getElementById('cfg-apt-rec-new-'+i);
+  const val = (inp?.value || '').trim();
+  if(!val) return;
+  if(!Array.isArray(DATA.aptCatalog[i].recomendacoes)) DATA.aptCatalog[i].recomendacoes = [];
+  DATA.aptCatalog[i].recomendacoes.push(val);
+  inp.value = '';
+  saveToCloud();
+  renderConfigPanel();
+  // Reabrir o painel do item
+  setTimeout(() => { const el = document.getElementById('cfg-apt-edit-'+i); if(el) el.style.display='block'; }, 0);
+}
+function cfgAptDel(i) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem excluir.','warn'); return; }
+  const apt = DATA.aptCatalog[i];
+  if(!confirm(`Excluir "${apt?.apontamento}"?`)) return;
+  DATA.aptCatalog.splice(i, 1);
+  saveToCloud();
+  renderConfigPanel();
+  showToast('🗑 Apontamento excluído.', 'success');
+}
+function cfgAptAdd() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem adicionar.','warn'); return; }
+  auditEnsure();
+  const id = 'APT-C' + String(Date.now()).slice(-5);
+  DATA.aptCatalog.push({ id, categoria:'Personalizado', criticidade:'Alta', apontamento:'Novo apontamento', impacto:'', descricao:'', recomendacoes:[] });
+  saveToCloud();
+  renderConfigPanel();
+  // Abre o editor do novo item
+  setTimeout(() => {
+    const idx = DATA.aptCatalog.length - 1;
+    const el = document.getElementById('cfg-apt-edit-'+idx);
+    if(el) { el.style.display='block'; el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  }, 50);
 }
 
 function _renderCfgCardServidor(title, desc) {
@@ -16484,8 +16641,8 @@ const APT_CATALOG_BUILTIN = [
 ];
 
 function _ncGetFullCatalog() {
-  const custom = Array.isArray(DATA.aptCatalog) ? DATA.aptCatalog : [];
-  return [...APT_CATALOG_BUILTIN, ...custom];
+  auditEnsure();
+  return DATA.aptCatalog;
 }
 
 let _ncSelectedAptIds = [];
@@ -16597,6 +16754,9 @@ function auditEnsure() {
   if(!Array.isArray(DATA.audits.nonconformities)) DATA.audits.nonconformities = [];
   if(!Array.isArray(DATA.audits.actions))         DATA.audits.actions = [];
   if(!Array.isArray(DATA.aptCatalog))             DATA.aptCatalog = [];
+  // Seed catálogo built-in se ainda vazio
+  if(DATA.aptCatalog.length === 0)
+    DATA.aptCatalog = APT_CATALOG_BUILTIN.map(a => ({...a, recomendacoes:[...a.recomendacoes]}));
 }
 
 function showAuditModule(show=true) {
