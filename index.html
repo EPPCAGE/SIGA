@@ -5052,6 +5052,7 @@ function switchPop(pop, tabEl) {
 
   if(editMode) enableEditables(true);
   try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) {}
+  if(currentSection === 'maturidade') try { matRender(prefix); } catch(e) { console.error('[matRender switchPop]', e); }
 }
 
 // ═══ NAV ══════════════════════════════════════
@@ -5078,7 +5079,7 @@ function showSection(id, tab, silent) {
   if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
   if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) {}
   if(id === 'raci')        try { renderRaci(popPrefix(currentPop)); } catch(e) {}
-  if(id === 'maturidade')  try { matRender(popPrefix(currentPop)); } catch(e) {}
+  if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { console.error('[matRender]', e); const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) c.innerHTML = '<p style="color:red;padding:20px;">Erro ao renderizar: ' + e.message + '</p>'; } }
   if(!silent && editMode) enableEditables(true);
   try { _updateVersionBars(); } catch(e) {}
 }
@@ -18606,7 +18607,10 @@ function matSetIndispensaveis(p, val) {
 
 function matRender(p) {
   const container = document.getElementById(p + '-maturidade-body');
-  if(!container) return;
+  if(!container) { console.warn('[matRender] container not found for p=', p); return; }
+
+  // Placeholder imediato enquanto processa
+  container.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:13px;">Carregando análise...</div>';
 
   const mat         = matGetData(p);
   const metrics     = matComputeMetrics(p);
@@ -18692,7 +18696,7 @@ function matRender(p) {
   }).join('');
 
   let resultHtml = '';
-  if(answered < 10) {
+  if(answered < 10 || !final) {
     resultHtml = `
       <div style="text-align:center;padding:28px;background:#f8fafc;border-radius:10px;border:1.5px dashed #e2e8f0;">
         <div style="font-size:36px;">📋</div>
