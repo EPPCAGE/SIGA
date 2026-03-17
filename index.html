@@ -1847,6 +1847,18 @@
     </div>
   </div>
 
+  <!-- IA / Gemini -->
+  <div class="card fade-up" style="margin-bottom:20px;">
+    <div class="card-header"><span class="card-title">🤖 Inteligência Artificial</span></div>
+    <div class="card-body" style="padding:20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">Integração com Google Gemini</div>
+        <div style="font-size:12px;color:var(--text-muted);">Quando desabilitada, todas as funções de IA (análise de processos, extração de PDF, geração de FAQs, análise de indicadores) ficam indisponíveis para todos os usuários.</div>
+      </div>
+      <button id="gemini-enabled-btn" onclick="toggleGeminiEnabled()" style="padding:10px 24px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;white-space:nowrap;min-width:150px;">✅ Habilitada</button>
+    </div>
+  </div>
+
   <!-- Cores -->
   <div class="card fade-up" style="margin-bottom:20px;">
     <div class="card-header">
@@ -7911,6 +7923,23 @@ function saveGlobalParam(key, value) {
   markChanged(true);
 }
 
+function toggleGeminiEnabled() {
+  const enabled = _gpGet().geminiEnabled ?? true;
+  saveGlobalParam('geminiEnabled', !enabled);
+  _updateGeminiBtn();
+  showToast(!enabled ? '✅ Gemini AI habilitada' : '⛔ Gemini AI desabilitada');
+}
+
+function _updateGeminiBtn() {
+  const enabled = _gpGet().geminiEnabled ?? true;
+  const btn = document.getElementById('gemini-enabled-btn');
+  if(!btn) return;
+  btn.textContent = enabled ? '✅ Habilitada' : '⛔ Desabilitada';
+  btn.style.background = enabled ? '#dcfce7' : '#fee2e2';
+  btn.style.color = enabled ? '#15803d' : '#b91c1c';
+  btn.style.boxShadow = enabled ? '0 1px 6px rgba(0,168,107,.25)' : '0 1px 6px rgba(185,28,28,.2)';
+}
+
 function applyGlobalParams() {
   const gp = _gpGet();
   // Identidade
@@ -7935,6 +7964,8 @@ function applyGlobalParams() {
   applySidebarBtnColors();
   // Header buttons visibility
   applyHeaderBtns();
+  // Gemini toggle state
+  try { _updateGeminiBtn(); } catch(e) {}
 }
 
 function applySidebarNav() {
@@ -9841,6 +9872,7 @@ window.addEventListener('beforeunload', () => {
     audits:          DATA.audits || { plans:[], executions:[], nonconformities:[], actions:[] },
     arqOverrides:    DATA._arqOverrides || null,
     logoUrl:         DATA._logoUrl || null,
+    logo2Url:        (DATA._logo2Url && DATA._logo2Url.startsWith('http')) ? DATA._logo2Url : null,
     newPops:         newPopKeys.map(k => ({ key: k, data: _stripTrans(DATA[k]) })),
     indicadoresCage: DATA.indicadoresCage || { indicadores: [], resultados: [] },
     repoDocs:        [],
@@ -9925,6 +9957,7 @@ async function saveToCloud(attempt=1) {
     audits:          DATA.audits || { plans:[], executions:[], nonconformities:[], actions:[] },
     arqOverrides:    DATA._arqOverrides || null,
     logoUrl:         DATA._logoUrl || null,
+    logo2Url:        (DATA._logo2Url && DATA._logo2Url.length < 300000) ? DATA._logo2Url : null,
     newPops:         newPopKeys.map(k => ({ key: k, data: _stripTransient(DATA[k]) })),
     repoDocs:        REPO_DOCS || [],
     drops:           DROPS     || [],
@@ -10078,7 +10111,8 @@ async function loadFromCloud() {
     if(payload.audits && typeof payload.audits === 'object') {
       DATA.audits = { plans:[], executions:[], nonconformities:[], actions:[], ...payload.audits };
     }
-    if(payload.logoUrl) DATA._logoUrl = payload.logoUrl;
+    if(payload.logoUrl)  DATA._logoUrl  = payload.logoUrl;
+    if(payload.logo2Url) DATA._logo2Url = payload.logo2Url;
     if(Array.isArray(payload.repoDocs)) { REPO_DOCS = payload.repoDocs; }
     if(Array.isArray(payload.drops))    { DROPS     = payload.drops; dropsRender(); }
     if(payload.arqOverrides) {
@@ -10405,6 +10439,9 @@ function geminiErrMsg(status, body) {
 // Todas as chamadas ao Gemini passam pelo proxy seguro no Supabase.
 // A chave da API nunca aparece no código do cliente.
 async function callGeminiProxy(prompt, image = null) {
+  if((_gpGet().geminiEnabled ?? true) === false)
+    throw new Error('Integração com IA desabilitada. Reative em: EPP → Parâmetros Globais → Inteligência Artificial.');
+
   const body = { prompt };
   if(image) body.image = image;  // { data: base64, mimeType }
 
@@ -11558,20 +11595,20 @@ async function exportPptx() {
 async function _loadCageLogoB64() {
   if(window._cageLogoB64Cache) return window._cageLogoB64Cache;
   const url = 'https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png';
-  // Tentativa 1: fetch (funciona em mesmo domínio ou se CORS estiver habilitado)
+  // Tentativa 1: fetch (funciona em mesmo domínio ou se CORS habilitado no servidor)
   try {
-    const resp = await fetch(url);
+    const resp = await fetch(url, { cache: 'force-cache' });
     if(resp.ok) {
-      const ct = resp.headers.get('content-type') || '';
-      if(ct.startsWith('image/')) {
-        const blob = await resp.blob();
+      const blob = await resp.blob();
+      if(blob.size > 500) { // exclui respostas de erro (HTML, redirecionamentos)
         const b64 = await new Promise(res => { const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
         window._cageLogoB64Cache = b64;
         return b64;
       }
     }
-  } catch(e) { /* ignora erro de CORS ou rede, tenta fallback */ }
-  // Tentativa 2: Image + canvas com crossOrigin (funciona se servidor enviar cabeçalhos CORS)
+  } catch(e) { /* CORS ou rede — tenta próxima abordagem */ }
+
+  // Tentativa 2: Image + canvas com crossOrigin (funciona se servidor enviar CORS headers)
   try {
     const b64 = await new Promise(resolve => {
       const img = new Image();
@@ -11585,10 +11622,27 @@ async function _loadCageLogoB64() {
         } catch(e) { resolve(null); }
       };
       img.onerror = () => resolve(null);
-      img.src = url + '?_t=' + Date.now();
+      img.src = url + '?_nc=' + Date.now(); // evita cache sem crossOrigin
     });
     if(b64) { window._cageLogoB64Cache = b64; return b64; }
-  } catch(e) { /* canvas tainted ou erro */ }
+  } catch(e) { /* canvas tainted ou servidor sem CORS */ }
+
+  // Tentativa 3: Image sem crossOrigin (carrega para display, canvas fica tainted)
+  // Útil para pptxgenjs que aceita URL via path quando fetch falha
+  try {
+    const loaded = await new Promise(resolve => {
+      const img = new Image();
+      img.onload  = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+    if(loaded) {
+      // Passar URL diretamente ao pptxgenjs como path (pode funcionar em same-origin)
+      window._cageLogoB64Cache = url; // usa URL direta como fallback
+      return url;
+    }
+  } catch(e) {}
+
   console.warn('Não foi possível carregar logo CAGE para o PPT');
   return null;
 }
@@ -11649,7 +11703,7 @@ async function buildPptx(D, _pptFlowMode) {
       { text:'   |   Revisado: ', options:{ color:'8898BB', fontSize:10 } },
       { text:revisado,      options:{ color:C.white,  fontSize:10, bold:true } },
     ], { x:0.5, y:5.1, w:9, h:0.4, margin:0 });
-    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
+    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
   }
 
   // ── SLIDE VISÃO GERAL ───────────────────────────────────────────────────
@@ -11855,7 +11909,7 @@ async function buildPptx(D, _pptFlowMode) {
       { text:'Elaborado por ', options:{ color:'8898BB', fontSize:11 } },
       { text:elaborado,        options:{ color:C.white,  fontSize:11, bold:true } },
     ], { x:0.5, y:4.3, w:9, h:0.4, margin:0 });
-    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
+    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
   }
 
   // ── SALVAR ───────────────────────────────────────────────────────────────
@@ -11969,7 +12023,7 @@ async function _buildEppStatusReport() {
 
   // ── Helpers de slide ───────────────────────────────────
   const addLogos = s => {
-    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:7.3, y:5.0, w:1.4, h:0.45, sizing:{type:'contain',w:1.4,h:0.45} });
+    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:7.3, y:5.0, w:1.4, h:0.45, sizing:{type:'contain',w:1.4,h:0.45} });
     if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:8.9, y:5.0, w:1.0, h:0.45, sizing:{type:'contain',w:1.0,h:0.45} });
   };
 
@@ -12025,7 +12079,7 @@ async function _buildEppStatusReport() {
     // Bottom footer bar
     s.addShape(pres.ShapeType.rect, { x:0, y:5.05, w:10, h:0.575, fill:{color:'061828'} });
     if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:0.5, y:5.1, w:1.2, h:0.45, sizing:{type:'contain',w:1.2,h:0.45} });
-    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
+    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
   }
 
   // ── SLIDE 2: MAPEAMENTOS EM ANDAMENTO ─────────────────
@@ -12119,7 +12173,7 @@ async function _buildEppStatusReport() {
     s.addShape(pres.ShapeType.rect, { x:0.7, y:0.18, w:5.2, h:1.0, line:{type:'dash',color:C.teal,pt:1.5}, fill:{color:C.white} });
     s.addText('Próximos trabalhos', { x:0.8, y:0.22, w:5.0, h:0.62, fontSize:32, color:C.black, bold:true, fontFace:'Calibri', margin:0 });
     s.addShape(pres.ShapeType.rect, { x:0.8, y:0.88, w:2.8, h:0.14, fill:{color:C.teal} });
-    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:8.5, y:0.15, w:1.3, h:0.55, sizing:{type:'contain',w:1.3,h:0.55} });
+    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.5, y:0.15, w:1.3, h:0.55, sizing:{type:'contain',w:1.3,h:0.55} });
 
     // Content box
     s.addShape(pres.ShapeType.rect, { x:0.7, y:1.4, w:8.5, h:3.55, line:{type:'dash',color:C.gray,pt:1}, fill:{color:C.white} });
@@ -12214,7 +12268,7 @@ async function _buildEppStatusReport() {
     // Bottom footer bar
     s.addShape(pres.ShapeType.rect, { x:0, y:5.05, w:10, h:0.575, fill:{color:'061828'} });
     if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:0.5, y:5.1, w:1.2, h:0.45, sizing:{type:'contain',w:1.2,h:0.45} });
-    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
+    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
   }
 
   // ── Salvar ─────────────────────────────────────────────
@@ -19119,7 +19173,7 @@ function statusModalUpdateSubList() {
       capa.addText(trimestreLabel, { x:0.8, y:2.55, w:8.4, fontSize:20, color:C.gold, bold:true, align:'center' });
       capa.addText(subtitulo, { x:0.8, y:3.3, w:8.4, fontSize:13, color:'8CB8FF', align:'center' });
       capa.addText(`Gerado em ${hoje}  ·  ${selectedCodigos.length} indicador(es)`, { x:0.8, y:4.1, w:8.4, fontSize:11, color:C.muted, align:'center', italic:true });
-      if(cageLogoB64) capa.addImage({ data:cageLogoB64, x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
+      if(cageLogoB64) capa.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
 
       // ── Slide por indicador ────────────────────────────────────────
       for(let idx = 0; idx < selectedCodigos.length; idx++) {
@@ -19258,7 +19312,7 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
       sFinal.addText('Relatório gerado automaticamente pelo GesProc-RS', { x:0.8, y:3.7, w:8.4, fontSize:14, color:C.white, align:'center' });
       sFinal.addText(subtitulo, { x:0.8, y:4.35, w:8.4, fontSize:11, color:'8CB8FF', align:'center', italic:true });
       sFinal.addText(hoje, { x:0.8, y:4.85, w:8.4, fontSize:10, color:C.muted, align:'center', italic:true });
-      if(cageLogoB64) sFinal.addImage({ data:cageLogoB64, x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
+      if(cageLogoB64) sFinal.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
 
       // ── Download ──────────────────────────────────────────────────
       const fileName = `Relatorio_Monitoramento_${trimestreLabel.replace(/\s+/g,'_')}.pptx`;
