@@ -1398,6 +1398,7 @@
       <button data-mod="quadro"   class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.25);">🗒 Quadro de Esboço</button>
       <button data-mod="arq"      class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
       <button data-mod="ind-cage" class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:rgba(232,160,32,.12);color:#fcd34d;border-color:rgba(232,160,32,.3);">📈 Indicadores CAGE</button>
+      <button data-mod="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:rgba(99,102,241,.12);color:#c7d2fe;border-color:rgba(99,102,241,.3);">🏛 Organograma CAGE</button>
     </div>
   </div>
   <div class="sidebar-list" id="sidebar-list"></div>
@@ -1972,6 +1973,30 @@
       <div style="font-size:15px;color:#475569;margin-bottom:16px;">O painel do Power BI não pode ser incorporado nesta página por restrições de segurança da Microsoft.</div>
       <a href="https://app.powerbi.com/reportEmbed?reportId=c4cf960c-1c0c-49d4-92ff-3cc87f43656b&autoAuth=true&ctid=83bd090b-756e-4a02-a512-e5ea02c03041" target="_blank" style="display:inline-block;padding:10px 24px;background:var(--cage-accent);color:#fff;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;">Abrir painel no Power BI ↗</a>
     </div>
+
+    <div style="background:white;border-radius:12px;padding:22px 24px;border-left:4px solid #6366f1;box-shadow:0 2px 10px rgba(0,0,0,.07);margin-top:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#0a2540;margin-bottom:6px;">🏛 Organograma CAGE</div>
+        <div style="font-size:13px;color:#475569;">Visualize a estrutura organizacional da CAGE com Contador-Geral, Adjuntos, Unidades e Equipes.</div>
+      </div>
+      <button onclick="showOrganogramaModule()" class="btn btn-primary" style="font-size:13px;white-space:nowrap;">Ver Organograma →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ORGANOGRAMA CAGE -->
+<div id="organograma-module" style="display:none;">
+  <div style="padding:28px 32px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">🏛 Organograma CAGE</h2>
+        <div style="font-size:13px;color:var(--text-muted);">CAGE-RS — Estrutura Organizacional por Unidades e Equipes</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-outline" onclick="showOrganogramaModule(false)" style="font-size:13px;">✕ Fechar painel</button>
+      </div>
+    </div>
+    <div id="organograma-render" style="min-height:200px;"></div>
   </div>
 </div>
 
@@ -7628,6 +7653,10 @@ const CONFIG_DEFAULTS = {
   tipoTrabalho:         ['Mapeamento de Processo Novo','Mapeamento de Processo Existente','Redesenho','Mapeamento e Redesenho','Criação de Documentação'],
   atores:               ['Auxiliar Administrativo','Analista','Auditor','Coordenador','Chefe de Divisão','Adjunto da CAGE','Contador','Auditor-Geral','Assessor','Auditor Setorial','Estagiário'],
   equipes:              [],
+  contadorGeral:        '',
+  adjuntosCage:         [],
+  equipeUnidade:        [],
+  equipeCompetencias:   [],
   hardSkills:           ['Modelagem de Processos (BPMN)','Mapeamento de Processos','Excel Avançado','Power BI','SQL','Análise de Dados','Gestão de Projetos','Desenho de Fluxogramas','SEI (Sistema Eletrônico de Informações)','SAEWEB','SIAFEM','Word / Writer','PowerPoint / Impress'],
   softSkills:           ['Comunicação','Trabalho em equipe','Organização','Atenção a detalhes','Proatividade','Resolução de problemas','Gestão do tempo','Adaptabilidade','Pensamento crítico','Escuta ativa','Liderança','Negociação','Criatividade'],
   conhecimentosNormativos: ['Lei de Responsabilidade Fiscal','Decreto Estadual de Controle Interno','INTOSAI GOV 9100','COSO — Controle Interno','NBC T SP 400','Lei de Acesso à Informação (LAI)','LGPD','Lei 14.133/2021 (Nova Lei de Licitações)','IN 01/2001 — TCU','Regulamentação do TCE-RS','Normas CAGE-RS'],
@@ -8065,6 +8094,10 @@ const _CFG_TABLES = [
   { key:'tipoAtividadePat',    title:'📅 Tipo de Atividade — PAT',    desc:'Tipos de atividade no Plano Anual de Trabalho.' },
   { key:'atores',              title:'🎭 Atores',                     desc:'Atores que executam ações nos fluxos dos processos mapeados.' },
   { key:'equipes',             title:'🫂 Equipes Responsáveis',       desc:'Equipes da CAGE que aparecem na ficha técnica dos mapeamentos.' },
+  { key:'contadorGeral',       title:'🏛 Contador-Geral',             desc:'Nome do Contador-Geral da CAGE para o organograma.', typed:'contador-geral' },
+  { key:'adjuntosCage',        title:'👔 Adjuntos da CAGE',           desc:'Adjuntos da CAGE (nível hierárquico abaixo do Contador-Geral).' },
+  { key:'equipeUnidade',       title:'🔗 Equipes por Unidade',        desc:'Relaciona cada equipe à sua unidade/divisão na estrutura da CAGE.', typed:'equipe-unidade' },
+  { key:'equipeCompetencias',  title:'🎯 Competências por Equipe',    desc:'Define as competências (Hard Skills, Soft Skills, Normativos) exigidas por cada equipe.', typed:'equipe-competencias' },
   { key:'hardSkills',          title:'🛠 Hard Skills',                desc:'Habilidades técnicas sugeridas na aba de Competências.' },
   { key:'softSkills',          title:'💬 Soft Skills',                desc:'Habilidades comportamentais sugeridas na aba de Competências.' },
   { key:'conhecimentosNormativos', title:'📜 Conhecimentos Normativos', desc:'Conhecimentos legais/normativos sugeridos na aba de Competências.' },
@@ -8095,9 +8128,12 @@ function renderConfigPanel() {
 }
 
 function _renderCfgCard({key, title, desc, typed=false}) {
-  if(typed === 'servidor') return _renderCfgCardServidor(title, desc);
-  if(typed === 'alertas')  return _renderCfgCardAlertas(title, desc);
-  if(typed === 'natureza') return _renderCfgCardNatureza(title, desc);
+  if(typed === 'servidor')       return _renderCfgCardServidor(title, desc);
+  if(typed === 'alertas')        return _renderCfgCardAlertas(title, desc);
+  if(typed === 'natureza')            return _renderCfgCardNatureza(title, desc);
+  if(typed === 'contador-geral')      return _renderCfgCardContador(title, desc);
+  if(typed === 'equipe-unidade')      return _renderCfgCardEquipeUnidade(title, desc);
+  if(typed === 'equipe-competencias') return _renderCfgCardEquipeCompetencias(title, desc);
 
   const items = getConfig(key);
   const empty = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum item cadastrado.</div>';
@@ -8137,6 +8173,164 @@ function _renderCfgCard({key, title, desc, typed=false}) {
     <div id="cfg-list-${key}">${listHtml || empty}</div>
     ${addHtml}
   </div>`;
+}
+
+function _renderCfgCardContador(title, desc) {
+  const val = getConfig('contadorGeral') || '';
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">${desc}</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input id="cfg-contador-geral-input" class="modal-input" style="flex:1;margin:0;font-size:13px;padding:6px 10px;"
+        placeholder="Nome do Contador-Geral..." value="${val.replace(/"/g,'&quot;')}"
+        onkeydown="if(event.key==='Enter') saveContadorGeral()">
+      <button onclick="saveContadorGeral()" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">Salvar</button>
+    </div>
+  </div>`;
+}
+
+function saveContadorGeral() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const val = (document.getElementById('cfg-contador-geral-input')?.value || '').trim();
+  setConfig('contadorGeral', val);
+  renderConfigPanel();
+  saveToCloud();
+  showToast('✅ Contador-Geral salvo!','success');
+}
+
+function _renderCfgCardEquipeUnidade(title, desc) {
+  const items   = getConfig('equipeUnidade');
+  const equipes = getConfig('equipes');
+  const areas   = getConfig('areas');
+
+  const rows = items.map((it, i) =>
+    `<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:7px 10px;background:#f8fafc;border-radius:7px;margin-bottom:5px;">
+      <span style="font-size:13px;color:#1e293b;font-weight:500;">${it.equipe}</span>
+      <span style="font-size:13px;color:#475569;">${it.unidade}</span>
+      <button onclick="configRemoveEquipeUnidade(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;padding:0 4px;" title="Remover">✕</button>
+    </div>`).join('');
+
+  const equipeOpts = equipes.map(e => `<option value="${e.replace(/"/g,'&quot;')}">`).join('');
+  const areaOpts   = areas.map(a => `<option value="${a.replace(/"/g,'&quot;')}">`).join('');
+
+  const empty = items.length ? '' : '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">Nenhum vínculo cadastrado.</div>';
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;grid-column:1/-1;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">${desc}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;padding:0 10px 6px;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">
+      <span>Equipe</span><span>Unidade</span><span></span>
+    </div>
+    <div id="cfg-list-equipeUnidade">${rows || empty}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px;align-items:center;">
+      <datalist id="cfg-eu-equipe-list">${equipeOpts}</datalist>
+      <datalist id="cfg-eu-area-list">${areaOpts}</datalist>
+      <input id="cfg-new-eu-equipe" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;"
+        list="cfg-eu-equipe-list" placeholder="Equipe..." autocomplete="off"
+        onkeydown="if(event.key==='Enter') configAddEquipeUnidade()">
+      <input id="cfg-new-eu-unidade" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;"
+        list="cfg-eu-area-list" placeholder="Unidade..." autocomplete="off"
+        onkeydown="if(event.key==='Enter') configAddEquipeUnidade()">
+      <button onclick="configAddEquipeUnidade()" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
+    </div>
+  </div>`;
+}
+
+function configAddEquipeUnidade() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const equipe  = (document.getElementById('cfg-new-eu-equipe')?.value  || '').trim();
+  const unidade = (document.getElementById('cfg-new-eu-unidade')?.value || '').trim();
+  if(!equipe || !unidade) { showToast('Preencha equipe e unidade.','warn'); return; }
+  const items = [...getConfig('equipeUnidade')];
+  if(items.some(it => it.equipe.toLowerCase() === equipe.toLowerCase() && it.unidade === unidade)) {
+    showToast('Vínculo já existe.','warn'); return;
+  }
+  items.push({equipe, unidade});
+  setConfig('equipeUnidade', items);
+  document.getElementById('cfg-new-eu-equipe').value  = '';
+  document.getElementById('cfg-new-eu-unidade').value = '';
+  renderConfigPanel();
+  saveToCloud();
+  showToast('✅ Vínculo adicionado!','success');
+}
+
+function configRemoveEquipeUnidade(i) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const items = [...getConfig('equipeUnidade')];
+  items.splice(i, 1);
+  setConfig('equipeUnidade', items);
+  renderConfigPanel();
+  saveToCloud();
+  showToast('Vínculo removido.','success');
+}
+
+function _renderCfgCardEquipeCompetencias(title, desc) {
+  const equipes    = getConfig('equipes');
+  const hardAll    = getConfig('hardSkills');
+  const softAll    = getConfig('softSkills');
+  const normasAll  = getConfig('conhecimentosNormativos');
+  const equipeComp = getConfig('equipeCompetencias');
+
+  if(equipes.length === 0) {
+    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;grid-column:1/-1;">
+      <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">${desc}</div>
+      <div style="color:#94a3b8;font-size:12px;text-align:center;padding:20px;">Cadastre equipes primeiro na tabela "🫂 Equipes Responsáveis".</div>
+    </div>`;
+  }
+
+  function chips(all, selected, equipe, tipo) {
+    if(!all.length) return '<span style="color:#94a3b8;font-size:11px;">—</span>';
+    return all.map(sk => {
+      const active = selected.includes(sk);
+      const eq = equipe.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const s  = sk.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<span onclick="toggleEquipeSkill('${eq}','${s}','${tipo}')" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#0a2540;color:white;border:1px solid #0a2540;' : 'background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;'}">${sk}</span>`;
+    }).join('');
+  }
+
+  const rows = equipes.map(eq => {
+    const rec  = equipeComp.find(e => e.equipe === eq) || {equipe:eq, hard:[], soft:[], normas:[]};
+    return `<tr style="border-top:1px solid #f1f5f9;vertical-align:top;">
+      <td style="padding:10px 12px;font-size:13px;font-weight:600;color:#1e293b;min-width:130px;white-space:nowrap;">${eq}</td>
+      <td style="padding:8px 10px;">${chips(hardAll,  rec.hard  || [], eq, 'hard')}</td>
+      <td style="padding:8px 10px;">${chips(softAll,  rec.soft  || [], eq, 'soft')}</td>
+      <td style="padding:8px 10px;">${chips(normasAll, rec.normas || [], eq, 'normas')}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;grid-column:1/-1;">
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:3px;">${title}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">${desc}</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f8fafc;">
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">Equipe</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">🛠 Hard Skills</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">💬 Soft Skills</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">📜 Conhecimentos Normativos</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:#94a3b8;">ℹ️ Clique em uma competência para ativar/desativar para a equipe. As alterações são salvas automaticamente.</div>
+  </div>`;
+}
+
+function toggleEquipeSkill(equipe, skill, tipo) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const items = [...getConfig('equipeCompetencias')];
+  let rec = items.find(e => e.equipe === equipe);
+  if(!rec) { rec = {equipe, hard:[], soft:[], normas:[]}; items.push(rec); }
+  const arr = rec[tipo] ? [...rec[tipo]] : [];
+  const idx = arr.indexOf(skill);
+  if(idx >= 0) arr.splice(idx, 1); else arr.push(skill);
+  rec[tipo] = arr;
+  setConfig('equipeCompetencias', items);
+  renderConfigPanel();
+  saveToCloud();
 }
 
 function _renderCfgCardServidor(title, desc) {
@@ -8706,6 +8900,85 @@ function showBiModule(show=true) {
   document.getElementById('bi-module').style.display = 'block';
 }
 
+function showOrganogramaModule(show=true) {
+  if(!show) { showHome(); return; }
+  hideHome();
+  hideAllModules();
+  document.getElementById('organograma-module').style.display = 'block';
+  renderOrganograma();
+}
+
+function renderOrganograma() {
+  const container = document.getElementById('organograma-render');
+  if(!container) return;
+
+  const contadorNome  = getConfig('contadorGeral') || '— Não definido —';
+  const adjuntos      = getConfig('adjuntosCage');
+  const areas         = getConfig('areas');
+  const equipeUnidade = getConfig('equipeUnidade');
+
+  // Map: unidade → equipes[]
+  const unitTeams = {};
+  areas.forEach(a => { unitTeams[a] = []; });
+  equipeUnidade.forEach(eu => {
+    if(!unitTeams[eu.unidade]) unitTeams[eu.unidade] = [];
+    unitTeams[eu.unidade].push(eu.equipe);
+  });
+
+  const connDown = `<div style="display:flex;justify-content:center;"><div style="width:2px;height:28px;background:#cbd5e1;"></div></div>`;
+
+  // Level 0 — Contador-Geral
+  const nivel0 = `
+    <div style="display:flex;justify-content:center;margin-bottom:0;">
+      <div style="background:#0a2540;color:white;border-radius:12px;padding:16px 32px;text-align:center;min-width:240px;box-shadow:0 4px 16px rgba(10,37,64,.35);">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#e8a020;margin-bottom:6px;">Contador-Geral</div>
+        <div style="font-size:17px;font-weight:700;">${contadorNome}</div>
+      </div>
+    </div>`;
+
+  // Level 1 — Adjuntos
+  let nivel1 = '';
+  if(adjuntos.length > 0) {
+    const cols = adjuntos.map(adj =>
+      `<div style="background:#1e3a5f;color:white;border-radius:10px;padding:12px 22px;text-align:center;min-width:170px;box-shadow:0 2px 10px rgba(10,37,64,.25);">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#93c5fd;margin-bottom:4px;">Adjunto</div>
+        <div style="font-size:14px;font-weight:600;">${adj}</div>
+      </div>`).join('');
+    nivel1 = `${connDown}
+    <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;">${cols}</div>`;
+  }
+
+  // Level 2 — Unidades + Level 3 Equipes under each
+  const unidadeCards = areas.map(area => {
+    const teams = unitTeams[area] || [];
+    const teamsHtml = teams.map(t =>
+      `<div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:7px 14px;font-size:12px;color:#374151;font-weight:500;text-align:center;width:100%;box-sizing:border-box;">${t}</div>`
+    ).join('');
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;min-width:130px;">
+      <div style="background:#e8a020;color:#0a2540;border-radius:10px;padding:11px 20px;text-align:center;width:100%;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(232,160,32,.3);box-sizing:border-box;">${area}</div>
+      ${teams.length ? `<div style="width:2px;height:14px;background:#cbd5e1;"></div><div style="display:flex;flex-direction:column;gap:5px;align-items:stretch;width:100%;">${teamsHtml}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  const nivel2 = `${connDown}
+    <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;align-items:flex-start;">${unidadeCards}</div>`;
+
+  // Empty state hint
+  const hint = (adjuntos.length === 0 && equipeUnidade.length === 0)
+    ? `<div style="margin-top:20px;padding:16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;text-align:center;font-size:13px;color:#94a3b8;">
+        Configure o organograma em <strong>Gestão Escritório de Processos → Configurações</strong>:<br>
+        defina o Contador-Geral, Adjuntos e vincule Equipes às Unidades.
+      </div>` : '';
+
+  container.innerHTML = `
+    <div style="background:white;border-radius:14px;padding:36px 28px;box-shadow:0 4px 20px rgba(0,0,0,.08);border:1px solid #e2e8f0;overflow-x:auto;">
+      ${nivel0}
+      ${nivel1}
+      ${nivel2}
+      ${hint}
+    </div>`;
+}
+
 // ═══ PAT MODULE ════════════════════════════════════════
 // DATA.pat = [ { id, titulo, unidade, tipo, desc, responsavel, equipe, inicio, fim, status, progresso, popVinc, obs } ]
 if(!DATA.pat) DATA.pat = [];
@@ -9142,7 +9415,7 @@ let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
 let workspaceId = sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
-  ['repo-module','drops-module','pat-module','bi-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel'].forEach(id => {
+  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel'].forEach(id => {
     const el = document.getElementById(id);
     if(el) { el.style.display = 'none'; el.classList.remove('active'); }
   });
@@ -18926,14 +19199,14 @@ function matComputeMetrics(p) {
       if(type === 'decisao')   totalDecisions++;
       if(nat === 'aprovacao')  totalApprovals++;
       if(nat === 'revisao' || nat === 'aprovacao' || LOOP_KW.some(k => textLow.includes(k))) totalLoops++;
-      if(actor && prevActor && actor !== prevActor) totalHandoffs++;
-      if(actor) { prevActor = actor; allActors.add(actor); }
+      if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) totalHandoffs++;
+      if(actor) { prevActor = actor; allActors.add(actor.toLowerCase()); }
     });
   });
 
   for(let i = 1; i < steps.length; i++) {
     const a = steps[i-1].responsible || '', b = steps[i].responsible || '';
-    if(a && b && a !== b) totalHandoffs++;
+    if(a && b && a.toLowerCase() !== b.toLowerCase()) totalHandoffs++;
   }
 
   const totalActors   = allActors.size;
