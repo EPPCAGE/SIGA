@@ -11595,23 +11595,46 @@ async function exportPptx() {
 }
 
 // ── Helper compartilhado: carrega o logo CAGE como base64 (com cache e fallback) ──
+function _cageLogoAdd(slide, opts) {
+  const v = window._cageLogoB64Cache;
+  if(!v) return;
+  try {
+    slide.addImage({ ...(v.startsWith('data:') ? { data: v } : { path: v }), ...opts });
+  } catch(e) { console.warn('[PPT] Logo CAGE ignorado:', e.message); }
+}
+
 async function _loadCageLogoB64() {
   if(window._cageLogoB64Cache) return window._cageLogoB64Cache;
-  const url = 'https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png';
-  // Tentativa 1: fetch (funciona em mesmo domínio ou se CORS habilitado no servidor)
+  const imgUrl = 'https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png';
+
+  // Tentativa 1: proxy Supabase (servidor busca a imagem sem restrições de CORS)
   try {
-    const resp = await fetch(url, { cache: 'force-cache' });
+    const proxyUrl = 'https://qdpkkzdlpdwoqqmbzpll.supabase.co/functions/v1/image-proxy';
+    const resp = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY },
+      body: JSON.stringify({ url: imgUrl })
+    });
+    if(resp.ok) {
+      const data = await resp.json();
+      if(data.dataUrl) { window._cageLogoB64Cache = data.dataUrl; return data.dataUrl; }
+    }
+  } catch(e) { /* proxy indisponível — tenta direto */ }
+
+  // Tentativa 2: fetch direto (funciona se app estiver no mesmo domínio que cage.fazenda.rs.gov.br)
+  try {
+    const resp = await fetch(imgUrl);
     if(resp.ok) {
       const blob = await resp.blob();
-      if(blob.size > 500) { // exclui respostas de erro (HTML, redirecionamentos)
+      if(blob.size > 500) {
         const b64 = await new Promise(res => { const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
         window._cageLogoB64Cache = b64;
         return b64;
       }
     }
-  } catch(e) { /* CORS ou rede — tenta próxima abordagem */ }
+  } catch(e) { /* CORS bloqueado */ }
 
-  // Tentativa 2: Image + canvas com crossOrigin (funciona se servidor enviar CORS headers)
+  // Tentativa 3: Image + canvas com crossOrigin (funciona se servidor enviar CORS headers)
   try {
     const b64 = await new Promise(resolve => {
       const img = new Image();
@@ -11625,28 +11648,12 @@ async function _loadCageLogoB64() {
         } catch(e) { resolve(null); }
       };
       img.onerror = () => resolve(null);
-      img.src = url + '?_nc=' + Date.now(); // evita cache sem crossOrigin
+      img.src = imgUrl + '?_nc=' + Date.now();
     });
     if(b64) { window._cageLogoB64Cache = b64; return b64; }
-  } catch(e) { /* canvas tainted ou servidor sem CORS */ }
+  } catch(e) { /* canvas tainted */ }
 
-  // Tentativa 3: Image sem crossOrigin (carrega para display, canvas fica tainted)
-  // Útil para pptxgenjs que aceita URL via path quando fetch falha
-  try {
-    const loaded = await new Promise(resolve => {
-      const img = new Image();
-      img.onload  = () => resolve(true);
-      img.onerror = () => resolve(false);
-      img.src = url;
-    });
-    if(loaded) {
-      // Passar URL diretamente ao pptxgenjs como path (pode funcionar em same-origin)
-      window._cageLogoB64Cache = url; // usa URL direta como fallback
-      return url;
-    }
-  } catch(e) {}
-
-  console.warn('Não foi possível carregar logo CAGE para o PPT');
+  console.warn('[GesProc] Logo CAGE indisponível para PPT — verifique o deploy da Edge Function image-proxy.');
   return null;
 }
 
@@ -11706,7 +11713,7 @@ async function buildPptx(D, _pptFlowMode) {
       { text:'   |   Revisado: ', options:{ color:'8898BB', fontSize:10 } },
       { text:revisado,      options:{ color:C.white,  fontSize:10, bold:true } },
     ], { x:0.5, y:5.1, w:9, h:0.4, margin:0 });
-    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
+    _cageLogoAdd(s, { x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
   }
 
   // ── SLIDE VISÃO GERAL ───────────────────────────────────────────────────
@@ -11912,7 +11919,7 @@ async function buildPptx(D, _pptFlowMode) {
       { text:'Elaborado por ', options:{ color:'8898BB', fontSize:11 } },
       { text:elaborado,        options:{ color:C.white,  fontSize:11, bold:true } },
     ], { x:0.5, y:4.3, w:9, h:0.4, margin:0 });
-    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
+    _cageLogoAdd(s, { x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
   }
 
   // ── SALVAR ───────────────────────────────────────────────────────────────
@@ -12026,7 +12033,7 @@ async function _buildEppStatusReport() {
 
   // ── Helpers de slide ───────────────────────────────────
   const addLogos = s => {
-    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:7.3, y:5.0, w:1.4, h:0.45, sizing:{type:'contain',w:1.4,h:0.45} });
+    _cageLogoAdd(s, { x:7.3, y:5.0, w:1.4, h:0.45, sizing:{type:'contain',w:1.4,h:0.45} });
     if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:8.9, y:5.0, w:1.0, h:0.45, sizing:{type:'contain',w:1.0,h:0.45} });
   };
 
@@ -12082,7 +12089,7 @@ async function _buildEppStatusReport() {
     // Bottom footer bar
     s.addShape(pres.ShapeType.rect, { x:0, y:5.05, w:10, h:0.575, fill:{color:'061828'} });
     if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:0.5, y:5.1, w:1.2, h:0.45, sizing:{type:'contain',w:1.2,h:0.45} });
-    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
+    _cageLogoAdd(s, { x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
   }
 
   // ── SLIDE 2: MAPEAMENTOS EM ANDAMENTO ─────────────────
@@ -12176,7 +12183,7 @@ async function _buildEppStatusReport() {
     s.addShape(pres.ShapeType.rect, { x:0.7, y:0.18, w:5.2, h:1.0, line:{type:'dash',color:C.teal,pt:1.5}, fill:{color:C.white} });
     s.addText('Próximos trabalhos', { x:0.8, y:0.22, w:5.0, h:0.62, fontSize:32, color:C.black, bold:true, fontFace:'Calibri', margin:0 });
     s.addShape(pres.ShapeType.rect, { x:0.8, y:0.88, w:2.8, h:0.14, fill:{color:C.teal} });
-    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.5, y:0.15, w:1.3, h:0.55, sizing:{type:'contain',w:1.3,h:0.55} });
+    _cageLogoAdd(s, { x:8.5, y:0.15, w:1.3, h:0.55, sizing:{type:'contain',w:1.3,h:0.55} });
 
     // Content box
     s.addShape(pres.ShapeType.rect, { x:0.7, y:1.4, w:8.5, h:3.55, line:{type:'dash',color:C.gray,pt:1}, fill:{color:C.white} });
@@ -12271,7 +12278,7 @@ async function _buildEppStatusReport() {
     // Bottom footer bar
     s.addShape(pres.ShapeType.rect, { x:0, y:5.05, w:10, h:0.575, fill:{color:'061828'} });
     if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:0.5, y:5.1, w:1.2, h:0.45, sizing:{type:'contain',w:1.2,h:0.45} });
-    if(cageLogoB64) s.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
+    _cageLogoAdd(s, { x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
   }
 
   // ── Salvar ─────────────────────────────────────────────
@@ -19176,7 +19183,7 @@ function statusModalUpdateSubList() {
       capa.addText(trimestreLabel, { x:0.8, y:2.55, w:8.4, fontSize:20, color:C.gold, bold:true, align:'center' });
       capa.addText(subtitulo, { x:0.8, y:3.3, w:8.4, fontSize:13, color:'8CB8FF', align:'center' });
       capa.addText(`Gerado em ${hoje}  ·  ${selectedCodigos.length} indicador(es)`, { x:0.8, y:4.1, w:8.4, fontSize:11, color:C.muted, align:'center', italic:true });
-      if(cageLogoB64) capa.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
+      _cageLogoAdd(capa, { x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
 
       // ── Slide por indicador ────────────────────────────────────────
       for(let idx = 0; idx < selectedCodigos.length; idx++) {
@@ -19315,7 +19322,7 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
       sFinal.addText('Relatório gerado automaticamente pelo GesProc-RS', { x:0.8, y:3.7, w:8.4, fontSize:14, color:C.white, align:'center' });
       sFinal.addText(subtitulo, { x:0.8, y:4.35, w:8.4, fontSize:11, color:'8CB8FF', align:'center', italic:true });
       sFinal.addText(hoje, { x:0.8, y:4.85, w:8.4, fontSize:10, color:C.muted, align:'center', italic:true });
-      if(cageLogoB64) sFinal.addImage({ ...(cageLogoB64.startsWith('data:')?{data:cageLogoB64}:{path:cageLogoB64}), x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
+      _cageLogoAdd(sFinal, { x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
 
       // ── Download ──────────────────────────────────────────────────
       const fileName = `Relatorio_Monitoramento_${trimestreLabel.replace(/\s+/g,'_')}.pptx`;
