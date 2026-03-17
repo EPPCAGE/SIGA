@@ -10693,12 +10693,17 @@ async function signInGoogle() {
 }
 
 async function signInEmail() {
-  const email = document.getElementById('auth-email').value.trim();
-  if(!email) { document.getElementById('auth-status').textContent = 'Informe seu e-mail.'; return; }
-  document.getElementById('auth-status').textContent = 'Enviando link...';
+  const email = document.getElementById('auth-email').value.trim().toLowerCase();
+  const statusEl = document.getElementById('auth-status');
+  if(!email) { statusEl.textContent = 'Informe seu e-mail.'; return; }
+  if(!email.endsWith('@sefaz.rs.gov.br') && email !== ADMIN_EMAIL) {
+    statusEl.textContent = '⛔ Acesso restrito a e-mails @sefaz.rs.gov.br';
+    return;
+  }
+  statusEl.textContent = 'Enviando link...';
   const { error } = await supaClient.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
-  if(error) document.getElementById('auth-status').textContent = '⚠️ ' + error.message;
-  else document.getElementById('auth-status').textContent = '✅ Link enviado! Verifique seu e-mail.';
+  if(error) statusEl.textContent = '⚠️ ' + error.message;
+  else statusEl.textContent = '✅ Link enviado! Verifique seu e-mail institucional.';
 }
 
 async function signOut() {
