@@ -15,6 +15,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.4/Sortable.min.js"></script>
 <script src="https://unpkg.com/bpmn-js@17/dist/bpmn-modeler.development.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17/dist/assets/diagram-js.css">
 <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17/dist/assets/bpmn-js.css">
@@ -45,6 +46,40 @@
   body.edit-mode [contenteditable="true"]:hover{outline-color:var(--edit-color);background:rgba(253,211,77,.2);}
   body.edit-mode [contenteditable="true"]:focus{outline:2px solid var(--edit-color);background:white;box-shadow:0 0 0 3px rgba(245,158,11,.15);}
   body.edit-mode .edit-add-btn,body.edit-mode .edit-rm-btn{display:inline-flex;}
+
+  /* DRAG-AND-DROP em modo edição */
+  body.edit-mode .nav-tab,
+  body.edit-mode .sidebar-pat-btn,
+  body.edit-mode .home-card,
+  body.edit-mode #home-stats>[data-sortkey]{cursor:grab!important;user-select:none;transition:box-shadow .15s,opacity .15s;}
+  body.edit-mode .nav-tab:active,
+  body.edit-mode .sidebar-pat-btn:active,
+  body.edit-mode .home-card:active,
+  body.edit-mode #home-stats>[data-sortkey]:active{cursor:grabbing!important;}
+  /* Indicador de alça nos nav tabs */
+  body.edit-mode .nav-tab::after{content:'⠿';opacity:0;margin-left:5px;font-size:9px;vertical-align:middle;transition:opacity .15s;}
+  body.edit-mode .nav-tab:hover::after{opacity:.55;}
+  /* Indicador de alça nos sidebar buttons */
+  body.edit-mode .sidebar-pat-btn{padding-right:28px;position:relative;}
+  body.edit-mode .sidebar-pat-btn::after{content:'⠿';position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:13px;opacity:0;transition:opacity .15s;}
+  body.edit-mode .sidebar-pat-btn:hover::after{opacity:.55;}
+  /* Indicador de alça nos home cards */
+  body.edit-mode .home-card{position:relative;}
+  body.edit-mode .home-card::after{content:'⠿';position:absolute;top:10px;right:12px;font-size:16px;color:#94a3b8;opacity:0;transition:opacity .15s;line-height:1;pointer-events:none;}
+  body.edit-mode .home-card:hover::after{opacity:1;}
+  /* Indicador de alça nos stat cards */
+  body.edit-mode #home-stats>[data-sortkey]{position:relative;}
+  body.edit-mode #home-stats>[data-sortkey]::after{content:'⠿';position:absolute;top:3px;right:5px;font-size:9px;color:#94a3b8;opacity:0;transition:opacity .15s;pointer-events:none;}
+  body.edit-mode #home-stats>[data-sortkey]:hover::after{opacity:.8;}
+  /* Container sortável — destaque sutil */
+  body.edit-mode #nav-tabs-inner,
+  body.edit-mode #sidebar-nav-btns,
+  body.edit-mode #home-cards-grid,
+  body.edit-mode #home-stats{outline:2px dashed rgba(245,158,11,.35);outline-offset:3px;border-radius:4px;}
+  /* Ghost (placeholder durante o drag) */
+  .dnd-ghost{opacity:.25!important;background:#fef9c3!important;border:2px dashed #f59e0b!important;box-shadow:none!important;}
+  /* Elemento sendo arrastado */
+  .dnd-dragging{opacity:.9!important;box-shadow:0 12px 32px rgba(0,0,0,.22)!important;transform:rotate(1deg) scale(1.02);z-index:9999;}
 
   .edit-bar{display:none;background:var(--edit-bg);border-bottom:2px solid var(--edit-color);padding:10px 32px;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:64px;z-index:99;}
   .edit-bar-left{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#92400e;}
@@ -1389,16 +1424,16 @@
   <div class="sidebar-head">
     <div class="sidebar-title">Processos</div>
     <div id="sidebar-nav-btns">
-      <button data-mod="home"     class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:rgba(0,168,107,.15);color:#6ee7b7;border-color:rgba(0,168,107,.3);">🏠 Página Inicial</button>
-      <button data-mod="repo"     class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:rgba(225,29,72,.12);color:#fda4af;border-color:rgba(225,29,72,.3);">📚 Documentos e Manuais</button>
-      <button data-mod="drops"    class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">💧 Drops de Conhecimento</button>
-      <button data-mod="audit"    class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:rgba(220,38,38,.12);color:#fca5a5;border-color:rgba(220,38,38,.3);">🔍 Auditoria de Processos</button>
-      <button data-mod="epp"      class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.3);">🏢 Gestão Escritório de Processos</button>
-      <button data-mod="bi"       class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:rgba(234,179,8,.12);color:#fde047;border-color:rgba(234,179,8,.25);">📊 Cadeia de Valor e Mapa Estratégico</button>
-      <button data-mod="quadro"   class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.25);">🗒 Quadro de Esboço</button>
-      <button data-mod="arq"      class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
-      <button data-mod="ind-cage" class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:rgba(232,160,32,.12);color:#fcd34d;border-color:rgba(232,160,32,.3);">📈 Indicadores CAGE</button>
-      <button data-mod="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:rgba(99,102,241,.12);color:#c7d2fe;border-color:rgba(99,102,241,.3);">🏛 Organograma CAGE</button>
+      <button data-mod="home"        data-sortkey="home"        class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:rgba(0,168,107,.15);color:#6ee7b7;border-color:rgba(0,168,107,.3);">🏠 Página Inicial</button>
+      <button data-mod="repo"        data-sortkey="repo"        class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:rgba(225,29,72,.12);color:#fda4af;border-color:rgba(225,29,72,.3);">📚 Documentos e Manuais</button>
+      <button data-mod="drops"       data-sortkey="drops"       class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">💧 Drops de Conhecimento</button>
+      <button data-mod="audit"       data-sortkey="audit"       class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:rgba(220,38,38,.12);color:#fca5a5;border-color:rgba(220,38,38,.3);">🔍 Auditoria de Processos</button>
+      <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.3);">🏢 Gestão Escritório de Processos</button>
+      <button data-mod="bi"          data-sortkey="bi"          class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:rgba(234,179,8,.12);color:#fde047;border-color:rgba(234,179,8,.25);">📊 Cadeia de Valor e Mapa Estratégico</button>
+      <button data-mod="quadro"      data-sortkey="quadro"      class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.25);">🗒 Quadro de Esboço</button>
+      <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
+      <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:rgba(232,160,32,.12);color:#fcd34d;border-color:rgba(232,160,32,.3);">📈 Indicadores CAGE</button>
+      <button data-mod="organograma" data-sortkey="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:rgba(99,102,241,.12);color:#c7d2fe;border-color:rgba(99,102,241,.3);">🏛 Organograma CAGE</button>
     </div>
   </div>
   <div class="sidebar-list" id="sidebar-list"></div>
@@ -1416,24 +1451,24 @@
 <!-- NAV TABS -->
 <nav class="nav-tabs">
   <div class="nav-tabs-inner" id="nav-tabs-inner">
-    <div class="nav-tab active" onclick="showSection('visao-geral',this)">🏠 Visão Geral</div>
-    <div class="nav-tab" onclick="showSection('fluxo',this)">⚙️ Fluxo</div>
-    <div class="nav-tab" onclick="showSection('responsabilidades',this)">👥 Responsabilidades</div>
-    <div class="nav-tab" onclick="showSection('indicadores',this)">📊 Indicadores</div>
-    <div class="nav-tab" onclick="showSection('faq',this)">❓ FAQ</div>
-    <div class="nav-tab" onclick="showSection('normas',this)">📜 Normas &amp; Revisões</div>
-    <div class="nav-tab" onclick="showSection('riscos',this)">⚠️ Riscos</div>
-    <div class="nav-tab" onclick="showSection('plano-acao',this)">✅ Plano de Ação</div>
-    <div class="nav-tab" onclick="showSection('reunioes',this)">🤝 Reuniões</div>
-    <div class="nav-tab" onclick="showSection('acompanhamento',this)">📋 Acompanhamento</div>
-    <div class="nav-tab" onclick="showSection('checklists',this)">☑️ Checklists</div>
-    <div class="nav-tab" onclick="showSection('raci',this)">📊 RACI</div>
-    <div class="nav-tab nav-tab-bpmn" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
-    <div class="nav-tab nav-tab-fd" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
-    <div class="nav-tab" onclick="showSection('competencias',this)">🎓 Competências</div>
-    <div class="nav-tab" onclick="showSection('maturidade',this)">📊 Maturidade</div>
-    <div class="nav-tab nav-tab-ai" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
-    <div class="nav-tab nav-tab-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
+    <div class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)">🏠 Visão Geral</div>
+    <div class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)">⚙️ Fluxo</div>
+    <div class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)">👥 Responsabilidades</div>
+    <div class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)">📊 Indicadores</div>
+    <div class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)">❓ FAQ</div>
+    <div class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)">📜 Normas &amp; Revisões</div>
+    <div class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)">⚠️ Riscos</div>
+    <div class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)">✅ Plano de Ação</div>
+    <div class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)">🤝 Reuniões</div>
+    <div class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)">📋 Acompanhamento</div>
+    <div class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)">☑️ Checklists</div>
+    <div class="nav-tab" data-sortkey="raci" onclick="showSection('raci',this)">📊 RACI</div>
+    <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
+    <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
+    <div class="nav-tab" data-sortkey="competencias" onclick="showSection('competencias',this)">🎓 Competências</div>
+    <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)">📊 Maturidade</div>
+    <div class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
+    <div class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
   </div>
 </nav>
 
@@ -1481,74 +1516,74 @@
     </div>
   </div>
   <div id="home-stats" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:hidden;margin-bottom:28px;"></div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;margin-bottom:40px;">
-    <div class="home-card" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
+  <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;margin-bottom:40px;">
+    <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
       <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
       <div class="home-card-title">Procedimentos Operacionais</div>
       <div class="home-card-desc">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
       <div class="home-card-footer" id="home-pops-count">—</div>
     </div>
-    <div class="home-card" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
+    <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
       <div class="home-card-icon" style="background:#f5f3ff;color:#8b5cf6;">🏛</div>
       <div class="home-card-title">Arquitetura de Processos</div>
       <div class="home-card-desc">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
       <div class="home-card-footer" id="home-arq-count">—</div>
     </div>
-    <div class="home-card" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
+    <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
       <div class="home-card-icon" style="background:#fffbeb;color:#f59e0b;">📊</div>
       <div class="home-card-title">Cadeia de Valor e Mapa Estratégico CAGE</div>
       <div class="home-card-desc">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
       <div class="home-card-footer">Power BI integrado</div>
     </div>
-    <div class="home-card" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
+    <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
       <div class="home-card-icon" style="background:#ecfdf5;color:#10b981;">🗒</div>
       <div class="home-card-title">Quadro de Esboço</div>
       <div class="home-card-desc">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
       <div class="home-card-footer">Canvas interativo</div>
     </div>
-    <div class="home-card home-card-editor" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
+    <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
       <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
       <div class="home-card-title">Gestão Escritório de Processos</div>
       <div class="home-card-desc">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
       <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
     </div>
-    <div class="home-card" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
+    <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
       <div class="home-card-icon" style="background:#f8fafc;color:#64748b;">🔍</div>
       <div class="home-card-title">Busca Global</div>
       <div class="home-card-desc">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
       <div class="home-card-footer">Busca em tempo real</div>
     </div>
-    <div class="home-card" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
+    <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
       <div class="home-card-icon" style="background:#fff1f2;color:#e11d48;">📚</div>
       <div class="home-card-title">Documentos e Manuais</div>
       <div class="home-card-desc">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
       <div class="home-card-footer" id="home-repo-count">—</div>
     </div>
-    <div class="home-card" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
+    <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
       <div class="home-card-icon" style="background:#f0f9ff;color:#0ea5e9;">💧</div>
       <div class="home-card-title">Drops de Conhecimento</div>
       <div class="home-card-desc">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
       <div class="home-card-footer" id="home-drops-count">—</div>
     </div>
-    <div class="home-card" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
+    <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
       <div class="home-card-icon" style="background:#fff1f2;color:#dc2626;">🔍</div>
       <div class="home-card-title">Auditoria de Processos</div>
       <div class="home-card-desc">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
       <div class="home-card-footer" id="home-audit-count">—</div>
     </div>
-    <div class="home-card" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
+    <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
       <div class="home-card-icon" style="background:#fffbeb;color:#e8a020;">📈</div>
       <div class="home-card-title">Indicadores CAGE</div>
       <div class="home-card-desc">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
       <div class="home-card-footer" id="home-indcage-count">—</div>
     </div>
-    <div class="home-card" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
+    <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
       <div class="home-card-icon" style="background:#eef2ff;color:#6366f1;">🏗️</div>
       <div class="home-card-title">Modelador BPMN 2.0</div>
       <div class="home-card-desc">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
       <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
     </div>
-    <div class="home-card" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
+    <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
       <div class="home-card-icon" style="background:#fdf2f8;color:#ec4899;">💡</div>
       <div class="home-card-title">Caixinha de Ideias</div>
       <div class="home-card-desc">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
@@ -5163,10 +5198,74 @@ function toggleEditMode(forceState) {
   try { _updateVersionBars(); } catch(e) {}
   // Persistir estado do modo edição entre recarregamentos
   try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) {}
+  try { _dndInit(editMode); } catch(e) {}
   if(forceState === undefined) {
-    if(editMode) showToast('✏️ Modo Edição ativo — clique em qualquer campo para editar','warn');
+    if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar','warn');
     else showToast('Modo visualização ativo');
   }
+}
+
+// ── Drag-and-Drop para reorganização de layout em modo edição ──────────────────
+let _dndSortables = [];
+
+// Salva a ordem em DATA.config.uiOrder.<key>
+function _dndSaveOrder(key, container) {
+  DATA.config = DATA.config || {};
+  DATA.config.uiOrder = DATA.config.uiOrder || {};
+  DATA.config.uiOrder[key] = [...container.children].map(c => c.dataset.sortkey).filter(Boolean);
+  markChanged();
+}
+
+// Aplica ordem salva nos elementos estáticos (nav tabs, sidebar, home cards)
+function _dndApplyOrder() {
+  const order = DATA.config?.uiOrder || {};
+  function reorder(container, keys) {
+    if(!container || !keys?.length) return;
+    const items = [...container.children];
+    keys.forEach(k => {
+      const el = items.find(c => c.dataset.sortkey === k);
+      if(el) container.appendChild(el);
+    });
+  }
+  reorder(document.getElementById('nav-tabs-inner'),  order.navTabs);
+  reorder(document.getElementById('sidebar-nav-btns'), order.sidebarNav);
+  reorder(document.getElementById('home-cards-grid'),  order.homeCards);
+}
+
+// Reinicia apenas o Sortable dos stat cards (pois o DOM é recriado pelo homeRefresh)
+function _dndReinitStats() {
+  if(typeof Sortable === 'undefined') return;
+  _dndSortables = _dndSortables.filter(s => {
+    if(s.el === document.getElementById('home-stats')) { try { s.destroy(); } catch(e) {} return false; }
+    return true;
+  });
+  const el = document.getElementById('home-stats');
+  if(!el) return;
+  _dndSortables.push(new Sortable(el, {
+    animation: 150, ghostClass: 'dnd-ghost', dragClass: 'dnd-dragging',
+    onEnd() { _dndSaveOrder('homeStats', el); }
+  }));
+}
+
+// Inicializa (ou destrói) todos os Sortables ao entrar/sair do modo edição
+function _dndInit(enabled) {
+  _dndSortables.forEach(s => { try { s.destroy(); } catch(e) {} });
+  _dndSortables = [];
+  if(!enabled || typeof Sortable === 'undefined') return;
+
+  function makeSortable(el, orderKey) {
+    if(!el) return;
+    const s = new Sortable(el, {
+      animation: 150, ghostClass: 'dnd-ghost', dragClass: 'dnd-dragging',
+      onEnd() { _dndSaveOrder(orderKey, el); }
+    });
+    _dndSortables.push(s);
+  }
+
+  makeSortable(document.getElementById('nav-tabs-inner'),  'navTabs');
+  makeSortable(document.getElementById('sidebar-nav-btns'), 'sidebarNav');
+  makeSortable(document.getElementById('home-cards-grid'),  'homeCards');
+  _dndReinitStats(); // stat cards têm DOM dinâmico, usar função dedicada
 }
 
 function enableEditables(on) {
@@ -14131,16 +14230,24 @@ function homeRefresh() {
   auditEnsure();
   const auditConcluidasN = (DATA.audits.plans||[]).filter(p => p.status === 'concluida').length;
 
-  document.getElementById('home-stats').innerHTML = [
-    { label: 'Processos mapeados',        val: procsMapeados,     color: '#00a86b' },
-    { label: 'Macroprocessos',          val: macros,            color: '#0a2540' },
-    { label: 'Processos',               val: procs,             color: '#8b5cf6' },
-    { label: 'Subprocessos',            val: subprocN,          color: '#0369a1' },
-    { label: 'FAQs cadastradas',        val: faqN,              color: '#d97706' },
-    { label: 'Riscos mapeados',         val: riscosN,           color: '#dc2626' },
-    { label: 'Indicadores',             val: indicadoresN,      color: '#7c3aed' },
-    { label: 'Auditorias concluídas',   val: auditConcluidasN,  color: '#15803d' },
-  ].map(s => `<div style="background:white;border-radius:8px;padding:7px 10px;box-shadow:0 2px 6px rgba(0,0,0,.06);flex:1 1 0;min-width:0;white-space:nowrap;">
+  let _statsArr = [
+    { key:'procs-mapeados', label: 'Processos mapeados',      val: procsMapeados,     color: '#00a86b' },
+    { key:'macros',         label: 'Macroprocessos',          val: macros,            color: '#0a2540' },
+    { key:'procs',          label: 'Processos',               val: procs,             color: '#8b5cf6' },
+    { key:'subprocs',       label: 'Subprocessos',            val: subprocN,          color: '#0369a1' },
+    { key:'faqs',           label: 'FAQs cadastradas',        val: faqN,              color: '#d97706' },
+    { key:'riscos',         label: 'Riscos mapeados',         val: riscosN,           color: '#dc2626' },
+    { key:'indicadores',    label: 'Indicadores',             val: indicadoresN,      color: '#7c3aed' },
+    { key:'audits',         label: 'Auditorias concluídas',   val: auditConcluidasN,  color: '#15803d' },
+  ];
+  const _statsOrder = DATA.config?.uiOrder?.homeStats;
+  if(_statsOrder?.length) {
+    _statsArr.sort((a, b) => {
+      const ia = _statsOrder.indexOf(a.key), ib = _statsOrder.indexOf(b.key);
+      return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+    });
+  }
+  document.getElementById('home-stats').innerHTML = _statsArr.map(s => `<div data-sortkey="${s.key}" style="background:white;border-radius:8px;padding:7px 10px;box-shadow:0 2px 6px rgba(0,0,0,.06);flex:1 1 0;min-width:0;white-space:nowrap;">
     <div style="font-size:18px;font-weight:700;color:${s.color};line-height:1.2;">${s.val}</div>
     <div style="font-size:10px;color:#64748b;margin-top:1px;">${s.label}</div>
   </div>`).join('');
@@ -14174,6 +14281,10 @@ function homeRefresh() {
       el.style.display = isEditor ? '' : 'none';
     }
   });
+
+  // Aplicar ordenação salva nos elementos estáticos e reiniciar sortable dos stat cards
+  try { _dndApplyOrder(); } catch(e) {}
+  try { if(typeof editMode !== 'undefined' && editMode) _dndReinitStats(); } catch(e) {}
 
 }
 
