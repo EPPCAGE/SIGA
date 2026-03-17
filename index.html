@@ -3942,7 +3942,9 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
         </div>
         <div style="grid-column:1/-1;">
           <label class="audit-label">Unidade Auditada</label>
-          <input class="modal-input" id="ap-unidade" type="text" placeholder="Ex: Divisão de Contabilidade">
+          <select class="modal-input" id="ap-unidade">
+            <option value="">— Selecione a unidade —</option>
+          </select>
         </div>
         <div style="grid-column:1/-1;">
           <label class="audit-label">Objetivo da Auditoria *</label>
@@ -4077,7 +4079,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
           <label class="audit-label">Plano / Auditoria</label>
-          <select class="modal-input" id="nc-plan">
+          <select class="modal-input" id="nc-plan" onchange="auditNcPlanChange()">
             <option value="">— Sem vínculo —</option>
           </select>
         </div>
@@ -4087,7 +4089,9 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
         </div>
         <div>
           <label class="audit-label">Etapa do Processo</label>
-          <input class="modal-input" id="nc-etapa" type="text" placeholder="Ex: Etapa 3 — Aprovação">
+          <select class="modal-input" id="nc-etapa">
+            <option value="">— Selecione um plano para carregar as etapas —</option>
+          </select>
         </div>
         <div>
           <label class="audit-label">Gravidade *</label>
@@ -16694,8 +16698,10 @@ function auditOpenPlanModal(id) {
       const n = DATA[k]?.meta?.name || k;
       return '<option value="'+k+'"'+(plan?.processo===k?' selected':'')+'>'+n+'</option>';
     }).join('');
+  // Popula unidade a partir das roles do processo selecionado, depois restaura valor salvo
+  auditPlanProcessoChange();
   document.getElementById('ap-unidade').value    = plan?.unidade    || '';
-  document.getElementById('ap-objetivo').value   = plan?.objetivo   || '';
+  document.getElementById('ap-objetivo').value   = plan?.objetivo   || 'Verificar aderência do processo ao POP vigente';
   document.getElementById('ap-auditor').value    = plan?.auditor    || '';
   document.getElementById('ap-data').value       = plan?.dataPrevista || '';
   document.getElementById('ap-criterios').value  = plan?.criterios  || '';
@@ -16711,7 +16717,42 @@ function auditOpenPlanModal(id) {
   document.getElementById('audit-plan-modal').style.display='flex';
 }
 function auditClosePlanModal() { document.getElementById('audit-plan-modal').style.display='none'; }
-function auditPlanProcessoChange() {}
+
+function auditPlanProcessoChange() {
+  const pKey = document.getElementById('ap-processo').value;
+  const sel   = document.getElementById('ap-unidade');
+  const saved = sel.value;
+  const roles = (pKey && Array.isArray(DATA[pKey]?.roles)) ? DATA[pKey].roles : [];
+  sel.innerHTML = '<option value="">— Selecione a unidade —</option>' +
+    roles.map(r => {
+      const label = r.name + (r.title ? ' — ' + r.title : '');
+      return `<option value="${label}"${saved===label?' selected':''}>${label}</option>`;
+    }).join('');
+}
+
+function auditNcPlanChange() {
+  const planId = document.getElementById('nc-plan').value;
+  const plan   = DATA.audits.plans.find(p => p.id === planId);
+  const pKey   = plan?.processo || '';
+  // Auto-fill process name
+  const processoEl = document.getElementById('nc-processo');
+  if(processoEl && plan) processoEl.value = plan.processoNome || '';
+  else if(processoEl && !plan) processoEl.value = '';
+  // Populate etapas from process mapping
+  const etapaSel = document.getElementById('nc-etapa');
+  if(!etapaSel) return;
+  const steps = (pKey && Array.isArray(DATA[pKey]?.steps)) ? DATA[pKey].steps : [];
+  const savedEtapa = etapaSel.value;
+  if(steps.length) {
+    etapaSel.innerHTML = '<option value="">— Selecione a etapa —</option>' +
+      steps.map((s, i) => {
+        const label = s.title || ('Etapa ' + (i + 1));
+        return `<option value="${label}"${savedEtapa===label?' selected':''}>${label}</option>`;
+      }).join('');
+  } else {
+    etapaSel.innerHTML = '<option value="">' + (pKey ? '— Processo sem etapas mapeadas —' : '— Selecione um plano para carregar as etapas —') + '</option>';
+  }
+}
 
 function auditSavePlan() {
   if(!isEditor) { showToast('🔒 Apenas editores podem salvar planos.','warn'); return; }
@@ -17057,12 +17098,16 @@ function auditOpenNcModal(id) {
   document.getElementById('nc-cat-search').value = '';
   _ncFilterCatalog();
   _ncRenderRecs();
-  // Plan select
+  // Plan select — popula e dispara auditNcPlanChange para pré-preencher processo e etapas
   const planSel = document.getElementById('nc-plan');
   planSel.innerHTML = '<option value="">— Sem vínculo —</option>' +
     DATA.audits.plans.map(p=>'<option value="'+p.id+'"'+(nc?.planId===p.id?' selected':'')+'>'+( p.processoNome||p.objetivo)+'</option>').join('');
-  document.getElementById('nc-processo').value   = nc?.processo   || '';
-  document.getElementById('nc-etapa').value      = nc?.etapa      || '';
+  auditNcPlanChange(); // preenche nc-processo e nc-etapa options a partir do plano selecionado
+  // Restaura valores salvos (sobrepõe o pré-preenchimento se NC já existe)
+  if(nc) {
+    document.getElementById('nc-processo').value = nc.processo || '';
+    document.getElementById('nc-etapa').value    = nc.etapa    || '';
+  }
   document.getElementById('nc-gravidade').value  = nc?.gravidade  || 'leve';
   document.getElementById('nc-descricao').value  = nc?.descricao  || '';
   document.getElementById('nc-causa').value      = nc?.causaProvavel || '';
