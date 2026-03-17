@@ -623,6 +623,8 @@
   .auth-logo{width:56px;height:56px;background:var(--cage-accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:"DM Serif Display",serif;font-size:28px;color:white;font-weight:700;margin:0 auto 20px;}
   .auth-title{font-family:"DM Serif Display",serif;font-size:24px;color:var(--cage-blue);margin-bottom:6px;}
   .auth-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px;line-height:1.5;}
+  .auth-ms-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border:none;border-radius:10px;background:#0078d4;cursor:pointer;font-size:14px;font-weight:600;color:white;transition:all .2s;margin-bottom:12px;}
+  .auth-ms-btn:hover{background:#106ebe;transform:translateY(-1px);}
   .auth-google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border:2px solid var(--cage-border);border-radius:10px;background:white;cursor:pointer;font-size:14px;font-weight:600;color:var(--cage-blue);transition:all .2s;margin-bottom:12px;}
   .auth-google-btn:hover{border-color:var(--cage-mid);background:var(--cage-light);transform:translateY(-1px);}
   .auth-google-icon{width:20px;height:20px;}
@@ -1342,6 +1344,11 @@
     </div>
     <div class="auth-title">GesProc-RS</div>
     <div class="auth-sub">Gestão de Processos CAGE<br>Faça login para acessar e sincronizar seus dados</div>
+    <button class="auth-ms-btn" onclick="signInMicrosoft()">
+      <svg width="20" height="20" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+      Entrar com Microsoft (SEFAZ-RS)
+    </button>
+    <div class="auth-divider">ou</div>
     <button class="auth-google-btn" onclick="signInGoogle()">
       <svg class="auth-google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Entrar com Google
@@ -10573,6 +10580,23 @@ async function initSupabase() {
       document.getElementById('access-request-overlay')?.remove();
       return;
     }
+
+    // Restrição de domínio: apenas @sefaz.rs.gov.br (+ admin)
+    const ALLOWED_DOMAIN = '@sefaz.rs.gov.br';
+    const userEmail = user.email || '';
+    if(userEmail !== ADMIN_EMAIL && !userEmail.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
+      try { await supaClient.auth.signOut({ scope: 'local' }); } catch(e) {}
+      try {
+        Object.keys(localStorage)
+          .filter(k => k.includes('supabase') || k.includes('gestpop_auth'))
+          .forEach(k => localStorage.removeItem(k));
+      } catch(e) {}
+      document.getElementById('auth-overlay').style.display = 'flex';
+      document.getElementById('auth-status').textContent =
+        '⛔ Acesso restrito. Use seu e-mail institucional @sefaz.rs.gov.br';
+      return;
+    }
+
     currentUser = user;
     showUserUI(user);
     document.getElementById('auth-overlay').style.display = 'none';
@@ -10627,6 +10651,25 @@ async function initSupabase() {
     console.error('[initSupabase] Erro fatal na inicialização:', e);
     document.getElementById('auth-status').textContent = '⚠️ Erro ao inicializar: ' + e.message;
     document.getElementById('auth-overlay').style.display = 'flex';
+  }
+}
+
+async function signInMicrosoft() {
+  const statusEl = document.getElementById('auth-status');
+  statusEl.textContent = 'Redirecionando para a Microsoft...';
+  if(!supaClient) { statusEl.textContent = '⚠️ Sistema ainda carregando. Tente novamente.'; return; }
+  try {
+    const { data, error } = await supaClient.auth.signInWithOAuth({
+      provider: 'azure',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname,
+        scopes: 'email profile openid'
+      }
+    });
+    if(error) statusEl.textContent = '⚠️ ' + error.message;
+  } catch(e) {
+    statusEl.textContent = '⚠️ Erro: ' + e.message;
+    console.error('Microsoft OAuth error:', e);
   }
 }
 
