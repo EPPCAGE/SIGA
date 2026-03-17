@@ -11452,7 +11452,7 @@ async function buildPptx(D, _pptFlowMode) {
   let cageLogoB64 = null;
   try {
     if(!window._cageLogoB64Cache) {
-      const resp = await fetch('https://cage.fazenda.rs.gov.br/upload/recortes/202506/04091256_2280_GD.png');
+      const resp = await fetch('https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png');
       const blob = await resp.blob();
       window._cageLogoB64Cache = await new Promise(res => { const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
     }
@@ -11507,6 +11507,7 @@ async function buildPptx(D, _pptFlowMode) {
       { text:'   |   Revisado: ', options:{ color:'8898BB', fontSize:10 } },
       { text:revisado,      options:{ color:C.white,  fontSize:10, bold:true } },
     ], { x:0.5, y:5.1, w:9, h:0.4, margin:0 });
+    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
   }
 
   // ── SLIDE VISÃO GERAL ───────────────────────────────────────────────────
@@ -11712,6 +11713,7 @@ async function buildPptx(D, _pptFlowMode) {
       { text:'Elaborado por ', options:{ color:'8898BB', fontSize:11 } },
       { text:elaborado,        options:{ color:C.white,  fontSize:11, bold:true } },
     ], { x:0.5, y:4.3, w:9, h:0.4, margin:0 });
+    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
   }
 
   // ── SALVAR ───────────────────────────────────────────────────────────────
@@ -11742,7 +11744,7 @@ async function _buildEppStatusReport() {
   let cageLogoB64 = null, eppLogoB64 = null;
   try {
     if(!window._cageLogoB64Cache) {
-      const resp = await fetch('https://cage.fazenda.rs.gov.br/upload/recortes/202506/04091256_2280_GD.png');
+      const resp = await fetch('https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png');
       const blob = await resp.blob();
       window._cageLogoB64Cache = await new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
     }
@@ -11887,8 +11889,8 @@ async function _buildEppStatusReport() {
     s.addText('Ciclo: ' + cycleStr, { x:0.6, y:3.9, w:2.8, h:0.45, fontSize:14, color:C.white, bold:true, align:'center', valign:'middle', margin:0 });
     // Bottom footer bar
     s.addShape(pres.ShapeType.rect, { x:0, y:5.05, w:10, h:0.575, fill:{color:'061828'} });
-    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:0.5, y:5.1, w:1.5, h:0.45, sizing:{type:'contain',w:1.5,h:0.45} });
-    if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:2.2, y:5.1, w:1.2, h:0.45, sizing:{type:'contain',w:1.2,h:0.45} });
+    if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:0.5, y:5.1, w:1.2, h:0.45, sizing:{type:'contain',w:1.2,h:0.45} });
+    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
   }
 
   // ── SLIDE 2: MAPEAMENTOS EM ANDAMENTO ─────────────────
@@ -12076,8 +12078,8 @@ async function _buildEppStatusReport() {
     s.addText(monthLong, { x:0.6, y:3.65, w:4.0, h:0.3, fontSize:11, color:'5B8C8A', margin:0 });
     // Bottom footer bar
     s.addShape(pres.ShapeType.rect, { x:0, y:5.05, w:10, h:0.575, fill:{color:'061828'} });
-    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:0.5, y:5.1, w:1.5, h:0.45, sizing:{type:'contain',w:1.5,h:0.45} });
-    if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:2.2, y:5.1, w:1.2, h:0.45, sizing:{type:'contain',w:1.2,h:0.45} });
+    if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:0.5, y:5.1, w:1.2, h:0.45, sizing:{type:'contain',w:1.2,h:0.45} });
+    if(cageLogoB64) s.addImage({ data:cageLogoB64, x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
   }
 
   // ── Salvar ─────────────────────────────────────────────
@@ -18869,6 +18871,17 @@ function statusModalUpdateSubList() {
       pres.title  = titulo + ' — ' + trimestreLabel;
       pres.author = 'GesProc-RS — CAGE-RS';
 
+      // Buscar logo oficial da CAGE como base64 (com cache)
+      let cageLogoB64 = null;
+      try {
+        if(!window._cageLogoB64Cache) {
+          const resp = await fetch('https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png');
+          const blob = await resp.blob();
+          window._cageLogoB64Cache = await new Promise(res => { const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
+        }
+        cageLogoB64 = window._cageLogoB64Cache;
+      } catch(e) { console.warn('Não foi possível carregar logo CAGE para o PPT', e); }
+
       const C = { navy:'0A2540', navyFull:'#0A2540', green:'00A86B', gold:'E8A020', white:'FFFFFF', light:'F4F7FB', muted:'8898AA', blue:'1E40AF' };
 
       // helper: cabeçalho azul padrão
@@ -18888,6 +18901,7 @@ function statusModalUpdateSubList() {
       capa.addText(trimestreLabel, { x:0.8, y:2.55, w:8.4, fontSize:20, color:C.gold, bold:true, align:'center' });
       capa.addText(subtitulo, { x:0.8, y:3.3, w:8.4, fontSize:13, color:'8CB8FF', align:'center' });
       capa.addText(`Gerado em ${hoje}  ·  ${selectedCodigos.length} indicador(es)`, { x:0.8, y:4.1, w:8.4, fontSize:11, color:C.muted, align:'center', italic:true });
+      if(cageLogoB64) capa.addImage({ data:cageLogoB64, x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
 
       // ── Slide por indicador ────────────────────────────────────────
       for(let idx = 0; idx < selectedCodigos.length; idx++) {
@@ -19026,6 +19040,7 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
       sFinal.addText('Relatório gerado automaticamente pelo GesProc-RS', { x:0.8, y:3.7, w:8.4, fontSize:14, color:C.white, align:'center' });
       sFinal.addText(subtitulo, { x:0.8, y:4.35, w:8.4, fontSize:11, color:'8CB8FF', align:'center', italic:true });
       sFinal.addText(hoje, { x:0.8, y:4.85, w:8.4, fontSize:10, color:C.muted, align:'center', italic:true });
+      if(cageLogoB64) sFinal.addImage({ data:cageLogoB64, x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
 
       // ── Download ──────────────────────────────────────────────────
       const fileName = `Relatorio_Monitoramento_${trimestreLabel.replace(/\s+/g,'_')}.pptx`;
