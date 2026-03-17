@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAGE-RS — Sistemas de Gestão</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:        #1e40af;
+      --blue-mid:    #1d4ed8;
+      --blue-light:  #3b82f6;
+      --blue-glow:   rgba(30, 64, 175, .35);
+      --purple:      #6d28d9;
+      --purple-mid:  #7c3aed;
+      --purple-light:#a78bfa;
+      --purple-glow: rgba(109, 40, 217, .35);
+      --bg:          #0d1117;
+      --surface:     #161b22;
+      --border:      rgba(255,255,255,.08);
+      --text:        #f0f6fc;
+      --text-muted:  #8b949e;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── Background animated grid ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Radial accent behind cards ── */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse at center,
+        rgba(30,64,175,.12) 0%,
+        rgba(109,40,217,.08) 50%,
+        transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      gap: 48px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      animation: fadeDown .6s ease both;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .header-logo svg { opacity: .85; }
+
+    .header-inst {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .header-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.15;
+    }
+
+    .header-sub {
+      font-size: 15px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* ── Cards grid ── */
+    .cards {
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp .6s .15s ease both;
+    }
+
+    .card {
+      position: relative;
+      width: 300px;
+      min-height: 360px;
+      border-radius: 20px;
+      padding: 36px 32px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transition: transform .25s ease, box-shadow .25s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* ── GesProc (azul) ── */
+    .card-gesproc {
+      background: linear-gradient(145deg, #1e3a8a 0%, #1e40af 40%, #1d4ed8 100%);
+      box-shadow: 0 4px 24px var(--blue-glow), 0 1px 0 rgba(255,255,255,.08) inset;
+      cursor: pointer;
+    }
+    .card-gesproc:hover {
+      transform: translateY(-6px) scale(1.01);
+      box-shadow: 0 16px 48px var(--blue-glow), 0 1px 0 rgba(255,255,255,.12) inset;
+    }
+    .card-gesproc .card-shine {
+      background: radial-gradient(circle at 70% 20%, rgba(255,255,255,.12) 0%, transparent 60%);
+    }
+
+    /* ── GesProj (roxo) ── */
+    .card-gesproj {
+      background: linear-gradient(145deg, #4c1d95 0%, #6d28d9 40%, #7c3aed 100%);
+      box-shadow: 0 4px 24px var(--purple-glow), 0 1px 0 rgba(255,255,255,.08) inset;
+      cursor: default;
+      opacity: .88;
+    }
+    .card-gesproj:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 36px var(--purple-glow), 0 1px 0 rgba(255,255,255,.1) inset;
+    }
+    .card-gesproj .card-shine {
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.1) 0%, transparent 55%);
+    }
+
+    /* ── Shine overlay ── */
+    .card-shine {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+
+    /* ── Card icon ── */
+    .card-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      backdrop-filter: blur(8px);
+    }
+
+    /* ── Card content ── */
+    .card-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 26px;
+      font-weight: 400;
+      color: #fff;
+      line-height: 1.2;
+      margin-top: 4px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: rgba(255,255,255,.72);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    /* ── "Em construção" badge ── */
+    .badge-wip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.22);
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,.9);
+      letter-spacing: .5px;
+      width: fit-content;
+      backdrop-filter: blur(4px);
+    }
+
+    .badge-wip::before {
+      content: '';
+      display: block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #fbbf24;
+      box-shadow: 0 0 6px #fbbf24;
+      animation: pulse 1.8s infinite;
+    }
+
+    /* ── Action area ── */
+    .card-action {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,.1);
+      margin-top: auto;
+    }
+
+    .card-action-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,.65);
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .card-action-arrow {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      transition: background .2s, transform .2s;
+    }
+
+    .card-gesproc:hover .card-action-arrow {
+      background: rgba(255,255,255,.22);
+      transform: translateX(3px);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      animation: fadeUp .6s .3s ease both;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .4; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      .cards { flex-direction: column; align-items: center; }
+      .card  { width: min(300px, 100%); min-height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header institucional -->
+    <header class="header">
+      <div class="header-logo">
+        <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
+          <rect x="1" y="1" width="34" height="34" rx="6" fill="#0a2540" stroke="#3b82f6" stroke-width="1.8"/>
+          <text x="18" y="24" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#3b82f6" text-anchor="middle">CAGE</text>
+        </svg>
+        <span class="header-inst">Contadoria e Auditoria-Geral do Estado — RS</span>
+      </div>
+      <div class="header-title">Sistemas de Gestão</div>
+      <div class="header-sub">Selecione o sistema que deseja acessar</div>
+    </header>
+
+    <!-- Cards -->
+    <div class="cards">
+
+      <!-- GesProc-RS -->
+      <a class="card card-gesproc" href="index.html" title="Acessar GesProc-RS">
+        <div class="card-shine"></div>
+        <div class="card-icon">📋</div>
+        <div class="card-name">GesProc-RS</div>
+        <div class="card-desc">
+          Gestão de processos, POPs, auditorias, indicadores e arquitetura de processos da CAGE-RS.
+        </div>
+        <div class="card-action">
+          <span class="card-action-label">Acessar sistema</span>
+          <span class="card-action-arrow">→</span>
+        </div>
+      </a>
+
+      <!-- GesProj-RS -->
+      <div class="card card-gesproj" title="Em construção">
+        <div class="card-shine"></div>
+        <div class="card-icon">🗂️</div>
+        <div class="card-name">GesProj-RS</div>
+        <div class="card-desc">
+          Gestão de projetos institucionais, portfólio, cronogramas e acompanhamento de entregas da CAGE-RS.
+        </div>
+        <div class="badge-wip">Em construção</div>
+        <div class="card-action">
+          <span class="card-action-label">Em breve</span>
+          <span class="card-action-arrow" style="opacity:.45;">🔒</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      CAGE-RS · Contadoria e Auditoria-Geral do Estado do Rio Grande do Sul
+    </footer>
+
+  </div>
+</body>
+</html>
