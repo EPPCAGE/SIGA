@@ -10111,13 +10111,22 @@ async function loadFromCloud() {
       .catch(async (err) => {
         if(err.message === 'timeout') {
           console.warn('[loadFromCloud] query timeout após ' + QUERY_TIMEOUT_MS + 'ms — tentando novamente...');
-          // Segunda tentativa sem timeout (pode recuperar após o primeiro hang)
-          return supaClient
-            .from('gestpop_workspace')
-            .select('*')
-            .order('updated_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          // Segunda tentativa com timeout de 20s
+          const timeout2Promise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('timeout2')), 20000)
+          );
+          return Promise.race([
+            supaClient
+              .from('gestpop_workspace')
+              .select('*')
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+            timeout2Promise
+          ]).catch(err2 => {
+            console.error('[loadFromCloud] Segunda tentativa também falhou:', err2.message);
+            return { data: null, error: { message: 'Timeout na conexão com o banco de dados. Verifique sua conexão.' } };
+          });
         }
         throw err;
       });
