@@ -19199,14 +19199,14 @@ function matComputeMetrics(p) {
       if(type === 'decisao')   totalDecisions++;
       if(nat === 'aprovacao')  totalApprovals++;
       if(nat === 'revisao' || nat === 'aprovacao' || LOOP_KW.some(k => textLow.includes(k))) totalLoops++;
-      if(actor && prevActor && actor !== prevActor) totalHandoffs++;
-      if(actor) { prevActor = actor; allActors.add(actor); }
+      if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) totalHandoffs++;
+      if(actor) { prevActor = actor; allActors.add(actor.toLowerCase()); }
     });
   });
 
   for(let i = 1; i < steps.length; i++) {
     const a = steps[i-1].responsible || '', b = steps[i].responsible || '';
-    if(a && b && a !== b) totalHandoffs++;
+    if(a && b && a.toLowerCase() !== b.toLowerCase()) totalHandoffs++;
   }
 
   const totalActors   = allActors.size;
