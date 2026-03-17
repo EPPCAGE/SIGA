@@ -19998,7 +19998,7 @@ function matSetVersion(p, v) {
 
 function matComputeMetrics(p, version='asis') {
   const steps = (DATA[p] && DATA[p].steps) || [];
-  let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0;
+  let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, actionsWithSistema = 0;
   const allActors = new Set();
   const allSistemas = new Set();
   const LOOP_KW = ['complementa', 'revisão', 'revisao', 'aprovação', 'aprovacao', 'autorização', 'autorizacao', 'devolver', 'retornar', 'reenviar', 'aguardar aprovação', 'aguardar revisão'];
@@ -20029,20 +20029,17 @@ function matComputeMetrics(p, version='asis') {
       if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) totalHandoffs++;
       if(actor) { prevActor = actor; allActors.add(actor.toLowerCase()); }
 
-      // Sistemas: conta sistemas únicos referenciados nas ações
+      // Sistemas: conta sistemas únicos e ações digitalizadas
       if(action.sistemas && action.sistemas.trim()) {
+        actionsWithSistema++;
         action.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
       }
     });
   });
 
-  for(let i = 1; i < steps.length; i++) {
-    const a = steps[i-1].responsible || '', b = steps[i].responsible || '';
-    if(a && b && a.toLowerCase() !== b.toLowerCase()) totalHandoffs++;
-  }
-
   const totalActors   = allActors.size;
   const totalSistemas = allSistemas.size;
+  const automRate     = totalActivities > 0 ? actionsWithSistema / totalActivities : 0;
   const complexScore  = totalActivities * 1 + totalDecisions * 2 + totalActors * 1.5 + totalLoops * 3;
 
   let complexLabel, complexCls;
@@ -20058,6 +20055,7 @@ function matComputeMetrics(p, version='asis') {
   else                        { burocLabel = 'Burocrático'; burocCls = '#ef4444'; }
 
   return { totalActivities, totalDecisions, totalActors, totalLoops, totalHandoffs, totalApprovals, totalSistemas,
+           actionsWithSistema, automRate,
            complexScore, complexLabel, complexCls, burocracia, burocLabel, burocCls };
 }
 
@@ -20096,11 +20094,18 @@ function matComputeFinal(p) {
   if(equipe === null) return null;
 
   // Normalise all to 0–100 where 100 = most mature
-  const normComplex = Math.max(0, Math.min(100, 100 - metrics.complexScore));
-  const normBuroc   = Math.max(0, Math.min(100, (1 - metrics.burocracia / 0.5) * 100));
-  const normRisco   = Math.max(0, Math.min(100, (1 - riscoRaw / 70) * 100));
+  // Complexidade: decaimento exponencial (meia-vida ≈ 50 pts) — evita penalizar
+  // linearmente processos naturalmente complexos mas bem controlados
+  const normComplex = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-metrics.complexScore / 50))));
+  // Burocracia: escala linear com teto em 50% de aprovações
+  const normBuroc   = Math.max(0, Math.min(100, Math.round((1 - metrics.burocracia / 0.5) * 100)));
+  // Risco: decaimento exponencial (meia-vida ≈ 45 pts) — remove teto artificial de 70
+  const normRisco   = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-riscoRaw / 45))));
+  // Digitalização: % de ações com sistema registrado (0–100) — novo componente
+  const normAutom   = Math.round(metrics.automRate * 100);
 
-  const final = equipe * 0.40 + normBuroc * 0.20 + normComplex * 0.15 + normRisco * 0.25;
+  // Pesos: Equipe 30% · Risco 25% · Burocracia 20% · Digitalização 15% · Complexidade 10%
+  const final = equipe * 0.30 + normRisco * 0.25 + normBuroc * 0.20 + normAutom * 0.15 + normComplex * 0.10;
   const f = Math.round(final);
 
   let level, levelColor, levelIcon;
@@ -20111,8 +20116,7 @@ function matComputeFinal(p) {
   else             { level = 'Otimizado';  levelColor = '#10b981'; levelIcon = '💚'; }
 
   return { final: f, level, levelColor, levelIcon,
-           equipe: Math.round(equipe), normComplex: Math.round(normComplex),
-           normBuroc: Math.round(normBuroc), normRisco: Math.round(normRisco) };
+           equipe: Math.round(equipe), normComplex, normBuroc, normRisco, normAutom };
 }
 
 function matSetAnswer(p, idx, val) {
@@ -20209,11 +20213,14 @@ function matRender(p) {
       ${metricCard('🔀','Handoffs',      metrics.totalHandoffs,  'trocas de ator')}
       ${metricCard('✅','Aprov./Revis.', metrics.totalApprovals, 'burocracia')}
       ${metricCard('💻','Sistemas',      metrics.totalSistemas,  'únicos no fluxo')}
+      ${metricCard('⚡','Digitalização', (metrics.automRate*100).toFixed(0)+'%', 'ações com sistema')}
     </div>`;
 
-  // issue #1: mostrar escala de cada índice; issue #4: ↓ menor = melhor
+  // índices calculados com escala de referência
+  const automLabel = metrics.automRate >= 0.6 ? 'Alta' : metrics.automRate >= 0.3 ? 'Média' : 'Baixa';
+  const automCls   = metrics.automRate >= 0.6 ? '#22c55e' : metrics.automRate >= 0.3 ? '#eab308' : '#ef4444';
   const indicesHtml = `
-    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:6px;">📊 Índices Calculados <span style="font-size:11px;color:#94a3b8;font-weight:400;">— quanto menor o valor, melhor o processo</span></div>
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:6px;">📊 Índices Calculados</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
       ${indexCard('Complexidade ↓', metrics.complexScore.toFixed(1), metrics.complexLabel, metrics.complexCls,
         `atividades×1 + decisões×2 + atores×1,5 + loops×3<br>Escala: ≤20 simples · ≤40 moderado · ≤70 complexo · &gt;70 muito complexo`)}
@@ -20221,6 +20228,8 @@ function matRender(p) {
         `(aprovações + revisões) ÷ total de atividades<br>Escala: &lt;15% saudável · 15–30% moderado · &gt;30% burocrático<br><span style="color:#64748b;">Fontes: natureza da ação + palavras-chave no texto</span>`)}
       ${indexCard('Risco Operacional ↓', risco.score, risco.label, risco.cls,
         `decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3<br>Escala: ≤15 baixo · ≤35 médio · &gt;35 alto`)}
+      ${indexCard('Digitalização ↑', (metrics.automRate*100).toFixed(0)+'%', automLabel, automCls,
+        `ações com sistema registrado ÷ total de atividades<br>Escala: &lt;30% baixa · 30–60% média · &gt;60% alta<br><span style="color:#64748b;">Mede penetração de sistemas no fluxo (rastreabilidade e automação)</span>`)}
     </div>`;
 
   const manualHtml = `
@@ -20301,8 +20310,6 @@ function matRender(p) {
         <div style="font-size:11px;color:#64748b;margin-top:3px;">${arrow} · peso ${weight}</div>
       </div>`;
 
-    const burocRaw = (metrics.burocracia * 100).toFixed(0) + '%';
-
     resultHtml = `
       <div style="text-align:center;padding:28px 20px;background:linear-gradient(135deg,#f8fafc,#fff);border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;">
         <div style="font-size:48px;margin-bottom:6px;">${final.levelIcon}</div>
@@ -20314,15 +20321,16 @@ function matRender(p) {
         </div>
       </div>
       ${levelsLegend}
-      <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;">Componentes do score:</div>
+      <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;">Componentes do score (normalizado 0–100):</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
-        ${scoreCard('Percepção da Equipe', final.equipe+'/100', 'questionário (↑ maior = melhor)', '40%', '#6366f1', '↑ maior = melhor')}
-        ${scoreCard('Burocracia', burocRaw, 'aprov.+revis. ÷ atividades', '20%', '#f97316', '↓ menor = melhor')}
-        ${scoreCard('Complexidade', metrics.complexScore.toFixed(0), 'score bruto do fluxo', '15%', '#a78bfa', '↓ menor = melhor')}
-        ${scoreCard('Risco Operacional', risco.score, 'score bruto', '25%', '#ef4444', '↓ menor = melhor')}
+        ${scoreCard('Percepção da Equipe', final.equipe+'/100', 'questionário ↑', '30%', '#6366f1', '↑ maior = melhor')}
+        ${scoreCard('Risco Operacional', final.normRisco+'/100', 'normalizado exp. ↑', '25%', '#ef4444', '↑ menor risco = melhor')}
+        ${scoreCard('Burocracia', final.normBuroc+'/100', 'normalizado ↑', '20%', '#f97316', '↑ menos burocracia = melhor')}
+        ${scoreCard('Digitalização', final.normAutom+'/100', '% ações com sistema ↑', '15%', '#0891b2', '↑ maior = melhor')}
+        ${scoreCard('Complexidade', final.normComplex+'/100', 'normalizado exp. ↑', '10%', '#a78bfa', '↑ menos complexo = melhor')}
       </div>
       <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:20px;">
-        Score final = Equipe×40% + (1−Burocracia)×20% + (1−Complexidade)×15% + (1−Risco)×25% — todos invertidos e normalizados para 0–100
+        Score = Equipe×30% + Risco×25% + Burocracia×20% + Digitalização×15% + Complexidade×10% — todos normalizados 0–100 (100 = mais maduro)
       </div>`;
   }
 
@@ -20410,21 +20418,26 @@ Descrição: ${popMeta.desc || 'Não informado'}
 - Loops detectados (revisão/aprovação no fluxo): ${metrics.totalLoops}
 - Handoffs (trocas de responsável): ${metrics.totalHandoffs}
 - Aprovações: ${metrics.totalApprovals}
+- Sistemas únicos referenciados: ${metrics.totalSistemas}
+- Ações com sistema registrado: ${metrics.actionsWithSistema} de ${metrics.totalActivities} (${(metrics.automRate*100).toFixed(0)}%)
 - Pessoas indispensáveis (informado pelo usuário): ${ind}
+- Sistemas indispensáveis (informado pelo usuário): ${sist}
 
 ## ÍNDICES
 - Complexidade: ${metrics.complexScore.toFixed(1)} → ${metrics.complexLabel} (escala: 0–20 simples, 21–40 moderado, 41–70 complexo, 70+ muito complexo)
 - Burocracia: ${(metrics.burocracia*100).toFixed(1)}% → ${metrics.burocLabel} (escala: <15% saudável, 15–30% moderado, >30% burocrático)
 - Risco Operacional: ${risco.score} → ${risco.label} (escala: 0–15 baixo, 16–35 médio, 36+ alto)
+- Digitalização: ${(metrics.automRate*100).toFixed(0)}% das ações possuem sistema registrado (escala: <30% baixa, 30–60% média, >60% alta)
 
 ## QUESTIONÁRIO DA EQUIPE (Sim=maduro nessa pergunta / Talvez=incerto / Não=imaduro)
 ${answersText}
 
-## SCORES FINAIS (0–100, quanto maior melhor)
-- Score da Equipe: ${equipe !== null ? Math.round(equipe) : '—'}
-- Burocracia normalizada: ${final ? final.normBuroc : '—'}
-- Complexidade normalizada: ${final ? final.normComplex : '—'}
-- Risco normalizado: ${final ? final.normRisco : '—'}
+## SCORES FINAIS (0–100, quanto maior melhor — normalização exponencial para complexidade e risco)
+- Percepção da Equipe: ${equipe !== null ? Math.round(equipe) : '—'}/100 (peso 30%)
+- Risco normalizado: ${final ? final.normRisco : '—'}/100 (peso 25%)
+- Burocracia normalizada: ${final ? final.normBuroc : '—'}/100 (peso 20%)
+- Digitalização: ${final ? final.normAutom : '—'}/100 (peso 15%)
+- Complexidade normalizada: ${final ? final.normComplex : '—'}/100 (peso 10%)
 - **SCORE GERAL DE MATURIDADE: ${final ? final.final : '—'}/100**
 - **NÍVEL: ${final ? final.level : '—'}** (Inicial→Gerenciado→Definido→Previsível→Otimizado)
 
@@ -20438,7 +20451,7 @@ Gere uma análise estruturada com exatamente estas seções:
 (Liste os 3 principais problemas identificados nos dados)
 
 ### 3. Insights Cruzados
-(Combine os índices para gerar observações não óbvias. Exemplos de padrões: baixa maturidade + alto risco = prioridade máxima; boa equipe + alta burocracia = processo engessado mas equipe adaptada; alta complexidade + poucos atores = gargalo de conhecimento; muitos loops + burocracia alta = fluxo ineficiente)
+(Combine os índices para gerar observações não óbvias. Exemplos de padrões: baixa maturidade + alto risco = prioridade máxima; boa equipe + alta burocracia = processo engessado mas equipe adaptada; alta complexidade + poucos atores = gargalo de conhecimento; muitos loops + burocracia alta = fluxo ineficiente; alta complexidade + baixa digitalização = processo complexo sem automação = alto risco operacional latente; baixa digitalização + burocracia alta = aprovações manuais que poderiam ser sistematizadas)
 
 ### 4. Prioridade de Intervenção
 (Urgente / Moderada / Baixa — com justificativa baseada nos dados)
