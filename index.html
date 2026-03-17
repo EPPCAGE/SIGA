@@ -5217,6 +5217,7 @@ function sanitizePop(p) {
   if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
   if(!Array.isArray(d.checklists))     d.checklists = [];
   if(!d.raciOverrides || typeof d.raciOverrides !== 'object') d.raciOverrides = {};
+  if(!Array.isArray(d.raciExtraActors)) d.raciExtraActors = [];
   if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
   if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
   if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
@@ -12410,7 +12411,40 @@ function _getRaciActors(p) {
       if(actor) actors.set(actor.toLowerCase(), actor);
     });
   });
+  // Atores extras adicionados manualmente na RACI
+  (d.raciExtraActors || []).forEach(name => {
+    const key = name.trim().toLowerCase();
+    if(key && !actors.has(key)) actors.set(key, name.trim());
+  });
   return actors; // Map { 'chefia dir' → 'Chefia DIR', ... }
+}
+
+function addRaciActor(p) {
+  if(!isEditor) { showToast('🔒 Apenas editores.', 'warn'); return; }
+  const input = document.getElementById('raci-new-actor-' + p);
+  const name = (input?.value || '').trim();
+  if(!name) { showToast('Informe o nome do ator.', 'warn'); return; }
+  const key = name.toLowerCase();
+  if(!DATA[p].raciExtraActors) DATA[p].raciExtraActors = [];
+  // Verificar se já existe (no fluxo ou nos extras)
+  const actors = _getRaciActors(p);
+  if(actors.has(key)) { showToast('Ator já existe na matriz.', 'warn'); return; }
+  DATA[p].raciExtraActors.push(name);
+  markChanged();
+  renderRaci(p);
+  showToast('✅ Ator adicionado!', 'success');
+}
+
+function removeRaciActor(p, actorKey) {
+  if(!isEditor) { showToast('🔒 Apenas editores.', 'warn'); return; }
+  DATA[p].raciExtraActors = (DATA[p].raciExtraActors || []).filter(n => n.trim().toLowerCase() !== actorKey);
+  // Remover overrides deste ator
+  Object.keys(DATA[p].raciOverrides).forEach(k => {
+    if(k.endsWith('_' + actorKey)) delete DATA[p].raciOverrides[k];
+  });
+  markChanged();
+  renderRaci(p);
+  showToast('Ator removido.', 'success');
 }
 
 function cycleRaciCell(p, stepIdx, actorKey) {
@@ -12444,9 +12478,29 @@ function renderRaci(p) {
   const actorKeys = [...actors.keys()];
   const actorNames = actorKeys.map(k => actors.get(k));
 
+  // Determina quais colunas são de atores extras (não do fluxo)
+  const flowActorKeys = new Set();
+  (d.steps || []).forEach(s => {
+    const resp = (s.responsible || '').trim();
+    if(resp) flowActorKeys.add(resp.toLowerCase());
+    (s.actions || []).forEach(a => {
+      const actor = typeof a === 'object' ? (a.actor || '').trim() : '';
+      if(actor) flowActorKeys.add(actor.toLowerCase());
+    });
+  });
+
   let html = '<table class="raci-table"><thead><tr>';
   html += '<th class="raci-step-col">Etapa</th>';
-  actorNames.forEach(name => { html += `<th title="${name}">${name.length > 14 ? name.slice(0,13)+'…' : name}</th>`; });
+  actorNames.forEach((name, i) => {
+    const ak = actorKeys[i];
+    const isExtra = !flowActorKeys.has(ak);
+    const rmBtn = (isEditor && isExtra)
+      ? `<button onclick="removeRaciActor('${p}','${ak.replace(/'/g,"\\'")}')" title="Remover ator"
+           style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:10px;padding:0 0 0 4px;line-height:1;vertical-align:middle;">✕</button>`
+      : '';
+    const label = name.length > 14 ? name.slice(0,13)+'…' : name;
+    html += `<th title="${name}">${label}${rmBtn}</th>`;
+  });
   html += '</tr></thead><tbody>';
 
   steps.forEach((s, si) => {
@@ -12479,6 +12533,16 @@ function renderRaci(p) {
     <span><span class="raci-cell I" style="width:20px;height:20px;font-size:10px;">I</span> Informado</span>
     <span style="color:var(--text-muted);font-size:11px;">💡 R e A são inferidos do fluxo. Clique em células vazias para definir C ou I.</span>
   </div>`;
+
+  if(isEditor) {
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap;">
+      <span style="font-size:12px;font-weight:600;color:#64748b;">＋ Adicionar ator:</span>
+      <input id="raci-new-actor-${p}" class="modal-input" type="text" placeholder="Nome do ator..."
+        style="flex:1;min-width:160px;max-width:280px;font-size:12px;padding:6px 10px;margin:0;"
+        onkeydown="if(event.key==='Enter') addRaciActor('${p}')">
+      <button onclick="addRaciActor('${p}')" class="btn btn-primary" style="font-size:12px;padding:6px 14px;">＋ Incluir</button>
+    </div>`;
+  }
   wrap.innerHTML = html;
 }
 
