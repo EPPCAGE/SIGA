@@ -20134,6 +20134,7 @@ function matAuditDetails(p, version) {
     const actions  = version === 'tobe' ? ((step.tobe && step.tobe.actions) || []) : (step.actions || []);
     const stepName = step.title || `Etapa ${si+1}`;
     if(step.responsible) audit.actors.add(step.responsible);
+    const seenHandoffs = new Set(); // dedup por etapa: mesmo par A→B conta só 1x por etapa
 
     actions.forEach((action, ai) => {
       const type    = action.type || 'atividade';
@@ -20155,8 +20156,10 @@ function matAuditDetails(p, version) {
         audit.loops.push({ step: stepName, text: txt, via: nat === 'revisao' ? 'natureza: revisao' : 'palavra-chave no texto' });
       inLoopCluster = isLoopSignal;
 
-      if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase())
-        audit.handoffs.push({ step: stepName, from: prevActor, to: actor });
+      if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
+        const key = `${prevActor.toLowerCase()}→${actor.toLowerCase()}`;
+        if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: actor }); }
+      }
       if(actor) { prevActor = actor; audit.actors.add(actor); }
 
       if(action.sistemas && action.sistemas.trim())
@@ -20230,6 +20233,7 @@ function matComputeMetrics(p, version='asis') {
     const actions = version === 'tobe'
       ? ((step.tobe && step.tobe.actions) || [])
       : (step.actions || []);
+    const seenHandoffs = new Set(); // dedup por etapa: mesmo par A→B conta só 1x por etapa
     if(step.responsible) allActors.add(step.responsible);
 
     actions.forEach(action => {
@@ -20251,7 +20255,10 @@ function matComputeMetrics(p, version='asis') {
       if(isLoopSignal && !inLoopCluster) totalLoops++;
       inLoopCluster = isLoopSignal;
 
-      if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) totalHandoffs++;
+      if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
+        const key = `${prevActor.toLowerCase()}→${actor.toLowerCase()}`;
+        if(!seenHandoffs.has(key)) { seenHandoffs.add(key); totalHandoffs++; }
+      }
       if(actor) { prevActor = actor; allActors.add(actor.toLowerCase()); }
 
       // Sistemas: conta sistemas únicos e ações digitalizadas (só atividades no numerador, consistente com denominador)
