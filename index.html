@@ -21608,7 +21608,7 @@ function matRender(p) {
       <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;">Componentes do score (normalizado 0–100):</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         ${scoreCard('Percepção da Equipe', final.equipe+'/100', 'questionário ↑', '30%', '#6366f1', '↑ maior = melhor')}
-        ${(()=>{ const rc = final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444'; return scoreCard('Risco Operacional', final.normRisco+'/100', '', '20%', rc, ''); })()}
+        ${(()=>{ const rc = final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444'; return scoreCard('Risco Operacional', final.normRisco+'/100', 'maior = melhor', '20%', rc, ''); })()}
         ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '30%', '#22c55e', '↑ mais lean = melhor')}
         ${scoreCard('Digitalização', final.normAutom+'/100', '% atividades com sistema ↑', '10%', '#0891b2', '↑ maior = melhor')}
         ${scoreCard('Automação', final.normAutomacao+'/100', '% atividades automáticas ⚙️ ↑', '10%', '#7c3aed', '↑ mais automático = melhor')}
