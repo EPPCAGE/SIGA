@@ -20086,11 +20086,12 @@ function matSetVersion(p, v) {
 
 function matAuditDetails(p, version) {
   const steps = (DATA[p] && DATA[p].steps) || [];
-  const LOOP_KW     = ['complementa','revisão','revisao','aprovação','aprovacao','autorização','autorizacao','devolver','retornar','reenviar','aguardar aprovação','aguardar revisão'];
-  const APPROVAL_KW = ['aprovação','aprovacao','revisão','revisao','autorização','autorizacao','validação','validacao','verificação','verificacao'];
+  const LOOP_TRIGGER_KW = ['complementa','devolver','retornar','reenviar'];
+  const APPROVAL_KW     = ['aprovação','aprovacao','revisão','revisao','autorização','autorizacao','validação','validacao','verificação','verificacao'];
   const audit = { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], actors:new Set() };
 
   let prevActor = '';
+  let inLoopCluster = false;
   steps.forEach((step, si) => {
     const actions  = version === 'tobe' ? ((step.tobe && step.tobe.actions) || []) : (step.actions || []);
     const stepName = step.title || `Etapa ${si+1}`;
@@ -20111,8 +20112,10 @@ function matAuditDetails(p, version) {
       if(isBurocByNat || isBurocByKw)
         audit.approvals.push({ step: stepName, text: txt, via: isBurocByNat ? `natureza: ${nat}` : 'palavra-chave no texto' });
 
-      if(nat === 'revisao' || nat === 'aprovacao' || LOOP_KW.some(k => textLow.includes(k)))
-        audit.loops.push({ step: stepName, text: txt, via: (nat === 'revisao' || nat === 'aprovacao') ? `natureza: ${nat}` : 'palavra-chave no texto' });
+      const isLoopSignal = nat === 'revisao' || LOOP_TRIGGER_KW.some(k => textLow.includes(k));
+      if(isLoopSignal && !inLoopCluster)
+        audit.loops.push({ step: stepName, text: txt, via: nat === 'revisao' ? 'natureza: revisao' : 'palavra-chave no texto' });
+      inLoopCluster = isLoopSignal;
 
       if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase())
         audit.handoffs.push({ step: stepName, from: prevActor, to: actor });
@@ -20179,10 +20182,12 @@ function matComputeMetrics(p, version='asis') {
   let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, actionsWithSistema = 0;
   const allActors = new Set();
   const allSistemas = new Set();
-  const LOOP_KW = ['complementa', 'revisão', 'revisao', 'aprovação', 'aprovacao', 'autorização', 'autorizacao', 'devolver', 'retornar', 'reenviar', 'aguardar aprovação', 'aguardar revisão'];
+  // Palavras que indicam o loop-back (retrabalho ocorreu) — não inclui aprovacao/revisao no texto pois são checkpoints, não retorno
+  const LOOP_TRIGGER_KW = ['complementa', 'devolver', 'retornar', 'reenviar'];
   const APPROVAL_KW = ['aprovação', 'aprovacao', 'revisão', 'revisao', 'autorização', 'autorizacao', 'validação', 'validacao', 'verificação', 'verificacao'];
 
   let prevActor = '';
+  let inLoopCluster = false; // detecta borda de subida: conta 1 loop por cluster de retrabalho
   steps.forEach((step) => {
     const actions = version === 'tobe'
       ? ((step.tobe && step.tobe.actions) || [])
@@ -20203,7 +20208,11 @@ function matComputeMetrics(p, version='asis') {
       const isBurocByKw  = !nat && APPROVAL_KW.some(k => textLow.includes(k));
       if(isBurocByNat || isBurocByKw) totalApprovals++;
 
-      if(nat === 'revisao' || nat === 'aprovacao' || LOOP_KW.some(k => textLow.includes(k))) totalLoops++;
+      // Loop: conta 1 por ciclo de retrabalho (borda de subida do cluster)
+      const isLoopSignal = nat === 'revisao' || LOOP_TRIGGER_KW.some(k => textLow.includes(k));
+      if(isLoopSignal && !inLoopCluster) totalLoops++;
+      inLoopCluster = isLoopSignal;
+
       if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) totalHandoffs++;
       if(actor) { prevActor = actor; allActors.add(actor.toLowerCase()); }
 
