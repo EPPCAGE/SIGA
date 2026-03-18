@@ -3498,6 +3498,7 @@ REGRAS PARA actions[] — LEIA COM ATENÇÃO:
 4. Após cada "decisao", crie actions para os caminhos possíveis: "Se sim: [ação]" e "Se não: [ação]", cada uma como action separada do tipo "atividade".
 5. Se uma linha menciona envio para aprovação, volta para revisão, ou aguardar retorno — inclua como action com a natureza correspondente.
 6. Nunca pule linhas por parecerem redundantes ou óbvias — inclua tudo.
+7. APENAS ações do tipo "atividade" devem ter "actor" e "sistemas" preenchidos. Para "decisao", "evento" e "observacao", deixe "actor":"" e "sistemas":"".
 
 # FLUXO DETALHADO (campo flow[])
 Mapeie TODOS os passos do processo SEM simplificar. Inclua obrigatoriamente:
@@ -17756,7 +17757,7 @@ SIGLAS: extraia TODAS as siglas do documento, cada uma como entrada separada em 
 EXECUTORES: crie uma entrada SEPARADA para cada executor — nunca concatene nomes com ";" em um único "name". Use o nome exato do executor no campo "actor" de cada action.
 CLASSIFICAÇÃO: atividade=ação executável · decisao=ponto de escolha/condição · evento=marco início/fim · observacao=comentário/OBS
 NATUREZA: preencha "natureza":"aprovacao" para ações de aprovar/validar/homologar; "natureza":"revisao" para revisar/corrigir/devolver; "" nas demais.
-SISTEMAS: preencha "sistemas" com o nome do sistema usado na ação (SEI, SIAPC, e-mail, etc.); "" se não houver.
+SISTEMAS e ACTOR: preencha apenas em ações do tipo "atividade". Para "decisao", "evento" e "observacao", deixe "actor":"" e "sistemas":"".
 
 ETAPAS (steps[]): cada seção/fase do documento = uma step separada. NUNCA mescle seções. NUNCA omita seção.
 AÇÕES (actions[]): cada linha/bullet/item numerado = uma action separada. NUNCA agrupe linhas. NUNCA omita linha. Preserve o texto exato.
@@ -20156,14 +20157,15 @@ function matAuditDetails(p, version) {
         audit.loops.push({ step: stepName, text: txt, via: nat === 'revisao' ? 'natureza: revisao' : 'palavra-chave no texto' });
       inLoopCluster = isLoopSignal;
 
-      if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
-        const key = `${prevActor.toLowerCase()}→${actor.toLowerCase()}`;
-        if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: actor }); }
+      if(type === 'atividade') {
+        if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
+          const key = `${prevActor.toLowerCase()}→${actor.toLowerCase()}`;
+          if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: actor }); }
+        }
+        if(actor) { prevActor = actor; audit.actors.add(actor); }
+        if(action.sistemas && action.sistemas.trim())
+          audit.digitalized.push({ step: stepName, text: txt, sistemas: action.sistemas });
       }
-      if(actor) { prevActor = actor; audit.actors.add(actor); }
-
-      if(action.sistemas && action.sistemas.trim())
-        audit.digitalized.push({ step: stepName, text: txt, sistemas: action.sistemas });
     });
   });
   return audit;
@@ -20255,13 +20257,15 @@ function matComputeMetrics(p, version='asis') {
       if(isLoopSignal && !inLoopCluster) totalLoops++;
       inLoopCluster = isLoopSignal;
 
-      if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
-        const key = `${prevActor.toLowerCase()}→${actor.toLowerCase()}`;
-        if(!seenHandoffs.has(key)) { seenHandoffs.add(key); totalHandoffs++; }
+      if(type === 'atividade') {
+        if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
+          const key = `${prevActor.toLowerCase()}→${actor.toLowerCase()}`;
+          if(!seenHandoffs.has(key)) { seenHandoffs.add(key); totalHandoffs++; }
+        }
+        if(actor) { prevActor = actor; allActors.add(actor.toLowerCase()); }
       }
-      if(actor) { prevActor = actor; allActors.add(actor.toLowerCase()); }
 
-      // Sistemas: conta sistemas únicos e ações digitalizadas (só atividades no numerador, consistente com denominador)
+      // Sistemas: conta sistemas únicos e ações digitalizadas (só atividades)
       if(action.sistemas && action.sistemas.trim()) {
         if(type === 'atividade') actionsWithSistema++;
         action.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
