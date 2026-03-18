@@ -8014,6 +8014,17 @@ function saveActionModal() {
   document.getElementById(id).addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
 });
 
+// Enter key → salva o formulário/modal ativo (exceto em textareas onde Enter = nova linha)
+document.addEventListener('keydown', function(e) {
+  if(e.key !== 'Enter') return;
+  if(e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
+  if(document.getElementById('action-type-modal').classList.contains('open')) { e.preventDefault(); saveActionModal(); return; }
+  if(document.getElementById('ind-modal').classList.contains('open'))          { e.preventDefault(); saveIndModal(); return; }
+  if(document.getElementById('rev-modal').classList.contains('open'))          { e.preventDefault(); saveRevision(); return; }
+  if(document.getElementById('faq-modal').classList.contains('open'))          { e.preventDefault(); saveFaqModal(); return; }
+  if(document.getElementById('norma-modal').classList.contains('open'))        { e.preventDefault(); saveNorma(); return; }
+});
+
 
 
 
