@@ -21245,9 +21245,10 @@ function matComputeMetrics(p, version='asis') {
 }
 
 function matComputeRisco(metrics, indispensaveis, sistIndispensaveis) {
-  // decisões×2 + handoffs×2 + distribuicao×1.5 (repasse explícito = dependência) + pessoas×5 + sistemas×3
+  // decisões×2 + handoffs×2 + pessoas×5 + sistemas×3
+  // Nota: distribuição NÃO é somada aqui — as atividades de distribuição já geram
+  // handoffs estruturais detectados pela troca de ator, evitando dupla contagem.
   const score = (metrics.totalDecisions * 2) + (metrics.totalHandoffs * 2)
-              + ((metrics.totalDistribuicao || 0) * 1.5)
               + (indispensaveis * 5) + ((sistIndispensaveis || 0) * 3);
   let label, cls;
   if(score <= 15)      { label = 'Baixo'; cls = '#22c55e'; }
@@ -21429,7 +21430,7 @@ function matRender(p) {
       ${indexCard('Overhead ↓', (metrics.overhead * 100).toFixed(1)+'%', metrics.overheadLabel, metrics.overheadCls,
         `(aprovações + revisões + controle) ÷ total de atividades<br>Escala: &lt;20% saudável · 20–35% moderado · &gt;35% elevado<br><span style="color:#64748b;">Fontes: natureza da ação (aprovacao/revisao/controle) + palavras-chave</span>`)}
       ${indexCard('Risco Operacional ↓', risco.score.toFixed(1), risco.label, risco.cls,
-        `decisões×2 + handoffs×2 + distribuição×1,5 + pessoas indispensáveis×5 + sistemas indispensáveis×3<br>Escala: ≤15 baixo · ≤35 médio · &gt;35 alto`)}
+        `decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3<br>Escala: ≤15 baixo · ≤35 médio · &gt;35 alto`)}
       ${indexCard('Foco em Execução ↑', focoLabel, focoLevelLabel, focoCls,
         `atividades com natureza 'execução' ÷ total de atividades<br>Escala: ≥40% lean · 20–40% moderado · &lt;20% baixo<br><span style="color:#64748b;">Requer naturezas definidas — premia processos focados em agregar valor</span>`)}
       ${indexCard('Digitalização ↑', (metrics.automRate*100).toFixed(0)+'%', automLabel, automCls,
@@ -21533,8 +21534,15 @@ function matRender(p) {
         ${scoreCard('Digitalização', final.normAutom+'/100', '% ações com sistema ↑', '15%', '#0891b2', '↑ maior = melhor')}
         ${scoreCard('Foco em Execução', final.normFoco+'/100', '% nat. execução ↑', '15%', '#22c55e', '↑ mais lean = melhor')}
       </div>
-      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;">
+      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:8px;">
         Score = Equipe×30% + Risco×20% + Overhead×20% + Digitalização×15% + Foco em Execução×15% — todos normalizados 0–100 (100 = mais maduro)
+      </div>
+      <div style="font-size:11px;color:#94a3b8;background:#f8fafc;border-left:3px solid #e2e8f0;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:16px;">
+        <strong style="color:#475569;">Por que a Complexidade foi removida?</strong>
+        A complexidade bruta (atividades, decisões, atores, loops) já está capturada indiretamente pelos outros componentes:
+        decisões e handoffs elevam o Risco; loops e aprovações elevam o Overhead; a ausência de execução direta penaliza o Foco em Execução.
+        Manter um componente de complexidade separado duplicava sinais já presentes e penalizava processos naturalmente complexos
+        (ex.: processos regulatórios com muitas etapas obrigatórias) sem agregar discriminação adicional ao score final.
       </div>
       <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
         ${isEditor ? `
@@ -21741,7 +21749,7 @@ function matExportPdf(p) {
           <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Sentido</th><th>Barra</th></tr>
           ${[
             ['👥 Percepção da Equipe',  '30%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
-            ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + distribuição×1,5 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
+            ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
             ['📋 Overhead Burocrático','20%', final.normBuroc, '#f97316', '100 = processo ágil (invertido)', 'Escala linear com teto em 60%: 1 − (aprovações+revisões+controle ÷ atividades) ÷ 0,6. Fontes: natureza aprovacao/revisao/controle e palavras-chave. Percentual bruto invertido → maior pontuação = menos overhead.'],
             ['💻 Digitalização',        '15%', final.normAutom, '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades que possuem sistema registrado (rastreabilidade e automação do fluxo).'],
             ['🎯 Foco em Execução',     '15%', final.normFoco,  '#22c55e', '100 = processo lean (direto)', 'Percentual de atividades com natureza "execução" ÷ total × 100, com teto em 50% para score máximo. Score 50 quando nenhuma natureza está definida (neutro). Premia processos focados em agregar valor com menos overhead.'],
@@ -21759,7 +21767,10 @@ function matExportPdf(p) {
         </table>
         <p class="formula-note" style="margin-top:10px;padding:8px 10px;background:#f1f5f9;border-radius:6px;border-left:3px solid #0a2540;">
           <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,30) + (Risco × 0,20) + (Overhead × 0,20) + (Digitalização × 0,15) + (Foco em Execução × 0,15)<br>
-          <span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span>
+          <span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span><br><br>
+          <strong>Por que a Complexidade foi removida?</strong> A complexidade bruta (atividades, decisões, atores, loops) já está capturada indiretamente:
+          decisões e handoffs elevam o Risco; loops e aprovações elevam o Overhead; ausência de execução penaliza o Foco em Execução.
+          Um componente separado duplicava esses sinais e penalizava processos naturalmente complexos (ex.: processos regulatórios) sem agregar discriminação adicional.
         </p>
       </div>
     </div>` : `<div class="empty-block">⚠️ Score não disponível — questionário não respondido completamente.</div>`;
