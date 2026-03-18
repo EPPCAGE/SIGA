@@ -5506,8 +5506,8 @@ const ACTION_TYPES = {
 
 function actionObj(a) {
   // Normalise: plain string → atividade object
-  if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'', eventoTipo:'', automatico:false };
-  const base = { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'', natureza: a.natureza||'', eventoTipo: a.eventoTipo||'', automatico: a.automatico||false };
+  if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'', eventoTipo:'', automatico:false, loop:false };
+  const base = { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'', natureza: a.natureza||'', eventoTipo: a.eventoTipo||'', automatico: a.automatico||false, loop: a.loop||false };
   if(Array.isArray(a.branches)) base.branches = a.branches;
   return base;
 }
@@ -5654,7 +5654,10 @@ function renderStep(p, i) {
     const dragHandle = em ? `<span class="drag-handle" title="Arrastar para reordenar">⋮⋮</span>` : '';
     const branchesHTML = obj.type === 'decisao' ? buildBranchesHTML(p, i, ai, obj.branches||[], isTobe, em) : '';
     const autoBtn = obj.type === 'atividade'
-      ? `<button class="edit-rm-btn auto-toggle-btn${obj.automatico ? ' auto-on' : ''}" onclick="toggleAutomatico('${p}',${i},${ai})" title="${obj.automatico ? 'Automático — clique para desmarcar' : 'Marcar como automático'}" style="margin-left:4px;background:${obj.automatico ? '#dcfce7' : 'transparent'};color:${obj.automatico ? '#16a34a' : '#94a3b8'};border:1px solid ${obj.automatico ? '#16a34a44' : '#e2e8f0'};font-size:13px;">⚡</button>`
+      ? `<button class="edit-rm-btn auto-toggle-btn${obj.automatico ? ' auto-on' : ''}" onclick="toggleAutomatico('${p}',${i},${ai})" title="${obj.automatico ? 'Automático — clique para desmarcar' : 'Marcar como automático'}" style="margin-left:4px;background:${obj.automatico ? '#dcfce7' : 'transparent'};color:${obj.automatico ? '#16a34a' : '#94a3b8'};border:1px solid ${obj.automatico ? '#16a34a44' : '#e2e8f0'};font-size:13px;">⚙️</button>`
+      : '';
+    const loopBtn = obj.type === 'atividade'
+      ? `<button class="edit-rm-btn loop-toggle-btn${obj.loop ? ' loop-on' : ''}" onclick="toggleLoop('${p}',${i},${ai})" title="${obj.loop ? 'Loop/retrabalho — clique para desmarcar' : 'Marcar como loop/retrabalho'}" style="margin-left:4px;background:${obj.loop ? '#fef3c7' : 'transparent'};color:${obj.loop ? '#b45309' : '#94a3b8'};border:1px solid ${obj.loop ? '#b4530944' : '#e2e8f0'};font-size:13px;">🔄</button>`
       : '';
     return `
     <li class="step-action-item" data-type="${obj.type}" data-ai="${ai}" ${em ? 'draggable="true"' : ''}>
@@ -5665,7 +5668,7 @@ function renderStep(p, i) {
           <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}${etipoBadge}
           ${actorHTML}
         </div>
-        ${autoBtn}${editBtn}${rmBtn}
+        ${loopBtn}${autoBtn}${editBtn}${rmBtn}
       </div>
       ${branchesHTML}
     </li>`;}).join('');
@@ -5827,6 +5830,17 @@ function toggleAutomatico(p, si, ai) {
   const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
   const a = actionObj(actions[ai]);
   a.automatico = !a.automatico;
+  actions[ai] = a;
+  markChanged();
+  renderStep(p, si);
+}
+
+function toggleLoop(p, si, ai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem marcar loops.', 'warn'); return; }
+  const step = DATA[p].steps[si];
+  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const a = actionObj(actions[ai]);
+  a.loop = !a.loop;
   actions[ai] = a;
   markChanged();
   renderStep(p, si);
@@ -8064,11 +8078,13 @@ function saveActionModal() {
   const natureza = (type === 'atividade' && natBtn) ? natBtn.dataset.nat : '';
   const etipoBtn = document.querySelector('[data-etipo].selected');
   const eventoTipo = (type === 'evento' && etipoBtn) ? etipoBtn.dataset.etipo : '';
-  // Preserve automatico flag (toggled via ⚡ button, not via modal)
+  // Preserve flags toggled via ícone (⚙️ automatico, 🔄 loop) — não passam pelo modal
   const step = DATA[_actP].steps[_actSi];
   const _existingActions = _actIsTobe ? (step.tobe?.actions || step.actions) : step.actions;
-  const _existingAuto = _actBi < 0 ? (actionObj(_existingActions[_actAi] || {}).automatico || false) : false;
-  const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo, automatico: _existingAuto };
+  const _existingObj = actionObj(_existingActions[_actBi < 0 ? _actAi : _actAi] || {});
+  const _existingAuto = _actBi < 0 ? (_existingObj.automatico || false) : false;
+  const _existingLoop = _actBi < 0 ? (_existingObj.loop || false) : false;
+  const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo, automatico: _existingAuto, loop: _existingLoop };
 
   const step = DATA[_actP].steps[_actSi];
   if(_actBi >= 0) {
@@ -16136,7 +16152,7 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
           ['⚠️ Risco Operacional',   '20%', matFinal.normRisco,     '#ef4444'],
           ['🌿 Lean Operacional',    '30%', matFinal.normLean,       '#22c55e'],
           ['💻 Digitalização',       '10%', matFinal.normAutom,      '#0891b2'],
-          ['⚡ Automação',           '10%', matFinal.normAutomacao,  '#7c3aed'],
+          ['⚙️ Automação',           '10%', matFinal.normAutomacao,  '#7c3aed'],
         ].map(([lbl, peso, val, col]) => `<tr>
           <td>${lbl}</td>
           <td style="text-align:center;">${peso}</td>
@@ -21001,28 +21017,12 @@ function matSetVersion(p, v) {
   matRender(p);
 }
 
-// Verifica se dois textos de loop são semanticamente similares (Jaccard sobre palavras)
-function _loopSimilar(textA, textB) {
-  const STOP = new Set(['o','a','os','as','de','do','da','dos','das','em','no','na','nos','nas','ao','às','um','uma','para','por','com','se','que','e','ou','mas','não','já','este','essa','isso']);
-  const words = t => new Set(
-    t.toLowerCase().replace(/[^a-záéíóúàãõâêôçü\s]/g,' ').replace(/\s+/g,' ').trim()
-     .split(' ').filter(w => w.length > 2 && !STOP.has(w))
-  );
-  const wa = words(textA), wb = words(textB);
-  const inter = [...wa].filter(w => wb.has(w)).length;
-  const union = new Set([...wa, ...wb]).size;
-  return union > 0 && inter / union >= 0.5;
-}
-
 function matAuditDetails(p, version) {
   const steps = (DATA[p] && DATA[p].steps) || [];
-  const LOOP_TRIGGER_KW = ['complementa','devolver','retornar','reenviar'];
   const APPROVAL_KW     = ['aprovação','aprovacao','revisão','revisao','autorização','autorizacao','validação','validacao'];
   const audit = { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], actors:new Set() };
 
   let prevActor = '';
-  let inLoopCluster = false;
-  const seenLoopTexts = []; // dedup semântico de loops similares
   steps.forEach((step, si) => {
     const actions  = version === 'tobe' ? ((step.tobe && step.tobe.actions) || []) : (step.actions || []);
     const stepName = step.title || `Etapa ${si+1}`;
@@ -21044,15 +21044,8 @@ function matAuditDetails(p, version) {
       if(isBurocByNat || isBurocByKw)
         audit.approvals.push({ step: stepName, text: txt, via: isBurocByNat ? `natureza: ${nat}` : 'palavra-chave no texto' });
 
-      const isLoopSignal = nat === 'revisao' || LOOP_TRIGGER_KW.some(k => textLow.includes(k));
-      if(isLoopSignal && !inLoopCluster) {
-        const isDuplicate = seenLoopTexts.some(t => _loopSimilar(t, txt));
-        if(!isDuplicate) {
-          audit.loops.push({ step: stepName, text: txt, via: nat === 'revisao' ? 'natureza: revisao' : 'palavra-chave no texto' });
-          seenLoopTexts.push(txt);
-        }
-      }
-      inLoopCluster = isLoopSignal;
+      if(type === 'atividade' && action.loop)
+        audit.loops.push({ step: stepName, text: txt });
 
       if(type === 'atividade') {
         if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
@@ -21094,7 +21087,7 @@ function matShowAudit(p) {
   const html = `
     ${section('▶','Atividades',          audit.activities,  i => row(i.text, i.step))}
     ${section('◆','Decisões',            audit.decisions,   i => row(i.text, i.step))}
-    ${section('🔄','Loops',              audit.loops,       i => row(i.text + ` <span style="color:#94a3b8;">(via ${i.via})</span>`, i.step))}
+    ${section('🔄','Loops',              audit.loops,       i => row(i.text, i.step))}
     ${section('🔀','Handoffs',           audit.handoffs,    i => row(`${i.from} → ${i.to}`, i.step))}
     ${section('✅','Aprovações/Burocracia', audit.approvals,i => row(i.text + ` <span style="color:#94a3b8;">(via ${i.via})</span>`, i.step))}
     ${section('⚡','Ações Digitalizadas', audit.digitalized, i => row(i.text + ` <span style="color:#94a3b8;">[${i.sistemas}]</span>`, i.step))}
@@ -21125,13 +21118,9 @@ function matComputeMetrics(p, version='asis') {
   let anyNatDefined = false;
   const allActors = new Set();
   const allSistemas = new Set();
-  // Palavras que indicam o loop-back (retrabalho ocorreu) — não inclui aprovacao/revisao no texto pois são checkpoints, não retorno
-  const LOOP_TRIGGER_KW = ['complementa', 'devolver', 'retornar', 'reenviar'];
   const APPROVAL_KW = ['aprovação', 'aprovacao', 'revisão', 'revisao', 'autorização', 'autorizacao', 'validação', 'validacao'];
 
   let prevActor = '';
-  let inLoopCluster = false; // detecta borda de subida: conta 1 loop por cluster de retrabalho
-  const seenLoopTexts = []; // dedup semântico de loops similares entre etapas
   steps.forEach((step) => {
     const actions = version === 'tobe'
       ? ((step.tobe && step.tobe.actions) || [])
@@ -21171,16 +21160,8 @@ function matComputeMetrics(p, version='asis') {
         if(isBurocByNat || isBurocByKw) totalApprovals++;
       }
 
-      // Loop: conta 1 por ciclo de retrabalho, deduplicando textos semanticamente similares
-      const isLoopSignal = nat === 'revisao' || LOOP_TRIGGER_KW.some(k => textLow.includes(k));
-      if(isLoopSignal && !inLoopCluster) {
-        const txt = action.text || '';
-        if(!seenLoopTexts.some(t => _loopSimilar(t, txt))) {
-          totalLoops++;
-          seenLoopTexts.push(txt);
-        }
-      }
-      inLoopCluster = isLoopSignal;
+      // Loop: conta apenas atividades marcadas manualmente com 🔄
+      if(type === 'atividade' && action.loop) totalLoops++;
 
       if(type === 'atividade') {
         if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
@@ -21195,7 +21176,7 @@ function matComputeMetrics(p, version='asis') {
         if(type === 'atividade') actionsWithSistema++;
         action.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
       }
-      // Automação: atividades marcadas explicitamente como automáticas (⚡)
+      // Automação: atividades marcadas explicitamente como automáticas (⚙️)
       if(type === 'atividade' && action.automatico) totalAutomatico++;
 
       // Processar caminhos de decisão: conta atividades/aprovações, mas deduplica aprovações (conta 1 por decisão)
@@ -21317,7 +21298,7 @@ function matComputeFinal(p) {
   const normLean  = leanDenom > 0
     ? Math.min(100, Math.round((metrics.totalExecucao / leanDenom) * 100))
     : 50;
-  // Automação: % de atividades marcadas como automáticas (⚡)
+  // Automação: % de atividades marcadas como automáticas (⚙️)
   const normAutomacao = Math.round(metrics.automacaoRate * 100);
 
   // Pesos: Equipe 30% · Risco 20% · Lean 30% · Digitalização 10% · Automação 10%
@@ -21471,8 +21452,8 @@ function matRender(p) {
         const av = (ar*100).toFixed(0)+'%';
         const al = ar >= 0.5 ? 'Alta' : ar >= 0.2 ? 'Média' : 'Baixa';
         const ac = ar >= 0.5 ? '#22c55e' : ar >= 0.2 ? '#eab308' : '#ef4444';
-        return indexCard('Automação ⚡ ↑', av, al, ac,
-          `atividades marcadas como automáticas (⚡) ÷ total de atividades<br>Escala: &lt;20% baixa · 20–50% média · &gt;50% alta<br><span style="color:#64748b;">Clique em ⚡ em cada atividade no fluxo para marcar</span>`);
+        return indexCard('Automação ⚙️ ↑', av, al, ac,
+          `atividades marcadas como automáticas (⚙️) ÷ total de atividades<br>Escala: &lt;20% baixa · 20–50% média · &gt;50% alta<br><span style="color:#64748b;">Clique em ⚙️ em cada atividade no fluxo para marcar</span>`);
       })()}
     </div>`;
 
@@ -21571,7 +21552,7 @@ function matRender(p) {
         ${scoreCard('Risco Operacional', final.normRisco+'/100', 'normalizado exp. ↑', '20%', '#ef4444', '↑ menor risco = melhor')}
         ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '30%', '#22c55e', '↑ mais lean = melhor')}
         ${scoreCard('Digitalização', final.normAutom+'/100', '% atividades com sistema ↑', '10%', '#0891b2', '↑ maior = melhor')}
-        ${scoreCard('Automação', final.normAutomacao+'/100', '% atividades automáticas ⚡ ↑', '10%', '#7c3aed', '↑ mais automático = melhor')}
+        ${scoreCard('Automação', final.normAutomacao+'/100', '% atividades automáticas ⚙️ ↑', '10%', '#7c3aed', '↑ mais automático = melhor')}
       </div>
       <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;">
         Score = Equipe×30% + Risco×20% + Lean×30% + Digitalização×10% + Automação×10% — todos normalizados 0–100 (100 = mais maduro)
@@ -21729,7 +21710,7 @@ function matRenderHistory(p, snapshots) {
                   ['⚠️ Risco',   snap.normRisco,         '#ef4444'],
                   ['🌿 Lean',    snap.normLean ?? snap.normBuroc, '#22c55e'],
                   ['💻 Digital.',snap.normAutom,          '#0891b2'],
-                  ['⚡ Auto.',   snap.normAutomacao,      '#7c3aed'],
+                  ['⚙️ Auto.',  snap.normAutomacao,      '#7c3aed'],
                 ].map(([lbl,val,col]) => `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;">${lbl} <strong style="color:${col};">${val??'—'}</strong></span>`).join('')}
               </div>
             </div>
@@ -21784,7 +21765,7 @@ function matExportPdf(p) {
             ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
             ['🌿 Lean Operacional',     '30%', final.normLean,      '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma atividade opinada existe.'],
             ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades top-level com sistema registrado (não conta sub-ações dentro de decisões).'],
-            ['⚡ Automação',            '10%', final.normAutomacao, '#7c3aed', '100 = totalmente automatizado', 'Percentual de atividades marcadas com ⚡ (automático) ÷ total de atividades. Marque via ícone ⚡ em cada atividade no fluxo.'],
+            ['⚙️ Automação',            '10%', final.normAutomacao, '#7c3aed', '100 = totalmente automatizado', 'Percentual de atividades marcadas com ⚙️ (automático) ÷ total de atividades. Marque via ícone ⚙️ em cada atividade no fluxo.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
               <td>${lbl}</td>
@@ -21800,7 +21781,7 @@ function matExportPdf(p) {
         <p class="formula-note" style="margin-top:10px;padding:8px 10px;background:#f1f5f9;border-radius:6px;border-left:3px solid #0a2540;">
           <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,30) + (Risco × 0,20) + (Lean × 0,30) + (Digitalização × 0,10) + (Automação × 0,10)<br>
           <span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span><br><br>
-          <strong>Lean</strong> = execução ÷ (execução + aprovações + controle). <strong>Automação</strong> = % de atividades marcadas com ⚡ no fluxo.
+          <strong>Lean</strong> = execução ÷ (execução + aprovações + controle). <strong>Automação</strong> = % de atividades marcadas com ⚙️ no fluxo.
         </p>
       </div>
     </div>` : `<div class="empty-block">⚠️ Score não disponível — questionário não respondido completamente.</div>`;
@@ -21861,7 +21842,7 @@ function matExportPdf(p) {
           const ar = metrics.automacaoRate;
           const al = ar >= 0.5 ? 'Alta' : ar >= 0.2 ? 'Média' : 'Baixa';
           const ac = ar >= 0.5 ? '#22c55e' : ar >= 0.2 ? '#eab308' : '#ef4444';
-          return `<td>Automação ⚡ <span class="note">(bruto = normalizado — ↑ maior = melhor; atividades marcadas no fluxo)</span></td>
+          return `<td>Automação ⚙️ <span class="note">(bruto = normalizado — ↑ maior = melhor; atividades marcadas no fluxo)</span></td>
         <td>${(ar*100).toFixed(0)}%</td>
         <td><span class="badge" style="background:${ac}20;color:${ac};">${al}</span></td>`;
         })()}
@@ -22054,7 +22035,7 @@ Descrição: ${popMeta.desc || 'Não informado'}
 - Atividades: ${metrics.totalActivities}
 - Decisões: ${metrics.totalDecisions}
 - Atores distintos: ${metrics.totalActors}
-- Loops detectados (revisão/aprovação no fluxo): ${metrics.totalLoops}
+- Loops/retrabalho marcados (🔄): ${metrics.totalLoops}
 - Handoffs (trocas de responsável): ${metrics.totalHandoffs}
 - Aprovações: ${metrics.totalApprovals}
 - Sistemas únicos referenciados: ${metrics.totalSistemas}
@@ -22075,7 +22056,7 @@ ${answersText}
 - Percepção da Equipe: ${equipe !== null ? Math.round(equipe) : '—'}/100 (peso 30%)
 - Risco normalizado: ${final ? final.normRisco : '—'}/100 (peso 20%)
 - Lean Operacional normalizado: ${final ? final.normLean : '—'}/100 (peso 30%)
-- Automação (⚡): ${final ? final.normAutomacao : '—'}/100 (peso 10%)
+- Automação (⚙️): ${final ? final.normAutomacao : '—'}/100 (peso 10%)
 - Digitalização: ${final ? final.normAutom : '—'}/100 (peso 10%)
 - Digitalização: ${final ? final.normAutom : '—'}/100 (peso 10%)
 - **SCORE GERAL DE MATURIDADE: ${final ? final.final : '—'}/100**
