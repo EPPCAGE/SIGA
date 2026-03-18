@@ -9286,9 +9286,12 @@ function showOrganogramaModule(show=true) {
   renderOrganograma();
 }
 
+let _orgSelectedUnit = null;
+
 function renderOrganograma() {
   const container = document.getElementById('organograma-render');
   if(!container) return;
+  _orgSelectedUnit = null;
 
   const contadorNome  = getConfig('contadorGeral') || '— Não definido —';
   const adjuntos      = getConfig('adjuntosCage');
@@ -9323,25 +9326,27 @@ function renderOrganograma() {
         <div style="font-size:14px;font-weight:600;">${adj}</div>
       </div>`).join('');
     nivel1 = `${connDown}
-    <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;">${cols}</div>`;
+    <div style="display:flex;justify-content:center;gap:14px;">${cols}</div>`;
   }
 
-  // Level 2 — Unidades + Level 3 Equipes under each
+  // Level 2 — Unidades clicáveis + Level 3 Equipes
   const unidadeCards = areas.map(area => {
     const teams = unitTeams[area] || [];
     const teamsHtml = teams.map(t =>
       `<div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:7px 14px;font-size:12px;color:#374151;font-weight:500;text-align:center;width:100%;box-sizing:border-box;">${t}</div>`
     ).join('');
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;min-width:130px;">
-      <div style="background:#e8a020;color:#0a2540;border-radius:10px;padding:11px 20px;text-align:center;width:100%;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(232,160,32,.3);box-sizing:border-box;">${area}</div>
+      <div id="org-unit-${area}" data-org-unit="${area}" onclick="orgClickUnit('${area}')"
+        style="background:#e8a020;color:#0a2540;border-radius:10px;padding:11px 20px;text-align:center;width:100%;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(232,160,32,.3);box-sizing:border-box;cursor:pointer;transition:all .15s;user-select:none;"
+        title="Clique para ver os processos desta unidade">${area}</div>
       ${teams.length ? `<div style="width:2px;height:14px;background:#cbd5e1;"></div><div style="display:flex;flex-direction:column;gap:5px;align-items:stretch;width:100%;">${teamsHtml}</div>` : ''}
     </div>`;
   }).join('');
 
+  // nowrap → todas as unidades ficam lado a lado (paisagem); overflow-x trata telas menores
   const nivel2 = `${connDown}
-    <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;align-items:flex-start;">${unidadeCards}</div>`;
+    <div style="display:flex;justify-content:center;gap:16px;flex-wrap:nowrap;align-items:flex-start;">${unidadeCards}</div>`;
 
-  // Empty state hint
   const hint = (adjuntos.length === 0 && equipeUnidade.length === 0)
     ? `<div style="margin-top:20px;padding:16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;text-align:center;font-size:13px;color:#94a3b8;">
         Configure o organograma em <strong>Gestão Escritório de Processos → Configurações</strong>:<br>
@@ -9354,7 +9359,89 @@ function renderOrganograma() {
       ${nivel1}
       ${nivel2}
       ${hint}
-    </div>`;
+    </div>
+    <div id="org-unit-panel" style="display:none;margin-top:16px;background:white;border-radius:14px;padding:24px 28px;box-shadow:0 4px 20px rgba(0,0,0,.08);border:1px solid #e2e8f0;"></div>`;
+}
+
+function orgClickUnit(area) {
+  _orgSelectedUnit = (_orgSelectedUnit === area) ? null : area;
+  // Atualizar estilo visual de todas as unidades
+  document.querySelectorAll('[data-org-unit]').forEach(el => {
+    const sel = el.dataset.orgUnit === _orgSelectedUnit;
+    el.style.background  = sel ? '#b87d10' : '#e8a020';
+    el.style.boxShadow   = sel ? '0 0 0 3px rgba(232,160,32,.55), 0 2px 8px rgba(232,160,32,.3)' : '0 2px 8px rgba(232,160,32,.3)';
+    el.style.color       = sel ? '#fff'    : '#0a2540';
+  });
+  orgRenderUnitPanel(_orgSelectedUnit);
+}
+
+function orgRenderUnitPanel(area) {
+  const panel = document.getElementById('org-unit-panel');
+  if(!panel) return;
+  if(!area) { panel.style.display = 'none'; return; }
+
+  const all   = arqGetData();
+  const procs = all.filter(r => r.area && r.area.trim().toUpperCase() === area.toUpperCase());
+
+  panel.style.display = 'block';
+
+  if(!procs.length) {
+    panel.innerHTML = `
+      <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:12px;">📋 Processos · <span style="color:#e8a020;">${area}</span></div>
+      <div style="color:#94a3b8;font-size:13px;padding:24px;text-align:center;background:#f8fafc;border-radius:8px;">
+        Nenhum processo com área "<strong>${area}</strong>" encontrado.<br>
+        <span style="font-size:12px;">Preencha o campo "Área" dos processos na Arquitetura de Processos.</span>
+      </div>`;
+    return;
+  }
+
+  // Agrupar por macroprocesso
+  const groups = {};
+  procs.forEach(r => {
+    const m = r.macroprocesso || 'Sem Macroprocesso';
+    if(!groups[m]) groups[m] = [];
+    groups[m].push(r);
+  });
+
+  const total   = procs.length;
+  const mapeados = procs.filter(r => r.mapeado).length;
+
+  const groupsHtml = Object.entries(groups).map(([macro, list]) => {
+    const rows = list.map(r => {
+      const idx = all.indexOf(r);
+      const nat = NAT_COLORS[r.natureza] || { bg:'#f1f5f9', color:'#475569' };
+      return `
+        <div onclick="arqShowProcessDetail(${idx})"
+          style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;margin-bottom:4px;border:1px solid #e2e8f0;cursor:pointer;background:white;transition:background .12s;"
+          onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='white'">
+          <span style="background:${nat.bg};color:${nat.color};font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;flex-shrink:0;white-space:nowrap;">${r.natureza||''}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:#0a2540;">${r.processo}</div>
+            ${r.subprocesso ? `<div style="font-size:11px;color:#64748b;">${r.subprocesso}</div>` : ''}
+            ${r.equipe ? `<div style="font-size:11px;color:#6366f1;font-weight:500;margin-top:1px;">👥 ${r.equipe}</div>` : ''}
+          </div>
+          ${r.critico ? '<span title="Processo crítico" style="font-size:14px;flex-shrink:0;">⚠️</span>' : ''}
+          <span style="font-size:11px;color:${r.mapeado?'#166534':'#94a3b8'};font-weight:600;flex-shrink:0;">${r.mapeado?'✅ Mapeado':'○'}</span>
+        </div>`;
+    }).join('');
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;">${macro}</div>
+        ${rows}
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:15px;font-weight:800;color:#0a2540;">📋 Processos · <span style="color:#e8a020;">${area}</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="background:#f0f4ff;color:#6366f1;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;">${total} processo${total!==1?'s':''}</span>
+        ${mapeados ? `<span style="background:#dcfce7;color:#166534;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;">${mapeados} mapeado${mapeados!==1?'s':''}</span>` : ''}
+        <button onclick="orgClickUnit('${area}')" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;" title="Fechar painel">✕</button>
+      </div>
+    </div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Clique em um processo para ver detalhes.</div>
+    ${groupsHtml}`;
 }
 
 // ═══ PAT MODULE ════════════════════════════════════════
@@ -13887,6 +13974,16 @@ function arqShowForm(idx = null) {
   const title = document.getElementById('arq-form-title');
   document.getElementById('arq-form-idx').value = idx !== null ? idx : '';
 
+  // Popular select de equipes
+  const equipeSelect = document.getElementById('arq-f-equipe');
+  equipeSelect.innerHTML = '<option value="">— Nenhuma —</option>';
+  getConfig('equipeUnidade').forEach(eu => {
+    const opt = document.createElement('option');
+    opt.value = eu.equipe;
+    opt.textContent = eu.equipe + (eu.unidade ? ' · ' + eu.unidade : '');
+    equipeSelect.appendChild(opt);
+  });
+
   if(idx !== null) {
     const r = arqGetData()[idx];
     title.textContent = 'Editar Processo';
@@ -13896,6 +13993,7 @@ function arqShowForm(idx = null) {
     document.getElementById('arq-f-natureza').value = r.natureza      || 'FINALÍSTICO';
     document.getElementById('arq-f-area').value     = r.area          || '';
     document.getElementById('arq-f-gerente').value  = r.gerente       || '';
+    equipeSelect.value                              = r.equipe        || '';
     document.getElementById('arq-f-objetivo').value = r.objetivo      || '';
     document.getElementById('arq-f-entradas').value = r.entradas      || '';
     document.getElementById('arq-f-entregas').value = r.entregas      || '';
@@ -13906,6 +14004,7 @@ function arqShowForm(idx = null) {
     ['macro','processo','sub','area','gerente','objetivo','entradas','entregas','clientes'].forEach(f =>
       document.getElementById('arq-f-' + f).value = '');
     document.getElementById('arq-f-natureza').value = 'FINALÍSTICO';
+    equipeSelect.value = '';
     document.getElementById('arq-f-critico').checked = false;
   }
   modal.style.display = 'flex';
@@ -13932,6 +14031,7 @@ function arqSaveForm() {
     natureza:      document.getElementById('arq-f-natureza').value,
     area:          document.getElementById('arq-f-area').value.trim(),
     gerente:       document.getElementById('arq-f-gerente').value.trim(),
+    equipe:        document.getElementById('arq-f-equipe').value,
     objetivo:      document.getElementById('arq-f-objetivo').value.trim(),
     entradas:      document.getElementById('arq-f-entradas').value.trim(),
     entregas:      document.getElementById('arq-f-entregas').value.trim(),
@@ -14220,6 +14320,7 @@ function arqShowProcessDetail(idx) {
       </div>
     </div>
     ${row('Área responsável', r.area)}
+    ${row('Equipe responsável', r.equipe)}
     ${row('Gestor do processo', r.gerente)}
     ${row('Objetivo', r.objetivo)}
     ${row('Fornecedores', r.fornecedores)}
@@ -20957,7 +21058,13 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Gerente do Processo</label>
         <input id="arq-f-gerente" placeholder="Nome ou cargo" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
       </div>
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+      <div>
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Equipe responsável</label>
+        <select id="arq-f-equipe" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;background:white;">
+          <option value="">— Nenhuma —</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:4px 0;">
         <input type="checkbox" id="arq-f-critico" style="width:16px;height:16px;accent-color:#dc2626;cursor:pointer;">
         <label for="arq-f-critico" style="font-size:13px;font-weight:600;color:#dc2626;cursor:pointer;">⚠️ Processo Crítico</label>
       </div>
