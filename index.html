@@ -5601,13 +5601,25 @@ function buildBranchesHTML(p, si, ai, branches, isTobe, em) {
         ? `<span class="natureza-badge" style="background:${_nc.bg};color:${_nc.color};">${_nc.icon ? _nc.icon+' ':''} ${_nc.label}</span>` : '';
       const baEdit = em ? `<button class="edit-rm-btn" style="margin-left:auto;" onclick="openBranchActionModal('${p}',${si},${ai},${bi},${bai})" title="Editar">✏️</button>` : '';
       const baRm   = em ? `<button class="edit-rm-btn" onclick="rmBranchAction('${p}',${si},${ai},${bi},${bai})">✕</button>` : '';
+      const baLoopBtn = (bo.type === 'atividade' && em)
+        ? `<button class="edit-rm-btn loop-toggle-btn${bo.loop ? ' loop-on' : ''}" onclick="toggleLoopBranch('${p}',${si},${ai},${bi},${bai})" title="${bo.loop ? 'Loop/retrabalho — clique para desmarcar' : 'Marcar como loop/retrabalho'}" style="margin-left:4px;background:${bo.loop ? '#fef3c7' : 'transparent'};color:${bo.loop ? '#b45309' : '#94a3b8'};border:1px solid ${bo.loop ? '#b4530944' : '#e2e8f0'};font-size:13px;">🔄</button>`
+        : '';
+      const baAutoBtn = (bo.type === 'atividade' && em)
+        ? `<button class="edit-rm-btn auto-toggle-btn${bo.automatico ? ' auto-on' : ''}" onclick="toggleAutomaticoBranch('${p}',${si},${ai},${bi},${bai})" title="${bo.automatico ? 'Automático — clique para desmarcar' : 'Marcar como automático'}" style="margin-left:4px;background:${bo.automatico ? '#dcfce7' : 'transparent'};color:${bo.automatico ? '#16a34a' : '#94a3b8'};border:1px solid ${bo.automatico ? '#16a34a44' : '#e2e8f0'};font-size:13px;">⚙️</button>`
+        : '';
+      const baLoopHint = (bo.type === 'atividade' && _hintDetectLoop(bo))
+        ? `<span title="Possível loop/retrabalho detectado — clique em 🔄 para confirmar" style="font-size:11px;color:#b45309;background:#fef3c7;border:1px solid #b4530933;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">🔄?</span>`
+        : '';
+      const baAutomHint = (bo.type === 'atividade' && _hintDetectAutom(bo))
+        ? `<span title="Possível automação detectada — clique em ⚙️ para confirmar" style="font-size:11px;color:#0891b2;background:#e0f2fe;border:1px solid #0891b233;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">⚙️?</span>`
+        : '';
       return `<li class="branch-action-item" data-type="${bo.type}">
         <span class="action-icon" style="color:${bt.color};font-size:12px;margin-top:1px;flex-shrink:0;">${bt.icon}</span>
         <div class="branch-action-body">
-          <span class="branch-action-text">${bo.text}</span>${baNatBadge}
+          <span class="branch-action-text">${bo.text}</span>${baNatBadge}${baLoopHint}${baAutomHint}
           ${baActor}
         </div>
-        ${baEdit}${baRm}
+        ${baLoopBtn}${baAutoBtn}${baEdit}${baRm}
       </li>`;
     }).join('');
     const addActBtn = em ? `<button class="add-branch-action-btn" onclick="addBranchAction('${p}',${si},${ai},${bi})">+ Ação</button>` : '';
@@ -5863,6 +5875,32 @@ function toggleLoop(p, si, ai) {
   const a = actionObj(actions[ai]);
   a.loop = !a.loop;
   actions[ai] = a;
+  markChanged();
+  renderStep(p, si);
+}
+
+function toggleAutomaticoBranch(p, si, ai, bi, bai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem marcar automações.', 'warn'); return; }
+  const step = DATA[p].steps[si];
+  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const parent = actionObj(actions[ai]);
+  const a = actionObj((parent.branches[bi].actions || [])[bai]);
+  a.automatico = !a.automatico;
+  parent.branches[bi].actions[bai] = a;
+  actions[ai] = parent;
+  markChanged();
+  renderStep(p, si);
+}
+
+function toggleLoopBranch(p, si, ai, bi, bai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem marcar loops.', 'warn'); return; }
+  const step = DATA[p].steps[si];
+  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const parent = actionObj(actions[ai]);
+  const a = actionObj((parent.branches[bi].actions || [])[bai]);
+  a.loop = !a.loop;
+  parent.branches[bi].actions[bai] = a;
+  actions[ai] = parent;
   markChanged();
   renderStep(p, si);
 }
