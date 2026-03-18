@@ -8572,8 +8572,18 @@ function getConfig(key) {
       const missing = (CONFIG_DEFAULTS.naturezaAtividade || []).filter(n => !existingKeys.has(n.key));
       if(missing.length) return [...val, ...missing];
     }
+    // Seed a partir do CAGE_PROCESSOS quando o array foi salvo vazio pelo usuário
+    if(key === 'gerentesProcessos' && Array.isArray(val) && !val.length)
+      return [...new Set(CAGE_PROCESSOS.map(r => r.gerente).filter(Boolean))].sort();
+    if(key === 'objetivosEstrategicos' && Array.isArray(val) && !val.length)
+      return [...new Set(CAGE_PROCESSOS.flatMap(r => r.objEstrategicos || []).filter(Boolean))].sort();
     return val;
   }
+  // Sem dado salvo: seed a partir do CAGE_PROCESSOS
+  if(key === 'gerentesProcessos')
+    return [...new Set(CAGE_PROCESSOS.map(r => r.gerente).filter(Boolean))].sort();
+  if(key === 'objetivosEstrategicos')
+    return [...new Set(CAGE_PROCESSOS.flatMap(r => r.objEstrategicos || []).filter(Boolean))].sort();
   return CONFIG_DEFAULTS[key] ?? [];
 }
 function setConfig(key, val) {
