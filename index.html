@@ -21611,21 +21611,29 @@ function matExportPdf(p) {
         <div class="level-badge" style="background:${final.levelColor};">${final.levelIcon} ${final.level}</div>
         <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${final.final}%;background:${final.levelColor};"></div></div>
         <table class="comp-table">
-          <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Barra</th></tr>
+          <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Sentido</th><th>Barra</th></tr>
           ${[
-            ['👥 Percepção da Equipe', '30%', final.equipe,      '#6366f1'],
-            ['⚠️ Risco Operacional',  '25%', final.normRisco,   '#ef4444'],
-            ['📋 Burocracia',          '20%', final.normBuroc,   '#f97316'],
-            ['💻 Digitalização',       '15%', final.normAutom,   '#0891b2'],
-            ['🔄 Complexidade',        '10%', final.normComplex, '#a78bfa'],
-          ].map(([lbl, peso, val, col]) => `
+            ['👥 Percepção da Equipe', '30%', final.equipe,      '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
+            ['⚠️ Risco Operacional',  '25%', final.normRisco,   '#ef4444', '↑ menor risco = melhor', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3.'],
+            ['📋 Burocracia',          '20%', final.normBuroc,   '#f97316', '↑ menos burocracia = melhor', 'Escala linear com teto em 50%: 1 − (aprovações+revisões ÷ atividades) ÷ 0,5. Fontes: natureza da ação e palavras-chave no texto.'],
+            ['💻 Digitalização',       '15%', final.normAutom,   '#0891b2', '↑ maior = melhor', 'Percentual de atividades que possuem sistema registrado (rastreabilidade e automação do fluxo).'],
+            ['🔄 Complexidade',        '10%', final.normComplex, '#a78bfa', '↑ menos complexo = melhor', 'Decaimento exponencial (meia-vida ≈ 50 pts) sobre: atividades×1 + decisões×2 + atores×1,5 + loops×3 + eventos de início×1,5 + eventos de encerramento×1.'],
+          ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
-              <td>${lbl}</td><td style="text-align:center;">${peso}</td>
+              <td>${lbl}</td>
+              <td style="text-align:center;">${peso}</td>
               <td style="text-align:center;font-weight:700;color:${col};">${val}/100</td>
-              <td><div style="background:#e2e8f0;border-radius:4px;height:8px;width:120px;overflow:hidden;"><div style="height:8px;width:${val}%;background:${col};border-radius:4px;"></div></div></td>
+              <td style="font-size:10px;color:#64748b;white-space:nowrap;">${sentido}</td>
+              <td><div style="background:#e2e8f0;border-radius:4px;height:8px;width:100px;overflow:hidden;"><div style="height:8px;width:${val}%;background:${col};border-radius:4px;"></div></div></td>
+            </tr>
+            <tr style="background:#f8fafc;">
+              <td colspan="5" style="font-size:10px;color:#94a3b8;padding:3px 8px 6px;">${formula}</td>
             </tr>`).join('')}
         </table>
-        <p class="formula-note">Score = Equipe×30% + Risco×25% + Burocracia×20% + Digitalização×15% + Complexidade×10%</p>
+        <p class="formula-note" style="margin-top:10px;padding:8px 10px;background:#f1f5f9;border-radius:6px;border-left:3px solid #0a2540;">
+          <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,30) + (Risco × 0,25) + (Burocracia × 0,20) + (Digitalização × 0,15) + (Complexidade × 0,10)<br>
+          <span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span>
+        </p>
       </div>
     </div>` : `<div class="empty-block">⚠️ Score não disponível — questionário não respondido completamente.</div>`;
 
