@@ -5506,8 +5506,8 @@ const ACTION_TYPES = {
 
 function actionObj(a) {
   // Normalise: plain string → atividade object
-  if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'', eventoTipo:'' };
-  const base = { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'', natureza: a.natureza||'', eventoTipo: a.eventoTipo||'' };
+  if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'', eventoTipo:'', automatico:false };
+  const base = { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'', natureza: a.natureza||'', eventoTipo: a.eventoTipo||'', automatico: a.automatico||false };
   if(Array.isArray(a.branches)) base.branches = a.branches;
   return base;
 }
@@ -5653,6 +5653,9 @@ function renderStep(p, i) {
     const rmBtn = em ? `<button class="edit-rm-btn" onclick="rmStepAction('${p}',${i},${ai})">✕</button>` : '';
     const dragHandle = em ? `<span class="drag-handle" title="Arrastar para reordenar">⋮⋮</span>` : '';
     const branchesHTML = obj.type === 'decisao' ? buildBranchesHTML(p, i, ai, obj.branches||[], isTobe, em) : '';
+    const autoBtn = obj.type === 'atividade'
+      ? `<button class="edit-rm-btn auto-toggle-btn${obj.automatico ? ' auto-on' : ''}" onclick="toggleAutomatico('${p}',${i},${ai})" title="${obj.automatico ? 'Automático — clique para desmarcar' : 'Marcar como automático'}" style="margin-left:4px;background:${obj.automatico ? '#dcfce7' : 'transparent'};color:${obj.automatico ? '#16a34a' : '#94a3b8'};border:1px solid ${obj.automatico ? '#16a34a44' : '#e2e8f0'};font-size:13px;">⚡</button>`
+      : '';
     return `
     <li class="step-action-item" data-type="${obj.type}" data-ai="${ai}" ${em ? 'draggable="true"' : ''}>
       <div class="action-main-row">
@@ -5662,7 +5665,7 @@ function renderStep(p, i) {
           <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}${etipoBadge}
           ${actorHTML}
         </div>
-        ${editBtn}${rmBtn}
+        ${autoBtn}${editBtn}${rmBtn}
       </div>
       ${branchesHTML}
     </li>`;}).join('');
@@ -5816,6 +5819,17 @@ function renderStep(p, i) {
   if(_stepPos) _stepPos.textContent = `Etapa ${i+1} de ${DATA[p].steps.length}`;
   if(_btnPrev) _btnPrev.disabled = i===0;
   if(_btnNext) _btnNext.textContent = i===DATA[p].steps.length-1 ? '✅ Concluído' : 'Próximo →';
+}
+
+function toggleAutomatico(p, si, ai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem marcar automações.', 'warn'); return; }
+  const step = DATA[p].steps[si];
+  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const a = actionObj(actions[ai]);
+  a.automatico = !a.automatico;
+  actions[ai] = a;
+  markChanged();
+  renderStep(p, si);
 }
 
 function addStepAction(p,si){
@@ -8050,7 +8064,11 @@ function saveActionModal() {
   const natureza = (type === 'atividade' && natBtn) ? natBtn.dataset.nat : '';
   const etipoBtn = document.querySelector('[data-etipo].selected');
   const eventoTipo = (type === 'evento' && etipoBtn) ? etipoBtn.dataset.etipo : '';
-  const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo };
+  // Preserve automatico flag (toggled via ⚡ button, not via modal)
+  const step = DATA[_actP].steps[_actSi];
+  const _existingActions = _actIsTobe ? (step.tobe?.actions || step.actions) : step.actions;
+  const _existingAuto = _actBi < 0 ? (actionObj(_existingActions[_actAi] || {}).automatico || false) : false;
+  const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo, automatico: _existingAuto };
 
   const step = DATA[_actP].steps[_actSi];
   if(_actBi >= 0) {
@@ -12898,10 +12916,11 @@ async function buildPptx(D, _popKey) {
         s.addText('Nível de Maturidade', { x:0.5, y:3.45, w:2.5, h:0.28, fontSize:9, color:C.muted, align:'center', margin:0 });
         // Componentes
         const comps = [
-          { label:'Equipe',          val:matResult.equipe,      color:C.mid },
-          { label:'Risco',           val:matResult.normRisco,   color:'EF4444' },
-          { label:'Lean Operacional',val:matResult.normLean,    color:'22C55E' },
-          { label:'Digitalização',   val:matResult.normAutom,   color:C.green },
+          { label:'Equipe',          val:matResult.equipe,          color:C.mid },
+          { label:'Risco',           val:matResult.normRisco,       color:'EF4444' },
+          { label:'Lean',            val:matResult.normLean,        color:'22C55E' },
+          { label:'Digitalização',   val:matResult.normAutom,       color:C.green },
+          { label:'Automação',       val:matResult.normAutomacao,   color:'7C3AED' },
         ];
         comps.forEach((c, ci) => {
           const y = 1.2 + ci * 0.72;
@@ -16113,10 +16132,11 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
       <table class="rel-table">
         <tr><th>Componente</th><th>Peso</th><th>Pontuação (0–100)</th></tr>
         ${[
-          ['👥 Percepção da Equipe', '30%', matFinal.equipe,     '#6366f1'],
-          ['⚠️ Risco Operacional',   '20%', matFinal.normRisco, '#ef4444'],
-          ['🌿 Lean Operacional',    '35%', matFinal.normLean,  '#22c55e'],
-          ['💻 Digitalização',       '15%', matFinal.normAutom, '#0891b2'],
+          ['👥 Percepção da Equipe', '30%', matFinal.equipe,         '#6366f1'],
+          ['⚠️ Risco Operacional',   '20%', matFinal.normRisco,     '#ef4444'],
+          ['🌿 Lean Operacional',    '30%', matFinal.normLean,       '#22c55e'],
+          ['💻 Digitalização',       '10%', matFinal.normAutom,      '#0891b2'],
+          ['⚡ Automação',           '10%', matFinal.normAutomacao,  '#7c3aed'],
         ].map(([lbl, peso, val, col]) => `<tr>
           <td>${lbl}</td>
           <td style="text-align:center;">${peso}</td>
@@ -16128,7 +16148,7 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
           </td>
         </tr>`).join('')}
       </table>
-      <p class="rel-p" style="font-size:11px;color:#94a3b8;">Fórmula: Score = Equipe×30% + Risco×20% + Lean Operacional×35% + Digitalização×15% — todos normalizados 0–100 (100 = mais maduro)</p>`;
+      <p class="rel-p" style="font-size:11px;color:#94a3b8;">Fórmula: Score = Equipe×30% + Risco×20% + Lean×30% + Digitalização×10% + Automação×10% — todos normalizados 0–100 (100 = mais maduro)</p>`;
     } else {
       h += `<p class="rel-empty">Questionário de maturidade não respondido completamente (${answered}/10 perguntas respondidas). Acesse a aba Maturidade para preencher o questionário.</p>`;
     }
@@ -21099,7 +21119,7 @@ function matShowAudit(p) {
 
 function matComputeMetrics(p, version='asis') {
   const steps = (DATA[p] && DATA[p].steps) || [];
-  let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, actionsWithSistema = 0, totalStartEvents = 0, totalEndEvents = 0;
+  let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, actionsWithSistema = 0, totalAutomatico = 0, totalStartEvents = 0, totalEndEvents = 0;
   // Contadores por natureza (7 naturezas)
   let totalExecucao = 0, totalControle = 0, totalDistribuicao = 0, totalComunicacao = 0, totalPlanejamento = 0;
   let anyNatDefined = false;
@@ -21170,11 +21190,13 @@ function matComputeMetrics(p, version='asis') {
         if(actor) { prevActor = actor; allActors.add(actor.toLowerCase()); }
       }
 
-      // Sistemas: conta sistemas únicos e ações digitalizadas (só atividades)
+      // Sistemas: conta sistemas únicos e atividades digitalizadas (só atividades top-level, não branch)
       if(action.sistemas && action.sistemas.trim()) {
         if(type === 'atividade') actionsWithSistema++;
         action.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
       }
+      // Automação: atividades marcadas explicitamente como automáticas (⚡)
+      if(type === 'atividade' && action.automatico) totalAutomatico++;
 
       // Processar caminhos de decisão: conta atividades/aprovações, mas deduplica aprovações (conta 1 por decisão)
       if(hasBranches) {
@@ -21207,7 +21229,7 @@ function matComputeMetrics(p, version='asis') {
             const baBurocByKw  = !baNat && APPROVAL_KW.some(k => baTextLow.includes(k));
             if(baBurocByNat || baBurocByKw) decisionHasApproval = true;
             if(ba.sistemas && ba.sistemas.trim()) {
-              if(baType === 'atividade') actionsWithSistema++;
+              // Digitalização conta apenas atividades top-level; branches contribuem apenas para allSistemas
               ba.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
             }
           });
@@ -21220,6 +21242,7 @@ function matComputeMetrics(p, version='asis') {
   const totalActors   = allActors.size;
   const totalSistemas = allSistemas.size;
   const automRate     = totalActivities > 0 ? actionsWithSistema / totalActivities : 0;
+  const automacaoRate = totalActivities > 0 ? totalAutomatico / totalActivities : 0;
   const complexScore  = totalActivities * 1 + totalDecisions * 2 + totalActors * 1.5 + totalLoops * 3 + totalStartEvents * 1.5 + totalEndEvents * 1;
 
   let complexLabel, complexCls;
@@ -21240,7 +21263,7 @@ function matComputeMetrics(p, version='asis') {
   const burocCls   = overheadCls;
 
   return { totalActivities, totalDecisions, totalActors, totalLoops, totalHandoffs, totalApprovals, totalSistemas,
-           actionsWithSistema, automRate, totalStartEvents, totalEndEvents,
+           actionsWithSistema, automRate, totalAutomatico, automacaoRate, totalStartEvents, totalEndEvents,
            totalExecucao, totalControle, totalDistribuicao, totalComunicacao, totalPlanejamento, anyNatDefined,
            complexScore, complexLabel, complexCls,
            overhead, overheadLabel, overheadCls,
@@ -21286,7 +21309,7 @@ function matComputeFinal(p) {
   // Normalise all to 0–100 where 100 = most mature
   // Risco: decaimento exponencial (meia-vida ≈ 45 pts)
   const normRisco   = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-riscoRaw / 45))));
-  // Digitalização: % de ações com sistema registrado (0–100)
+  // Digitalização: % de atividades top-level com sistema registrado (0–100)
   const normAutom   = Math.round(metrics.automRate * 100);
   // Lean Operacional: execução / (execução + overhead) — mede proporção de valor direto vs. controle
   // Se nenhuma atividade "opinada" (execucao/aprovacao/controle) → neutro (50)
@@ -21294,9 +21317,11 @@ function matComputeFinal(p) {
   const normLean  = leanDenom > 0
     ? Math.min(100, Math.round((metrics.totalExecucao / leanDenom) * 100))
     : 50;
+  // Automação: % de atividades marcadas como automáticas (⚡)
+  const normAutomacao = Math.round(metrics.automacaoRate * 100);
 
-  // Pesos: Equipe 30% · Risco 20% · Lean Operacional 35% · Digitalização 15%
-  const final = equipe * 0.30 + normRisco * 0.20 + normLean * 0.35 + normAutom * 0.15;
+  // Pesos: Equipe 30% · Risco 20% · Lean 30% · Digitalização 10% · Automação 10%
+  const final = equipe * 0.30 + normRisco * 0.20 + normLean * 0.30 + normAutom * 0.10 + normAutomacao * 0.10;
   const f = Math.round(final);
 
   let level, levelColor, levelIcon;
@@ -21307,7 +21332,7 @@ function matComputeFinal(p) {
   else             { level = 'Otimizado';  levelColor = '#10b981'; levelIcon = '💚'; }
 
   return { final: f, level, levelColor, levelIcon,
-           equipe: Math.round(equipe), normLean, normRisco, normAutom };
+           equipe: Math.round(equipe), normLean, normRisco, normAutom, normAutomacao };
 }
 
 function matSetAnswer(p, idx, val) {
@@ -21440,7 +21465,15 @@ function matRender(p) {
           `execução ÷ (execução + aprovações + controle)<br>Escala: ≥60% lean · 35–60% moderado · &lt;35% burocrático<br><span style="color:#64748b;">Mede proporção de valor direto vs. etapas de controle no fluxo</span>`);
       })()}
       ${indexCard('Digitalização ↑', (metrics.automRate*100).toFixed(0)+'%', automLabel, automCls,
-        `ações com sistema registrado ÷ total de atividades<br>Escala: &lt;30% baixa · 30–60% média · &gt;60% alta<br><span style="color:#64748b;">Mede penetração de sistemas no fluxo (rastreabilidade e automação)</span>`)}
+        `atividades top-level com sistema registrado ÷ total de atividades<br>Escala: &lt;30% baixa · 30–60% média · &gt;60% alta<br><span style="color:#64748b;">Mede penetração de sistemas no fluxo (rastreabilidade)</span>`)}
+      ${(()=>{
+        const ar = metrics.automacaoRate;
+        const av = (ar*100).toFixed(0)+'%';
+        const al = ar >= 0.5 ? 'Alta' : ar >= 0.2 ? 'Média' : 'Baixa';
+        const ac = ar >= 0.5 ? '#22c55e' : ar >= 0.2 ? '#eab308' : '#ef4444';
+        return indexCard('Automação ⚡ ↑', av, al, ac,
+          `atividades marcadas como automáticas (⚡) ÷ total de atividades<br>Escala: &lt;20% baixa · 20–50% média · &gt;50% alta<br><span style="color:#64748b;">Clique em ⚡ em cada atividade no fluxo para marcar</span>`);
+      })()}
     </div>`;
 
   const manualHtml = `
@@ -21536,11 +21569,12 @@ function matRender(p) {
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         ${scoreCard('Percepção da Equipe', final.equipe+'/100', 'questionário ↑', '30%', '#6366f1', '↑ maior = melhor')}
         ${scoreCard('Risco Operacional', final.normRisco+'/100', 'normalizado exp. ↑', '20%', '#ef4444', '↑ menor risco = melhor')}
-        ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '35%', '#22c55e', '↑ mais lean = melhor')}
-        ${scoreCard('Digitalização', final.normAutom+'/100', '% ações com sistema ↑', '15%', '#0891b2', '↑ maior = melhor')}
+        ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '30%', '#22c55e', '↑ mais lean = melhor')}
+        ${scoreCard('Digitalização', final.normAutom+'/100', '% atividades com sistema ↑', '10%', '#0891b2', '↑ maior = melhor')}
+        ${scoreCard('Automação', final.normAutomacao+'/100', '% atividades automáticas ⚡ ↑', '10%', '#7c3aed', '↑ mais automático = melhor')}
       </div>
       <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;">
-        Score = Equipe×30% + Risco×20% + Lean Operacional×35% + Digitalização×15% — todos normalizados 0–100 (100 = mais maduro)
+        Score = Equipe×30% + Risco×20% + Lean×30% + Digitalização×10% + Automação×10% — todos normalizados 0–100 (100 = mais maduro)
       </div>
       <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
         ${isEditor ? `
@@ -21634,8 +21668,9 @@ function matSaveSnapshot(p) {
     levelIcon: final.levelIcon,
     equipe:     final.equipe,
     normRisco:  final.normRisco,
-    normLean:   final.normLean,
-    normAutom:  final.normAutom,
+    normLean:      final.normLean,
+    normAutom:     final.normAutom,
+    normAutomacao: final.normAutomacao,
   });
   mat.snapshots.sort((a,b) => a.date.localeCompare(b.date));
   markChanged();
@@ -21690,10 +21725,11 @@ function matRenderHistory(p, snapshots) {
               <!-- Componentes compactos -->
               <div style="display:flex;flex-wrap:wrap;gap:6px;">
                 ${[
-                  ['👥 Equipe', snap.equipe, '#6366f1'],
-                  ['⚠️ Risco',  snap.normRisco, '#ef4444'],
-                  ['🌿 Lean', snap.normLean ?? snap.normBuroc, '#22c55e'],
-                  ['💻 Digital.',snap.normAutom, '#0891b2'],
+                  ['👥 Equipe',  snap.equipe,           '#6366f1'],
+                  ['⚠️ Risco',   snap.normRisco,         '#ef4444'],
+                  ['🌿 Lean',    snap.normLean ?? snap.normBuroc, '#22c55e'],
+                  ['💻 Digital.',snap.normAutom,          '#0891b2'],
+                  ['⚡ Auto.',   snap.normAutomacao,      '#7c3aed'],
                 ].map(([lbl,val,col]) => `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;">${lbl} <strong style="color:${col};">${val??'—'}</strong></span>`).join('')}
               </div>
             </div>
@@ -21746,8 +21782,9 @@ function matExportPdf(p) {
           ${[
             ['👥 Percepção da Equipe',  '30%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
             ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
-            ['🌿 Lean Operacional',     '35%', final.normLean,  '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma atividade opinada existe.'],
-            ['💻 Digitalização',        '15%', final.normAutom, '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades que possuem sistema registrado (rastreabilidade e automação do fluxo).'],
+            ['🌿 Lean Operacional',     '30%', final.normLean,      '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma atividade opinada existe.'],
+            ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades top-level com sistema registrado (não conta sub-ações dentro de decisões).'],
+            ['⚡ Automação',            '10%', final.normAutomacao, '#7c3aed', '100 = totalmente automatizado', 'Percentual de atividades marcadas com ⚡ (automático) ÷ total de atividades. Marque via ícone ⚡ em cada atividade no fluxo.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
               <td>${lbl}</td>
@@ -21761,9 +21798,9 @@ function matExportPdf(p) {
             </tr>`).join('')}
         </table>
         <p class="formula-note" style="margin-top:10px;padding:8px 10px;background:#f1f5f9;border-radius:6px;border-left:3px solid #0a2540;">
-          <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,30) + (Risco × 0,20) + (Lean Operacional × 0,35) + (Digitalização × 0,15)<br>
+          <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,30) + (Risco × 0,20) + (Lean × 0,30) + (Digitalização × 0,10) + (Automação × 0,10)<br>
           <span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span><br><br>
-          <strong>Lean Operacional</strong> = execução ÷ (execução + aprovações + controle). Unifica em um único sinal a proporção de valor direto vs. burocracia, evitando a dupla contagem que ocorria com Overhead e Foco em Execução separados.
+          <strong>Lean</strong> = execução ÷ (execução + aprovações + controle). <strong>Automação</strong> = % de atividades marcadas com ⚡ no fluxo.
         </p>
       </div>
     </div>` : `<div class="empty-block">⚠️ Score não disponível — questionário não respondido completamente.</div>`;
@@ -21815,9 +21852,19 @@ function matExportPdf(p) {
         })()}
       </tr>
       <tr>
-        <td>Digitalização <span class="note">(bruto = normalizado — ↑ maior = melhor)</span></td>
+        <td>Digitalização <span class="note">(bruto = normalizado — ↑ maior = melhor; apenas atividades top-level)</span></td>
         <td>${(metrics.automRate*100).toFixed(0)}%</td>
         <td><span class="badge" style="background:${automCls}20;color:${automCls};">${automLabel}</span></td>
+      </tr>
+      <tr>
+        ${(()=>{
+          const ar = metrics.automacaoRate;
+          const al = ar >= 0.5 ? 'Alta' : ar >= 0.2 ? 'Média' : 'Baixa';
+          const ac = ar >= 0.5 ? '#22c55e' : ar >= 0.2 ? '#eab308' : '#ef4444';
+          return `<td>Automação ⚡ <span class="note">(bruto = normalizado — ↑ maior = melhor; atividades marcadas no fluxo)</span></td>
+        <td>${(ar*100).toFixed(0)}%</td>
+        <td><span class="badge" style="background:${ac}20;color:${ac};">${al}</span></td>`;
+        })()}
       </tr>
     </table>`;
 
@@ -21862,7 +21909,7 @@ function matExportPdf(p) {
   const histBlock = snapshots.length ? `
     <h2 class="section-title">📈 Histórico de Maturidade</h2>
     <table class="data-table">
-      <tr><th>Data</th><th>Score</th><th>Nível</th><th>Variação</th><th>Equipe</th><th>Risco</th><th>Lean</th><th>Digital.</th></tr>
+      <tr><th>Data</th><th>Score</th><th>Nível</th><th>Variação</th><th>Equipe</th><th>Risco</th><th>Lean</th><th>Digital.</th><th>Auto.</th></tr>
       ${[...snapshots].reverse().map((s, idx, arr) => {
         const prevSnap = arr[idx + 1];
         const delta = prevSnap ? s.score - prevSnap.score : null;
@@ -21877,6 +21924,7 @@ function matExportPdf(p) {
           <td style="text-align:center;">${s.normRisco??'—'}</td>
           <td style="text-align:center;">${s.normLean ?? s.normBuroc ?? '—'}</td>
           <td style="text-align:center;">${s.normAutom??'—'}</td>
+          <td style="text-align:center;">${s.normAutomacao??'—'}</td>
         </tr>`;
       }).join('')}
     </table>` : '';
@@ -22026,9 +22074,10 @@ ${answersText}
 ## SCORES FINAIS (0–100, quanto maior melhor — normalização exponencial para complexidade e risco)
 - Percepção da Equipe: ${equipe !== null ? Math.round(equipe) : '—'}/100 (peso 30%)
 - Risco normalizado: ${final ? final.normRisco : '—'}/100 (peso 20%)
-- Lean Operacional normalizado: ${final ? final.normLean : '—'}/100 (peso 35%)
-- Digitalização: ${final ? final.normAutom : '—'}/100 (peso 15%)
-- Digitalização: ${final ? final.normAutom : '—'}/100 (peso 15%)
+- Lean Operacional normalizado: ${final ? final.normLean : '—'}/100 (peso 30%)
+- Automação (⚡): ${final ? final.normAutomacao : '—'}/100 (peso 10%)
+- Digitalização: ${final ? final.normAutom : '—'}/100 (peso 10%)
+- Digitalização: ${final ? final.normAutom : '—'}/100 (peso 10%)
 - **SCORE GERAL DE MATURIDADE: ${final ? final.final : '—'}/100**
 - **NÍVEL: ${final ? final.level : '—'}** (Inicial→Gerenciado→Definido→Previsível→Otimizado)
 
