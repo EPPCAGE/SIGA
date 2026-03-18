@@ -9326,6 +9326,7 @@ const _ORG_AREA_MAP = {
   'DAUD': 'Divisão de Auditoria',
   'DCON': 'Divisão de Contabilidade',
   'DIR':  'Divisão de Integridade e Responsabilização',
+  'DIE':  'Divisão de Informações Estratégicas',
   'DTTI': 'Divisão de Transparência e Tecnologia da Informação',
   'GAB':  'Gabinete da CAGE',
 };
@@ -10171,8 +10172,8 @@ window.addEventListener('beforeunload', () => {
     arqOverrides:    DATA._arqOverrides || null,
     logoUrl:         DATA._logoUrl || null,
     logo2Url:        (DATA._logo2Url && DATA._logo2Url.startsWith('http')) ? DATA._logo2Url : null,
-    cadeiaValorImg:  (DATA._cadeiaValorImg && DATA._cadeiaValorImg.length < 300000) ? DATA._cadeiaValorImg : null,
-    mapaEstrategicoImg: (DATA._mapaEstrategicoImg && DATA._mapaEstrategicoImg.length < 300000) ? DATA._mapaEstrategicoImg : null,
+    cadeiaValorImg:  DATA._cadeiaValorImg ? (DATA._cadeiaValorImg.startsWith('http') ? DATA._cadeiaValorImg : (DATA._cadeiaValorImg.length < 300000 ? DATA._cadeiaValorImg : null)) : null,
+    mapaEstrategicoImg: DATA._mapaEstrategicoImg ? (DATA._mapaEstrategicoImg.startsWith('http') ? DATA._mapaEstrategicoImg : (DATA._mapaEstrategicoImg.length < 300000 ? DATA._mapaEstrategicoImg : null)) : null,
     newPops:         newPopKeys.map(k => ({ key: k, data: _stripTrans(DATA[k]) })),
     indicadoresCage: DATA.indicadoresCage || { indicadores: [], resultados: [] },
     repoDocs:        [],
@@ -10258,8 +10259,8 @@ async function saveToCloud(attempt=1) {
     arqOverrides:    DATA._arqOverrides || null,
     logoUrl:         DATA._logoUrl || null,
     logo2Url:        (DATA._logo2Url && DATA._logo2Url.length < 300000) ? DATA._logo2Url : null,
-    cadeiaValorImg:  (DATA._cadeiaValorImg && DATA._cadeiaValorImg.length < 300000) ? DATA._cadeiaValorImg : null,
-    mapaEstrategicoImg: (DATA._mapaEstrategicoImg && DATA._mapaEstrategicoImg.length < 300000) ? DATA._mapaEstrategicoImg : null,
+    cadeiaValorImg:  DATA._cadeiaValorImg ? (DATA._cadeiaValorImg.startsWith('http') ? DATA._cadeiaValorImg : (DATA._cadeiaValorImg.length < 300000 ? DATA._cadeiaValorImg : null)) : null,
+    mapaEstrategicoImg: DATA._mapaEstrategicoImg ? (DATA._mapaEstrategicoImg.startsWith('http') ? DATA._mapaEstrategicoImg : (DATA._mapaEstrategicoImg.length < 300000 ? DATA._mapaEstrategicoImg : null)) : null,
     newPops:         newPopKeys.map(k => ({ key: k, data: _stripTransient(DATA[k]) })),
     repoDocs:        REPO_DOCS || [],
     drops:           DROPS     || [],
@@ -13774,6 +13775,16 @@ function arqShowForm(idx = null) {
     equipeSelect.appendChild(opt);
   });
 
+  // Popular select de áreas
+  const areaSelect = document.getElementById('arq-f-area');
+  areaSelect.innerHTML = '<option value="">— Selecione —</option>';
+  getConfig('areas').forEach(sigla => {
+    const opt = document.createElement('option');
+    opt.value = sigla;
+    opt.textContent = _ORG_AREA_MAP[sigla] ? sigla + ' — ' + _ORG_AREA_MAP[sigla] : sigla;
+    areaSelect.appendChild(opt);
+  });
+
   if(idx !== null) {
     const r = arqGetData()[idx];
     title.textContent = 'Editar Processo';
@@ -13781,7 +13792,7 @@ function arqShowForm(idx = null) {
     document.getElementById('arq-f-processo').value = r.processo      || '';
     document.getElementById('arq-f-sub').value      = r.subprocesso   || '';
     document.getElementById('arq-f-natureza').value = r.natureza      || 'FINALÍSTICO';
-    document.getElementById('arq-f-area').value     = r.area          || '';
+    areaSelect.value = _ORG_AREA_MAP_REV[(r.area||'').trim().toUpperCase()] || r.area || '';
     document.getElementById('arq-f-gerente').value  = r.gerente       || '';
     equipeSelect.value                              = r.equipe        || '';
     document.getElementById('arq-f-objetivo').value = r.objetivo      || '';
@@ -14341,12 +14352,42 @@ function biImgFileSelected(file, type) {
   const key = type === 'cadeia' ? '_cadeiaValorImg' : '_mapaEstrategicoImg';
   const reader = new FileReader();
   reader.onload = () => {
-    DATA[key] = reader.result;
+    DATA[key] = reader.result; // base64 temporário para exibição imediata
     biImgRefresh(type);
     markChanged();
-    showToast('✅ Imagem carregada com sucesso!', 'success');
+    showToast('✅ Imagem carregada! Salvando na nuvem...', 'success');
+    uploadBiImgToStorage(file, type); // substitui base64 por URL permanente
   };
   reader.readAsDataURL(file);
+}
+
+async function uploadBiImgToStorage(file, type) {
+  if(!supaClient || !currentUser) {
+    showToast('⚠️ Faça login para persistir a imagem na nuvem. Ela ficará disponível só nesta sessão.', 'warn');
+    return;
+  }
+  const key    = type === 'cadeia' ? '_cadeiaValorImg' : '_mapaEstrategicoImg';
+  const prefix = type === 'cadeia' ? 'cadeia-valor' : 'mapa-estrategico';
+  try {
+    const ext  = file.name.split('.').pop().toLowerCase() || 'png';
+    const path = `${prefix}-${Date.now()}.${ext}`;
+    const { error } = await supaClient.storage
+      .from('gestpop-images')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if(error) {
+      showToast('⚠️ Erro no storage: ' + error.message + '. Imagem salva só localmente.', 'warn');
+      return;
+    }
+    const { data } = supaClient.storage.from('gestpop-images').getPublicUrl(path);
+    if(data?.publicUrl) {
+      DATA[key] = data.publicUrl;
+      biImgRefresh(type);
+      showToast('✅ Imagem salva permanentemente na nuvem!', 'success');
+      markChanged();
+    }
+  } catch(e) {
+    showToast('⚠️ Erro inesperado no storage: ' + e.message, 'warn');
+  }
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -20842,7 +20883,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       </div>
       <div>
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Área</label>
-        <input id="arq-f-area" placeholder="Ex: Divisão de Auditoria" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        <select id="arq-f-area" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;background:white;"></select>
       </div>
       <div>
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Gerente do Processo</label>
