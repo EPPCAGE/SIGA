@@ -21646,10 +21646,10 @@ function matExportPdf(p) {
           <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Sentido</th><th>Barra</th></tr>
           ${[
             ['👥 Percepção da Equipe', '30%', final.equipe,      '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
-            ['⚠️ Risco Operacional',  '25%', final.normRisco,   '#ef4444', '↑ menor risco = melhor', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3.'],
-            ['📋 Burocracia',          '20%', final.normBuroc,   '#f97316', '↑ menos burocracia = melhor', 'Escala linear com teto em 50%: 1 − (aprovações+revisões ÷ atividades) ÷ 0,5. Fontes: natureza da ação e palavras-chave no texto.'],
-            ['💻 Digitalização',       '15%', final.normAutom,   '#0891b2', '↑ maior = melhor', 'Percentual de atividades que possuem sistema registrado (rastreabilidade e automação do fluxo).'],
-            ['🔄 Complexidade',        '10%', final.normComplex, '#a78bfa', '↑ menos complexo = melhor', 'Decaimento exponencial (meia-vida ≈ 50 pts) sobre: atividades×1 + decisões×2 + atores×1,5 + loops×3 + eventos de início×1,5 + eventos de encerramento×1.'],
+            ['⚠️ Risco Operacional',  '25%', final.normRisco,   '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
+            ['📋 Burocracia',          '20%', final.normBuroc,   '#f97316', '100 = processo ágil (invertido)', 'Escala linear com teto em 50%: 1 − (aprovações+revisões ÷ atividades) ÷ 0,5. Fontes: natureza da ação e palavras-chave no texto. Percentual bruto invertido → maior pontuação = menos burocracia.'],
+            ['💻 Digitalização',       '15%', final.normAutom,   '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades que possuem sistema registrado (rastreabilidade e automação do fluxo).'],
+            ['🔄 Complexidade',        '10%', final.normComplex, '#a78bfa', '100 = baixa complexidade (invertido)', 'Decaimento exponencial (meia-vida ≈ 50 pts) sobre: atividades×1 + decisões×2 + atores×1,5 + loops×3 + eventos de início×1,5 + eventos de encerramento×1. Score bruto invertido → maior pontuação = menor complexidade.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
               <td>${lbl}</td>
@@ -21687,25 +21687,28 @@ function matExportPdf(p) {
   // ── Índices ────────────────────────────────────────────────────────────
   const indicesBlock = `
     <table class="data-table">
-      <tr><th colspan="3">📊 Índices Calculados</th></tr>
-      <tr><th>Índice</th><th>Valor</th><th>Classificação</th></tr>
+      <tr><th colspan="3">📊 Índices Brutos do Processo</th></tr>
+      <tr><td colspan="3" style="font-size:10px;color:#64748b;padding:5px 10px;background:#f8fafc;font-style:italic;">
+        Valores originais, na escala natural de cada métrica. São invertidos/normalizados para a escala 0–100 dos componentes do Score de Maturidade acima.
+      </td></tr>
+      <tr><th>Índice</th><th>Valor bruto</th><th>Classificação</th></tr>
       <tr>
-        <td>Complexidade <span class="note">(↓ menor = melhor)</span></td>
-        <td>${metrics.complexScore.toFixed(1)}</td>
+        <td>Complexidade <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100)</span></td>
+        <td>${metrics.complexScore.toFixed(1)} pts</td>
         <td><span class="badge" style="background:${metrics.complexCls}20;color:${metrics.complexCls};">${metrics.complexLabel}</span></td>
       </tr>
       <tr>
-        <td>Burocracia <span class="note">(↓ menor = melhor)</span></td>
+        <td>Burocracia <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100)</span></td>
         <td>${(metrics.burocracia*100).toFixed(1)}%</td>
         <td><span class="badge" style="background:${metrics.burocCls}20;color:${metrics.burocCls};">${metrics.burocLabel}</span></td>
       </tr>
       <tr>
-        <td>Risco Operacional <span class="note">(↓ menor = melhor)</span></td>
-        <td>${risco.score}</td>
+        <td>Risco Operacional <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100)</span></td>
+        <td>${risco.score} pts</td>
         <td><span class="badge" style="background:${risco.cls}20;color:${risco.cls};">${risco.label}</span></td>
       </tr>
       <tr>
-        <td>Digitalização <span class="note">(↑ maior = melhor)</span></td>
+        <td>Digitalização <span class="note">(bruto = normalizado — ↑ maior = melhor)</span></td>
         <td>${(metrics.automRate*100).toFixed(0)}%</td>
         <td><span class="badge" style="background:${automCls}20;color:${automCls};">${automLabel}</span></td>
       </tr>
