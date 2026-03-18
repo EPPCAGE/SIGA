@@ -214,6 +214,14 @@
   .branch-actions{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px;}
   .branch-action-item{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;background:white;border-radius:4px;border-left:2px solid var(--cage-accent);}
   .branch-action-item[data-type="evento"]{border-left-color:#a78bfa;}.branch-action-item[data-type="decisao"]{border-left-color:#f59e0b;}.branch-action-item[data-type="observacao"]{border-left-color:#60a5fa;}
+  /* Decisão aninhada dentro de caminho */
+  .nested-decision-wrapper{margin-top:4px;border-left:2px dashed #f59e0b;padding:4px 0 4px 8px;border-radius:0 4px 4px 0;background:rgba(245,158,11,.03);}
+  .nested-decision-header{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;background:rgba(245,158,11,.10);}
+  .nested-decision-text{font-size:12.5px;color:#92400e;font-weight:600;flex:1;}
+  .decision-branches.nested{padding:2px 8px 6px 24px;border-left:2px solid #93c5fd;margin-top:4px;}
+  .decision-branches.nested .decision-branch{border-left-color:#3b82f6;background:rgba(59,130,246,.04);}
+  .decision-branches.nested .branch-connector{color:#3b82f6;}
+  .decision-branches.nested .branch-label{color:#1e40af;}
   .branch-action-body{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
   .branch-action-text{font-size:12.5px;color:var(--text-secondary);line-height:1.35;}
   .branch-action-actor{font-size:10.5px;color:var(--text-muted);font-weight:600;}
@@ -5613,6 +5621,22 @@ function buildBranchesHTML(p, si, ai, branches, isTobe, em) {
       const baAutomHint = (bo.type === 'atividade' && _hintDetectAutom(bo))
         ? `<span title="Possível automação detectada — clique em ⚙️ para confirmar" style="font-size:11px;color:#0891b2;background:#e0f2fe;border:1px solid #0891b233;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">⚙️?</span>`
         : '';
+      // Decisão aninhada: renderizar wrapper com sub-ramos indentados
+      if(bo.type === 'decisao') {
+        const nestedBranchesHTML = buildNestedBranchesHTML(p, si, ai, bi, bai, bo.branches || [], em);
+        const addNestedCamBtn = em ? `<button class="add-branch-btn" onclick="addNestedDecisionBranch('${p}',${si},${ai},${bi},${bai})">+ Caminho</button>` : '';
+        return `<li class="branch-action-item" data-type="decisao" style="flex-direction:column;padding:0;">
+          <div class="nested-decision-wrapper" style="width:100%;box-sizing:border-box;">
+            <div class="nested-decision-header">
+              <span class="action-icon" style="color:${bt.color};font-size:12px;flex-shrink:0;">${bt.icon}</span>
+              <span class="nested-decision-text">${bo.text}</span>
+              ${baEdit}${baRm}
+            </div>
+            ${nestedBranchesHTML}
+            ${addNestedCamBtn}
+          </div>
+        </li>`;
+      }
       return `<li class="branch-action-item" data-type="${bo.type}">
         <span class="action-icon" style="color:${bt.color};font-size:12px;margin-top:1px;flex-shrink:0;">${bt.icon}</span>
         <div class="branch-action-body">
@@ -5636,6 +5660,47 @@ function buildBranchesHTML(p, si, ai, branches, isTobe, em) {
   }).join('');
   const addBranchBtn = em ? `<button class="add-branch-btn" onclick="addDecisionBranch('${p}',${si},${ai})">+ Caminho</button>` : '';
   return `<div class="decision-branches">${branchItems}${addBranchBtn}</div>`;
+}
+
+// Renderiza os caminhos de uma decisão ANINHADA (dentro de um caminho de outra decisão)
+// path: p, si, ai (decisão pai), bi (caminho do pai), bai (índice da sub-decisão no caminho)
+function buildNestedBranchesHTML(p, si, ai, bi, bai, branches, em) {
+  const hasItems = branches && branches.length > 0;
+  if(!em && !hasItems) return '';
+  const ce = em ? 'contenteditable="true"' : '';
+  const branchItems = (branches || []).map((branch, nbi) => {
+    const actionsHtml = (branch.actions || []).map((nba, nbai) => {
+      const nbo = actionObj(nba);
+      const nbt = ACTION_TYPES[nbo.type] || ACTION_TYPES.atividade;
+      const nbaActor = nbo.actor ? `<span class="branch-action-actor">👤 ${nbo.actor}</span>` : '';
+      const _nm = getNatMap();
+      const _nc = nbo.natureza ? _nm[nbo.natureza] : null;
+      const nbaNatBadge = (nbo.type === 'atividade' && _nc)
+        ? `<span class="natureza-badge" style="background:${_nc.bg};color:${_nc.color};">${_nc.icon ? _nc.icon+' ':''} ${_nc.label}</span>` : '';
+      const nbaEdit = em ? `<button class="edit-rm-btn" style="margin-left:auto;" onclick="openNestedBranchActionModal('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})" title="Editar">✏️</button>` : '';
+      const nbaRm   = em ? `<button class="edit-rm-btn" onclick="rmNestedBranchAction('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})">✕</button>` : '';
+      return `<li class="branch-action-item" data-type="${nbo.type}">
+        <span class="action-icon" style="color:${nbt.color};font-size:12px;margin-top:1px;flex-shrink:0;">${nbt.icon}</span>
+        <div class="branch-action-body">
+          <span class="branch-action-text">${nbo.text}</span>${nbaNatBadge}
+          ${nbaActor}
+        </div>
+        ${nbaEdit}${nbaRm}
+      </li>`;
+    }).join('');
+    const addNbaBtn = em ? `<button class="add-branch-action-btn" onclick="addNestedBranchAction('${p}',${si},${ai},${bi},${bai},${nbi})">+ Ação</button>` : '';
+    const rmNbrBtn  = em ? `<button class="rm-branch-btn" onclick="rmNestedDecisionBranch('${p}',${si},${ai},${bi},${bai},${nbi})" title="Remover caminho">✕</button>` : '';
+    return `<div class="decision-branch" data-nbi="${nbi}">
+      <div class="branch-header">
+        <span class="branch-connector">└</span>
+        <span class="branch-label" ${ce} data-sp="${p}" data-si="${si}" data-ai="${ai}" data-bi="${bi}" data-bai="${bai}" data-nbi="${nbi}" data-field="nestedbranchlabel">${branch.label || `Caminho ${nbi+1}`}</span>
+        ${rmNbrBtn}
+      </div>
+      <ul class="branch-actions">${actionsHtml}</ul>
+      ${addNbaBtn}
+    </div>`;
+  }).join('');
+  return `<div class="decision-branches nested">${branchItems}</div>`;
 }
 
 function renderStep(p, i) {
@@ -5844,6 +5909,25 @@ function renderStep(p, i) {
       if(Array.isArray(action.branches) && action.branches[bi]) {
         action.branches[bi].label = this.innerText.trim() || `Caminho ${bi+1}`;
         actions[ai] = action;
+      }
+      markChanged(true);
+    });
+  });
+  // Nested branch label inline editing
+  container.querySelectorAll('[data-field="nestedbranchlabel"]').forEach(el => {
+    el.addEventListener('blur', function() {
+      const pp=this.dataset.sp, si=parseInt(this.dataset.si), ai=parseInt(this.dataset.ai);
+      const bi=parseInt(this.dataset.bi), bai=parseInt(this.dataset.bai), nbi=parseInt(this.dataset.nbi);
+      const isTobe_ = flowMode === 'tobe';
+      const step = DATA[pp].steps[si];
+      if(!step) return;
+      const actions = isTobe_ ? (step.tobe?.actions || []) : step.actions;
+      const parent = actionObj(actions[ai]);
+      const subDec = actionObj((parent.branches[bi]?.actions || [])[bai] || {});
+      if(Array.isArray(subDec.branches) && subDec.branches[nbi]) {
+        subDec.branches[nbi].label = this.innerText.trim() || `Caminho ${nbi+1}`;
+        parent.branches[bi].actions[bai] = subDec;
+        actions[ai] = parent;
       }
       markChanged(true);
     });
@@ -7754,6 +7838,103 @@ function rmBranchAction(p, si, ai, bi, bai) {
   renderStep(p, si); markChanged();
 }
 
+// ── Gestão de caminhos em decisões ANINHADAS ──────────────────────────────
+// path: (p, si, ai) = decisão pai (top-level), bi = caminho do pai, bai = índice da sub-decisão
+function _nestedDecision(p, si, ai, bi, bai) {
+  const actions = _decActions(p, si, ai);
+  const parent = actionObj(actions[ai]);
+  const subDec = actionObj((parent.branches[bi].actions || [])[bai] || {});
+  if(!Array.isArray(subDec.branches)) subDec.branches = [];
+  return { actions, parent, subDec };
+}
+function _saveNestedDecision(p, si, ai, bi, bai, actions, parent, subDec) {
+  parent.branches[bi].actions[bai] = subDec;
+  actions[ai] = parent;
+}
+
+function addNestedDecisionBranch(p, si, ai, bi, bai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem adicionar caminhos.', 'warn'); return; }
+  const { actions, parent, subDec } = _nestedDecision(p, si, ai, bi, bai);
+  subDec.branches.push({ label: `Caminho ${subDec.branches.length + 1}`, actions: [] });
+  _saveNestedDecision(p, si, ai, bi, bai, actions, parent, subDec);
+  renderStep(p, si); markChanged();
+}
+
+function rmNestedDecisionBranch(p, si, ai, bi, bai, nbi) {
+  if(!isEditor) return;
+  if(!confirm('Remover este caminho e todas as suas ações?')) return;
+  const { actions, parent, subDec } = _nestedDecision(p, si, ai, bi, bai);
+  subDec.branches.splice(nbi, 1);
+  _saveNestedDecision(p, si, ai, bi, bai, actions, parent, subDec);
+  renderStep(p, si); markChanged();
+}
+
+function addNestedBranchAction(p, si, ai, bi, bai, nbi) {
+  if(!isEditor) return;
+  const { actions, parent, subDec } = _nestedDecision(p, si, ai, bi, bai);
+  if(!Array.isArray(subDec.branches[nbi].actions)) subDec.branches[nbi].actions = [];
+  subDec.branches[nbi].actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:'',natureza:''});
+  const nbai = subDec.branches[nbi].actions.length - 1;
+  _saveNestedDecision(p, si, ai, bi, bai, actions, parent, subDec);
+  renderStep(p, si); markChanged();
+  openNestedBranchActionModal(p, si, ai, bi, bai, nbi, nbai);
+}
+
+function rmNestedBranchAction(p, si, ai, bi, bai, nbi, nbai) {
+  if(!isEditor) return;
+  const { actions, parent, subDec } = _nestedDecision(p, si, ai, bi, bai);
+  subDec.branches[nbi].actions.splice(nbai, 1);
+  _saveNestedDecision(p, si, ai, bi, bai, actions, parent, subDec);
+  renderStep(p, si); markChanged();
+}
+
+function openNestedBranchActionModal(p, si, ai, bi, bai, nbi, nbai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar ações.', 'warn'); return; }
+  _actP = p; _actSi = si; _actAi = ai; _actIsTobe = (flowMode === 'tobe');
+  _actBi = bi; _actBai = bai; _actNbi = nbi; _actNbai = nbai;
+  const step = DATA[p].steps[si];
+  const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
+  const parent = actionObj(actions[ai]);
+  const subDec = actionObj((parent.branches[bi].actions || [])[bai] || {});
+  const obj = actionObj((subDec.branches[nbi]?.actions || [])[nbai] || {});
+  document.querySelectorAll('.action-type-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.type === obj.type);
+  });
+  const actorList = document.getElementById('act-actor-list');
+  if(actorList) {
+    const atores = getConfig('atores');
+    actorList.innerHTML = atores.map(a => `<option value="${a.replace(/"/g,'&quot;')}">`).join('');
+  }
+  document.getElementById('act-text').value        = obj.text;
+  document.getElementById('act-actor').value       = obj.actor || step.responsible || '';
+  document.getElementById('act-duracao').value     = obj.duracao;
+  document.getElementById('act-sistemas').value    = obj.sistemas;
+  document.getElementById('act-documentos').value  = obj.documentos;
+  document.getElementById('act-observacoes').value = obj.observacoes;
+  document.getElementById('act-pontos').value      = obj.pontosMelhoria;
+  const natWrap = document.getElementById('act-natureza-wrap');
+  if(natWrap) natWrap.style.display = obj.type === 'atividade' ? 'block' : 'none';
+  const natList = getConfig('naturezaAtividade');
+  const defaultNat = natList[0]?.key || 'execucao';
+  const selectedNat = obj.natureza || defaultNat;
+  const grid = document.querySelector('#act-natureza-wrap .natureza-grid');
+  if(grid) grid.innerHTML = natList.map(n =>
+    `<button class="natureza-btn${n.key === selectedNat ? ' selected' : ''}" data-nat="${n.key}"
+      onclick="selectNatureza('${n.key}')">${n.icon ? n.icon+' ' : ''}${n.label}</button>`
+  ).join('');
+  const etipoWrap = document.getElementById('act-evento-tipo-wrap');
+  if(etipoWrap) {
+    etipoWrap.style.display = obj.type === 'evento' ? 'block' : 'none';
+    document.querySelectorAll('[data-etipo]').forEach(btn => btn.classList.toggle('selected', btn.dataset.etipo === (obj.eventoTipo||'inicio')));
+  }
+  const titleEl = document.querySelector('.action-type-title');
+  if(titleEl) titleEl.textContent = `Sub-caminho ${nbi+1} — Configurar Ação`;
+  const moveWrap = document.getElementById('act-move-step-wrap');
+  if(moveWrap) moveWrap.style.display = 'none';
+  document.getElementById('action-type-modal').classList.add('open');
+  document.getElementById('act-text').focus();
+}
+
 // ── Helper: add role ──────────────────────────
 function addRole(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem adicionar atores.', 'warn'); return; }
@@ -7940,7 +8121,7 @@ document.getElementById('npop-overlay').addEventListener('click', function(e) {
 });
 
 // ═══ ACTION TYPE MODAL ════════════════════════
-let _actP='', _actSi=-1, _actAi=-1, _actIsTobe=false, _actBi=-1, _actBai=-1;
+let _actP='', _actSi=-1, _actAi=-1, _actIsTobe=false, _actBi=-1, _actBai=-1, _actNbi=-1, _actNbai=-1;
 
 function openActionModal(p, si, ai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar ações.', 'warn'); return; }
@@ -8031,14 +8212,14 @@ function openActionModal(p, si, ai) {
 }
 
 function closeActionModal() {
-  _actBi = -1; _actBai = -1;
+  _actBi = -1; _actBai = -1; _actNbi = -1; _actNbai = -1;
   document.getElementById('action-type-modal').classList.remove('open');
 }
 
 function openBranchActionModal(p, si, ai, bi, bai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar ações.', 'warn'); return; }
   _actP = p; _actSi = si; _actAi = ai; _actIsTobe = (flowMode === 'tobe');
-  _actBi = bi; _actBai = bai;
+  _actBi = bi; _actBai = bai; _actNbi = -1; _actNbai = -1;
   const step = DATA[p].steps[si];
   const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
   const parent = actionObj(actions[ai]);
@@ -8145,7 +8326,18 @@ function saveActionModal() {
   const _existingLoop = _actBi < 0 ? (_existingObj.loop || false) : false;
   const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo, automatico: _existingAuto, loop: _existingLoop };
 
-  if(_actBi >= 0) {
+  if(_actNbi >= 0) {
+    // Saving a nested branch action (decisão dentro de caminho)
+    const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
+    const parent = actionObj(actions[_actAi]);
+    const subDec = actionObj((parent.branches[_actBi]?.actions || [])[_actBai] || {});
+    if(!Array.isArray(subDec.branches)) subDec.branches = [];
+    if(!subDec.branches[_actNbi]) subDec.branches[_actNbi] = { label: `Caminho ${_actNbi+1}`, actions: [] };
+    if(!Array.isArray(subDec.branches[_actNbi].actions)) subDec.branches[_actNbi].actions = [];
+    subDec.branches[_actNbi].actions[_actNbai] = actionData;
+    parent.branches[_actBi].actions[_actBai] = subDec;
+    actions[_actAi] = parent;
+  } else if(_actBi >= 0) {
     // Saving a branch action
     const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
     const parent = actionObj(actions[_actAi]);
@@ -8345,6 +8537,12 @@ function getConfig(key) {
     // Migration: servidoresEPP may be stored as plain strings from earlier version
     if(key === 'servidoresEPP' && Array.isArray(val) && val.length > 0 && typeof val[0] === 'string')
       return val.map(nome => ({nome, email:''}));
+    // Migration: naturezaAtividade — add missing entries from defaults
+    if(key === 'naturezaAtividade' && Array.isArray(val)) {
+      const existingKeys = new Set(val.map(n => n.key));
+      const missing = (CONFIG_DEFAULTS.naturezaAtividade || []).filter(n => !existingKeys.has(n.key));
+      if(missing.length) return [...val, ...missing];
+    }
     return val;
   }
   return CONFIG_DEFAULTS[key] ?? [];
@@ -21267,10 +21465,14 @@ function matComputeMetrics(p, version='asis') {
             const baBurocByNat = (baNat === 'aprovacao' || baNat === 'revisao');
             const baBurocByKw  = !baNat && APPROVAL_KW.some(k => baTextLow.includes(k));
             if(baBurocByNat || baBurocByKw) decisionHasApproval = true;
-            if(ba.sistemas && ba.sistemas.trim()) {
-              // Digitalização conta apenas atividades top-level; branches contribuem apenas para allSistemas
+            if(baType === 'atividade' && ba.automatico) totalAutomatico++;
+            if(baType === 'atividade' && ba.sistemas && ba.sistemas.trim()) {
+              actionsWithSistema++;
+              ba.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
+            } else if(ba.sistemas && ba.sistemas.trim()) {
               ba.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
             }
+            if(baType === 'atividade' && ba.loop) totalLoops++;
           });
         });
         if(decisionHasApproval) totalApprovals++; // conta 1 aprovação por decisão, independente de quantos caminhos
@@ -21823,7 +22025,7 @@ function matExportPdf(p) {
             ['👥 Percepção da Equipe',  '30%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
             ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
             ['🌿 Lean Operacional',     '30%', final.normLean,      '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma atividade opinada existe.'],
-            ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades top-level com sistema registrado (não conta sub-ações dentro de decisões).'],
+            ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades com sistema registrado, incluindo atividades dentro de decisões.'],
             ['⚙️ Automação',            '10%', final.normAutomacao, '#7c3aed', '100 = totalmente automatizado', 'Percentual de atividades marcadas com ⚙️ (automático) ÷ total de atividades. Marque via ícone ⚙️ em cada atividade no fluxo.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
