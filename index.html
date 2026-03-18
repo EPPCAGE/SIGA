@@ -13808,11 +13808,9 @@ function renderFicha(p) {
   // ── Gestor e Objetivos Estratégicos (da Arquitetura) ──────────────
   let arqInfoHtml = '';
   try {
-    const arqRec = typeof arqGetData === 'function' ? arqGetData().find(r => {
-      const procMatch = (r.processo || '').trim() === (m.processo || '').trim();
-      const subMatch  = (r.subprocesso || '').trim() === (m.sub || '').trim();
-      return procMatch && subMatch;
-    }) : null;
+    const arqRec = typeof arqGetData === 'function' && typeof arqFindLinkedPop === 'function'
+      ? arqGetData().find(r => arqFindLinkedPop(r) === p)
+      : null;
     if (arqRec) {
       const gerenteHtml = arqRec.gerente
         ? `<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);">Gestor do Processo</span><div style="font-size:13px;color:var(--text-primary);font-weight:500;margin-top:2px;">${arqRec.gerente}</div></div>`
