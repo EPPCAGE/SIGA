@@ -21798,17 +21798,6 @@ function matRender(p) {
   // índices calculados com escala de referência
   const automLabel = metrics.automRate >= 0.6 ? 'Alta' : metrics.automRate >= 0.3 ? 'Média' : 'Baixa';
   const automCls   = metrics.automRate >= 0.6 ? '#22c55e' : metrics.automRate >= 0.3 ? '#eab308' : '#ef4444';
-  const focoLabel = metrics.anyNatDefined
-    ? (metrics.totalActivities > 0 ? ((metrics.totalExecucao / metrics.totalActivities) * 100).toFixed(1) + '%' : '0%')
-    : 'N/D';
-  const focoCls   = !metrics.anyNatDefined ? '#94a3b8'
-    : metrics.totalActivities > 0 && (metrics.totalExecucao / metrics.totalActivities) >= 0.4 ? '#22c55e'
-    : metrics.totalActivities > 0 && (metrics.totalExecucao / metrics.totalActivities) >= 0.2 ? '#eab308'
-    : '#ef4444';
-  const focoLevelLabel = !metrics.anyNatDefined ? 'Sem naturezas'
-    : metrics.totalActivities > 0 && (metrics.totalExecucao / metrics.totalActivities) >= 0.4 ? 'Lean'
-    : metrics.totalActivities > 0 && (metrics.totalExecucao / metrics.totalActivities) >= 0.2 ? 'Moderado'
-    : 'Baixo';
   const indicesHtml = `
     <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:6px;">📊 Índices Calculados</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
@@ -22119,11 +22108,6 @@ function matExportPdf(p) {
 
   const automLabel = metrics.automRate >= 0.6 ? 'Alta' : metrics.automRate >= 0.3 ? 'Média' : 'Baixa';
   const automCls   = metrics.automRate >= 0.6 ? '#22c55e' : metrics.automRate >= 0.3 ? '#eab308' : '#ef4444';
-  const focoRatePdf = metrics.totalActivities > 0 ? metrics.totalExecucao / metrics.totalActivities : 0;
-  const focoCls     = !metrics.anyNatDefined ? '#94a3b8'
-    : focoRatePdf >= 0.4 ? '#22c55e' : focoRatePdf >= 0.2 ? '#eab308' : '#ef4444';
-  const focoLevelLabel = !metrics.anyNatDefined ? 'Sem naturezas'
-    : focoRatePdf >= 0.4 ? 'Lean' : focoRatePdf >= 0.2 ? 'Moderado' : 'Baixo';
 
   // ── Score block ────────────────────────────────────────────────────────
   const scoreBlock = final ? `
@@ -22211,7 +22195,7 @@ function matExportPdf(p) {
         })()}
       </tr>
       <tr>
-        <td>Digitalização <span class="note">(bruto = normalizado — ↑ maior = melhor; apenas atividades top-level)</span></td>
+        <td>Digitalização <span class="note">(bruto = normalizado — ↑ maior = melhor; atividades c/ sistema ou automáticas ⚙️, incl. dentro de decisões)</span></td>
         <td>${(metrics.automRate*100).toFixed(0)}%</td>
         <td><span class="badge" style="background:${automCls}20;color:${automCls};">${automLabel}</span></td>
       </tr>
