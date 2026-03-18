@@ -9320,13 +9320,39 @@ function orgClickUnit(area) {
   orgRenderUnitPanel(_orgSelectedUnit);
 }
 
+// Mapeamento sigla → nome completo da unidade (e vice-versa)
+const _ORG_AREA_MAP = {
+  'DCO':  'Divisão de Controle e Orientação',
+  'DAUD': 'Divisão de Auditoria',
+  'DCON': 'Divisão de Contabilidade',
+  'DIR':  'Divisão de Integridade e Responsabilização',
+  'DTTI': 'Divisão de Transparência e Tecnologia da Informação',
+  'GAB':  'Gabinete da CAGE',
+};
+// Reverso: nome completo → sigla
+const _ORG_AREA_MAP_REV = Object.fromEntries(Object.entries(_ORG_AREA_MAP).map(([k,v]) => [v.toUpperCase(), k]));
+
+function _orgAreaMatches(recordArea, unitSigla) {
+  if(!recordArea) return false;
+  const ra = recordArea.trim().toUpperCase();
+  const us = unitSigla.toUpperCase();
+  if(ra === us) return true;
+  // sigla → full name match
+  const full = (_ORG_AREA_MAP[us] || '').toUpperCase();
+  if(full && ra === full) return true;
+  // full name → sigla match
+  const siglaFromFull = _ORG_AREA_MAP_REV[us] || '';
+  if(siglaFromFull && ra === siglaFromFull) return true;
+  return false;
+}
+
 function orgRenderUnitPanel(area) {
   const panel = document.getElementById('org-unit-panel');
   if(!panel) return;
   if(!area) { panel.style.display = 'none'; return; }
 
   const all   = arqGetData();
-  const procs = all.filter(r => r.area && r.area.trim().toUpperCase() === area.toUpperCase());
+  const procs = all.filter(r => _orgAreaMatches(r.area, area));
 
   panel.style.display = 'block';
 
