@@ -20084,6 +20084,96 @@ function matSetVersion(p, v) {
   matRender(p);
 }
 
+function matAuditDetails(p, version) {
+  const steps = (DATA[p] && DATA[p].steps) || [];
+  const LOOP_KW     = ['complementa','revisão','revisao','aprovação','aprovacao','autorização','autorizacao','devolver','retornar','reenviar','aguardar aprovação','aguardar revisão'];
+  const APPROVAL_KW = ['aprovação','aprovacao','revisão','revisao','autorização','autorizacao','validação','validacao','verificação','verificacao'];
+  const audit = { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], actors:new Set() };
+
+  let prevActor = '';
+  steps.forEach((step, si) => {
+    const actions  = version === 'tobe' ? ((step.tobe && step.tobe.actions) || []) : (step.actions || []);
+    const stepName = step.title || `Etapa ${si+1}`;
+    if(step.responsible) audit.actors.add(step.responsible);
+
+    actions.forEach((action, ai) => {
+      const type    = action.type || 'atividade';
+      const nat     = action.natureza || '';
+      const actor   = action.actor || step.responsible || '';
+      const textLow = (action.text || '').toLowerCase();
+      const txt     = action.text || `Ação ${ai+1}`;
+
+      if(type === 'atividade') audit.activities.push({ step: stepName, text: txt });
+      if(type === 'decisao')   audit.decisions.push({ step: stepName, text: txt });
+
+      const isBurocByNat = (nat === 'aprovacao' || nat === 'revisao');
+      const isBurocByKw  = !nat && APPROVAL_KW.some(k => textLow.includes(k));
+      if(isBurocByNat || isBurocByKw)
+        audit.approvals.push({ step: stepName, text: txt, via: isBurocByNat ? `natureza: ${nat}` : 'palavra-chave no texto' });
+
+      if(nat === 'revisao' || nat === 'aprovacao' || LOOP_KW.some(k => textLow.includes(k)))
+        audit.loops.push({ step: stepName, text: txt, via: (nat === 'revisao' || nat === 'aprovacao') ? `natureza: ${nat}` : 'palavra-chave no texto' });
+
+      if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase())
+        audit.handoffs.push({ step: stepName, from: prevActor, to: actor });
+      if(actor) { prevActor = actor; audit.actors.add(actor); }
+
+      if(action.sistemas && action.sistemas.trim())
+        audit.digitalized.push({ step: stepName, text: txt, sistemas: action.sistemas });
+    });
+  });
+  return audit;
+}
+
+function matShowAudit(p) {
+  const mat     = matGetData(p);
+  const version = mat.version || 'asis';
+  const audit   = matAuditDetails(p, version);
+
+  const row = (text, tag) =>
+    `<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 10px;background:#f8fafc;border-radius:6px;font-size:12px;">
+       <span style="color:#6366f1;font-size:10px;white-space:nowrap;padding-top:1px;min-width:80px;max-width:140px;overflow:hidden;text-overflow:ellipsis;">${tag}</span>
+       <span style="color:#1e293b;">${text}</span>
+     </div>`;
+
+  const section = (icon, label, items, fn) => {
+    const count = items.length;
+    const body  = count
+      ? `<div style="display:flex;flex-direction:column;gap:3px;">${items.map(fn).join('')}</div>`
+      : `<div style="font-size:12px;color:#94a3b8;padding:5px 10px;background:#f8fafc;border-radius:6px;">Nenhum item encontrado.</div>`;
+    return `<div style="margin-bottom:16px;">
+      <div style="font-weight:700;color:#0a2540;font-size:13px;margin-bottom:6px;">${icon} ${label}
+        <span style="color:#6366f1;font-weight:400;font-size:12px;">(${count})</span>
+      </div>${body}</div>`;
+  };
+
+  const actorsList = [...audit.actors].map(a => ({ text: a }));
+  const html = `
+    ${section('▶','Atividades',          audit.activities,  i => row(i.text, i.step))}
+    ${section('◆','Decisões',            audit.decisions,   i => row(i.text, i.step))}
+    ${section('🔄','Loops',              audit.loops,       i => row(i.text + ` <span style="color:#94a3b8;">(via ${i.via})</span>`, i.step))}
+    ${section('🔀','Handoffs',           audit.handoffs,    i => row(`${i.from} → ${i.to}`, i.step))}
+    ${section('✅','Aprovações/Burocracia', audit.approvals,i => row(i.text + ` <span style="color:#94a3b8;">(via ${i.via})</span>`, i.step))}
+    ${section('⚡','Ações Digitalizadas', audit.digitalized, i => row(i.text + ` <span style="color:#94a3b8;">[${i.sistemas}]</span>`, i.step))}
+    ${section('👤','Atores',             actorsList,        i => row(i.text, 'ator'))}`;
+
+  let modal = document.getElementById('mat-audit-modal');
+  if(!modal) { modal = document.createElement('div'); modal.id = 'mat-audit-modal'; document.body.appendChild(modal); }
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;';
+  modal.onclick = e => { if(e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div style="background:white;border-radius:14px;width:100%;max-width:660px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #e2e8f0;background:#f8fafc;">
+        <div>
+          <div style="font-weight:800;font-size:15px;color:#0a2540;">🔍 Auditoria das Métricas</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:1px;">Veja exatamente quais ações geraram cada número — ${version === 'tobe' ? 'Fluxo TO BE' : 'Fluxo AS IS'}</div>
+        </div>
+        <button onclick="document.getElementById('mat-audit-modal').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;padding:4px 8px;">✕</button>
+      </div>
+      <div style="padding:20px;overflow-y:auto;max-height:72vh;">${html}</div>
+    </div>`;
+}
+
 function matComputeMetrics(p, version='asis') {
   const steps = (DATA[p] && DATA[p].steps) || [];
   let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, actionsWithSistema = 0;
@@ -20092,11 +20182,11 @@ function matComputeMetrics(p, version='asis') {
   const LOOP_KW = ['complementa', 'revisão', 'revisao', 'aprovação', 'aprovacao', 'autorização', 'autorizacao', 'devolver', 'retornar', 'reenviar', 'aguardar aprovação', 'aguardar revisão'];
   const APPROVAL_KW = ['aprovação', 'aprovacao', 'revisão', 'revisao', 'autorização', 'autorizacao', 'validação', 'validacao', 'verificação', 'verificacao'];
 
+  let prevActor = '';
   steps.forEach((step) => {
     const actions = version === 'tobe'
       ? ((step.tobe && step.tobe.actions) || [])
       : (step.actions || []);
-    let prevActor = step.responsible || '';
     if(step.responsible) allActors.add(step.responsible);
 
     actions.forEach(action => {
@@ -20292,7 +20382,10 @@ function matRender(p) {
 
   // ── sections ────────────────────────────────────────────────────
   const metricsHtml = `
-    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:10px;">📐 Métricas do Processo — <span style="color:#6366f1;">${procName}</span> <span style="font-size:11px;color:#94a3b8;font-weight:400;">(${version === 'tobe' ? 'TO BE' : 'AS IS'})</span></div>
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      📐 Métricas do Processo — <span style="color:#6366f1;">${procName}</span> <span style="font-size:11px;color:#94a3b8;font-weight:400;">(${version === 'tobe' ? 'TO BE' : 'AS IS'})</span>
+      <button onclick="matShowAudit('${p}')" style="font-size:11px;padding:3px 12px;border-radius:20px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#6366f1;font-weight:700;cursor:pointer;white-space:nowrap;">🔍 Auditoria</button>
+    </div>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;">
       ${metricCard('▶', 'Atividades',   metrics.totalActivities)}
       ${metricCard('◆', 'Decisões',     metrics.totalDecisions)}
