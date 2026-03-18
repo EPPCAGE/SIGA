@@ -21392,7 +21392,7 @@ function matSetVersion(p, v) {
 function matAuditDetails(p, version) {
   const steps = (DATA[p] && DATA[p].steps) || [];
   const APPROVAL_KW = ['aprovação','aprovacao','revisão','revisao','autorização','autorizacao','validação','validacao'];
-  const audit = { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], actors:new Set() };
+  const audit = { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], startEvents:[], endEvents:[], actors:new Set() };
 
   let prevActor = '';
   steps.forEach((step, si) => {
@@ -21411,6 +21411,11 @@ function matAuditDetails(p, version) {
 
       if(type === 'atividade') audit.activities.push({ step: stepName, text: txt });
       if(type === 'decisao')   audit.decisions.push({ step: stepName, text: txt });
+      if(type === 'evento') {
+        const etipo = action.eventoTipo || '';
+        if(etipo === 'inicio')        audit.startEvents.push({ step: stepName, text: txt });
+        else if(etipo === 'encerramento') audit.endEvents.push({ step: stepName, text: txt });
+      }
 
       // Overhead: aprovacao/revisao por natureza ou palavra-chave; controle por natureza
       // (espelha exatamente matComputeMetrics — controle é overhead separado no Lean)
@@ -21503,13 +21508,15 @@ function matShowAudit(p) {
 
   const actorsList = [...audit.actors].map(a => ({ text: a }));
   const html = `
-    ${section('▶','Atividades',          audit.activities,  i => row(i.text, i.step))}
-    ${section('◆','Decisões',            audit.decisions,   i => row(i.text, i.step))}
-    ${section('🔄','Loops',              audit.loops,       i => row(i.text, i.step))}
-    ${section('🔀','Handoffs',           audit.handoffs,    i => row(`${i.from} → ${i.to}`, i.step))}
-    ${section('✅','Aprovações/Burocracia', audit.approvals,i => row(i.text + ` <span style="color:#94a3b8;">(via ${i.via})</span>`, i.step))}
-    ${section('⚡','Ações Digitalizadas', audit.digitalized, i => row(i.text + ` <span style="color:#94a3b8;">[${i.sistemas}]</span>`, i.step))}
-    ${section('👤','Atores',             actorsList,        i => row(i.text, 'ator'))}`;
+    ${section('▶','Atividades',              audit.activities,  i => row(i.text, i.step))}
+    ${section('◆','Decisões',               audit.decisions,   i => row(i.text, i.step))}
+    ${section('⬤','Eventos de Início',      audit.startEvents, i => row(i.text, i.step))}
+    ${section('◉','Eventos de Encerramento',audit.endEvents,   i => row(i.text, i.step))}
+    ${section('🔄','Loops',                 audit.loops,       i => row(i.text, i.step))}
+    ${section('🔀','Handoffs',              audit.handoffs,    i => row(`${i.from} → ${i.to}`, i.step))}
+    ${section('✅','Aprovações/Burocracia', audit.approvals,   i => row(i.text + ` <span style="color:#94a3b8;">(via ${i.via})</span>`, i.step))}
+    ${section('⚡','Ações Digitalizadas',   audit.digitalized, i => row(i.text + ` <span style="color:#94a3b8;">[${i.sistemas}]</span>`, i.step))}
+    ${section('👤','Atores',               actorsList,        i => row(i.text, 'ator'))}`;
 
   let modal = document.getElementById('mat-audit-modal');
   if(!modal) { modal = document.createElement('div'); modal.id = 'mat-audit-modal'; document.body.appendChild(modal); }
@@ -21834,6 +21841,8 @@ function matRender(p) {
       ${metricCard('👤','Atores',        metrics.totalActors)}
       ${metricCard('🔄','Loops',         metrics.totalLoops,    'retrabalho')}
       ${metricCard('🔀','Handoffs',      metrics.totalHandoffs,  'trocas de ator')}
+      ${metricCard('⬤', 'Ev. Início',   metrics.totalStartEvents, 'eventos de início')}
+      ${metricCard('◉', 'Ev. Encerramento', metrics.totalEndEvents, 'eventos de fim')}
       ${metricCard('🎯','Execução',      metrics.totalExecucao, 'nat. execução')}
       ${metricCard('📤','Distribuição',  metrics.totalDistribuicao, 'nat. distribuição')}
       ${metricCard('⚡','Digitalização', (metrics.automRate*100).toFixed(0)+'%', 'c/ sistema ou automáticas')}
