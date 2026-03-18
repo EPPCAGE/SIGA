@@ -15144,19 +15144,23 @@ function arqAbrirPopVinculado(popKey) {
 
 // ── Detalhes de Processo (popup clicável) ─────────────────
 function arqFindLinkedPop(r) {
-  // Find a POP whose meta.processo or meta.subprocesso or meta.name matches
   const keys = ['d','r',...Object.keys(DATA).filter(k=>k.startsWith('pop_'))];
+  const rProcLC = (r.processo||'').toLowerCase().trim();
+  const rSubLC  = (r.subprocesso||'').toLowerCase().trim();
   return keys.find(k => {
     const m = DATA[k]?.meta;
     if(!m) return false;
-    const nameLC   = (m.name||'').toLowerCase();
-    const procLC   = (m.processo||'').toLowerCase();
-    const subLC    = (m.subprocesso||'').toLowerCase();
-    const rProcLC  = (r.processo||'').toLowerCase();
-    const rSubLC   = (r.subprocesso||'').toLowerCase();
-    return nameLC === rProcLC || nameLC === rSubLC ||
-           procLC === rProcLC || procLC === rSubLC  ||
-           (subLC  && (subLC === rProcLC || subLC === rSubLC));
+    const nameLC = (m.name||'').toLowerCase().trim();
+    const procLC = (m.processo||'').toLowerCase().trim();
+    const subLC  = (m.subprocesso||'').toLowerCase().trim();
+    if(rSubLC) {
+      // Registro tem subprocesso: só casa no nível do subprocesso,
+      // evitando que irmãos do mesmo processo pai sejam confundidos.
+      return nameLC === rSubLC || procLC === rSubLC || subLC === rSubLC;
+    } else {
+      return nameLC === rProcLC || procLC === rProcLC ||
+             (subLC && subLC === rProcLC);
+    }
   });
 }
 
@@ -17993,7 +17997,7 @@ function eppRenderRanking(activeKey) {
   }
 
   const tab     = _RANKING_TABS.find(t => t.key === activeKey);
-  const sorted  = [...items].sort((a,b) => tab.dir * (b[activeKey] - a[activeKey]));
+  const sorted  = [...items].sort((a,b) => tab.dir * (a[activeKey] - b[activeKey]));
   const isOverhead = activeKey === 'overhead';
   const unit    = (activeKey === 'risco' || activeKey === 'maturidade') ? '/100' : '%';
 
