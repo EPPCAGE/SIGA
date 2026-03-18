@@ -5504,6 +5504,21 @@ const ACTION_TYPES = {
   observacao:  { icon:'💬', label:'Observação',   color:'#60a5fa' },
 };
 
+// Heurísticas de sugestão — retornam true se o texto/natureza parece ser do tipo, mas SEM marcar o flag
+function _hintDetectLoop(obj) {
+  if(obj.loop) return false; // já marcado, não mostrar dica
+  const t = (obj.text||'').toLowerCase();
+  const LOOP_KW = ['devolver','retornar','reenviar','reenvio','reprocessar','retrabalho','complementar','revisão','revisar','corrigir','correção','retificação','ajustar','refazer'];
+  return obj.natureza === 'revisao' || LOOP_KW.some(k => t.includes(k));
+}
+function _hintDetectAutom(obj) {
+  if(obj.automatico) return false; // já marcado, não mostrar dica
+  if(obj.sistemas && obj.sistemas.trim()) return true; // tem sistema associado
+  const t = (obj.text||'').toLowerCase();
+  const AUTOM_KW = ['automático','automatico','sistema envia','sistema gera','sistema notifica','dispara','disparo','integração','integra','api ','bot ','robô','robo','e-mail automático','notificação automática','gerado automaticamente'];
+  return AUTOM_KW.some(k => t.includes(k));
+}
+
 function actionObj(a) {
   // Normalise: plain string → atividade object
   if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'', eventoTipo:'', automatico:false, loop:false };
@@ -5653,6 +5668,12 @@ function renderStep(p, i) {
     const rmBtn = em ? `<button class="edit-rm-btn" onclick="rmStepAction('${p}',${i},${ai})">✕</button>` : '';
     const dragHandle = em ? `<span class="drag-handle" title="Arrastar para reordenar">⋮⋮</span>` : '';
     const branchesHTML = obj.type === 'decisao' ? buildBranchesHTML(p, i, ai, obj.branches||[], isTobe, em) : '';
+    const loopHint  = (obj.type === 'atividade' && _hintDetectLoop(obj))
+      ? `<span title="Possível loop/retrabalho detectado — clique em 🔄 para confirmar" style="font-size:11px;color:#b45309;background:#fef3c7;border:1px solid #b4530933;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">🔄?</span>`
+      : '';
+    const automHint = (obj.type === 'atividade' && _hintDetectAutom(obj))
+      ? `<span title="Possível automação detectada — clique em ⚙️ para confirmar" style="font-size:11px;color:#0891b2;background:#e0f2fe;border:1px solid #0891b233;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">⚙️?</span>`
+      : '';
     const autoBtn = obj.type === 'atividade'
       ? `<button class="edit-rm-btn auto-toggle-btn${obj.automatico ? ' auto-on' : ''}" onclick="toggleAutomatico('${p}',${i},${ai})" title="${obj.automatico ? 'Automático — clique para desmarcar' : 'Marcar como automático'}" style="margin-left:4px;background:${obj.automatico ? '#dcfce7' : 'transparent'};color:${obj.automatico ? '#16a34a' : '#94a3b8'};border:1px solid ${obj.automatico ? '#16a34a44' : '#e2e8f0'};font-size:13px;">⚙️</button>`
       : '';
@@ -5665,7 +5686,7 @@ function renderStep(p, i) {
         ${dragHandle}
         <span class="action-icon" style="color:${t.color}">${t.icon}</span>
         <div class="action-body">
-          <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}${etipoBadge}
+          <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}${etipoBadge}${loopHint}${automHint}
           ${actorHTML}
         </div>
         ${loopBtn}${autoBtn}${editBtn}${rmBtn}
