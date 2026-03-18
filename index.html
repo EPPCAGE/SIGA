@@ -13367,7 +13367,37 @@ function renderFicha(p) {
       </div>
     </div>`).join('');
 
-  el.innerHTML = statusBadge + fieldHtml;
+  // ── Score de Maturidade (se calculado) ────────────────────
+  let matBadgeHtml = '';
+  try {
+    const matFinal = typeof matComputeFinal === 'function' ? matComputeFinal(p) : null;
+    if (matFinal) {
+      const lastSnap  = (DATA[p]?.maturidade?.snapshots || []).slice(-1)[0];
+      const snapInfo  = lastSnap
+        ? `<span style="font-size:10px;color:#94a3b8;margin-top:2px;">Último registro: ${(() => { try { return new Date(lastSnap.date+'T12:00:00Z').toLocaleDateString('pt-BR'); } catch(e){ return lastSnap.date; } })()}</span>`
+        : `<span style="font-size:10px;color:#94a3b8;margin-top:2px;">Questionário respondido</span>`;
+      matBadgeHtml = `
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);">
+          <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;">Maturidade</div>
+          <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
+            <div style="text-align:center;flex-shrink:0;">
+              <div style="font-size:30px;font-weight:900;color:${matFinal.levelColor};line-height:1;">${matFinal.final}</div>
+              <div style="font-size:9px;color:#94a3b8;line-height:1.2;">/ 100</div>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:${matFinal.levelColor};margin-bottom:4px;">${matFinal.levelIcon} ${matFinal.level}</div>
+              <div style="background:#e2e8f0;border-radius:4px;height:6px;overflow:hidden;margin-bottom:4px;">
+                <div style="height:6px;width:${matFinal.final}%;background:${matFinal.levelColor};border-radius:4px;"></div>
+              </div>
+              ${snapInfo}
+            </div>
+            <div style="font-size:10px;color:#94a3b8;flex-shrink:0;">Ver detalhes →</div>
+          </div>
+        </div>`;
+    }
+  } catch(e) { /* matComputeFinal indisponível ou incompleto */ }
+
+  el.innerHTML = statusBadge + fieldHtml + matBadgeHtml;
 }
 
 // ═══ GENERIC MODAL HELPERS ════════════════
