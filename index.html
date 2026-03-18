@@ -235,6 +235,13 @@
   .rm-step-btn{display:none;padding:4px 10px;font-size:11px;font-weight:700;border:1.5px solid rgba(255,255,255,.5);background:transparent;color:rgba(255,255,255,.85);border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
   .rm-step-btn:hover{background:rgba(255,0,0,.25);border-color:white;}
   body.edit-mode .rm-step-btn{display:inline-flex;}
+  .move-step-btn{display:none;padding:4px 8px;font-size:14px;font-weight:700;border:1.5px solid rgba(255,255,255,.5);background:transparent;color:rgba(255,255,255,.85);border-radius:6px;cursor:pointer;transition:all .15s;line-height:1;}
+  .move-step-btn:hover:not(:disabled){background:rgba(255,255,255,.2);border-color:white;}
+  .move-step-btn:disabled{opacity:.25;cursor:default;}
+  body.edit-mode .move-step-btn{display:inline-flex;}
+  .act-move-step-wrap{margin-top:4px;padding-top:12px;border-top:1px solid var(--cage-border);}
+  .act-move-step-wrap label{font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;}
+  .act-move-step-row{display:flex;gap:8px;align-items:center;}
   .action-type-box{overflow-y:auto;max-height:90vh;}
   .decision-box{background:#fffbf0;border:1.5px solid #f0c840;border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
   .decision-box .dicon{font-size:18px;flex-shrink:0;}
@@ -4479,6 +4486,13 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
           </div>
         </div>
       </div>
+      <div class="act-move-step-wrap" id="act-move-step-wrap">
+        <label>📤 Mover ação para outra etapa</label>
+        <div class="act-move-step-row">
+          <select class="modal-input" id="act-move-step-select" style="flex:1;"></select>
+          <button class="btn btn-outline" onclick="moveActionToStep()">Mover</button>
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn btn-outline" onclick="closeActionModal()">Cancelar</button>
         <button class="btn btn-success" onclick="saveActionModal()">💾 Salvar</button>
@@ -5546,6 +5560,8 @@ function renderStep(p, i) {
           <p ${ce} data-sp="${p}" data-si="${i}" data-sf="${subtitleSf}">${dispSubtitle}</p>
         </div>
         ${modeBadge}
+        <button class="move-step-btn" onclick="moveStep('${p}',${i},-1)" title="Mover etapa para cima" ${i===0?'disabled':''}>↑</button>
+        <button class="move-step-btn" onclick="moveStep('${p}',${i},1)" title="Mover etapa para baixo" ${i===DATA[p].steps.length-1?'disabled':''}>↓</button>
         <button class="rm-step-btn" onclick="rmStep('${p}',${i})" title="Apagar esta etapa">🗑 Apagar etapa</button>
       </div>
       <div class="step-panel-body">
@@ -7413,6 +7429,44 @@ function rmStep(p, si) {
   showToast('🗑 Etapa apagada.', 'success');
 }
 
+// ── Helper: move step up/down ─────────────────
+function moveStep(p, si, dir) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem reordenar etapas.', 'warn'); return; }
+  const steps = DATA[p].steps;
+  const ni = si + dir;
+  if(ni < 0 || ni >= steps.length) return;
+  [steps[si], steps[ni]] = [steps[ni], steps[si]];
+  DATA[p].currentStep = ni;
+  renderTracker(p);
+  renderStep(p, ni);
+  markChanged();
+}
+
+// ── Helper: move action to another step ───────
+function moveActionToStep() {
+  if(!isEditor) return;
+  const sel = document.getElementById('act-move-step-select');
+  if(!sel) return;
+  const toIdx = parseInt(sel.value);
+  if(isNaN(toIdx)) return;
+  const fromStep = DATA[_actP].steps[_actSi];
+  const toStep   = DATA[_actP].steps[toIdx];
+  if(!fromStep || !toStep) return;
+  const fromArr = _actIsTobe ? (fromStep.tobe?.actions || []) : fromStep.actions;
+  const action  = fromArr.splice(_actAi, 1)[0];
+  if(_actIsTobe) {
+    if(!toStep.tobe) toStep.tobe = {};
+    if(!Array.isArray(toStep.tobe.actions)) toStep.tobe.actions = [];
+    toStep.tobe.actions.push(action);
+  } else {
+    toStep.actions.push(action);
+  }
+  closeActionModal();
+  renderStep(_actP, _actSi);
+  markChanged();
+  showToast(`📤 Ação movida para Etapa ${toIdx + 1}.`, 'success');
+}
+
 // ── Helper: add role ──────────────────────────
 function addRole(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem adicionar atores.', 'warn'); return; }
@@ -7645,6 +7699,17 @@ function openActionModal(p, si, ai) {
   // Update modal title to show which mode is being edited
   const titleEl = document.querySelector('.action-type-title');
   if(titleEl) titleEl.textContent = _actIsTobe ? 'Configurar Ação — TO BE' : 'Configurar Ação — AS IS';
+
+  // Populate move-to-step dropdown
+  const moveWrap   = document.getElementById('act-move-step-wrap');
+  const moveSelect = document.getElementById('act-move-step-select');
+  if(moveWrap && moveSelect) {
+    const steps = DATA[p].steps;
+    moveSelect.innerHTML = steps
+      .map((s, idx) => idx === si ? null : `<option value="${idx}">Etapa ${idx+1}: ${s.title}</option>`)
+      .filter(Boolean).join('');
+    moveWrap.style.display = steps.length > 1 ? 'block' : 'none';
+  }
 
   document.getElementById('action-type-modal').classList.add('open');
   document.getElementById('act-text').focus();
