@@ -21257,14 +21257,20 @@ function matRender(p) {
       <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;">
         Score = Equipe×30% + Risco×25% + Burocracia×20% + Digitalização×15% + Complexidade×10% — todos normalizados 0–100 (100 = mais maduro)
       </div>
-      ${isEditor ? `
-      <div style="text-align:center;margin-bottom:20px;">
+      <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+        ${isEditor ? `
         <button onclick="matSaveSnapshot('${p}')"
-          style="padding:10px 28px;background:#0a2540;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(10,37,64,.2);">
-          💾 Salvar Nota de Maturidade
+          style="padding:10px 24px;background:#0a2540;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(10,37,64,.18);">
+          💾 Salvar Nota
+        </button>` : ''}
+        <button onclick="matExportPdf('${p}')"
+          style="padding:10px 24px;background:#1d4ed8;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(29,78,216,.18);">
+          📄 Exportar PDF
         </button>
-        <div style="font-size:11px;color:#94a3b8;margin-top:6px;">Registra a nota atual com a data de hoje para acompanhar a evolução</div>
-      </div>` : ''}
+      </div>
+      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:-12px;margin-bottom:20px;">
+        ${isEditor ? '"Salvar Nota" registra a pontuação com a data de hoje · ' : ''}"Exportar PDF" gera relatório completo
+      </div>
       `;
   }
 
@@ -21413,6 +21419,248 @@ function matRenderHistory(p, snapshots) {
       </div>`;
   });
   return items.reverse().join(''); // mais recente primeiro
+}
+
+function matExportPdf(p) {
+  const mat      = matGetData(p);
+  const version  = mat.version || 'asis';
+  const metrics  = matComputeMetrics(p, version);
+  const ind      = parseInt(mat.indispensaveis) || 0;
+  const sist     = parseInt(mat.sistIndispensaveis) || 0;
+  const risco    = matComputeRisco(metrics, ind, sist);
+  const final    = matComputeFinal(p);
+  const answers  = Array.isArray(mat.answers) ? mat.answers : new Array(10).fill(null);
+  const snapshots = mat.snapshots || [];
+  const popName  = DATA[p]?.meta?.name || (p === 'd' ? 'Denúncias' : 'Representações');
+  const today    = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+  const fmtDate  = d => { try { return new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){ return d; } };
+  const esc      = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const ansLabel = { sim:'Sim', talvez:'Talvez', nao:'Não' };
+  const ansColor = { sim:'#22c55e', talvez:'#eab308', nao:'#ef4444' };
+
+  const automLabel = metrics.automRate >= 0.6 ? 'Alta' : metrics.automRate >= 0.3 ? 'Média' : 'Baixa';
+  const automCls   = metrics.automRate >= 0.6 ? '#22c55e' : metrics.automRate >= 0.3 ? '#eab308' : '#ef4444';
+
+  // ── Score block ────────────────────────────────────────────────────────
+  const scoreBlock = final ? `
+    <div class="score-block">
+      <div class="score-circle" style="border-color:${final.levelColor};">
+        <div class="score-icon">${final.levelIcon}</div>
+        <div class="score-num" style="color:${final.levelColor};">${final.final}</div>
+        <div class="score-label">/ 100</div>
+      </div>
+      <div class="score-info">
+        <div class="level-badge" style="background:${final.levelColor};">${final.levelIcon} ${final.level}</div>
+        <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${final.final}%;background:${final.levelColor};"></div></div>
+        <table class="comp-table">
+          <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Barra</th></tr>
+          ${[
+            ['👥 Percepção da Equipe', '30%', final.equipe,      '#6366f1'],
+            ['⚠️ Risco Operacional',  '25%', final.normRisco,   '#ef4444'],
+            ['📋 Burocracia',          '20%', final.normBuroc,   '#f97316'],
+            ['💻 Digitalização',       '15%', final.normAutom,   '#0891b2'],
+            ['🔄 Complexidade',        '10%', final.normComplex, '#a78bfa'],
+          ].map(([lbl, peso, val, col]) => `
+            <tr>
+              <td>${lbl}</td><td style="text-align:center;">${peso}</td>
+              <td style="text-align:center;font-weight:700;color:${col};">${val}/100</td>
+              <td><div style="background:#e2e8f0;border-radius:4px;height:8px;width:120px;overflow:hidden;"><div style="height:8px;width:${val}%;background:${col};border-radius:4px;"></div></div></td>
+            </tr>`).join('')}
+        </table>
+        <p class="formula-note">Score = Equipe×30% + Risco×25% + Burocracia×20% + Digitalização×15% + Complexidade×10%</p>
+      </div>
+    </div>` : `<div class="empty-block">⚠️ Score não disponível — questionário não respondido completamente.</div>`;
+
+  // ── Métricas ───────────────────────────────────────────────────────────
+  const metricsBlock = `
+    <table class="data-table">
+      <tr><th colspan="2">📐 Métricas do Processo (${version === 'tobe' ? 'TO BE' : 'AS IS'})</th></tr>
+      <tr><td>Atividades</td><td>${metrics.totalActivities}</td></tr>
+      <tr><td>Decisões</td><td>${metrics.totalDecisions}</td></tr>
+      <tr><td>Atores envolvidos</td><td>${metrics.totalActors}</td></tr>
+      <tr><td>Loops (retrabalho)</td><td>${metrics.totalLoops}</td></tr>
+      <tr><td>Handoffs (trocas de ator)</td><td>${metrics.totalHandoffs}</td></tr>
+      <tr><td>Aprovações / Revisões</td><td>${metrics.totalApprovals}</td></tr>
+      <tr><td>Ações com sistema registrado</td><td>${metrics.actionsWithSistema} (${(metrics.automRate*100).toFixed(0)}%)</td></tr>
+      <tr><td>Pessoas indispensáveis (manual)</td><td>${ind}</td></tr>
+      <tr><td>Sistemas indispensáveis (manual)</td><td>${sist}</td></tr>
+    </table>`;
+
+  // ── Índices ────────────────────────────────────────────────────────────
+  const indicesBlock = `
+    <table class="data-table">
+      <tr><th colspan="3">📊 Índices Calculados</th></tr>
+      <tr><th>Índice</th><th>Valor</th><th>Classificação</th></tr>
+      <tr>
+        <td>Complexidade <span class="note">(↓ menor = melhor)</span></td>
+        <td>${metrics.complexScore.toFixed(1)}</td>
+        <td><span class="badge" style="background:${metrics.complexCls}20;color:${metrics.complexCls};">${metrics.complexLabel}</span></td>
+      </tr>
+      <tr>
+        <td>Burocracia <span class="note">(↓ menor = melhor)</span></td>
+        <td>${(metrics.burocracia*100).toFixed(1)}%</td>
+        <td><span class="badge" style="background:${metrics.burocCls}20;color:${metrics.burocCls};">${metrics.burocLabel}</span></td>
+      </tr>
+      <tr>
+        <td>Risco Operacional <span class="note">(↓ menor = melhor)</span></td>
+        <td>${risco.score}</td>
+        <td><span class="badge" style="background:${risco.cls}20;color:${risco.cls};">${risco.label}</span></td>
+      </tr>
+      <tr>
+        <td>Digitalização <span class="note">(↑ maior = melhor)</span></td>
+        <td>${(metrics.automRate*100).toFixed(0)}%</td>
+        <td><span class="badge" style="background:${automCls}20;color:${automCls};">${automLabel}</span></td>
+      </tr>
+    </table>`;
+
+  // ── Questionário ───────────────────────────────────────────────────────
+  const answered = answers.filter(a => a !== null).length;
+  const questBlock = `
+    <h2 class="section-title">📋 Questionário de Percepção da Equipe <span class="note">(${answered}/10 respondidas)</span></h2>
+    <table class="data-table">
+      <tr><th>#</th><th>Pergunta</th><th>Resposta</th></tr>
+      ${MAT_QUESTIONS.map((q, i) => {
+        const ans = answers[i];
+        const lbl = ans ? ansLabel[ans] : '—';
+        const col = ans ? ansColor[ans] : '#94a3b8';
+        return `<tr>
+          <td style="text-align:center;font-weight:700;color:#94a3b8;">${i+1}</td>
+          <td>${esc(q.text)}${q.inverted ? ' <em style="color:#6366f1;font-size:10px;">(invertida)</em>' : ''}</td>
+          <td style="text-align:center;"><span class="badge" style="background:${col}20;color:${col};font-weight:700;">${lbl}</span></td>
+        </tr>`;
+      }).join('')}
+    </table>`;
+
+  // ── Escala de Maturidade ───────────────────────────────────────────────
+  const scaleBlock = `
+    <table class="data-table">
+      <tr><th colspan="3">📖 Escala de Maturidade (0–100)</th></tr>
+      <tr><th>Nível</th><th>Faixa</th><th>Descrição</th></tr>
+      ${[
+        ['🔴 Inicial',    '0–20',   '#ef4444', 'Processo sem estrutura definida. Execução depende de conhecimento informal.'],
+        ['🟠 Gerenciado', '21–40',  '#f97316', 'Alguma documentação, sem padronização efetiva. Alta dependência de pessoas-chave.'],
+        ['🟡 Definido',   '41–60',  '#eab308', 'Processo documentado e seguido, variações aceitáveis, fluxo estável.'],
+        ['🟢 Previsível', '61–80',  '#22c55e', 'Processo controlado com resultados consistentes. Métricas monitoradas.'],
+        ['💚 Otimizado',  '81–100', '#10b981', 'Processo em melhoria contínua, automatizado onde possível.'],
+      ].map(([lbl, range, col, desc]) => `
+        <tr>
+          <td><span class="badge" style="background:${col}20;color:${col};font-weight:700;">${lbl}</span></td>
+          <td style="text-align:center;white-space:nowrap;">${range} pts</td>
+          <td>${desc}</td>
+        </tr>`).join('')}
+    </table>`;
+
+  // ── Histórico ──────────────────────────────────────────────────────────
+  const histBlock = snapshots.length ? `
+    <h2 class="section-title">📈 Histórico de Maturidade</h2>
+    <table class="data-table">
+      <tr><th>Data</th><th>Score</th><th>Nível</th><th>Variação</th><th>Equipe</th><th>Risco</th><th>Buroc.</th><th>Digital.</th><th>Compl.</th></tr>
+      ${[...snapshots].reverse().map((s, idx, arr) => {
+        const prevSnap = arr[idx + 1];
+        const delta = prevSnap ? s.score - prevSnap.score : null;
+        const deltaStr = delta === null ? '—' : delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : '= 0';
+        const deltaCol = delta === null ? '#94a3b8' : delta > 0 ? '#22c55e' : delta < 0 ? '#ef4444' : '#94a3b8';
+        return `<tr>
+          <td style="white-space:nowrap;">${fmtDate(s.date)}</td>
+          <td style="text-align:center;font-weight:800;color:${s.levelColor||'#0a2540'};">${s.score}</td>
+          <td><span class="badge" style="background:${(s.levelColor||'#0a2540')}20;color:${s.levelColor||'#0a2540'};">${s.levelIcon||''} ${s.level||''}</span></td>
+          <td style="text-align:center;font-weight:700;color:${deltaCol};">${deltaStr}</td>
+          <td style="text-align:center;">${s.equipe??'—'}</td>
+          <td style="text-align:center;">${s.normRisco??'—'}</td>
+          <td style="text-align:center;">${s.normBuroc??'—'}</td>
+          <td style="text-align:center;">${s.normAutom??'—'}</td>
+          <td style="text-align:center;">${s.normComplex??'—'}</td>
+        </tr>`;
+      }).join('')}
+    </table>` : '';
+
+  // ── Análise IA ─────────────────────────────────────────────────────────
+  const aiBlock = mat.geminiAnalysis ? `
+    <h2 class="section-title">🤖 Análise Inteligente — Gemini${mat.lastAnalysis ? ` <span class="note">(${mat.lastAnalysis})</span>` : ''}</h2>
+    <div class="ai-content">${mat.geminiAnalysis
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/^### (.*)$/gm,'<h4>$1</h4>')
+      .replace(/^## (.*)$/gm,'<h3>$1</h3>')
+      .replace(/^# (.*)$/gm,'<h3>$1</h3>')
+      .replace(/\n/g,'<br>')
+    }</div>` : '';
+
+  const win = window.open('', '_blank', 'width=960,height=750');
+  if(!win) { showToast('Popup bloqueado. Permita popups para este site.', 'warn'); return; }
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="utf-8">
+<title>Análise de Maturidade — ${esc(popName)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;color:#1e293b;font-size:13px;padding:36px 48px;max-width:940px;margin:0 auto;}
+.doc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;padding-bottom:18px;border-bottom:3px solid #0a2540;}
+.doc-header-left .badge-org{font-size:9px;font-weight:800;letter-spacing:.12em;color:#00a86b;text-transform:uppercase;}
+.doc-header-left h1{font-size:22px;font-weight:900;color:#0a2540;margin:4px 0;}
+.doc-header-left .sub{font-size:11px;color:#64748b;}
+.doc-header-right{text-align:right;font-size:11px;color:#64748b;line-height:1.7;}
+.score-block{display:flex;gap:28px;align-items:flex-start;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:20px;}
+.score-circle{width:100px;height:100px;border-radius:50%;border:5px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+.score-icon{font-size:22px;line-height:1;}
+.score-num{font-size:30px;font-weight:900;line-height:1;}
+.score-label{font-size:10px;color:#94a3b8;}
+.score-info{flex:1;}
+.level-badge{display:inline-block;color:#fff;font-size:14px;font-weight:800;padding:5px 16px;border-radius:20px;margin-bottom:10px;}
+.score-bar-wrap{background:#e2e8f0;border-radius:6px;height:10px;margin-bottom:12px;overflow:hidden;}
+.score-bar-fill{height:10px;border-radius:6px;}
+.comp-table{width:100%;border-collapse:collapse;font-size:12px;}
+.comp-table th{background:#0a2540;color:#fff;padding:5px 8px;text-align:left;font-weight:700;}
+.comp-table td{padding:5px 8px;border-bottom:1px solid #f1f5f9;}
+.comp-table tr:last-child td{border-bottom:none;}
+.formula-note{font-size:10px;color:#94a3b8;margin-top:8px;}
+.section-title{font-size:14px;font-weight:800;color:#0a2540;margin:20px 0 8px;padding-bottom:5px;border-bottom:2px solid #00a86b;page-break-after:avoid;}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;}
+.data-table th{background:#0a2540;color:#fff;padding:7px 10px;text-align:left;font-weight:700;}
+.data-table td{padding:6px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.data-table tr:nth-child(even) td{background:#f8fafc;}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;}
+.note{font-size:10px;color:#94a3b8;font-weight:400;}
+.empty-block{padding:20px;background:#f8fafc;border:1.5px dashed #e2e8f0;border-radius:8px;color:#94a3b8;text-align:center;margin-bottom:20px;}
+.ai-content{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-size:12.5px;line-height:1.75;white-space:pre-wrap;}
+.ai-content h3,.ai-content h4{color:#0a2540;margin:12px 0 4px;}
+.print-btn{position:fixed;top:16px;right:16px;padding:10px 22px;background:#0a2540;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+@media print{
+  .print-btn{display:none!important;}
+  body{padding:0 20px;}
+  .score-block{break-inside:avoid;}
+  .data-table{break-inside:auto;}
+  .data-table tr{break-inside:avoid;}
+}
+</style>
+</head><body>
+<button class="print-btn" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+<div class="doc-header">
+  <div class="doc-header-left">
+    <div class="badge-org">CAGE-RS · GesProc-RS</div>
+    <h1>${esc(popName)}</h1>
+    <div class="sub">Análise de Maturidade de Processos · Fluxo: ${version === 'tobe' ? 'TO BE' : 'AS IS'}</div>
+  </div>
+  <div class="doc-header-right">
+    <div><strong>Data:</strong> ${today}</div>
+    <div><strong>Histórico:</strong> ${snapshots.length} registro${snapshots.length !== 1 ? 's' : ''}</div>
+  </div>
+</div>
+
+<h2 class="section-title">🏆 Score de Maturidade</h2>
+${scoreBlock}
+${scaleBlock}
+<h2 class="section-title">📐 Métricas e Índices do Processo</h2>
+${metricsBlock}
+${indicesBlock}
+${questBlock}
+${histBlock}
+${aiBlock}
+<script>window.onload=function(){window.print();}<\/script>
+</body></html>`);
+  win.document.close();
 }
 
 async function matGeminiAnalyze(p) {
