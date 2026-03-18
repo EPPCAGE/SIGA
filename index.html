@@ -9,7 +9,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>GesProc-RS — Gestão de Processos CAGE-RS</title>
+<title>SIGE-CAGE — Sistema Integrado de Gestão Estratégica</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230a2540'/%3E%3Crect x='2' y='2' width='28' height='28' rx='4' fill='none' stroke='%2300a86b' stroke-width='2'/%3E%3Ctext x='16' y='22' font-family='Arial,sans-serif' font-size='13' font-weight='bold' fill='%2300a86b' text-anchor='middle'%3EEPP%3C/text%3E%3C/svg%3E">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1353,8 +1353,8 @@
         <circle cx="19" cy="11" r="2.5" stroke="white" stroke-width="2.2"/>
       </svg>
     </div>
-    <div class="auth-title">GesProc-RS</div>
-    <div class="auth-sub">Gestão de Processos CAGE<br>Faça login para acessar e sincronizar seus dados</div>
+    <div class="auth-title">SIGE-CAGE</div>
+    <div class="auth-sub">Sistema Integrado de Gestão Estratégica · CAGE-RS<br>Faça login para acessar e sincronizar seus dados</div>
     <button class="auth-google-btn" onclick="signInGoogle()">
       <svg class="auth-google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Entrar com Google
@@ -1382,7 +1382,7 @@
         </div>
       </div>
       <div class="header-divider-line"></div>
-      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início"><strong>GesProc-RS</strong></div>
+      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início"><strong>SIGE-CAGE</strong></div>
     </div>
     <div class="header-meta">
       <a href="landing.html" title="Voltar ao portal de sistemas" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.45);text-decoration:none;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.1);transition:color .2s,border-color .2s;white-space:nowrap;" onmouseover="this.style.color='rgba(255,255,255,.85)';this.style.borderColor='rgba(255,255,255,.25)'" onmouseout="this.style.color='rgba(255,255,255,.45)';this.style.borderColor='rgba(255,255,255,.1)'">
@@ -1495,15 +1495,17 @@
 <main class="main">
 
 <!-- ══════════════════ HOME PAGE ══════════════════ -->
-<div id="home-page" style="display:none;padding:40px 32px 60px;max-width:1100px;margin:0 auto;">
+<div id="home-page" style="display:none;padding:40px 32px 60px;max-width:1200px;margin:0 auto;">
+
+  <!-- Cabeçalho da home -->
   <div style="margin-bottom:36px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:20px;">
     <div>
-      <div style="font-family:'DM Serif Display',serif;font-size:32px;color:#0a2540;line-height:1.2;">Bem-vindo ao <span style="color:#00a86b;">GesProc-RS</span></div>
-      <div style="font-size:15px;color:#64748b;margin-top:8px;">Gestão de Processos CAGE-RS — selecione um módulo para começar</div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#00a86b;margin-bottom:6px;">CAGE-RS · Controladoria e Auditoria-Geral do Estado</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:34px;color:#0a2540;line-height:1.15;">SIGE-CAGE</div>
+      <div style="font-size:15px;color:#64748b;margin-top:4px;font-weight:500;">Sistema Integrado de Gestão Estratégica</div>
     </div>
     <!-- Logos -->
     <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
-      <!-- EPP Logo -->
       <div id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()">
         <img id="epp-logo-img" src="" alt="Logo EPP" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
         <div id="epp-logo-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
@@ -1512,7 +1514,6 @@
         </div>
         <div id="epp-logo-editor-hint" style="display:none;position:absolute;top:4px;right:6px;font-size:10px;color:#94a3b8;">✎</div>
       </div>
-      <!-- Segundo Logo (upload) -->
       <div id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()">
         <img id="logo2-img" src="" alt="Segundo Logo" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
         <div id="logo2-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
@@ -1524,84 +1525,115 @@
       </div>
     </div>
   </div>
-  <div id="home-stats" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:hidden;margin-bottom:28px;"></div>
-  <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;margin-bottom:40px;">
-    <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
-      <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
-      <div class="home-card-title">Procedimentos Operacionais</div>
-      <div class="home-card-desc">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
-      <div class="home-card-footer" id="home-pops-count">—</div>
+
+  <!-- KPIs -->
+  <div id="home-stats" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:hidden;margin-bottom:36px;"></div>
+
+  <!-- ══ BLOCO 1: GESTÃO DE PROCESSOS ══ -->
+  <div style="margin-bottom:40px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <div style="width:5px;height:28px;background:#00a86b;border-radius:3px;flex-shrink:0;"></div>
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#0a2540;line-height:1.2;">Gestão de Processos</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Mapeamento, análise, melhoria e documentação de processos institucionais</div>
+      </div>
     </div>
-    <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
-      <div class="home-card-icon" style="background:#f5f3ff;color:#8b5cf6;">🏛</div>
-      <div class="home-card-title">Arquitetura de Processos</div>
-      <div class="home-card-desc">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
-      <div class="home-card-footer" id="home-arq-count">—</div>
+    <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
+      <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
+        <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
+        <div class="home-card-title">Procedimentos Operacionais</div>
+        <div class="home-card-desc">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
+        <div class="home-card-footer" id="home-pops-count">—</div>
+      </div>
+      <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
+        <div class="home-card-icon" style="background:#f5f3ff;color:#8b5cf6;">🏛</div>
+        <div class="home-card-title">Arquitetura de Processos</div>
+        <div class="home-card-desc">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
+        <div class="home-card-footer" id="home-arq-count">—</div>
+      </div>
+      <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
+        <div class="home-card-icon" style="background:#fffbeb;color:#f59e0b;">📊</div>
+        <div class="home-card-title">Cadeia de Valor e Mapa Estratégico</div>
+        <div class="home-card-desc">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
+        <div class="home-card-footer">Imagens configuráveis</div>
+      </div>
+      <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
+        <div class="home-card-icon" style="background:#fff1f2;color:#dc2626;">🔍</div>
+        <div class="home-card-title">Auditoria de Processos</div>
+        <div class="home-card-desc">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
+        <div class="home-card-footer" id="home-audit-count">—</div>
+      </div>
+      <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
+        <div class="home-card-icon" style="background:#fffbeb;color:#e8a020;">📈</div>
+        <div class="home-card-title">Indicadores CAGE</div>
+        <div class="home-card-desc">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
+        <div class="home-card-footer" id="home-indcage-count">—</div>
+      </div>
+      <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
+        <div class="home-card-icon" style="background:#eef2ff;color:#6366f1;">🏗️</div>
+        <div class="home-card-title">Modelador BPMN 2.0</div>
+        <div class="home-card-desc">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
+        <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
+      </div>
+      <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
+        <div class="home-card-icon" style="background:#ecfdf5;color:#10b981;">🗒</div>
+        <div class="home-card-title">Quadro de Esboço</div>
+        <div class="home-card-desc">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
+        <div class="home-card-footer">Canvas interativo</div>
+      </div>
+      <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
+        <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
+        <div class="home-card-title">Gestão Escritório de Processos</div>
+        <div class="home-card-desc">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
+        <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
+      </div>
+      <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
+        <div class="home-card-icon" style="background:#f8fafc;color:#64748b;">🔍</div>
+        <div class="home-card-title">Busca Global</div>
+        <div class="home-card-desc">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
+        <div class="home-card-footer">Busca em tempo real</div>
+      </div>
+      <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
+        <div class="home-card-icon" style="background:#fff1f2;color:#e11d48;">📚</div>
+        <div class="home-card-title">Documentos e Manuais</div>
+        <div class="home-card-desc">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
+        <div class="home-card-footer" id="home-repo-count">—</div>
+      </div>
+      <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
+        <div class="home-card-icon" style="background:#f0f9ff;color:#0ea5e9;">💧</div>
+        <div class="home-card-title">Drops de Conhecimento</div>
+        <div class="home-card-desc">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
+        <div class="home-card-footer" id="home-drops-count">—</div>
+      </div>
+      <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
+        <div class="home-card-icon" style="background:#fdf2f8;color:#ec4899;">💡</div>
+        <div class="home-card-title">Caixinha de Ideias</div>
+        <div class="home-card-desc">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
+        <div class="home-card-footer">Formulário Microsoft Forms</div>
+      </div>
     </div>
-    <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
-      <div class="home-card-icon" style="background:#fffbeb;color:#f59e0b;">📊</div>
-      <div class="home-card-title">Cadeia de Valor e Mapa Estratégico CAGE</div>
-      <div class="home-card-desc">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
-      <div class="home-card-footer">Imagens configuráveis</div>
+  </div>
+
+  <!-- ══ BLOCO 2: GESTÃO DE PROJETOS ══ -->
+  <div style="margin-bottom:40px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <div style="width:5px;height:28px;background:#3b82f6;border-radius:3px;flex-shrink:0;"></div>
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#0a2540;line-height:1.2;">Gestão de Projetos</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Planejamento, acompanhamento e controle de projetos institucionais</div>
+      </div>
     </div>
-    <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
-      <div class="home-card-icon" style="background:#ecfdf5;color:#10b981;">🗒</div>
-      <div class="home-card-title">Quadro de Esboço</div>
-      <div class="home-card-desc">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
-      <div class="home-card-footer">Canvas interativo</div>
-    </div>
-    <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
-      <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
-      <div class="home-card-title">Gestão Escritório de Processos</div>
-      <div class="home-card-desc">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
-      <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
-    </div>
-    <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
-      <div class="home-card-icon" style="background:#f8fafc;color:#64748b;">🔍</div>
-      <div class="home-card-title">Busca Global</div>
-      <div class="home-card-desc">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
-      <div class="home-card-footer">Busca em tempo real</div>
-    </div>
-    <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
-      <div class="home-card-icon" style="background:#fff1f2;color:#e11d48;">📚</div>
-      <div class="home-card-title">Documentos e Manuais</div>
-      <div class="home-card-desc">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
-      <div class="home-card-footer" id="home-repo-count">—</div>
-    </div>
-    <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
-      <div class="home-card-icon" style="background:#f0f9ff;color:#0ea5e9;">💧</div>
-      <div class="home-card-title">Drops de Conhecimento</div>
-      <div class="home-card-desc">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
-      <div class="home-card-footer" id="home-drops-count">—</div>
-    </div>
-    <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
-      <div class="home-card-icon" style="background:#fff1f2;color:#dc2626;">🔍</div>
-      <div class="home-card-title">Auditoria de Processos</div>
-      <div class="home-card-desc">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
-      <div class="home-card-footer" id="home-audit-count">—</div>
-    </div>
-    <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
-      <div class="home-card-icon" style="background:#fffbeb;color:#e8a020;">📈</div>
-      <div class="home-card-title">Indicadores CAGE</div>
-      <div class="home-card-desc">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
-      <div class="home-card-footer" id="home-indcage-count">—</div>
-    </div>
-    <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
-      <div class="home-card-icon" style="background:#eef2ff;color:#6366f1;">🏗️</div>
-      <div class="home-card-title">Modelador BPMN 2.0</div>
-      <div class="home-card-desc">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
-      <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
-    </div>
-    <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
-      <div class="home-card-icon" style="background:#fdf2f8;color:#ec4899;">💡</div>
-      <div class="home-card-title">Caixinha de Ideias</div>
-      <div class="home-card-desc">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
-      <div class="home-card-footer">Formulário Microsoft Forms</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
+      <div style="border-radius:14px;border:2px dashed #bfdbfe;background:#f0f7ff;padding:28px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:140px;gap:10px;">
+        <div style="font-size:32px;">🚧</div>
+        <div style="font-size:14px;font-weight:700;color:#1d4ed8;">Em desenvolvimento</div>
+        <div style="font-size:12px;color:#64748b;line-height:1.5;">Os módulos de Gestão de Projetos estão sendo desenvolvidos e serão disponibilizados em breve.</div>
+      </div>
     </div>
   </div>
 
   <!-- Rodapé de contato -->
-  <div style="margin-top:40px;padding-top:24px;border-top:1px solid #e2e8f0;text-align:center;font-size:13px;color:#64748b;line-height:1.7;">
+  <div style="margin-top:20px;padding-top:24px;border-top:1px solid #e2e8f0;text-align:center;font-size:13px;color:#64748b;line-height:1.7;">
     Dúvidas, sugestões ou oportunidades de melhoria podem ser encaminhadas para:
     <a href="mailto:epp.cage@sefaz.rs.gov.br" style="color:#00a86b;font-weight:600;text-decoration:none;margin-left:4px;">epp.cage@sefaz.rs.gov.br</a>
   </div>
@@ -1834,7 +1866,7 @@
     <div class="card-body" style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div>
         <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Nome do Sistema</label>
-        <input class="modal-input" id="gp-nome-sistema" type="text" placeholder="GesProc-RS" oninput="saveGlobalParam('nomeSistema',this.value);applyGlobalParams()">
+        <input class="modal-input" id="gp-nome-sistema" type="text" placeholder="SIGE-CAGE" oninput="saveGlobalParam('nomeSistema',this.value);applyGlobalParams()">
       </div>
       <div>
         <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Subtítulo Institucional</label>
@@ -3477,7 +3509,7 @@ Fim"></textarea>
                 <div style="font-size:13px;font-weight:600;color:var(--cage-blue);margin-bottom:4px;">Envie seu arquivo + copie este prompt</div>
                 <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;position:relative;">
                   <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.6;font-style:italic;white-space:pre-wrap;" id="npop-prompt-text"># PROMPT COMPLETO — EXTRAÇÃO DE POP CAGE → GESPROC-RS
-Analise o documento de processo enviado (POP, manual de processo ou relatório de processo) e extraia todas as informações estruturadas para o sistema GesProc-RS da CAGE-RS.
+Analise o documento de processo enviado (POP, manual de processo ou relatório de processo) e extraia todas as informações estruturadas para o sistema SIGE-CAGE da CAGE-RS.
 Leia o documento INTEIRO antes de estruturar os dados. Nunca invente informações. Se um campo não existir no documento, retorne null ou lista vazia. Retorne APENAS JSON puro, sem explicações.
 
 # REGRA CRÍTICA — LIMPEZA
@@ -11852,7 +11884,7 @@ function exportBackup() {
     const payload = {
       _version: 2,
       _exported: new Date().toISOString(),
-      _app: 'GesProc-RS',
+      _app: 'SIGE-CAGE',
       d:    DATA.d,
       r:    DATA.r,
       pat:  DATA.pat || [],
@@ -12409,7 +12441,7 @@ async function _loadCageLogoB64() {
 async function buildPptx(D, _popKey) {
   const pres = new PptxGenJS();
   pres.layout = 'LAYOUT_16x9';
-  pres.title  = 'GesProc-RS · ' + (D.meta?.name || 'POP');
+  pres.title  = 'SIGE-CAGE · ' + (D.meta?.name || 'POP');
 
   const cageLogoB64 = await _loadCageLogoB64();
 
@@ -12450,7 +12482,7 @@ async function buildPptx(D, _popKey) {
     s.addShape(pres.ShapeType.rect, { x:0, y:0, w:0.25, h:5.625, fill:{ color:C.green } });
     s.addShape(pres.ShapeType.ellipse, { x:8.2, y:0.2, w:3.5, h:3.5, fill:{ color:'FFFFFF', transparency:92 } });
     s.addShape(pres.ShapeType.ellipse, { x:7.5, y:0.8, w:2.2, h:2.2, fill:{ color:C.green, transparency:85 } });
-    s.addText('CAGE-RS · GesProc-RS', { x:0.5, y:0.3, w:8, h:0.35, fontSize:10, color:C.green, bold:true, charSpacing:2, margin:0 });
+    s.addText('CAGE-RS · SIGE-CAGE', { x:0.5, y:0.3, w:8, h:0.35, fontSize:10, color:C.green, bold:true, charSpacing:2, margin:0 });
     s.addText('PROCEDIMENTO OPERACIONAL PADRÃO', { x:0.5, y:0.75, w:8, h:0.35, fontSize:10, color:'CADCFC', bold:true, charSpacing:3, margin:0 });
     s.addText(nome, { x:0.5, y:1.2, w:8.5, h:1.5, fontSize:36, color:C.white, bold:true, fontFace:'Calibri', margin:0 });
     if(macro)    s.addText(macro,    { x:0.5, y:2.85, w:8, h:0.5, fontSize:13, color:'CADCFC', margin:0 });
@@ -12859,7 +12891,7 @@ async function buildPptx(D, _popKey) {
     s.background = { color: C.navy };
     s.addShape(pres.ShapeType.rect, { x:0, y:0, w:0.25, h:5.625, fill:{ color:C.green } });
     s.addShape(pres.ShapeType.ellipse, { x:6.5, y:2.5, w:5, h:5, fill:{ color:'FFFFFF', transparency:94 } });
-    s.addText('GesProc-RS', { x:0.5, y:1.5, w:8, h:0.5, fontSize:13, color:C.green, bold:true, charSpacing:2, margin:0 });
+    s.addText('SIGE-CAGE', { x:0.5, y:1.5, w:8, h:0.5, fontSize:13, color:C.green, bold:true, charSpacing:2, margin:0 });
     s.addText(nome, { x:0.5, y:2.1, w:8, h:1.0, fontSize:32, color:C.white, bold:true, margin:0 });
     s.addText('Procedimento Operacional Padrão', { x:0.5, y:3.2, w:8, h:0.4, fontSize:12, color:'8898BB', margin:0 });
     s.addText([
@@ -12870,7 +12902,7 @@ async function buildPptx(D, _popKey) {
   }
 
   // ── SALVAR ───────────────────────────────────────────────────────────────
-  const fname = 'GesProc-RS_' + nome.replace(/[^a-zA-Z0-9]/g,'_') + '.pptx';
+  const fname = 'SIGE-CAGE_' + nome.replace(/[^a-zA-Z0-9]/g,'_') + '.pptx';
   await pres.writeFile({ fileName: fname });
   showToast('✅ PPT exportado: ' + fname, 'success');
 }
@@ -14098,7 +14130,7 @@ function gerarAtaAcomp(pop, period) {
   saveAcomp(pop); // garante dados atualizados
   const acomp = DATA[pop]?.acompanhamento?.[period] || {};
   const gp    = DATA.config?.globalParams || {};
-  const inst  = gp.nomeSistema || 'GesProc-RS';
+  const inst  = gp.nomeSistema || 'SIGE-CAGE';
   const sub   = gp.subtitulo   || 'Escritório de Processos · CAGE-RS';
   const nomeProcesso = DATA[pop]?.meta?.name || DATA[pop]?.ficha?.nome || pop.toUpperCase();
 
@@ -18437,7 +18469,7 @@ function auditExportRelatorioWord(planId) {
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Auditoria</title><style>${style}</style></head><body>
 <div class="cover">
-  <div style="font-size:9pt;letter-spacing:2px;color:#93c5fd;text-transform:uppercase;margin-bottom:16px;">CAGE-RS · GesProc-RS</div>
+  <div style="font-size:9pt;letter-spacing:2px;color:#93c5fd;text-transform:uppercase;margin-bottom:16px;">CAGE-RS · SIGE-CAGE</div>
   <h1>Relatório de Auditoria</h1>
   <p class="subtitle">${plan.processoNome||plan.objetivo||'—'}</p>
   <div class="meta">
@@ -18493,7 +18525,7 @@ function auditExportRelatorioWord(planId) {
 </div>
 
 <div class="footer">
-  <strong>CAGE-RS</strong> · Contadoria e Auditoria-Geral do Estado · GesProc-RS &nbsp;|&nbsp; Emitido em ${today} &nbsp;|&nbsp; Este documento é de uso interno.
+  <strong>CAGE-RS</strong> · Contadoria e Auditoria-Geral do Estado · SIGE-CAGE &nbsp;|&nbsp; Emitido em ${today} &nbsp;|&nbsp; Este documento é de uso interno.
 </div>
 </body></html>`;
 
@@ -18530,7 +18562,7 @@ async function npopExtractWithGemini(file) {
 
     const prompt = document.getElementById('npop-prompt-text')?.textContent?.trim() ||
 `# PROMPT COMPLETO — EXTRAÇÃO DE POP CAGE → GESPROC-RS
-Analise o documento de processo enviado e extraia todas as informações estruturadas para o sistema GesProc-RS da CAGE-RS. Leia o documento INTEIRO antes de estruturar. Nunca invente informações. Retorne APENAS JSON puro.
+Analise o documento de processo enviado e extraia todas as informações estruturadas para o sistema SIGE-CAGE da CAGE-RS. Leia o documento INTEIRO antes de estruturar. Nunca invente informações. Retorne APENAS JSON puro.
 
 SIGLAS: extraia TODAS as siglas do documento, cada uma como entrada separada em siglas[].
 EXECUTORES: crie uma entrada SEPARADA para cada executor — nunca concatene nomes com ";" em um único "name". Use o nome exato do executor no campo "actor" de cada action.
@@ -20475,7 +20507,7 @@ function statusModalUpdateSubList() {
       const pres = new PptxGenJS();
       pres.layout = 'LAYOUT_16x9';
       pres.title  = titulo + ' — ' + trimestreLabel;
-      pres.author = 'GesProc-RS — CAGE-RS';
+      pres.author = 'SIGE-CAGE — CAGE-RS';
 
       const cageLogoB64 = await _loadCageLogoB64();
 
@@ -20634,7 +20666,7 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
       const sFinal = pres.addSlide();
       sFinal.addShape(pres.ShapeType.rect, { x:0, y:0, w:10, h:7.5, fill:{ color:C.navy } });
       sFinal.addShape(pres.ShapeType.rect, { x:0, y:3.5, w:10, h:0.1, fill:{ color:C.gold } });
-      sFinal.addText('Relatório gerado automaticamente pelo GesProc-RS', { x:0.8, y:3.7, w:8.4, fontSize:14, color:C.white, align:'center' });
+      sFinal.addText('Relatório gerado automaticamente pelo SIGE-CAGE', { x:0.8, y:3.7, w:8.4, fontSize:14, color:C.white, align:'center' });
       sFinal.addText(subtitulo, { x:0.8, y:4.35, w:8.4, fontSize:11, color:'8CB8FF', align:'center', italic:true });
       sFinal.addText(hoje, { x:0.8, y:4.85, w:8.4, fontSize:10, color:C.muted, align:'center', italic:true });
       _cageLogoAdd(sFinal, { x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
@@ -21614,10 +21646,10 @@ function matExportPdf(p) {
           <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Sentido</th><th>Barra</th></tr>
           ${[
             ['👥 Percepção da Equipe', '30%', final.equipe,      '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
-            ['⚠️ Risco Operacional',  '25%', final.normRisco,   '#ef4444', '↑ menor risco = melhor', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3.'],
-            ['📋 Burocracia',          '20%', final.normBuroc,   '#f97316', '↑ menos burocracia = melhor', 'Escala linear com teto em 50%: 1 − (aprovações+revisões ÷ atividades) ÷ 0,5. Fontes: natureza da ação e palavras-chave no texto.'],
-            ['💻 Digitalização',       '15%', final.normAutom,   '#0891b2', '↑ maior = melhor', 'Percentual de atividades que possuem sistema registrado (rastreabilidade e automação do fluxo).'],
-            ['🔄 Complexidade',        '10%', final.normComplex, '#a78bfa', '↑ menos complexo = melhor', 'Decaimento exponencial (meia-vida ≈ 50 pts) sobre: atividades×1 + decisões×2 + atores×1,5 + loops×3 + eventos de início×1,5 + eventos de encerramento×1.'],
+            ['⚠️ Risco Operacional',  '25%', final.normRisco,   '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
+            ['📋 Burocracia',          '20%', final.normBuroc,   '#f97316', '100 = processo ágil (invertido)', 'Escala linear com teto em 50%: 1 − (aprovações+revisões ÷ atividades) ÷ 0,5. Fontes: natureza da ação e palavras-chave no texto. Percentual bruto invertido → maior pontuação = menos burocracia.'],
+            ['💻 Digitalização',       '15%', final.normAutom,   '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades que possuem sistema registrado (rastreabilidade e automação do fluxo).'],
+            ['🔄 Complexidade',        '10%', final.normComplex, '#a78bfa', '100 = baixa complexidade (invertido)', 'Decaimento exponencial (meia-vida ≈ 50 pts) sobre: atividades×1 + decisões×2 + atores×1,5 + loops×3 + eventos de início×1,5 + eventos de encerramento×1. Score bruto invertido → maior pontuação = menor complexidade.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
               <td>${lbl}</td>
@@ -21655,25 +21687,28 @@ function matExportPdf(p) {
   // ── Índices ────────────────────────────────────────────────────────────
   const indicesBlock = `
     <table class="data-table">
-      <tr><th colspan="3">📊 Índices Calculados</th></tr>
-      <tr><th>Índice</th><th>Valor</th><th>Classificação</th></tr>
+      <tr><th colspan="3">📊 Índices Brutos do Processo</th></tr>
+      <tr><td colspan="3" style="font-size:10px;color:#64748b;padding:5px 10px;background:#f8fafc;font-style:italic;">
+        Valores originais, na escala natural de cada métrica. São invertidos/normalizados para a escala 0–100 dos componentes do Score de Maturidade acima.
+      </td></tr>
+      <tr><th>Índice</th><th>Valor bruto</th><th>Classificação</th></tr>
       <tr>
-        <td>Complexidade <span class="note">(↓ menor = melhor)</span></td>
-        <td>${metrics.complexScore.toFixed(1)}</td>
+        <td>Complexidade <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100)</span></td>
+        <td>${metrics.complexScore.toFixed(1)} pts</td>
         <td><span class="badge" style="background:${metrics.complexCls}20;color:${metrics.complexCls};">${metrics.complexLabel}</span></td>
       </tr>
       <tr>
-        <td>Burocracia <span class="note">(↓ menor = melhor)</span></td>
+        <td>Burocracia <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100)</span></td>
         <td>${(metrics.burocracia*100).toFixed(1)}%</td>
         <td><span class="badge" style="background:${metrics.burocCls}20;color:${metrics.burocCls};">${metrics.burocLabel}</span></td>
       </tr>
       <tr>
-        <td>Risco Operacional <span class="note">(↓ menor = melhor)</span></td>
-        <td>${risco.score}</td>
+        <td>Risco Operacional <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100)</span></td>
+        <td>${risco.score} pts</td>
         <td><span class="badge" style="background:${risco.cls}20;color:${risco.cls};">${risco.label}</span></td>
       </tr>
       <tr>
-        <td>Digitalização <span class="note">(↑ maior = melhor)</span></td>
+        <td>Digitalização <span class="note">(bruto = normalizado — ↑ maior = melhor)</span></td>
         <td>${(metrics.automRate*100).toFixed(0)}%</td>
         <td><span class="badge" style="background:${automCls}20;color:${automCls};">${automLabel}</span></td>
       </tr>
@@ -21804,7 +21839,7 @@ body{font-family:'Inter',sans-serif;color:#1e293b;font-size:13px;padding:36px 48
 <button class="print-btn" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
 <div class="doc-header">
   <div class="doc-header-left">
-    <div class="badge-org">CAGE-RS · GesProc-RS</div>
+    <div class="badge-org">CAGE-RS · SIGE-CAGE</div>
     <h1>${esc(popName)}</h1>
     <div class="sub">Análise de Maturidade de Processos · Fluxo: ${version === 'tobe' ? 'TO BE' : 'AS IS'}</div>
   </div>
