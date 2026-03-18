@@ -565,21 +565,6 @@
   .ck-bar{height:4px;border-radius:2px;background:#e2e8f0;margin-top:10px;overflow:hidden;}
   .ck-bar-fill{height:100%;background:var(--cage-accent);border-radius:2px;transition:width .3s;}
 
-  /* ── RACI ────────────────────────────────── */
-  .raci-wrap{overflow-x:auto;}
-  .raci-table{width:100%;border-collapse:collapse;font-size:12px;}
-  .raci-table th{background:#0a2540;color:white;padding:8px 10px;text-align:center;font-weight:600;white-space:nowrap;}
-  .raci-table th.raci-step-col{text-align:left;min-width:180px;}
-  .raci-table td{padding:6px 10px;text-align:center;border:1px solid #e2e8f0;vertical-align:middle;}
-  .raci-table td.raci-step-name{text-align:left;font-weight:600;color:#0a2540;background:#f8fafc;font-size:12px;}
-  .raci-cell{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-weight:800;font-size:12px;cursor:pointer;transition:all .15s;user-select:none;}
-  .raci-cell.R{background:#dcfce7;color:#166534;}
-  .raci-cell.A{background:#fef9c3;color:#854d0e;}
-  .raci-cell.C{background:#dbeafe;color:#1e40af;}
-  .raci-cell.I{background:#f3e8ff;color:#6b21a8;}
-  .raci-cell.empty{background:#f1f5f9;color:#94a3b8;}
-  .raci-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:11px;}
-  .raci-legend span{display:flex;align-items:center;gap:5px;}
 
   /* ── NATUREZA DA ATIVIDADE ───────────────── */
   .natureza-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
@@ -1462,7 +1447,6 @@
     <div class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)">🤝 Reuniões</div>
     <div class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)">📋 Acompanhamento</div>
     <div class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)">☑️ Checklists</div>
-    <div class="nav-tab" data-sortkey="raci" onclick="showSection('raci',this)">📊 RACI</div>
     <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
     <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
     <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)">📊 Maturidade</div>
@@ -2498,18 +2482,6 @@
     </div>
   </section>
 
-  <!-- RACI -->
-  <section id="d-raci" class="section">
-    <div class="section-inner">
-      <div class="card fade-up" style="margin-bottom:16px;">
-        <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-          <div style="font-size:13px;color:var(--text-secondary);">📊 Matriz RACI gerada automaticamente a partir do fluxo. Clique em cada célula para sobrescrever (R→A→C→I→vazio).</div>
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="syncRaci('d')">↻ Atualizar RACI</button>
-        </div>
-      </div>
-      <div id="d-raci-wrap" class="raci-wrap"></div>
-    </div>
-  </section>
 
   <!-- ACOMPANHAMENTO -->
   <section id="d-acompanhamento" class="section">
@@ -2876,18 +2848,6 @@
     </div>
   </section>
 
-  <!-- RACI -->
-  <section id="r-raci" class="section">
-    <div class="section-inner">
-      <div class="card fade-up" style="margin-bottom:16px;">
-        <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-          <div style="font-size:13px;color:var(--text-secondary);">📊 Matriz RACI gerada automaticamente a partir do fluxo. Clique em cada célula para sobrescrever (R→A→C→I→vazio).</div>
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="syncRaci('r')">↻ Atualizar RACI</button>
-        </div>
-      </div>
-      <div id="r-raci-wrap" class="raci-wrap"></div>
-    </div>
-  </section>
 
   <!-- ACOMPANHAMENTO -->
   <section id="r-acompanhamento" class="section">
@@ -5223,7 +5183,6 @@ function showSection(id, tab, silent) {
   }
   if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
   if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) {}
-  if(id === 'raci')        try { renderRaci(popPrefix(currentPop)); } catch(e) {}
   if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { console.error('[matRender]', e); const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) c.innerHTML = '<p style="color:red;padding:20px;">Erro ao renderizar: ' + e.message + '</p>'; } }
   if(!silent && editMode) enableEditables(true);
   try { _updateVersionBars(); } catch(e) {}
@@ -5445,9 +5404,6 @@ function sanitizePop(p) {
   if(!d.versionNum)                d.versionNum = 1;
   if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
   if(!Array.isArray(d.checklists))     d.checklists = [];
-  if(!d.raciOverrides || typeof d.raciOverrides !== 'object') d.raciOverrides = {};
-  if(!Array.isArray(d.raciExtraActors)) d.raciExtraActors = [];
-  if(!d.raciVersion) d.raciVersion = 'asis';
   if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
   if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
   if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
@@ -7263,17 +7219,6 @@ function mountNewPopTab(key, label, silent=false) {
           </div>
         </div>
         <div id="${key}-ck-list"></div>
-      </div>
-    </div>
-    <div id="${key}-raci" class="section">
-      <div class="section-inner">
-        <div class="card fade-up" style="margin-bottom:16px;">
-          <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-            <div style="font-size:13px;color:var(--text-secondary);">📊 Matriz RACI gerada automaticamente a partir do fluxo.</div>
-            <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="syncRaci('${key}')">↻ Atualizar RACI</button>
-          </div>
-        </div>
-        <div id="${key}-raci-wrap" class="raci-wrap"></div>
       </div>
     </div>
     <div id="${key}-acompanhamento" class="section">
@@ -13326,187 +13271,6 @@ function renderChecklists(p) {
       </ul>
     </div>`;
   }).join('');
-}
-
-// ═══ RACI ═══════════════════════════════════════════════════════
-
-function syncRaci(p) {
-  try { harvestEditables(); } catch(e) { /* silencioso */ }
-  renderRaci(p);
-  showToast('✅ RACI atualizado com base no fluxo atual.', 'success');
-}
-
-function _getRaciActors(p, mode) {
-  const d = DATA[p];
-  const actors = new Map(); // key (normalized) → display name
-  (d.steps || []).forEach(s => {
-    const rs = resolveStep(s, mode);
-    const resp = rs.responsible.trim();
-    if(resp) actors.set(resp.toLowerCase(), resp);
-    rs.actions.forEach(a => {
-      const actor = typeof a === 'object' ? (a.actor || '').trim() : '';
-      if(actor) actors.set(actor.toLowerCase(), actor);
-    });
-  });
-  // Atores extras adicionados manualmente na RACI
-  (d.raciExtraActors || []).forEach(name => {
-    const key = name.trim().toLowerCase();
-    if(key && !actors.has(key)) actors.set(key, name.trim());
-  });
-  return actors; // Map { 'chefia dir' → 'Chefia DIR', ... }
-}
-
-function setRaciVersion(p, v) {
-  DATA[p].raciVersion = v;
-  renderRaci(p);
-  markChanged(true);
-}
-
-function addRaciActor(p) {
-  if(!isEditor) { showToast('🔒 Apenas editores.', 'warn'); return; }
-  const input = document.getElementById('raci-new-actor-' + p);
-  const name = (input?.value || '').trim();
-  if(!name) { showToast('Informe o nome do ator.', 'warn'); return; }
-  const key = name.toLowerCase();
-  if(!DATA[p].raciExtraActors) DATA[p].raciExtraActors = [];
-  const mode = DATA[p].raciVersion || 'asis';
-  const actors = _getRaciActors(p, mode);
-  if(actors.has(key)) { showToast('Ator já existe na matriz.', 'warn'); return; }
-  DATA[p].raciExtraActors.push(name);
-  markChanged();
-  renderRaci(p);
-  showToast('✅ Ator adicionado!', 'success');
-}
-
-function removeRaciActor(p, actorKey) {
-  if(!isEditor) { showToast('🔒 Apenas editores.', 'warn'); return; }
-  DATA[p].raciExtraActors = (DATA[p].raciExtraActors || []).filter(n => n.trim().toLowerCase() !== actorKey);
-  // Remover overrides deste ator em ambos os modos
-  Object.keys(DATA[p].raciOverrides).forEach(k => {
-    if(k.endsWith('_' + actorKey)) delete DATA[p].raciOverrides[k];
-  });
-  markChanged();
-  renderRaci(p);
-  showToast('Ator removido.', 'success');
-}
-
-function cycleRaciCell(p, stepIdx, actorKey, mode) {
-  if(!isEditor) { showToast('🔒 Apenas editores.', 'warn'); return; }
-  const oKey = `${mode||'asis'}_${stepIdx}_${actorKey}`;
-  const cur = DATA[p].raciOverrides[oKey] || '';
-  const cycle = ['', 'R', 'A', 'C', 'I'];
-  const next = cycle[(cycle.indexOf(cur) + 1) % cycle.length];
-  if(next === '') delete DATA[p].raciOverrides[oKey];
-  else DATA[p].raciOverrides[oKey] = next;
-  renderRaci(p);
-  markChanged(true);
-}
-
-function renderRaci(p) {
-  const wrap = document.getElementById(p + '-raci-wrap');
-  if(!wrap) return;
-  const d = DATA[p];
-  const mode = d.raciVersion || 'asis';
-  const steps = d.steps || [];
-
-  // Toggle AS IS / TO BE
-  let html = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 14px;background:#f1f5f9;border-radius:10px;flex-wrap:wrap;">
-      <span style="font-size:12px;font-weight:700;color:#475569;margin-right:4px;">Analisando fluxo:</span>
-      <button onclick="setRaciVersion('${p}','asis')"
-        style="padding:6px 16px;border-radius:20px;border:none;font-size:12px;font-weight:700;cursor:pointer;
-               background:${mode==='asis'?'#0a2540':'#e2e8f0'};color:${mode==='asis'?'#fff':'#475569'};">
-        AS IS (situação atual)
-      </button>
-      <button onclick="setRaciVersion('${p}','tobe')"
-        style="padding:6px 16px;border-radius:20px;border:none;font-size:12px;font-weight:700;cursor:pointer;
-               background:${mode==='tobe'?'#0a2540':'#e2e8f0'};color:${mode==='tobe'?'#fff':'#475569'};">
-        TO BE (processo futuro)
-      </button>
-    </div>`;
-
-  if(!steps.length) {
-    wrap.innerHTML = html + '<div style="text-align:center;padding:32px;color:var(--text-muted);">Nenhuma etapa cadastrada. Adicione etapas no Fluxo primeiro.</div>';
-    return;
-  }
-
-  const actors = _getRaciActors(p, mode);
-  if(!actors.size) {
-    wrap.innerHTML = html + '<div style="text-align:center;padding:32px;color:var(--text-muted);">Nenhum ator identificado. Preencha os campos "Executor" e "Responsável" nas etapas do fluxo.</div>';
-    return;
-  }
-
-  const actorKeys = [...actors.keys()];
-  const actorNames = actorKeys.map(k => actors.get(k));
-
-  // Determina quais colunas são de atores extras (não do fluxo no modo atual)
-  const flowActorKeys = new Set();
-  (d.steps || []).forEach(s => {
-    const rs = resolveStep(s, mode);
-    const resp = rs.responsible.trim();
-    if(resp) flowActorKeys.add(resp.toLowerCase());
-    rs.actions.forEach(a => {
-      const actor = typeof a === 'object' ? (a.actor || '').trim() : '';
-      if(actor) flowActorKeys.add(actor.toLowerCase());
-    });
-  });
-
-  html += '<table class="raci-table"><thead><tr>';
-  html += '<th class="raci-step-col">Etapa</th>';
-  actorNames.forEach((name, i) => {
-    const ak = actorKeys[i];
-    const isExtra = !flowActorKeys.has(ak);
-    const rmBtn = (isEditor && isExtra)
-      ? `<button onclick="removeRaciActor('${p}','${ak.replace(/'/g,"\\'")}')" title="Remover ator"
-           style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:10px;padding:0 0 0 4px;line-height:1;vertical-align:middle;">✕</button>`
-      : '';
-    const label = name.length > 14 ? name.slice(0,13)+'…' : name;
-    html += `<th title="${name}">${label}${rmBtn}</th>`;
-  });
-  html += '</tr></thead><tbody>';
-
-  steps.forEach((s, si) => {
-    const rs = resolveStep(s, mode);
-    const resp = rs.responsible.trim().toLowerCase();
-    html += `<tr><td class="raci-step-name">Etapa ${si+1}: ${rs.title||'(sem título)'}</td>`;
-    actorKeys.forEach(ak => {
-      const oKey = `${mode}_${si}_${ak}`;
-      const override = d.raciOverrides[oKey];
-      let val = override || '';
-      // Auto-assign R e A se não houver override
-      if(!override) {
-        const isResp  = ak === resp;
-        const isActor = rs.actions.some(a => typeof a === 'object' && (a.actor||'').trim().toLowerCase() === ak);
-        if(isResp && isActor) val = 'R';
-        else if(isActor)      val = 'R';
-        else if(isResp)       val = 'A';
-      }
-      const cls = val || 'empty';
-      const tip = val ? 'Clique para alterar' : 'Clique para R→A→C→I→vazio';
-      html += `<td><span class="raci-cell ${cls}" title="${tip}" onclick="cycleRaciCell('${p}',${si},'${ak}','${mode}')">${val||'—'}</span></td>`;
-    });
-    html += '</tr>';
-  });
-
-  html += '</tbody></table>';
-  html += `<div class="raci-legend">
-    <span><span class="raci-cell R" style="width:20px;height:20px;font-size:10px;">R</span> Responsável pela execução</span>
-    <span><span class="raci-cell A" style="width:20px;height:20px;font-size:10px;">A</span> Aprovador / Accountable</span>
-    <span><span class="raci-cell C" style="width:20px;height:20px;font-size:10px;">C</span> Consultado</span>
-    <span><span class="raci-cell I" style="width:20px;height:20px;font-size:10px;">I</span> Informado</span>
-    <span style="color:var(--text-muted);font-size:11px;">💡 R e A são inferidos do fluxo ${mode==='tobe'?'TO BE':'AS IS'}. Clique em qualquer célula para sobrescrever manualmente (R→A→C→I→vazio).</span>
-  </div>`;
-
-  if(isEditor) {
-    html += `<div style="display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap;">
-      <span style="font-size:12px;font-weight:600;color:#64748b;">＋ Adicionar ator:</span>
-      <input id="raci-new-actor-${p}" class="modal-input" type="text" placeholder="Nome do ator..."
-        style="flex:1;min-width:160px;max-width:280px;font-size:12px;padding:6px 10px;margin:0;"
-        onkeydown="if(event.key==='Enter') addRaciActor('${p}')">
-      <button onclick="addRaciActor('${p}')" class="btn btn-primary" style="font-size:12px;padding:6px 14px;">＋ Incluir</button>
-    </div>`;
-  }
-  wrap.innerHTML = html;
 }
 
 // ═══ PLANO DE AÇÃO ════════════════════════
