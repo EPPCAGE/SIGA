@@ -12897,7 +12897,7 @@ async function buildPptx(D, _popKey) {
           { label:'Risco',           val:matResult.normRisco,   color:'EF4444' },
           { label:'Burocracia',      val:matResult.normBuroc,   color:C.amber },
           { label:'Digitalização',   val:matResult.normAutom,   color:C.green },
-          { label:'Complexidade',    val:matResult.normComplex, color:'7C3AED' },
+          { label:'Foco Execução',   val:matResult.normFoco,    color:'22C55E' },
         ];
         comps.forEach((c, ci) => {
           const y = 1.2 + ci * 0.72;
@@ -16110,10 +16110,10 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
         <tr><th>Componente</th><th>Peso</th><th>Pontuação (0–100)</th></tr>
         ${[
           ['👥 Percepção da Equipe', '30%', matFinal.equipe,      '#6366f1'],
-          ['⚠️ Risco Operacional',  '25%', matFinal.normRisco,   '#ef4444'],
-          ['📋 Burocracia',          '20%', matFinal.normBuroc,   '#f97316'],
-          ['💻 Digitalização',       '15%', matFinal.normAutom,   '#0891b2'],
-          ['🔄 Complexidade',        '10%', matFinal.normComplex, '#a78bfa'],
+          ['⚠️ Risco Operacional',   '20%', matFinal.normRisco, '#ef4444'],
+          ['📋 Overhead Burocrático','20%', matFinal.normBuroc, '#f97316'],
+          ['💻 Digitalização',        '15%', matFinal.normAutom, '#0891b2'],
+          ['🎯 Foco em Execução',     '15%', matFinal.normFoco,  '#22c55e'],
         ].map(([lbl, peso, val, col]) => `<tr>
           <td>${lbl}</td>
           <td style="text-align:center;">${peso}</td>
@@ -20994,7 +20994,7 @@ function _loopSimilar(textA, textB) {
 function matAuditDetails(p, version) {
   const steps = (DATA[p] && DATA[p].steps) || [];
   const LOOP_TRIGGER_KW = ['complementa','devolver','retornar','reenviar'];
-  const APPROVAL_KW     = ['aprovação','aprovacao','revisão','revisao','autorização','autorizacao','validação','validacao','verificação','verificacao'];
+  const APPROVAL_KW     = ['aprovação','aprovacao','revisão','revisao','autorização','autorizacao','validação','validacao'];
   const audit = { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], actors:new Set() };
 
   let prevActor = '';
@@ -21016,7 +21016,7 @@ function matAuditDetails(p, version) {
       if(type === 'atividade') audit.activities.push({ step: stepName, text: txt });
       if(type === 'decisao')   audit.decisions.push({ step: stepName, text: txt });
 
-      const isBurocByNat = (nat === 'aprovacao' || nat === 'revisao');
+      const isBurocByNat = (nat === 'aprovacao' || nat === 'revisao' || nat === 'controle');
       const isBurocByKw  = !nat && APPROVAL_KW.some(k => textLow.includes(k));
       if(isBurocByNat || isBurocByKw)
         audit.approvals.push({ step: stepName, text: txt, via: isBurocByNat ? `natureza: ${nat}` : 'palavra-chave no texto' });
@@ -21097,11 +21097,14 @@ function matShowAudit(p) {
 function matComputeMetrics(p, version='asis') {
   const steps = (DATA[p] && DATA[p].steps) || [];
   let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, actionsWithSistema = 0, totalStartEvents = 0, totalEndEvents = 0;
+  // Contadores por natureza (7 naturezas)
+  let totalExecucao = 0, totalControle = 0, totalDistribuicao = 0, totalComunicacao = 0, totalPlanejamento = 0;
+  let anyNatDefined = false;
   const allActors = new Set();
   const allSistemas = new Set();
   // Palavras que indicam o loop-back (retrabalho ocorreu) — não inclui aprovacao/revisao no texto pois são checkpoints, não retorno
   const LOOP_TRIGGER_KW = ['complementa', 'devolver', 'retornar', 'reenviar'];
-  const APPROVAL_KW = ['aprovação', 'aprovacao', 'revisão', 'revisao', 'autorização', 'autorizacao', 'validação', 'validacao', 'verificação', 'verificacao'];
+  const APPROVAL_KW = ['aprovação', 'aprovacao', 'revisão', 'revisao', 'autorização', 'autorizacao', 'validação', 'validacao'];
 
   let prevActor = '';
   let inLoopCluster = false; // detecta borda de subida: conta 1 loop por cluster de retrabalho
@@ -21122,14 +21125,23 @@ function matComputeMetrics(p, version='asis') {
 
       if(type === 'atividade') totalActivities++;
       if(type === 'decisao')   totalDecisions++;
+      // Rastrear naturezas das atividades
+      if(type === 'atividade' && nat) {
+        anyNatDefined = true;
+        if(nat === 'execucao')       totalExecucao++;
+        else if(nat === 'controle')  totalControle++;
+        else if(nat === 'distribuicao') totalDistribuicao++;
+        else if(nat === 'comunicacao')  totalComunicacao++;
+        else if(nat === 'planejamento') totalPlanejamento++;
+      }
       if(type === 'evento') {
         const etipo = action.eventoTipo || '';
         if(etipo === 'inicio') totalStartEvents++;
         else if(etipo === 'encerramento') totalEndEvents++;
       }
 
-      // Burocracia: para decisões com caminhos, conta 1 se qualquer caminho for aprovacao/revisao
-      // Para demais ações, conta por natureza ou palavra-chave no texto
+      // Overhead burocrático: aprovacao e revisao por natureza ou palavra-chave
+      // controle é rastreado separadamente em totalControle (acima)
       if(!hasBranches) {
         const isBurocByNat = (nat === 'aprovacao' || nat === 'revisao');
         const isBurocByKw  = !nat && APPROVAL_KW.some(k => textLow.includes(k));
@@ -21172,6 +21184,15 @@ function matComputeMetrics(p, version='asis') {
             const baActor   = ba.actor || '';
             if(baType === 'atividade') {
               totalActivities++;
+              // Rastrear naturezas dentro de branches
+              if(baNat) {
+                anyNatDefined = true;
+                if(baNat === 'execucao')       totalExecucao++;
+                else if(baNat === 'controle')  totalControle++;
+                else if(baNat === 'distribuicao') totalDistribuicao++;
+                else if(baNat === 'comunicacao')  totalComunicacao++;
+                else if(baNat === 'planejamento') totalPlanejamento++;
+              }
               if(baActor && prevActor && baActor.toLowerCase() !== prevActor.toLowerCase()) {
                 const key = `${prevActor.toLowerCase()}→${baActor.toLowerCase()}`;
                 if(!seenHandoffs.has(key)) { seenHandoffs.add(key); totalHandoffs++; }
@@ -21204,20 +21225,29 @@ function matComputeMetrics(p, version='asis') {
   else if(complexScore <= 70) { complexLabel = 'Complexo';       complexCls = '#f97316'; }
   else                        { complexLabel = 'Muito Complexo'; complexCls = '#ef4444'; }
 
-  const burocracia = totalActivities > 0 ? totalApprovals / totalActivities : 0;
-  let burocLabel, burocCls;
-  if(burocracia < 0.15)       { burocLabel = 'Saudável';    burocCls = '#22c55e'; }
-  else if(burocracia <= 0.30) { burocLabel = 'Moderado';    burocCls = '#eab308'; }
-  else                        { burocLabel = 'Burocrático'; burocCls = '#ef4444'; }
+  // Overhead expandido: aprovacao + revisao (via nat/kw) + controle (via nat)
+  const overhead = totalActivities > 0 ? (totalApprovals + totalControle) / totalActivities : 0;
+  let overheadLabel, overheadCls;
+  if(overhead < 0.20)       { overheadLabel = 'Saudável';  overheadCls = '#22c55e'; }
+  else if(overhead <= 0.35) { overheadLabel = 'Moderado';  overheadCls = '#eab308'; }
+  else                      { overheadLabel = 'Elevado';   overheadCls = '#ef4444'; }
+  // Alias legado (burocracia = overhead para compatibilidade)
+  const burocracia = overhead;
+  const burocLabel = overheadLabel;
+  const burocCls   = overheadCls;
 
   return { totalActivities, totalDecisions, totalActors, totalLoops, totalHandoffs, totalApprovals, totalSistemas,
            actionsWithSistema, automRate, totalStartEvents, totalEndEvents,
-           complexScore, complexLabel, complexCls, burocracia, burocLabel, burocCls };
+           totalExecucao, totalControle, totalDistribuicao, totalComunicacao, totalPlanejamento, anyNatDefined,
+           complexScore, complexLabel, complexCls,
+           overhead, overheadLabel, overheadCls,
+           burocracia, burocLabel, burocCls };
 }
 
 function matComputeRisco(metrics, indispensaveis, sistIndispensaveis) {
-  // decisões×2 + handoffs×2 + pessoas_indispensáveis×5 + sistemas_indispensáveis×3
+  // decisões×2 + handoffs×2 + distribuicao×1.5 (repasse explícito = dependência) + pessoas×5 + sistemas×3
   const score = (metrics.totalDecisions * 2) + (metrics.totalHandoffs * 2)
+              + ((metrics.totalDistribuicao || 0) * 1.5)
               + (indispensaveis * 5) + ((sistIndispensaveis || 0) * 3);
   let label, cls;
   if(score <= 15)      { label = 'Baixo'; cls = '#22c55e'; }
@@ -21250,18 +21280,21 @@ function matComputeFinal(p) {
   if(equipe === null) return null;
 
   // Normalise all to 0–100 where 100 = most mature
-  // Complexidade: decaimento exponencial (meia-vida ≈ 50 pts) — evita penalizar
-  // linearmente processos naturalmente complexos mas bem controlados
-  const normComplex = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-metrics.complexScore / 50))));
-  // Burocracia: escala linear com teto em 50% de aprovações
-  const normBuroc   = Math.max(0, Math.min(100, Math.round((1 - metrics.burocracia / 0.5) * 100)));
-  // Risco: decaimento exponencial (meia-vida ≈ 45 pts) — remove teto artificial de 70
+  // Overhead: escala linear com teto em 60% — inclui aprovacao + revisao + controle
+  const normBuroc   = Math.max(0, Math.min(100, Math.round((1 - metrics.overhead / 0.6) * 100)));
+  // Risco: decaimento exponencial (meia-vida ≈ 45 pts)
   const normRisco   = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-riscoRaw / 45))));
-  // Digitalização: % de ações com sistema registrado (0–100) — novo componente
+  // Digitalização: % de ações com sistema registrado (0–100)
   const normAutom   = Math.round(metrics.automRate * 100);
+  // Foco em Execução: % de atividades com natureza 'execucao' — premia processos lean
+  // Se nenhuma natureza definida → neutro (50), incentivando uso das naturezas
+  const focoRate  = metrics.totalActivities > 0 ? metrics.totalExecucao / metrics.totalActivities : 0;
+  const normFoco  = metrics.anyNatDefined
+    ? Math.min(100, Math.round(focoRate / 0.5 * 100))
+    : 50;
 
-  // Pesos: Equipe 30% · Risco 25% · Burocracia 20% · Digitalização 15% · Complexidade 10%
-  const final = equipe * 0.30 + normRisco * 0.25 + normBuroc * 0.20 + normAutom * 0.15 + normComplex * 0.10;
+  // Pesos: Equipe 30% · Risco 20% · Overhead 20% · Digitalização 15% · Foco em Execução 15%
+  const final = equipe * 0.30 + normRisco * 0.20 + normBuroc * 0.20 + normAutom * 0.15 + normFoco * 0.15;
   const f = Math.round(final);
 
   let level, levelColor, levelIcon;
@@ -21272,7 +21305,7 @@ function matComputeFinal(p) {
   else             { level = 'Otimizado';  levelColor = '#10b981'; levelIcon = '💚'; }
 
   return { final: f, level, levelColor, levelIcon,
-           equipe: Math.round(equipe), normComplex, normBuroc, normRisco, normAutom };
+           equipe: Math.round(equipe), normFoco, normBuroc, normRisco, normAutom };
 }
 
 function matSetAnswer(p, idx, val) {
@@ -21368,26 +21401,37 @@ function matRender(p) {
       ${metricCard('▶', 'Atividades',   metrics.totalActivities)}
       ${metricCard('◆', 'Decisões',     metrics.totalDecisions)}
       ${metricCard('👤','Atores',        metrics.totalActors)}
-      ${metricCard('🔄','Loops',         metrics.totalLoops,    'revisão/aprovação')}
+      ${metricCard('🔄','Loops',         metrics.totalLoops,    'retrabalho')}
       ${metricCard('🔀','Handoffs',      metrics.totalHandoffs,  'trocas de ator')}
-      ${metricCard('✅','Aprov./Revis.', metrics.totalApprovals, 'burocracia')}
+      ${metricCard('✅','Overhead',      metrics.totalApprovals + metrics.totalControle, 'aprov.+revis.+controle')}
+      ${metricCard('🎯','Execução',      metrics.totalExecucao, 'nat. execução')}
+      ${metricCard('📤','Distribuição',  metrics.totalDistribuicao, 'nat. distribuição')}
       ${metricCard('⚡','Digitalização', (metrics.automRate*100).toFixed(0)+'%', 'ações com sistema')}
-      ${metricCard('⬤', 'Ev. Início',   metrics.totalStartEvents, 'eventos de início')}
-      ${metricCard('⬤', 'Ev. Encerramento', metrics.totalEndEvents, 'eventos de encerramento')}
     </div>`;
 
   // índices calculados com escala de referência
   const automLabel = metrics.automRate >= 0.6 ? 'Alta' : metrics.automRate >= 0.3 ? 'Média' : 'Baixa';
   const automCls   = metrics.automRate >= 0.6 ? '#22c55e' : metrics.automRate >= 0.3 ? '#eab308' : '#ef4444';
+  const focoLabel = metrics.anyNatDefined
+    ? (metrics.totalActivities > 0 ? ((metrics.totalExecucao / metrics.totalActivities) * 100).toFixed(1) + '%' : '0%')
+    : 'N/D';
+  const focoCls   = !metrics.anyNatDefined ? '#94a3b8'
+    : metrics.totalActivities > 0 && (metrics.totalExecucao / metrics.totalActivities) >= 0.4 ? '#22c55e'
+    : metrics.totalActivities > 0 && (metrics.totalExecucao / metrics.totalActivities) >= 0.2 ? '#eab308'
+    : '#ef4444';
+  const focoLevelLabel = !metrics.anyNatDefined ? 'Sem naturezas'
+    : metrics.totalActivities > 0 && (metrics.totalExecucao / metrics.totalActivities) >= 0.4 ? 'Lean'
+    : metrics.totalActivities > 0 && (metrics.totalExecucao / metrics.totalActivities) >= 0.2 ? 'Moderado'
+    : 'Baixo';
   const indicesHtml = `
     <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:6px;">📊 Índices Calculados</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
-      ${indexCard('Complexidade ↓', metrics.complexScore.toFixed(1), metrics.complexLabel, metrics.complexCls,
-        `atividades×1 + decisões×2 + atores×1,5 + loops×3 + inícios×1,5 + encerramentos×1<br>Escala: ≤20 simples · ≤40 moderado · ≤70 complexo · &gt;70 muito complexo`)}
-      ${indexCard('Burocracia ↓', (metrics.burocracia * 100).toFixed(1)+'%', metrics.burocLabel, metrics.burocCls,
-        `(aprovações + revisões) ÷ total de atividades<br>Escala: &lt;15% saudável · 15–30% moderado · &gt;30% burocrático<br><span style="color:#64748b;">Fontes: natureza da ação + palavras-chave no texto</span>`)}
-      ${indexCard('Risco Operacional ↓', risco.score, risco.label, risco.cls,
-        `decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3<br>Escala: ≤15 baixo · ≤35 médio · &gt;35 alto`)}
+      ${indexCard('Overhead ↓', (metrics.overhead * 100).toFixed(1)+'%', metrics.overheadLabel, metrics.overheadCls,
+        `(aprovações + revisões + controle) ÷ total de atividades<br>Escala: &lt;20% saudável · 20–35% moderado · &gt;35% elevado<br><span style="color:#64748b;">Fontes: natureza da ação (aprovacao/revisao/controle) + palavras-chave</span>`)}
+      ${indexCard('Risco Operacional ↓', risco.score.toFixed(1), risco.label, risco.cls,
+        `decisões×2 + handoffs×2 + distribuição×1,5 + pessoas indispensáveis×5 + sistemas indispensáveis×3<br>Escala: ≤15 baixo · ≤35 médio · &gt;35 alto`)}
+      ${indexCard('Foco em Execução ↑', focoLabel, focoLevelLabel, focoCls,
+        `atividades com natureza 'execução' ÷ total de atividades<br>Escala: ≥40% lean · 20–40% moderado · &lt;20% baixo<br><span style="color:#64748b;">Requer naturezas definidas — premia processos focados em agregar valor</span>`)}
       ${indexCard('Digitalização ↑', (metrics.automRate*100).toFixed(0)+'%', automLabel, automCls,
         `ações com sistema registrado ÷ total de atividades<br>Escala: &lt;30% baixa · 30–60% média · &gt;60% alta<br><span style="color:#64748b;">Mede penetração de sistemas no fluxo (rastreabilidade e automação)</span>`)}
     </div>`;
@@ -21484,13 +21528,13 @@ function matRender(p) {
       <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;">Componentes do score (normalizado 0–100):</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         ${scoreCard('Percepção da Equipe', final.equipe+'/100', 'questionário ↑', '30%', '#6366f1', '↑ maior = melhor')}
-        ${scoreCard('Risco Operacional', final.normRisco+'/100', 'normalizado exp. ↑', '25%', '#ef4444', '↑ menor risco = melhor')}
-        ${scoreCard('Burocracia', final.normBuroc+'/100', 'normalizado ↑', '20%', '#f97316', '↑ menos burocracia = melhor')}
+        ${scoreCard('Risco Operacional', final.normRisco+'/100', 'normalizado exp. ↑', '20%', '#ef4444', '↑ menor risco = melhor')}
+        ${scoreCard('Overhead Burocrático', final.normBuroc+'/100', 'normalizado ↑', '20%', '#f97316', '↑ menos overhead = melhor')}
         ${scoreCard('Digitalização', final.normAutom+'/100', '% ações com sistema ↑', '15%', '#0891b2', '↑ maior = melhor')}
-        ${scoreCard('Complexidade', final.normComplex+'/100', 'normalizado exp. ↑', '10%', '#a78bfa', '↑ menos complexo = melhor')}
+        ${scoreCard('Foco em Execução', final.normFoco+'/100', '% nat. execução ↑', '15%', '#22c55e', '↑ mais lean = melhor')}
       </div>
       <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;">
-        Score = Equipe×30% + Risco×25% + Burocracia×20% + Digitalização×15% + Complexidade×10% — todos normalizados 0–100 (100 = mais maduro)
+        Score = Equipe×30% + Risco×20% + Overhead×20% + Digitalização×15% + Foco em Execução×15% — todos normalizados 0–100 (100 = mais maduro)
       </div>
       <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
         ${isEditor ? `
@@ -21586,7 +21630,7 @@ function matSaveSnapshot(p) {
     normRisco:  final.normRisco,
     normBuroc:  final.normBuroc,
     normAutom:  final.normAutom,
-    normComplex:final.normComplex,
+    normFoco:   final.normFoco,
   });
   mat.snapshots.sort((a,b) => a.date.localeCompare(b.date));
   markChanged();
@@ -21643,10 +21687,10 @@ function matRenderHistory(p, snapshots) {
                 ${[
                   ['👥 Equipe', snap.equipe, '#6366f1'],
                   ['⚠️ Risco',  snap.normRisco, '#ef4444'],
-                  ['📋 Buroc.', snap.normBuroc, '#f97316'],
+                  ['📋 Overhead', snap.normBuroc, '#f97316'],
                   ['💻 Digital.',snap.normAutom, '#0891b2'],
-                  ['🔄 Compl.', snap.normComplex,'#a78bfa'],
-                ].map(([lbl,val,col]) => `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;">${lbl} <strong style="color:${col};">${val}</strong></span>`).join('')}
+                  ['🎯 Foco', snap.normFoco ?? snap.normComplex,'#22c55e'],
+                ].map(([lbl,val,col]) => `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;">${lbl} <strong style="color:${col};">${val??'—'}</strong></span>`).join('')}
               </div>
             </div>
           </div>
@@ -21676,6 +21720,11 @@ function matExportPdf(p) {
 
   const automLabel = metrics.automRate >= 0.6 ? 'Alta' : metrics.automRate >= 0.3 ? 'Média' : 'Baixa';
   const automCls   = metrics.automRate >= 0.6 ? '#22c55e' : metrics.automRate >= 0.3 ? '#eab308' : '#ef4444';
+  const focoRatePdf = metrics.totalActivities > 0 ? metrics.totalExecucao / metrics.totalActivities : 0;
+  const focoCls     = !metrics.anyNatDefined ? '#94a3b8'
+    : focoRatePdf >= 0.4 ? '#22c55e' : focoRatePdf >= 0.2 ? '#eab308' : '#ef4444';
+  const focoLevelLabel = !metrics.anyNatDefined ? 'Sem naturezas'
+    : focoRatePdf >= 0.4 ? 'Lean' : focoRatePdf >= 0.2 ? 'Moderado' : 'Baixo';
 
   // ── Score block ────────────────────────────────────────────────────────
   const scoreBlock = final ? `
@@ -21691,11 +21740,11 @@ function matExportPdf(p) {
         <table class="comp-table">
           <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Sentido</th><th>Barra</th></tr>
           ${[
-            ['👥 Percepção da Equipe', '30%', final.equipe,      '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
-            ['⚠️ Risco Operacional',  '25%', final.normRisco,   '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
-            ['📋 Burocracia',          '20%', final.normBuroc,   '#f97316', '100 = processo ágil (invertido)', 'Escala linear com teto em 50%: 1 − (aprovações+revisões ÷ atividades) ÷ 0,5. Fontes: natureza da ação e palavras-chave no texto. Percentual bruto invertido → maior pontuação = menos burocracia.'],
-            ['💻 Digitalização',       '15%', final.normAutom,   '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades que possuem sistema registrado (rastreabilidade e automação do fluxo).'],
-            ['🔄 Complexidade',        '10%', final.normComplex, '#a78bfa', '100 = baixa complexidade (invertido)', 'Decaimento exponencial (meia-vida ≈ 50 pts) sobre: atividades×1 + decisões×2 + atores×1,5 + loops×3 + eventos de início×1,5 + eventos de encerramento×1. Score bruto invertido → maior pontuação = menor complexidade.'],
+            ['👥 Percepção da Equipe',  '30%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
+            ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + distribuição×1,5 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
+            ['📋 Overhead Burocrático','20%', final.normBuroc, '#f97316', '100 = processo ágil (invertido)', 'Escala linear com teto em 60%: 1 − (aprovações+revisões+controle ÷ atividades) ÷ 0,6. Fontes: natureza aprovacao/revisao/controle e palavras-chave. Percentual bruto invertido → maior pontuação = menos overhead.'],
+            ['💻 Digitalização',        '15%', final.normAutom, '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades que possuem sistema registrado (rastreabilidade e automação do fluxo).'],
+            ['🎯 Foco em Execução',     '15%', final.normFoco,  '#22c55e', '100 = processo lean (direto)', 'Percentual de atividades com natureza "execução" ÷ total × 100, com teto em 50% para score máximo. Score 50 quando nenhuma natureza está definida (neutro). Premia processos focados em agregar valor com menos overhead.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
               <td>${lbl}</td>
@@ -21709,7 +21758,7 @@ function matExportPdf(p) {
             </tr>`).join('')}
         </table>
         <p class="formula-note" style="margin-top:10px;padding:8px 10px;background:#f1f5f9;border-radius:6px;border-left:3px solid #0a2540;">
-          <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,30) + (Risco × 0,25) + (Burocracia × 0,20) + (Digitalização × 0,15) + (Complexidade × 0,10)<br>
+          <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,30) + (Risco × 0,20) + (Overhead × 0,20) + (Digitalização × 0,15) + (Foco em Execução × 0,15)<br>
           <span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span>
         </p>
       </div>
@@ -21724,7 +21773,13 @@ function matExportPdf(p) {
       <tr><td>Atores envolvidos</td><td>${metrics.totalActors}</td></tr>
       <tr><td>Loops (retrabalho)</td><td>${metrics.totalLoops}</td></tr>
       <tr><td>Handoffs (trocas de ator)</td><td>${metrics.totalHandoffs}</td></tr>
-      <tr><td>Aprovações / Revisões</td><td>${metrics.totalApprovals}</td></tr>
+      <tr><td>Overhead (aprov. + revis. + controle)</td><td>${metrics.totalApprovals + metrics.totalControle}</td></tr>
+      <tr><td>— Aprovações / Revisões (nat/kw)</td><td>${metrics.totalApprovals}</td></tr>
+      <tr><td>— Controle (natureza controle)</td><td>${metrics.totalControle}</td></tr>
+      <tr><td>Execução (natureza execução)</td><td>${metrics.totalExecucao}</td></tr>
+      <tr><td>Distribuição (natureza distribuição)</td><td>${metrics.totalDistribuicao}</td></tr>
+      <tr><td>Comunicação (natureza comunicação)</td><td>${metrics.totalComunicacao}</td></tr>
+      <tr><td>Planejamento (natureza planejamento)</td><td>${metrics.totalPlanejamento}</td></tr>
       <tr><td>Ações com sistema registrado</td><td>${metrics.actionsWithSistema} (${(metrics.automRate*100).toFixed(0)}%)</td></tr>
       <tr><td>Pessoas indispensáveis (manual)</td><td>${ind}</td></tr>
       <tr><td>Sistemas indispensáveis (manual)</td><td>${sist}</td></tr>
@@ -21739,19 +21794,19 @@ function matExportPdf(p) {
       </td></tr>
       <tr><th>Índice</th><th>Valor bruto</th><th>Classificação</th></tr>
       <tr>
-        <td>Complexidade <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100)</span></td>
-        <td>${metrics.complexScore.toFixed(1)} pts</td>
-        <td><span class="badge" style="background:${metrics.complexCls}20;color:${metrics.complexCls};">${metrics.complexLabel}</span></td>
-      </tr>
-      <tr>
-        <td>Burocracia <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100)</span></td>
-        <td>${(metrics.burocracia*100).toFixed(1)}%</td>
-        <td><span class="badge" style="background:${metrics.burocCls}20;color:${metrics.burocCls};">${metrics.burocLabel}</span></td>
+        <td>Overhead Burocrático <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100, teto 60%)</span></td>
+        <td>${(metrics.overhead*100).toFixed(1)}%</td>
+        <td><span class="badge" style="background:${metrics.overheadCls}20;color:${metrics.overheadCls};">${metrics.overheadLabel}</span></td>
       </tr>
       <tr>
         <td>Risco Operacional <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100)</span></td>
-        <td>${risco.score} pts</td>
+        <td>${risco.score.toFixed(1)} pts</td>
         <td><span class="badge" style="background:${risco.cls}20;color:${risco.cls};">${risco.label}</span></td>
+      </tr>
+      <tr>
+        <td>Foco em Execução <span class="note">(bruto — ↑ maior = melhor; teto 50% execução = score 100)</span></td>
+        <td>${metrics.anyNatDefined && metrics.totalActivities > 0 ? ((metrics.totalExecucao/metrics.totalActivities)*100).toFixed(1)+'%' : 'N/D (sem naturezas)'}</td>
+        <td><span class="badge" style="background:${focoCls}20;color:${focoCls};">${focoLevelLabel}</span></td>
       </tr>
       <tr>
         <td>Digitalização <span class="note">(bruto = normalizado — ↑ maior = melhor)</span></td>
@@ -21801,7 +21856,7 @@ function matExportPdf(p) {
   const histBlock = snapshots.length ? `
     <h2 class="section-title">📈 Histórico de Maturidade</h2>
     <table class="data-table">
-      <tr><th>Data</th><th>Score</th><th>Nível</th><th>Variação</th><th>Equipe</th><th>Risco</th><th>Buroc.</th><th>Digital.</th><th>Compl.</th></tr>
+      <tr><th>Data</th><th>Score</th><th>Nível</th><th>Variação</th><th>Equipe</th><th>Risco</th><th>Overhead</th><th>Digital.</th><th>Foco</th></tr>
       ${[...snapshots].reverse().map((s, idx, arr) => {
         const prevSnap = arr[idx + 1];
         const delta = prevSnap ? s.score - prevSnap.score : null;
@@ -21816,7 +21871,7 @@ function matExportPdf(p) {
           <td style="text-align:center;">${s.normRisco??'—'}</td>
           <td style="text-align:center;">${s.normBuroc??'—'}</td>
           <td style="text-align:center;">${s.normAutom??'—'}</td>
-          <td style="text-align:center;">${s.normComplex??'—'}</td>
+          <td style="text-align:center;">${s.normFoco ?? s.normComplex ?? '—'}</td>
         </tr>`;
       }).join('')}
     </table>` : '';
@@ -21965,10 +22020,10 @@ ${answersText}
 
 ## SCORES FINAIS (0–100, quanto maior melhor — normalização exponencial para complexidade e risco)
 - Percepção da Equipe: ${equipe !== null ? Math.round(equipe) : '—'}/100 (peso 30%)
-- Risco normalizado: ${final ? final.normRisco : '—'}/100 (peso 25%)
-- Burocracia normalizada: ${final ? final.normBuroc : '—'}/100 (peso 20%)
+- Risco normalizado: ${final ? final.normRisco : '—'}/100 (peso 20%)
+- Overhead burocrático normalizado: ${final ? final.normBuroc : '—'}/100 (peso 20%)
 - Digitalização: ${final ? final.normAutom : '—'}/100 (peso 15%)
-- Complexidade normalizada: ${final ? final.normComplex : '—'}/100 (peso 10%)
+- Foco em Execução: ${final ? final.normFoco : '—'}/100 (peso 15%)
 - **SCORE GERAL DE MATURIDADE: ${final ? final.final : '—'}/100**
 - **NÍVEL: ${final ? final.level : '—'}** (Inicial→Gerenciado→Definido→Previsível→Otimizado)
 
