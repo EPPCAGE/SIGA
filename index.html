@@ -14660,10 +14660,21 @@ let _arqData = null; // working copy, loaded from CAGE_PROCESSOS + Supabase over
 
 function arqGetData() {
   if(!_arqData) {
-    // Start with hardcoded data, then apply any saved overrides
     _arqData = JSON.parse(JSON.stringify(CAGE_PROCESSOS));
     const saved = DATA._arqOverrides;
-    if(saved && Array.isArray(saved)) _arqData = saved;
+    if(saved && Array.isArray(saved)) {
+      // Merge: usa CAGE_PROCESSOS como base para preservar campos como objEstrategicos
+      // que podem não ter sido salvos em versões anteriores do override.
+      // Campos salvos pelo usuário têm prioridade sobre a base.
+      _arqData = saved.map(rec => {
+        const base = CAGE_PROCESSOS.find(c =>
+          c.macroprocesso === rec.macroprocesso &&
+          c.processo      === rec.processo      &&
+          (c.subprocesso || '') === (rec.subprocesso || '')
+        );
+        return base ? { ...base, ...rec } : rec;
+      });
+    }
   }
   return _arqData;
 }
@@ -14916,6 +14927,26 @@ function arqShowForm(idx = null) {
     equipeSelect.value = '';
     document.getElementById('arq-f-critico').checked = false;
   }
+
+  // Popular checkboxes de Objetivos Estratégicos
+  const objsContainer = document.getElementById('arq-f-objs-container');
+  let objsList = getConfig('objetivosEstrategicos');
+  if(!objsList.length) {
+    // Fallback: coleta objetivos únicos do CAGE_PROCESSOS
+    objsList = [...new Set(CAGE_PROCESSOS.flatMap(r => r.objEstrategicos || []).filter(Boolean))].sort();
+  }
+  const existingObjs = (idx !== null ? (arqGetData()[idx] || {}).objEstrategicos : null) || [];
+  objsContainer.innerHTML = objsList.length
+    ? objsList.map(o => {
+        const esc = o.replace(/"/g, '&quot;');
+        const checked = existingObjs.includes(o) ? 'checked' : '';
+        return `<label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#1e293b;cursor:pointer;padding:5px 8px;background:white;border-radius:6px;border:1px solid #e2e8f0;line-height:1.4;">
+          <input type="checkbox" value="${esc}" ${checked} style="margin-top:2px;accent-color:#6366f1;flex-shrink:0;">
+          ${o}
+        </label>`;
+      }).join('')
+    : '<div style="font-size:12px;color:#94a3b8;padding:4px;">Nenhum objetivo cadastrado. Adicione em Gestão do Site → 🎯 Objetivos Estratégicos.</div>';
+
   modal.style.display = 'flex';
 }
 
@@ -14941,8 +14972,9 @@ function arqSaveForm() {
     area:          document.getElementById('arq-f-area').value.trim(),
     gerente:       document.getElementById('arq-f-gerente').value.trim(),
     equipe:        document.getElementById('arq-f-equipe').value,
-    objetivo:      document.getElementById('arq-f-objetivo').value.trim(),
-    entradas:      document.getElementById('arq-f-entradas').value.trim(),
+    objetivo:         document.getElementById('arq-f-objetivo').value.trim(),
+    objEstrategicos:  [...document.querySelectorAll('#arq-f-objs-container input[type=checkbox]:checked')].map(cb => cb.value),
+    entradas:         document.getElementById('arq-f-entradas').value.trim(),
     entregas:      document.getElementById('arq-f-entregas').value.trim(),
     clientes:      document.getElementById('arq-f-clientes').value.trim(),
     critico:       document.getElementById('arq-f-critico').checked,
@@ -22810,6 +22842,11 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       <div style="grid-column:1/-1;">
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Objetivo do Processo</label>
         <textarea id="arq-f-objetivo" rows="3" placeholder="Descreva o objetivo..." style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
+      </div>
+      <div style="grid-column:1/-1;">
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">🎯 Objetivos Estratégicos</label>
+        <div id="arq-f-objs-container" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;min-height:40px;"></div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Gerencie a lista em Gestão do Site → Objetivos Estratégicos</div>
       </div>
       <div style="grid-column:1/-1;">
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Entradas do Processo</label>
