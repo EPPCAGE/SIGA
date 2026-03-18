@@ -9053,6 +9053,8 @@ const _CFG_TABLES = [
   { key:'statusAuditoria',     title:'🔍 Status de Auditoria',        desc:'Status usados nos planos de auditoria.', typed:'status' },
   { key:'naturezaAtividade',   title:'🏷️ Natureza da Atividade',      desc:'Tipos de natureza exibidos como badge nas atividades dos fluxos.', typed:'natureza' },
   { key:'aptCatalog', title:'⚠️ Catálogo de Não Conformidades', desc:'Apontamentos padrão usados nas auditorias, com suas recomendações vinculadas. Editável livremente.', typed:'apt-catalog' },
+  { key:'gerentesProcessos',   title:'👤 Gerentes dos Processos',      desc:'Lista de gerentes responsáveis pelos processos mapeados na arquitetura.' },
+  { key:'objetivosEstrategicos', title:'🎯 Objetivos Estratégicos',    desc:'Objetivos estratégicos institucionais vinculados aos processos na arquitetura.' },
 ];
 
 const _ALERT_TYPES = [
@@ -14691,6 +14693,16 @@ function arqInit() {
   const filterArea = document.getElementById('arq-filter-area');
   if(filterArea) filterArea.innerHTML = '<option value="">Todas</option>' + areas.map(a => `<option value="${a}">${a}</option>`).join('');
 
+  // Populate gerente filter
+  const gerentes = [...new Set(data.map(r => r.gerente).filter(Boolean))].sort();
+  const filterGerente = document.getElementById('arq-filter-gerente');
+  if(filterGerente) filterGerente.innerHTML = '<option value="">Todos</option>' + gerentes.map(g => `<option value="${g}">${g}</option>`).join('');
+
+  // Populate objetivos estratégicos filter
+  const allObjs = [...new Set(data.flatMap(r => r.objEstrategicos || []).filter(Boolean))].sort();
+  const filterObj = document.getElementById('arq-filter-obj');
+  if(filterObj) filterObj.innerHTML = '<option value="">Todos</option>' + allObjs.map(o => `<option value="${o}">${o}</option>`).join('');
+
   arqApplyFilter();
 }
 
@@ -14699,6 +14711,8 @@ function arqApplyFilter() {
   const macro   = document.getElementById('arq-filter-macro').value.toLowerCase();
   const nat     = document.getElementById('arq-filter-natureza').value.toLowerCase();
   const area    = (document.getElementById('arq-filter-area')?.value || '').toLowerCase();
+  const gerente = (document.getElementById('arq-filter-gerente')?.value || '');
+  const obj     = (document.getElementById('arq-filter-obj')?.value || '');
   const mapeado = document.getElementById('arq-filter-mapeado')?.value || '';
   const critico = document.getElementById('arq-filter-critico')?.value || '';
   const search  = (document.getElementById('arq-filter-search').value || '').toLowerCase();
@@ -14707,11 +14721,13 @@ function arqApplyFilter() {
     const matchMacro   = !macro   || r.macroprocesso.toLowerCase() === macro;
     const matchNat     = !nat     || (r.natureza||'').toLowerCase() === nat;
     const matchArea    = !area    || (r.area||'').toLowerCase() === area;
+    const matchGerente = !gerente || (r.gerente||'') === gerente;
+    const matchObj     = !obj     || (r.objEstrategicos || []).includes(obj);
     const matchMapeado = !mapeado || (mapeado === 'sim' ? !!r.mapeado : !r.mapeado);
     const matchCritico = !critico || (critico === 'sim' ? !!r.critico : !r.critico);
     const matchSearch  = !search  || [r.macroprocesso, r.processo, r.subprocesso, r.area, r.gerente]
       .some(v => (v||'').toLowerCase().includes(search));
-    return matchMacro && matchNat && matchArea && matchMapeado && matchCritico && matchSearch;
+    return matchMacro && matchNat && matchArea && matchGerente && matchObj && matchMapeado && matchCritico && matchSearch;
   });
 
   // Apply sort
@@ -14734,6 +14750,8 @@ function arqClearFilter() {
   document.getElementById('arq-filter-natureza').value = '';
   document.getElementById('arq-filter-search').value   = '';
   const a = document.getElementById('arq-filter-area');    if(a) a.value = '';
+  const g = document.getElementById('arq-filter-gerente'); if(g) g.value = '';
+  const o = document.getElementById('arq-filter-obj');     if(o) o.value = '';
   const m = document.getElementById('arq-filter-mapeado'); if(m) m.value = '';
   const c = document.getElementById('arq-filter-critico'); if(c) c.value = '';
   _arqSort = { col: null, dir: 1 };
@@ -15212,7 +15230,7 @@ function arqShowProcessDetail(idx) {
     </div>
     ${row('Área responsável', r.area)}
     ${row('Equipe responsável', r.equipe)}
-    ${row('Gestor do processo', r.gerente)}
+    ${row('Gerente do processo', r.gerente)}
     ${r.objEstrategicos && r.objEstrategicos.length ? `<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid #f1f5f9;">
       <div style="width:140px;flex-shrink:0;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding-top:2px;">Objetivos Estratégicos</div>
       <div style="font-size:13px;color:#1e293b;flex:1;display:flex;flex-wrap:wrap;gap:6px;">
@@ -22699,6 +22717,18 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Área</label>
         <select id="arq-filter-area" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
           <option value="">Todas</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:160px;">
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Gerente</label>
+        <select id="arq-filter-gerente" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div style="flex:2;min-width:200px;">
+        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Objetivo Estratégico</label>
+        <select id="arq-filter-obj" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
+          <option value="">Todos</option>
         </select>
       </div>
       <div style="flex:0 0 140px;">
