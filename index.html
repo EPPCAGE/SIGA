@@ -21701,10 +21701,9 @@ function matRender(p) {
       ${metricCard('👤','Atores',        metrics.totalActors)}
       ${metricCard('🔄','Loops',         metrics.totalLoops,    'retrabalho')}
       ${metricCard('🔀','Handoffs',      metrics.totalHandoffs,  'trocas de ator')}
-      ${metricCard('✅','Overhead',      metrics.totalApprovals + metrics.totalControle, 'aprov.+revis.+controle')}
       ${metricCard('🎯','Execução',      metrics.totalExecucao, 'nat. execução')}
       ${metricCard('📤','Distribuição',  metrics.totalDistribuicao, 'nat. distribuição')}
-      ${metricCard('⚡','Digitalização', (metrics.automRate*100).toFixed(0)+'%', 'ações com sistema')}
+      ${metricCard('⚡','Digitalização', (metrics.automRate*100).toFixed(0)+'%', 'atividades c/ sistema')}
     </div>`;
 
   // índices calculados com escala de referência
@@ -22092,7 +22091,7 @@ function matExportPdf(p) {
       <tr><td>Distribuição (natureza distribuição)</td><td>${metrics.totalDistribuicao}</td></tr>
       <tr><td>Comunicação (natureza comunicação)</td><td>${metrics.totalComunicacao}</td></tr>
       <tr><td>Planejamento (natureza planejamento)</td><td>${metrics.totalPlanejamento}</td></tr>
-      <tr><td>Ações com sistema registrado</td><td>${metrics.actionsWithSistema} (${(metrics.automRate*100).toFixed(0)}%)</td></tr>
+      <tr><td>Atividades com sistema registrado</td><td>${metrics.actionsWithSistema} (${(metrics.automRate*100).toFixed(0)}%)</td></tr>
       <tr><td>Pessoas indispensáveis (manual)</td><td>${ind}</td></tr>
       <tr><td>Sistemas indispensáveis (manual)</td><td>${sist}</td></tr>
     </table>`;
@@ -22329,7 +22328,7 @@ Descrição: ${popMeta.desc || 'Não informado'}
 - Handoffs (trocas de responsável): ${metrics.totalHandoffs}
 - Aprovações: ${metrics.totalApprovals}
 - Sistemas únicos referenciados: ${metrics.totalSistemas}
-- Ações com sistema registrado: ${metrics.actionsWithSistema} de ${metrics.totalActivities} (${(metrics.automRate*100).toFixed(0)}%)
+- Atividades com sistema registrado: ${metrics.actionsWithSistema} de ${metrics.totalActivities} (${(metrics.automRate*100).toFixed(0)}%)
 - Pessoas indispensáveis (informado pelo usuário): ${ind}
 - Sistemas indispensáveis (informado pelo usuário): ${sist}
 
