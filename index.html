@@ -4676,14 +4676,6 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
     <!-- Filter bar -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
       <input id="indcage-search" type="text" class="modal-input" placeholder="🔍 Buscar por código ou enunciado…" style="max-width:280px;padding:8px 12px;font-size:13px;" oninput="indcageRenderIndicadores()">
-      <select id="indcage-filter-nivel" class="indcage-filter-select" onchange="indcageRenderIndicadores()" style="min-width:160px;">
-        <option value="">Todos os níveis</option>
-        <option value="atividade">Atividade</option>
-        <option value="processo">Processo/Projeto</option>
-        <option value="macroprocesso">Macroprocesso/Proj Estratégico</option>
-        <option value="acao">Ação</option>
-        <option value="etapa">Etapa</option>
-      </select>
       <select id="indcage-filter-divisao" class="indcage-filter-select" onchange="indcageRenderIndicadores()" style="min-width:160px;">
         <option value="">Todas as divisões</option>
       </select>
@@ -18919,7 +18911,6 @@ function statusModalUpdateSubList() {
   window.indcageRenderIndicadores = function() {
     ensureData();
     const search  = (document.getElementById('indcage-search')?.value || '').toLowerCase();
-    const nivel   = document.getElementById('indcage-filter-nivel')?.value || '';
     const divisao = document.getElementById('indcage-filter-divisao')?.value || '';
 
     const all = getAllIndicators();
@@ -18935,7 +18926,6 @@ function statusModalUpdateSubList() {
 
     const filtered = all.filter(ind => {
       if(search && !((ind.codigo||'') + ' ' + (ind.enunciado||'')).toLowerCase().includes(search)) return false;
-      if(nivel && ind.nivel !== nivel) return false;
       if(divisao && ind.divisao !== divisao) return false;
       return true;
     });
