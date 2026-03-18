@@ -1465,7 +1465,6 @@
     <div class="nav-tab" data-sortkey="raci" onclick="showSection('raci',this)">📊 RACI</div>
     <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
     <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
-    <div class="nav-tab" data-sortkey="competencias" onclick="showSection('competencias',this)">🎓 Competências</div>
     <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)">📊 Maturidade</div>
     <div class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
     <div class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
@@ -2618,12 +2617,6 @@
   </section>
 
   <!-- COMPETÊNCIAS -->
-  <section id="d-competencias" class="section">
-    <div class="section-inner">
-      <div id="d-competencias-body"></div>
-    </div>
-  </section>
-
   <!-- MATURIDADE -->
   <section id="d-maturidade" class="section">
     <div class="section-inner">
@@ -2998,13 +2991,6 @@
           </div>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- COMPETÊNCIAS -->
-  <section id="r-competencias" class="section">
-    <div class="section-inner">
-      <div id="r-competencias-body"></div>
     </div>
   </section>
 
@@ -5211,7 +5197,6 @@ function switchPop(pop, tabEl) {
 
   if(editMode) enableEditables(true);
   try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) {}
-  if(currentSection === 'competencias') try { compRender(prefix); } catch(e) { console.error('[compRender switchPop]',e); }
   if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { console.error('[matRender switchPop]', e); }
 }
 
@@ -5239,7 +5224,6 @@ function showSection(id, tab, silent) {
   if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
   if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) {}
   if(id === 'raci')        try { renderRaci(popPrefix(currentPop)); } catch(e) {}
-  if(id === 'competencias') try { compRender(popPrefix(currentPop)); } catch(e) { console.error('[compRender]',e); }
   if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { console.error('[matRender]', e); const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) c.innerHTML = '<p style="color:red;padding:20px;">Erro ao renderizar: ' + e.message + '</p>'; } }
   if(!silent && editMode) enableEditables(true);
   try { _updateVersionBars(); } catch(e) {}
@@ -7390,11 +7374,6 @@ function mountNewPopTab(key, label, silent=false) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-    <div id="${key}-competencias" class="section">
-      <div class="section-inner">
-        <div id="${key}-competencias-body"></div>
       </div>
     </div>
     <div id="${key}-maturidade" class="section">
@@ -14248,6 +14227,10 @@ function arqShowProcessDetail(idx) {
     ${row('Entregas / saídas', r.entregas)}
     ${row('Clientes', r.clientes)}
     ${mappedSection}
+    <div style="margin-top:20px;border-top:2px solid #e2e8f0;padding-top:16px;">
+      <div style="font-size:14px;font-weight:800;color:#0a2540;margin-bottom:12px;">🎓 Competências Necessárias</div>
+      <div id="arq-comp-section"></div>
+    </div>
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;">
       ${!mapped || !popData ? `
         <button onclick="arqAbrirMapeamento(${idx})"
@@ -14282,6 +14265,7 @@ function arqShowProcessDetail(idx) {
   document.getElementById('arq-det-title').textContent = r.subprocesso || r.processo;
   document.getElementById('arq-det-body').innerHTML = html;
   modal.classList.add('open');
+  try { arqCompRenderSection(idx); } catch(e) { console.error('[arqCompRenderSection]', e); }
 
   // Render mermaid if needed
   if(mapped && popData?.flowDiagram?.mermaid && !fluxoUrl) {
@@ -20031,6 +20015,107 @@ function compRender(p) {
     </div>
     <div style="font-size:13px;color:#64748b;margin-bottom:20px;padding:12px 14px;background:#f8fafc;border-radius:8px;border-left:3px solid #6366f1;">
       Selecione as competências exigidas dos executores deste processo. As sugestões vêm das listas configuradas no módulo de Gestão do Sistema.
+    </div>
+    ${catHtml}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// COMPETÊNCIAS NA ARQUITETURA DE PROCESSOS
+// ═══════════════════════════════════════════════════════════════════
+
+function arqCompGetData(idx) {
+  const data = arqGetData();
+  if(!data[idx]) return { hard:[], soft:[], normativo:[] };
+  if(!data[idx].competencias) data[idx].competencias = { hard:[], soft:[], normativo:[] };
+  COMP_CATS.forEach(c => { if(!Array.isArray(data[idx].competencias[c.key])) data[idx].competencias[c.key] = []; });
+  return data[idx].competencias;
+}
+
+function _arqCompPersist() {
+  // Sincroniza _arqData (in-memory) → DATA._arqOverrides para salvar
+  DATA._arqOverrides = arqGetData();
+  markChanged();
+}
+
+function arqCompToggle(idx, cat, val) {
+  const comp = arqCompGetData(idx);
+  const i = comp[cat].indexOf(val);
+  if(i >= 0) comp[cat].splice(i, 1);
+  else comp[cat].push(val);
+  _arqCompPersist();
+  arqCompRenderSection(idx);
+}
+
+function arqCompAddCustom(idx, cat) {
+  const inp = document.getElementById(`arq-comp-custom-${idx}-${cat}`);
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val) return;
+  const comp = arqCompGetData(idx);
+  if(comp[cat].some(v => v.toLowerCase() === val.toLowerCase())) { showToast('Competência já adicionada.','warn'); return; }
+  comp[cat].push(val);
+  inp.value = '';
+  _arqCompPersist();
+  arqCompRenderSection(idx);
+}
+
+function arqCompRemove(idx, cat, ci) {
+  const comp = arqCompGetData(idx);
+  comp[cat].splice(ci, 1);
+  _arqCompPersist();
+  arqCompRenderSection(idx);
+}
+
+function arqCompRenderSection(idx) {
+  const container = document.getElementById('arq-comp-section');
+  if(!container) return;
+  const comp = arqCompGetData(idx);
+  const em = isEditor;
+
+  const catHtml = COMP_CATS.map(cat => {
+    const suggestions = getConfig(cat.configKey);
+    const selected    = comp[cat.key] || [];
+
+    const tagsHtml = suggestions.map(sug => {
+      const on = selected.includes(sug);
+      return `<button onclick="arqCompToggle(${idx},'${cat.key}',${JSON.stringify(sug)})"
+        style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${on?'#6366f1':'#e2e8f0'};
+               background:${on?'#6366f1':'#f8fafc'};color:${on?'#fff':'#475569'};font-weight:${on?'700':'400'};
+               margin:3px;transition:all .15s;">${on?'✓ ':''} ${sug}</button>`;
+    }).join('');
+
+    const selectedHtml = selected.length
+      ? selected.map((v, i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f0f4ff;border-radius:7px;margin-bottom:4px;">
+            <span style="flex:1;font-size:13px;color:#1e293b;">${v}</span>
+            ${em ? `<button onclick="arqCompRemove(${idx},'${cat.key}',${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;" title="Remover">✕</button>` : ''}
+          </div>`).join('')
+      : '<div style="color:#94a3b8;font-size:12px;padding:6px 0;">Nenhuma competência selecionada.</div>';
+
+    return `
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:800;color:#0a2540;margin-bottom:2px;">${cat.label}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">${cat.desc}</div>
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Sugestões</div>
+        <div style="display:flex;flex-wrap:wrap;gap:2px;margin-bottom:12px;padding:8px;background:#f8fafc;border-radius:8px;">
+          ${tagsHtml || '<span style="color:#94a3b8;font-size:12px;">Nenhuma sugestão cadastrada nas configurações.</span>'}
+        </div>
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Selecionadas</div>
+        <div style="margin-bottom:${em?'10px':'0'};">${selectedHtml}</div>
+        ${em ? `
+        <div style="display:flex;gap:8px;">
+          <input id="arq-comp-custom-${idx}-${cat.key}" class="modal-input" type="text"
+            placeholder="Adicionar competência não listada..."
+            style="flex:1;font-size:12px;"
+            onkeydown="if(event.key==='Enter') arqCompAddCustom(${idx},'${cat.key}')">
+          <button onclick="arqCompAddCustom(${idx},'${cat.key}')" class="btn btn-primary" style="font-size:12px;padding:5px 12px;">＋</button>
+        </div>` : ''}
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="font-size:12px;color:#64748b;margin-bottom:14px;padding:10px 12px;background:#f8fafc;border-radius:8px;border-left:3px solid #6366f1;">
+      Selecione as competências exigidas dos executores deste processo. As sugestões vêm das listas em Gestão do Sistema.
     </div>
     ${catHtml}`;
 }
