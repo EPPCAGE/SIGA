@@ -200,7 +200,26 @@
   .step-action-item:hover .drag-handle,
   .step-actions.edit-mode-list .drag-handle { opacity:1; }
 
-  .step-action-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--cage-light);border-radius:var(--radius-sm);border-left:3px solid var(--cage-accent);transition:border-color .2s;}
+  .step-action-item{display:block;background:var(--cage-light);border-radius:var(--radius-sm);border-left:3px solid var(--cage-accent);transition:border-color .2s;}
+  .action-main-row{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;}
+  .decision-branches{padding:2px 14px 8px 36px;display:flex;flex-direction:column;gap:6px;}
+  .decision-branch{border-left:2px solid #f59e0b;padding:4px 0 4px 10px;border-radius:0 4px 4px 0;background:rgba(245,158,11,.04);}
+  .branch-header{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+  .branch-connector{color:#f59e0b;font-size:13px;flex-shrink:0;line-height:1;}
+  .branch-label{font-size:12px;font-weight:700;color:#b45309;flex:1;min-width:40px;outline:none;}
+  .branch-label[contenteditable]:empty::before{content:'Rótulo…';color:#d97706;opacity:.6;}
+  .rm-branch-btn{display:none;padding:1px 5px;font-size:10px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;border-radius:4px;flex-shrink:0;}
+  .rm-branch-btn:hover{background:#fee2e2;color:#ef4444;}
+  body.edit-mode .rm-branch-btn{display:inline-flex;}
+  .branch-actions{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px;}
+  .branch-action-item{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;background:white;border-radius:4px;border-left:2px solid var(--cage-accent);}
+  .branch-action-item[data-type="evento"]{border-left-color:#a78bfa;}.branch-action-item[data-type="decisao"]{border-left-color:#f59e0b;}.branch-action-item[data-type="observacao"]{border-left-color:#60a5fa;}
+  .branch-action-body{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
+  .branch-action-text{font-size:12.5px;color:var(--text-secondary);line-height:1.35;}
+  .branch-action-actor{font-size:10.5px;color:var(--text-muted);font-weight:600;}
+  .add-branch-btn,.add-branch-action-btn{display:none;margin-top:4px;padding:3px 10px;font-size:11px;background:transparent;border:1px dashed #d97706;color:#d97706;border-radius:4px;cursor:pointer;align-self:flex-start;}
+  .add-branch-btn:hover,.add-branch-action-btn:hover{background:#fef3c7;}
+  body.edit-mode .add-branch-btn,body.edit-mode .add-branch-action-btn{display:inline-flex;}
   .step-action-item[data-type="evento"]{border-left-color:#a78bfa;background:#faf5ff;}
   .step-action-item[data-type="decisao"]{border-left-color:#f59e0b;background:#fffbf0;}
   .step-action-item[data-type="observacao"]{border-left-color:#60a5fa;background:#f0f7ff;}
@@ -5421,8 +5440,10 @@ const ACTION_TYPES = {
 
 function actionObj(a) {
   // Normalise: plain string → atividade object
-  if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'' };
-  return { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'', natureza: a.natureza||'' };
+  if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'' };
+  const base = { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'', natureza: a.natureza||'' };
+  if(Array.isArray(a.branches)) base.branches = a.branches;
+  return base;
 }
 
 // ── Garante estrutura mínima de um POP antes de renderizar ──
@@ -5484,6 +5505,46 @@ function sanitizePop(p) {
   if(d.steps.length > 0 && d.currentStep >= d.steps.length) d.currentStep = 0;
 }
 
+function buildBranchesHTML(p, si, ai, branches, isTobe, em) {
+  const hasItems = branches && branches.length > 0;
+  if(!em && !hasItems) return '';
+  const ce = em ? 'contenteditable="true"' : '';
+  const branchItems = (branches || []).map((branch, bi) => {
+    const actionsHtml = (branch.actions || []).map((ba, bai) => {
+      const bo = actionObj(ba);
+      const bt = ACTION_TYPES[bo.type] || ACTION_TYPES.atividade;
+      const baActor = bo.actor ? `<span class="branch-action-actor">👤 ${bo.actor}</span>` : '';
+      const _nm = getNatMap();
+      const _nc = bo.natureza ? _nm[bo.natureza] : null;
+      const baNatBadge = (bo.type === 'atividade' && _nc)
+        ? `<span class="natureza-badge" style="background:${_nc.bg};color:${_nc.color};">${_nc.icon ? _nc.icon+' ':''} ${_nc.label}</span>` : '';
+      const baEdit = em ? `<button class="edit-rm-btn" style="margin-left:auto;" onclick="openBranchActionModal('${p}',${si},${ai},${bi},${bai})" title="Editar">✏️</button>` : '';
+      const baRm   = em ? `<button class="edit-rm-btn" onclick="rmBranchAction('${p}',${si},${ai},${bi},${bai})">✕</button>` : '';
+      return `<li class="branch-action-item" data-type="${bo.type}">
+        <span class="action-icon" style="color:${bt.color};font-size:12px;margin-top:1px;flex-shrink:0;">${bt.icon}</span>
+        <div class="branch-action-body">
+          <span class="branch-action-text">${bo.text}</span>${baNatBadge}
+          ${baActor}
+        </div>
+        ${baEdit}${baRm}
+      </li>`;
+    }).join('');
+    const addActBtn = em ? `<button class="add-branch-action-btn" onclick="addBranchAction('${p}',${si},${ai},${bi})">+ Ação</button>` : '';
+    const rmBranchBtn = em ? `<button class="rm-branch-btn" onclick="rmDecisionBranch('${p}',${si},${ai},${bi})" title="Remover caminho">✕</button>` : '';
+    return `<div class="decision-branch" data-bi="${bi}">
+      <div class="branch-header">
+        <span class="branch-connector">└</span>
+        <span class="branch-label" ${ce} data-sp="${p}" data-si="${si}" data-ai="${ai}" data-bi="${bi}" data-field="branchlabel">${branch.label || `Caminho ${bi+1}`}</span>
+        ${rmBranchBtn}
+      </div>
+      <ul class="branch-actions">${actionsHtml}</ul>
+      ${addActBtn}
+    </div>`;
+  }).join('');
+  const addBranchBtn = em ? `<button class="add-branch-btn" onclick="addDecisionBranch('${p}',${si},${ai})">+ Caminho</button>` : '';
+  return `<div class="decision-branches">${branchItems}${addBranchBtn}</div>`;
+}
+
 function renderStep(p, i) {
   if(!DATA[p] || !Array.isArray(DATA[p].steps) || !DATA[p].steps[i]) {
     console.warn('renderStep: estado inválido para pop=' + p + ' step=' + i);
@@ -5522,15 +5583,19 @@ function renderStep(p, i) {
     const editBtn = em ? `<button class="edit-rm-btn" style="margin-left:4px;" onclick="openActionModal('${p}',${i},${ai})" title="Editar ação">✏️</button>` : '';
     const rmBtn = em ? `<button class="edit-rm-btn" onclick="rmStepAction('${p}',${i},${ai})">✕</button>` : '';
     const dragHandle = em ? `<span class="drag-handle" title="Arrastar para reordenar">⋮⋮</span>` : '';
+    const branchesHTML = obj.type === 'decisao' ? buildBranchesHTML(p, i, ai, obj.branches||[], isTobe, em) : '';
     return `
     <li class="step-action-item" data-type="${obj.type}" data-ai="${ai}" ${em ? 'draggable="true"' : ''}>
-      ${dragHandle}
-      <span class="action-icon" style="color:${t.color}">${t.icon}</span>
-      <div class="action-body">
-        <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}
-        ${actorHTML}
+      <div class="action-main-row">
+        ${dragHandle}
+        <span class="action-icon" style="color:${t.color}">${t.icon}</span>
+        <div class="action-body">
+          <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}
+          ${actorHTML}
+        </div>
+        ${editBtn}${rmBtn}
       </div>
-      ${editBtn}${rmBtn}
+      ${branchesHTML}
     </li>`;}).join('');
   const decHTML = s.decision ? `
     <div class="decision-box"><span class="dicon">⚡</span><div class="dtext">
@@ -5657,6 +5722,22 @@ function renderStep(p, i) {
         step.actions[ai] = cur;
       }
       markChanged(true); // quick=true: salvar em 800ms após blur
+    });
+  });
+  // Branch label inline editing
+  container.querySelectorAll('[data-field="branchlabel"]').forEach(el => {
+    el.addEventListener('blur', function() {
+      const pp=this.dataset.sp, si=parseInt(this.dataset.si), ai=parseInt(this.dataset.ai), bi=parseInt(this.dataset.bi);
+      const isTobe_ = flowMode === 'tobe';
+      const step = DATA[pp].steps[si];
+      if(!step) return;
+      const actions = isTobe_ ? (step.tobe?.actions || []) : step.actions;
+      const action = actionObj(actions[ai]);
+      if(Array.isArray(action.branches) && action.branches[bi]) {
+        action.branches[bi].label = this.innerText.trim() || `Caminho ${bi+1}`;
+        actions[ai] = action;
+      }
+      markChanged(true);
     });
   });
   renderTracker(p);
@@ -7467,6 +7548,53 @@ function moveActionToStep() {
   showToast(`📤 Ação movida para Etapa ${toIdx + 1}.`, 'success');
 }
 
+// ── Decision branches ─────────────────────────
+function _decActions(p, si, ai) {
+  const step = DATA[p].steps[si];
+  return flowMode === 'tobe' ? (step.tobe?.actions || []) : step.actions;
+}
+
+function addDecisionBranch(p, si, ai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem adicionar caminhos.', 'warn'); return; }
+  const actions = _decActions(p, si, ai);
+  const action = actionObj(actions[ai]);
+  if(!Array.isArray(action.branches)) action.branches = [];
+  action.branches.push({ label: `Caminho ${action.branches.length + 1}`, actions: [] });
+  actions[ai] = action;
+  renderStep(p, si); markChanged();
+}
+
+function rmDecisionBranch(p, si, ai, bi) {
+  if(!isEditor) return;
+  if(!confirm('Remover este caminho e todas as suas ações?')) return;
+  const actions = _decActions(p, si, ai);
+  const action = actionObj(actions[ai]);
+  if(Array.isArray(action.branches)) action.branches.splice(bi, 1);
+  actions[ai] = action;
+  renderStep(p, si); markChanged();
+}
+
+function addBranchAction(p, si, ai, bi) {
+  if(!isEditor) return;
+  const actions = _decActions(p, si, ai);
+  const action = actionObj(actions[ai]);
+  if(!Array.isArray(action.branches)) action.branches = [];
+  if(!Array.isArray(action.branches[bi].actions)) action.branches[bi].actions = [];
+  action.branches[bi].actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:'',natureza:''});
+  actions[ai] = action;
+  renderStep(p, si); markChanged();
+  openBranchActionModal(p, si, ai, bi, action.branches[bi].actions.length - 1);
+}
+
+function rmBranchAction(p, si, ai, bi, bai) {
+  if(!isEditor) return;
+  const actions = _decActions(p, si, ai);
+  const action = actionObj(actions[ai]);
+  action.branches[bi].actions.splice(bai, 1);
+  actions[ai] = action;
+  renderStep(p, si); markChanged();
+}
+
 // ── Helper: add role ──────────────────────────
 function addRole(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem adicionar atores.', 'warn'); return; }
@@ -7653,7 +7781,7 @@ document.getElementById('npop-overlay').addEventListener('click', function(e) {
 });
 
 // ═══ ACTION TYPE MODAL ════════════════════════
-let _actP='', _actSi=-1, _actAi=-1, _actIsTobe=false;
+let _actP='', _actSi=-1, _actAi=-1, _actIsTobe=false, _actBi=-1, _actBai=-1;
 
 function openActionModal(p, si, ai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar ações.', 'warn'); return; }
@@ -7716,7 +7844,51 @@ function openActionModal(p, si, ai) {
 }
 
 function closeActionModal() {
+  _actBi = -1; _actBai = -1;
   document.getElementById('action-type-modal').classList.remove('open');
+}
+
+function openBranchActionModal(p, si, ai, bi, bai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar ações.', 'warn'); return; }
+  _actP = p; _actSi = si; _actAi = ai; _actIsTobe = (flowMode === 'tobe');
+  _actBi = bi; _actBai = bai;
+  const step = DATA[p].steps[si];
+  const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
+  const parent = actionObj(actions[ai]);
+  const obj = actionObj((parent.branches[bi].actions || [])[bai] || {});
+  // Populate modal same as openActionModal
+  document.querySelectorAll('.action-type-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.type === obj.type);
+  });
+  const actorList = document.getElementById('act-actor-list');
+  if(actorList) {
+    const atores = getConfig('atores');
+    actorList.innerHTML = atores.map(a => `<option value="${a.replace(/"/g,'&quot;')}">`).join('');
+  }
+  document.getElementById('act-text').value        = obj.text;
+  document.getElementById('act-actor').value       = obj.actor;
+  document.getElementById('act-duracao').value     = obj.duracao;
+  document.getElementById('act-sistemas').value    = obj.sistemas;
+  document.getElementById('act-documentos').value  = obj.documentos;
+  document.getElementById('act-observacoes').value = obj.observacoes;
+  document.getElementById('act-pontos').value      = obj.pontosMelhoria;
+  const natWrap = document.getElementById('act-natureza-wrap');
+  if(natWrap) natWrap.style.display = obj.type === 'atividade' ? 'block' : 'none';
+  const natList = getConfig('naturezaAtividade');
+  const defaultNat = natList[0]?.key || 'execucao';
+  const selectedNat = obj.natureza || defaultNat;
+  const grid = document.querySelector('#act-natureza-wrap .natureza-grid');
+  if(grid) grid.innerHTML = natList.map(n =>
+    `<button class="natureza-btn${n.key === selectedNat ? ' selected' : ''}" data-nat="${n.key}"
+      onclick="selectNatureza('${n.key}')">${n.icon ? n.icon+' ' : ''}${n.label}</button>`
+  ).join('');
+  const titleEl = document.querySelector('.action-type-title');
+  if(titleEl) titleEl.textContent = `Caminho ${bi+1} — Configurar Ação`;
+  // Hide move-to-step for branch actions
+  const moveWrap = document.getElementById('act-move-step-wrap');
+  if(moveWrap) moveWrap.style.display = 'none';
+  document.getElementById('action-type-modal').classList.add('open');
+  document.getElementById('act-text').focus();
 }
 
 function selectActionType(type) {
@@ -7759,15 +7931,24 @@ function saveActionModal() {
   const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza };
 
   const step = DATA[_actP].steps[_actSi];
-  if(_actIsTobe) {
+  if(_actBi >= 0) {
+    // Saving a branch action
+    const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
+    const parent = actionObj(actions[_actAi]);
+    if(Array.isArray(parent.branches) && parent.branches[_actBi]) {
+      if(!Array.isArray(parent.branches[_actBi].actions)) parent.branches[_actBi].actions = [];
+      parent.branches[_actBi].actions[_actBai] = actionData;
+      actions[_actAi] = parent;
+    }
+  } else if(_actIsTobe) {
     if(!step.tobe) step.tobe = {};
     if(!Array.isArray(step.tobe.actions)) step.tobe.actions = [];
     step.tobe.actions[_actAi] = actionData;
   } else {
     step.actions[_actAi] = actionData;
   }
-  // Sync action text to responsible's duties list
-  syncActionToRole(_actP, text, step.responsible);
+  // Sync action text to responsible's duties list (root actions only)
+  if(_actBi < 0) syncActionToRole(_actP, text, step.responsible);
   renderStep(_actP, _actSi);
   renderRoles(_actP);
   closeActionModal();
@@ -20308,14 +20489,18 @@ function matComputeMetrics(p, version='asis') {
       const nat     = action.natureza || '';
       const actor   = action.actor || step.responsible || '';
       const textLow = (action.text || '').toLowerCase();
+      const hasBranches = type === 'decisao' && Array.isArray(action.branches) && action.branches.length > 0;
 
       if(type === 'atividade') totalActivities++;
       if(type === 'decisao')   totalDecisions++;
 
-      // Burocracia: conta por natureza (aprovacao/revisao) OU por palavra-chave no texto quando natureza ausente
-      const isBurocByNat = (nat === 'aprovacao' || nat === 'revisao');
-      const isBurocByKw  = !nat && APPROVAL_KW.some(k => textLow.includes(k));
-      if(isBurocByNat || isBurocByKw) totalApprovals++;
+      // Burocracia: para decisões com caminhos, conta 1 se qualquer caminho for aprovacao/revisao
+      // Para demais ações, conta por natureza ou palavra-chave no texto
+      if(!hasBranches) {
+        const isBurocByNat = (nat === 'aprovacao' || nat === 'revisao');
+        const isBurocByKw  = !nat && APPROVAL_KW.some(k => textLow.includes(k));
+        if(isBurocByNat || isBurocByKw) totalApprovals++;
+      }
 
       // Loop: conta 1 por ciclo de retrabalho (borda de subida do cluster)
       const isLoopSignal = nat === 'revisao' || LOOP_TRIGGER_KW.some(k => textLow.includes(k));
@@ -20334,6 +20519,36 @@ function matComputeMetrics(p, version='asis') {
       if(action.sistemas && action.sistemas.trim()) {
         if(type === 'atividade') actionsWithSistema++;
         action.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
+      }
+
+      // Processar caminhos de decisão: conta atividades/aprovações, mas deduplica aprovações (conta 1 por decisão)
+      if(hasBranches) {
+        let decisionHasApproval = false;
+        action.branches.forEach(branch => {
+          (branch.actions || []).forEach(ba => {
+            const baType = ba.type || 'atividade';
+            const baNat  = ba.natureza || '';
+            const baTextLow = (ba.text || '').toLowerCase();
+            const baActor   = ba.actor || '';
+            if(baType === 'atividade') {
+              totalActivities++;
+              if(baActor && prevActor && baActor.toLowerCase() !== prevActor.toLowerCase()) {
+                const key = `${prevActor.toLowerCase()}→${baActor.toLowerCase()}`;
+                if(!seenHandoffs.has(key)) { seenHandoffs.add(key); totalHandoffs++; }
+              }
+              if(baActor) { prevActor = baActor; allActors.add(baActor.toLowerCase()); }
+            }
+            if(baType === 'decisao') totalDecisions++;
+            const baBurocByNat = (baNat === 'aprovacao' || baNat === 'revisao');
+            const baBurocByKw  = !baNat && APPROVAL_KW.some(k => baTextLow.includes(k));
+            if(baBurocByNat || baBurocByKw) decisionHasApproval = true;
+            if(ba.sistemas && ba.sistemas.trim()) {
+              if(baType === 'atividade') actionsWithSistema++;
+              ba.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
+            }
+          });
+        });
+        if(decisionHasApproval) totalApprovals++; // conta 1 aprovação por decisão, independente de quantos caminhos
       }
     });
   });
