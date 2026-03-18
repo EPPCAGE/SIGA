@@ -2504,8 +2504,8 @@
     <div class="section-inner">
       <div class="card fade-up" style="margin-bottom:16px;">
         <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-          <div style="font-size:13px;color:var(--text-secondary);">📊 Matriz RACI gerada automaticamente a partir do fluxo. Clique em cada célula para definir C/I manualmente.</div>
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="renderRaci('d')">↻ Atualizar RACI</button>
+          <div style="font-size:13px;color:var(--text-secondary);">📊 Matriz RACI gerada automaticamente a partir do fluxo. Clique em cada célula para sobrescrever (R→A→C→I→vazio).</div>
+          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="syncRaci('d')">↻ Atualizar RACI</button>
         </div>
       </div>
       <div id="d-raci-wrap" class="raci-wrap"></div>
@@ -2888,8 +2888,8 @@
     <div class="section-inner">
       <div class="card fade-up" style="margin-bottom:16px;">
         <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-          <div style="font-size:13px;color:var(--text-secondary);">📊 Matriz RACI gerada automaticamente a partir do fluxo. Clique em cada célula para definir C/I manualmente.</div>
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="renderRaci('r')">↻ Atualizar RACI</button>
+          <div style="font-size:13px;color:var(--text-secondary);">📊 Matriz RACI gerada automaticamente a partir do fluxo. Clique em cada célula para sobrescrever (R→A→C→I→vazio).</div>
+          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="syncRaci('r')">↻ Atualizar RACI</button>
         </div>
       </div>
       <div id="r-raci-wrap" class="raci-wrap"></div>
@@ -7285,7 +7285,7 @@ function mountNewPopTab(key, label, silent=false) {
         <div class="card fade-up" style="margin-bottom:16px;">
           <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
             <div style="font-size:13px;color:var(--text-secondary);">📊 Matriz RACI gerada automaticamente a partir do fluxo.</div>
-            <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="renderRaci('${key}')">↻ Atualizar RACI</button>
+            <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="syncRaci('${key}')">↻ Atualizar RACI</button>
           </div>
         </div>
         <div id="${key}-raci-wrap" class="raci-wrap"></div>
@@ -13262,6 +13262,12 @@ function renderChecklists(p) {
 }
 
 // ═══ RACI ═══════════════════════════════════════════════════════
+
+function syncRaci(p) {
+  try { harvestEditables(); } catch(e) { /* silencioso */ }
+  renderRaci(p);
+  showToast('✅ RACI atualizado com base no fluxo atual.', 'success');
+}
 
 function _getRaciActors(p) {
   const d = DATA[p];
