@@ -4487,6 +4487,14 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
           <button class="natureza-btn" data-nat="comunicacao" onclick="selectNatureza('comunicacao')">📢 Comunicação</button>
         </div>
       </div>
+      <div id="act-evento-tipo-wrap" style="display:none;">
+        <label>Tipo de Evento</label>
+        <div class="natureza-grid">
+          <button class="natureza-btn selected" data-etipo="inicio" onclick="selectEventoTipo('inicio')">⬤ Início</button>
+          <button class="natureza-btn" data-etipo="intermediario" onclick="selectEventoTipo('intermediario')">⬤ Intermediário</button>
+          <button class="natureza-btn" data-etipo="encerramento" onclick="selectEventoTipo('encerramento')">⬤ Encerramento</button>
+        </div>
+      </div>
       <div class="act-extra-fields">
         <span class="act-extra-label">📋 Informações Complementares</span>
         <div class="act-extra-grid">
@@ -5439,8 +5447,8 @@ const ACTION_TYPES = {
 
 function actionObj(a) {
   // Normalise: plain string → atividade object
-  if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'' };
-  const base = { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'', natureza: a.natureza||'' };
+  if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'', eventoTipo:'' };
+  const base = { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'', natureza: a.natureza||'', eventoTipo: a.eventoTipo||'' };
   if(Array.isArray(a.branches)) base.branches = a.branches;
   return base;
 }
@@ -5579,6 +5587,9 @@ function renderStep(p, i) {
     const natBadge = (obj.type === 'atividade' && _natCfg)
       ? `<span class="natureza-badge" style="background:${_natCfg.bg};color:${_natCfg.color};">${_natCfg.icon ? _natCfg.icon+' ' : ''}${_natCfg.label}</span>`
       : '';
+    const _etipoMap = { inicio: { label:'Início', color:'#16a34a', bg:'#dcfce7' }, intermediario: { label:'Intermediário', color:'#b45309', bg:'#fef3c7' }, encerramento: { label:'Encerramento', color:'#dc2626', bg:'#fee2e2' } };
+    const _etipoCfg = (obj.type === 'evento' && obj.eventoTipo) ? _etipoMap[obj.eventoTipo] : null;
+    const etipoBadge = _etipoCfg ? `<span class="natureza-badge" style="background:${_etipoCfg.bg};color:${_etipoCfg.color};">${_etipoCfg.label}</span>` : '';
     const editBtn = em ? `<button class="edit-rm-btn" style="margin-left:4px;" onclick="openActionModal('${p}',${i},${ai})" title="Editar ação">✏️</button>` : '';
     const rmBtn = em ? `<button class="edit-rm-btn" onclick="rmStepAction('${p}',${i},${ai})">✕</button>` : '';
     const dragHandle = em ? `<span class="drag-handle" title="Arrastar para reordenar">⋮⋮</span>` : '';
@@ -5589,7 +5600,7 @@ function renderStep(p, i) {
         ${dragHandle}
         <span class="action-icon" style="color:${t.color}">${t.icon}</span>
         <div class="action-body">
-          <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}
+          <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}${etipoBadge}
           ${actorHTML}
         </div>
         ${editBtn}${rmBtn}
@@ -7826,6 +7837,16 @@ function openActionModal(p, si, ai) {
       onclick="selectNatureza('${n.key}')">${n.icon ? n.icon+' ' : ''}${n.label}</button>`
   ).join('');
 
+  // Evento tipo — só para eventos
+  const etipoWrap = document.getElementById('act-evento-tipo-wrap');
+  if(etipoWrap) {
+    etipoWrap.style.display = obj.type === 'evento' ? 'block' : 'none';
+    const selectedEtipo = obj.eventoTipo || 'inicio';
+    document.querySelectorAll('[data-etipo]').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.etipo === selectedEtipo);
+    });
+  }
+
   // Update modal title to show which mode is being edited
   const titleEl = document.querySelector('.action-type-title');
   if(titleEl) titleEl.textContent = _actIsTobe ? 'Configurar Ação — TO BE' : 'Configurar Ação — AS IS';
@@ -7884,6 +7905,15 @@ function openBranchActionModal(p, si, ai, bi, bai) {
     `<button class="natureza-btn${n.key === selectedNat ? ' selected' : ''}" data-nat="${n.key}"
       onclick="selectNatureza('${n.key}')">${n.icon ? n.icon+' ' : ''}${n.label}</button>`
   ).join('');
+  // Evento tipo — só para eventos
+  const etipoWrapB = document.getElementById('act-evento-tipo-wrap');
+  if(etipoWrapB) {
+    etipoWrapB.style.display = obj.type === 'evento' ? 'block' : 'none';
+    const selectedEtipoB = obj.eventoTipo || 'inicio';
+    document.querySelectorAll('[data-etipo]').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.etipo === selectedEtipoB);
+    });
+  }
   const titleEl = document.querySelector('.action-type-title');
   if(titleEl) titleEl.textContent = `Caminho ${bi+1} — Configurar Ação`;
   // Hide move-to-step for branch actions
@@ -7900,6 +7930,15 @@ function selectActionType(type) {
   // Mostrar campo Natureza só para Atividade
   const wrap = document.getElementById('act-natureza-wrap');
   if(wrap) wrap.style.display = type === 'atividade' ? 'block' : 'none';
+  // Mostrar campo Tipo de Evento só para Evento
+  const etipoWrap = document.getElementById('act-evento-tipo-wrap');
+  if(etipoWrap) etipoWrap.style.display = type === 'evento' ? 'block' : 'none';
+}
+
+function selectEventoTipo(etipo) {
+  document.querySelectorAll('[data-etipo]').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.etipo === etipo);
+  });
 }
 
 function selectNatureza(nat) {
@@ -7930,7 +7969,9 @@ function saveActionModal() {
   const pontosMelhoria = document.getElementById('act-pontos').value.trim();
   const natBtn = document.querySelector('.natureza-btn.selected');
   const natureza = (type === 'atividade' && natBtn) ? natBtn.dataset.nat : '';
-  const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza };
+  const etipoBtn = document.querySelector('[data-etipo].selected');
+  const eventoTipo = (type === 'evento' && etipoBtn) ? etipoBtn.dataset.etipo : '';
+  const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo };
 
   const step = DATA[_actP].steps[_actSi];
   if(_actBi >= 0) {
@@ -20549,7 +20590,7 @@ function matShowAudit(p) {
 
 function matComputeMetrics(p, version='asis') {
   const steps = (DATA[p] && DATA[p].steps) || [];
-  let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, actionsWithSistema = 0;
+  let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, actionsWithSistema = 0, totalStartEvents = 0, totalEndEvents = 0;
   const allActors = new Set();
   const allSistemas = new Set();
   // Palavras que indicam o loop-back (retrabalho ocorreu) — não inclui aprovacao/revisao no texto pois são checkpoints, não retorno
@@ -20575,6 +20616,11 @@ function matComputeMetrics(p, version='asis') {
 
       if(type === 'atividade') totalActivities++;
       if(type === 'decisao')   totalDecisions++;
+      if(type === 'evento') {
+        const etipo = action.eventoTipo || '';
+        if(etipo === 'inicio') totalStartEvents++;
+        else if(etipo === 'encerramento') totalEndEvents++;
+      }
 
       // Burocracia: para decisões com caminhos, conta 1 se qualquer caminho for aprovacao/revisao
       // Para demais ações, conta por natureza ou palavra-chave no texto
@@ -20644,7 +20690,7 @@ function matComputeMetrics(p, version='asis') {
   const totalActors   = allActors.size;
   const totalSistemas = allSistemas.size;
   const automRate     = totalActivities > 0 ? actionsWithSistema / totalActivities : 0;
-  const complexScore  = totalActivities * 1 + totalDecisions * 2 + totalActors * 1.5 + totalLoops * 3;
+  const complexScore  = totalActivities * 1 + totalDecisions * 2 + totalActors * 1.5 + totalLoops * 3 + totalStartEvents * 1.5 + totalEndEvents * 1;
 
   let complexLabel, complexCls;
   if(complexScore <= 20)      { complexLabel = 'Simples';        complexCls = '#22c55e'; }
@@ -20659,7 +20705,7 @@ function matComputeMetrics(p, version='asis') {
   else                        { burocLabel = 'Burocrático'; burocCls = '#ef4444'; }
 
   return { totalActivities, totalDecisions, totalActors, totalLoops, totalHandoffs, totalApprovals, totalSistemas,
-           actionsWithSistema, automRate,
+           actionsWithSistema, automRate, totalStartEvents, totalEndEvents,
            complexScore, complexLabel, complexCls, burocracia, burocLabel, burocCls };
 }
 
@@ -20820,6 +20866,8 @@ function matRender(p) {
       ${metricCard('🔀','Handoffs',      metrics.totalHandoffs,  'trocas de ator')}
       ${metricCard('✅','Aprov./Revis.', metrics.totalApprovals, 'burocracia')}
       ${metricCard('⚡','Digitalização', (metrics.automRate*100).toFixed(0)+'%', 'ações com sistema')}
+      ${metricCard('⬤', 'Ev. Início',   metrics.totalStartEvents, 'eventos de início')}
+      ${metricCard('⬤', 'Ev. Encerramento', metrics.totalEndEvents, 'eventos de encerramento')}
     </div>`;
 
   // índices calculados com escala de referência
@@ -20829,7 +20877,7 @@ function matRender(p) {
     <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:6px;">📊 Índices Calculados</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
       ${indexCard('Complexidade ↓', metrics.complexScore.toFixed(1), metrics.complexLabel, metrics.complexCls,
-        `atividades×1 + decisões×2 + atores×1,5 + loops×3<br>Escala: ≤20 simples · ≤40 moderado · ≤70 complexo · &gt;70 muito complexo`)}
+        `atividades×1 + decisões×2 + atores×1,5 + loops×3 + inícios×1,5 + encerramentos×1<br>Escala: ≤20 simples · ≤40 moderado · ≤70 complexo · &gt;70 muito complexo`)}
       ${indexCard('Burocracia ↓', (metrics.burocracia * 100).toFixed(1)+'%', metrics.burocLabel, metrics.burocCls,
         `(aprovações + revisões) ÷ total de atividades<br>Escala: &lt;15% saudável · 15–30% moderado · &gt;30% burocrático<br><span style="color:#64748b;">Fontes: natureza da ação + palavras-chave no texto</span>`)}
       ${indexCard('Risco Operacional ↓', risco.score, risco.label, risco.cls,
