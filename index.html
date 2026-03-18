@@ -2457,7 +2457,10 @@
       <div class="card fade-up" style="margin-bottom:16px;">
         <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
           <div style="font-size:13px;color:var(--text-secondary);">⚠️ Riscos e oportunidades identificados no processo, ranqueados por nota de risco.</div>
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openRiskModal('d')">＋ Adicionar</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;" id="d-risk-ia-btn" onclick="generateRisksIA('d')">✨ Gerar por IA</button>
+            <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openRiskModal('d')">＋ Adicionar</button>
+          </div>
         </div>
       </div>
       <div id="d-risk-grid" class="risk-matrix"></div>
@@ -2823,7 +2826,10 @@
       <div class="card fade-up" style="margin-bottom:16px;">
         <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
           <div style="font-size:13px;color:var(--text-secondary);">⚠️ Riscos e oportunidades identificados no processo, ranqueados por nota de risco.</div>
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openRiskModal('r')">＋ Adicionar</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;" id="r-risk-ia-btn" onclick="generateRisksIA('r')">✨ Gerar por IA</button>
+            <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openRiskModal('r')">＋ Adicionar</button>
+          </div>
         </div>
       </div>
       <div id="r-risk-grid" class="risk-matrix"></div>
@@ -3521,8 +3527,8 @@ REGRAS PARA actions[] — LEIA COM ATENÇÃO:
 1. Cada linha, bullet point ou item numerado do documento = uma action separada. NUNCA agrupe duas linhas em uma só action.
 2. Preserve o texto exato do documento no campo "text" — não resuma, não parafraseie.
 3. Se uma linha descreve uma decisão (contém "?", "se", "caso", "quando", "verificar se"), classifique como "decisao".
-4. Após cada "decisao", crie actions para os caminhos possíveis: "Se sim: [ação]" e "Se não: [ação]", cada uma como action separada do tipo "atividade".
-5. Se uma linha menciona envio para aprovação, volta para revisão, ou aguardar retorno — inclua como action com a natureza correspondente.
+4. Para ações do tipo "decisao", use o campo "branches" para representar os caminhos possíveis. Cada caminho tem "label" (ex: "Sim", "Não", "Aprovado", "Reprovado") e "actions" (lista de ações daquele caminho). NÃO crie actions separadas no nível da etapa para os caminhos de uma decisão — elas devem estar DENTRO do branches[] da decisão correspondente.
+5. Se uma linha menciona envio para aprovação, volta para revisão, ou aguardar retorno — inclua como action com a natureza correspondente (dentro do caminho adequado se for resultado de uma decisão).
 6. Nunca pule linhas por parecerem redundantes ou óbvias — inclua tudo.
 7. APENAS ações do tipo "atividade" devem ter "actor" e "sistemas" preenchidos. Para "decisao", "evento" e "observacao", deixe "actor":"" e "sistemas":"".
 
@@ -3535,7 +3541,7 @@ Mapeie TODOS os passos do processo SEM simplificar. Inclua obrigatoriamente:
 Regras técnicas: id único por nó (n1, n2, ...); nós de decisão têm label obrigatório nas setas ("Sim"/"Não" ou equivalente); pelo menos um nó "start" e um "end".
 
 # FORMATO FINAL DO JSON
-{"nome":"","macro":"","processo":"","subprocesso":"","area_responsavel":"","divisao":"","titulo":"","elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","canais_entrada":[],"output":"","siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":""}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}
+{"nome":"","macro":"","processo":"","subprocesso":"","area_responsavel":"","divisao":"","titulo":"","elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","canais_entrada":[],"output":"","siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":"","branches":[{"label":"Sim","actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":""}]},{"label":"Não","actions":[]}]}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}
 
 VALIDAÇÃO FINAL OBRIGATÓRIA:
 ✓ siglas[] contém TODAS as siglas do documento, cada uma como entrada separada
@@ -3544,6 +3550,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
 ✓ steps[].actions[] tem UMA action por linha/item do documento — nenhuma linha omitida ou agrupada
 ✓ steps[].actions[].actor usa o nome EXATO de um executor em executores[].name
 ✓ steps[].actions[].natureza preenchida para ações de aprovação ou revisão
+✓ ações do tipo "decisao" possuem "branches" com os caminhos e suas sub-ações (nunca caminhos soltos no nível da etapa)
 ✓ flow[] possui pelo menos um "start" e um "end", todos os caminhos de decisão mapeados, loops incluídos</div>
                   <button onclick="copyNpopPrompt()" id="npop-copy-btn"
                     style="margin-top:8px;padding:5px 12px;background:var(--cage-blue);color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
@@ -7308,7 +7315,10 @@ function mountNewPopTab(key, label, silent=false) {
         <div class="card fade-up" style="margin-bottom:16px;">
           <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:13px;color:var(--text-secondary);">⚠️ Riscos e oportunidades identificados no processo, ranqueados por nota de risco.</div>
-            <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openRiskModal('${key}')">＋ Adicionar</button>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;" id="${key}-risk-ia-btn" onclick="generateRisksIA('${key}')">✨ Gerar por IA</button>
+              <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openRiskModal('${key}')">＋ Adicionar</button>
+            </div>
           </div>
         </div>
         <div id="${key}-risk-grid" class="risk-matrix"></div>
@@ -13199,6 +13209,68 @@ function deleteRisk(p,i) {
   renderRisks(p); markChanged();
 }
 
+async function generateRisksIA(p) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem usar IA.', 'warn'); return; }
+  const btn = document.getElementById(p + '-risk-ia-btn');
+  if(btn) { btn.disabled = true; btn.textContent = '⏳ Gerando…'; }
+  try {
+    const D = DATA[p];
+    const procName = D.meta?.name || 'Processo';
+    const desc     = D.meta?.desc || '';
+    const stepsCtx = (D.steps || []).map((s,i) => {
+      const acts = (s.actions||[]).map(a => {
+        const lines = [`  - [${(a.type||'atividade').toUpperCase()}] ${a.text||''}`];
+        if(Array.isArray(a.branches)) a.branches.forEach(b =>
+          (b.actions||[]).forEach(ba => lines.push(`    • (${b.label}) ${ba.text||''}`)));
+        return lines.join('\n');
+      }).join('\n');
+      return `Etapa ${i+1}: ${s.title}\n${acts}`;
+    }).join('\n\n');
+    const existingTitles = (D.risks||[]).map(r => r.title).filter(Boolean);
+    const existingCtx = existingTitles.length ? `\n\nRISCOS JÁ CADASTRADOS (não repita):\n${existingTitles.map(t=>'- '+t).join('\n')}` : '';
+
+    const prompt = `Você é um especialista em gestão de riscos de processos públicos. Analise o processo abaixo e identifique de 5 a 8 riscos e/ou oportunidades relevantes e específicos ao conteúdo real do processo. Evite riscos genéricos. Para cada item forneça: título objetivo (máx. 80 chars), descrição breve, causa provável, tratamento sugerido, impacto (1=mínimo a 5=máximo) e probabilidade (1=raro a 5=quase certo).
+
+PROCESSO: ${procName}
+${desc ? 'DESCRIÇÃO: ' + desc + '\n' : ''}
+FLUXO:
+${stepsCtx}${existingCtx}
+
+Responda APENAS em JSON puro (sem markdown, sem \`\`\`), como array:
+[{"type":"risco","title":"","desc":"","causa":"","solucao":"","impact":3,"prob":2,"treat":"Mitigar"}]
+Valores possíveis para "type": "risco" ou "oportunidade".
+Valores possíveis para "treat": "Mitigar", "Aceitar", "Transferir", "Eliminar", "Explorar".`;
+
+    const text = await callGemini(prompt);
+    let clean = text.trim().replace(/```json|```/g,'').trim();
+    const match = clean.match(/\[[\s\S]*\]/);
+    if(match) clean = match[0];
+    const items = JSON.parse(clean);
+    if(!Array.isArray(items) || !items.length) throw new Error('Resposta vazia da IA.');
+    if(!D.risks) D.risks = [];
+    items.forEach(item => {
+      D.risks.push({
+        type:    (item.type === 'oportunidade') ? 'oportunidade' : 'risco',
+        title:   item.title   || '',
+        desc:    item.desc    || '',
+        causa:   item.causa   || '',
+        solucao: item.solucao || '',
+        impact:  Math.min(5, Math.max(1, parseInt(item.impact)||3)),
+        prob:    Math.min(5, Math.max(1, parseInt(item.prob)||2)),
+        score:   Math.min(5, Math.max(1, parseInt(item.impact)||3)) * Math.min(5, Math.max(1, parseInt(item.prob)||2)),
+        treat:   item.treat   || 'Mitigar',
+      });
+    });
+    renderRisks(p);
+    markChanged();
+    showToast(`✅ ${items.length} itens gerados pela IA e adicionados.`, 'success');
+  } catch(e) {
+    showToast('❌ Erro ao gerar riscos: ' + (e.message || e), 'error');
+  } finally {
+    if(btn) { btn.disabled = false; btn.textContent = '✨ Gerar por IA'; }
+  }
+}
+
 // ═══ VERSIONAMENTO ════════════════════════════════════════════════
 
 // Campos do POP que são versionados (meta/revisions são compartilhados entre versões)
@@ -18007,12 +18079,12 @@ SISTEMAS e ACTOR: preencha apenas em ações do tipo "atividade". Para "decisao"
 
 ETAPAS (steps[]): cada seção/fase do documento = uma step separada. NUNCA mescle seções. NUNCA omita seção.
 AÇÕES (actions[]): cada linha/bullet/item numerado = uma action separada. NUNCA agrupe linhas. NUNCA omita linha. Preserve o texto exato.
-Após cada decisao, crie actions para cada caminho ("Se sim: ...", "Se não: ...") como atividades separadas.
+Para ações do tipo "decisao", use o campo "branches" para os caminhos (ex: [{"label":"Sim","actions":[...]},{"label":"Não","actions":[...]}]). NÃO crie actions separadas no nível da etapa para os caminhos de uma decisão.
 
 FLUXO (flow[]): mapeie TODOS os passos sem simplificar — inclua exceções, loops de retorno, todos os caminhos de decisão. flow[] tem start+end+todos os caminhos.
 
 FORMATO:
-{"nome":"","macro":"","processo":"","subprocesso":"","area_responsavel":"","divisao":"","titulo":"","elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","canais_entrada":[],"output":"","siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":""}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}`;
+{"nome":"","macro":"","processo":"","subprocesso":"","area_responsavel":"","divisao":"","titulo":"","elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","canais_entrada":[],"output":"","siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":"","branches":[{"label":"Sim","actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":""}]},{"label":"Não","actions":[]}]}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}`;
 
     pbar.style.width = '60%';
     msg.textContent = 'Gemini analisando o documento...';
@@ -20369,6 +20441,19 @@ function matSetVersion(p, v) {
   matRender(p);
 }
 
+// Verifica se dois textos de loop são semanticamente similares (Jaccard sobre palavras)
+function _loopSimilar(textA, textB) {
+  const STOP = new Set(['o','a','os','as','de','do','da','dos','das','em','no','na','nos','nas','ao','às','um','uma','para','por','com','se','que','e','ou','mas','não','já','este','essa','isso']);
+  const words = t => new Set(
+    t.toLowerCase().replace(/[^a-záéíóúàãõâêôçü\s]/g,' ').replace(/\s+/g,' ').trim()
+     .split(' ').filter(w => w.length > 2 && !STOP.has(w))
+  );
+  const wa = words(textA), wb = words(textB);
+  const inter = [...wa].filter(w => wb.has(w)).length;
+  const union = new Set([...wa, ...wb]).size;
+  return union > 0 && inter / union >= 0.5;
+}
+
 function matAuditDetails(p, version) {
   const steps = (DATA[p] && DATA[p].steps) || [];
   const LOOP_TRIGGER_KW = ['complementa','devolver','retornar','reenviar'];
@@ -20377,6 +20462,7 @@ function matAuditDetails(p, version) {
 
   let prevActor = '';
   let inLoopCluster = false;
+  const seenLoopTexts = []; // dedup semântico de loops similares
   steps.forEach((step, si) => {
     const actions  = version === 'tobe' ? ((step.tobe && step.tobe.actions) || []) : (step.actions || []);
     const stepName = step.title || `Etapa ${si+1}`;
@@ -20399,8 +20485,13 @@ function matAuditDetails(p, version) {
         audit.approvals.push({ step: stepName, text: txt, via: isBurocByNat ? `natureza: ${nat}` : 'palavra-chave no texto' });
 
       const isLoopSignal = nat === 'revisao' || LOOP_TRIGGER_KW.some(k => textLow.includes(k));
-      if(isLoopSignal && !inLoopCluster)
-        audit.loops.push({ step: stepName, text: txt, via: nat === 'revisao' ? 'natureza: revisao' : 'palavra-chave no texto' });
+      if(isLoopSignal && !inLoopCluster) {
+        const isDuplicate = seenLoopTexts.some(t => _loopSimilar(t, txt));
+        if(!isDuplicate) {
+          audit.loops.push({ step: stepName, text: txt, via: nat === 'revisao' ? 'natureza: revisao' : 'palavra-chave no texto' });
+          seenLoopTexts.push(txt);
+        }
+      }
       inLoopCluster = isLoopSignal;
 
       if(type === 'atividade') {
@@ -20477,6 +20568,7 @@ function matComputeMetrics(p, version='asis') {
 
   let prevActor = '';
   let inLoopCluster = false; // detecta borda de subida: conta 1 loop por cluster de retrabalho
+  const seenLoopTexts = []; // dedup semântico de loops similares entre etapas
   steps.forEach((step) => {
     const actions = version === 'tobe'
       ? ((step.tobe && step.tobe.actions) || [])
@@ -20502,9 +20594,15 @@ function matComputeMetrics(p, version='asis') {
         if(isBurocByNat || isBurocByKw) totalApprovals++;
       }
 
-      // Loop: conta 1 por ciclo de retrabalho (borda de subida do cluster)
+      // Loop: conta 1 por ciclo de retrabalho, deduplicando textos semanticamente similares
       const isLoopSignal = nat === 'revisao' || LOOP_TRIGGER_KW.some(k => textLow.includes(k));
-      if(isLoopSignal && !inLoopCluster) totalLoops++;
+      if(isLoopSignal && !inLoopCluster) {
+        const txt = action.text || '';
+        if(!seenLoopTexts.some(t => _loopSimilar(t, txt))) {
+          totalLoops++;
+          seenLoopTexts.push(txt);
+        }
+      }
       inLoopCluster = isLoopSignal;
 
       if(type === 'atividade') {
