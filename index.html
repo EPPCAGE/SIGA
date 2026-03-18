@@ -7877,7 +7877,7 @@ function openActionModal(p, si, ai) {
 
   // Set text, actor and complementary fields
   document.getElementById('act-text').value       = obj.text;
-  document.getElementById('act-actor').value      = obj.actor;
+  document.getElementById('act-actor').value      = obj.actor || step.responsible || '';
   document.getElementById('act-duracao').value    = obj.duracao;
   document.getElementById('act-sistemas').value   = obj.sistemas;
   document.getElementById('act-documentos').value = obj.documentos;
@@ -7966,7 +7966,7 @@ function openBranchActionModal(p, si, ai, bi, bai) {
     actorList.innerHTML = atores.map(a => `<option value="${a.replace(/"/g,'&quot;')}">`).join('');
   }
   document.getElementById('act-text').value        = obj.text;
-  document.getElementById('act-actor').value       = obj.actor;
+  document.getElementById('act-actor').value       = obj.actor || step.responsible || '';
   document.getElementById('act-duracao').value     = obj.duracao;
   document.getElementById('act-sistemas').value    = obj.sistemas;
   document.getElementById('act-documentos').value  = obj.documentos;
@@ -8267,10 +8267,15 @@ function getMacroprocessos() { return getConfig('macroprocessos'); }
 // ── Classificação automática de natureza por verbos ──────────────────────
 const NATUREZA_VERBOS = {
   planejamento: ['planejar','definir','estruturar','programar','organizar','projetar','especificar','estimar'],
-  revisao:      ['revisar','avaliar','reavaliar','diagnosticar','verificar'],
+  revisao:      ['revisar','avaliar','reavaliar','diagnosticar'],
   controle:     ['conferir','checar','confirmar','certificar','inspecionar','controlar','fiscalizar','vistoriar'],
   aprovacao:    ['aprovar','autorizar','homologar','ratificar','deferir','indeferir','sancionar'],
-  comunicacao:  ['comunicar','informar','notificar','avisar','reportar','solicitar','registrar'],
+  comunicacao:  ['comunicar','informar','notificar','avisar','reportar','solicitar','registrar',
+                 'pedir','requerer','requisitar',
+                 'perguntar','questionar','indagar','consultar','inquirir',
+                 'elogiar','parabenizar','reconhecer','enaltecer','congratular',
+                 'retroalimentar','responder','esclarecer',
+                 'orientar','alertar','advertir','cobrar','lembrar'],
   distribuicao: ['distribuir','encaminhar','direcionar','atribuir','designar','delegar','alocar',
                  'devolver','repassar','mandar','enviar'],
 };
