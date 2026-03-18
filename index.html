@@ -1785,6 +1785,12 @@
     <div id="epp-macro-list"></div>
   </div>
 
+  <!-- Block 2b: Cobertura por Objetivo Estratégico -->
+  <div class="epp-dash-section">
+    <div class="epp-dash-section-title">🎯 Cobertura por Objetivo Estratégico</div>
+    <div id="epp-obj-list"></div>
+  </div>
+
   <!-- Block 3: Performance do EPP -->
   <div class="epp-dash-section">
     <div class="epp-dash-section-title">⚡ Performance do Escritório de Processos</div>
@@ -17773,6 +17779,39 @@ function eppRenderDashboard() {
         '<div style="width:90px;text-align:right;font-size:11px;color:#94a3b8;">'+d.mapeados+'/'+d.total+'</div>'+
       '</div>';
     }).join('') || '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px;">Sem dados de arquitetura</div>';
+  }
+
+  // By objetivo estratégico
+  const objListEl = document.getElementById('epp-obj-list');
+  if(objListEl) {
+    const objMap = {};
+    arqData.forEach(r => {
+      (r.objEstrategicos || []).forEach(obj => {
+        if(!obj) return;
+        if(!objMap[obj]) objMap[obj] = { total:0, mapeados:0 };
+        objMap[obj].total++;
+        if(r.mapeado) objMap[obj].mapeados++;
+      });
+    });
+    const objEntries = Object.entries(objMap).sort((a,b) => {
+      const pa = a[1].total ? a[1].mapeados/a[1].total : 0;
+      const pb = b[1].total ? b[1].mapeados/b[1].total : 0;
+      return pb - pa;
+    });
+    if(objEntries.length === 0) {
+      objListEl.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px;">Nenhum objetivo estratégico vinculado aos processos da arquitetura</div>';
+    } else {
+      objListEl.innerHTML = objEntries.map(([obj, d]) => {
+        const pct = d.total ? Math.round(d.mapeados / d.total * 100) : 0;
+        const col = pct === 100 ? '#15803d' : pct >= 60 ? '#f59e0b' : '#dc2626';
+        return '<div class="epp-macro-row">' +
+          '<div style="flex:1;min-width:0;font-size:12px;font-weight:600;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + obj + '">' + obj + '</div>' +
+          '<div style="width:180px;flex-shrink:0;margin:0 12px;"><div class="epp-prog-bar"><div class="epp-prog-fill" style="width:' + pct + '%;background:' + col + ';"></div></div></div>' +
+          '<div style="width:44px;text-align:right;font-size:12px;font-weight:700;color:' + col + ';">' + pct + '%</div>' +
+          '<div style="width:70px;text-align:right;font-size:11px;color:#94a3b8;">' + d.mapeados + '/' + d.total + '</div>' +
+        '</div>';
+      }).join('');
+    }
   }
 
   // ── 3. Performance EPP ──────────────────────────────────────
