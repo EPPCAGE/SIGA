@@ -6360,11 +6360,48 @@ async function _generateFaqIAWithMode(p, mode) {
   try {
     const D = DATA[p];
     const modeLabel = mode === 'tobe' ? 'TO BE (Futuro)' : 'AS IS (Atual)';
-    const steps = (D.steps||[]).map((s,i)=>{ const rs=resolveStep(s,mode); return `Etapa ${i+1}: ${rs.title}. Ações: ${rs.actions.map(a=>(typeof a==='string'?a:a.text)).join('; ')}`; }).join('\n');
-    const roles = (D.roles||[]).map(r=>`${r.name}: ${(r.duties||[]).join(', ')}`).join('\n');
-    const desc  = D.meta?.desc || D.objetivo || '';
-    const context = `Processo: ${D.meta?.name||'POP'} [${modeLabel}]\nObjetivo: ${desc}\nEtapas:\n${steps}\nAtores:\n${roles}`;
-    const prompt = `Com base neste processo, gere 5 perguntas frequentes (FAQ) realistas que cidadãos, servidores ou gestores fariam, com respostas claras e objetivas.\n\n${context}\n\nResponda APENAS em JSON puro (sem markdown, sem \`\`\`): [{"q":"pergunta","a":"resposta"},...]`;
+
+    // Fluxo
+    const steps = (D.steps||[]).map((s,i)=>{
+      const rs = resolveStep(s, mode);
+      const acoes = rs.actions.map(a => typeof a === 'string' ? a : (a.text || '')).filter(Boolean).join('; ');
+      return `Etapa ${i+1}: ${rs.title}${acoes ? '. Ações: ' + acoes : ''}`;
+    }).join('\n');
+
+    // Responsabilidades
+    const roles = (D.roles||[]).map(r => {
+      const cargo = r.title ? ` (${r.title})` : '';
+      const atrib = (r.duties||[]).filter(Boolean).join(', ');
+      return `${r.name}${cargo}${atrib ? ': ' + atrib : ''}`;
+    }).join('\n');
+
+    // Riscos
+    const risksText = (D.risks||[]).length
+      ? (D.risks||[]).map(r => {
+          const nivel = r.score >= 16 ? 'Alto' : r.score >= 8 ? 'Médio' : 'Baixo';
+          const partes = [`[${nivel}] ${r.title||''}`];
+          if(r.desc)    partes.push(`Descrição: ${r.desc}`);
+          if(r.causa)   partes.push(`Causa: ${r.causa}`);
+          if(r.solucao) partes.push(`Tratamento: ${r.solucao}`);
+          return partes.join(' | ');
+        }).join('\n')
+      : null;
+
+    // Checklists
+    const checklistsText = (D.checklists||[]).length
+      ? (D.checklists||[]).map(ck => {
+          const itens = (ck.items||[]).map(it => `  - ${it.q||''}`).filter(i => i.trim() !== '-').join('\n');
+          return `${ck.title}:\n${itens}`;
+        }).join('\n\n')
+      : null;
+
+    const desc = D.meta?.desc || D.objetivo || '';
+
+    let context = `Processo: ${D.meta?.name||'POP'} [${modeLabel}]\nObjetivo: ${desc}\n\nFLUXO:\n${steps}\n\nRESPONSABILIDADES:\n${roles}`;
+    if(risksText)      context += `\n\nRISCOS MAPEADOS:\n${risksText}`;
+    if(checklistsText) context += `\n\nCHECKLISTS:\n${checklistsText}`;
+
+    const prompt = `Com base neste processo, gere 8 perguntas frequentes (FAQ) realistas que cidadãos, servidores ou gestores fariam, com respostas claras e objetivas. Explore diferentes fontes: fluxo de trabalho, riscos operacionais, responsabilidades dos atores e itens de checklist — gerando perguntas variadas que cubram dúvidas práticas, pontos críticos de controle e responsabilidades.\n\n${context}\n\nResponda APENAS em JSON puro (sem markdown, sem \`\`\`): [{"q":"pergunta","a":"resposta"},...]`;
 
     const text = await callGemini(prompt);
     let clean = text.trim();
