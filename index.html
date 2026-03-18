@@ -9326,6 +9326,7 @@ const _ORG_AREA_MAP = {
   'DAUD': 'Divisão de Auditoria',
   'DCON': 'Divisão de Contabilidade',
   'DIR':  'Divisão de Integridade e Responsabilização',
+  'DIE':  'Divisão de Informações Estratégicas',
   'DTTI': 'Divisão de Transparência e Tecnologia da Informação',
   'GAB':  'Gabinete da CAGE',
 };
@@ -13774,6 +13775,16 @@ function arqShowForm(idx = null) {
     equipeSelect.appendChild(opt);
   });
 
+  // Popular select de áreas
+  const areaSelect = document.getElementById('arq-f-area');
+  areaSelect.innerHTML = '<option value="">— Selecione —</option>';
+  getConfig('areas').forEach(sigla => {
+    const opt = document.createElement('option');
+    opt.value = sigla;
+    opt.textContent = _ORG_AREA_MAP[sigla] ? sigla + ' — ' + _ORG_AREA_MAP[sigla] : sigla;
+    areaSelect.appendChild(opt);
+  });
+
   if(idx !== null) {
     const r = arqGetData()[idx];
     title.textContent = 'Editar Processo';
@@ -13781,7 +13792,7 @@ function arqShowForm(idx = null) {
     document.getElementById('arq-f-processo').value = r.processo      || '';
     document.getElementById('arq-f-sub').value      = r.subprocesso   || '';
     document.getElementById('arq-f-natureza').value = r.natureza      || 'FINALÍSTICO';
-    document.getElementById('arq-f-area').value     = r.area          || '';
+    areaSelect.value = _ORG_AREA_MAP_REV[(r.area||'').trim().toUpperCase()] || r.area || '';
     document.getElementById('arq-f-gerente').value  = r.gerente       || '';
     equipeSelect.value                              = r.equipe        || '';
     document.getElementById('arq-f-objetivo').value = r.objetivo      || '';
@@ -20872,7 +20883,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       </div>
       <div>
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Área</label>
-        <input id="arq-f-area" placeholder="Ex: Divisão de Auditoria" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        <select id="arq-f-area" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;background:white;"></select>
       </div>
       <div>
         <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Gerente do Processo</label>
