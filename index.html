@@ -21672,11 +21672,13 @@ function matComputeMetrics(p, version='asis') {
 }
 
 function matComputeRisco(metrics, indispensaveis, sistIndispensaveis) {
-  // decisões×2 + handoffs×2 + pessoas×5 + sistemas×3
+  // decisões×2 + handoffs×2 + pessoas×5 + sistemas×3 + eventos início×1.5 + eventos fim×1
+  // Múltiplos pontos de entrada/saída indicam processo com fluxos complexos e não-lineares.
   // Nota: distribuição NÃO é somada aqui — as atividades de distribuição já geram
   // handoffs estruturais detectados pela troca de ator, evitando dupla contagem.
   const score = (metrics.totalDecisions * 2) + (metrics.totalHandoffs * 2)
-              + (indispensaveis * 5) + ((sistIndispensaveis || 0) * 3);
+              + (indispensaveis * 5) + ((sistIndispensaveis || 0) * 3)
+              + (metrics.totalStartEvents * 1.5) + (metrics.totalEndEvents * 1);
   let label, cls;
   if(score <= 15)      { label = 'Baixo'; cls = '#22c55e'; }
   else if(score <= 35) { label = 'Médio'; cls = '#eab308'; }
