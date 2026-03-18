@@ -8086,7 +8086,6 @@ function saveActionModal() {
   const _existingLoop = _actBi < 0 ? (_existingObj.loop || false) : false;
   const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo, automatico: _existingAuto, loop: _existingLoop };
 
-  const step = DATA[_actP].steps[_actSi];
   if(_actBi >= 0) {
     // Saving a branch action
     const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
