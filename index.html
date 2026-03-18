@@ -15964,15 +15964,142 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
     h += `<p class="rel-empty">Nenhum item cadastrado no Plano de Ação.</p>`;
   }
 
-  // ── 11. Conclusão ──────────────────────────────────────────
-  if (ai.conclusao) {
-    h += `<h2 class="rel-h1">11. Conclusão</h2>${paras(ai.conclusao)}`;
+  // ── 11. Análise de Maturidade ───────────────────────────────
+  {
+    const matData    = typeof matGetData       === 'function' ? matGetData(p)                        : null;
+    const matFinal   = typeof matComputeFinal  === 'function' ? matComputeFinal(p)                   : null;
+    const matVersion = matData?.version || 'asis';
+    const matMetrics = typeof matComputeMetrics === 'function' ? matComputeMetrics(p, matVersion)    : null;
+    const matRiscoR  = (typeof matComputeRisco === 'function' && matMetrics)
+      ? matComputeRisco(matMetrics, parseInt(matData?.indispensaveis)||0, parseInt(matData?.sistIndispensaveis)||0)
+      : null;
+    const matSnaps   = matData?.snapshots || [];
+    const matAnswers = Array.isArray(matData?.answers) ? matData.answers : new Array(10).fill(null);
+    const answered   = matAnswers.filter(a => a !== null).length;
+    const ansLbl     = { sim:'Sim', talvez:'Talvez', nao:'Não' };
+    const ansBg      = { sim:'#dcfce7', talvez:'#fef9c3', nao:'#fee2e2' };
+    const ansColor   = { sim:'#166534', talvez:'#854d0e', nao:'#991b1b' };
+    const fmtDate    = d => { try { return new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){ return d; } };
+
+    h += `<h2 class="rel-h1">11. Análise de Maturidade do Processo</h2>`;
+
+    if (matFinal) {
+      // Score em destaque
+      h += `<table class="rel-ficha" style="margin-bottom:16px;">
+        <tr><td>Fluxo analisado</td><td>${matVersion === 'tobe' ? 'TO BE (Futuro)' : 'AS IS (Atual)'}</td></tr>
+        <tr><td>Score de Maturidade</td><td><strong style="font-size:18px;color:${matFinal.levelColor};">${matFinal.final}/100</strong></td></tr>
+        <tr><td>Nível</td><td><strong style="color:${matFinal.levelColor};">${matFinal.levelIcon} ${matFinal.level}</strong></td></tr>
+      </table>`;
+
+      // Barra de progresso
+      h += `<div style="background:#e2e8f0;border-radius:6px;height:12px;margin-bottom:16px;overflow:hidden;">
+        <div style="height:12px;width:${matFinal.final}%;background:${matFinal.levelColor};border-radius:6px;"></div>
+      </div>`;
+
+      // Componentes do score
+      h += `<h3 class="rel-h2">11.1 Componentes do Score</h3>
+      <table class="rel-table">
+        <tr><th>Componente</th><th>Peso</th><th>Pontuação (0–100)</th></tr>
+        ${[
+          ['👥 Percepção da Equipe', '30%', matFinal.equipe,      '#6366f1'],
+          ['⚠️ Risco Operacional',  '25%', matFinal.normRisco,   '#ef4444'],
+          ['📋 Burocracia',          '20%', matFinal.normBuroc,   '#f97316'],
+          ['💻 Digitalização',       '15%', matFinal.normAutom,   '#0891b2'],
+          ['🔄 Complexidade',        '10%', matFinal.normComplex, '#a78bfa'],
+        ].map(([lbl, peso, val, col]) => `<tr>
+          <td>${lbl}</td>
+          <td style="text-align:center;">${peso}</td>
+          <td>
+            <strong style="color:${col};">${val}/100</strong>
+            <div style="display:inline-block;background:#e2e8f0;border-radius:4px;height:6px;width:100px;margin-left:10px;overflow:hidden;vertical-align:middle;">
+              <div style="height:6px;width:${val}%;background:${col};border-radius:4px;"></div>
+            </div>
+          </td>
+        </tr>`).join('')}
+      </table>
+      <p class="rel-p" style="font-size:11px;color:#94a3b8;">Fórmula: Score = Equipe×30% + Risco×25% + Burocracia×20% + Digitalização×15% + Complexidade×10% — todos normalizados 0–100 (100 = mais maduro)</p>`;
+    } else {
+      h += `<p class="rel-empty">Questionário de maturidade não respondido completamente (${answered}/10 perguntas respondidas). Acesse a aba Maturidade para preencher o questionário.</p>`;
+    }
+
+    // Métricas do processo
+    if (matMetrics) {
+      const automLabel = matMetrics.automRate >= 0.6 ? 'Alta' : matMetrics.automRate >= 0.3 ? 'Média' : 'Baixa';
+      h += `<h3 class="rel-h2">11.2 Métricas do Processo</h3>
+      <table class="rel-table">
+        <tr><th>Métrica</th><th>Valor</th></tr>
+        <tr><td>Atividades</td><td>${matMetrics.totalActivities}</td></tr>
+        <tr><td>Decisões</td><td>${matMetrics.totalDecisions}</td></tr>
+        <tr><td>Atores envolvidos</td><td>${matMetrics.totalActors}</td></tr>
+        <tr><td>Loops / Retrabalho</td><td>${matMetrics.totalLoops}</td></tr>
+        <tr><td>Handoffs (trocas de ator)</td><td>${matMetrics.totalHandoffs}</td></tr>
+        <tr><td>Aprovações / Revisões</td><td>${matMetrics.totalApprovals}</td></tr>
+        <tr><td>Digitalização</td><td>${(matMetrics.automRate*100).toFixed(0)}% (${automLabel})</td></tr>
+        <tr><td>Complexidade</td><td>${matMetrics.complexScore.toFixed(1)} — ${matMetrics.complexLabel}</td></tr>
+        <tr><td>Burocracia</td><td>${(matMetrics.burocracia*100).toFixed(1)}% — ${matMetrics.burocLabel}</td></tr>
+        ${matRiscoR ? `<tr><td>Risco Operacional</td><td>${matRiscoR.score} — ${matRiscoR.label}</td></tr>` : ''}
+      </table>`;
+    }
+
+    // Questionário
+    if (typeof MAT_QUESTIONS !== 'undefined' && answered > 0) {
+      h += `<h3 class="rel-h2">11.3 Questionário de Percepção da Equipe (${answered}/10)</h3>
+      <table class="rel-table">
+        <tr><th>#</th><th>Pergunta</th><th>Resposta</th></tr>
+        ${MAT_QUESTIONS.map((q, i) => {
+          const ans = matAnswers[i];
+          return `<tr>
+            <td style="text-align:center;font-weight:700;color:#94a3b8;">${i+1}</td>
+            <td>${esc(q.text)}${q.inverted ? ' <em style="font-size:10px;color:#6366f1;">(invertida)</em>' : ''}</td>
+            <td style="text-align:center;">${ans
+              ? `<span class="rel-status" style="background:${ansBg[ans]};color:${ansColor[ans]};">${ansLbl[ans]}</span>`
+              : '<span style="color:#94a3b8;">—</span>'}</td>
+          </tr>`;
+        }).join('')}
+      </table>`;
+    }
+
+    // Histórico de snapshots
+    if (matSnaps.length) {
+      h += `<h3 class="rel-h2">11.4 Histórico de Notas de Maturidade</h3>
+      <table class="rel-table">
+        <tr><th>Data</th><th>Score</th><th>Nível</th><th>Variação</th></tr>
+        ${[...matSnaps].reverse().map((s, idx, arr) => {
+          const prev = arr[idx + 1];
+          const delta = prev ? s.score - prev.score : null;
+          const deltaStr = delta === null ? '—' : delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : '= 0';
+          const deltaCol = delta > 0 ? '#166534' : delta < 0 ? '#991b1b' : '#64748b';
+          return `<tr>
+            <td>${fmtDate(s.date)}</td>
+            <td style="font-weight:800;color:${s.levelColor||'#0a2540'};">${s.score}/100</td>
+            <td><span class="rel-status" style="background:${(s.levelColor||'#0a2540')}22;color:${s.levelColor||'#0a2540'};">${s.levelIcon||''} ${s.level||''}</span></td>
+            <td style="font-weight:700;color:${deltaCol};">${deltaStr}</td>
+          </tr>`;
+        }).join('')}
+      </table>`;
+    }
+
+    // Análise IA de Maturidade (se disponível)
+    if (matData?.geminiAnalysis) {
+      h += `<h3 class="rel-h2">11.5 Análise Inteligente de Maturidade${matData.lastAnalysis ? ` <span style="font-weight:400;color:#94a3b8;font-size:11px;">(${matData.lastAnalysis})</span>` : ''}</h3>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;font-size:12.5px;line-height:1.75;white-space:pre-wrap;">${
+        matData.geminiAnalysis
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+          .replace(/\n/g,'<br>')
+      }</div>`;
+    }
   }
 
-  // ── 12. Diagramas ──────────────────────────────────────────
+  // ── 12. Conclusão ──────────────────────────────────────────
+  if (ai.conclusao) {
+    h += `<h2 class="rel-h1">12. Conclusão</h2>${paras(ai.conclusao)}`;
+  }
+
+  // ── 13. Diagramas ──────────────────────────────────────────
   if (imgSrc) {
-    h += `<h2 class="rel-h1">12. Diagramas do Processo</h2>
-    <h3 class="rel-h2">12.1 Fluxo do Processo (Imagem BPMN)</h3>
+    h += `<h2 class="rel-h1">13. Diagramas do Processo</h2>
+    <h3 class="rel-h2">13.1 Fluxo do Processo (Imagem BPMN)</h3>
     <div class="rel-diagram-box"><img src="${imgSrc}" alt="Fluxo do processo — ${esc(meta.name)}"></div>`;
   }
 
