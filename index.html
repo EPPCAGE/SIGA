@@ -13314,7 +13314,7 @@ function cycleRaciCell(p, stepIdx, actorKey) {
   if(!isEditor) { showToast('🔒 Apenas editores.', 'warn'); return; }
   const key = `${stepIdx}_${actorKey}`;
   const cur = DATA[p].raciOverrides[key] || '';
-  const cycle = ['', 'C', 'I'];
+  const cycle = ['', 'R', 'A', 'C', 'I'];
   const next = cycle[(cycle.indexOf(cur) + 1) % cycle.length];
   if(next === '') delete DATA[p].raciOverrides[key];
   else DATA[p].raciOverrides[key] = next;
@@ -13382,7 +13382,7 @@ function renderRaci(p) {
         else if(isResp)          val = 'A'; // responsável pela etapa
       }
       const cls = val || 'empty';
-      const tip = val ? '' : 'Clique para C→I→vazio';
+      const tip = val ? 'Clique para alterar' : 'Clique para R→A→C→I→vazio';
       html += `<td><span class="raci-cell ${cls}" title="${tip}" onclick="cycleRaciCell('${p}',${si},'${ak}')">${val||'—'}</span></td>`;
     });
     html += '</tr>';
@@ -13394,7 +13394,7 @@ function renderRaci(p) {
     <span><span class="raci-cell A" style="width:20px;height:20px;font-size:10px;">A</span> Aprovador / Accountable</span>
     <span><span class="raci-cell C" style="width:20px;height:20px;font-size:10px;">C</span> Consultado</span>
     <span><span class="raci-cell I" style="width:20px;height:20px;font-size:10px;">I</span> Informado</span>
-    <span style="color:var(--text-muted);font-size:11px;">💡 R e A são inferidos do fluxo. Clique em células vazias para definir C ou I.</span>
+    <span style="color:var(--text-muted);font-size:11px;">💡 R e A são inferidos do fluxo. Clique em qualquer célula para definir ou sobrescrever manualmente (R→A→C→I→vazio).</span>
   </div>`;
 
   if(isEditor) {
