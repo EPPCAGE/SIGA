@@ -1847,6 +1847,13 @@
     <div style="font-size:12px;font-weight:700;color:#64748b;margin:16px 0 10px;text-transform:uppercase;letter-spacing:.04em;">Status atual do PAT</div>
     <div class="epp-kpi-grid" id="epp-status-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;"></div>
   </div>
+
+  <!-- Block 5: Rankings de Maturidade -->
+  <div class="epp-dash-section">
+    <div class="epp-dash-section-title">🏆 Rankings de Processos Mapeados</div>
+    <div id="epp-ranking-tabs" style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;"></div>
+    <div id="epp-ranking-body"></div>
+  </div>
 </div>
 
 <!-- EPP: Config panel (shown when config tab is active) -->
@@ -17930,6 +17937,92 @@ function eppRenderDashboard() {
       '</div>';
     }).join('');
   }
+
+  // ── 5. Rankings de maturidade ───────────────────────────
+  const rankingItems = [];
+  arqData.filter(r => r.mapeado).forEach(r => {
+    const pk = arqFindLinkedPop(r);
+    if(!pk || !DATA[pk] || !Array.isArray(DATA[pk].steps) || !DATA[pk].steps.length) return;
+    const final   = matComputeFinal(pk);
+    const metrics = matComputeMetrics(pk, (matGetData(pk).version || 'asis'));
+    if(!final) return;
+    rankingItems.push({
+      nome:    r.subprocesso || r.processo,
+      macro:   r.macroprocesso,
+      pk,
+      maturidade:   final.final,
+      matColor:     final.levelColor,
+      matLevel:     final.level,
+      risco:        final.normRisco,
+      riscoColor:   final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444',
+      riscoLabel:   final.riscoLabel,
+      overhead:     Math.round(metrics.overhead * 100),
+      overheadColor: metrics.overheadCls,
+      overheadLabel: metrics.overheadLabel,
+      digital:      Math.round(metrics.automRate * 100),
+      digitalColor: metrics.automRate >= 0.6 ? '#0891b2' : metrics.automRate >= 0.3 ? '#eab308' : '#94a3b8',
+    });
+  });
+  window._eppRankingItems = rankingItems;
+  eppRenderRanking('maturidade');
+}
+
+const _RANKING_TABS = [
+  { key:'maturidade', label:'Maturidade',          desc:'Índice final (0–100) — maior = melhor',           dir: -1 },
+  { key:'risco',      label:'Risco Operacional',    desc:'Score normalizado (0–100) — maior = menos risco', dir: -1 },
+  { key:'overhead',   label:'Overhead Burocrático', desc:'% de atividades burocráticas — menor = melhor',   dir:  1 },
+  { key:'digital',    label:'Digitalização',        desc:'% atividades com sistema/automação — maior = melhor', dir: -1 },
+];
+
+function eppRenderRanking(activeKey) {
+  const tabs   = document.getElementById('epp-ranking-tabs');
+  const body   = document.getElementById('epp-ranking-body');
+  const items  = window._eppRankingItems || [];
+  if(!tabs || !body) return;
+
+  tabs.innerHTML = _RANKING_TABS.map(t =>
+    `<button onclick="eppRenderRanking('${t.key}')" style="
+      padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;
+      border:1.5px solid ${t.key===activeKey?'#6366f1':'#e2e8f0'};
+      background:${t.key===activeKey?'#6366f1':'#f8fafc'};
+      color:${t.key===activeKey?'#fff':'#334155'};">${t.label}
+    </button>`
+  ).join('');
+
+  if(!items.length) {
+    body.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;font-size:13px;">Nenhum processo mapeado com dados de maturidade calculados.</div>';
+    return;
+  }
+
+  const tab     = _RANKING_TABS.find(t => t.key === activeKey);
+  const sorted  = [...items].sort((a,b) => tab.dir * (b[activeKey] - a[activeKey]));
+  const isOverhead = activeKey === 'overhead';
+  const unit    = (activeKey === 'risco' || activeKey === 'maturidade') ? '/100' : '%';
+
+  body.innerHTML =
+    `<div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">${tab.desc}</div>` +
+    sorted.map((it, i) => {
+      const val   = it[activeKey];
+      const color = it[activeKey + 'Color'] || '#6366f1';
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="color:#94a3b8;font-weight:700;font-size:12px;">${i+1}</span>`;
+      const barW  = isOverhead ? Math.min(val, 100) : Math.min(val, 100);
+      const barCol = isOverhead ? (val <= 20 ? '#22c55e' : val <= 35 ? '#eab308' : '#ef4444') : color;
+      const sub   = isOverhead ? (it.overheadLabel||'') : activeKey === 'risco' ? (it.riscoLabel||'') : activeKey === 'maturidade' ? (it.matLevel||'') : '';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+        <div style="width:28px;text-align:center;flex-shrink:0;">${medal}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:#0a2540;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${it.nome}">${it.nome}</div>
+          <div style="font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.macro}</div>
+        </div>
+        <div style="width:120px;flex-shrink:0;">
+          <div style="height:6px;border-radius:3px;background:#f1f5f9;overflow:hidden;">
+            <div style="height:100%;width:${barW}%;background:${barCol};border-radius:3px;transition:width .3s;"></div>
+          </div>
+        </div>
+        <div style="width:52px;text-align:right;font-size:13px;font-weight:800;color:${barCol};flex-shrink:0;">${val}${unit}</div>
+        <div style="width:60px;text-align:right;font-size:11px;color:#94a3b8;flex-shrink:0;">${sub}</div>
+      </div>`;
+    }).join('');
 }
 
 function eppSetValorHora() {
