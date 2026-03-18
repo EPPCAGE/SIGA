@@ -20090,10 +20090,10 @@ function matAuditDetails(p, version) {
   const APPROVAL_KW = ['aprovação','aprovacao','revisão','revisao','autorização','autorizacao','validação','validacao','verificação','verificacao'];
   const audit = { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], actors:new Set() };
 
+  let prevActor = '';
   steps.forEach((step, si) => {
     const actions  = version === 'tobe' ? ((step.tobe && step.tobe.actions) || []) : (step.actions || []);
     const stepName = step.title || `Etapa ${si+1}`;
-    let prevActor  = step.responsible || '';
     if(step.responsible) audit.actors.add(step.responsible);
 
     actions.forEach((action, ai) => {
@@ -20182,11 +20182,11 @@ function matComputeMetrics(p, version='asis') {
   const LOOP_KW = ['complementa', 'revisão', 'revisao', 'aprovação', 'aprovacao', 'autorização', 'autorizacao', 'devolver', 'retornar', 'reenviar', 'aguardar aprovação', 'aguardar revisão'];
   const APPROVAL_KW = ['aprovação', 'aprovacao', 'revisão', 'revisao', 'autorização', 'autorizacao', 'validação', 'validacao', 'verificação', 'verificacao'];
 
+  let prevActor = '';
   steps.forEach((step) => {
     const actions = version === 'tobe'
       ? ((step.tobe && step.tobe.actions) || [])
       : (step.actions || []);
-    let prevActor = step.responsible || '';
     if(step.responsible) allActors.add(step.responsible);
 
     actions.forEach(action => {
