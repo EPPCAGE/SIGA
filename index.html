@@ -4478,7 +4478,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
         <datalist id="act-actor-list"></datalist>
       </div>
       <div id="act-natureza-wrap" style="display:none;">
-        <label>Natureza da Atividade</label>
+        <label style="display:flex;align-items:center;gap:8px;">Natureza da Atividade <span id="act-nat-auto-hint" style="display:none;font-size:10px;font-weight:600;color:#0891b2;background:#e0f2fe;padding:1px 7px;border-radius:8px;">✨ sugerido</span></label>
         <div class="natureza-grid">
           <button class="natureza-btn selected" data-nat="execucao" onclick="selectNatureza('execucao')">▶ Execução</button>
           <button class="natureza-btn" data-nat="revisao" onclick="selectNatureza('revisao')">🔍 Revisão</button>
@@ -7862,6 +7862,24 @@ function openActionModal(p, si, ai) {
     moveWrap.style.display = steps.length > 1 ? 'block' : 'none';
   }
 
+  // Auto-detect natureza ao digitar — registra listener único via flag no elemento
+  const actTextEl = document.getElementById('act-text');
+  if(actTextEl && !actTextEl._natListenerAttached) {
+    actTextEl._natListenerAttached = true;
+    actTextEl.addEventListener('input', () => {
+      if(document.querySelector('#act-natureza-wrap').style.display === 'none') return;
+      const inferred = inferNatureza(actTextEl.value);
+      if(inferred) {
+        selectNatureza(inferred, true); // true = auto-detectado
+      }
+    });
+  }
+  // Executa detecção imediata para ações existentes (só se natureza ainda não definida)
+  if(obj.type === 'atividade' && !obj.natureza) {
+    const inferred = inferNatureza(obj.text);
+    if(inferred) selectNatureza(inferred, true);
+  }
+
   document.getElementById('action-type-modal').classList.add('open');
   document.getElementById('act-text').focus();
 }
@@ -7941,10 +7959,12 @@ function selectEventoTipo(etipo) {
   });
 }
 
-function selectNatureza(nat) {
+function selectNatureza(nat, auto) {
   document.querySelectorAll('.natureza-btn').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.nat === nat);
   });
+  const hint = document.getElementById('act-nat-auto-hint');
+  if(hint) hint.style.display = auto ? 'inline' : 'none';
 }
 
 function saveActionModal() {
@@ -8158,10 +8178,12 @@ const CONFIG_DEFAULTS = {
   statusAuditoria:      [{value:'planejada',label:'📋 Planejada'},{value:'em_execucao',label:'🔄 Em Execução'},{value:'concluida',label:'✅ Concluída'},{value:'cancelada',label:'⛔ Cancelada'}],
   naturezaAtividade: [
     { key:'execucao',     label:'Execução',     icon:'▶',  bg:'#dcfce7', color:'#166534' },
-    { key:'revisao',      label:'Revisão',      icon:'🔍', bg:'#dbeafe', color:'#1e40af' },
-    { key:'aprovacao',    label:'Aprovação',    icon:'✅', bg:'#fef9c3', color:'#854d0e' },
-    { key:'distribuicao', label:'Distribuição', icon:'📤', bg:'#f3e8ff', color:'#6b21a8' },
-    { key:'comunicacao',  label:'Comunicação',  icon:'📢', bg:'#ffedd5', color:'#9a3412' },
+    { key:'planejamento', label:'Planejamento',  icon:'🗓', bg:'#e0f2fe', color:'#075985' },
+    { key:'revisao',      label:'Revisão',       icon:'🔍', bg:'#dbeafe', color:'#1e40af' },
+    { key:'controle',     label:'Controle',      icon:'🔎', bg:'#f1f5f9', color:'#334155' },
+    { key:'aprovacao',    label:'Aprovação',     icon:'✅', bg:'#fef9c3', color:'#854d0e' },
+    { key:'distribuicao', label:'Distribuição',  icon:'📤', bg:'#f3e8ff', color:'#6b21a8' },
+    { key:'comunicacao',  label:'Comunicação',   icon:'📢', bg:'#ffedd5', color:'#9a3412' },
   ],
 };
 
@@ -8182,6 +8204,49 @@ function setConfig(key, val) {
   DATA.config[key] = val;
 }
 function getMacroprocessos() { return getConfig('macroprocessos'); }
+
+// ── Classificação automática de natureza por verbos ──────────────────────
+const NATUREZA_VERBOS = {
+  planejamento: ['planejar','definir','estruturar','programar','organizar','projetar','especificar','estimar'],
+  revisao:      ['revisar','avaliar','reavaliar','diagnosticar','verificar'],
+  controle:     ['conferir','checar','confirmar','certificar','inspecionar','controlar','fiscalizar','vistoriar'],
+  aprovacao:    ['aprovar','autorizar','homologar','ratificar','deferir','indeferir','sancionar'],
+  comunicacao:  ['comunicar','informar','notificar','avisar','reportar','solicitar','registrar'],
+  distribuicao: ['distribuir','encaminhar','direcionar','atribuir','designar','delegar','alocar',
+                 'devolver','repassar','mandar','enviar'],
+};
+// Constrói índice normalizado: stem → natureza (calculado uma vez)
+let _natVerbIndex = null;
+function _getNatVerbIndex() {
+  if(_natVerbIndex) return _natVerbIndex;
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  _natVerbIndex = [];
+  for(const [nat, verbs] of Object.entries(NATUREZA_VERBOS)) {
+    for(const verb of verbs) {
+      const n = norm(verb);
+      // stem = verb sem desinência de infinitivo (-ar/-er/-ir/-or → remove 2 chars)
+      // Garante stem mínimo de 4 chars para evitar falsos positivos
+      const stem = n.length > 5 ? n.slice(0, -2) : n;
+      _natVerbIndex.push({ nat, exact: n, stem });
+    }
+  }
+  return _natVerbIndex;
+}
+function inferNatureza(text) {
+  if(!text || !text.trim()) return null;
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  // Extrai o primeiro token (verbo)
+  const firstWord = norm(text.trim().split(/\s+/)[0]);
+  if(firstWord.length < 3) return null;
+  const idx = _getNatVerbIndex();
+  // 1ª passagem: match exato
+  for(const e of idx) { if(firstWord === e.exact) return e.nat; }
+  // 2ª passagem: firstWord começa com o stem (cobre conjugações: aprova, aprovam…)
+  for(const e of idx) { if(e.stem.length >= 4 && firstWord.startsWith(e.stem)) return e.nat; }
+  // 3ª passagem: o exact começa com firstWord (usuário digitou prefixo: "distrib…")
+  for(const e of idx) { if(firstWord.length >= 5 && e.exact.startsWith(firstWord)) return e.nat; }
+  return null; // execução (default)
+}
 
 // Retorna map { key → {label,icon,bg,color} } para natureza da atividade
 function getNatMap() {
