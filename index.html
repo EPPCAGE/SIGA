@@ -12900,9 +12900,8 @@ async function buildPptx(D, _popKey) {
         const comps = [
           { label:'Equipe',          val:matResult.equipe,      color:C.mid },
           { label:'Risco',           val:matResult.normRisco,   color:'EF4444' },
-          { label:'Burocracia',      val:matResult.normBuroc,   color:C.amber },
+          { label:'Lean Operacional',val:matResult.normLean,    color:'22C55E' },
           { label:'Digitalização',   val:matResult.normAutom,   color:C.green },
-          { label:'Foco Execução',   val:matResult.normFoco,    color:'22C55E' },
         ];
         comps.forEach((c, ci) => {
           const y = 1.2 + ci * 0.72;
@@ -16114,11 +16113,10 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
       <table class="rel-table">
         <tr><th>Componente</th><th>Peso</th><th>Pontuação (0–100)</th></tr>
         ${[
-          ['👥 Percepção da Equipe', '30%', matFinal.equipe,      '#6366f1'],
+          ['👥 Percepção da Equipe', '30%', matFinal.equipe,     '#6366f1'],
           ['⚠️ Risco Operacional',   '20%', matFinal.normRisco, '#ef4444'],
-          ['📋 Overhead Burocrático','20%', matFinal.normBuroc, '#f97316'],
-          ['💻 Digitalização',        '15%', matFinal.normAutom, '#0891b2'],
-          ['🎯 Foco em Execução',     '15%', matFinal.normFoco,  '#22c55e'],
+          ['🌿 Lean Operacional',    '35%', matFinal.normLean,  '#22c55e'],
+          ['💻 Digitalização',       '15%', matFinal.normAutom, '#0891b2'],
         ].map(([lbl, peso, val, col]) => `<tr>
           <td>${lbl}</td>
           <td style="text-align:center;">${peso}</td>
@@ -16130,7 +16128,7 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
           </td>
         </tr>`).join('')}
       </table>
-      <p class="rel-p" style="font-size:11px;color:#94a3b8;">Fórmula: Score = Equipe×30% + Risco×25% + Burocracia×20% + Digitalização×15% + Complexidade×10% — todos normalizados 0–100 (100 = mais maduro)</p>`;
+      <p class="rel-p" style="font-size:11px;color:#94a3b8;">Fórmula: Score = Equipe×30% + Risco×20% + Lean Operacional×35% + Digitalização×15% — todos normalizados 0–100 (100 = mais maduro)</p>`;
     } else {
       h += `<p class="rel-empty">Questionário de maturidade não respondido completamente (${answered}/10 perguntas respondidas). Acesse a aba Maturidade para preencher o questionário.</p>`;
     }
@@ -21286,21 +21284,19 @@ function matComputeFinal(p) {
   if(equipe === null) return null;
 
   // Normalise all to 0–100 where 100 = most mature
-  // Overhead: escala linear com teto em 60% — inclui aprovacao + revisao + controle
-  const normBuroc   = Math.max(0, Math.min(100, Math.round((1 - metrics.overhead / 0.6) * 100)));
   // Risco: decaimento exponencial (meia-vida ≈ 45 pts)
   const normRisco   = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-riscoRaw / 45))));
   // Digitalização: % de ações com sistema registrado (0–100)
   const normAutom   = Math.round(metrics.automRate * 100);
-  // Foco em Execução: % de atividades com natureza 'execucao' — premia processos lean
-  // Se nenhuma natureza definida → neutro (50), incentivando uso das naturezas
-  const focoRate  = metrics.totalActivities > 0 ? metrics.totalExecucao / metrics.totalActivities : 0;
-  const normFoco  = metrics.anyNatDefined
-    ? Math.min(100, Math.round(focoRate / 0.5 * 100))
+  // Lean Operacional: execução / (execução + overhead) — mede proporção de valor direto vs. controle
+  // Se nenhuma atividade "opinada" (execucao/aprovacao/controle) → neutro (50)
+  const leanDenom = metrics.totalExecucao + metrics.totalApprovals + metrics.totalControle;
+  const normLean  = leanDenom > 0
+    ? Math.min(100, Math.round((metrics.totalExecucao / leanDenom) * 100))
     : 50;
 
-  // Pesos: Equipe 30% · Risco 20% · Overhead 20% · Digitalização 15% · Foco em Execução 15%
-  const final = equipe * 0.30 + normRisco * 0.20 + normBuroc * 0.20 + normAutom * 0.15 + normFoco * 0.15;
+  // Pesos: Equipe 30% · Risco 20% · Lean Operacional 35% · Digitalização 15%
+  const final = equipe * 0.30 + normRisco * 0.20 + normLean * 0.35 + normAutom * 0.15;
   const f = Math.round(final);
 
   let level, levelColor, levelIcon;
@@ -21311,7 +21307,7 @@ function matComputeFinal(p) {
   else             { level = 'Otimizado';  levelColor = '#10b981'; levelIcon = '💚'; }
 
   return { final: f, level, levelColor, levelIcon,
-           equipe: Math.round(equipe), normFoco, normBuroc, normRisco, normAutom };
+           equipe: Math.round(equipe), normLean, normRisco, normAutom };
 }
 
 function matSetAnswer(p, idx, val) {
@@ -21432,12 +21428,17 @@ function matRender(p) {
   const indicesHtml = `
     <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:6px;">📊 Índices Calculados</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
-      ${indexCard('Overhead ↓', (metrics.overhead * 100).toFixed(1)+'%', metrics.overheadLabel, metrics.overheadCls,
-        `(aprovações + revisões + controle) ÷ total de atividades<br>Escala: &lt;20% saudável · 20–35% moderado · &gt;35% elevado<br><span style="color:#64748b;">Fontes: natureza da ação (aprovacao/revisao/controle) + palavras-chave</span>`)}
       ${indexCard('Risco Operacional ↓', risco.score.toFixed(1), risco.label, risco.cls,
         `decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3<br>Escala: ≤15 baixo · ≤35 médio · &gt;35 alto`)}
-      ${indexCard('Foco em Execução ↑', focoLabel, focoLevelLabel, focoCls,
-        `atividades com natureza 'execução' ÷ total de atividades<br>Escala: ≥40% lean · 20–40% moderado · &lt;20% baixo<br><span style="color:#64748b;">Requer naturezas definidas — premia processos focados em agregar valor</span>`)}
+      ${(()=>{
+        const ld = metrics.totalExecucao + metrics.totalApprovals + metrics.totalControle;
+        const lr = ld > 0 ? metrics.totalExecucao / ld : null;
+        const lv = lr !== null ? (lr*100).toFixed(1)+'%' : 'N/D';
+        const ll = lr === null ? 'Sem dados' : lr >= 0.6 ? 'Lean' : lr >= 0.35 ? 'Moderado' : 'Burocrático';
+        const lc = lr === null ? '#94a3b8' : lr >= 0.6 ? '#22c55e' : lr >= 0.35 ? '#eab308' : '#ef4444';
+        return indexCard('Lean Operacional ↑', lv, ll, lc,
+          `execução ÷ (execução + aprovações + controle)<br>Escala: ≥60% lean · 35–60% moderado · &lt;35% burocrático<br><span style="color:#64748b;">Mede proporção de valor direto vs. etapas de controle no fluxo</span>`);
+      })()}
       ${indexCard('Digitalização ↑', (metrics.automRate*100).toFixed(0)+'%', automLabel, automCls,
         `ações com sistema registrado ÷ total de atividades<br>Escala: &lt;30% baixa · 30–60% média · &gt;60% alta<br><span style="color:#64748b;">Mede penetração de sistemas no fluxo (rastreabilidade e automação)</span>`)}
     </div>`;
@@ -21535,19 +21536,11 @@ function matRender(p) {
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         ${scoreCard('Percepção da Equipe', final.equipe+'/100', 'questionário ↑', '30%', '#6366f1', '↑ maior = melhor')}
         ${scoreCard('Risco Operacional', final.normRisco+'/100', 'normalizado exp. ↑', '20%', '#ef4444', '↑ menor risco = melhor')}
-        ${scoreCard('Overhead Burocrático', final.normBuroc+'/100', 'normalizado ↑', '20%', '#f97316', '↑ menos overhead = melhor')}
+        ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '35%', '#22c55e', '↑ mais lean = melhor')}
         ${scoreCard('Digitalização', final.normAutom+'/100', '% ações com sistema ↑', '15%', '#0891b2', '↑ maior = melhor')}
-        ${scoreCard('Foco em Execução', final.normFoco+'/100', '% nat. execução ↑', '15%', '#22c55e', '↑ mais lean = melhor')}
       </div>
-      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:8px;">
-        Score = Equipe×30% + Risco×20% + Overhead×20% + Digitalização×15% + Foco em Execução×15% — todos normalizados 0–100 (100 = mais maduro)
-      </div>
-      <div style="font-size:11px;color:#94a3b8;background:#f8fafc;border-left:3px solid #e2e8f0;padding:8px 12px;border-radius:0 6px 6px 0;margin-bottom:16px;">
-        <strong style="color:#475569;">Por que a Complexidade foi removida?</strong>
-        A complexidade bruta (atividades, decisões, atores, loops) já está capturada indiretamente pelos outros componentes:
-        decisões e handoffs elevam o Risco; loops e aprovações elevam o Overhead; a ausência de execução direta penaliza o Foco em Execução.
-        Manter um componente de complexidade separado duplicava sinais já presentes e penalizava processos naturalmente complexos
-        (ex.: processos regulatórios com muitas etapas obrigatórias) sem agregar discriminação adicional ao score final.
+      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;">
+        Score = Equipe×30% + Risco×20% + Lean Operacional×35% + Digitalização×15% — todos normalizados 0–100 (100 = mais maduro)
       </div>
       <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
         ${isEditor ? `
@@ -21641,9 +21634,8 @@ function matSaveSnapshot(p) {
     levelIcon: final.levelIcon,
     equipe:     final.equipe,
     normRisco:  final.normRisco,
-    normBuroc:  final.normBuroc,
+    normLean:   final.normLean,
     normAutom:  final.normAutom,
-    normFoco:   final.normFoco,
   });
   mat.snapshots.sort((a,b) => a.date.localeCompare(b.date));
   markChanged();
@@ -21700,9 +21692,8 @@ function matRenderHistory(p, snapshots) {
                 ${[
                   ['👥 Equipe', snap.equipe, '#6366f1'],
                   ['⚠️ Risco',  snap.normRisco, '#ef4444'],
-                  ['📋 Overhead', snap.normBuroc, '#f97316'],
+                  ['🌿 Lean', snap.normLean ?? snap.normBuroc, '#22c55e'],
                   ['💻 Digital.',snap.normAutom, '#0891b2'],
-                  ['🎯 Foco', snap.normFoco ?? snap.normComplex,'#22c55e'],
                 ].map(([lbl,val,col]) => `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;">${lbl} <strong style="color:${col};">${val??'—'}</strong></span>`).join('')}
               </div>
             </div>
@@ -21755,9 +21746,8 @@ function matExportPdf(p) {
           ${[
             ['👥 Percepção da Equipe',  '30%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
             ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
-            ['📋 Overhead Burocrático','20%', final.normBuroc, '#f97316', '100 = processo ágil (invertido)', 'Escala linear com teto em 60%: 1 − (aprovações+revisões+controle ÷ atividades) ÷ 0,6. Fontes: natureza aprovacao/revisao/controle e palavras-chave. Percentual bruto invertido → maior pontuação = menos overhead.'],
+            ['🌿 Lean Operacional',     '35%', final.normLean,  '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma atividade opinada existe.'],
             ['💻 Digitalização',        '15%', final.normAutom, '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades que possuem sistema registrado (rastreabilidade e automação do fluxo).'],
-            ['🎯 Foco em Execução',     '15%', final.normFoco,  '#22c55e', '100 = processo lean (direto)', 'Percentual de atividades com natureza "execução" ÷ total × 100, com teto em 50% para score máximo. Score 50 quando nenhuma natureza está definida (neutro). Premia processos focados em agregar valor com menos overhead.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
               <td>${lbl}</td>
@@ -21771,11 +21761,9 @@ function matExportPdf(p) {
             </tr>`).join('')}
         </table>
         <p class="formula-note" style="margin-top:10px;padding:8px 10px;background:#f1f5f9;border-radius:6px;border-left:3px solid #0a2540;">
-          <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,30) + (Risco × 0,20) + (Overhead × 0,20) + (Digitalização × 0,15) + (Foco em Execução × 0,15)<br>
+          <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,30) + (Risco × 0,20) + (Lean Operacional × 0,35) + (Digitalização × 0,15)<br>
           <span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span><br><br>
-          <strong>Por que a Complexidade foi removida?</strong> A complexidade bruta (atividades, decisões, atores, loops) já está capturada indiretamente:
-          decisões e handoffs elevam o Risco; loops e aprovações elevam o Overhead; ausência de execução penaliza o Foco em Execução.
-          Um componente separado duplicava esses sinais e penalizava processos naturalmente complexos (ex.: processos regulatórios) sem agregar discriminação adicional.
+          <strong>Lean Operacional</strong> = execução ÷ (execução + aprovações + controle). Unifica em um único sinal a proporção de valor direto vs. burocracia, evitando a dupla contagem que ocorria com Overhead e Foco em Execução separados.
         </p>
       </div>
     </div>` : `<div class="empty-block">⚠️ Score não disponível — questionário não respondido completamente.</div>`;
@@ -21810,19 +21798,21 @@ function matExportPdf(p) {
       </td></tr>
       <tr><th>Índice</th><th>Valor bruto</th><th>Classificação</th></tr>
       <tr>
-        <td>Overhead Burocrático <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100, teto 60%)</span></td>
-        <td>${(metrics.overhead*100).toFixed(1)}%</td>
-        <td><span class="badge" style="background:${metrics.overheadCls}20;color:${metrics.overheadCls};">${metrics.overheadLabel}</span></td>
-      </tr>
-      <tr>
         <td>Risco Operacional <span class="note">(bruto — ↓ menor = melhor; normalizado → componente 0–100)</span></td>
         <td>${risco.score.toFixed(1)} pts</td>
         <td><span class="badge" style="background:${risco.cls}20;color:${risco.cls};">${risco.label}</span></td>
       </tr>
       <tr>
-        <td>Foco em Execução <span class="note">(bruto — ↑ maior = melhor; teto 50% execução = score 100)</span></td>
-        <td>${metrics.anyNatDefined && metrics.totalActivities > 0 ? ((metrics.totalExecucao/metrics.totalActivities)*100).toFixed(1)+'%' : 'N/D (sem naturezas)'}</td>
-        <td><span class="badge" style="background:${focoCls}20;color:${focoCls};">${focoLevelLabel}</span></td>
+        ${(()=>{
+          const ld = metrics.totalExecucao + metrics.totalApprovals + metrics.totalControle;
+          const lr = ld > 0 ? metrics.totalExecucao / ld : null;
+          const lv = lr !== null ? (lr*100).toFixed(1)+'%' : 'N/D';
+          const ll = lr === null ? 'Sem dados' : lr >= 0.6 ? 'Lean' : lr >= 0.35 ? 'Moderado' : 'Burocrático';
+          const lc = lr === null ? '#94a3b8' : lr >= 0.6 ? '#22c55e' : lr >= 0.35 ? '#eab308' : '#ef4444';
+          return `<td>Lean Operacional <span class="note">(bruto — ↑ maior = melhor; execução ÷ (execução+overhead))</span></td>
+        <td>${lv}</td>
+        <td><span class="badge" style="background:${lc}20;color:${lc};">${ll}</span></td>`;
+        })()}
       </tr>
       <tr>
         <td>Digitalização <span class="note">(bruto = normalizado — ↑ maior = melhor)</span></td>
@@ -21872,7 +21862,7 @@ function matExportPdf(p) {
   const histBlock = snapshots.length ? `
     <h2 class="section-title">📈 Histórico de Maturidade</h2>
     <table class="data-table">
-      <tr><th>Data</th><th>Score</th><th>Nível</th><th>Variação</th><th>Equipe</th><th>Risco</th><th>Overhead</th><th>Digital.</th><th>Foco</th></tr>
+      <tr><th>Data</th><th>Score</th><th>Nível</th><th>Variação</th><th>Equipe</th><th>Risco</th><th>Lean</th><th>Digital.</th></tr>
       ${[...snapshots].reverse().map((s, idx, arr) => {
         const prevSnap = arr[idx + 1];
         const delta = prevSnap ? s.score - prevSnap.score : null;
@@ -21885,9 +21875,8 @@ function matExportPdf(p) {
           <td style="text-align:center;font-weight:700;color:${deltaCol};">${deltaStr}</td>
           <td style="text-align:center;">${s.equipe??'—'}</td>
           <td style="text-align:center;">${s.normRisco??'—'}</td>
-          <td style="text-align:center;">${s.normBuroc??'—'}</td>
+          <td style="text-align:center;">${s.normLean ?? s.normBuroc ?? '—'}</td>
           <td style="text-align:center;">${s.normAutom??'—'}</td>
-          <td style="text-align:center;">${s.normFoco ?? s.normComplex ?? '—'}</td>
         </tr>`;
       }).join('')}
     </table>` : '';
@@ -22037,9 +22026,9 @@ ${answersText}
 ## SCORES FINAIS (0–100, quanto maior melhor — normalização exponencial para complexidade e risco)
 - Percepção da Equipe: ${equipe !== null ? Math.round(equipe) : '—'}/100 (peso 30%)
 - Risco normalizado: ${final ? final.normRisco : '—'}/100 (peso 20%)
-- Overhead burocrático normalizado: ${final ? final.normBuroc : '—'}/100 (peso 20%)
+- Lean Operacional normalizado: ${final ? final.normLean : '—'}/100 (peso 35%)
 - Digitalização: ${final ? final.normAutom : '—'}/100 (peso 15%)
-- Foco em Execução: ${final ? final.normFoco : '—'}/100 (peso 15%)
+- Digitalização: ${final ? final.normAutom : '—'}/100 (peso 15%)
 - **SCORE GERAL DE MATURIDADE: ${final ? final.final : '—'}/100**
 - **NÍVEL: ${final ? final.level : '—'}** (Inicial→Gerenciado→Definido→Previsível→Otimizado)
 
