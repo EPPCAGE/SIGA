@@ -21465,10 +21465,14 @@ function matComputeMetrics(p, version='asis') {
             const baBurocByNat = (baNat === 'aprovacao' || baNat === 'revisao');
             const baBurocByKw  = !baNat && APPROVAL_KW.some(k => baTextLow.includes(k));
             if(baBurocByNat || baBurocByKw) decisionHasApproval = true;
-            if(ba.sistemas && ba.sistemas.trim()) {
-              // Digitalização conta apenas atividades top-level; branches contribuem apenas para allSistemas
+            if(baType === 'atividade' && ba.automatico) totalAutomatico++;
+            if(baType === 'atividade' && ba.sistemas && ba.sistemas.trim()) {
+              actionsWithSistema++;
+              ba.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
+            } else if(ba.sistemas && ba.sistemas.trim()) {
               ba.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
             }
+            if(baType === 'atividade' && ba.loop) totalLoops++;
           });
         });
         if(decisionHasApproval) totalApprovals++; // conta 1 aprovação por decisão, independente de quantos caminhos
@@ -22021,7 +22025,7 @@ function matExportPdf(p) {
             ['👥 Percepção da Equipe',  '30%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
             ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
             ['🌿 Lean Operacional',     '30%', final.normLean,      '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma atividade opinada existe.'],
-            ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades top-level com sistema registrado (não conta sub-ações dentro de decisões).'],
+            ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades com sistema registrado, incluindo atividades dentro de decisões.'],
             ['⚙️ Automação',            '10%', final.normAutomacao, '#7c3aed', '100 = totalmente automatizado', 'Percentual de atividades marcadas com ⚙️ (automático) ÷ total de atividades. Marque via ícone ⚙️ em cada atividade no fluxo.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
