@@ -8345,6 +8345,12 @@ function getConfig(key) {
     // Migration: servidoresEPP may be stored as plain strings from earlier version
     if(key === 'servidoresEPP' && Array.isArray(val) && val.length > 0 && typeof val[0] === 'string')
       return val.map(nome => ({nome, email:''}));
+    // Migration: naturezaAtividade — add missing entries from defaults
+    if(key === 'naturezaAtividade' && Array.isArray(val)) {
+      const existingKeys = new Set(val.map(n => n.key));
+      const missing = (CONFIG_DEFAULTS.naturezaAtividade || []).filter(n => !existingKeys.has(n.key));
+      if(missing.length) return [...val, ...missing];
+    }
     return val;
   }
   return CONFIG_DEFAULTS[key] ?? [];
