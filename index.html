@@ -20207,9 +20207,9 @@ function matComputeMetrics(p, version='asis') {
       if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) totalHandoffs++;
       if(actor) { prevActor = actor; allActors.add(actor.toLowerCase()); }
 
-      // Sistemas: conta sistemas únicos e ações digitalizadas
+      // Sistemas: conta sistemas únicos e ações digitalizadas (só atividades no numerador, consistente com denominador)
       if(action.sistemas && action.sistemas.trim()) {
-        actionsWithSistema++;
+        if(type === 'atividade') actionsWithSistema++;
         action.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
       }
     });
