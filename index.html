@@ -21033,7 +21033,7 @@ function matComputeMetrics(p, version='asis') {
       ? ((step.tobe && step.tobe.actions) || [])
       : (step.actions || []);
     const seenHandoffs = new Set(); // dedup por etapa: mesmo par A→B conta só 1x por etapa
-    if(step.responsible) allActors.add(step.responsible);
+    if(step.responsible) allActors.add(step.responsible.toLowerCase());
 
     actions.forEach(action => {
       const type    = action.type || 'atividade';
