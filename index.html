@@ -21189,9 +21189,18 @@ function matRender(p) {
         ${scoreCard('Digitalização', final.normAutom+'/100', '% ações com sistema ↑', '15%', '#0891b2', '↑ maior = melhor')}
         ${scoreCard('Complexidade', final.normComplex+'/100', 'normalizado exp. ↑', '10%', '#a78bfa', '↑ menos complexo = melhor')}
       </div>
-      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:20px;">
+      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;">
         Score = Equipe×30% + Risco×25% + Burocracia×20% + Digitalização×15% + Complexidade×10% — todos normalizados 0–100 (100 = mais maduro)
-      </div>`;
+      </div>
+      ${isEditor ? `
+      <div style="text-align:center;margin-bottom:20px;">
+        <button onclick="matSaveSnapshot('${p}')"
+          style="padding:10px 28px;background:#0a2540;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(10,37,64,.2);">
+          💾 Salvar Nota de Maturidade
+        </button>
+        <div style="font-size:11px;color:#94a3b8;margin-top:6px;">Registra a nota atual com a data de hoje para acompanhar a evolução</div>
+      </div>` : ''}
+      `;
   }
 
   const cachedResult = mat.geminiAnalysis
@@ -21222,6 +21231,16 @@ function matRender(p) {
       </div>
     </div>`;
 
+  const snapshots = mat.snapshots || [];
+  const historyHtml = `
+    <div style="font-size:14px;font-weight:700;color:#0a2540;margin:24px 0 12px;display:flex;align-items:center;gap:10px;">
+      📈 Histórico de Maturidade
+      <span style="font-size:11px;font-weight:400;color:#94a3b8;">${snapshots.length} registro${snapshots.length !== 1 ? 's' : ''}</span>
+    </div>
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;">
+      ${matRenderHistory(p, snapshots)}
+    </div>`;
+
   container.innerHTML = `
     ${versionToggle}
     ${metricsHtml}
@@ -21234,8 +21253,101 @@ function matRender(p) {
     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:24px;">${qHtml}</div>
     <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:12px;">🏆 Score de Maturidade</div>
     ${resultHtml}
+    ${historyHtml}
     <div style="font-size:14px;font-weight:700;color:#0a2540;margin:20px 0 12px;">🤖 Análise com IA</div>
     ${geminiHtml}`;
+}
+
+// ── Maturidade: Histórico de snapshots ──────────────────────────────────
+function matSaveSnapshot(p) {
+  const final = matComputeFinal(p);
+  if(!final) { showToast('Responda todas as 10 perguntas antes de salvar.', 'warn'); return; }
+  const mat = matGetData(p);
+  if(!Array.isArray(mat.snapshots)) mat.snapshots = [];
+  const today = new Date().toISOString().slice(0,10);
+  // Evitar duplicata no mesmo dia
+  if(mat.snapshots.some(s => s.date === today)) {
+    if(!confirm('Já existe uma nota salva para hoje (' + today + '). Substituir?')) return;
+    mat.snapshots = mat.snapshots.filter(s => s.date !== today);
+  }
+  mat.snapshots.push({
+    date: today,
+    score: final.final,
+    level: final.level,
+    levelColor: final.levelColor,
+    levelIcon: final.levelIcon,
+    equipe:     final.equipe,
+    normRisco:  final.normRisco,
+    normBuroc:  final.normBuroc,
+    normAutom:  final.normAutom,
+    normComplex:final.normComplex,
+  });
+  mat.snapshots.sort((a,b) => a.date.localeCompare(b.date));
+  markChanged();
+  showToast('✅ Nota de maturidade salva!', 'success');
+  matRender(p);
+}
+function matDeleteSnapshot(p, idx) {
+  if(!confirm('Remover este registro do histórico?')) return;
+  const mat = matGetData(p);
+  if(Array.isArray(mat.snapshots)) mat.snapshots.splice(idx, 1);
+  markChanged();
+  matRender(p);
+}
+function matRenderHistory(p, snapshots) {
+  if(!snapshots || !snapshots.length) return `
+    <div style="text-align:center;padding:24px;background:#f8fafc;border-radius:10px;border:1.5px dashed #e2e8f0;color:#94a3b8;font-size:13px;">
+      Nenhum registro salvo ainda. Clique em <strong>💾 Salvar Nota</strong> para iniciar o histórico.
+    </div>`;
+  const fmtDate = d => { try { return new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){ return d; } };
+  const items = snapshots.map((snap, idx) => {
+    const prev  = idx > 0 ? snapshots[idx-1] : null;
+    const delta = prev ? snap.score - prev.score : null;
+    const deltaHtml = delta === null ? '' :
+      delta > 0 ? `<span style="color:#22c55e;font-weight:700;font-size:13px;">▲ +${delta}</span>` :
+      delta < 0 ? `<span style="color:#ef4444;font-weight:700;font-size:13px;">▼ ${delta}</span>` :
+                  `<span style="color:#94a3b8;font-size:13px;">= sem mudança</span>`;
+    const isLast = idx === snapshots.length - 1;
+    return `
+      <div style="display:flex;gap:0;align-items:stretch;">
+        <!-- Trilho da linha do tempo -->
+        <div style="display:flex;flex-direction:column;align-items:center;width:36px;flex-shrink:0;">
+          <div style="width:14px;height:14px;border-radius:50%;background:${snap.levelColor};border:2.5px solid #fff;box-shadow:0 0 0 2px ${snap.levelColor};margin-top:18px;flex-shrink:0;"></div>
+          ${!isLast ? `<div style="width:2px;flex:1;background:#e2e8f0;margin:2px 0;min-height:16px;"></div>` : ''}
+        </div>
+        <!-- Card do snapshot -->
+        <div style="flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:${isLast?'0':'10px'};">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span style="font-size:12px;font-weight:700;color:#475569;">📅 ${fmtDate(snap.date)}</span>
+              <span style="font-size:11px;padding:2px 10px;border-radius:12px;background:${snap.levelColor}22;color:${snap.levelColor};font-weight:700;">${snap.levelIcon} ${snap.level}</span>
+              ${deltaHtml}
+            </div>
+            ${isEditor ? `<button onclick="matDeleteSnapshot('${p}',${idx})" style="padding:2px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fff5f5;color:#ef4444;font-size:11px;cursor:pointer;" title="Remover registro">✕</button>` : ''}
+          </div>
+          <!-- Score + barra -->
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <div style="font-size:40px;font-weight:900;color:${snap.levelColor};line-height:1;">${snap.score}</div>
+            <div style="flex:1;min-width:120px;">
+              <div style="background:#f1f5f9;border-radius:6px;height:10px;overflow:hidden;margin-bottom:6px;">
+                <div style="height:100%;width:${snap.score}%;background:${snap.levelColor};border-radius:6px;transition:width .4s;"></div>
+              </div>
+              <!-- Componentes compactos -->
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                ${[
+                  ['👥 Equipe', snap.equipe, '#6366f1'],
+                  ['⚠️ Risco',  snap.normRisco, '#ef4444'],
+                  ['📋 Buroc.', snap.normBuroc, '#f97316'],
+                  ['💻 Digital.',snap.normAutom, '#0891b2'],
+                  ['🔄 Compl.', snap.normComplex,'#a78bfa'],
+                ].map(([lbl,val,col]) => `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;">${lbl} <strong style="color:${col};">${val}</strong></span>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+  return items.reverse().join(''); // mais recente primeiro
 }
 
 async function matGeminiAnalyze(p) {
