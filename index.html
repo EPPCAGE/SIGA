@@ -10171,8 +10171,8 @@ window.addEventListener('beforeunload', () => {
     arqOverrides:    DATA._arqOverrides || null,
     logoUrl:         DATA._logoUrl || null,
     logo2Url:        (DATA._logo2Url && DATA._logo2Url.startsWith('http')) ? DATA._logo2Url : null,
-    cadeiaValorImg:  (DATA._cadeiaValorImg && DATA._cadeiaValorImg.length < 300000) ? DATA._cadeiaValorImg : null,
-    mapaEstrategicoImg: (DATA._mapaEstrategicoImg && DATA._mapaEstrategicoImg.length < 300000) ? DATA._mapaEstrategicoImg : null,
+    cadeiaValorImg:  DATA._cadeiaValorImg ? (DATA._cadeiaValorImg.startsWith('http') ? DATA._cadeiaValorImg : (DATA._cadeiaValorImg.length < 300000 ? DATA._cadeiaValorImg : null)) : null,
+    mapaEstrategicoImg: DATA._mapaEstrategicoImg ? (DATA._mapaEstrategicoImg.startsWith('http') ? DATA._mapaEstrategicoImg : (DATA._mapaEstrategicoImg.length < 300000 ? DATA._mapaEstrategicoImg : null)) : null,
     newPops:         newPopKeys.map(k => ({ key: k, data: _stripTrans(DATA[k]) })),
     indicadoresCage: DATA.indicadoresCage || { indicadores: [], resultados: [] },
     repoDocs:        [],
@@ -10258,8 +10258,8 @@ async function saveToCloud(attempt=1) {
     arqOverrides:    DATA._arqOverrides || null,
     logoUrl:         DATA._logoUrl || null,
     logo2Url:        (DATA._logo2Url && DATA._logo2Url.length < 300000) ? DATA._logo2Url : null,
-    cadeiaValorImg:  (DATA._cadeiaValorImg && DATA._cadeiaValorImg.length < 300000) ? DATA._cadeiaValorImg : null,
-    mapaEstrategicoImg: (DATA._mapaEstrategicoImg && DATA._mapaEstrategicoImg.length < 300000) ? DATA._mapaEstrategicoImg : null,
+    cadeiaValorImg:  DATA._cadeiaValorImg ? (DATA._cadeiaValorImg.startsWith('http') ? DATA._cadeiaValorImg : (DATA._cadeiaValorImg.length < 300000 ? DATA._cadeiaValorImg : null)) : null,
+    mapaEstrategicoImg: DATA._mapaEstrategicoImg ? (DATA._mapaEstrategicoImg.startsWith('http') ? DATA._mapaEstrategicoImg : (DATA._mapaEstrategicoImg.length < 300000 ? DATA._mapaEstrategicoImg : null)) : null,
     newPops:         newPopKeys.map(k => ({ key: k, data: _stripTransient(DATA[k]) })),
     repoDocs:        REPO_DOCS || [],
     drops:           DROPS     || [],
@@ -14341,12 +14341,42 @@ function biImgFileSelected(file, type) {
   const key = type === 'cadeia' ? '_cadeiaValorImg' : '_mapaEstrategicoImg';
   const reader = new FileReader();
   reader.onload = () => {
-    DATA[key] = reader.result;
+    DATA[key] = reader.result; // base64 temporário para exibição imediata
     biImgRefresh(type);
     markChanged();
-    showToast('✅ Imagem carregada com sucesso!', 'success');
+    showToast('✅ Imagem carregada! Salvando na nuvem...', 'success');
+    uploadBiImgToStorage(file, type); // substitui base64 por URL permanente
   };
   reader.readAsDataURL(file);
+}
+
+async function uploadBiImgToStorage(file, type) {
+  if(!supaClient || !currentUser) {
+    showToast('⚠️ Faça login para persistir a imagem na nuvem. Ela ficará disponível só nesta sessão.', 'warn');
+    return;
+  }
+  const key    = type === 'cadeia' ? '_cadeiaValorImg' : '_mapaEstrategicoImg';
+  const prefix = type === 'cadeia' ? 'cadeia-valor' : 'mapa-estrategico';
+  try {
+    const ext  = file.name.split('.').pop().toLowerCase() || 'png';
+    const path = `${prefix}-${Date.now()}.${ext}`;
+    const { error } = await supaClient.storage
+      .from('gestpop-images')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if(error) {
+      showToast('⚠️ Erro no storage: ' + error.message + '. Imagem salva só localmente.', 'warn');
+      return;
+    }
+    const { data } = supaClient.storage.from('gestpop-images').getPublicUrl(path);
+    if(data?.publicUrl) {
+      DATA[key] = data.publicUrl;
+      biImgRefresh(type);
+      showToast('✅ Imagem salva permanentemente na nuvem!', 'success');
+      markChanged();
+    }
+  } catch(e) {
+    showToast('⚠️ Erro inesperado no storage: ' + e.message, 'warn');
+  }
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
