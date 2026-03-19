@@ -397,6 +397,16 @@
   .norm-code{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--cage-mid);background:rgba(26,74,122,.08);padding:2px 6px;border-radius:4px;display:inline-block;margin-bottom:4px;}
   .norm-name{font-size:13px;color:var(--text-secondary);}
 
+  /* SIPOC */
+  .sipoc-table{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--cage-border);border-radius:8px;overflow:hidden;}
+  .sipoc-col{display:flex;flex-direction:column;}
+  .sipoc-col-head{padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-align:center;}
+  .sipoc-col-body{padding:8px 10px;background:#fff;flex:1;border-top:1px solid var(--cage-border);}
+  .sipoc-col:not(:last-child) .sipoc-col-head,.sipoc-col:not(:last-child) .sipoc-col-body{border-right:1px solid var(--cage-border);}
+  .sipoc-item{font-size:12px;color:#374151;padding:3px 0;border-bottom:1px dotted #e5e7eb;}
+  .sipoc-item:last-child{border-bottom:none;}
+  .sipoc-processo{font-size:13px;font-weight:700;color:#059669;text-align:center;padding:8px 0;}
+  @media(max-width:700px){.sipoc-table{grid-template-columns:1fr;}}
   /* SIGLAS */
   .sigla-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
   .sigla-item{background:white;border:1px solid var(--cage-border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;}
@@ -3395,19 +3405,15 @@ Fim"></textarea>
               <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📋 Identificação</div>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div>
-                  <label>Nome do Subprocesso *</label>
-                  <input class="modal-input" id="nf-nome" type="text" placeholder="Ex: Tratar Recursos Administrativos">
+                  <label>Macroprocesso *</label>
+                  <select class="modal-input" id="nf-macro" onchange="npopUpdateProcessoList()">
+                    <option value="">Selecione o macroprocesso...</option>
+                  </select>
                 </div>
                 <div class="npop-row">
                   <div>
-                    <label>Macroprocesso</label>
-                    <select class="modal-input" id="nf-macro" onchange="npopUpdateProcessoList()">
-              <option value="">Selecione o macroprocesso...</option>
-            </select>
-                  </div>
-                  <div>
-                    <label>Processo Pai</label>
-                    <input class="modal-input" id="nf-processo" type="text" placeholder="Digite para filtrar processos..." list="nf-processo-list" autocomplete="off">
+                    <label>Processo *</label>
+                    <input class="modal-input" id="nf-processo" type="text" placeholder="Digite para filtrar processos..." list="nf-processo-list" autocomplete="off" oninput="npopUpdateSubprocessoList()">
                     <datalist id="nf-processo-list"></datalist>
                   </div>
                   <div>
@@ -3416,49 +3422,34 @@ Fim"></textarea>
                     <datalist id="nf-subprocesso-list"></datalist>
                   </div>
                 </div>
-
-                <!-- Painel automático da Arquitetura de Processos -->
-                <div id="nf-arq-info" style="display:none;background:#f0f6ff;border:1px solid #c5d8f5;border-radius:6px;padding:10px 13px;">
-                  <div style="font-size:10px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">📌 Da Arquitetura de Processos</div>
-                  <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px;">
-                    <div style="flex:1;min-width:150px;">
-                      <div style="font-size:11px;color:#888;margin-bottom:2px;">Divisão</div>
-                      <div id="nf-info-divisao" style="font-size:13px;font-weight:600;color:#1e3a5f;">—</div>
-                    </div>
-                    <div style="flex:1;min-width:150px;">
-                      <div style="font-size:11px;color:#888;margin-bottom:2px;">Gerente do Processo</div>
-                      <div id="nf-info-gerente" style="font-size:13px;font-weight:600;color:#1e3a5f;">—</div>
-                    </div>
-                  </div>
-                  <div>
-                    <div style="font-size:11px;color:#888;margin-bottom:5px;">Objetivos Estratégicos</div>
-                    <div id="nf-info-obj-estrategicos" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
-                  </div>
-                </div>
-
+                <!-- Campos auto-preenchidos -->
                 <div class="npop-row">
                   <div>
-                    <label>Unidade Responsável</label>
-                    <select class="modal-input" id="nf-unidade">
-                      <option value="">Selecione...</option>
-                      <option>DCO</option>
-                      <option>DIR</option>
-                      <option>DIE</option>
-                      <option>DTTI</option>
-                      <option>GAB</option>
-                      <option>DAUD</option>
-                      <option>DCON</option>
+                    <label>Unidade (ou Divisão)</label>
+                    <input class="modal-input" id="nf-unidade" type="text" readonly style="background:#f1f5f9;color:#475569;cursor:default;" placeholder="Preenchido automaticamente">
+                  </div>
+                  <div>
+                    <label>Gerente do Processo</label>
+                    <input class="modal-input" id="nf-gerente" type="text" placeholder="Preenchido automaticamente">
+                  </div>
+                </div>
+                <div>
+                  <label>Objetivo Estratégico</label>
+                  <div id="nf-obj-estrategico-tags" style="min-height:34px;padding:5px 8px;background:#f1f5f9;border:1px solid var(--cage-border);border-radius:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;"><span style="color:#94a3b8;font-size:12px;">Preenchido automaticamente ao selecionar o processo</span></div>
+                  <input type="hidden" id="nf-obj-estrategico">
+                </div>
+                <!-- Seleções -->
+                <div class="npop-row">
+                  <div>
+                    <label>Equipe Responsável</label>
+                    <select class="modal-input" id="nf-equipe-resp">
+                      <option value="">Selecione a equipe...</option>
                     </select>
                   </div>
                   <div>
                     <label>Tipo de Trabalho</label>
                     <select class="modal-input" id="nf-tipo">
                       <option value="">Selecione...</option>
-                      <option>Mapeamento de Processo Novo</option>
-                      <option>Mapeamento de Processo Existente</option>
-                      <option>Redesenho</option>
-                      <option>Mapeamento e Redesenho</option>
-                      <option>Criação de Documentação</option>
                     </select>
                   </div>
                 </div>
@@ -3467,31 +3458,23 @@ Fim"></textarea>
                     <label>Dificuldade</label>
                     <select class="modal-input" id="nf-dificuldade">
                       <option value="">Selecione...</option>
-                      <option>Baixa</option>
-                      <option>Média</option>
-                      <option>Alta</option>
+                      <option>Baixa</option><option>Média</option><option>Alta</option>
                     </select>
                   </div>
                   <div>
                     <label>Status do Mapeamento</label>
-                    <select class="modal-input" id="nf-status-map">
-                      <option value="">Selecione...</option>
-                      <option value="planejado">📋 Planejado</option>
-                      <option value="em_andamento">🔄 Em Andamento</option>
-                      <option value="concluido">✅ Concluído</option>
-                      <option value="atrasado">⚠️ Atrasado</option>
-                      <option value="suspenso">⏸ Suspenso</option>
-                    </select>
+                    <input class="modal-input" id="nf-status-display" type="text" readonly style="background:#f1f5f9;color:#475569;cursor:default;" placeholder="Calculado pelas datas">
+                    <input type="hidden" id="nf-status-map">
                   </div>
                 </div>
                 <div class="npop-row">
                   <div>
                     <label>Data de Início</label>
-                    <input class="modal-input" id="nf-data-inicio" type="date">
+                    <input class="modal-input" id="nf-data-inicio" type="date" onchange="npopUpdateDataFim();npopUpdateStatus();">
                   </div>
                   <div>
-                    <label>Data Prevista de Entrega</label>
-                    <input class="modal-input" id="nf-data-prevista" type="date">
+                    <label>Data de Fim <span style="color:#94a3b8;font-weight:400;font-size:11px;">(90 dias após início)</span></label>
+                    <input class="modal-input" id="nf-data-prevista" type="date" onchange="npopUpdateStatus();">
                   </div>
                 </div>
               </div>
@@ -3504,21 +3487,11 @@ Fim"></textarea>
                 <div class="npop-row">
                   <div>
                     <label>Solicitante</label>
-                    <input class="modal-input" id="nf-solicitante" type="text" placeholder="Quem solicitou o POP">
+                    <input class="modal-input" id="nf-solicitante" type="text" placeholder="Quem solicitou o mapeamento">
                   </div>
                   <div>
                     <label>Patrocinador</label>
                     <select class="modal-input" id="nf-patrocinador"><option value="">— selecione —</option></select>
-                  </div>
-                </div>
-                <div class="npop-row">
-                  <div>
-                    <label>Elaborado por</label>
-                    <input class="modal-input" id="nf-elaborado" type="text" placeholder="Nome do elaborador">
-                  </div>
-                  <div>
-                    <label>Revisado por</label>
-                    <input class="modal-input" id="nf-revisado" type="text" placeholder="Nome do revisor">
                   </div>
                 </div>
                 <div>
@@ -3533,30 +3506,23 @@ Fim"></textarea>
               <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">⚙️ Processo</div>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div>
-                  <label>Objetivo / Descrição</label>
-                  <textarea class="modal-input modal-textarea" id="nf-desc" placeholder="Descreva brevemente o objetivo deste POP..." style="min-height:56px;"></textarea>
+                  <label>Objetivo</label>
+                  <textarea class="modal-input modal-textarea" id="nf-desc" placeholder="Descreva o objetivo deste processo..." style="min-height:56px;"></textarea>
                 </div>
                 <div class="npop-row">
                   <div>
-                    <label>Entrada (Input)</label>
-                    <input class="modal-input" id="nf-input" type="text" placeholder="Ex: Ofício recebido, e-mail...">
+                    <label>Entradas</label>
+                    <textarea class="modal-input modal-textarea" id="nf-input" placeholder="Insumos / entradas do processo..." style="min-height:48px;"></textarea>
                   </div>
                   <div>
-                    <label>Saída (Output)</label>
-                    <input class="modal-input" id="nf-output" type="text" placeholder="Ex: Processo tratado...">
+                    <label>Saídas</label>
+                    <textarea class="modal-input modal-textarea" id="nf-output" placeholder="Produtos / saídas do processo..." style="min-height:48px;"></textarea>
                   </div>
                 </div>
                 <div>
                   <label>Resultados Esperados</label>
-                  <textarea class="modal-input modal-textarea" id="nf-resultados" placeholder="Quais os resultados e benefícios esperados deste processo..." style="min-height:48px;"></textarea>
+                  <textarea class="modal-input modal-textarea" id="nf-resultados" placeholder="Quais resultados e benefícios esperados..." style="min-height:48px;"></textarea>
                 </div>
-              </div>
-            </div>
-
-            <!-- SEÇÃO: Contexto -->
-            <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;">
-              <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🔗 Contexto</div>
-              <div style="display:flex;flex-direction:column;gap:10px;">
                 <div class="npop-row">
                   <div>
                     <label>Fornecedores</label>
@@ -3570,6 +3536,11 @@ Fim"></textarea>
                 <div>
                   <label>Sistemas Utilizados</label>
                   <input class="modal-input" id="nf-sistemas" type="text" placeholder="Ex: SAEWEB, SEI, FalaBR, e-SIC...">
+                </div>
+                <div>
+                  <label>Atores <span style="color:#94a3b8;font-weight:400;font-size:11px;">(clique para selecionar)</span></label>
+                  <div id="nf-atores-wrap" style="display:flex;flex-wrap:wrap;gap:6px;padding:6px 8px;background:#f8fafc;border:1px solid var(--cage-border);border-radius:6px;min-height:38px;"></div>
+                  <input type="hidden" id="nf-atores">
                 </div>
               </div>
             </div>
@@ -7334,6 +7305,13 @@ let _npopKey    = null; // key in DATA for the new pop
 
 function openNovoPop() {
   if(!isEditor) { showToast('🔒 Apenas editores podem criar mapeamentos.', 'warn'); return; }
+
+  // Primeiro uso: perguntar nome do usuário para usar como elaborador
+  if(!currentUserName && !localStorage.getItem('cage_nome_usuario')) {
+    const nome = window.prompt('Qual é o seu nome? (será registrado como elaborador dos mapeamentos)');
+    if(nome?.trim()) localStorage.setItem('cage_nome_usuario', nome.trim());
+  }
+
   _npopMethod = 'manual';
   _npopFile   = null;
   window._npopExtractedFull   = null;
@@ -7342,13 +7320,47 @@ function openNovoPop() {
   document.getElementById('npop-s1').classList.add('active');
   document.getElementById('npop-s2').classList.remove('active');
   document.getElementById('npop-s3').classList.remove('active');
-  // Also reset inline display styles set by Gemini flow
   document.getElementById('npop-s2').style.display = '';
   document.getElementById('npop-s3').style.display = '';
-  ['nf-nome','nf-macro','nf-processo','nf-elaborado','nf-revisado','nf-desc','nf-input','nf-output'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.value = '';
+
+  // Popular macroprocesso
+  const macroSel = document.getElementById('nf-macro');
+  if(macroSel) {
+    const macros = [...new Set((arqGetData ? arqGetData() : CAGE_PROCESSOS).map(r => r.macroprocesso).filter(Boolean))].sort();
+    macroSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>'
+      + macros.map(m => `<option value="${m}">${m}</option>`).join('');
+  }
+  // Popular tipo de trabalho
+  const tipoSel = document.getElementById('nf-tipo');
+  if(tipoSel) {
+    const tipos = getConfig('tipoTrabalho');
+    tipoSel.innerHTML = '<option value="">Selecione...</option>'
+      + tipos.map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+
+  // Resetar campos de texto/select
+  ['nf-macro','nf-processo','nf-subprocesso','nf-gerente','nf-desc','nf-input','nf-output',
+   'nf-resultados','nf-solicitante','nf-equipe','nf-sistemas','nf-fornecedores','nf-clientes',
+   'nf-data-inicio','nf-data-prevista'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
   });
+  const unEl = document.getElementById('nf-unidade');        if(unEl) unEl.value = '';
+  const sdEl = document.getElementById('nf-status-display'); if(sdEl) sdEl.value = '';
+  const smEl = document.getElementById('nf-status-map');     if(smEl) smEl.value = '';
+  const tagsEl = document.getElementById('nf-obj-estrategico-tags');
+  if(tagsEl) tagsEl.innerHTML = '<span style="color:#94a3b8;font-size:12px;">Preenchido automaticamente ao selecionar o processo</span>';
+  const objHEl = document.getElementById('nf-obj-estrategico'); if(objHEl) objHEl.value = '';
+
+  // Datalists e equipe responsável
+  const procList = document.getElementById('nf-processo-list');    if(procList) procList.innerHTML = '';
+  const subList  = document.getElementById('nf-subprocesso-list'); if(subList)  subList.innerHTML  = '';
+  npopUpdateEquipeSelect('', 'nf-equipe-resp');
+  npopUpdateProcessoList();
+
+  // Atores e patrocinadores
+  npopRenderAtores([], true);
+  populatePatrocinadoresSelect('nf-patrocinador', '');
+
   _populateNpopPatSelect();
   resetNpopFile();
   document.getElementById('npop-json-paste').value = '';
@@ -7478,33 +7490,52 @@ function confirmNovoPop() {
       showImportTargetModal(extracted);
       return;
     }
-    const nome = document.getElementById('nf-nome').value.trim();
-    if(!nome) { showToast('Informe o nome do subprocesso.', 'warn'); document.getElementById('nf-nome').focus(); return; }
+    const sub  = document.getElementById('nf-subprocesso').value.trim();
+    const proc = document.getElementById('nf-processo').value.trim();
+    const nome = sub || proc;
+    if(!nome) { showToast('Selecione ao menos um Processo ou Subprocesso.', 'warn'); return; }
+    const elaborado = currentUserName || localStorage.getItem('cage_nome_usuario') || '';
     createBlankPop({
       nome,
-      macro:        document.getElementById('nf-macro').value.trim(),
-      processo:     document.getElementById('nf-processo').value.trim(),
-      unidade:      document.getElementById('nf-unidade').value,
-      tipo:         document.getElementById('nf-tipo').value,
-      dificuldade:  document.getElementById('nf-dificuldade').value,
-      statusMap:    document.getElementById('nf-status-map').value,
-      dataInicio:   document.getElementById('nf-data-inicio').value,
-      dataPrevista: document.getElementById('nf-data-prevista').value,
-      solicitante:  document.getElementById('nf-solicitante').value.trim(),
-      patrocinador: document.getElementById('nf-patrocinador').value.trim(),
-      elaborado:    document.getElementById('nf-elaborado').value.trim(),
-      revisado:     document.getElementById('nf-revisado').value.trim(),
-      equipe:       document.getElementById('nf-equipe').value.trim(),
-      desc:         document.getElementById('nf-desc').value.trim(),
-      input:        document.getElementById('nf-input').value.trim(),
-      output:       document.getElementById('nf-output').value.trim(),
-      resultados:   document.getElementById('nf-resultados').value.trim(),
-      fornecedores: document.getElementById('nf-fornecedores').value.trim(),
-      clientes:     document.getElementById('nf-clientes').value.trim(),
-      sistemas:     document.getElementById('nf-sistemas').value.trim(),
-      patVinc:      document.getElementById('nf-pat-vinc')?.value || '',
+      macro:            document.getElementById('nf-macro').value.trim(),
+      processo:         proc,
+      sub,
+      unidade:          document.getElementById('nf-unidade').value.trim(),
+      gerente:          document.getElementById('nf-gerente').value.trim(),
+      objEstrategicos:  _tryParseJson(document.getElementById('nf-obj-estrategico')?.value, []),
+      equipeResponsavel:document.getElementById('nf-equipe-resp')?.value || '',
+      tipo:             document.getElementById('nf-tipo').value,
+      dificuldade:      document.getElementById('nf-dificuldade').value,
+      statusMap:        document.getElementById('nf-status-map')?.value || 'planejado',
+      dataInicio:       document.getElementById('nf-data-inicio').value,
+      dataPrevista:     document.getElementById('nf-data-prevista').value,
+      solicitante:      document.getElementById('nf-solicitante').value.trim(),
+      patrocinador:     document.getElementById('nf-patrocinador').value.trim(),
+      elaborado,
+      revisado:         '',
+      equipe:           document.getElementById('nf-equipe').value.trim(),
+      atores:           (document.getElementById('nf-atores')?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
+      desc:             document.getElementById('nf-desc').value.trim(),
+      input:            document.getElementById('nf-input').value.trim(),
+      output:           document.getElementById('nf-output').value.trim(),
+      resultados:       document.getElementById('nf-resultados').value.trim(),
+      fornecedores:     document.getElementById('nf-fornecedores').value.trim(),
+      clientes:         document.getElementById('nf-clientes').value.trim(),
+      sistemas:         document.getElementById('nf-sistemas').value.trim(),
+      patVinc:          document.getElementById('nf-pat-vinc')?.value || '',
     });
   }
+}
+
+// Helper: parse JSON safely
+function _tryParseJson(str, fallback) {
+  if(!str) return fallback;
+  try { return JSON.parse(str); } catch(e) { return fallback; }
+}
+// Helper: split text into array (comma, semicolon or newline separated)
+function _splitLines(str) {
+  if(!str) return [];
+  return str.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
 }
 
 // ── Create blank POP ──────────────────────────
@@ -7515,29 +7546,41 @@ function createBlankPop(info) {
   DATA[key] = {
     currentStep: 0,
     meta: {
-      name:         info.nome         || 'Novo Mapeamento',
-      macro:        info.macro        || '',
-      processo:     info.processo     || '',
-      unidade:      info.unidade      || '',
-      tipo:         info.tipo         || '',
-      dificuldade:  info.dificuldade  || '',
-      statusMap:    info.statusMap    || 'planejado',
-      dataInicio:   info.dataInicio   || '',
-      dataPrevista: info.dataPrevista || '',
-      dataEfetiva:  '',
-      solicitante:  info.solicitante  || '',
-      patrocinador: info.patrocinador || '',
-      elaborado:    info.elaborado    || '',
-      revisado:     info.revisado     || '',
-      equipe:       info.equipe       || '',
-      desc:         info.desc         || '',
-      input:        info.input        || '',
-      output:       info.output       || '',
-      resultados:   info.resultados   || '',
-      fornecedores: info.fornecedores || '',
-      clientes:     info.clientes     || '',
-      sistemas:     info.sistemas     || '',
-      patVinc:      info.patVinc      || '',
+      name:             info.nome             || 'Novo Mapeamento',
+      macro:            info.macro            || '',
+      processo:         info.processo         || '',
+      sub:              info.sub              || '',
+      unidade:          info.unidade          || '',
+      gerente:          info.gerente          || '',
+      objEstrategicos:  Array.isArray(info.objEstrategicos) ? info.objEstrategicos : [],
+      equipeResponsavel:info.equipeResponsavel|| '',
+      tipo:             info.tipo             || '',
+      dificuldade:      info.dificuldade      || '',
+      statusMap:        info.statusMap        || 'planejado',
+      dataInicio:       info.dataInicio       || '',
+      dataPrevista:     info.dataPrevista     || '',
+      dataEfetiva:      '',
+      solicitante:      info.solicitante      || '',
+      patrocinador:     info.patrocinador     || '',
+      elaborado:        info.elaborado        || '',
+      revisado:         info.revisado         || '',
+      equipe:           info.equipe           || '',
+      atores:           Array.isArray(info.atores) ? info.atores : [],
+      desc:             info.desc             || '',
+      input:            info.input            || '',
+      output:           info.output           || '',
+      resultados:       info.resultados       || '',
+      fornecedores:     info.fornecedores     || '',
+      clientes:         info.clientes         || '',
+      sistemas:         info.sistemas         || '',
+      patVinc:          info.patVinc          || '',
+    },
+    sipoc: {
+      fornecedores: _splitLines(info.fornecedores),
+      entradas:     _splitLines(info.input),
+      processo:     info.nome || '',
+      saidas:       _splitLines(info.output),
+      clientes:     _splitLines(info.clientes),
     },
     steps: [
       { title: 'Etapa 1', subtitle: '', responsible: 'Responsável', respClass: 'resp-green',
@@ -7561,9 +7604,11 @@ function createBlankPop(info) {
   }
 
   mountNewPopTab(key, info.nome || 'Novo POP');
+  renderFicha(key);
+  renderSipoc(key);
   closeNovoPop();
   const patMsg = info.patVinc ? ' Vínculo com o PAT registrado.' : '';
-  showToast('✅ Novo POP criado! Ative o Modo Edição para preencher.' + patMsg, 'success');
+  showToast('✅ Mapeamento iniciado! Ficha técnica e SIPOC gerados.' + patMsg, 'success');
 }
 
 // ── Mount tab + DOM for a new pop ────────────
@@ -7620,6 +7665,10 @@ function mountNewPopTab(key, label, silent=false) {
       <div id="${key}-ficha-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
         <div class="card-header"><span class="card-title">📋 Ficha Técnica</span><button class="btn btn-outline" onclick="openStatusModal('${key}')" style="font-size:11px;padding:4px 10px;margin-left:auto;">✏️ Editar</button></div>
         <div class="card-body" id="${key}-ficha-body" style="padding:16px;"></div>
+      </div>
+      <div id="${key}-sipoc-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
+        <div class="card-header"><span class="card-title">📊 SIPOC</span></div>
+        <div class="sipoc-body" style="padding:12px 16px;overflow-x:auto;"></div>
       </div>
     </div>
     <div id="${key}-fluxo" class="section">
@@ -11512,6 +11561,7 @@ async function loadFromCloud() {
         try { renderSiglas(p); }    catch(e) { console.warn('renderSiglas',p,e); }
         try { renderMetrics(p); }   catch(e) { console.warn('renderMetrics',p,e); }
         try { renderFicha(p); }     catch(e) { console.warn('renderFicha',p,e); }
+        try { renderSipoc(p); }     catch(e) { console.warn('renderSipoc',p,e); }
         try { loadAcomp(p); }       catch(e) { console.warn('loadAcomp',p,e); }
         try { renderVersionBadge(p); } catch(e) {}
       } catch(e) { console.warn('Render error for', p, e); }
@@ -14158,6 +14208,38 @@ function renderBanner(p) {
     bannerSub.textContent = [m.macro, m.processo, m.name].filter(Boolean).join(' · ');
   }
   if(bannerIcon && m.bannerIcon)  bannerIcon.textContent  = m.bannerIcon;
+}
+
+// ═══ SIPOC ════════════════════════════════════════════
+function renderSipoc(p) {
+  const card = document.getElementById(p + '-sipoc-card');
+  if(!card) return;
+  const sipoc = DATA[p]?.sipoc;
+  if(!sipoc) { card.style.display = 'none'; return; }
+  const cols = [
+    {key:'fornecedores', label:'Fornecedores', color:'#3b82f6', bg:'#eff6ff', icon:'📦'},
+    {key:'entradas',     label:'Entradas',     color:'#8b5cf6', bg:'#f5f3ff', icon:'➡️'},
+    {key:'processo',     label:'Processo',     color:'#059669', bg:'#f0fdf4', icon:'⚙️'},
+    {key:'saidas',       label:'Saídas',       color:'#f59e0b', bg:'#fffbeb', icon:'📤'},
+    {key:'clientes',     label:'Clientes',     color:'#ef4444', bg:'#fef2f2', icon:'👥'},
+  ];
+  const getItems = k => {
+    const v = sipoc[k];
+    if(Array.isArray(v)) return v;
+    if(typeof v === 'string') return v.split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean);
+    return [];
+  };
+  card.style.display = '';
+  const body = card.querySelector('.sipoc-body');
+  if(!body) return;
+  body.innerHTML = `<div class="sipoc-table">${cols.map(c => `
+    <div class="sipoc-col" style="border-top:3px solid ${c.color};">
+      <div class="sipoc-col-head" style="background:${c.bg};color:${c.color};">${c.icon} ${c.label}</div>
+      <div class="sipoc-col-body">${c.key === 'processo'
+        ? `<div class="sipoc-processo">${sipoc.processo || DATA[p]?.meta?.name || ''}</div>`
+        : (getItems(c.key).map(item=>`<div class="sipoc-item">${item}</div>`).join('') || '<div style="color:#94a3b8;font-size:11px;font-style:italic;">Não informado</div>')
+      }</div>
+    </div>`).join('')}</div>`;
 }
 
 // ═══ FICHA TÉCNICA ════════════════════════════════════
@@ -17248,71 +17330,151 @@ function npopUpdateSubprocessoList() {
   npopAutoFill();
 }
 
-// Central autofill: called whenever macro, processo or subprocesso changes.
-// Priority: subprocesso match > processo match (sem subprocesso).
-// Always overwrites fields (user can correct after).
+// ── Helpers: status, datas, equipes, atores ─────────────────────────────────
+
+// Calcula status a partir das datas
+function npopCalcStatus(inicio, prevista, efetiva) {
+  if(efetiva) return 'concluido';
+  if(!inicio) return 'planejado';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const di = new Date(inicio);
+  if(today < di) return 'planejado';
+  const dp = prevista ? new Date(prevista) : null;
+  if(dp && today > dp) return 'atrasado';
+  return 'em_andamento';
+}
+function _statusLabel(val) {
+  const map = {'planejado':'📋 Planejado','em_andamento':'🔄 Em Andamento','atrasado':'⚠️ Atrasado','concluido':'✅ Concluído','suspenso':'⏸ Suspenso'};
+  return map[val] || val || '';
+}
+// Atualiza exibição de status no form criar
+function npopUpdateStatus() {
+  const inicio   = document.getElementById('nf-data-inicio')?.value   || '';
+  const prevista = document.getElementById('nf-data-prevista')?.value || '';
+  const status   = npopCalcStatus(inicio, prevista, '');
+  const sdEl = document.getElementById('nf-status-display'); if(sdEl) sdEl.value = _statusLabel(status);
+  const smEl = document.getElementById('nf-status-map');     if(smEl) smEl.value = status;
+}
+// Preenche data fim = início + 90 dias
+function npopUpdateDataFim() {
+  const inicioEl   = document.getElementById('nf-data-inicio');
+  const previstaEl = document.getElementById('nf-data-prevista');
+  if(!inicioEl || !previstaEl || !inicioEl.value) return;
+  const d = new Date(inicioEl.value);
+  d.setDate(d.getDate() + 90);
+  previstaEl.value = d.toISOString().split('T')[0];
+}
+// Atualiza status no modal de edição
+function statusModalUpdateStatus() {
+  const inicio   = document.getElementById('status-modal-inicio')?.value   || '';
+  const prevista = document.getElementById('status-modal-prevista')?.value || '';
+  const efetiva  = document.getElementById('status-modal-efetiva')?.value  || '';
+  const status   = npopCalcStatus(inicio, prevista, efetiva);
+  const sel = document.getElementById('status-modal-status');
+  if(sel && sel.value !== 'suspenso') sel.value = status;
+}
+// Preenche data fim no modal de edição
+function statusModalUpdateDataFim() {
+  const inicioEl   = document.getElementById('status-modal-inicio');
+  const previstaEl = document.getElementById('status-modal-prevista');
+  if(!inicioEl || !previstaEl || !inicioEl.value || previstaEl.value) return;
+  const d = new Date(inicioEl.value);
+  d.setDate(d.getDate() + 90);
+  previstaEl.value = d.toISOString().split('T')[0];
+}
+
+// Retorna equipes filtradas pela unidade/área
+function npopGetEquipesByUnidade(area) {
+  const euList = getConfig('equipeUnidade');
+  if(!area || !euList.length) return getConfig('equipes');
+  const filtered = euList
+    .filter(eu => eu && eu.unidade && (_orgAreaMatches(area, eu.unidade) || _orgAreaMatches(eu.unidade, area)))
+    .map(eu => eu.equipe || eu.nome || '')
+    .filter(Boolean);
+  return filtered.length ? filtered : getConfig('equipes');
+}
+// Popula select de equipe responsável
+function npopUpdateEquipeSelect(area, selectId) {
+  const sel = document.getElementById(selectId || 'nf-equipe-resp');
+  if(!sel) return;
+  const equipes = npopGetEquipesByUnidade(area);
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Selecione a equipe...</option>'
+    + equipes.map(e => `<option value="${e}">${e}</option>`).join('');
+  if(current) sel.value = current;
+}
+
+// Renderiza tags de atores clicáveis
+function npopRenderAtores(selectedArr, isCreateForm) {
+  const wrapId  = isCreateForm ? 'nf-atores-wrap'          : 'status-modal-atores-wrap';
+  const hiddenId= isCreateForm ? 'nf-atores'               : 'status-modal-atores';
+  const wrap   = document.getElementById(wrapId);
+  const hidden = document.getElementById(hiddenId);
+  if(!wrap) return;
+  const atores   = getConfig('atores');
+  const selected = new Set(selectedArr || []);
+  wrap.innerHTML = atores.map(a => {
+    const on = selected.has(a);
+    return `<span onclick="npopToggleAtor(this,'${a.replace(/'/g,'\\\'').replace(/"/g,'&quot;')}',${isCreateForm})" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${a}</span>`;
+  }).join('');
+  if(hidden) hidden.value = [...selected].join(',');
+}
+function npopToggleAtor(el, ator, isCreateForm) {
+  const hiddenId = isCreateForm ? 'nf-atores' : 'status-modal-atores';
+  const hidden = document.getElementById(hiddenId);
+  const current = (hidden?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const idx = current.indexOf(ator);
+  if(idx===-1) current.push(ator); else current.splice(idx,1);
+  if(hidden) hidden.value = current.join(',');
+  npopRenderAtores(current, isCreateForm);
+}
+
+// ── Central autofill (criar): preenche unidade, gerente, obj, processo ───────
 function npopAutoFill() {
   const data  = arqGetData ? arqGetData() : CAGE_PROCESSOS;
-  const macro = document.getElementById('nf-macro')?.value || '';
+  const macro = document.getElementById('nf-macro')?.value  || '';
   const proc  = document.getElementById('nf-processo')?.value || '';
   const sub   = document.getElementById('nf-subprocesso')?.value || '';
 
-  // 1. Try exact subprocesso match
   let match = sub
-    ? data.find(r =>
-        r.subprocesso === sub &&
-        (!proc  || r.processo     === proc) &&
-        (!macro || r.macroprocesso === macro))
+    ? data.find(r => r.subprocesso === sub && (!proc||r.processo===proc) && (!macro||r.macroprocesso===macro))
     : null;
-
-  // 2. Fallback: exact processo match (row with no subprocesso, or first row)
   if(!match && proc) {
-    match = data.find(r =>
-      r.processo === proc &&
-      (!macro || r.macroprocesso === macro) &&
-      !r.subprocesso
-    ) || data.find(r =>
-      r.processo === proc &&
-      (!macro || r.macroprocesso === macro)
-    );
+    match = data.find(r => r.processo===proc && (!macro||r.macroprocesso===macro) && !r.subprocesso)
+         || data.find(r => r.processo===proc && (!macro||r.macroprocesso===macro));
   }
 
-  const arqPanel = document.getElementById('nf-arq-info');
   if(!match) {
-    if(arqPanel) arqPanel.style.display = 'none';
+    const unEl = document.getElementById('nf-unidade');   if(unEl) unEl.value = '';
+    const geEl = document.getElementById('nf-gerente');   if(geEl) geEl.value = '';
+    const tagsEl = document.getElementById('nf-obj-estrategico-tags');
+    if(tagsEl) tagsEl.innerHTML = '<span style="color:#94a3b8;font-size:12px;">Preenchido automaticamente ao selecionar o processo</span>';
+    const objHEl = document.getElementById('nf-obj-estrategico'); if(objHEl) objHEl.value = '';
+    npopUpdateEquipeSelect('', 'nf-equipe-resp');
     return;
   }
 
-  // Fill all fields — always overwrite so switching subprocesso updates them
-  const fields = {
-    'nf-desc':        match.objetivo    || '',
-    'nf-input':       match.entradas    || '',
-    'nf-output':      match.entregas    || '',
-    'nf-fornecedores':match.fornecedores|| '',
-    'nf-clientes':    match.clientes    || '',
-  };
-  Object.entries(fields).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if(el) el.value = val;
+  // Painel Processo (editáveis, sempre sobrescreve ao trocar subprocesso)
+  ['nf-desc','nf-input','nf-output','nf-fornecedores','nf-clientes'].forEach((id,i) => {
+    const val = [match.objetivo,match.entradas,match.entregas,match.fornecedores,match.clientes][i] || '';
+    const el = document.getElementById(id); if(el) el.value = val;
   });
 
-  // Set nome only if empty (user may have typed a custom name)
-  const nomeEl = document.getElementById('nf-nome');
-  if(nomeEl && !nomeEl.value) nomeEl.value = sub || proc;
+  // Unidade (somente leitura)
+  const unEl = document.getElementById('nf-unidade'); if(unEl) unEl.value = match.area || '';
+  // Gerente (editável, auto-fill)
+  const geEl = document.getElementById('nf-gerente'); if(geEl) geEl.value = match.gerente || '';
+  // Objetivo Estratégico (tags)
+  const objs = match.objEstrategicos || [];
+  const objHEl = document.getElementById('nf-obj-estrategico');
+  if(objHEl) objHEl.value = JSON.stringify(objs);
+  const tagsEl = document.getElementById('nf-obj-estrategico-tags');
+  if(tagsEl) tagsEl.innerHTML = objs.length
+    ? objs.map(o=>`<span style="display:inline-block;background:#e8f0fe;color:#1a56db;font-size:11px;padding:2px 9px;border-radius:10px;border:1px solid #c5d8f5;">${o}</span>`).join('')
+    : '<span style="color:#94a3b8;font-size:12px;">Nenhum objetivo estratégico associado</span>';
 
-  // Preencher painel da Arquitetura de Processos
-  const divisaoEl   = document.getElementById('nf-info-divisao');
-  const gerenteEl   = document.getElementById('nf-info-gerente');
-  const objEstratEl = document.getElementById('nf-info-obj-estrategicos');
-  if(divisaoEl)  divisaoEl.textContent  = match.area    || '—';
-  if(gerenteEl)  gerenteEl.textContent  = match.gerente || '—';
-  if(objEstratEl) {
-    const objs = match.objEstrategicos || [];
-    objEstratEl.innerHTML = objs.length
-      ? objs.map(o => `<span style="display:inline-block;background:#e8f0fe;color:#1a56db;font-size:11px;padding:2px 9px;border-radius:10px;border:1px solid #c5d8f5;">${o}</span>`).join('')
-      : '<span style="color:#999;font-size:12px;">Nenhum objetivo estratégico associado</span>';
-  }
-  if(arqPanel) arqPanel.style.display = '';
+  // Equipe responsável filtrada pela unidade
+  npopUpdateEquipeSelect(match.area || '', 'nf-equipe-resp');
 }
 
 // Init selects when npop modal opens
@@ -19940,66 +20102,72 @@ function openStatusModal(p) {
   const m = DATA[p]?.meta || {};
   document.getElementById('status-modal-pop').value = p;
   // Capa
-  document.getElementById('status-modal-icon').value       = m.bannerIcon   || '';
-  document.getElementById('status-modal-banner-sub').value = m.bannerSub    || '';
-  // Identificação
-  document.getElementById('status-modal-nome').value       = m.name         || '';
-  // Populate macro dropdown from architecture data
-  (function() {
-    const macroSel = document.getElementById('status-modal-macro');
-    if(!macroSel) return;
-    const macros = [...new Set((arqGetData ? arqGetData() : []).map(r => r.macroprocesso).filter(Boolean))].sort();
+  document.getElementById('status-modal-icon').value       = m.bannerIcon || '';
+  document.getElementById('status-modal-banner-sub').value = m.bannerSub  || '';
+  // Identificação — popular macro
+  const macroSel = document.getElementById('status-modal-macro');
+  if(macroSel) {
+    const macros = [...new Set((arqGetData ? arqGetData() : CAGE_PROCESSOS).map(r => r.macroprocesso).filter(Boolean))].sort();
     macroSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>'
       + macros.map(m2 => `<option value="${m2}">${m2}</option>`).join('');
     macroSel.value = m.macro || '';
-  })();
+  }
   statusModalUpdateProcessoList();
-  document.getElementById('status-modal-processo').value   = m.processo     || '';
+  document.getElementById('status-modal-processo').value = m.processo || '';
   statusModalUpdateSubList();
-  document.getElementById('status-modal-sub').value        = m.sub          || '';
-  populateConfigSelect('status-modal-unidade', 'areas', m.unidade || '');
-  populateConfigSelect('status-modal-tipo', 'tipoTrabalho', m.tipo || '');
-  // Equipe Responsável — datalist dinâmico
-  (function() {
-    const dl = document.getElementById('status-modal-equipe-resp-list');
-    if(dl) dl.innerHTML = getConfig('equipes').map(e => `<option value="${e.replace(/"/g,'&quot;')}">`).join('');
-    const inp = document.getElementById('status-modal-equipe-resp');
-    if(inp) inp.value = m.equipeResponsavel || '';
-  })();
-  document.getElementById('status-modal-dificuldade').value= m.dificuldade  || '';
+  document.getElementById('status-modal-sub').value = m.sub || m.name || '';
+  // Unidade (readonly), Gerente (editável)
+  const unEl = document.getElementById('status-modal-unidade'); if(unEl) unEl.value = m.unidade || '';
+  const geEl = document.getElementById('status-modal-gerente'); if(geEl) geEl.value = m.gerente || '';
+  // Objetivo Estratégico
+  const objs = Array.isArray(m.objEstrategicos) ? m.objEstrategicos : [];
+  const objHEl = document.getElementById('status-modal-obj-estrategico'); if(objHEl) objHEl.value = JSON.stringify(objs);
+  const tagsEl = document.getElementById('status-modal-obj-tags');
+  if(tagsEl) tagsEl.innerHTML = objs.length
+    ? objs.map(o=>`<span style="display:inline-block;background:#e8f0fe;color:#1a56db;font-size:11px;padding:2px 9px;border-radius:10px;border:1px solid #c5d8f5;">${o}</span>`).join('')
+    : '<span style="color:#94a3b8;font-size:12px;">Nenhum objetivo estratégico associado</span>';
+  // Equipe responsável (select filtrado)
+  npopUpdateEquipeSelect(m.unidade || '', 'status-modal-equipe-resp');
+  const erSel = document.getElementById('status-modal-equipe-resp'); if(erSel) erSel.value = m.equipeResponsavel || '';
+  // Tipo de trabalho
+  const tipoSel = document.getElementById('status-modal-tipo');
+  if(tipoSel) {
+    const tipos = getConfig('tipoTrabalho');
+    tipoSel.innerHTML = '<option value="">Selecione...</option>' + tipos.map(t => `<option value="${t}">${t}</option>`).join('');
+    tipoSel.value = m.tipo || '';
+  }
+  document.getElementById('status-modal-dificuldade').value = m.dificuldade || '';
   // Status e Datas
-  document.getElementById('status-modal-status').value     = m.statusMap    || '';
-  document.getElementById('status-modal-inicio').value     = m.dataInicio   || '';
-  document.getElementById('status-modal-prevista').value   = m.dataPrevista || '';
-  document.getElementById('status-modal-efetiva').value    = m.dataEfetiva  || '';
+  document.getElementById('status-modal-status').value   = m.statusMap    || '';
+  document.getElementById('status-modal-inicio').value   = m.dataInicio   || '';
+  document.getElementById('status-modal-prevista').value = m.dataPrevista || '';
+  document.getElementById('status-modal-efetiva').value  = m.dataEfetiva  || '';
   // Pessoas
-  document.getElementById('status-modal-solicitante').value  = m.solicitante  || '';
+  document.getElementById('status-modal-solicitante').value = m.solicitante || '';
   populatePatrocinadoresSelect('status-modal-patrocinador', m.patrocinador || '');
-  document.getElementById('status-modal-elaborado').value    = m.elaborado    || '';
-  document.getElementById('status-modal-revisado').value     = m.revisado     || '';
-  document.getElementById('status-modal-equipe').value       = m.equipe       || '';
+  document.getElementById('status-modal-equipe').value = m.equipe || '';
   // Processo
-  document.getElementById('status-modal-desc').value        = m.desc         || '';
-  document.getElementById('status-modal-input').value       = m.input        || '';
-  document.getElementById('status-modal-output').value      = m.output       || '';
-  document.getElementById('status-modal-resultados').value  = m.resultados   || '';
-  // Contexto
-  document.getElementById('status-modal-fornecedores').value= m.fornecedores || '';
-  document.getElementById('status-modal-clientes').value    = m.clientes     || '';
-  document.getElementById('status-modal-sistemas').value    = m.sistemas     || '';
-  // Populate PAT select
-  (function() {
-    const sel = document.getElementById('status-modal-pat-vinc');
-    if(!sel) return;
+  document.getElementById('status-modal-desc').value       = m.desc        || '';
+  document.getElementById('status-modal-input').value      = m.input       || '';
+  document.getElementById('status-modal-output').value     = m.output      || '';
+  document.getElementById('status-modal-resultados').value = m.resultados  || '';
+  document.getElementById('status-modal-fornecedores').value = m.fornecedores || '';
+  document.getElementById('status-modal-clientes').value    = m.clientes    || '';
+  document.getElementById('status-modal-sistemas').value    = m.sistemas    || '';
+  // Atores
+  npopRenderAtores(Array.isArray(m.atores) ? m.atores : [], false);
+  // Vínculo com PAT
+  const sel = document.getElementById('status-modal-pat-vinc');
+  if(sel) {
     if(!DATA.pat) DATA.pat = [];
-    const statusLabel = { planejado:'Planejado', andamento:'Em Andamento', concluido:'Concluído', atrasado:'Atrasado', cancelado:'Cancelado' };
+    const slbl = { planejado:'Planejado', andamento:'Em Andamento', concluido:'Concluído', atrasado:'Atrasado', cancelado:'Cancelado' };
     sel.innerHTML = '<option value="">— Nenhum vínculo —</option>'
       + DATA.pat.map(item => {
-          const info = [item.unidade, statusLabel[item.status] || item.status].filter(Boolean).join(' · ');
-          return `<option value="${item.id}">${item.titulo || 'Item sem título'}${info ? '  [' + info + ']' : ''}</option>`;
+          const info = [item.unidade, slbl[item.status]||item.status].filter(Boolean).join(' · ');
+          return `<option value="${item.id}">${item.titulo||'Item sem título'}${info?'  ['+info+']':''}</option>`;
         }).join('');
     sel.value = m.patVinc || '';
-  })();
+  }
   openModal('status-map-modal');
 }
 
@@ -20016,20 +20184,15 @@ function saveStatusModal() {
   // Identificação
   const newName = document.getElementById('status-modal-nome').value.trim();
   if(newName) m.name = newName;
-  m.macro        = document.getElementById('status-modal-macro').value;
-  m.processo     = document.getElementById('status-modal-processo').value.trim();
-  m.sub          = document.getElementById('status-modal-sub').value.trim();
-  m.unidade           = document.getElementById('status-modal-unidade').value;
+  m.macro             = document.getElementById('status-modal-macro').value;
+  m.processo          = document.getElementById('status-modal-processo').value.trim();
+  m.sub               = document.getElementById('status-modal-sub').value.trim();
+  m.unidade           = document.getElementById('status-modal-unidade').value.trim();
+  m.gerente           = document.getElementById('status-modal-gerente').value.trim();
+  m.objEstrategicos   = _tryParseJson(document.getElementById('status-modal-obj-estrategico')?.value, []);
   m.equipeResponsavel = (document.getElementById('status-modal-equipe-resp')?.value || '').trim();
   m.tipo              = document.getElementById('status-modal-tipo').value;
   m.dificuldade       = document.getElementById('status-modal-dificuldade').value;
-  // Gravar equipe na tabela de equipes da CAGE se for nova
-  if(m.equipeResponsavel) {
-    const equipes = getConfig('equipes');
-    if(!equipes.some(e => e.toLowerCase() === m.equipeResponsavel.toLowerCase())) {
-      setConfig('equipes', [...equipes, m.equipeResponsavel]);
-    }
-  }
   // Status e Datas
   m.statusMap    = document.getElementById('status-modal-status').value;
   m.dataInicio   = document.getElementById('status-modal-inicio').value;
@@ -20038,18 +20201,23 @@ function saveStatusModal() {
   // Pessoas
   m.solicitante  = document.getElementById('status-modal-solicitante').value.trim();
   m.patrocinador = document.getElementById('status-modal-patrocinador').value.trim();
-  m.elaborado    = document.getElementById('status-modal-elaborado').value.trim();
-  m.revisado     = document.getElementById('status-modal-revisado').value.trim();
   m.equipe       = document.getElementById('status-modal-equipe').value.trim();
+  m.atores       = (document.getElementById('status-modal-atores')?.value || '').split(',').map(s=>s.trim()).filter(Boolean);
   // Processo
   m.desc         = document.getElementById('status-modal-desc').value.trim();
   m.input        = document.getElementById('status-modal-input').value.trim();
   m.output       = document.getElementById('status-modal-output').value.trim();
   m.resultados   = document.getElementById('status-modal-resultados').value.trim();
-  // Contexto
   m.fornecedores = document.getElementById('status-modal-fornecedores').value.trim();
   m.clientes     = document.getElementById('status-modal-clientes').value.trim();
   m.sistemas     = document.getElementById('status-modal-sistemas').value.trim();
+  // Atualizar SIPOC
+  if(!DATA[p].sipoc) DATA[p].sipoc = {};
+  DATA[p].sipoc.fornecedores = _splitLines(m.fornecedores);
+  DATA[p].sipoc.entradas     = _splitLines(m.input);
+  DATA[p].sipoc.processo     = m.sub || m.processo || m.name || '';
+  DATA[p].sipoc.saidas       = _splitLines(m.output);
+  DATA[p].sipoc.clientes     = _splitLines(m.clientes);
   // PAT link
   const newPatVinc = document.getElementById('status-modal-pat-vinc')?.value || '';
   const oldPatVinc = m.patVinc || '';
@@ -20079,6 +20247,7 @@ function saveStatusModal() {
   }
   closeModal('status-map-modal');
   renderFicha(p);
+  renderSipoc(p);
   // Sincronizar com Arquitetura: concluido → mapeado=true
   if(DATA[p]?.meta?.statusMap === 'concluido') {
     if(typeof arqSyncFromPops === 'function') arqSyncFromPops();
@@ -20113,6 +20282,38 @@ function statusModalUpdateSubList() {
     ).map(r => r.subprocesso).filter(Boolean)
   )].sort();
   subList.innerHTML = subs.map(s => `<option value="${s}">`).join('');
+  statusModalAutoFill();
+}
+
+// Auto-fill do modal de edição ao mudar processo/subprocesso
+function statusModalAutoFill() {
+  const data  = arqGetData ? arqGetData() : CAGE_PROCESSOS;
+  const macro = document.getElementById('status-modal-macro')?.value  || '';
+  const proc  = document.getElementById('status-modal-processo')?.value || '';
+  const sub   = document.getElementById('status-modal-sub')?.value    || '';
+
+  let match = sub
+    ? data.find(r => r.subprocesso===sub && (!proc||r.processo===proc) && (!macro||r.macroprocesso===macro))
+    : null;
+  if(!match && proc) {
+    match = data.find(r => r.processo===proc && (!macro||r.macroprocesso===macro) && !r.subprocesso)
+         || data.find(r => r.processo===proc && (!macro||r.macroprocesso===macro));
+  }
+  if(!match) { npopUpdateEquipeSelect('', 'status-modal-equipe-resp'); return; }
+
+  // Unidade (somente leitura)
+  const unEl = document.getElementById('status-modal-unidade'); if(unEl) unEl.value = match.area || '';
+  // Gerente (editável)
+  const geEl = document.getElementById('status-modal-gerente'); if(geEl) geEl.value = match.gerente || '';
+  // Objetivo Estratégico tags
+  const objs = match.objEstrategicos || [];
+  const objHEl = document.getElementById('status-modal-obj-estrategico'); if(objHEl) objHEl.value = JSON.stringify(objs);
+  const tagsEl = document.getElementById('status-modal-obj-tags');
+  if(tagsEl) tagsEl.innerHTML = objs.length
+    ? objs.map(o=>`<span style="display:inline-block;background:#e8f0fe;color:#1a56db;font-size:11px;padding:2px 9px;border-radius:10px;border:1px solid #c5d8f5;">${o}</span>`).join('')
+    : '<span style="color:#94a3b8;font-size:12px;">Nenhum objetivo estratégico associado</span>';
+  // Equipe filtrada
+  npopUpdateEquipeSelect(match.area || '', 'status-modal-equipe-resp');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -23912,65 +24113,59 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;">
         <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🏷 Identificação</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <label class="gmod-label">Macroprocesso</label>
+            <select class="modal-input" id="status-modal-macro" onchange="statusModalUpdateProcessoList()">
+              <option value="">Selecione o macroprocesso...</option>
+            </select>
+          </div>
           <div class="gmod-row">
             <div>
-              <label class="gmod-label">Macroprocesso</label>
-              <select class="modal-input" id="status-modal-macro" onchange="statusModalUpdateProcessoList()">
-                <option value="">Selecione o macroprocesso...</option>
-              </select>
-            </div>
-            <div>
-              <label class="gmod-label">Processo Pai</label>
+              <label class="gmod-label">Processo</label>
               <input class="modal-input" id="status-modal-processo" type="text" placeholder="Digite para filtrar processos..." list="status-modal-processo-list" autocomplete="off" oninput="statusModalUpdateSubList()">
               <datalist id="status-modal-processo-list"></datalist>
             </div>
+            <div>
+              <label class="gmod-label">Subprocesso</label>
+              <input class="modal-input" id="status-modal-sub" type="text" placeholder="Digite para filtrar subprocessos..." list="status-modal-sub-list" autocomplete="off" oninput="statusModalAutoFill()">
+              <datalist id="status-modal-sub-list"></datalist>
+            </div>
+          </div>
+          <div class="gmod-row">
+            <div>
+              <label class="gmod-label">Unidade (ou Divisão)</label>
+              <input class="modal-input" id="status-modal-unidade" type="text" readonly style="background:#f1f5f9;color:#475569;cursor:default;" placeholder="Preenchido automaticamente">
+            </div>
+            <div>
+              <label class="gmod-label">Gerente do Processo</label>
+              <input class="modal-input" id="status-modal-gerente" type="text" placeholder="Preenchido automaticamente">
+            </div>
           </div>
           <div>
-            <label class="gmod-label">Subprocesso</label>
-            <input class="modal-input" id="status-modal-sub" type="text" placeholder="Digite para filtrar subprocessos..." list="status-modal-sub-list" autocomplete="off">
-            <datalist id="status-modal-sub-list"></datalist>
+            <label class="gmod-label">Objetivo Estratégico</label>
+            <div id="status-modal-obj-tags" style="min-height:34px;padding:5px 8px;background:#f1f5f9;border:1px solid var(--cage-border);border-radius:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;"><span style="color:#94a3b8;font-size:12px;">Preenchido automaticamente ao selecionar o processo</span></div>
+            <input type="hidden" id="status-modal-obj-estrategico">
           </div>
           <div class="gmod-row">
-            <div>
-              <label class="gmod-label">Unidade Responsável</label>
-              <select class="modal-input" id="status-modal-unidade">
-                <option value="">Selecione...</option>
-                <option>DTTI</option>
-                <option>DCO</option>
-                <option>DCON</option>
-                <option>DIR</option>
-                <option>DAUD</option>
-                <option>GAB</option>
-                <option>DIE</option>
-              </select>
-            </div>
             <div>
               <label class="gmod-label">Equipe Responsável</label>
-              <input class="modal-input" id="status-modal-equipe-resp" type="text"
-                list="status-modal-equipe-resp-list" autocomplete="off"
-                placeholder="Selecione ou cadastre nova equipe...">
-              <datalist id="status-modal-equipe-resp-list"></datalist>
+              <select class="modal-input" id="status-modal-equipe-resp">
+                <option value="">Selecione a equipe...</option>
+              </select>
             </div>
-          </div>
-          <div class="gmod-row">
             <div>
               <label class="gmod-label">Tipo de Trabalho</label>
               <select class="modal-input" id="status-modal-tipo">
                 <option value="">Selecione...</option>
-                <option>Mapeamento de Processo Novo</option>
-                <option>Mapeamento de Processo Existente</option>
-                <option>Redesenho</option>
-                <option>Mapeamento e Redesenho</option>
-                <option>Criação de Documentação</option>
               </select>
             </div>
-            <div>
-              <label class="gmod-label">Dificuldade</label>
-              <select class="modal-input" id="status-modal-dificuldade">
-                <option value="">Selecione...</option>
-                <option>Baixa</option><option>Média</option><option>Alta</option>
-              </select>
-            </div>
+          </div>
+          <div style="max-width:220px;">
+            <label class="gmod-label">Dificuldade</label>
+            <select class="modal-input" id="status-modal-dificuldade">
+              <option value="">Selecione...</option>
+              <option>Baixa</option><option>Média</option><option>Alta</option>
+            </select>
           </div>
         </div>
       </div>
@@ -23979,30 +24174,32 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;">
         <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📅 Status e Datas</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <div>
-            <label class="gmod-label">Status do Mapeamento</label>
-            <select class="modal-input" id="status-modal-status">
-              <option value="">Selecione...</option>
-              <option value="planejado">📋 Planejado</option>
-              <option value="em_andamento">🔄 Em Andamento</option>
-              <option value="concluido">✅ Concluído</option>
-              <option value="atrasado">⚠️ Atrasado</option>
-              <option value="suspenso">⏸ Suspenso</option>
-            </select>
+          <div class="gmod-row">
+            <div>
+              <label class="gmod-label">Status do Mapeamento <span style="color:#94a3b8;font-weight:400;font-size:10px;">(calculado pelas datas)</span></label>
+              <select class="modal-input" id="status-modal-status">
+                <option value="">Selecione...</option>
+                <option value="planejado">📋 Planejado</option>
+                <option value="em_andamento">🔄 Em Andamento</option>
+                <option value="concluido">✅ Concluído</option>
+                <option value="atrasado">⚠️ Atrasado</option>
+                <option value="suspenso">⏸ Suspenso</option>
+              </select>
+            </div>
+            <div>
+              <label class="gmod-label">Data de Início</label>
+              <input class="modal-input" id="status-modal-inicio" type="date" onchange="statusModalUpdateStatus();">
+            </div>
           </div>
           <div class="gmod-row">
             <div>
-              <label class="gmod-label">Data de Início</label>
-              <input class="modal-input" id="status-modal-inicio" type="date">
+              <label class="gmod-label">Data de Fim <span style="color:#94a3b8;font-weight:400;font-size:10px;">(90 dias após início)</span></label>
+              <input class="modal-input" id="status-modal-prevista" type="date" onchange="statusModalUpdateStatus();">
             </div>
             <div>
-              <label class="gmod-label">Data Prevista de Entrega</label>
-              <input class="modal-input" id="status-modal-prevista" type="date">
+              <label class="gmod-label">Data de Conclusão Efetiva</label>
+              <input class="modal-input" id="status-modal-efetiva" type="date" onchange="statusModalUpdateStatus();">
             </div>
-          </div>
-          <div>
-            <label class="gmod-label">Data Efetiva de Entrega</label>
-            <input class="modal-input" id="status-modal-efetiva" type="date" style="max-width:220px;">
           </div>
         </div>
       </div>
@@ -24014,21 +24211,11 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
           <div class="gmod-row">
             <div>
               <label class="gmod-label">Solicitante</label>
-              <input class="modal-input" id="status-modal-solicitante" type="text" placeholder="Quem solicitou o POP">
+              <input class="modal-input" id="status-modal-solicitante" type="text" placeholder="Quem solicitou o mapeamento">
             </div>
             <div>
               <label class="gmod-label">Patrocinador</label>
               <select class="modal-input" id="status-modal-patrocinador"><option value="">— selecione —</option></select>
-            </div>
-          </div>
-          <div class="gmod-row">
-            <div>
-              <label class="gmod-label">Elaborado por</label>
-              <input class="modal-input" id="status-modal-elaborado" type="text" placeholder="Nome do elaborador">
-            </div>
-            <div>
-              <label class="gmod-label">Revisado por</label>
-              <input class="modal-input" id="status-modal-revisado" type="text" placeholder="Nome do revisor">
             </div>
           </div>
           <div>
@@ -24043,30 +24230,23 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">⚙️ Processo</div>
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div>
-            <label class="gmod-label">Objetivo / Descrição</label>
-            <textarea class="modal-input modal-textarea" id="status-modal-desc" placeholder="Descreva brevemente o objetivo deste POP..." style="min-height:56px;"></textarea>
+            <label class="gmod-label">Objetivo</label>
+            <textarea class="modal-input modal-textarea" id="status-modal-desc" placeholder="Descreva o objetivo deste processo..." style="min-height:56px;"></textarea>
           </div>
           <div class="gmod-row">
             <div>
-              <label class="gmod-label">Entrada (Input)</label>
-              <input class="modal-input" id="status-modal-input" type="text" placeholder="Ex: Ofício recebido...">
+              <label class="gmod-label">Entradas</label>
+              <textarea class="modal-input modal-textarea" id="status-modal-input" placeholder="Insumos / entradas do processo..." style="min-height:48px;"></textarea>
             </div>
             <div>
-              <label class="gmod-label">Saída (Output)</label>
-              <input class="modal-input" id="status-modal-output" type="text" placeholder="Ex: Processo tratado...">
+              <label class="gmod-label">Saídas</label>
+              <textarea class="modal-input modal-textarea" id="status-modal-output" placeholder="Produtos / saídas do processo..." style="min-height:48px;"></textarea>
             </div>
           </div>
           <div>
             <label class="gmod-label">Resultados Esperados</label>
             <textarea class="modal-input modal-textarea" id="status-modal-resultados" placeholder="Resultados e benefícios esperados..." style="min-height:48px;"></textarea>
           </div>
-        </div>
-      </div>
-
-      <!-- Contexto -->
-      <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🔗 Contexto</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
           <div class="gmod-row">
             <div>
               <label class="gmod-label">Fornecedores</label>
@@ -24080,6 +24260,11 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
           <div>
             <label class="gmod-label">Sistemas Utilizados</label>
             <input class="modal-input" id="status-modal-sistemas" type="text" placeholder="Ex: SAEWEB, SEI, FalaBR...">
+          </div>
+          <div>
+            <label class="gmod-label">Atores <span style="color:#94a3b8;font-weight:400;font-size:11px;">(clique para selecionar)</span></label>
+            <div id="status-modal-atores-wrap" style="display:flex;flex-wrap:wrap;gap:6px;padding:6px 8px;background:#f8fafc;border:1px solid var(--cage-border);border-radius:6px;min-height:38px;"></div>
+            <input type="hidden" id="status-modal-atores">
           </div>
         </div>
       </div>
