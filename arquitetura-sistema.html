@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>SIGA — Arquitetura do Sistema</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-dark:  #0d2e52;
+    --blue:       #1a4d8a;
+    --blue-mid:   #2563eb;
+    --blue-light: #dbeafe;
+    --green:      #00a86b;
+    --green-light:#d1fae5;
+    --purple:     #7c3aed;
+    --purple-light:#ede9fe;
+    --orange:     #ea580c;
+    --orange-light:#ffedd5;
+    --teal:       #0891b2;
+    --teal-light: #cffafe;
+    --gray:       #64748b;
+    --gray-light: #f1f5f9;
+    --border:     #e2e8f0;
+    --text:       #0f172a;
+    --text-muted: #64748b;
+    --white:      #ffffff;
+    --shadow:     0 4px 24px rgba(0,0,0,.10);
+    --shadow-sm:  0 2px 8px rgba(0,0,0,.07);
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f0f4f9;
+    color: var(--text);
+    padding: 32px;
+    min-height: 100vh;
+  }
+
+  /* ── Header ──────────────────────────────────────── */
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--blue-dark);
+    color: white;
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--blue-dark);
+    letter-spacing: -.02em;
+  }
+  .header h1 span { color: var(--blue-mid); }
+  .header p {
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  /* ── Legend ──────────────────────────────────────── */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* ── Main layout ─────────────────────────────────── */
+  .diagram {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── Layers ──────────────────────────────────────── */
+  .layer {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .layer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 22px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: white;
+  }
+  .layer-header .layer-icon { font-size: 16px; }
+  .layer-body {
+    padding: 20px 22px 22px;
+  }
+
+  .layer-blue   .layer-header { background: var(--blue-dark); }
+  .layer-green  .layer-header { background: #065f46; }
+  .layer-purple .layer-header { background: var(--purple); }
+  .layer-teal   .layer-header { background: var(--teal); }
+  .layer-orange .layer-header { background: var(--orange); }
+
+  /* ── Section grouping inside layer ──────────────── */
+  .section-group {
+    margin-bottom: 16px;
+  }
+  .section-group:last-child { margin-bottom: 0; }
+  .section-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    padding-left: 2px;
+  }
+
+  /* ── Module cards ────────────────────────────────── */
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 10px;
+  }
+  .module-card {
+    border-radius: 10px;
+    padding: 12px 13px;
+    border: 1.5px solid transparent;
+    transition: transform .15s, box-shadow .15s;
+    cursor: default;
+    position: relative;
+  }
+  .module-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+  .module-card .m-icon {
+    font-size: 20px;
+    margin-bottom: 7px;
+    display: block;
+  }
+  .module-card .m-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .module-card .m-desc {
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+  .module-card .m-tag {
+    position: absolute;
+    top: 8px; right: 8px;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  /* Color variants for module cards */
+  .mc-blue   { background: var(--blue-light);   border-color: #bfdbfe; color: #1e3a8a; }
+  .mc-blue   .m-desc { color: #3b82f6; }
+  .mc-green  { background: var(--green-light);  border-color: #a7f3d0; color: #064e3b; }
+  .mc-green  .m-desc { color: #059669; }
+  .mc-purple { background: var(--purple-light); border-color: #ddd6fe; color: #4c1d95; }
+  .mc-purple .m-desc { color: #7c3aed; }
+  .mc-orange { background: var(--orange-light); border-color: #fed7aa; color: #7c2d12; }
+  .mc-orange .m-desc { color: #ea580c; }
+  .mc-teal   { background: var(--teal-light);   border-color: #a5f3fc; color: #164e63; }
+  .mc-teal   .m-desc { color: #0891b2; }
+  .mc-gray   { background: var(--gray-light);   border-color: var(--border); color: #334155; }
+  .mc-gray   .m-desc { color: #64748b; }
+
+  .tag-ai     { background: #fef3c7; color: #92400e; }
+  .tag-admin  { background: #fee2e2; color: #991b1b; }
+  .tag-export { background: #ede9fe; color: #5b21b6; }
+
+  /* ── Arrows between layers ───────────────────────── */
+  .arrow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+    padding: 4px 0;
+  }
+  .arrow-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 10.5px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .arrow-line {
+    width: 2px;
+    height: 28px;
+    background: linear-gradient(to bottom, #94a3b8, #cbd5e1);
+    position: relative;
+  }
+  .arrow-line::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 7px solid #94a3b8;
+  }
+
+  /* ── Backend row ──────────────────────────────────── */
+  .backend-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ── Services grid (bottom) ──────────────────────── */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+  }
+  .service-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border: 1.5px solid var(--border);
+  }
+  .service-icon {
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .service-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .service-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* ── DB tables ─────────────────────────────────────── */
+  .db-tables {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .db-table {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 11px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #334155;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Auth methods ─────────────────────────────────── */
+  .auth-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .auth-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  /* ── Roles ──────────────────────────────────────────── */
+  .roles-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .role-card {
+    flex: 1;
+    min-width: 120px;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+  }
+  .role-card .role-icon { font-size: 22px; margin-bottom: 4px; }
+  .role-card .role-name { font-size: 13px; font-weight: 700; }
+  .role-card .role-perms { font-size: 10.5px; margin-top: 4px; line-height: 1.5; color: var(--text-muted); }
+
+  /* ── Tech badges ──────────────────────────────────── */
+  .tech-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .tech-badge {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  /* ── Footer ─────────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  @media print {
+    body { padding: 16px; background: white; }
+    .module-card:hover { transform: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────── -->
+<div class="header">
+  <div class="header-badge">
+    <span>🏛</span> CAGE-RS · Controladoria e Auditoria-Geral do Estado
+  </div>
+  <h1>SIGA — <span>Sistema Integrado de Gestão de Atividades</span></h1>
+  <p>Diagrama de arquitetura · Plataforma de Gestão de Processos, Procedimentos e Controle Interno</p>
+</div>
+
+<!-- ── LEGEND ──────────────────────────────────────────── -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#dbeafe;border:1.5px solid #bfdbfe"></div> Módulos Principais</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d1fae5;border:1.5px solid #a7f3d0"></div> Qualidade / Auditoria</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ede9fe;border:1.5px solid #ddd6fe"></div> Modelagem Visual</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ffedd5;border:1.5px solid #fed7aa"></div> Inteligência Artificial</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#cffafe;border:1.5px solid #a5f3fc"></div> Analytics / Dados</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f1f5f9;border:1.5px solid #e2e8f0"></div> Gestão / Administração</div>
+</div>
+
+<div class="diagram">
+
+  <!-- ════════════════════════════════════════════════ -->
+  <!-- LAYER 1: FRONT-END / MÓDULOS                    -->
+  <!-- ════════════════════════════════════════════════ -->
+  <div class="layer layer-blue">
+    <div class="layer-header">
+      <span class="layer-icon">🖥</span>
+      Camada de Apresentação — Aplicação Web (Single Page Application · HTML/CSS/JS)
+    </div>
+    <div class="layer-body">
+
+      <!-- Módulos Principais -->
+      <div class="section-group">
+        <div class="section-label">📋 Gestão de Procedimentos Operacionais (POPs)</div>
+        <div class="modules-grid">
+          <div class="module-card mc-blue">
+            <span class="m-icon">📄</span>
+            <div class="m-title">Editor de POPs</div>
+            <div class="m-desc">Criação e edição de procedimentos com versionamento e histórico</div>
+          </div>
+          <div class="module-card mc-blue">
+            <span class="m-icon">🔄</span>
+            <div class="m-title">Fluxo do Processo</div>
+            <div class="m-desc">Mapeamento visual passo a passo com papéis e responsáveis</div>
+          </div>
+          <div class="module-card mc-blue">
+            <span class="m-icon">👥</span>
+            <div class="m-title">Responsabilidades</div>
+            <div class="m-desc">Atribuição de papéis e permissões por etapa do processo</div>
+          </div>
+          <div class="module-card mc-blue">
+            <span class="m-icon">📊</span>
+            <div class="m-title">Indicadores (KPIs)</div>
+            <div class="m-desc">Definição e acompanhamento de indicadores de desempenho</div>
+          </div>
+          <div class="module-card mc-blue">
+            <span class="m-icon">❓</span>
+            <div class="m-title">FAQ</div>
+            <div class="m-desc">Perguntas e respostas do processo com geração automática via IA</div>
+            <span class="m-tag tag-ai">IA</span>
+          </div>
+          <div class="module-card mc-blue">
+            <span class="m-icon">📜</span>
+            <div class="m-title">Normas & Revisões</div>
+            <div class="m-desc">Legislação aplicável, rastreabilidade e histórico de revisões</div>
+          </div>
+          <div class="module-card mc-blue">
+            <span class="m-icon">⚠️</span>
+            <div class="m-title">Gestão de Riscos</div>
+            <div class="m-desc">Identificação e avaliação de riscos operacionais por processo</div>
+          </div>
+          <div class="module-card mc-blue">
+            <span class="m-icon">✅</span>
+            <div class="m-title">Plano de Ação</div>
+            <div class="m-desc">Ações corretivas com prazos, responsáveis e status</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Módulos de Modelagem -->
+      <div class="section-group">
+        <div class="section-label">🗂 Arquitetura & Modelagem</div>
+        <div class="modules-grid">
+          <div class="module-card mc-purple">
+            <span class="m-icon">🏛</span>
+            <div class="m-title">Arquitetura de Processos</div>
+            <div class="m-desc">Hierarquia macro → processo → subprocesso com status de mapeamento</div>
+          </div>
+          <div class="module-card mc-purple">
+            <span class="m-icon">🏗</span>
+            <div class="m-title">Modelador BPMN 2.0</div>
+            <div class="m-desc">Editor visual de diagramas BPMN com swimlanes e gateways</div>
+          </div>
+          <div class="module-card mc-purple">
+            <span class="m-icon">🎨</span>
+            <div class="m-title">Desenhar Fluxo</div>
+            <div class="m-desc">Canvas livre (Excalidraw) com conversão texto → fluxograma</div>
+          </div>
+          <div class="module-card mc-purple">
+            <span class="m-icon">🗺</span>
+            <div class="m-title">Cadeia de Valor</div>
+            <div class="m-desc">Mapa estratégico e cadeia de valor institucional com métricas</div>
+          </div>
+          <div class="module-card mc-purple">
+            <span class="m-icon">📝</span>
+            <div class="m-title">Quadro de Esboço</div>
+            <div class="m-desc">Canvas colaborativo para rascunhos e brainstorm de processos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Módulos de Qualidade -->
+      <div class="section-group">
+        <div class="section-label">🔍 Auditoria & Qualidade</div>
+        <div class="modules-grid">
+          <div class="module-card mc-green">
+            <span class="m-icon">🔍</span>
+            <div class="m-title">Auditoria de Processos</div>
+            <div class="m-desc">Planos de auditoria, execução de checklists e registro de NCs</div>
+          </div>
+          <div class="module-card mc-green">
+            <span class="m-icon">☑️</span>
+            <div class="m-title">Checklists</div>
+            <div class="m-desc">Checklists inteligentes gerados por IA com rastreamento de conformidade</div>
+            <span class="m-tag tag-ai">IA</span>
+          </div>
+          <div class="module-card mc-green">
+            <span class="m-icon">📈</span>
+            <div class="m-title">Maturidade</div>
+            <div class="m-desc">Avaliação do nível de maturidade dos processos mapeados</div>
+          </div>
+          <div class="module-card mc-green">
+            <span class="m-icon">🗓</span>
+            <div class="m-title">Acompanhamento</div>
+            <div class="m-desc">Reuniões de acompanhamento e monitoramento periódico dos processos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics e IA -->
+      <div class="section-group">
+        <div class="section-label">🤖 Inteligência Artificial & Analytics</div>
+        <div class="modules-grid">
+          <div class="module-card mc-orange">
+            <span class="m-icon">🤖</span>
+            <div class="m-title">Análise Inteligente</div>
+            <div class="m-desc">Análise do processo com sugestões de melhoria via Google Gemini</div>
+            <span class="m-tag tag-ai">Gemini</span>
+          </div>
+          <div class="module-card mc-orange">
+            <span class="m-icon">📄</span>
+            <div class="m-title">Relatório IA</div>
+            <div class="m-desc">Geração automática de relatórios executivos em formato Word/PPT</div>
+            <span class="m-tag tag-export">Export</span>
+          </div>
+          <div class="module-card mc-teal">
+            <span class="m-icon">📉</span>
+            <div class="m-title">Indicadores CAGE</div>
+            <div class="m-desc">Painel institucional com importação SISPLAN e gráficos comparativos</div>
+          </div>
+          <div class="module-card mc-teal">
+            <span class="m-icon">🔎</span>
+            <div class="m-title">Busca Global</div>
+            <div class="m-desc">Pesquisa full-text em tempo real por todos os POPs e processos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gestão e Admin -->
+      <div class="section-group">
+        <div class="section-label">⚙️ Gestão & Administração</div>
+        <div class="modules-grid">
+          <div class="module-card mc-gray">
+            <span class="m-icon">📅</span>
+            <div class="m-title">Gestão EPP</div>
+            <div class="m-desc">Plano Anual de Trabalho (PAT) e dashboard de desempenho da equipe</div>
+            <span class="m-tag tag-admin">Admin</span>
+          </div>
+          <div class="module-card mc-gray">
+            <span class="m-icon">📚</span>
+            <div class="m-title">Documentos e Manuais</div>
+            <div class="m-desc">Repositório de PDFs, Word, PPT e imagens institucionais</div>
+          </div>
+          <div class="module-card mc-gray">
+            <span class="m-icon">💧</span>
+            <div class="m-title">Drops de Conhecimento</div>
+            <div class="m-desc">Publicações mensais de conhecimento institucional</div>
+          </div>
+          <div class="module-card mc-gray">
+            <span class="m-icon">💡</span>
+            <div class="m-title">Caixinha de Ideias</div>
+            <div class="m-desc">Canal de sugestões de melhoria via Microsoft Forms</div>
+          </div>
+          <div class="module-card mc-gray">
+            <span class="m-icon">👤</span>
+            <div class="m-title">Gestão de Usuários</div>
+            <div class="m-desc">Perfis, permissões, aprovação de acesso e monitoramento</div>
+            <span class="m-tag tag-admin">Admin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Exportação -->
+      <div class="section-group">
+        <div class="section-label">📤 Exportação e Bibliotecas Visuais</div>
+        <div class="tech-badges">
+          <span class="tech-badge">📄 Word (docx)</span>
+          <span class="tech-badge">📊 PowerPoint (pptxgenjs)</span>
+          <span class="tech-badge">📋 Excel / XLSX</span>
+          <span class="tech-badge">🖼 SVG / PNG</span>
+          <span class="tech-badge">📑 PDF (pdf.js)</span>
+          <span class="tech-badge">📈 Chart.js (gráficos)</span>
+          <span class="tech-badge">🔀 SortableJS (drag & drop)</span>
+          <span class="tech-badge">🗂 bpmn-js v17</span>
+          <span class="tech-badge">🎨 Excalidraw 0.18</span>
+        </div>
+      </div>
+
+    </div><!-- /layer-body -->
+  </div><!-- /layer frontend -->
+
+  <!-- ── Connector ─────────────────────────────────── -->
+  <div class="arrow-row">
+    <div class="arrow-item">
+      <div class="arrow-line"></div>
+      <span>HTTPS / REST</span>
+    </div>
+    <div class="arrow-item">
+      <div class="arrow-line"></div>
+      <span>WebSocket (Realtime)</span>
+    </div>
+    <div class="arrow-item">
+      <div class="arrow-line"></div>
+      <span>OAuth 2.0</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════ -->
+  <!-- LAYER 2: BACKEND — SUPABASE                     -->
+  <!-- ════════════════════════════════════════════════ -->
+  <div class="layer layer-green">
+    <div class="layer-header">
+      <span class="layer-icon">☁️</span>
+      Camada de Backend — Supabase (BaaS · PostgreSQL + Auth + Storage + Edge Functions)
+    </div>
+    <div class="layer-body">
+      <div class="backend-row">
+
+        <!-- Banco de Dados -->
+        <div>
+          <div class="section-label">🗄 Banco de Dados (PostgreSQL · Row Level Security)</div>
+          <div class="db-tables">
+            <div class="db-table">gestpop_workspace</div>
+            <div class="db-table">gestpop_editors</div>
+            <div class="db-table">gestpop_requests</div>
+            <div class="db-table">gestpop_history</div>
+            <div class="db-table">gestpop-images (Storage)</div>
+          </div>
+          <div style="margin-top:14px;">
+            <div class="section-label">⚡ Edge Functions (Serverless)</div>
+            <div class="db-tables">
+              <div class="db-table">gemini-proxy</div>
+              <div class="db-table">image-proxy</div>
+              <div class="db-table">send-alert-email</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auth + Sync -->
+        <div>
+          <div class="section-label">🔐 Autenticação & Sincronização</div>
+          <div class="auth-pills">
+            <div class="auth-pill">🔵 Google OAuth 2.0</div>
+            <div class="auth-pill">🟦 Microsoft Azure AD (@sefaz.rs.gov.br)</div>
+            <div class="auth-pill">✉️ E-mail / Senha</div>
+          </div>
+          <div style="margin-top:14px;">
+            <div class="section-label">👥 Perfis de Acesso</div>
+            <div class="roles-row">
+              <div class="role-card" style="background:#fee2e2;border:1.5px solid #fca5a5;">
+                <div class="role-icon">🛡</div>
+                <div class="role-name">Admin</div>
+                <div class="role-perms">Acesso total, gestão de usuários, configurações</div>
+              </div>
+              <div class="role-card" style="background:#dbeafe;border:1.5px solid #93c5fd;">
+                <div class="role-icon">✏️</div>
+                <div class="role-name">Editor</div>
+                <div class="role-perms">Cria e edita POPs, planos de auditoria e processos</div>
+              </div>
+              <div class="role-card" style="background:#f1f5f9;border:1.5px solid #cbd5e1;">
+                <div class="role-icon">👁</div>
+                <div class="role-name">Visualizador</div>
+                <div class="role-perms">Somente leitura, sem edição de conteúdo</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Connector ─────────────────────────────────── -->
+  <div class="arrow-row">
+    <div class="arrow-item">
+      <div class="arrow-line"></div>
+      <span>API Key (proxy seguro)</span>
+    </div>
+    <div class="arrow-item">
+      <div class="arrow-line"></div>
+      <span>OAuth / REST</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════ -->
+  <!-- LAYER 3: SERVIÇOS EXTERNOS                      -->
+  <!-- ════════════════════════════════════════════════ -->
+  <div class="layer layer-orange">
+    <div class="layer-header">
+      <span class="layer-icon">🌐</span>
+      Serviços e Integrações Externas
+    </div>
+    <div class="layer-body">
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="service-icon">🤖</div>
+          <div>
+            <div class="service-title">Google Gemini API</div>
+            <div class="service-desc">IA generativa para análise de processos, geração de FAQs, checklists inteligentes, relatórios e análise de PDFs</div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">🔵</div>
+          <div>
+            <div class="service-title">Google OAuth</div>
+            <div class="service-desc">Autenticação social com contas Google para todos os usuários</div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">🟦</div>
+          <div>
+            <div class="service-title">Microsoft Azure AD</div>
+            <div class="service-desc">SSO corporativo restrito ao domínio @sefaz.rs.gov.br para servidores estaduais</div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">📊</div>
+          <div>
+            <div class="service-title">SISPLAN (Google Sheets)</div>
+            <div class="service-desc">Importação automática de indicadores estratégicos via CSV do sistema de planejamento estadual</div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">📝</div>
+          <div>
+            <div class="service-title">Microsoft Forms</div>
+            <div class="service-desc">Canal de coleta de ideias e sugestões de melhoria dos servidores</div>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">📦</div>
+          <div>
+            <div class="service-title">esm.sh / unpkg CDN</div>
+            <div class="service-desc">Carregamento de bibliotecas front-end (Excalidraw, bpmn-js, Chart.js) diretamente do CDN</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════ -->
+  <!-- NUMBERS ROW                                      -->
+  <!-- ════════════════════════════════════════════════ -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:4px;">
+    <div style="background:white;border-radius:12px;box-shadow:var(--shadow-sm);border:1.5px solid var(--border);padding:16px;text-align:center;">
+      <div style="font-size:28px;font-weight:800;color:var(--blue-mid);">16+</div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;font-weight:500;">Módulos funcionais</div>
+    </div>
+    <div style="background:white;border-radius:12px;box-shadow:var(--shadow-sm);border:1.5px solid var(--border);padding:16px;text-align:center;">
+      <div style="font-size:28px;font-weight:800;color:var(--green);">5</div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;font-weight:500;">Tabelas no banco de dados</div>
+    </div>
+    <div style="background:white;border-radius:12px;box-shadow:var(--shadow-sm);border:1.5px solid var(--border);padding:16px;text-align:center;">
+      <div style="font-size:28px;font-weight:800;color:var(--purple);">3</div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;font-weight:500;">Perfis de acesso</div>
+    </div>
+    <div style="background:white;border-radius:12px;box-shadow:var(--shadow-sm);border:1.5px solid var(--border);padding:16px;text-align:center;">
+      <div style="font-size:28px;font-weight:800;color:var(--orange);">1</div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;font-weight:500;">Arquivo único (SPA)</div>
+    </div>
+    <div style="background:white;border-radius:12px;box-shadow:var(--shadow-sm);border:1.5px solid var(--border);padding:16px;text-align:center;">
+      <div style="font-size:28px;font-weight:800;color:var(--teal);">3</div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;font-weight:500;">Edge Functions serverless</div>
+    </div>
+    <div style="background:white;border-radius:12px;box-shadow:var(--shadow-sm);border:1.5px solid var(--border);padding:16px;text-align:center;">
+      <div style="font-size:28px;font-weight:800;color:#059669;">9+</div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;font-weight:500;">Formatos de exportação</div>
+    </div>
+  </div>
+
+</div><!-- /diagram -->
+
+<div class="footer" style="margin-top:32px;">
+  SIGA · CAGE-RS · Controladoria e Auditoria-Geral do Estado do Rio Grande do Sul<br>
+  Diagrama gerado automaticamente com base no código-fonte do sistema
+</div>
+
+</body>
+</html>
