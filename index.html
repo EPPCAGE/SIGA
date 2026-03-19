@@ -5425,6 +5425,13 @@ function toggleEditMode(forceState) {
     if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar','warn');
     else showToast('Modo visualização ativo');
   }
+  // Ao sair do modo edição, salvar se houver alterações pendentes
+  if(!editMode && currentUser && window._appInitialized) {
+    const unsavedDot = document.getElementById('unsaved-dot');
+    if(unsavedDot && unsavedDot.style.display === 'inline-block') {
+      saveToCloud();
+    }
+  }
 }
 
 // ── Drag-and-Drop para reorganização de layout em modo edição ──────────────────
@@ -6017,6 +6024,7 @@ function toggleAutomatico(p, si, ai) {
   actions[ai] = a;
   markChanged();
   renderStep(p, si);
+  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleLoop(p, si, ai) {
@@ -6028,6 +6036,7 @@ function toggleLoop(p, si, ai) {
   actions[ai] = a;
   markChanged();
   renderStep(p, si);
+  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleAutomaticoBranch(p, si, ai, bi, bai) {
@@ -6041,6 +6050,7 @@ function toggleAutomaticoBranch(p, si, ai, bi, bai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
+  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleLoopBranch(p, si, ai, bi, bai) {
@@ -6054,6 +6064,7 @@ function toggleLoopBranch(p, si, ai, bi, bai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
+  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function addStepAction(p,si){
@@ -8388,9 +8399,20 @@ function saveActionModal() {
   // Preserve flags toggled via ícone (⚙️ automatico, 🔄 loop) — não passam pelo modal
   const step = DATA[_actP].steps[_actSi];
   const _existingActions = _actIsTobe ? (step.tobe?.actions || step.actions) : step.actions;
-  const _existingObj = actionObj(_existingActions[_actBi < 0 ? _actAi : _actAi] || {});
-  const _existingAuto = _actBi < 0 ? (_existingObj.automatico || false) : false;
-  const _existingLoop = _actBi < 0 ? (_existingObj.loop || false) : false;
+  // Recuperar objeto existente para QUALQUER nível (root ou branch), preservando loop/automatico
+  let _existingObj = {};
+  if(_actBi < 0) {
+    _existingObj = actionObj(_existingActions[_actAi] || {});
+  } else if(_actNbi >= 0) {
+    const _p = actionObj(_existingActions[_actAi] || {});
+    const _s = actionObj((_p.branches?.[_actBi]?.actions || [])[_actBai] || {});
+    _existingObj = actionObj((_s.branches?.[_actNbi]?.actions || [])[_actNbai] || {});
+  } else {
+    const _p = actionObj(_existingActions[_actAi] || {});
+    _existingObj = actionObj((_p.branches?.[_actBi]?.actions || [])[_actBai] || {});
+  }
+  const _existingAuto = _existingObj.automatico || false;
+  const _existingLoop = _existingObj.loop || false;
   const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo, automatico: _existingAuto, loop: _existingLoop };
 
   if(_actNbi >= 0) {
@@ -8426,6 +8448,8 @@ function saveActionModal() {
   renderRoles(_actP);
   closeActionModal();
   markChanged();
+  // Salvar diretamente — o usuário clicou em "Salvar" explicitamente
+  if(currentUser && window._appInitialized) saveToCloud();
   showToast('✅ Ação salva!', 'success');
 }
 
@@ -10987,7 +11011,7 @@ window.addEventListener('beforeunload', () => {
   // Montar payload — limite keepalive do Chrome é 64KB (65536 bytes)
   // Incluir repoDocs e drops apenas se couberem no orçamento
   const KEEPALIVE_LIMIT = 63000; // margem de segurança abaixo de 64KB
-  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores']);
+  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores','homeCards','aptCatalog','quadro']);
   const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
 
   // Payload essencial (POPs, PAT, arquitetura)
@@ -11076,7 +11100,7 @@ async function saveToCloud(attempt=1) {
 
   try { harvestEditables(); } catch(e) { console.warn('harvestEditables:', e); }
 
-  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores']);
+  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores','homeCards','aptCatalog','quadro']);
   const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
   // Strip session-only transient fields (prefixed with _) before persisting
   function _stripTransient(obj) {
