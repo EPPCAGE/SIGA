@@ -3233,8 +3233,10 @@ Fim"></textarea>
       <!-- Excalidraw iframe -->
       <div id="fd-canvas-wrap" style="flex:1;overflow:hidden;position:relative;">
         <div id="fd-exc-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:white;z-index:2;flex-direction:column;gap:12px;">
-          <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="80 20" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="1s" repeatCount="indefinite"/></circle></svg>
-          <div style="font-size:13px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando Excalidraw…</div>
+          <svg id="fd-exc-spinner" width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="80 20" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="1s" repeatCount="indefinite"/></circle></svg>
+          <div id="fd-exc-loading-msg" style="font-size:13px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando Excalidraw…</div>
+          <div id="fd-exc-loading-sub" style="font-size:11px;color:#94a3b8;display:none;">Aguardando módulos externos (esm.sh)…</div>
+          <button id="fd-exc-retry-btn" onclick="fdRetryExcalidraw()" style="display:none;padding:8px 20px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">↺ Tentar novamente</button>
         </div>
         <iframe id="fd-excalidraw-frame" style="width:100%;height:100%;border:none;display:block;" src="about:blank" allow="clipboard-read; clipboard-write"></iframe>
       </div>
@@ -20028,26 +20030,79 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
   }
 
   // ── Ensure Excalidraw iframe is initialised ───────────────────
+  let _pendingCbs = [];
+  let _loadTimeout = null;
+
+  function _showExcLoadingError() {
+    const msg = document.getElementById('fd-exc-loading-msg');
+    const sub = document.getElementById('fd-exc-loading-sub');
+    const btn = document.getElementById('fd-exc-retry-btn');
+    const spinner = document.getElementById('fd-exc-spinner');
+    if (msg) msg.textContent = 'Não foi possível carregar o Excalidraw.';
+    if (sub) { sub.textContent = 'Verifique sua conexão ou tente novamente.'; sub.style.display = 'block'; }
+    if (btn) btn.style.display = 'inline-block';
+    if (spinner) spinner.style.display = 'none';
+  }
+
   function _ensureFrame(cb) {
     const frame = document.getElementById('fd-excalidraw-frame');
     if (!frame) return;
     if (_excReady) { if (cb) cb(frame); return; }
-    if (!_excBlobUrl) {
-      const blob = new Blob([_getExcalidrawHtml()], { type: 'text/html' });
-      _excBlobUrl = URL.createObjectURL(blob);
-      frame.src = _excBlobUrl;
-    }
-    const onReady = ev => {
-      if (ev.data?.type === 'EXC_READY') {
-        _excReady = true;
+    if (cb) _pendingCbs.push(cb);
+    if (_excBlobUrl) return; // already loading, just queued cb
+
+    const blob = new Blob([_getExcalidrawHtml()], { type: 'text/html' });
+    _excBlobUrl = URL.createObjectURL(blob);
+    frame.src = _excBlobUrl;
+
+    // Show sub-hint after 5 s
+    const hintTimer = setTimeout(() => {
+      const sub = document.getElementById('fd-exc-loading-sub');
+      if (sub && !_excReady) sub.style.display = 'block';
+    }, 5000);
+
+    // Timeout after 25 s → show error
+    _loadTimeout = setTimeout(() => {
+      if (!_excReady) {
+        clearTimeout(hintTimer);
         window.removeEventListener('message', onReady);
-        const loading = document.getElementById('fd-exc-loading');
-        if (loading) loading.style.display = 'none';
-        if (cb) cb(frame);
+        _showExcLoadingError();
       }
+    }, 25000);
+
+    const onReady = ev => {
+      if (ev.data?.type !== 'EXC_READY') return;
+      _excReady = true;
+      clearTimeout(hintTimer);
+      clearTimeout(_loadTimeout);
+      window.removeEventListener('message', onReady);
+      const loading = document.getElementById('fd-exc-loading');
+      if (loading) loading.style.display = 'none';
+      const pending = _pendingCbs.splice(0);
+      pending.forEach(fn => fn(frame));
     };
     window.addEventListener('message', onReady);
   }
+
+  window.fdRetryExcalidraw = function() {
+    _excReady   = false;
+    _excBlobUrl = null;
+    _pendingCbs = [];
+    clearTimeout(_loadTimeout);
+    const frame = document.getElementById('fd-excalidraw-frame');
+    if (frame) frame.src = 'about:blank';
+    const loading = document.getElementById('fd-exc-loading');
+    const msg     = document.getElementById('fd-exc-loading-msg');
+    const sub     = document.getElementById('fd-exc-loading-sub');
+    const btn     = document.getElementById('fd-exc-retry-btn');
+    const spinner = document.getElementById('fd-exc-spinner');
+    if (loading)  loading.style.display  = 'flex';
+    if (msg)      msg.textContent        = 'Carregando Excalidraw…';
+    if (sub)      sub.style.display      = 'none';
+    if (btn)      btn.style.display      = 'none';
+    if (spinner)  spinner.style.display  = '';
+    _fdLoad();
+  };
 
   // ── Send Mermaid code to Excalidraw iframe ────────────────────
   function _render(mermaidCode) {
