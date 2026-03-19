@@ -20872,7 +20872,7 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
     const col = {};
     headers.forEach((h, i) => {
       if(h.includes('divis'))                                                                                                             col.divisao       = i;
-      if(h.includes('digo') || (h.includes('cod') && !h.includes('per')) || (h.includes('indicador') && !h.includes('enunciado')))      col.codigo        = i;
+      if(col.codigo === undefined && (h.includes('digo') || (h.includes('cod') && !h.includes('per')) || (h.includes('indicador') && !h.includes('enunciado') && !h.includes('ciclo') && !h.includes('divis') && !h.includes('period')))) col.codigo = i;
       if(h.includes('tipo') || h.includes('nivel') || h.includes('nvel'))                                                               col.tipoNivel     = i;
       if(h.includes('enunciado'))                                                                                                         col.enunciado     = i;
       if(h.includes('descri'))                                                                                                            col.descricao     = i;
