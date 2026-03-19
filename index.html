@@ -4991,7 +4991,9 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
         <thead>
           <tr>
             <th>Período</th>
+            <th>Ciclo</th>
             <th>Divisão</th>
+            <th>PPE?</th>
             <th>Indicador</th>
             <th>Enunciado</th>
             <th>Meta</th>
@@ -20866,19 +20868,22 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
 
     const col = {};
     headers.forEach((h, i) => {
-      if(h.includes('divis')) col.divisao = i;
-      if(h.includes('digo') || (h.includes('cod') && !h.includes('per')) || (h.includes('indicador') && !h.includes('enunciado'))) col.codigo = i;
-      if(h.includes('tipo') || h.includes('nivel') || h.includes('nvel')) col.tipoNivel = i;
-      if(h.includes('enunciado')) col.enunciado = i;
-      if(h.includes('descri')) col.descricao = i;
-      if(h.includes('period') || h.includes('aval')) col.periodo = i;
-      if(h.includes('justificativa')) col.justificativa = i;
-      if(h.includes('ndice') || h.includes('indice')) col.pctIndice = i;
-      if(h.includes('meta') && col.meta === undefined) col.meta = i;
-      if(h.includes('realizado') && !h.includes('acum') && !h.includes('cumul') && !h.includes('%') && col.realizado === undefined) col.realizado = i;
-      if(h.includes('realizado') && !h.includes('acum') && !h.includes('cumul') && h.includes('%') && col.pctRealizado === undefined) col.pctRealizado = i;
-      if((h.includes('acum') || h.includes('cumul')) && !h.includes('%') && col.realizadoAcum === undefined) col.realizadoAcum = i;
-      if((h.includes('acum') || h.includes('cumul')) && h.includes('%') && col.pctRealizAcum === undefined) col.pctRealizAcum = i;
+      if(h.includes('divis'))                                                                                                             col.divisao       = i;
+      if(h.includes('digo') || (h.includes('cod') && !h.includes('per')) || (h.includes('indicador') && !h.includes('enunciado')))      col.codigo        = i;
+      if(h.includes('tipo') || h.includes('nivel') || h.includes('nvel'))                                                               col.tipoNivel     = i;
+      if(h.includes('enunciado'))                                                                                                         col.enunciado     = i;
+      if(h.includes('descri'))                                                                                                            col.descricao     = i;
+      if(h.includes('periodicidad'))                                                                                                      col.periodicidade = i;
+      else if(h.includes('period') || h.includes('aval'))                                                                               col.periodo       = i;
+      if(h.includes('ciclo'))                                                                                                             col.ciclo         = i;
+      if(h.includes('ppe'))                                                                                                               col.ppe           = i;
+      if(h.includes('justificativa'))                                                                                                     col.justificativa = i;
+      if(h.includes('ndice') || h.includes('indice'))                                                                                    col.pctIndice     = i;
+      if(h.includes('meta') && col.meta === undefined)                                                                                   col.meta          = i;
+      if(h.includes('realizado') && !h.includes('acum') && !h.includes('cumul') && !h.includes('%') && col.realizado  === undefined)    col.realizado     = i;
+      if(h.includes('realizado') && !h.includes('acum') && !h.includes('cumul') &&  h.includes('%') && col.pctRealizado === undefined)  col.pctRealizado  = i;
+      if((h.includes('acum') || h.includes('cumul')) && !h.includes('%') && col.realizadoAcum === undefined)                            col.realizadoAcum = i;
+      if((h.includes('acum') || h.includes('cumul')) &&  h.includes('%') && col.pctRealizAcum === undefined)                            col.pctRealizAcum = i;
     });
     const analiseIdxs = [];
     headers.forEach((h, i) => { if(h.includes('anali') || h.includes('anlise') || h.includes('nalis') || h.includes('alise')) analiseIdxs.push(i); });
@@ -20899,22 +20904,25 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
       if(!enunciado && !codigo) continue;
       const periodo = col.periodo !== undefined ? _parsePeriodo(r[col.periodo]) : '';
       newRows.push({
-        divisao:       col.divisao      !== undefined ? String(r[col.divisao]).trim()      : '',
+        divisao:        col.divisao        !== undefined ? String(r[col.divisao]).trim()        : '',
         codigo,
-        tipoNivel:     col.tipoNivel    !== undefined ? String(r[col.tipoNivel]).trim()     : '',
+        tipoNivel:      col.tipoNivel      !== undefined ? String(r[col.tipoNivel]).trim()      : '',
         enunciado,
-        descricao:     col.descricao    !== undefined ? String(r[col.descricao]).trim()     : '',
+        descricao:      col.descricao      !== undefined ? String(r[col.descricao]).trim()      : '',
+        periodicidade:  col.periodicidade  !== undefined ? String(r[col.periodicidade]).trim()  : '',
         periodo,
-        justificativa: col.justificativa!== undefined ? String(r[col.justificativa]).trim(): '',
-        analise:       col.analise      !== undefined ? String(r[col.analise]).trim()       : '',
-        pctIndice:     col.pctIndice    !== undefined ? _parseNum(r[col.pctIndice])         : null,
-        meta:          col.meta         !== undefined ? _parseNum(r[col.meta])              : null,
-        realizado:     col.realizado    !== undefined ? _parseNum(r[col.realizado])         : null,
-        pctRealizado:  col.pctRealizado !== undefined ? _parseNum(r[col.pctRealizado])      : null,
-        analise2:      col.analise2     !== undefined ? String(r[col.analise2]).trim()      : '',
-        realizadoAcum: col.realizadoAcum!== undefined ? _parseNum(r[col.realizadoAcum])    : null,
-        pctRealizAcum: col.pctRealizAcum!== undefined ? _parseNum(r[col.pctRealizAcum])    : null,
-        _importedAt:   importedAt
+        ciclo:          col.ciclo          !== undefined ? String(r[col.ciclo]).trim()          : '',
+        ppe:            col.ppe            !== undefined ? String(r[col.ppe]).trim()            : '',
+        justificativa:  col.justificativa  !== undefined ? String(r[col.justificativa]).trim()  : '',
+        analise:        col.analise        !== undefined ? String(r[col.analise]).trim()        : '',
+        pctIndice:      col.pctIndice      !== undefined ? _parseNum(r[col.pctIndice])          : null,
+        meta:           col.meta           !== undefined ? _parseNum(r[col.meta])               : null,
+        realizado:      col.realizado      !== undefined ? _parseNum(r[col.realizado])          : null,
+        pctRealizado:   col.pctRealizado   !== undefined ? _parseNum(r[col.pctRealizado])       : null,
+        analise2:       col.analise2       !== undefined ? String(r[col.analise2]).trim()       : '',
+        realizadoAcum:  col.realizadoAcum  !== undefined ? _parseNum(r[col.realizadoAcum])     : null,
+        pctRealizAcum:  col.pctRealizAcum  !== undefined ? _parseNum(r[col.pctRealizAcum])     : null,
+        _importedAt:    importedAt
       });
     }
 
@@ -20939,7 +20947,7 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
           divisao: nr.divisao,
           pop: '',
           meta: nr.meta !== null ? String(nr.meta) : '',
-          periodicidade: 'mensal',
+          periodicidade: nr.periodicidade || 'mensal',
           responsavel: '',
           formula: '',
           fonte: 'Importado SISPLAN'
@@ -21121,10 +21129,13 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
       const sample = resultados.filter(r => r.codigo === selInd).sort((a,b) => (b.periodo||'').localeCompare(a.periodo||''))[0];
       if(sample) {
         const fields = [
-          { label: '☑️ Indicador',     value: sample.codigo },
-          { label: '🔤 Enunciado',      value: sample.enunciado },
-          { label: '🔡 Descrição',      value: sample.descricao },
-          { label: '🧰️ Divisão',       value: sample.divisao },
+          { label: '☑️ Indicador',       value: sample.codigo },
+          { label: '🔤 Enunciado',        value: sample.enunciado },
+          { label: '🔡 Descrição',        value: sample.descricao },
+          { label: '🧰️ Divisão',         value: sample.divisao },
+          { label: '⌛ Periodicidade',    value: sample.periodicidade },
+          { label: '📅 Ciclo Indicador', value: sample.ciclo },
+          { label: '💰 PPE?',            value: sample.ppe },
         ].filter(f => f.value);
         infoBody.innerHTML = fields.map(f => `
           <div style="display:flex;flex-direction:column;gap:2px;">
@@ -21175,7 +21186,7 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
     if(count) count.textContent = filtered.length + ' registro(s)';
     if(!tbody) return;
     if(filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;color:#94a3b8;padding:24px;">Nenhum resultado para os filtros selecionados.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;color:#94a3b8;padding:24px;">Nenhum resultado para os filtros selecionados.</td></tr>`;
       return;
     }
     tbody.innerHTML = filtered.map(r => {
@@ -21186,9 +21197,12 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
       const unidade = cfg.unidade ? cfg.unidade : '%';
       const isPerc = cfg.tipo === 'percentual' || cfg.tipo === 'prazo' || cfg.tipo === 'auto';
       const fmtVal = v => v !== null && v !== undefined ? _fmtNumDec(v, cfg.casasDecimais) : '—';
+      const ppeBadge = r.ppe ? `<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${r.ppe.toLowerCase()==='sim'||r.ppe.toLowerCase()==='s'||r.ppe==='1'?'#dcfce7':'#f1f5f9'};color:${r.ppe.toLowerCase()==='sim'||r.ppe.toLowerCase()==='s'||r.ppe==='1'?'#166534':'#64748b'};">${r.ppe}</span>` : '—';
       return `<tr>
         <td style="white-space:nowrap;font-weight:600;">${_periodoLabel(r.periodo)}</td>
+        <td style="font-size:11px;color:#475569;">${r.ciclo || '—'}</td>
         <td>${r.divisao || '—'}</td>
+        <td style="text-align:center;">${ppeBadge}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${r.codigo || '—'}</td>
         <td style="max-width:220px;">${r.enunciado || '—'}</td>
         <td style="text-align:right;">${fmtVal(r.meta)}${r.meta !== null ? ' <span style="font-size:9px;color:#94a3b8;">'+unidade+'</span>' : ''}</td>
