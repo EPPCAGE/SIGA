@@ -3417,6 +3417,26 @@ Fim"></textarea>
                     <datalist id="nf-subprocesso-list"></datalist>
                   </div>
                 </div>
+
+                <!-- Painel automático da Arquitetura de Processos -->
+                <div id="nf-arq-info" style="display:none;background:#f0f6ff;border:1px solid #c5d8f5;border-radius:6px;padding:10px 13px;">
+                  <div style="font-size:10px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">📌 Da Arquitetura de Processos</div>
+                  <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px;">
+                    <div style="flex:1;min-width:150px;">
+                      <div style="font-size:11px;color:#888;margin-bottom:2px;">Divisão</div>
+                      <div id="nf-info-divisao" style="font-size:13px;font-weight:600;color:#1e3a5f;">—</div>
+                    </div>
+                    <div style="flex:1;min-width:150px;">
+                      <div style="font-size:11px;color:#888;margin-bottom:2px;">Gerente do Processo</div>
+                      <div id="nf-info-gerente" style="font-size:13px;font-weight:600;color:#1e3a5f;">—</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;color:#888;margin-bottom:5px;">Objetivos Estratégicos</div>
+                    <div id="nf-info-obj-estrategicos" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+                  </div>
+                </div>
+
                 <div class="npop-row">
                   <div>
                     <label>Unidade Responsável</label>
@@ -17090,6 +17110,9 @@ function npopInitSelects() {
   macroSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>'
     + getMacroprocessos().map(m => `<option value="${m}">${m}</option>`).join('');
   populatePatrocinadoresSelect('nf-patrocinador');
+  // Esconder painel da arquitetura ao abrir o modal
+  const arqPanel = document.getElementById('nf-arq-info');
+  if(arqPanel) arqPanel.style.display = 'none';
 }
 
 function npopUpdateProcessoList() {
@@ -17159,7 +17182,11 @@ function npopAutoFill() {
     );
   }
 
-  if(!match) return;
+  const arqPanel = document.getElementById('nf-arq-info');
+  if(!match) {
+    if(arqPanel) arqPanel.style.display = 'none';
+    return;
+  }
 
   // Fill all fields — always overwrite so switching subprocesso updates them
   const fields = {
@@ -17177,6 +17204,20 @@ function npopAutoFill() {
   // Set nome only if empty (user may have typed a custom name)
   const nomeEl = document.getElementById('nf-nome');
   if(nomeEl && !nomeEl.value) nomeEl.value = sub || proc;
+
+  // Preencher painel da Arquitetura de Processos
+  const divisaoEl   = document.getElementById('nf-info-divisao');
+  const gerenteEl   = document.getElementById('nf-info-gerente');
+  const objEstratEl = document.getElementById('nf-info-obj-estrategicos');
+  if(divisaoEl)  divisaoEl.textContent  = match.area    || '—';
+  if(gerenteEl)  gerenteEl.textContent  = match.gerente || '—';
+  if(objEstratEl) {
+    const objs = match.objEstrategicos || [];
+    objEstratEl.innerHTML = objs.length
+      ? objs.map(o => `<span style="display:inline-block;background:#e8f0fe;color:#1a56db;font-size:11px;padding:2px 9px;border-radius:10px;border:1px solid #c5d8f5;">${o}</span>`).join('')
+      : '<span style="color:#999;font-size:12px;">Nenhum objetivo estratégico associado</span>';
+  }
+  if(arqPanel) arqPanel.style.display = '';
 }
 
 // Init selects when npop modal opens
