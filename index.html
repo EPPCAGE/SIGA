@@ -20120,19 +20120,27 @@ function statusModalUpdateSubList() {
 
   // ── Excalidraw iframe HTML (loaded via blob URL) ──────────────
   function _getExcalidrawHtml() {
-    // Abordagem oficial (docs.excalidraw.com):
-    //   import do caminho dist/dev/index.js com ?external=react,react-dom
-    //   → esm.sh referencia os mesmos URLs de React, sem duplicação de instância
-    //   CSS e EXCALIDRAW_ASSET_PATH carregados explicitamente (obrigatório no novo build)
+    // Abordagem oficial (docs.excalidraw.com) com import map:
+    //   ?external=react,react-dom gera bare specifiers ('react', 'react-dom')
+    //   que o browser resolve via <script type="importmap"> → mesma instância de React,
+    //   sem duplicação, sem React error #130.
     return `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <style>*{box-sizing:border-box;margin:0;padding:0}html,body,#root{width:100%;height:100%;overflow:hidden}</style>
 <link rel="stylesheet" href="https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/dev/index.css">
 <script>window.EXCALIDRAW_ASSET_PATH = "https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/prod/";<\/script>
+<script type="importmap">{
+  "imports": {
+    "react":             "https://esm.sh/react@18.3.1",
+    "react-dom":         "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client":  "https://esm.sh/react-dom@18.3.1/client",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime"
+  }
+}<\/script>
 </head><body><div id="root"></div>
 <script type="module">
-import React from 'https://esm.sh/react@18.3.1';
-import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client';
+import React from 'react';
+import { createRoot } from 'react-dom/client';
 import * as ExLib from 'https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/dev/index.js?external=react,react-dom';
 
 const { Excalidraw, exportToSvg, exportToBlob } = ExLib;
