@@ -10544,6 +10544,29 @@ function _patItemQuarter(item) {
   return 'q4';
 }
 
+// Retorna true se a atividade cobre (total ou parcialmente) o trimestre q.
+// Uma atividade de Jan a Dez cobre todos os 4 trimestres.
+function _patItemInQuarter(item, q) {
+  const qRange = { q1:[0,2], q2:[3,5], q3:[6,8], q4:[9,11] }[q];
+  if(!qRange) return false;
+  const [qm0, qm1] = qRange;
+
+  const iniDate = item.inicio ? new Date(item.inicio + 'T12:00') : null;
+  const fimDate = item.fim    ? new Date(item.fim    + 'T12:00') : null;
+  if(!iniDate && !fimDate) return false;
+
+  const iniM = iniDate ? iniDate.getMonth() : null;
+  const fimM = fimDate ? fimDate.getMonth() : null;
+
+  // Só data de fim: ponto único
+  if(iniM === null) return fimM >= qm0 && fimM <= qm1;
+  // Só data de início: atividade em aberto — cobre este e todos os trimestres seguintes
+  if(fimM === null) return iniM <= qm1;
+  // Ambas as datas: sobreposição normal (mesmo ano) ou atividade que cruza o ano
+  if(iniM <= fimM) return iniM <= qm1 && fimM >= qm0;
+  return true; // início depois do fim = cruza virada de ano, cobre tudo
+}
+
 function renderPat() {
   renderPatKpis();
   renderPatCards();
@@ -10553,7 +10576,7 @@ function renderPatKpis() {
   const el = document.getElementById('pat-kpis');
   if(!el) return;
   const allItems = DATA.pat || [];
-  let items = _patQuarterFilter === 'todos' ? allItems : allItems.filter(i => _patItemQuarter(i) === _patQuarterFilter);
+  let items = _patQuarterFilter === 'todos' ? allItems : allItems.filter(i => _patItemInQuarter(i, _patQuarterFilter));
   if(_patTipoFilter) items = items.filter(i => i.tipo === _patTipoFilter);
   const total      = items.length;
   const planejado  = items.filter(i=>i.status==='planejado').length;
@@ -10584,7 +10607,7 @@ function renderPatCards() {
   if(!el) return;
   const items = DATA.pat || [];
   let filtered = _patFilter === 'todos' ? items : items.filter(i => i.status === _patFilter);
-  if(_patQuarterFilter !== 'todos') filtered = filtered.filter(i => _patItemQuarter(i) === _patQuarterFilter);
+  if(_patQuarterFilter !== 'todos') filtered = filtered.filter(i => _patItemInQuarter(i, _patQuarterFilter));
   if(_patTipoFilter)                filtered = filtered.filter(i => i.tipo === _patTipoFilter);
 
   if(!filtered.length) {
