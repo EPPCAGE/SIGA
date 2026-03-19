@@ -4842,7 +4842,7 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
     <div class="indcage-import-bar">
       <div style="flex:1;min-width:200px;">
         <div style="font-size:13px;font-weight:700;color:#0a2540;">📥 Importar Planilha SISPLAN</div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px;">Colunas esperadas: 🧰️ Divisão · ☑️ Indicador · 🔤 Enunciado Ind. · 🔡 Descrição Ind. · 📅 Período · 〽️ % Índice · 💹 Meta · ✔️ Realizado · 〽️ % Realizado · 🔡 Análise · ✔️ Realizado Acúm. · 〽️ % Realiz. Acúm.</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">Colunas esperadas: 🧰️ Divisão Ind. · ☑️ Indicador · 🔤 Enunciado Ind. · 🔡 Descrição Ind. · ⌛ Periodicidade · 📅 Período · 📅 Ciclo Indicador · 💰 PPE? · 〽️ % Índice · 💹 Meta · ✔️ Realizado · 🔡 Análise</div>
       </div>
       <label class="btn btn-primary" style="font-size:12px;padding:8px 16px;cursor:pointer;margin:0;">
         📂 Escolher Arquivo Excel
@@ -4990,19 +4990,18 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
       <table class="indcage-table">
         <thead>
           <tr>
-            <th>Período</th>
-            <th>Ciclo</th>
-            <th>Divisão</th>
-            <th>PPE?</th>
-            <th>Indicador</th>
-            <th>Enunciado</th>
-            <th>Meta</th>
-            <th>Realizado</th>
-            <th>% Realizado</th>
-            <th>% Índice</th>
-            <th>Realiz. Acúm.</th>
-            <th>% Realiz. Acúm.</th>
-            <th>Análise</th>
+            <th>🧰️ Divisão Ind.</th>
+            <th>☑️ Indicador</th>
+            <th>🔤 Enunciado Ind.</th>
+            <th>🔡 Descrição Ind.</th>
+            <th>⌛ Periodicidade</th>
+            <th>📅 Período</th>
+            <th>📅 Ciclo</th>
+            <th>💰 PPE?</th>
+            <th>〽️ % Índice</th>
+            <th>💹 Meta</th>
+            <th>✔️ Realizado</th>
+            <th>🔡 Análise</th>
           </tr>
         </thead>
         <tbody id="indcage-table-body"></tbody>
@@ -21186,7 +21185,7 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
     if(count) count.textContent = filtered.length + ' registro(s)';
     if(!tbody) return;
     if(filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;color:#94a3b8;padding:24px;">Nenhum resultado para os filtros selecionados.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;color:#94a3b8;padding:24px;">Nenhum resultado para os filtros selecionados.</td></tr>`;
       return;
     }
     tbody.innerHTML = filtered.map(r => {
@@ -21199,19 +21198,18 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
       const fmtVal = v => v !== null && v !== undefined ? _fmtNumDec(v, cfg.casasDecimais) : '—';
       const ppeBadge = r.ppe ? `<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${r.ppe.toLowerCase()==='sim'||r.ppe.toLowerCase()==='s'||r.ppe==='1'?'#dcfce7':'#f1f5f9'};color:${r.ppe.toLowerCase()==='sim'||r.ppe.toLowerCase()==='s'||r.ppe==='1'?'#166534':'#64748b'};">${r.ppe}</span>` : '—';
       return `<tr>
-        <td style="white-space:nowrap;font-weight:600;">${_periodoLabel(r.periodo)}</td>
-        <td style="font-size:11px;color:#475569;">${r.ciclo || '—'}</td>
         <td>${r.divisao || '—'}</td>
-        <td style="text-align:center;">${ppeBadge}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${r.codigo || '—'}</td>
         <td style="max-width:220px;">${r.enunciado || '—'}</td>
+        <td style="max-width:180px;font-size:11px;color:#475569;">${r.descricao || '—'}</td>
+        <td style="font-size:11px;color:#475569;">${r.periodicidade || '—'}</td>
+        <td style="white-space:nowrap;font-weight:600;">${_periodoLabel(r.periodo)}</td>
+        <td style="font-size:11px;color:#475569;">${r.ciclo || '—'}</td>
+        <td style="text-align:center;">${ppeBadge}</td>
+        <td style="text-align:center;">${r.pctIndice !== null ? `<span class="indcage-pct-pill pct-cinza">${_fmtNum(r.pctIndice)}%</span>` : '—'}</td>
         <td style="text-align:right;">${fmtVal(r.meta)}${r.meta !== null ? ' <span style="font-size:9px;color:#94a3b8;">'+unidade+'</span>' : ''}</td>
         <td style="text-align:right;">${fmtVal(r.realizado)}${r.realizado !== null ? ' <span style="font-size:9px;color:#94a3b8;">'+unidade+'</span>' : ''}</td>
-        <td style="text-align:center;">${pct !== null ? `<span class="indcage-pct-pill ${pctClass}">${_fmtNum(pct)}%</span>` : '—'}</td>
-        <td style="text-align:center;">${r.pctIndice !== null ? `<span class="indcage-pct-pill pct-cinza">${_fmtNum(r.pctIndice)}%</span>` : '—'}</td>
-        <td style="text-align:right;">${fmtVal(r.realizadoAcum)}${r.realizadoAcum !== null ? ' <span style="font-size:9px;color:#94a3b8;">'+unidade+'</span>' : ''}</td>
-        <td style="text-align:center;">${r.pctRealizAcum !== null ? `<span class="indcage-pct-pill ${pctAcClass}">${_fmtNum(r.pctRealizAcum)}%</span>` : '—'}</td>
-        <td style="max-width:180px;font-size:11px;color:#475569;">${r.analise || '—'}</td>
+        <td style="max-width:200px;font-size:11px;color:#475569;">${r.analise || '—'}</td>
       </tr>`;
     }).join('');
   };
