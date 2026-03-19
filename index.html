@@ -9,7 +9,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>SIGE-CAGE — Sistema Integrado de Gestão Estratégica</title>
+<title>SIGA — Sistema Integrado de Gestão de Atividades da CAGE</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230a2540'/%3E%3Crect x='2' y='2' width='28' height='28' rx='4' fill='none' stroke='%2300a86b' stroke-width='2'/%3E%3Ctext x='16' y='22' font-family='Arial,sans-serif' font-size='13' font-weight='bold' fill='%2300a86b' text-anchor='middle'%3EEPP%3C/text%3E%3C/svg%3E">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -819,7 +819,7 @@
   .pat-filter-btn.active{background:var(--cage-blue);color:white;border-color:var(--cage-blue);}
 
 
-  /* ── EPP MODULE (Gestão Escritório de Processos) ── */
+  /* ── EPP MODULE (SIGA Projetos) ── */
   .epp-tab{padding:9px 20px;border:none;border-bottom:3px solid transparent;background:none;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;white-space:nowrap;transition:all .15s;}
   .epp-tab.active{color:#0a2540;border-bottom-color:#0a2540;}
   .epp-tab:hover{color:#0a2540;}
@@ -1341,8 +1341,8 @@
         <circle cx="19" cy="11" r="2.5" stroke="white" stroke-width="2.2"/>
       </svg>
     </div>
-    <div class="auth-title">SIGE-CAGE</div>
-    <div class="auth-sub">Sistema Integrado de Gestão Estratégica · CAGE-RS<br>Faça login para acessar e sincronizar seus dados</div>
+    <div class="auth-title">SIGA</div>
+    <div class="auth-sub">Sistema Integrado de Gestão de Atividades da CAGE · CAGE-RS<br>Faça login para acessar e sincronizar seus dados</div>
     <button class="auth-google-btn" onclick="signInGoogle()">
       <svg class="auth-google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Entrar com Google
@@ -1370,7 +1370,7 @@
         </div>
       </div>
       <div class="header-divider-line"></div>
-      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início"><strong>SIGE-CAGE</strong></div>
+      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início"><strong>SIGA</strong></div>
     </div>
     <div class="header-meta">
       <button onclick="showHome()" title="Voltar à página inicial" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.45);background:none;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.1);transition:color .2s,border-color .2s;white-space:nowrap;" onmouseover="this.style.color='rgba(255,255,255,.85)';this.style.borderColor='rgba(255,255,255,.25)'" onmouseout="this.style.color='rgba(255,255,255,.45)';this.style.borderColor='rgba(255,255,255,.1)'">
@@ -1421,13 +1421,13 @@
 
 <div class="sidebar" id="sidebar">
   <div class="sidebar-head">
-    <div class="sidebar-title">Processos</div>
+    <div class="sidebar-title">SIGA Processos</div>
     <div id="sidebar-nav-btns">
       <button data-mod="home"        data-sortkey="home"        class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:rgba(0,168,107,.15);color:#6ee7b7;border-color:rgba(0,168,107,.3);">🏠 Página Inicial</button>
       <button data-mod="repo"        data-sortkey="repo"        class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:rgba(225,29,72,.12);color:#fda4af;border-color:rgba(225,29,72,.3);">📚 Documentos e Manuais</button>
       <button data-mod="drops"       data-sortkey="drops"       class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">💧 Drops de Conhecimento</button>
       <button data-mod="audit"       data-sortkey="audit"       class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:rgba(220,38,38,.12);color:#fca5a5;border-color:rgba(220,38,38,.3);">🔍 Auditoria de Processos</button>
-      <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.3);">🏢 Gestão Escritório de Processos</button>
+      <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.3);">🏢 SIGA Projetos</button>
       <button data-mod="bi"          data-sortkey="bi"          class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:rgba(234,179,8,.12);color:#fde047;border-color:rgba(234,179,8,.25);">📊 Cadeia de Valor e Mapa Estratégico</button>
       <button data-mod="quadro"      data-sortkey="quadro"      class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.25);">🗒 Quadro de Esboço</button>
       <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
@@ -1489,8 +1489,8 @@
   <div style="margin-bottom:36px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:20px;">
     <div>
       <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#00a86b;margin-bottom:6px;">CAGE-RS · Contadoria e Auditoria-Geral do Estado</div>
-      <div style="font-family:'DM Serif Display',serif;font-size:34px;color:#0a2540;line-height:1.15;">SIGE-CAGE</div>
-      <div style="font-size:15px;color:#64748b;margin-top:4px;font-weight:500;">Sistema Integrado de Gestão Estratégica</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:34px;color:#0a2540;line-height:1.15;">SIGA</div>
+      <div style="font-size:15px;color:#64748b;margin-top:4px;font-weight:500;">Sistema Integrado de Gestão de Atividades da CAGE</div>
     </div>
     <!-- Logos -->
     <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
@@ -1626,7 +1626,7 @@
       </div>
       <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
         <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
-        <div class="home-card-title">Gestão Escritório de Processos</div>
+        <div class="home-card-title">SIGA Projetos</div>
         <div class="home-card-desc">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </div>
@@ -1691,7 +1691,7 @@
   <div style="max-width:1100px;margin:0 auto;padding:16px 32px 0;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
       <div>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:#0a2540;margin:0 0 2px;">🏢 Gestão Escritório de Processos</h2>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:#0a2540;margin:0 0 2px;">🏢 SIGA Projetos</h2>
         <div style="font-size:12px;color:#64748b;">CAGE-RS · Plano Anual de Trabalho e Dashboard de Desempenho</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
@@ -1773,7 +1773,7 @@
 
   <!-- Block 3: Performance do EPP -->
   <div class="epp-dash-section">
-    <div class="epp-dash-section-title">⚡ Performance do Escritório de Processos</div>
+    <div class="epp-dash-section-title">⚡ Performance do SIGA Projetos</div>
     <div class="epp-kpi-grid">
       <div class="epp-kpi-card" style="border-left-color:#3b82f6;">
         <div class="epp-kpi-value" id="epp-kpi-prazo">—</div>
@@ -1923,7 +1923,7 @@
     <div class="card-body" style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div>
         <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Nome do Sistema</label>
-        <input class="modal-input" id="gp-nome-sistema" type="text" placeholder="SIGE-CAGE" oninput="saveGlobalParam('nomeSistema',this.value);applyGlobalParams()">
+        <input class="modal-input" id="gp-nome-sistema" type="text" placeholder="SIGA" oninput="saveGlobalParam('nomeSistema',this.value);applyGlobalParams()">
       </div>
       <div>
         <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Subtítulo Institucional</label>
@@ -2049,8 +2049,8 @@
 <div id="pat-module" class="pat-module" style="display:none;">
   <div class="pat-header-row">
     <div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">📅 Plano de Trabalho do Escritório de Processos</h2>
-      <div style="font-size:13px;color:var(--text-muted);">Escritório de Processos — Visível apenas para editores</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">📅 Plano de Trabalho — SIGA Projetos</h2>
+      <div style="font-size:13px;color:var(--text-muted);">SIGA Projetos — Visível apenas para editores</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <button class="btn btn-primary" onclick="openPatModal()" style="font-size:13px;">＋ Nova Atividade</button>
@@ -3532,7 +3532,7 @@ Fim"></textarea>
                 <div style="font-size:13px;font-weight:600;color:var(--cage-blue);margin-bottom:4px;">Envie seu arquivo + copie este prompt</div>
                 <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;position:relative;">
                   <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.6;font-style:italic;white-space:pre-wrap;" id="npop-prompt-text"># PROMPT COMPLETO — EXTRAÇÃO DE POP CAGE → GESPROC-RS
-Analise o documento de processo enviado (POP, manual de processo ou relatório de processo) e extraia todas as informações estruturadas para o sistema SIGE-CAGE da CAGE-RS.
+Analise o documento de processo enviado (POP, manual de processo ou relatório de processo) e extraia todas as informações estruturadas para o sistema SIGA da CAGE-RS.
 Leia o documento INTEIRO antes de estruturar os dados. Nunca invente informações. Se um campo não existir no documento, retorne null ou lista vazia. Retorne APENAS JSON puro, sem explicações.
 
 # REGRA CRÍTICA — LIMPEZA
@@ -8641,7 +8641,7 @@ const _MODULES_NAV = [
   { key:'repo',     label:'📚 Documentos e Manuais',               color:'#e11d48' },
   { key:'drops',    label:'💧 Drops de Conhecimento',              color:'#0ea5e9' },
   { key:'audit',    label:'🔍 Auditoria de Processos',             color:'#dc2626' },
-  { key:'epp',      label:'🏢 Gestão Escritório de Processos',     color:'#3b82f6' },
+  { key:'epp',      label:'🏢 SIGA Projetos',     color:'#3b82f6' },
   { key:'bi',       label:'📊 Cadeia de Valor e Mapa Estratégico', color:'#eab308' },
   { key:'quadro',   label:'🗒 Quadro de Esboço',                   color:'#10b981' },
   { key:'arq',      label:'🏛 Arquitetura de Processos',           color:'#8b5cf6' },
@@ -10047,7 +10047,7 @@ function renderOrganograma() {
 
   const hint = (adjuntos.length === 0 && equipeUnidade.length === 0)
     ? `<div style="margin-top:20px;padding:16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;text-align:center;font-size:13px;color:#94a3b8;">
-        Configure o organograma em <strong>Gestão Escritório de Processos → Configurações</strong>:<br>
+        Configure o organograma em <strong>SIGA Projetos → Configurações</strong>:<br>
         defina o Contador-Geral, Adjuntos e vincule Equipes às Unidades.
       </div>` : '';
 
@@ -11891,7 +11891,7 @@ function exportBackup() {
     const payload = {
       _version: 2,
       _exported: new Date().toISOString(),
-      _app: 'SIGE-CAGE',
+      _app: 'SIGA',
       d:    DATA.d,
       r:    DATA.r,
       pat:  DATA.pat || [],
@@ -12448,7 +12448,7 @@ async function _loadCageLogoB64() {
 async function buildPptx(D, _popKey) {
   const pres = new PptxGenJS();
   pres.layout = 'LAYOUT_16x9';
-  pres.title  = 'SIGE-CAGE · ' + (D.meta?.name || 'POP');
+  pres.title  = 'SIGA · ' + (D.meta?.name || 'POP');
 
   const cageLogoB64 = await _loadCageLogoB64();
 
@@ -12489,7 +12489,7 @@ async function buildPptx(D, _popKey) {
     s.addShape(pres.ShapeType.rect, { x:0, y:0, w:0.25, h:5.625, fill:{ color:C.green } });
     s.addShape(pres.ShapeType.ellipse, { x:8.2, y:0.2, w:3.5, h:3.5, fill:{ color:'FFFFFF', transparency:92 } });
     s.addShape(pres.ShapeType.ellipse, { x:7.5, y:0.8, w:2.2, h:2.2, fill:{ color:C.green, transparency:85 } });
-    s.addText('CAGE-RS · SIGE-CAGE', { x:0.5, y:0.3, w:8, h:0.35, fontSize:10, color:C.green, bold:true, charSpacing:2, margin:0 });
+    s.addText('CAGE-RS · SIGA', { x:0.5, y:0.3, w:8, h:0.35, fontSize:10, color:C.green, bold:true, charSpacing:2, margin:0 });
     s.addText('PROCEDIMENTO OPERACIONAL PADRÃO', { x:0.5, y:0.75, w:8, h:0.35, fontSize:10, color:'CADCFC', bold:true, charSpacing:3, margin:0 });
     s.addText(nome, { x:0.5, y:1.2, w:8.5, h:1.5, fontSize:36, color:C.white, bold:true, fontFace:'Calibri', margin:0 });
     if(macro)    s.addText(macro,    { x:0.5, y:2.85, w:8, h:0.5, fontSize:13, color:'CADCFC', margin:0 });
@@ -12908,7 +12908,7 @@ async function buildPptx(D, _popKey) {
     s.background = { color: C.navy };
     s.addShape(pres.ShapeType.rect, { x:0, y:0, w:0.25, h:5.625, fill:{ color:C.green } });
     s.addShape(pres.ShapeType.ellipse, { x:6.5, y:2.5, w:5, h:5, fill:{ color:'FFFFFF', transparency:94 } });
-    s.addText('SIGE-CAGE', { x:0.5, y:1.5, w:8, h:0.5, fontSize:13, color:C.green, bold:true, charSpacing:2, margin:0 });
+    s.addText('SIGA', { x:0.5, y:1.5, w:8, h:0.5, fontSize:13, color:C.green, bold:true, charSpacing:2, margin:0 });
     s.addText(nome, { x:0.5, y:2.1, w:8, h:1.0, fontSize:32, color:C.white, bold:true, margin:0 });
     s.addText('Procedimento Operacional Padrão', { x:0.5, y:3.2, w:8, h:0.4, fontSize:12, color:'8898BB', margin:0 });
     s.addText([
@@ -12919,7 +12919,7 @@ async function buildPptx(D, _popKey) {
   }
 
   // ── SALVAR ───────────────────────────────────────────────────────────────
-  const fname = 'SIGE-CAGE_' + nome.replace(/[^a-zA-Z0-9]/g,'_') + '.pptx';
+  const fname = 'SIGA_' + nome.replace(/[^a-zA-Z0-9]/g,'_') + '.pptx';
   await pres.writeFile({ fileName: fname });
   showToast('✅ PPT exportado: ' + fname, 'success');
 }
@@ -13077,7 +13077,7 @@ async function _buildEppStatusReport() {
     // Teal separator
     s.addShape(pres.ShapeType.rect, { x:0.6, y:2.82, w:5.5, h:0.07, fill:{color:C.teal} });
     // Institution subtitle
-    s.addText('Escritório de Processos', { x:0.6, y:3.0, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
+    s.addText('SIGA Projetos', { x:0.6, y:3.0, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
     s.addText('CAGE-RS — Controladoria e Auditoria-Geral do Estado', { x:0.6, y:3.38, w:6.5, h:0.3, fontSize:10, color:'5B8C8A', margin:0 });
     // Cycle pill
     s.addShape(pres.ShapeType.rect, { x:0.6, y:3.9, w:2.8, h:0.45, fill:{color:C.teal} });
@@ -13222,7 +13222,7 @@ async function _buildEppStatusReport() {
     s.background = { color:C.white };
     // Header bar
     s.addShape(pres.ShapeType.rect, { x:0, y:0, w:10, h:0.9, fill:{color:C.teal} });
-    s.addText('Indicadores do Escritório de Processos', {
+    s.addText('Indicadores — SIGA Projetos', {
       x:0.3, y:0, w:7.5, h:0.9, fontSize:20, color:C.white, bold:true, valign:'middle', margin:0
     });
     s.addText(monthLong, { x:0.3, y:0, w:9.4, h:0.9, fontSize:11, color:'E0F9F7', align:'right', valign:'middle', margin:0 });
@@ -13546,7 +13546,7 @@ async function _buildEppStatusReport() {
     // Teal separator
     s.addShape(pres.ShapeType.rect, { x:0.6, y:2.4, w:5.0, h:0.07, fill:{color:C.teal} });
     // Institution
-    s.addText('Escritório de Processos', { x:0.6, y:2.6, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
+    s.addText('SIGA Projetos', { x:0.6, y:2.6, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
     s.addText('CAGE-RS — Comprometidos com a melhoria contínua dos processos do Estado', { x:0.6, y:2.98, w:6.5, h:0.35, fontSize:10, color:'5B8C8A', margin:0 });
     // Second teal separator
     s.addShape(pres.ShapeType.rect, { x:0.6, y:3.5, w:3.0, h:0.05, fill:{color:'006B63'} });
@@ -14446,8 +14446,8 @@ function gerarAtaAcomp(pop, period) {
   saveAcomp(pop); // garante dados atualizados
   const acomp = DATA[pop]?.acompanhamento?.[period] || {};
   const gp    = DATA.config?.globalParams || {};
-  const inst  = gp.nomeSistema || 'SIGE-CAGE';
-  const sub   = gp.subtitulo   || 'Escritório de Processos · CAGE-RS';
+  const inst  = gp.nomeSistema || 'SIGA';
+  const sub   = gp.subtitulo   || 'SIGA Projetos · CAGE-RS';
   const nomeProcesso = DATA[pop]?.meta?.name || DATA[pop]?.ficha?.nome || pop.toUpperCase();
 
   const isSegunda = period === '1a';
@@ -16209,7 +16209,7 @@ REGRAS OBRIGATÓRIAS:
 - Não invente dados que não estejam presentes nos dados fornecidos
 - Omita seções sem dados suficientes (retorne array vazio [] ou null)
 - Se não há gargalos/retrabalhos explícitos, infira com base nas etapas do processo
-- Refira-se à organização como CAGE-RS e ao setor como Escritório de Processos
+- Refira-se à organização como CAGE-RS e ao setor como SIGA Projetos
 - Retorne APENAS o JSON, absolutamente nada antes ou depois
 
 DADOS DO PROCESSO:
@@ -18981,7 +18981,7 @@ function auditExportRelatorioWord(planId) {
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Auditoria</title><style>${style}</style></head><body>
 <div class="cover">
-  <div style="font-size:9pt;letter-spacing:2px;color:#93c5fd;text-transform:uppercase;margin-bottom:16px;">CAGE-RS · SIGE-CAGE</div>
+  <div style="font-size:9pt;letter-spacing:2px;color:#93c5fd;text-transform:uppercase;margin-bottom:16px;">CAGE-RS · SIGA</div>
   <h1>Relatório de Auditoria</h1>
   <p class="subtitle">${plan.processoNome||plan.objetivo||'—'}</p>
   <div class="meta">
@@ -19037,7 +19037,7 @@ function auditExportRelatorioWord(planId) {
 </div>
 
 <div class="footer">
-  <strong>CAGE-RS</strong> · Contadoria e Auditoria-Geral do Estado · SIGE-CAGE &nbsp;|&nbsp; Emitido em ${today} &nbsp;|&nbsp; Este documento é de uso interno.
+  <strong>CAGE-RS</strong> · Contadoria e Auditoria-Geral do Estado · SIGA &nbsp;|&nbsp; Emitido em ${today} &nbsp;|&nbsp; Este documento é de uso interno.
 </div>
 </body></html>`;
 
@@ -19074,7 +19074,7 @@ async function npopExtractWithGemini(file) {
 
     const prompt = document.getElementById('npop-prompt-text')?.textContent?.trim() ||
 `# PROMPT COMPLETO — EXTRAÇÃO DE POP CAGE → GESPROC-RS
-Analise o documento de processo enviado e extraia todas as informações estruturadas para o sistema SIGE-CAGE da CAGE-RS. Leia o documento INTEIRO antes de estruturar. Nunca invente informações. Retorne APENAS JSON puro.
+Analise o documento de processo enviado e extraia todas as informações estruturadas para o sistema SIGA da CAGE-RS. Leia o documento INTEIRO antes de estruturar. Nunca invente informações. Retorne APENAS JSON puro.
 
 SIGLAS: extraia TODAS as siglas do documento, cada uma como entrada separada em siglas[].
 EXECUTORES: crie uma entrada SEPARADA para cada executor — nunca concatene nomes com ";" em um único "name". Use o nome exato do executor no campo "actor" de cada action.
@@ -21019,7 +21019,7 @@ function statusModalUpdateSubList() {
       const pres = new PptxGenJS();
       pres.layout = 'LAYOUT_16x9';
       pres.title  = titulo + ' — ' + trimestreLabel;
-      pres.author = 'SIGE-CAGE — CAGE-RS';
+      pres.author = 'SIGA — CAGE-RS';
 
       const cageLogoB64 = await _loadCageLogoB64();
 
@@ -21178,7 +21178,7 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
       const sFinal = pres.addSlide();
       sFinal.addShape(pres.ShapeType.rect, { x:0, y:0, w:10, h:7.5, fill:{ color:C.navy } });
       sFinal.addShape(pres.ShapeType.rect, { x:0, y:3.5, w:10, h:0.1, fill:{ color:C.gold } });
-      sFinal.addText('Relatório gerado automaticamente pelo SIGE-CAGE', { x:0.8, y:3.7, w:8.4, fontSize:14, color:C.white, align:'center' });
+      sFinal.addText('Relatório gerado automaticamente pelo SIGA', { x:0.8, y:3.7, w:8.4, fontSize:14, color:C.white, align:'center' });
       sFinal.addText(subtitulo, { x:0.8, y:4.35, w:8.4, fontSize:11, color:'8CB8FF', align:'center', italic:true });
       sFinal.addText(hoje, { x:0.8, y:4.85, w:8.4, fontSize:10, color:C.muted, align:'center', italic:true });
       _cageLogoAdd(sFinal, { x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
@@ -22444,7 +22444,7 @@ body{font-family:'Inter',sans-serif;color:#1e293b;font-size:13px;padding:36px 48
 <button class="print-btn" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
 <div class="doc-header">
   <div class="doc-header-left">
-    <div class="badge-org">CAGE-RS · SIGE-CAGE</div>
+    <div class="badge-org">CAGE-RS · SIGA</div>
     <h1>${esc(popName)}</h1>
     <div class="sub">Análise de Maturidade de Processos · Fluxo: ${version === 'tobe' ? 'TO BE' : 'AS IS'}</div>
   </div>
