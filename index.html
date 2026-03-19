@@ -1583,74 +1583,74 @@
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
       <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
         <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Procedimentos Operacionais</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Procedimentos Operacionais</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
         <div class="home-card-footer" id="home-pops-count">—</div>
       </div>
       <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
         <div class="home-card-icon" style="background:#f5f3ff;color:#8b5cf6;">🏛</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Arquitetura de Processos</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Arquitetura de Processos</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
         <div class="home-card-footer" id="home-arq-count">—</div>
       </div>
       <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
         <div class="home-card-icon" style="background:#fffbeb;color:#f59e0b;">📊</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Cadeia de Valor e Mapa Estratégico</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Cadeia de Valor e Mapa Estratégico</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
         <div class="home-card-footer">Imagens configuráveis</div>
       </div>
       <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
         <div class="home-card-icon" style="background:#fff1f2;color:#dc2626;">🔍</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Auditoria de Processos</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Auditoria de Processos</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
         <div class="home-card-footer" id="home-audit-count">—</div>
       </div>
       <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
         <div class="home-card-icon" style="background:#fffbeb;color:#e8a020;">📈</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Indicadores CAGE</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Indicadores CAGE</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
       </div>
       <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
         <div class="home-card-icon" style="background:#eef2ff;color:#6366f1;">🏗️</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Modelador BPMN 2.0</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Modelador BPMN 2.0</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
         <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
       </div>
       <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
         <div class="home-card-icon" style="background:#ecfdf5;color:#10b981;">🗒</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Quadro de Esboço</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
         <div class="home-card-footer">Canvas interativo</div>
       </div>
       <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
         <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">SIGA Processos</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">SIGA Processos</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </div>
       <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
         <div class="home-card-icon" style="background:#f8fafc;color:#64748b;">🔍</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Busca Global</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Busca Global</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
         <div class="home-card-footer">Busca em tempo real</div>
       </div>
       <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
         <div class="home-card-icon" style="background:#fff1f2;color:#e11d48;">📚</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Documentos e Manuais</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Documentos e Manuais</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
         <div class="home-card-footer" id="home-repo-count">—</div>
       </div>
       <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
         <div class="home-card-icon" style="background:#f0f9ff;color:#0ea5e9;">💧</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Drops de Conhecimento</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Drops de Conhecimento</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
         <div class="home-card-footer" id="home-drops-count">—</div>
       </div>
       <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
         <div class="home-card-icon" style="background:#fdf2f8;color:#ec4899;">💡</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Caixinha de Ideias</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Caixinha de Ideias</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
         <div class="home-card-footer">Formulário Microsoft Forms</div>
       </div>
     </div>
@@ -5114,7 +5114,8 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
 // ═══ DATA ════════════════════════════════════
 const DATA = {
   d: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Denúncias" }, ficha: {}, flowDiagram: null },
-  r: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Representações" }, ficha: {}, flowDiagram: null }
+  r: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Representações" }, ficha: {}, flowDiagram: null },
+  homeCards: {}
 };
 
 // ═══ STATE ════════════════════════════════════
@@ -5249,6 +5250,37 @@ function harvestEditables() {
       const cur = actionObj(step.actions[ai]);
       cur.text = el.innerText?.trim() || '';
       step.actions[ai] = cur;
+    }
+  });
+
+  // Capturar títulos e descrições dos home-cards editáveis
+  document.querySelectorAll('#home-cards-grid .home-card').forEach(card => {
+    const key = card.dataset.sortkey;
+    if(!key) return;
+    const titleEl = card.querySelector('.home-card-title');
+    const descEl  = card.querySelector('.home-card-desc');
+    if(!titleEl && !descEl) return;
+    if(!DATA.homeCards) DATA.homeCards = {};
+    DATA.homeCards[key] = {
+      title: titleEl ? (titleEl.innerText?.trim() || '') : undefined,
+      desc:  descEl  ? (descEl.innerText?.trim()  || '') : undefined,
+    };
+  });
+}
+
+// Aplica o conteúdo salvo dos home-cards ao DOM
+function _applyHomeCards(cards) {
+  if(!cards || typeof cards !== 'object') return;
+  Object.entries(cards).forEach(([key, vals]) => {
+    const card = document.querySelector(`#home-cards-grid .home-card[data-sortkey="${key}"]`);
+    if(!card) return;
+    if(vals.title !== undefined) {
+      const el = card.querySelector('.home-card-title');
+      if(el && vals.title) el.textContent = vals.title;
+    }
+    if(vals.desc !== undefined) {
+      const el = card.querySelector('.home-card-desc');
+      if(el && vals.desc) el.textContent = vals.desc;
     }
   });
 }
@@ -10649,7 +10681,8 @@ let currentAccessToken = null;   // token de acesso atual — atualizado a cada 
 let isEditor = false;
 let isAdmin  = false;
 let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
-let workspaceId = sessionStorage.getItem('gestpop_wsid') || null;
+// workspaceId persiste em localStorage (entre sessões) e sessionStorage (fallback rápido)
+let workspaceId = localStorage.getItem('gestpop_wsid') || sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
   ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel'].forEach(id => {
@@ -10971,13 +11004,14 @@ window.addEventListener('beforeunload', () => {
     audits:          DATA.audits || { plans:[], executions:[], nonconformities:[], actions:[] },
     arqOverrides:    DATA._arqOverrides || null,
     logoUrl:         DATA._logoUrl || null,
-    logo2Url:        (DATA._logo2Url && DATA._logo2Url.startsWith('http')) ? DATA._logo2Url : null,
+    logo2Url:        DATA._logo2Url || null,
     cadeiaValorImg:  DATA._cadeiaValorImg ? (DATA._cadeiaValorImg.startsWith('http') ? DATA._cadeiaValorImg : (DATA._cadeiaValorImg.length < 300000 ? DATA._cadeiaValorImg : null)) : null,
     mapaEstrategicoImg: DATA._mapaEstrategicoImg ? (DATA._mapaEstrategicoImg.startsWith('http') ? DATA._mapaEstrategicoImg : (DATA._mapaEstrategicoImg.length < 300000 ? DATA._mapaEstrategicoImg : null)) : null,
     newPops:         newPopKeys.map(k => ({ key: k, data: _stripTrans(DATA[k]) })),
     indicadoresCage: DATA.indicadoresCage || { indicadores: [], resultados: [] },
     repoDocs:        [],
-    drops:           []
+    drops:           [],
+    homeCards:       DATA.homeCards && Object.keys(DATA.homeCards).length > 0 ? DATA.homeCards : null,
   };
 
   let reqBody = JSON.stringify({
@@ -11069,6 +11103,7 @@ async function saveToCloud(attempt=1) {
     config:          DATA.config          || null,
     aptCatalog:      Array.isArray(DATA.aptCatalog) && DATA.aptCatalog.length > 0 ? DATA.aptCatalog : null,
     quadro:          DATA.quadro          || null,
+    homeCards:       DATA.homeCards && Object.keys(DATA.homeCards).length > 0 ? DATA.homeCards : null,
   };
 
   try {
@@ -11081,7 +11116,7 @@ async function saveToCloud(attempt=1) {
         .limit(1)
         .maybeSingle();
       if(fetchErr) console.warn('saveToCloud: fetch workspaceId error', fetchErr);
-      if(existing?.id) { workspaceId = existing.id; sessionStorage.setItem('gestpop_wsid', workspaceId); }
+      if(existing?.id) { workspaceId = existing.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}; }
       else console.log('saveToCloud: nenhum workspace existente — será criado');
     }
 
@@ -11099,34 +11134,65 @@ async function saveToCloud(attempt=1) {
         .eq('id', workspaceId)
         .select('id, updated_at, updated_by_name')
         .maybeSingle());
-      // Se o UPDATE não encontrou a linha (workspaceId inválido/expirado), fazer INSERT
+      // Se o UPDATE não encontrou a linha (workspaceId inválido/expirado):
+      // re-consultar antes de criar nova linha, para evitar duplicatas
       if(!error && !saved) {
-        console.warn('[saveToCloud] UPDATE retornou 0 linhas — workspaceId inválido, recriando workspace');
+        console.warn('[saveToCloud] UPDATE retornou 0 linhas — re-consultando workspace existente');
         workspaceId = null;
         sessionStorage.removeItem('gestpop_wsid');
-        ({ error, data: saved } = await supaClient
+        try { localStorage.removeItem('gestpop_wsid'); } catch(e) {}
+        const { data: recheck } = await supaClient
           .from('gestpop_workspace')
-          .insert({
-            data:            payload,
-            updated_by:      currentUserEmail,
-            updated_by_name: currentUserName
-          })
-          .select('id, updated_at, updated_by_name')
-          .maybeSingle());
-        if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); }
+          .select('id')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if(recheck?.id) {
+          // Linha encontrada — usar ela para o UPDATE
+          workspaceId = recheck.id;
+          sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}
+          ({ error, data: saved } = await supaClient
+            .from('gestpop_workspace')
+            .update({ data: payload, updated_at: new Date().toISOString(), updated_by: currentUserEmail, updated_by_name: currentUserName })
+            .eq('id', workspaceId)
+            .select('id, updated_at, updated_by_name')
+            .maybeSingle());
+        } else {
+          // Realmente não existe nenhuma linha — INSERT
+          console.log('[saveToCloud] Nenhuma linha encontrada — criando workspace');
+          ({ error, data: saved } = await supaClient
+            .from('gestpop_workspace')
+            .insert({ data: payload, updated_by: currentUserEmail, updated_by_name: currentUserName })
+            .select('id, updated_at, updated_by_name')
+            .maybeSingle());
+          if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}; }
+        }
       }
     } else {
-      // Primeiro uso: INSERT
-      ({ error, data: saved } = await supaClient
+      // Primeiro uso nesta sessão: buscar linha existente antes de inserir
+      const { data: existing2 } = await supaClient
         .from('gestpop_workspace')
-        .insert({
-          data:            payload,
-          updated_by:      currentUserEmail,
-          updated_by_name: currentUserName
-        })
-        .select('id, updated_at, updated_by_name')
-        .maybeSingle());
-      if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); }
+        .select('id')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if(existing2?.id) {
+        workspaceId = existing2.id;
+        sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}
+        ({ error, data: saved } = await supaClient
+          .from('gestpop_workspace')
+          .update({ data: payload, updated_at: new Date().toISOString(), updated_by: currentUserEmail, updated_by_name: currentUserName })
+          .eq('id', workspaceId)
+          .select('id, updated_at, updated_by_name')
+          .maybeSingle());
+      } else {
+        ({ error, data: saved } = await supaClient
+          .from('gestpop_workspace')
+          .insert({ data: payload, updated_by: currentUserEmail, updated_by_name: currentUserName })
+          .select('id, updated_at, updated_by_name')
+          .maybeSingle());
+        if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}; }
+      }
     }
 
     if(error) {
@@ -11231,7 +11297,7 @@ async function loadFromCloud() {
       return;
     }
 
-    workspaceId = data.id; sessionStorage.setItem('gestpop_wsid', workspaceId);
+    workspaceId = data.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {};
     const payload = data.data;
     console.log('loadFromCloud: payload recebido, tamanho', JSON.stringify(payload).length, 'bytes');
 
@@ -11258,6 +11324,11 @@ async function loadFromCloud() {
     if(Array.isArray(payload.aptCatalog) && payload.aptCatalog.length > 0) DATA.aptCatalog = payload.aptCatalog;
     // Quadro de esboço (Excalidraw)
     if(payload.quadro && typeof payload.quadro === 'object') DATA.quadro = payload.quadro;
+    // Home-cards: títulos e descrições editáveis
+    if(payload.homeCards && typeof payload.homeCards === 'object') {
+      DATA.homeCards = payload.homeCards;
+      _applyHomeCards(payload.homeCards);
+    }
     if(payload.indicadoresCage && typeof payload.indicadoresCage === 'object') {
       DATA.indicadoresCage = {
         indicadores: Array.isArray(payload.indicadoresCage.indicadores) ? payload.indicadoresCage.indicadores : [],
@@ -11807,6 +11878,7 @@ async function signOut() {
   try { await supaClient.auth.signOut({ scope: 'local' }); } catch(e) {}
   try {
     sessionStorage.removeItem('gestpop_wsid');
+    try { localStorage.removeItem('gestpop_wsid'); } catch(e) {}
     workspaceId = null;
     Object.keys(localStorage)
       .filter(k => k.includes('supabase') || k.includes('gestpop_auth'))
