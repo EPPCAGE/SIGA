@@ -4882,6 +4882,24 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
           <option value="">Todos os períodos</option>
         </select>
       </div>
+      <div class="indcage-filter-group">
+        <label class="indcage-filter-label">Ciclo</label>
+        <select id="indcage-res-filter-ciclo" class="indcage-filter-select" onchange="indcageRenderResultados()">
+          <option value="">Todos os ciclos</option>
+        </select>
+      </div>
+      <div class="indcage-filter-group">
+        <label class="indcage-filter-label">Periodicidade</label>
+        <select id="indcage-res-filter-periodicidade" class="indcage-filter-select" onchange="indcageRenderResultados()">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="indcage-filter-group">
+        <label class="indcage-filter-label">PPE?</label>
+        <select id="indcage-res-filter-ppe" class="indcage-filter-select" onchange="indcageRenderResultados()" style="min-width:120px;">
+          <option value="">Todos</option>
+        </select>
+      </div>
     </div>
 
     <!-- Dados básicos do indicador selecionado -->
@@ -20077,15 +20095,21 @@ function statusModalUpdateSubList() {
 <script type="module">
 import React from 'https://esm.sh/react@18';
 import { createRoot } from 'https://esm.sh/react-dom@18/client';
-import * as ExLib from 'https://esm.sh/@excalidraw/excalidraw@0.17.6?bundle&deps=react@18,react-dom@18';
-const { Excalidraw, exportToSvg, exportToBlob } = ExLib;
-// parseMermaidToExcalidraw is re-exported from the main bundle in 0.17.x
-let parseMermaidToExcalidraw = ExLib.parseMermaidToExcalidraw;
+// Sem ?bundle: compartilha a mesma instância de React (evita dois contextos e React error #130)
+import * as ExLib from 'https://esm.sh/@excalidraw/excalidraw@0.17.6?deps=react@18,react-dom@18';
+const Excalidraw   = ExLib.Excalidraw   ?? ExLib.default?.Excalidraw   ?? ExLib.default;
+const exportToSvg  = ExLib.exportToSvg  ?? ExLib.default?.exportToSvg;
+const exportToBlob = ExLib.exportToBlob ?? ExLib.default?.exportToBlob;
+if (!Excalidraw) {
+  document.getElementById('root').textContent = 'Erro: Excalidraw não carregou.';
+  window.parent?.postMessage({ type: 'EXC_ERROR', error: 'export_not_found' }, '*');
+  throw new Error('Excalidraw export not found');
+}
+let parseMermaidToExcalidraw = ExLib.parseMermaidToExcalidraw ?? ExLib.default?.parseMermaidToExcalidraw ?? null;
 if (!parseMermaidToExcalidraw) {
-  // fallback: try loading the separate package (any available version)
   try {
-    const m = await import('https://esm.sh/@excalidraw/mermaid-to-excalidraw?bundle');
-    parseMermaidToExcalidraw = m.parseMermaidToExcalidraw;
+    const m = await import('https://esm.sh/@excalidraw/mermaid-to-excalidraw?deps=react@18,react-dom@18');
+    parseMermaidToExcalidraw = m.parseMermaidToExcalidraw ?? m.default?.parseMermaidToExcalidraw ?? null;
   } catch(e) { parseMermaidToExcalidraw = null; }
 }
 let _api = null;
@@ -21089,35 +21113,50 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
     const resultados = DATA.indicadoresCage.resultados;
 
     // Populate filter selects
-    const allCodigos = [...new Set(resultados.map(r => r.codigo).filter(Boolean))].sort();
-    const allDivisoes = [...new Set(resultados.map(r => r.divisao).filter(Boolean))].sort();
-    const allAnos = [...new Set(resultados.map(r => r.periodo?.slice(0,4)).filter(Boolean))].sort().reverse();
-    const allPeriodos = [...new Set(resultados.map(r => r.periodo).filter(Boolean))].sort().reverse();
+    const allCodigos        = [...new Set(resultados.map(r => r.codigo).filter(Boolean))].sort();
+    const allDivisoes       = [...new Set(resultados.map(r => r.divisao).filter(Boolean))].sort();
+    const allAnos           = [...new Set(resultados.map(r => r.periodo?.slice(0,4)).filter(Boolean))].sort().reverse();
+    const allPeriodos       = [...new Set(resultados.map(r => r.periodo).filter(Boolean))].sort().reverse();
+    const allCiclos         = [...new Set(resultados.map(r => r.ciclo).filter(Boolean))].sort();
+    const allPeriodicidades = [...new Set(resultados.map(r => r.periodicidade).filter(Boolean))].sort();
+    const allPPEs           = [...new Set(resultados.map(r => r.ppe).filter(Boolean))].sort();
 
     const fInd    = document.getElementById('indcage-res-filter-ind');
     const fDiv    = document.getElementById('indcage-res-filter-div');
     const fAno    = document.getElementById('indcage-res-filter-ano');
     const fPer    = document.getElementById('indcage-res-filter-periodo');
+    const fCiclo  = document.getElementById('indcage-res-filter-ciclo');
+    const fPerio  = document.getElementById('indcage-res-filter-periodicidade');
+    const fPPE    = document.getElementById('indcage-res-filter-ppe');
 
     _repopSelect(fInd, allCodigos, 'Todos', v => {
       const lbl = getAllIndicators().find(i => i.codigo === v)?.enunciado;
       return lbl ? v + ' — ' + lbl : v;
     });
-    _repopSelect(fDiv, allDivisoes, 'Todas');
-    _repopSelect(fAno, allAnos, 'Todos os anos');
-    _repopSelect(fPer, allPeriodos, 'Todos os períodos', v => _periodoLabel(v));
+    _repopSelect(fDiv,    allDivisoes,       'Todas');
+    _repopSelect(fAno,    allAnos,           'Todos os anos');
+    _repopSelect(fPer,    allPeriodos,       'Todos os períodos', v => _periodoLabel(v));
+    _repopSelect(fCiclo,  allCiclos,         'Todos os ciclos');
+    _repopSelect(fPerio,  allPeriodicidades, 'Todas');
+    _repopSelect(fPPE,    allPPEs,           'Todos');
 
-    const selInd = fInd?.value || '';
-    const selDiv = fDiv?.value || '';
-    const selAno = fAno?.value || '';
-    const selPer = fPer?.value || '';
+    const selInd    = fInd?.value    || '';
+    const selDiv    = fDiv?.value    || '';
+    const selAno    = fAno?.value    || '';
+    const selPer    = fPer?.value    || '';
+    const selCiclo  = fCiclo?.value  || '';
+    const selPerio  = fPerio?.value  || '';
+    const selPPE    = fPPE?.value    || '';
     const selSearch = (document.getElementById('indcage-res-search')?.value || '').toLowerCase().trim();
 
     let filtered = resultados.filter(r => {
-      if(selInd && r.codigo !== selInd) return false;
-      if(selDiv && r.divisao !== selDiv) return false;
-      if(selAno && !(r.periodo||'').startsWith(selAno)) return false;
-      if(selPer && r.periodo !== selPer) return false;
+      if(selInd   && r.codigo        !== selInd)   return false;
+      if(selDiv   && r.divisao       !== selDiv)   return false;
+      if(selAno   && !(r.periodo||'').startsWith(selAno)) return false;
+      if(selPer   && r.periodo       !== selPer)   return false;
+      if(selCiclo && r.ciclo         !== selCiclo) return false;
+      if(selPerio && r.periodicidade !== selPerio) return false;
+      if(selPPE   && r.ppe           !== selPPE)   return false;
       if(selSearch) {
         const haystack = [r.codigo, r.enunciado, r.descricao, r.divisao, r.analise].filter(Boolean).join(' ').toLowerCase();
         if(!haystack.includes(selSearch)) return false;
@@ -21233,32 +21272,48 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
     if(!kpiRow) return;
     if(filtered.length === 0) { kpiRow.innerHTML = ''; return; }
 
-    // Agregar para o período/indicador selecionado
+    const periodo = selPer ? _periodoLabel(selPer) : (filtered[0]?.periodo ? _periodoLabel(filtered[0].periodo) : '—');
+
+    // Sem indicador específico: KPIs de contagem
+    // (somar % de indicadores misturados com unidades diferentes não faz sentido)
+    if(!selInd) {
+      const uniqInds = new Set(filtered.map(r => r.codigo).filter(Boolean)).size;
+      const uniqPers = new Set(filtered.map(r => r.periodo).filter(Boolean)).size;
+      const comDados = filtered.filter(r => r.realizado !== null).length;
+      const semDados = filtered.length - comDados;
+      kpiRow.innerHTML = `
+        <div class="indcage-kpi"><div class="indcage-kpi-value" style="font-size:26px;">${uniqInds}</div><div class="indcage-kpi-label">Indicadores</div><div class="indcage-kpi-sub">${filtered.length} linha(s)</div></div>
+        <div class="indcage-kpi"><div class="indcage-kpi-value" style="font-size:26px;">${uniqPers}</div><div class="indcage-kpi-label">Períodos distintos</div><div class="indcage-kpi-sub">${periodo}</div></div>
+        <div class="indcage-kpi"><div class="indcage-kpi-value" style="font-size:26px;">${comDados}</div><div class="indcage-kpi-label">Com realizado informado</div><div class="indcage-kpi-sub">${semDados} sem dado</div></div>
+      `;
+      return;
+    }
+
+    // Com indicador específico selecionado: mostrar médias e totais
     const avg = (arr, key) => {
       const vals = arr.map(r => r[key]).filter(v => v !== null);
       if(!vals.length) return null;
       return vals.reduce((a,b)=>a+b,0) / vals.length;
     };
-    const pctReal = avg(filtered, 'pctRealizado');
-    const pctInd  = avg(filtered, 'pctIndice');
-    const pctAcum = avg(filtered, 'pctRealizAcum');
-    const realizadoTotal = filtered.reduce((s,r) => s + (r.realizado||0), 0);
-    const metaTotal = filtered.reduce((s,r) => s + (r.meta||0), 0);
+    const pctReal        = avg(filtered, 'pctRealizado');
+    const pctInd         = avg(filtered, 'pctIndice');
+    const pctAcum        = avg(filtered, 'pctRealizAcum');
+    const realizadoTotal = filtered.reduce((s,r) => s + (r.realizado ?? 0), 0);
+    const metaTotal      = filtered.reduce((s,r) => s + (r.meta      ?? 0), 0);
 
-    const cfg = selInd ? _getOverride(selInd) : null;
+    const cfg = _getOverride(selInd);
     function kpiClass(v) {
-      if(v===null || !cfg) return '';
+      if(v===null) return '';
       return _pctClass(v, cfg).replace('pct-', '');
     }
-    const periodo = selPer ? _periodoLabel(selPer) : (filtered[0]?.periodo ? _periodoLabel(filtered[0].periodo) : '—');
-    const unidade = cfg?.unidade || '';
-    const sentidoLabel = cfg ? (cfg.sentido === 'menor' ? '↓ menor melhor' : '↑ maior melhor') : '';
+    const unidade      = cfg?.unidade || '';
+    const sentidoLabel = cfg.sentido === 'menor' ? '↓ menor melhor' : '↑ maior melhor';
 
     kpiRow.innerHTML = `
       <div class="indcage-kpi"><div class="indcage-kpi-value ${kpiClass(pctReal)}">${pctReal!==null?_fmtNum(pctReal)+'%':'—'}</div><div class="indcage-kpi-label">% Realizado (média)</div><div class="indcage-kpi-sub">${periodo}</div></div>
       <div class="indcage-kpi"><div class="indcage-kpi-value ${kpiClass(pctInd)}">${pctInd!==null?_fmtNum(pctInd)+'%':'—'}</div><div class="indcage-kpi-label">% Índice (média)</div><div class="indcage-kpi-sub">${periodo}</div></div>
       <div class="indcage-kpi"><div class="indcage-kpi-value ${kpiClass(pctAcum)}">${pctAcum!==null?_fmtNum(pctAcum)+'%':'—'}</div><div class="indcage-kpi-label">% Realiz. Acumulado</div><div class="indcage-kpi-sub">${periodo}</div></div>
-      <div class="indcage-kpi"><div class="indcage-kpi-value" style="font-size:22px;">${_fmtNum(realizadoTotal)}${unidade?' <span style="font-size:14px;color:#94a3b8;">'+unidade+'</span>':''}</div><div class="indcage-kpi-label">Total Realizado</div><div class="indcage-kpi-sub">vs Meta: ${_fmtNum(metaTotal)}${unidade?' '+unidade:''}${sentidoLabel?' · '+sentidoLabel:''}</div></div>
+      <div class="indcage-kpi"><div class="indcage-kpi-value" style="font-size:22px;">${_fmtNum(realizadoTotal)}${unidade?' <span style="font-size:14px;color:#94a3b8;">'+unidade+'</span>':''}</div><div class="indcage-kpi-label">Total Realizado</div><div class="indcage-kpi-sub">vs Meta: ${_fmtNum(metaTotal)}${unidade?' '+unidade:''} · ${sentidoLabel}</div></div>
     `;
   }
 
