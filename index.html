@@ -11455,9 +11455,11 @@ async function loadFromCloud() {
     }
     if(payload.indicadoresCage && typeof payload.indicadoresCage === 'object') {
       DATA.indicadoresCage = {
-        indicadores: Array.isArray(payload.indicadoresCage.indicadores) ? payload.indicadoresCage.indicadores : [],
-        resultados:  Array.isArray(payload.indicadoresCage.resultados)  ? payload.indicadoresCage.resultados  : [],
-        overrides:   (payload.indicadoresCage.overrides && typeof payload.indicadoresCage.overrides === 'object') ? payload.indicadoresCage.overrides : {}
+        indicadores:     Array.isArray(payload.indicadoresCage.indicadores) ? payload.indicadoresCage.indicadores : [],
+        resultados:      Array.isArray(payload.indicadoresCage.resultados)  ? payload.indicadoresCage.resultados  : [],
+        overrides:       (payload.indicadoresCage.overrides && typeof payload.indicadoresCage.overrides === 'object') ? payload.indicadoresCage.overrides : {},
+        sisplanUrl:      payload.indicadoresCage.sisplanUrl      || '',
+        sisplanAutoSync: payload.indicadoresCage.sisplanAutoSync || false
       };
     }
     if(payload.newPops?.length) {
