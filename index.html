@@ -3349,10 +3349,11 @@
     </div>
   </div>
 
-  <!-- Cobertura por Macroprocesso -->
-  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);">
-    <div style="font-size:13px;font-weight:800;color:#0a2540;margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em;">🗺 Cobertura da Arquitetura de Processos</div>
-    <div id="cockpit-coverage-grid" style="display:flex;flex-direction:column;gap:10px;"></div>
+  <!-- Divider before existing EPP dashboard metrics -->
+  <div style="display:flex;align-items:center;gap:14px;margin:8px 0;">
+    <div style="flex:1;height:1px;background:linear-gradient(90deg,#e2e8f0,transparent);"></div>
+    <div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;">Métricas Detalhadas</div>
+    <div style="flex:1;height:1px;background:linear-gradient(270deg,#e2e8f0,transparent);"></div>
   </div>
 
 </div><!-- /cockpit-module -->
@@ -20411,7 +20412,15 @@ function statusModalAutoFill() {
     hideAllModules();
     if (typeof hideHome === 'function') hideHome();
     document.getElementById('cockpit-module').style.display = 'block';
+    // Also show the existing EPP dashboard panel with all existing metrics
+    const dash = document.getElementById('epp-dash-panel');
+    if (dash) {
+      dash.style.display = 'block';
+      // Override its top padding so it flows naturally below cockpit sections
+      dash.style.paddingTop = '0';
+    }
     _renderCockpit();
+    if (typeof eppRenderDashboard === 'function') eppRenderDashboard();
   };
 
   function _allPops() {
@@ -20443,7 +20452,6 @@ function statusModalAutoFill() {
     _renderKpis(pops);
     _renderDonut(pops);
     _renderTimeline(pops);
-    _renderCoverage(pops);
     _renderPopSelector(pops);
   }
 
