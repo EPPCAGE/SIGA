@@ -4823,7 +4823,22 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
 
   <!-- ─── TAB: RESULTADOS ──────────────────────────────────── -->
   <div id="indcage-sec-resultados" class="indcage-section">
-    <!-- Import bar -->
+
+    <!-- Sincronização Automática via URL -->
+    <div style="background:#f0f7ff;border:1px solid #c5d8f5;border-radius:8px;padding:12px 16px;margin-bottom:10px;">
+      <div style="font-size:13px;font-weight:700;color:#0a2540;margin-bottom:4px;">🔗 Sincronização Automática via URL</div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:10px;">Cole a URL da planilha <b>publicada como CSV</b> no Google Sheets (<i>Arquivo → Compartilhar → Publicar na web → CSV</i>) e clique em Sincronizar — sem baixar nem selecionar arquivo.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input id="indcage-sync-url" type="url" class="modal-input" placeholder="https://docs.google.com/spreadsheets/d/…/pub?output=csv" style="flex:1;min-width:260px;font-size:12px;" oninput="indcageSaveUrl()">
+        <button class="btn btn-primary" onclick="indcageSyncFromUrl()" style="font-size:12px;padding:8px 16px;white-space:nowrap;">🔄 Sincronizar</button>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#334155;cursor:pointer;white-space:nowrap;">
+          <input type="checkbox" id="indcage-sync-auto" onchange="indcageSaveUrl()" style="width:14px;height:14px;"> Auto ao abrir
+        </label>
+      </div>
+      <div id="indcage-sync-status" style="font-size:11px;color:#64748b;margin-top:6px;min-height:16px;"></div>
+    </div>
+
+    <!-- Import bar (manual) -->
     <div class="indcage-import-bar">
       <div style="flex:1;min-width:200px;">
         <div style="font-size:13px;font-weight:700;color:#0a2540;">📥 Importar Planilha SISPLAN</div>
@@ -20557,6 +20572,8 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
     if(!Array.isArray(DATA.indicadoresCage.indicadores)) DATA.indicadoresCage.indicadores = [];
     if(!Array.isArray(DATA.indicadoresCage.resultados))  DATA.indicadoresCage.resultados  = [];
     if(!DATA.indicadoresCage.overrides || typeof DATA.indicadoresCage.overrides !== 'object') DATA.indicadoresCage.overrides = {};
+    if(DATA.indicadoresCage.sisplanUrl      === undefined) DATA.indicadoresCage.sisplanUrl      = '';
+    if(DATA.indicadoresCage.sisplanAutoSync === undefined) DATA.indicadoresCage.sisplanAutoSync = false;
   }
 
   // ─── Module show/hide ─────────────────────────────────────────────
@@ -20579,7 +20596,7 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
     const sec = document.getElementById('indcage-sec-' + tab);
     if(sec) sec.classList.add('active');
     if(tab === 'indicadores') indcageRenderIndicadores();
-    if(tab === 'resultados')  indcageRenderResultados();
+    if(tab === 'resultados')  { indcageRenderResultados(); indcageLoadUrlConfig(); }
     if(tab === 'relatorio')   indcageRenderRelatorioTab();
   };
 
@@ -20801,119 +20818,7 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
       try {
         ensureData();
         const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
-        if(rows.length < 2) { showToast('Planilha vazia ou sem dados.', 'warn'); return; }
-
-        // Detectar header row (primeira linha não vazia com >= 5 colunas preenchidas)
-        let headerIdx = 0;
-        for(let i = 0; i < Math.min(5, rows.length); i++) {
-          if(rows[i].filter(c => String(c).trim()).length >= 5) { headerIdx = i; break; }
-        }
-        const headers = rows[headerIdx].map(h => _normalizeHeader(String(h)));
-
-        // Map column indices
-        const col = {};
-        headers.forEach((h, i) => {
-          if(h.includes('divis')) col.divisao = i;
-          // '☑️ Indicador' → 'indicador' (novo) ou 'Código' → 'digo'/'cod' (legado)
-          if(h.includes('digo') || (h.includes('cod') && !h.includes('per')) || (h.includes('indicador') && !h.includes('enunciado'))) col.codigo = i;
-          if(h.includes('tipo') || h.includes('nivel') || h.includes('nvel')) col.tipoNivel = i;
-          // '🔤 Enunciado Ind.' → 'enunciado' (novo) ou 'Enunciado' (legado)
-          if(h.includes('enunciado')) col.enunciado = i;
-          // '🔡 Descrição Ind.' → 'descrição'/'descri' (novo)
-          if(h.includes('descri')) col.descricao = i;
-          if(h.includes('period') || h.includes('aval')) col.periodo = i;
-          if(h.includes('justificativa')) col.justificativa = i;
-          if(h.includes('ndice') || h.includes('indice')) col.pctIndice = i;
-          if(h.includes('meta') && col.meta === undefined) col.meta = i;
-          // Excluir colunas com 'acum'/'acumulado' para não confundir com realizado simples
-          if(h.includes('realizado') && !h.includes('acum') && !h.includes('cumul') && !h.includes('%') && col.realizado === undefined) col.realizado = i;
-          if(h.includes('realizado') && !h.includes('acum') && !h.includes('cumul') && h.includes('%') && col.pctRealizado === undefined) col.pctRealizado = i;
-          if((h.includes('acum') || h.includes('cumul')) && !h.includes('%') && col.realizadoAcum === undefined) col.realizadoAcum = i;
-          if((h.includes('acum') || h.includes('cumul')) && h.includes('%') && col.pctRealizAcum === undefined) col.pctRealizAcum = i;
-        });
-        // Análise columns: find by position among remaining 'analise' cols
-        // Acentos normalizados em _normalizeHeader, então 'Análise' → 'analise'
-        const analiseIdxs = [];
-        headers.forEach((h, i) => { if(h.includes('anali') || h.includes('anlise') || h.includes('nalis') || h.includes('alise')) analiseIdxs.push(i); });
-        if(analiseIdxs.length >= 1) col.analise  = analiseIdxs[0];
-        if(analiseIdxs.length >= 2) col.analise2 = analiseIdxs[1];
-        // % Realizado — if not found by %, find after realizado column
-        if(col.pctRealizado === undefined && col.realizado !== undefined) {
-          // look for a % column after realizado
-          for(let i = col.realizado+1; i < headers.length; i++) {
-            if(headers[i].includes('%') || headers[i].includes('perc')) { col.pctRealizado = i; break; }
-          }
-        }
-
-        const importedAt = new Date().toISOString();
-        const newRows = [];
-        for(let i = headerIdx + 1; i < rows.length; i++) {
-          const r = rows[i];
-          const enunciado = col.enunciado !== undefined ? String(r[col.enunciado]).trim() : '';
-          const codigo    = col.codigo    !== undefined ? String(r[col.codigo]).trim()    : '';
-          if(!enunciado && !codigo) continue; // skip empty rows
-          const periodo = col.periodo !== undefined ? _parsePeriodo(r[col.periodo]) : '';
-          newRows.push({
-            divisao:       col.divisao      !== undefined ? String(r[col.divisao]).trim()      : '',
-            codigo,
-            tipoNivel:     col.tipoNivel    !== undefined ? String(r[col.tipoNivel]).trim()     : '',
-            enunciado,
-            descricao:     col.descricao    !== undefined ? String(r[col.descricao]).trim()     : '',
-            periodo,
-            justificativa: col.justificativa!== undefined ? String(r[col.justificativa]).trim(): '',
-            analise:       col.analise      !== undefined ? String(r[col.analise]).trim()       : '',
-            pctIndice:     col.pctIndice    !== undefined ? _parseNum(r[col.pctIndice])         : null,
-            meta:          col.meta         !== undefined ? _parseNum(r[col.meta])              : null,
-            realizado:     col.realizado    !== undefined ? _parseNum(r[col.realizado])         : null,
-            pctRealizado:  col.pctRealizado !== undefined ? _parseNum(r[col.pctRealizado])      : null,
-            analise2:      col.analise2     !== undefined ? String(r[col.analise2]).trim()      : '',
-            realizadoAcum: col.realizadoAcum!== undefined ? _parseNum(r[col.realizadoAcum])    : null,
-            pctRealizAcum: col.pctRealizAcum!== undefined ? _parseNum(r[col.pctRealizAcum])    : null,
-            _importedAt:   importedAt
-          });
-        }
-
-        // Merge: replace rows with same codigo+periodo, append new
-        const existing = DATA.indicadoresCage.resultados;
-        newRows.forEach(nr => {
-          const key = (nr.codigo + '||' + nr.periodo + '||' + nr.divisao).toLowerCase();
-          const idx = existing.findIndex(er => (er.codigo+'||'+er.periodo+'||'+er.divisao).toLowerCase() === key);
-          if(idx !== -1) existing[idx] = nr;
-          else existing.push(nr);
-        });
-
-        // Populate auto-create indicators from imported codes
-        newRows.forEach(nr => {
-          if(!nr.codigo) return;
-          const exists = getAllIndicators().some(i => i.codigo === nr.codigo);
-          if(!exists) {
-            DATA.indicadoresCage.indicadores.push({
-              id: 'ic_auto_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
-              codigo: nr.codigo,
-              enunciado: nr.enunciado,
-              descricao: nr.descricao || '',
-              sisplan: '',
-              nivel: _guessNivel(nr.tipoNivel),
-              divisao: nr.divisao,
-              pop: '',
-              meta: nr.meta !== null ? String(nr.meta) : '',
-              periodicidade: 'mensal',
-              responsavel: '',
-              formula: '',
-              fonte: 'Importado SISPLAN'
-            });
-          }
-        });
-
-        markChanged();
-        saveToCloud();
-        if(status) status.textContent = `✅ ${newRows.length} registros importados`;
-        showToast(`📥 ${newRows.length} resultados importados com sucesso!`, 'success');
-        indcageRenderResultados();
-        // reset input
+        _indcageProcessWb(wb, status);
         input.value = '';
       } catch(err) {
         console.error('indcageImportExcel error:', err);
@@ -20922,6 +20827,164 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
       }
     };
     reader.readAsArrayBuffer(file);
+  };
+
+  // ─── Processamento interno de workbook (reutilizado por import e sync URL) ─
+  function _indcageProcessWb(wb, statusEl) {
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    if(rows.length < 2) { showToast('Planilha vazia ou sem dados.', 'warn'); return; }
+
+    let headerIdx = 0;
+    for(let i = 0; i < Math.min(5, rows.length); i++) {
+      if(rows[i].filter(c => String(c).trim()).length >= 5) { headerIdx = i; break; }
+    }
+    const headers = rows[headerIdx].map(h => _normalizeHeader(String(h)));
+
+    const col = {};
+    headers.forEach((h, i) => {
+      if(h.includes('divis')) col.divisao = i;
+      if(h.includes('digo') || (h.includes('cod') && !h.includes('per')) || (h.includes('indicador') && !h.includes('enunciado'))) col.codigo = i;
+      if(h.includes('tipo') || h.includes('nivel') || h.includes('nvel')) col.tipoNivel = i;
+      if(h.includes('enunciado')) col.enunciado = i;
+      if(h.includes('descri')) col.descricao = i;
+      if(h.includes('period') || h.includes('aval')) col.periodo = i;
+      if(h.includes('justificativa')) col.justificativa = i;
+      if(h.includes('ndice') || h.includes('indice')) col.pctIndice = i;
+      if(h.includes('meta') && col.meta === undefined) col.meta = i;
+      if(h.includes('realizado') && !h.includes('acum') && !h.includes('cumul') && !h.includes('%') && col.realizado === undefined) col.realizado = i;
+      if(h.includes('realizado') && !h.includes('acum') && !h.includes('cumul') && h.includes('%') && col.pctRealizado === undefined) col.pctRealizado = i;
+      if((h.includes('acum') || h.includes('cumul')) && !h.includes('%') && col.realizadoAcum === undefined) col.realizadoAcum = i;
+      if((h.includes('acum') || h.includes('cumul')) && h.includes('%') && col.pctRealizAcum === undefined) col.pctRealizAcum = i;
+    });
+    const analiseIdxs = [];
+    headers.forEach((h, i) => { if(h.includes('anali') || h.includes('anlise') || h.includes('nalis') || h.includes('alise')) analiseIdxs.push(i); });
+    if(analiseIdxs.length >= 1) col.analise  = analiseIdxs[0];
+    if(analiseIdxs.length >= 2) col.analise2 = analiseIdxs[1];
+    if(col.pctRealizado === undefined && col.realizado !== undefined) {
+      for(let i = col.realizado+1; i < headers.length; i++) {
+        if(headers[i].includes('%') || headers[i].includes('perc')) { col.pctRealizado = i; break; }
+      }
+    }
+
+    const importedAt = new Date().toISOString();
+    const newRows = [];
+    for(let i = headerIdx + 1; i < rows.length; i++) {
+      const r = rows[i];
+      const enunciado = col.enunciado !== undefined ? String(r[col.enunciado]).trim() : '';
+      const codigo    = col.codigo    !== undefined ? String(r[col.codigo]).trim()    : '';
+      if(!enunciado && !codigo) continue;
+      const periodo = col.periodo !== undefined ? _parsePeriodo(r[col.periodo]) : '';
+      newRows.push({
+        divisao:       col.divisao      !== undefined ? String(r[col.divisao]).trim()      : '',
+        codigo,
+        tipoNivel:     col.tipoNivel    !== undefined ? String(r[col.tipoNivel]).trim()     : '',
+        enunciado,
+        descricao:     col.descricao    !== undefined ? String(r[col.descricao]).trim()     : '',
+        periodo,
+        justificativa: col.justificativa!== undefined ? String(r[col.justificativa]).trim(): '',
+        analise:       col.analise      !== undefined ? String(r[col.analise]).trim()       : '',
+        pctIndice:     col.pctIndice    !== undefined ? _parseNum(r[col.pctIndice])         : null,
+        meta:          col.meta         !== undefined ? _parseNum(r[col.meta])              : null,
+        realizado:     col.realizado    !== undefined ? _parseNum(r[col.realizado])         : null,
+        pctRealizado:  col.pctRealizado !== undefined ? _parseNum(r[col.pctRealizado])      : null,
+        analise2:      col.analise2     !== undefined ? String(r[col.analise2]).trim()      : '',
+        realizadoAcum: col.realizadoAcum!== undefined ? _parseNum(r[col.realizadoAcum])    : null,
+        pctRealizAcum: col.pctRealizAcum!== undefined ? _parseNum(r[col.pctRealizAcum])    : null,
+        _importedAt:   importedAt
+      });
+    }
+
+    const existing = DATA.indicadoresCage.resultados;
+    newRows.forEach(nr => {
+      const key = (nr.codigo + '||' + nr.periodo + '||' + nr.divisao).toLowerCase();
+      const idx = existing.findIndex(er => (er.codigo+'||'+er.periodo+'||'+er.divisao).toLowerCase() === key);
+      if(idx !== -1) existing[idx] = nr; else existing.push(nr);
+    });
+
+    newRows.forEach(nr => {
+      if(!nr.codigo) return;
+      const exists = getAllIndicators().some(i => i.codigo === nr.codigo);
+      if(!exists) {
+        DATA.indicadoresCage.indicadores.push({
+          id: 'ic_auto_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+          codigo: nr.codigo,
+          enunciado: nr.enunciado,
+          descricao: nr.descricao || '',
+          sisplan: '',
+          nivel: _guessNivel(nr.tipoNivel),
+          divisao: nr.divisao,
+          pop: '',
+          meta: nr.meta !== null ? String(nr.meta) : '',
+          periodicidade: 'mensal',
+          responsavel: '',
+          formula: '',
+          fonte: 'Importado SISPLAN'
+        });
+      }
+    });
+
+    markChanged();
+    saveToCloud();
+    if(statusEl) statusEl.textContent = `✅ ${newRows.length} registros importados`;
+    showToast(`📥 ${newRows.length} resultados importados com sucesso!`, 'success');
+    indcageRenderResultados();
+  };
+
+  // ─── Sincronização via URL ────────────────────────────────────────────────
+  window.indcageSaveUrl = function() {
+    ensureData();
+    DATA.indicadoresCage.sisplanUrl      = document.getElementById('indcage-sync-url')?.value.trim()  || '';
+    DATA.indicadoresCage.sisplanAutoSync = document.getElementById('indcage-sync-auto')?.checked || false;
+    markChanged();
+  };
+
+  window.indcageLoadUrlConfig = function() {
+    ensureData();
+    const urlEl  = document.getElementById('indcage-sync-url');
+    const autoEl = document.getElementById('indcage-sync-auto');
+    if(urlEl)  urlEl.value   = DATA.indicadoresCage.sisplanUrl      || '';
+    if(autoEl) autoEl.checked = DATA.indicadoresCage.sisplanAutoSync || false;
+    // Auto-sync se habilitado e URL configurada
+    if(DATA.indicadoresCage.sisplanAutoSync && DATA.indicadoresCage.sisplanUrl) {
+      indcageSyncFromUrl(true);
+    } else if(DATA.indicadoresCage.sisplanLastSync) {
+      const syncEl = document.getElementById('indcage-sync-status');
+      if(syncEl) syncEl.textContent = `Última sincronização: ${new Date(DATA.indicadoresCage.sisplanLastSync).toLocaleString('pt-BR')}`;
+    }
+  };
+
+  window.indcageSyncFromUrl = async function(silent = false) {
+    ensureData();
+    const urlInput = document.getElementById('indcage-sync-url');
+    const url = (urlInput?.value.trim() || DATA.indicadoresCage.sisplanUrl || '').trim();
+    const syncStatus = document.getElementById('indcage-sync-status');
+    const importStatus = document.getElementById('indcage-import-status');
+
+    if(!url) {
+      if(!silent) showToast('Cole a URL da planilha no campo acima.', 'warn');
+      return;
+    }
+
+    if(syncStatus) syncStatus.textContent = '⏳ Buscando planilha…';
+    try {
+      const resp = await fetch(url, { cache: 'no-store' });
+      if(!resp.ok) throw new Error(`Servidor retornou HTTP ${resp.status}`);
+      const buf = await resp.arrayBuffer();
+      if(syncStatus) syncStatus.textContent = '⏳ Processando…';
+      ensureData();
+      const wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true });
+      _indcageProcessWb(wb, importStatus);
+      DATA.indicadoresCage.sisplanLastSync = new Date().toISOString();
+      if(syncStatus) syncStatus.textContent = `✅ Sincronizado em ${new Date().toLocaleString('pt-BR')}`;
+    } catch(err) {
+      console.error('indcageSyncFromUrl:', err);
+      const msg = (err.message.includes('fetch') || err.message.includes('Network'))
+        ? 'Não foi possível acessar a URL. Verifique se a planilha está publicada publicamente (sem login).'
+        : err.message;
+      if(syncStatus) syncStatus.textContent = `❌ ${msg}`;
+      if(!silent) showToast('Erro na sincronização: ' + msg, 'warn');
+    }
   };
 
   function _normalizeHeader(h) {
