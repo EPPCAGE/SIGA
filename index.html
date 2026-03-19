@@ -21266,32 +21266,48 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
     if(!kpiRow) return;
     if(filtered.length === 0) { kpiRow.innerHTML = ''; return; }
 
-    // Agregar para o período/indicador selecionado
+    const periodo = selPer ? _periodoLabel(selPer) : (filtered[0]?.periodo ? _periodoLabel(filtered[0].periodo) : '—');
+
+    // Sem indicador específico: KPIs de contagem
+    // (somar % de indicadores misturados com unidades diferentes não faz sentido)
+    if(!selInd) {
+      const uniqInds = new Set(filtered.map(r => r.codigo).filter(Boolean)).size;
+      const uniqPers = new Set(filtered.map(r => r.periodo).filter(Boolean)).size;
+      const comDados = filtered.filter(r => r.realizado !== null).length;
+      const semDados = filtered.length - comDados;
+      kpiRow.innerHTML = `
+        <div class="indcage-kpi"><div class="indcage-kpi-value" style="font-size:26px;">${uniqInds}</div><div class="indcage-kpi-label">Indicadores</div><div class="indcage-kpi-sub">${filtered.length} linha(s)</div></div>
+        <div class="indcage-kpi"><div class="indcage-kpi-value" style="font-size:26px;">${uniqPers}</div><div class="indcage-kpi-label">Períodos distintos</div><div class="indcage-kpi-sub">${periodo}</div></div>
+        <div class="indcage-kpi"><div class="indcage-kpi-value" style="font-size:26px;">${comDados}</div><div class="indcage-kpi-label">Com realizado informado</div><div class="indcage-kpi-sub">${semDados} sem dado</div></div>
+      `;
+      return;
+    }
+
+    // Com indicador específico selecionado: mostrar médias e totais
     const avg = (arr, key) => {
       const vals = arr.map(r => r[key]).filter(v => v !== null);
       if(!vals.length) return null;
       return vals.reduce((a,b)=>a+b,0) / vals.length;
     };
-    const pctReal = avg(filtered, 'pctRealizado');
-    const pctInd  = avg(filtered, 'pctIndice');
-    const pctAcum = avg(filtered, 'pctRealizAcum');
-    const realizadoTotal = filtered.reduce((s,r) => s + (r.realizado||0), 0);
-    const metaTotal = filtered.reduce((s,r) => s + (r.meta||0), 0);
+    const pctReal        = avg(filtered, 'pctRealizado');
+    const pctInd         = avg(filtered, 'pctIndice');
+    const pctAcum        = avg(filtered, 'pctRealizAcum');
+    const realizadoTotal = filtered.reduce((s,r) => s + (r.realizado ?? 0), 0);
+    const metaTotal      = filtered.reduce((s,r) => s + (r.meta      ?? 0), 0);
 
-    const cfg = selInd ? _getOverride(selInd) : null;
+    const cfg = _getOverride(selInd);
     function kpiClass(v) {
-      if(v===null || !cfg) return '';
+      if(v===null) return '';
       return _pctClass(v, cfg).replace('pct-', '');
     }
-    const periodo = selPer ? _periodoLabel(selPer) : (filtered[0]?.periodo ? _periodoLabel(filtered[0].periodo) : '—');
-    const unidade = cfg?.unidade || '';
-    const sentidoLabel = cfg ? (cfg.sentido === 'menor' ? '↓ menor melhor' : '↑ maior melhor') : '';
+    const unidade      = cfg?.unidade || '';
+    const sentidoLabel = cfg.sentido === 'menor' ? '↓ menor melhor' : '↑ maior melhor';
 
     kpiRow.innerHTML = `
       <div class="indcage-kpi"><div class="indcage-kpi-value ${kpiClass(pctReal)}">${pctReal!==null?_fmtNum(pctReal)+'%':'—'}</div><div class="indcage-kpi-label">% Realizado (média)</div><div class="indcage-kpi-sub">${periodo}</div></div>
       <div class="indcage-kpi"><div class="indcage-kpi-value ${kpiClass(pctInd)}">${pctInd!==null?_fmtNum(pctInd)+'%':'—'}</div><div class="indcage-kpi-label">% Índice (média)</div><div class="indcage-kpi-sub">${periodo}</div></div>
       <div class="indcage-kpi"><div class="indcage-kpi-value ${kpiClass(pctAcum)}">${pctAcum!==null?_fmtNum(pctAcum)+'%':'—'}</div><div class="indcage-kpi-label">% Realiz. Acumulado</div><div class="indcage-kpi-sub">${periodo}</div></div>
-      <div class="indcage-kpi"><div class="indcage-kpi-value" style="font-size:22px;">${_fmtNum(realizadoTotal)}${unidade?' <span style="font-size:14px;color:#94a3b8;">'+unidade+'</span>':''}</div><div class="indcage-kpi-label">Total Realizado</div><div class="indcage-kpi-sub">vs Meta: ${_fmtNum(metaTotal)}${unidade?' '+unidade:''}${sentidoLabel?' · '+sentidoLabel:''}</div></div>
+      <div class="indcage-kpi"><div class="indcage-kpi-value" style="font-size:22px;">${_fmtNum(realizadoTotal)}${unidade?' <span style="font-size:14px;color:#94a3b8;">'+unidade+'</span>':''}</div><div class="indcage-kpi-label">Total Realizado</div><div class="indcage-kpi-sub">vs Meta: ${_fmtNum(metaTotal)}${unidade?' '+unidade:''} · ${sentidoLabel}</div></div>
     `;
   }
 
