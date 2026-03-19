@@ -3108,17 +3108,17 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- FLOW DESIGNER MODULE — Mermaid.js + BPMN 2.0              -->
+<!-- FLOW DESIGNER MODULE — Excalidraw + BPMN 2.0              -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div id="fd-module" style="display:none;">
 
   <!-- Seletor de modo -->
   <div id="fd-mode-bar">
-    <button id="fd-btn-mermaid" class="fd-mode-btn active" onclick="fdSetMode('mermaid')">📝 Texto → Mermaid</button>
+    <button id="fd-btn-mermaid" class="fd-mode-btn active" onclick="fdSetMode('excalidraw')">🎨 Texto → Excalidraw</button>
     <button id="fd-btn-bpmn"    class="fd-mode-btn"        onclick="fdSetMode('bpmn')">🏗️ Editor BPMN 2.0</button>
   </div>
 
-  <!-- ── MODO TEXTO / MERMAID ───────────────────────────────── -->
+  <!-- ── MODO TEXTO / EXCALIDRAW ───────────────────────────── -->
   <div id="fd-text-mode" style="display:flex;height:calc(100vh - 218px);min-height:520px;background:white;border-radius:var(--radius);border:1px solid var(--cage-border);overflow:hidden;box-shadow:var(--shadow-md);">
 
     <!-- LEFT: collapsible text input panel -->
@@ -3143,15 +3143,11 @@ Fim"></textarea>
       </div>
     </div>
 
-    <!-- CENTER: Mermaid canvas -->
+    <!-- CENTER: Excalidraw canvas -->
     <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
       <!-- Toolbar -->
       <div style="padding:7px 12px;border-bottom:1px solid var(--cage-border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--cage-blue);">
         <button id="fd-expand-btn" title="Expandir painel de texto" onclick="fdToggleLeftPanel()" style="display:none;padding:4px 8px;background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">▶ Texto</button>
-        <button onclick="fdZoom(1.2)" title="Zoom +" style="padding:4px 10px;background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:13px;cursor:pointer;">＋</button>
-        <button onclick="fdZoom(0.83)" title="Zoom -" style="padding:4px 10px;background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:13px;cursor:pointer;">－</button>
-        <button onclick="fdZoomReset()" title="Zoom 100%" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15);border-radius:5px;font-size:11px;cursor:pointer;">100%</button>
-        <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
         <label style="font-size:11px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:5px;cursor:pointer;">
           <input type="checkbox" id="fd-lr-toggle" onchange="fdToggleDirection(this.checked)" checked style="cursor:pointer;">
           Esquerda→Direita
@@ -3161,30 +3157,16 @@ Fim"></textarea>
         <button onclick="fdExportPNG()" title="Exportar PNG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">⬇ PNG</button>
         <button onclick="fdSave()" title="Salvar (Ctrl+S)" style="padding:4px 9px;background:rgba(0,168,107,.3);color:#4ade80;border:1px solid rgba(0,168,107,.5);border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;">☁️ Salvar</button>
       </div>
-      <!-- Mermaid output -->
-      <div id="fd-canvas-wrap" style="flex:1;overflow:auto;background:#f8fafc;display:flex;align-items:flex-start;justify-content:center;padding:20px 16px;">
-        <div id="fd-mermaid-out" style="transform-origin:top center;transition:transform .15s;">
-          <div style="color:#94a3b8;font-size:14px;padding:60px 20px;text-align:center;font-family:'DM Sans',sans-serif;">
-            Cole o texto no painel e clique em "Gerar Fluxo"
-          </div>
+      <!-- Excalidraw iframe -->
+      <div id="fd-canvas-wrap" style="flex:1;overflow:hidden;position:relative;">
+        <div id="fd-exc-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:white;z-index:2;flex-direction:column;gap:12px;">
+          <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="80 20" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="1s" repeatCount="indefinite"/></circle></svg>
+          <div style="font-size:13px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando Excalidraw…</div>
         </div>
+        <iframe id="fd-excalidraw-frame" style="width:100%;height:100%;border:none;display:block;" src="about:blank" allow="clipboard-read; clipboard-write"></iframe>
       </div>
     </div>
 
-    <!-- RIGHT: Mermaid code panel -->
-    <div style="width:230px;flex-shrink:0;border-left:1px solid var(--cage-border);display:flex;flex-direction:column;background:#f8fafc;">
-      <div style="padding:10px 14px;border-bottom:1px solid var(--cage-border);background:var(--cage-blue);">
-        <div style="font-size:12px;font-weight:700;color:white;">Código Mermaid</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:1px;">Edite e clique em Renderizar</div>
-      </div>
-      <textarea id="fd-mermaid-code" spellcheck="false"
-        style="flex:1;border:none;outline:none;resize:none;padding:10px 12px;font-size:11px;font-family:'JetBrains Mono',monospace;line-height:1.65;background:#f8fafc;color:var(--text-primary);"
-        placeholder="flowchart LR&#10;  subgraph Auditor&#10;    A([Início])&#10;    B[Registrar]&#10;  end&#10;  A --> B"></textarea>
-      <div style="padding:8px 10px;border-top:1px solid var(--cage-border);background:#f0f4f8;">
-        <button onclick="fdRenderCode()" style="width:100%;padding:7px;background:var(--cage-mid);color:white;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">▶ Renderizar</button>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:6px;line-height:1.5;">Mermaid.js · <a href="https://mermaid.js.org/syntax/flowchart.html" target="_blank" style="color:var(--cage-mid);">sintaxe</a></div>
-      </div>
-    </div>
   </div><!-- /fd-text-mode -->
 
   <!-- ── MODO BPMN 2.0 ──────────────────────────────────────── -->
@@ -15260,14 +15242,17 @@ function arqShowProcessDetail(idx) {
   modal.classList.add('open');
   try { arqCompRenderSection(idx); } catch(e) { console.error('[arqCompRenderSection]', e); }
 
-  // Render mermaid if needed
-  if(mapped && popData?.flowDiagram?.mermaid && !fluxoUrl) {
+  // Render flow diagram if available
+  if(mapped && popData?.flowDiagram && !fluxoUrl) {
     const mDiv = document.getElementById('arq-det-mermaid');
-    if(mDiv && window.mermaid) {
-      try {
-        const id = 'arq-mermaid-'+Date.now();
-        mermaid.render(id, popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{});
-      } catch(e) {}
+    if(mDiv) {
+      if(popData.flowDiagram.excalidraw?.elements?.length) {
+        mDiv.innerHTML = `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-size:12px;color:#64748b;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px;">🎨</div>
+          Diagrama Excalidraw salvo — abra o <strong>Fluxo</strong> para visualizar e editar.</div>`;
+      } else if(popData.flowDiagram.mermaid && window.mermaid) {
+        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{}); } catch(e) {}
+      }
     }
   }
 }
@@ -16007,21 +15992,23 @@ ${fluxoTexto}`;
         </div>
       </div>`;
 
-      // Renderizar Mermaid após inserir o HTML
-      setTimeout(() => {
-        try {
-          mermaid.render(mermaidId + '-svg', mermaidCode).then(({ svg }) => {
+      // Renderizar Mermaid sugerido pela IA
+      if(window.mermaid) {
+        setTimeout(() => {
+          try {
+            mermaid.render(mermaidId + '-svg', mermaidCode).then(({ svg }) => {
+              const el = document.getElementById(mermaidId);
+              if(el) el.innerHTML = svg;
+            }).catch(err => {
+              const el = document.getElementById(mermaidId);
+              if(el) el.innerHTML = `<div style="color:#dc2626;font-size:12px;">Erro ao renderizar diagrama: ${err.message}</div>`;
+            });
+          } catch(e) {
             const el = document.getElementById(mermaidId);
-            if(el) el.innerHTML = svg;
-          }).catch(err => {
-            const el = document.getElementById(mermaidId);
-            if(el) el.innerHTML = `<div style="color:#dc2626;font-size:12px;">Erro ao renderizar diagrama: ${err.message}</div>`;
-          });
-        } catch(e) {
-          const el = document.getElementById(mermaidId);
-          if(el) el.innerHTML = `<div style="color:#dc2626;font-size:12px;">Erro ao renderizar diagrama.</div>`;
-        }
-      }, 100);
+            if(el) el.innerHTML = `<div style="color:#dc2626;font-size:12px;">Erro ao renderizar diagrama.</div>`;
+          }
+        }, 100);
+      }
     }
 
     output.innerHTML = html;
@@ -19399,28 +19386,102 @@ function statusModalUpdateSubList() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// FLOW DESIGNER — Mermaid.js + BPMN 2.0 (bpmn-js)
+// FLOW DESIGNER — Excalidraw + BPMN 2.0 (bpmn-js)
 // ═══════════════════════════════════════════════════════════════════
 (function() {
-  // ── Initialize Mermaid ────────────────────────────────────────
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: 'default',
-    flowchart: { curve: 'basis', padding: 20, useMaxWidth: false },
-    securityLevel: 'loose',
-  });
+  let _direction   = 'LR';
+  let _currentMode = 'excalidraw'; // 'excalidraw' | 'bpmn'
+  let _excBlobUrl  = null;
+  let _excReady    = false;
 
-  let _direction = 'LR';
-  let _zoom      = 1;
-  let _savedCode = '';
-  let _currentMode = 'mermaid'; // 'mermaid' | 'bpmn'
+  // ── Excalidraw iframe HTML (loaded via blob URL) ──────────────
+  function _getExcalidrawHtml() {
+    return `<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>*{box-sizing:border-box;margin:0;padding:0}html,body,#root{width:100%;height:100%;overflow:hidden}</style>
+</head><body><div id="root"></div>
+<script type="module">
+import React from 'https://esm.sh/react@18';
+import { createRoot } from 'https://esm.sh/react-dom@18/client';
+import * as ExLib from 'https://esm.sh/@excalidraw/excalidraw@0.17.6?bundle&deps=react@18,react-dom@18';
+import { parseMermaidToExcalidraw } from 'https://esm.sh/@excalidraw/mermaid-to-excalidraw@0.2.3?bundle';
+const { Excalidraw, exportToSvg, exportToBlob } = ExLib;
+let _api = null;
+function App() {
+  React.useEffect(() => {
+    window.parent.postMessage({ type: 'EXC_READY' }, '*');
+    window.addEventListener('message', async ev => {
+      const d = ev.data || {};
+      if (d.type === 'LOAD_MERMAID') {
+        try {
+          const res = await parseMermaidToExcalidraw(d.code);
+          const els = res.elements || res;
+          if (_api) { _api.updateScene({ elements: els }); setTimeout(() => _api.scrollToContent(els, { fitToViewport: true }), 80); }
+        } catch(e) { console.error('exc mermaid parse', e); }
+      } else if (d.type === 'LOAD_SCENE') {
+        if (_api && d.elements) { _api.updateScene({ elements: d.elements, files: d.files || {} }); setTimeout(() => _api.scrollToContent(d.elements, { fitToViewport: true }), 80); }
+      } else if (d.type === 'GET_SCENE') {
+        if (_api) window.parent.postMessage({ type: 'SCENE_DATA', elements: _api.getSceneElements(), files: _api.getFiles() }, '*');
+      } else if (d.type === 'EXPORT_SVG') {
+        if (_api) { const s = await exportToSvg({ elements: _api.getSceneElements(), files: _api.getFiles(), appState: { ...(_api.getAppState()), exportWithDarkMode: false } }); window.parent.postMessage({ type: 'SVG_DATA', svg: new XMLSerializer().serializeToString(s) }, '*'); }
+      } else if (d.type === 'EXPORT_PNG') {
+        if (_api) { const b = await exportToBlob({ elements: _api.getSceneElements(), files: _api.getFiles(), appState: _api.getAppState(), mimeType: 'image/png', quality: 0.95 }); const r = new FileReader(); r.onload = () => window.parent.postMessage({ type: 'PNG_DATA', dataUrl: r.result }, '*'); r.readAsDataURL(b); }
+      }
+    });
+  }, []);
+  return React.createElement(Excalidraw, { excalidrawAPI: a => { _api = a; }, theme: 'light', langCode: 'pt-BR' });
+}
+createRoot(document.getElementById('root')).render(React.createElement(App, null));
+<\/script></body></html>`;
+  }
+
+  // ── Ensure Excalidraw iframe is initialised ───────────────────
+  function _ensureFrame(cb) {
+    const frame = document.getElementById('fd-excalidraw-frame');
+    if (!frame) return;
+    if (_excReady) { if (cb) cb(frame); return; }
+    if (!_excBlobUrl) {
+      const blob = new Blob([_getExcalidrawHtml()], { type: 'text/html' });
+      _excBlobUrl = URL.createObjectURL(blob);
+      frame.src = _excBlobUrl;
+    }
+    const onReady = ev => {
+      if (ev.data?.type === 'EXC_READY') {
+        _excReady = true;
+        window.removeEventListener('message', onReady);
+        const loading = document.getElementById('fd-exc-loading');
+        if (loading) loading.style.display = 'none';
+        if (cb) cb(frame);
+      }
+    };
+    window.addEventListener('message', onReady);
+  }
+
+  // ── Send Mermaid code to Excalidraw iframe ────────────────────
+  function _render(mermaidCode) {
+    _ensureFrame(frame => {
+      frame.contentWindow.postMessage({ type: 'LOAD_MERMAID', code: mermaidCode }, '*');
+    });
+  }
+
+  // ── Promise: get scene from iframe ────────────────────────────
+  function _getScene() {
+    return new Promise(resolve => {
+      const frame = document.getElementById('fd-excalidraw-frame');
+      if (!frame || !_excReady) { resolve(null); return; }
+      const h = ev => { if (ev.data?.type === 'SCENE_DATA') { window.removeEventListener('message', h); resolve(ev.data); } };
+      window.addEventListener('message', h);
+      frame.contentWindow.postMessage({ type: 'GET_SCENE' }, '*');
+      setTimeout(() => { window.removeEventListener('message', h); resolve(null); }, 4000);
+    });
+  }
 
   // ── Mode switching ────────────────────────────────────────────
   window.fdSetMode = function(mode) {
     _currentMode = mode;
-    document.getElementById('fd-text-mode').style.display  = mode === 'mermaid' ? 'flex'  : 'none';
-    document.getElementById('fd-bpmn-mode').style.display  = mode === 'bpmn'    ? 'block' : 'none';
-    document.getElementById('fd-btn-mermaid').classList.toggle('active', mode === 'mermaid');
+    document.getElementById('fd-text-mode').style.display  = mode === 'excalidraw' ? 'flex'  : 'none';
+    document.getElementById('fd-bpmn-mode').style.display  = mode === 'bpmn'       ? 'block' : 'none';
+    document.getElementById('fd-btn-mermaid').classList.toggle('active', mode === 'excalidraw');
     document.getElementById('fd-btn-bpmn').classList.toggle('active', mode === 'bpmn');
     if (mode === 'bpmn') { _initModeler(); _loadDiagram(); }
   };
@@ -19429,7 +19490,6 @@ function statusModalUpdateSubList() {
   window.showFlowDesigner = function(tab) {
     hideHome();
     hideAllModules();
-    // Restore nav-tabs visibility (hideAllModules hides them, but fd-module lives within the POP nav context)
     const nav = document.querySelector('.nav-tabs');
     const sw  = document.getElementById('pop-switcher-bar');
     if(nav) nav.style.display = '';
@@ -19437,60 +19497,22 @@ function statusModalUpdateSubList() {
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     if (tab) tab.classList.add('active');
     document.getElementById('fd-module').style.display = 'block';
-    // Always open in mermaid mode; load saved mermaid diagram
-    fdSetMode('mermaid');
+    fdSetMode('excalidraw');
     _fdLoad();
   };
 
-  // ── Load saved mermaid diagram ────────────────────────────────
+  // ── Load saved diagram into Excalidraw ────────────────────────
   function _fdLoad() {
-    const p = popPrefix(currentPop);
+    const p  = popPrefix(currentPop);
     const fd = DATA[p]?.flowDiagram;
-    if (fd?.mermaid) {
-      _savedCode = fd.mermaid;
-      document.getElementById('fd-mermaid-code').value = _savedCode;
-      _render(_savedCode);
-    } else {
-      _savedCode = '';
-      document.getElementById('fd-mermaid-out').innerHTML =
-        '<div style="color:#94a3b8;font-size:14px;padding:60px 20px;text-align:center;">Cole o texto e clique em "Gerar Fluxo"</div>';
-    }
     if (fd?.text) document.getElementById('fd-text-input').value = fd.text;
-  }
-
-  // ── Textarea auto-save (mermaid code) ─────────────────────────
-  const _codeArea = document.getElementById('fd-mermaid-code');
-  if (_codeArea) {
-    let _autoT;
-    _codeArea.addEventListener('input', () => {
-      clearTimeout(_autoT);
-      _autoT = setTimeout(() => {
-        const code = _codeArea.value.trim();
-        const p = popPrefix(currentPop);
-        if (!p || !DATA[p] || !code) return;
-        if (!DATA[p].flowDiagram) DATA[p].flowDiagram = {};
-        DATA[p].flowDiagram.mermaid = code;
-        _savedCode = code;
-        markChanged();
-      }, 900);
+    _ensureFrame(frame => {
+      if (fd?.excalidraw?.elements?.length) {
+        frame.contentWindow.postMessage({ type: 'LOAD_SCENE', elements: fd.excalidraw.elements, files: fd.excalidraw.files || {} }, '*');
+      } else if (fd?.mermaid) {
+        frame.contentWindow.postMessage({ type: 'LOAD_MERMAID', code: fd.mermaid }, '*');
+      }
     });
-  }
-
-  // ── Render Mermaid code ───────────────────────────────────────
-  async function _render(code) {
-    const out = document.getElementById('fd-mermaid-out');
-    if (!code || !code.trim()) return;
-    try {
-      const id = 'mmd-' + Date.now();
-      const { svg } = await mermaid.render(id, code.trim());
-      out.innerHTML = svg;
-      out.style.transform = `scale(${_zoom})`;
-      const svgEl = out.querySelector('svg');
-      if (svgEl) { svgEl.style.maxWidth = 'none'; svgEl.style.display = 'block'; }
-    } catch(err) {
-      out.innerHTML = `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:20px;color:#dc2626;font-size:13px;">
-        <strong>Erro no diagrama:</strong><br><pre style="white-space:pre-wrap;font-size:11px;margin-top:8px;">${err.message||err}</pre></div>`;
-    }
   }
 
   // ── DSL text → Mermaid syntax ─────────────────────────────────
@@ -19579,52 +19601,33 @@ function statusModalUpdateSubList() {
     return lines.join('\n');
   }
 
-  // ── Mermaid save ──────────────────────────────────────────────
-  window.fdSave = function() {
-    const code = document.getElementById('fd-mermaid-code').value.trim();
+  // ── Save Excalidraw scene ─────────────────────────────────────
+  window.fdSave = async function() {
     const text = document.getElementById('fd-text-input').value.trim();
-    const p = popPrefix(currentPop);
+    const p    = popPrefix(currentPop);
     if (!p || !DATA[p]) return;
     if (!DATA[p].flowDiagram) DATA[p].flowDiagram = {};
-    if (code) DATA[p].flowDiagram.mermaid = code;
     if (text) DATA[p].flowDiagram.text = text;
-    _savedCode = code;
+    const scene = await _getScene();
+    if (scene?.elements?.length) {
+      DATA[p].flowDiagram.excalidraw = { elements: scene.elements, files: scene.files || {} };
+    }
     markChanged();
     saveToCloud();
-    showToast('✅ Fluxo Mermaid salvo!', 'success');
+    showToast('✅ Fluxo Excalidraw salvo!', 'success');
   };
 
   window.fdGenerateFromText = function() {
     const raw = document.getElementById('fd-text-input').value.trim();
     if (!raw) return;
     const code = _dslToMermaid(raw);
-    document.getElementById('fd-mermaid-code').value = code;
     _render(code);
-  };
-
-  window.fdRenderCode = function() {
-    _render(document.getElementById('fd-mermaid-code').value.trim());
-  };
-
-  window.fdZoom = function(f) {
-    _zoom = Math.min(3, Math.max(0.3, _zoom * f));
-    const out = document.getElementById('fd-mermaid-out');
-    if (out) out.style.transform = `scale(${_zoom})`;
-  };
-  window.fdZoomReset = function() {
-    _zoom = 1;
-    const out = document.getElementById('fd-mermaid-out');
-    if (out) out.style.transform = 'scale(1)';
   };
 
   window.fdToggleDirection = function(isLR) {
     _direction = isLR ? 'LR' : 'TD';
-    const code = document.getElementById('fd-mermaid-code').value.trim();
-    if (code) {
-      const updated = code.replace(/^flowchart\s+(LR|TD|RL|BT)/m, `flowchart ${_direction}`);
-      document.getElementById('fd-mermaid-code').value = updated;
-      _render(updated);
-    }
+    const raw = document.getElementById('fd-text-input').value.trim();
+    if (raw) { const code = _dslToMermaid(raw); _render(code); }
   };
 
   window.fdToggleLeftPanel = function() {
@@ -19636,25 +19639,34 @@ function statusModalUpdateSubList() {
     if (expBtn) expBtn.style.display = collapsed ? '' : 'none';
   };
 
-  // ── Export from Mermaid (SVG/PNG) ────────────────────────────
+  // ── Export SVG / PNG via Excalidraw ───────────────────────────
   window.fdExportSVG = function() {
-    const svg = document.querySelector('#fd-mermaid-out svg');
-    if (!svg) { showToast('Gere o fluxo antes de exportar.', 'warn'); return; }
-    const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fluxo.svg'; a.click();
+    const frame = document.getElementById('fd-excalidraw-frame');
+    if (!frame || !_excReady) { showToast('Gere o fluxo antes de exportar.', 'warn'); return; }
+    const h = ev => {
+      if (ev.data?.type === 'SVG_DATA') {
+        window.removeEventListener('message', h);
+        const blob = new Blob([ev.data.svg], { type: 'image/svg+xml' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fluxo.svg'; a.click();
+      }
+    };
+    window.addEventListener('message', h);
+    frame.contentWindow.postMessage({ type: 'EXPORT_SVG' }, '*');
+    setTimeout(() => window.removeEventListener('message', h), 5000);
   };
+
   window.fdExportPNG = function() {
-    const svg = document.querySelector('#fd-mermaid-out svg');
-    if (!svg) { showToast('Gere o fluxo antes de exportar.', 'warn'); return; }
-    const box = svg.getBoundingClientRect();
-    const W = box.width * 2 || 1200, H = box.height * 2 || 800;
-    const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'white'; ctx.fillRect(0, 0, W, H);
-    const data = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-    img.onload = () => { ctx.drawImage(img, 0, 0, W, H); const a = document.createElement('a'); a.download = 'fluxo.png'; a.href = canvas.toDataURL('image/png'); a.click(); };
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(data);
+    const frame = document.getElementById('fd-excalidraw-frame');
+    if (!frame || !_excReady) { showToast('Gere o fluxo antes de exportar.', 'warn'); return; }
+    const h = ev => {
+      if (ev.data?.type === 'PNG_DATA') {
+        window.removeEventListener('message', h);
+        const a = document.createElement('a'); a.href = ev.data.dataUrl; a.download = 'fluxo.png'; a.click();
+      }
+    };
+    window.addEventListener('message', h);
+    frame.contentWindow.postMessage({ type: 'EXPORT_PNG' }, '*');
+    setTimeout(() => window.removeEventListener('message', h), 5000);
   };
 
   // ── Build from flow[] JSON (called after POP import) ──────────
@@ -19666,6 +19678,8 @@ function statusModalUpdateSubList() {
     if (!DATA[p].flowDiagram) DATA[p].flowDiagram = {};
     DATA[p].flowDiagram.mermaid = code;
     DATA[p].flowDiagram.flow    = flowArr;
+    // If flow designer is open, render immediately
+    _render(code);
   };
 
   // ═══════════════════════════════════════════════════════════════
