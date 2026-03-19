@@ -1536,8 +1536,8 @@
         </svg>
       </div>
       <div>
-        <div contenteditable="true" onclick="event.stopPropagation()" style="font-size:22px;font-weight:900;color:#0a2540;line-height:1.2;">SIGA Processos</div>
-        <div contenteditable="true" onclick="event.stopPropagation()" style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.5;">Mapeamento, análise, melhoria e documentação de processos institucionais</div>
+        <div class="home-selector-title" contenteditable="false" style="font-size:22px;font-weight:900;color:#0a2540;line-height:1.2;">SIGA Processos</div>
+        <div class="home-selector-sub" contenteditable="false" style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.5;">Mapeamento, análise, melhoria e documentação de processos institucionais</div>
       </div>
       <div style="display:inline-flex;align-items:center;gap:6px;margin-top:4px;background:#00a86b;color:#fff;font-size:13px;font-weight:700;padding:8px 18px;border-radius:8px;width:fit-content;">Acessar →</div>
     </div>
@@ -1562,8 +1562,8 @@
         </svg>
       </div>
       <div>
-        <div contenteditable="true" onclick="event.stopPropagation()" style="font-size:22px;font-weight:900;color:#0a2540;line-height:1.2;">SIGA Projetos</div>
-        <div contenteditable="true" onclick="event.stopPropagation()" style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.5;">Planejamento, acompanhamento e controle de projetos institucionais</div>
+        <div class="home-selector-title" contenteditable="false" style="font-size:22px;font-weight:900;color:#0a2540;line-height:1.2;">SIGA Projetos</div>
+        <div class="home-selector-sub" contenteditable="false" style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.5;">Planejamento, acompanhamento e controle de projetos institucionais</div>
       </div>
       <div style="display:inline-flex;align-items:center;gap:6px;margin-top:4px;background:#3b82f6;color:#fff;font-size:13px;font-weight:700;padding:8px 18px;border-radius:8px;width:fit-content;">Acessar →</div>
     </div>
@@ -1583,74 +1583,74 @@
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
       <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
         <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Procedimentos Operacionais</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Procedimentos Operacionais</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
         <div class="home-card-footer" id="home-pops-count">—</div>
       </div>
       <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
         <div class="home-card-icon" style="background:#f5f3ff;color:#8b5cf6;">🏛</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Arquitetura de Processos</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Arquitetura de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
         <div class="home-card-footer" id="home-arq-count">—</div>
       </div>
       <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
         <div class="home-card-icon" style="background:#fffbeb;color:#f59e0b;">📊</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Cadeia de Valor e Mapa Estratégico</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Cadeia de Valor e Mapa Estratégico</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
         <div class="home-card-footer">Imagens configuráveis</div>
       </div>
       <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
         <div class="home-card-icon" style="background:#fff1f2;color:#dc2626;">🔍</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Auditoria de Processos</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Auditoria de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
         <div class="home-card-footer" id="home-audit-count">—</div>
       </div>
       <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
         <div class="home-card-icon" style="background:#fffbeb;color:#e8a020;">📈</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Indicadores CAGE</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Indicadores CAGE</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
       </div>
       <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
         <div class="home-card-icon" style="background:#eef2ff;color:#6366f1;">🏗️</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Modelador BPMN 2.0</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Modelador BPMN 2.0</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
         <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
       </div>
       <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
         <div class="home-card-icon" style="background:#ecfdf5;color:#10b981;">🗒</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Quadro de Esboço</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
         <div class="home-card-footer">Canvas interativo</div>
       </div>
       <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
         <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">SIGA Processos</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">SIGA Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </div>
       <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
         <div class="home-card-icon" style="background:#f8fafc;color:#64748b;">🔍</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Busca Global</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Busca Global</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
         <div class="home-card-footer">Busca em tempo real</div>
       </div>
       <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
         <div class="home-card-icon" style="background:#fff1f2;color:#e11d48;">📚</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Documentos e Manuais</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Documentos e Manuais</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
         <div class="home-card-footer" id="home-repo-count">—</div>
       </div>
       <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
         <div class="home-card-icon" style="background:#f0f9ff;color:#0ea5e9;">💧</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Drops de Conhecimento</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Drops de Conhecimento</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
         <div class="home-card-footer" id="home-drops-count">—</div>
       </div>
       <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
         <div class="home-card-icon" style="background:#fdf2f8;color:#ec4899;">💡</div>
-        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Caixinha de Ideias</div>
-        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Caixinha de Ideias</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
         <div class="home-card-footer">Formulário Microsoft Forms</div>
       </div>
     </div>
@@ -1682,6 +1682,73 @@
   </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MODAL: STATUS REPORT CONFIG (com seleção de indicadores)  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="gmod-overlay" id="status-report-modal" style="display:none;">
+  <div class="gmod-box" style="max-width:720px;max-height:90vh;display:flex;flex-direction:column;">
+    <div class="gmod-head">
+      <span>📊 Exportar Status Report Executivo</span>
+      <button class="gmod-close" onclick="document.getElementById('status-report-modal').style.display='none'">✕</button>
+    </div>
+    <div class="gmod-body" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px;">
+
+      <!-- Configurações gerais -->
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#0a2540;margin-bottom:10px;">⚙️ Configurações do Relatório</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="indrel-config-field">
+            <label class="indcage-filter-label">Trimestre</label>
+            <select id="sr-trimestre" class="indcage-filter-select">
+              <option value="1">1º Trimestre</option>
+              <option value="2">2º Trimestre</option>
+              <option value="3">3º Trimestre</option>
+              <option value="4">4º Trimestre</option>
+            </select>
+          </div>
+          <div class="indrel-config-field">
+            <label class="indcage-filter-label">Ano</label>
+            <input type="number" id="sr-ano" class="indcage-filter-select" value="2026" min="2020" max="2035" style="width:110px;">
+          </div>
+          <div class="indrel-config-field" style="flex:1;min-width:200px;">
+            <label class="indcage-filter-label">Subtítulo / Órgão</label>
+            <input type="text" id="sr-subtitulo" class="indcage-filter-select" placeholder="Ex: CAGE-RS — Escritório de Processos" style="width:100%;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção de indicadores -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#0a2540;">📈 Indicadores para incluir no relatório</div>
+            <div style="font-size:11px;color:#64748b;margin-top:2px;">Opcional — deixe todos desmarcados para gerar apenas o relatório de projetos</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1e3a7a;font-weight:600;cursor:pointer;white-space:nowrap;">
+              <input type="checkbox" id="sr-usar-ia" checked style="accent-color:#0a2540;width:15px;height:15px;">
+              🤖 Análise IA
+            </label>
+            <button class="btn btn-outline" onclick="srSelTodos()" style="font-size:11px;padding:4px 10px;">✓ Todos</button>
+            <button class="btn btn-outline" onclick="srDeselTodos()" style="font-size:11px;padding:4px 10px;">✗ Nenhum</button>
+          </div>
+        </div>
+        <div id="sr-ind-list" class="indrel-list" style="max-height:260px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:8px;"></div>
+        <div id="sr-ind-empty" style="display:none;text-align:center;padding:24px;color:#94a3b8;font-size:13px;">
+          Nenhum indicador cadastrado. Cadastre no módulo <strong>Indicadores CAGE</strong>.
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #e2e8f0;background:#f8fafc;border-radius:0 0 12px 12px;">
+      <button class="btn btn-outline" onclick="document.getElementById('status-report-modal').style.display='none'">Cancelar</button>
+      <button class="btn btn-primary" id="sr-gerar-btn" onclick="eppExportStatusReportConfirm()" style="background:#00a86b;border-color:#00a86b;padding:8px 22px;">
+        📊 Gerar Status Report
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
 <!-- MÓDULO: GESTÃO ESCRITÓRIO DE PROCESSOS (EPP)              -->
@@ -4699,7 +4766,6 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
     <div class="indcage-tabs">
       <button class="indcage-tab active" data-indcage-tab="indicadores" onclick="indcageTab('indicadores',this)">📋 Indicadores</button>
       <button class="indcage-tab" data-indcage-tab="resultados" onclick="indcageTab('resultados',this)">📊 Resultados</button>
-      <button class="indcage-tab" data-indcage-tab="relatorio" onclick="indcageTab('relatorio',this)">📊 Relatório PPT</button>
     </div>
   </div>
 </div>
@@ -4904,8 +4970,8 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
     </div>
   </div>
 
-  <!-- ─── TAB: RELATÓRIO PPT ──────────────────────────────────── -->
-  <div id="indcage-sec-relatorio" class="indcage-section">
+  <!-- ─── TAB: RELATÓRIO PPT (fundido no Status Report Executivo) ── -->
+  <div id="indcage-sec-relatorio" class="indcage-section" style="display:none!important;">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
       <div>
         <div style="font-size:15px;font-weight:700;color:#0a2540;">📊 Gerar Relatório de Monitoramento</div>
@@ -5048,7 +5114,8 @@ VALIDAÇÃO FINAL OBRIGATÓRIA:
 // ═══ DATA ════════════════════════════════════
 const DATA = {
   d: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Denúncias" }, ficha: {}, flowDiagram: null },
-  r: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Representações" }, ficha: {}, flowDiagram: null }
+  r: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Representações" }, ficha: {}, flowDiagram: null },
+  homeCards: {}
 };
 
 // ═══ STATE ════════════════════════════════════
@@ -5183,6 +5250,37 @@ function harvestEditables() {
       const cur = actionObj(step.actions[ai]);
       cur.text = el.innerText?.trim() || '';
       step.actions[ai] = cur;
+    }
+  });
+
+  // Capturar títulos e descrições dos home-cards editáveis
+  document.querySelectorAll('#home-cards-grid .home-card').forEach(card => {
+    const key = card.dataset.sortkey;
+    if(!key) return;
+    const titleEl = card.querySelector('.home-card-title');
+    const descEl  = card.querySelector('.home-card-desc');
+    if(!titleEl && !descEl) return;
+    if(!DATA.homeCards) DATA.homeCards = {};
+    DATA.homeCards[key] = {
+      title: titleEl ? (titleEl.innerText?.trim() || '') : undefined,
+      desc:  descEl  ? (descEl.innerText?.trim()  || '') : undefined,
+    };
+  });
+}
+
+// Aplica o conteúdo salvo dos home-cards ao DOM
+function _applyHomeCards(cards) {
+  if(!cards || typeof cards !== 'object') return;
+  Object.entries(cards).forEach(([key, vals]) => {
+    const card = document.querySelector(`#home-cards-grid .home-card[data-sortkey="${key}"]`);
+    if(!card) return;
+    if(vals.title !== undefined) {
+      const el = card.querySelector('.home-card-title');
+      if(el && vals.title) el.textContent = vals.title;
+    }
+    if(vals.desc !== undefined) {
+      const el = card.querySelector('.home-card-desc');
+      if(el && vals.desc) el.textContent = vals.desc;
     }
   });
 }
@@ -5327,6 +5425,13 @@ function toggleEditMode(forceState) {
     if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar','warn');
     else showToast('Modo visualização ativo');
   }
+  // Ao sair do modo edição, salvar se houver alterações pendentes
+  if(!editMode && currentUser && window._appInitialized) {
+    const unsavedDot = document.getElementById('unsaved-dot');
+    if(unsavedDot && unsavedDot.style.display === 'inline-block') {
+      saveToCloud();
+    }
+  }
 }
 
 // ── Drag-and-Drop para reorganização de layout em modo edição ──────────────────
@@ -5407,6 +5512,8 @@ function enableEditables(on) {
     '.action-text', '.resp-tag',
     '.step-info h3', '.step-info p',
     '[id*="-metric-vol-"]', '[id*="-metric-ciclo-"]',
+    '.home-card-title', '.home-card-desc',
+    '.home-selector-title', '.home-selector-sub',
   ];
   editZoneSelectors.forEach(sel => {
     document.querySelectorAll(sel).forEach(el => {
@@ -5919,6 +6026,7 @@ function toggleAutomatico(p, si, ai) {
   actions[ai] = a;
   markChanged();
   renderStep(p, si);
+  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleLoop(p, si, ai) {
@@ -5930,6 +6038,7 @@ function toggleLoop(p, si, ai) {
   actions[ai] = a;
   markChanged();
   renderStep(p, si);
+  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleAutomaticoBranch(p, si, ai, bi, bai) {
@@ -5943,6 +6052,7 @@ function toggleAutomaticoBranch(p, si, ai, bi, bai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
+  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleLoopBranch(p, si, ai, bi, bai) {
@@ -5956,6 +6066,7 @@ function toggleLoopBranch(p, si, ai, bi, bai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
+  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function addStepAction(p,si){
@@ -8290,9 +8401,20 @@ function saveActionModal() {
   // Preserve flags toggled via ícone (⚙️ automatico, 🔄 loop) — não passam pelo modal
   const step = DATA[_actP].steps[_actSi];
   const _existingActions = _actIsTobe ? (step.tobe?.actions || step.actions) : step.actions;
-  const _existingObj = actionObj(_existingActions[_actBi < 0 ? _actAi : _actAi] || {});
-  const _existingAuto = _actBi < 0 ? (_existingObj.automatico || false) : false;
-  const _existingLoop = _actBi < 0 ? (_existingObj.loop || false) : false;
+  // Recuperar objeto existente para QUALQUER nível (root ou branch), preservando loop/automatico
+  let _existingObj = {};
+  if(_actBi < 0) {
+    _existingObj = actionObj(_existingActions[_actAi] || {});
+  } else if(_actNbi >= 0) {
+    const _p = actionObj(_existingActions[_actAi] || {});
+    const _s = actionObj((_p.branches?.[_actBi]?.actions || [])[_actBai] || {});
+    _existingObj = actionObj((_s.branches?.[_actNbi]?.actions || [])[_actNbai] || {});
+  } else {
+    const _p = actionObj(_existingActions[_actAi] || {});
+    _existingObj = actionObj((_p.branches?.[_actBi]?.actions || [])[_actBai] || {});
+  }
+  const _existingAuto = _existingObj.automatico || false;
+  const _existingLoop = _existingObj.loop || false;
   const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo, automatico: _existingAuto, loop: _existingLoop };
 
   if(_actNbi >= 0) {
@@ -8328,6 +8450,8 @@ function saveActionModal() {
   renderRoles(_actP);
   closeActionModal();
   markChanged();
+  // Salvar diretamente — o usuário clicou em "Salvar" explicitamente
+  if(currentUser && window._appInitialized) saveToCloud();
   showToast('✅ Ação salva!', 'success');
 }
 
@@ -10583,7 +10707,8 @@ let currentAccessToken = null;   // token de acesso atual — atualizado a cada 
 let isEditor = false;
 let isAdmin  = false;
 let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
-let workspaceId = sessionStorage.getItem('gestpop_wsid') || null;
+// workspaceId persiste em localStorage (entre sessões) e sessionStorage (fallback rápido)
+let workspaceId = localStorage.getItem('gestpop_wsid') || sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
   ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel'].forEach(id => {
@@ -10888,7 +11013,7 @@ window.addEventListener('beforeunload', () => {
   // Montar payload — limite keepalive do Chrome é 64KB (65536 bytes)
   // Incluir repoDocs e drops apenas se couberem no orçamento
   const KEEPALIVE_LIMIT = 63000; // margem de segurança abaixo de 64KB
-  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores']);
+  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores','homeCards','aptCatalog','quadro']);
   const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
 
   // Payload essencial (POPs, PAT, arquitetura)
@@ -10905,13 +11030,14 @@ window.addEventListener('beforeunload', () => {
     audits:          DATA.audits || { plans:[], executions:[], nonconformities:[], actions:[] },
     arqOverrides:    DATA._arqOverrides || null,
     logoUrl:         DATA._logoUrl || null,
-    logo2Url:        (DATA._logo2Url && DATA._logo2Url.startsWith('http')) ? DATA._logo2Url : null,
+    logo2Url:        DATA._logo2Url || null,
     cadeiaValorImg:  DATA._cadeiaValorImg ? (DATA._cadeiaValorImg.startsWith('http') ? DATA._cadeiaValorImg : (DATA._cadeiaValorImg.length < 300000 ? DATA._cadeiaValorImg : null)) : null,
     mapaEstrategicoImg: DATA._mapaEstrategicoImg ? (DATA._mapaEstrategicoImg.startsWith('http') ? DATA._mapaEstrategicoImg : (DATA._mapaEstrategicoImg.length < 300000 ? DATA._mapaEstrategicoImg : null)) : null,
     newPops:         newPopKeys.map(k => ({ key: k, data: _stripTrans(DATA[k]) })),
     indicadoresCage: DATA.indicadoresCage || { indicadores: [], resultados: [] },
     repoDocs:        [],
-    drops:           []
+    drops:           [],
+    homeCards:       DATA.homeCards && Object.keys(DATA.homeCards).length > 0 ? DATA.homeCards : null,
   };
 
   let reqBody = JSON.stringify({
@@ -10976,7 +11102,7 @@ async function saveToCloud(attempt=1) {
 
   try { harvestEditables(); } catch(e) { console.warn('harvestEditables:', e); }
 
-  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores']);
+  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores','homeCards','aptCatalog','quadro']);
   const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
   // Strip session-only transient fields (prefixed with _) before persisting
   function _stripTransient(obj) {
@@ -11003,6 +11129,7 @@ async function saveToCloud(attempt=1) {
     config:          DATA.config          || null,
     aptCatalog:      Array.isArray(DATA.aptCatalog) && DATA.aptCatalog.length > 0 ? DATA.aptCatalog : null,
     quadro:          DATA.quadro          || null,
+    homeCards:       DATA.homeCards && Object.keys(DATA.homeCards).length > 0 ? DATA.homeCards : null,
   };
 
   try {
@@ -11015,7 +11142,7 @@ async function saveToCloud(attempt=1) {
         .limit(1)
         .maybeSingle();
       if(fetchErr) console.warn('saveToCloud: fetch workspaceId error', fetchErr);
-      if(existing?.id) { workspaceId = existing.id; sessionStorage.setItem('gestpop_wsid', workspaceId); }
+      if(existing?.id) { workspaceId = existing.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}; }
       else console.log('saveToCloud: nenhum workspace existente — será criado');
     }
 
@@ -11033,34 +11160,65 @@ async function saveToCloud(attempt=1) {
         .eq('id', workspaceId)
         .select('id, updated_at, updated_by_name')
         .maybeSingle());
-      // Se o UPDATE não encontrou a linha (workspaceId inválido/expirado), fazer INSERT
+      // Se o UPDATE não encontrou a linha (workspaceId inválido/expirado):
+      // re-consultar antes de criar nova linha, para evitar duplicatas
       if(!error && !saved) {
-        console.warn('[saveToCloud] UPDATE retornou 0 linhas — workspaceId inválido, recriando workspace');
+        console.warn('[saveToCloud] UPDATE retornou 0 linhas — re-consultando workspace existente');
         workspaceId = null;
         sessionStorage.removeItem('gestpop_wsid');
-        ({ error, data: saved } = await supaClient
+        try { localStorage.removeItem('gestpop_wsid'); } catch(e) {}
+        const { data: recheck } = await supaClient
           .from('gestpop_workspace')
-          .insert({
-            data:            payload,
-            updated_by:      currentUserEmail,
-            updated_by_name: currentUserName
-          })
-          .select('id, updated_at, updated_by_name')
-          .maybeSingle());
-        if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); }
+          .select('id')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if(recheck?.id) {
+          // Linha encontrada — usar ela para o UPDATE
+          workspaceId = recheck.id;
+          sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}
+          ({ error, data: saved } = await supaClient
+            .from('gestpop_workspace')
+            .update({ data: payload, updated_at: new Date().toISOString(), updated_by: currentUserEmail, updated_by_name: currentUserName })
+            .eq('id', workspaceId)
+            .select('id, updated_at, updated_by_name')
+            .maybeSingle());
+        } else {
+          // Realmente não existe nenhuma linha — INSERT
+          console.log('[saveToCloud] Nenhuma linha encontrada — criando workspace');
+          ({ error, data: saved } = await supaClient
+            .from('gestpop_workspace')
+            .insert({ data: payload, updated_by: currentUserEmail, updated_by_name: currentUserName })
+            .select('id, updated_at, updated_by_name')
+            .maybeSingle());
+          if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}; }
+        }
       }
     } else {
-      // Primeiro uso: INSERT
-      ({ error, data: saved } = await supaClient
+      // Primeiro uso nesta sessão: buscar linha existente antes de inserir
+      const { data: existing2 } = await supaClient
         .from('gestpop_workspace')
-        .insert({
-          data:            payload,
-          updated_by:      currentUserEmail,
-          updated_by_name: currentUserName
-        })
-        .select('id, updated_at, updated_by_name')
-        .maybeSingle());
-      if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); }
+        .select('id')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if(existing2?.id) {
+        workspaceId = existing2.id;
+        sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}
+        ({ error, data: saved } = await supaClient
+          .from('gestpop_workspace')
+          .update({ data: payload, updated_at: new Date().toISOString(), updated_by: currentUserEmail, updated_by_name: currentUserName })
+          .eq('id', workspaceId)
+          .select('id, updated_at, updated_by_name')
+          .maybeSingle());
+      } else {
+        ({ error, data: saved } = await supaClient
+          .from('gestpop_workspace')
+          .insert({ data: payload, updated_by: currentUserEmail, updated_by_name: currentUserName })
+          .select('id, updated_at, updated_by_name')
+          .maybeSingle());
+        if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}; }
+      }
     }
 
     if(error) {
@@ -11165,7 +11323,7 @@ async function loadFromCloud() {
       return;
     }
 
-    workspaceId = data.id; sessionStorage.setItem('gestpop_wsid', workspaceId);
+    workspaceId = data.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {};
     const payload = data.data;
     console.log('loadFromCloud: payload recebido, tamanho', JSON.stringify(payload).length, 'bytes');
 
@@ -11192,6 +11350,11 @@ async function loadFromCloud() {
     if(Array.isArray(payload.aptCatalog) && payload.aptCatalog.length > 0) DATA.aptCatalog = payload.aptCatalog;
     // Quadro de esboço (Excalidraw)
     if(payload.quadro && typeof payload.quadro === 'object') DATA.quadro = payload.quadro;
+    // Home-cards: títulos e descrições editáveis
+    if(payload.homeCards && typeof payload.homeCards === 'object') {
+      DATA.homeCards = payload.homeCards;
+      _applyHomeCards(payload.homeCards);
+    }
     if(payload.indicadoresCage && typeof payload.indicadoresCage === 'object') {
       DATA.indicadoresCage = {
         indicadores: Array.isArray(payload.indicadoresCage.indicadores) ? payload.indicadoresCage.indicadores : [],
@@ -11741,6 +11904,7 @@ async function signOut() {
   try { await supaClient.auth.signOut({ scope: 'local' }); } catch(e) {}
   try {
     sessionStorage.removeItem('gestpop_wsid');
+    try { localStorage.removeItem('gestpop_wsid'); } catch(e) {}
     workspaceId = null;
     Object.keys(localStorage)
       .filter(k => k.includes('supabase') || k.includes('gestpop_auth'))
@@ -12907,19 +13071,96 @@ async function buildPptx(D, _popKey) {
 
 
 // ═══ EPP STATUS REPORT EXECUTIVO ═══════════════════════
-async function eppExportStatusReport() {
-  const btn = document.getElementById('epp-report-btn');
-  if(btn) { btn.textContent = '⏳ Gerando...'; btn.disabled = true; }
+
+// Abre o modal de configuração do Status Report
+function eppExportStatusReport() {
+  // Preenche trimestre/ano padrão com a data atual
+  const now = new Date();
+  const q = Math.ceil((now.getMonth()+1)/3);
+  const selTrim = document.getElementById('sr-trimestre');
+  const selAno  = document.getElementById('sr-ano');
+  if(selTrim) selTrim.value = q;
+  if(selAno)  selAno.value  = now.getFullYear();
+
+  // Carrega lista de indicadores no modal
+  _srCarregarIndicadores();
+
+  const modal = document.getElementById('status-report-modal');
+  if(modal) modal.style.display = 'flex';
+}
+
+function _srCarregarIndicadores() {
+  const list  = document.getElementById('sr-ind-list');
+  const empty = document.getElementById('sr-ind-empty');
+  if(!list) return;
+
+  const allInds = (typeof getAllIndicators === 'function') ? getAllIndicators() : [];
+  const resultados = (window.DATA?.indicadoresCage?.resultados) || [];
+  const codigosComDados = new Set(resultados.map(r => r.codigo).filter(Boolean));
+
+  if(allInds.length === 0) {
+    list.innerHTML = '';
+    list.style.display = 'none';
+    if(empty) empty.style.display = 'block';
+    return;
+  }
+  if(empty) empty.style.display = 'none';
+  list.style.display = 'block';
+
+  list.innerHTML = allInds.map(ind => {
+    const temDados = ind.codigo && codigosComDados.has(ind.codigo);
+    const badge = temDados
+      ? `<span class="indrel-has-data">✓ com dados</span>`
+      : `<span class="indrel-no-data">sem resultados</span>`;
+    const metaInfo = [
+      ind.divisao ? `🏢 ${ind.divisao}` : '',
+      ind.periodicidade ? `🔁 ${ind.periodicidade}` : '',
+    ].filter(Boolean).join('  ');
+    return `
+    <label class="indrel-item">
+      <input type="checkbox" class="sr-ind-check indrel-checkbox" value="${ind.codigo || ''}" data-id="${ind.id || ''}">
+      <div class="indrel-item-info">
+        ${ind.codigo ? `<div class="indrel-item-codigo">${ind.codigo}</div>` : ''}
+        <div class="indrel-item-enunciado">${ind.enunciado || '<em style="color:#94a3b8">Sem enunciado</em>'}</div>
+        ${metaInfo ? `<div class="indrel-item-meta"><span>${metaInfo}</span></div>` : ''}
+      </div>
+      ${badge}
+    </label>`;
+  }).join('');
+}
+
+function srSelTodos()   { document.querySelectorAll('.sr-ind-check').forEach(cb => cb.checked = true); }
+function srDeselTodos() { document.querySelectorAll('.sr-ind-check').forEach(cb => cb.checked = false); }
+
+// Chamado pelo botão "Gerar" do modal
+async function eppExportStatusReportConfirm() {
+  const modal  = document.getElementById('status-report-modal');
+  const btn    = document.getElementById('sr-gerar-btn');
+  const btnTop = document.getElementById('epp-report-btn');
+
+  const trimestre = document.getElementById('sr-trimestre')?.value || '1';
+  const ano       = document.getElementById('sr-ano')?.value || String(new Date().getFullYear());
+  const subtitulo = document.getElementById('sr-subtitulo')?.value.trim() || 'CAGE-RS — Controladoria-Geral do Estado do Rio Grande do Sul';
+  const usarIA    = document.getElementById('sr-usar-ia')?.checked !== false;
+  const selectedCodigos = Array.from(document.querySelectorAll('.sr-ind-check:checked')).map(cb => cb.value).filter(Boolean);
+
+  if(modal) modal.style.display = 'none';
+  if(btn)    { btn.textContent = '⏳ Gerando...'; btn.disabled = true; }
+  if(btnTop) { btnTop.textContent = '⏳ Gerando...'; btnTop.disabled = true; }
+
   try {
-    await _buildEppStatusReport();
+    await _buildEppStatusReport({ trimestre, ano, subtitulo, usarIA, selectedCodigos });
   } catch(e) {
     console.error('[eppExportStatusReport]', e);
     showToast('Erro ao gerar Status Report: ' + e.message, 'warn');
   }
-  if(btn) { btn.textContent = '📊 Exportar Status Report'; btn.disabled = false; }
+
+  if(btn)    { btn.textContent = '📊 Gerar Status Report'; btn.disabled = false; }
+  if(btnTop) { btnTop.textContent = '📊 Exportar Status Report'; btnTop.disabled = false; }
 }
 
-async function _buildEppStatusReport() {
+async function _buildEppStatusReport(opts = {}) {
+  const { trimestre, ano, subtitulo: subtituloOpt, usarIA = true, selectedCodigos = [] } = opts;
   const pres = new PptxGenJS();
   pres.layout = 'LAYOUT_16x9'; // 10" × 5.625"
 
@@ -12943,12 +13184,13 @@ async function _buildEppStatusReport() {
 
   // ── Dados de tempo ─────────────────────────────────────
   const now    = new Date();
-  const year   = now.getFullYear();
-  const qCur   = Math.ceil((now.getMonth()+1)/3);
+  const year   = ano ? parseInt(ano) : now.getFullYear();
+  const qCur   = trimestre ? parseInt(trimestre) : Math.ceil((now.getMonth()+1)/3);
   const mNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const cycleStr  = mNames[now.getMonth()] + '/' + String(year).slice(2);
-  const monthLong = mNames[now.getMonth()] + ' / ' + year;
+  const qLastMonth = qCur * 3 - 1; // índice do último mês do trimestre
+  const cycleStr  = ['1T','2T','3T','4T'][qCur-1] + '/' + String(year).slice(2);
+  const monthLong = ['1º Trimestre','2º Trimestre','3º Trimestre','4º Trimestre'][qCur-1] + ' / ' + year;
 
   // ── PAT helpers ────────────────────────────────────────
   const patItems = Array.isArray(DATA.pat) ? DATA.pat : [];
@@ -13538,8 +13780,184 @@ async function _buildEppStatusReport() {
     _cageLogoAdd(s, { x:8.1, y:5.1, w:1.65, h:0.45, sizing:{type:'contain',w:1.65,h:0.45} });
   }
 
+  // ── Slides de Indicadores (opcional) ───────────────────
+  if(selectedCodigos.length > 0) {
+    const trimestreNomes = ['1º','2º','3º','4º'];
+    const trimestreLabel = trimestreNomes[qCur-1] + ' Trimestre ' + year;
+    const hoje = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+    const CI = { navy:'0A2540', green:'00A86B', gold:'E8A020', white:'FFFFFF', muted:'8898AA', blue:'1E40AF' };
+
+    // helper: cabeçalho azul padrão para slides de indicadores
+    const addIndHdr = (slide, title, sub) => {
+      slide.addShape(pres.ShapeType.rect, { x:0, y:0, w:10, h:0.75, fill:{ color:CI.navy } });
+      slide.addShape(pres.ShapeType.rect, { x:0, y:0.75, w:10, h:0.05, fill:{ color:CI.green } });
+      slide.addText(title, { x:0.35, y:0, w:7.5, h:0.75, fontSize:14, color:CI.white, bold:true, valign:'middle' });
+      if(sub) slide.addText(sub, { x:0, y:0, w:9.7, h:0.75, fontSize:10, color:'8CB8FF', align:'right', valign:'middle' });
+    };
+
+    // Slide divisor de seção
+    const sDivider = pres.addSlide();
+    sDivider.addShape(pres.ShapeType.rect, { x:0, y:0, w:10, h:5.625, fill:{ color:CI.navy } });
+    sDivider.addShape(pres.ShapeType.rect, { x:0, y:3.5, w:10, h:0.08, fill:{ color:CI.gold } });
+    sDivider.addShape(pres.ShapeType.rect, { x:0, y:3.58, w:10, h:0.06, fill:{ color:CI.green } });
+    sDivider.addText('📈 Monitoramento de Indicadores', { x:0.8, y:1.3, w:8.4, fontSize:28, color:CI.white, bold:true, align:'center' });
+    sDivider.addText(trimestreLabel, { x:0.8, y:2.3, w:8.4, fontSize:16, color:CI.gold, bold:true, align:'center' });
+    sDivider.addText(`${selectedCodigos.length} indicador(es) selecionado(s)`, { x:0.8, y:2.9, w:8.4, fontSize:11, color:CI.muted, align:'center', italic:true });
+    _cageLogoAdd(sDivider, { x:8.1, y:4.5, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
+
+    const allInds = (typeof getAllIndicators === 'function') ? getAllIndicators() : [];
+    const resultados = (DATA.indicadoresCage?.resultados) || [];
+
+    // helper: renderiza gráfico em canvas offscreen → base64
+    const _srChartToBase64 = (codigo, chartType) => new Promise(resolve => {
+      const cfg = (typeof _getOverride === 'function') ? _getOverride(codigo) : {};
+      const all = resultados.filter(r => r.codigo === codigo).sort((a,b) => (a.periodo||'').localeCompare(b.periodo||''));
+      if(all.length === 0) return resolve(null);
+      const canvas = document.createElement('canvas');
+      canvas.width = 900; canvas.height = 380;
+      canvas.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
+      document.body.appendChild(canvas);
+
+      const hasPercentage = cfg.tipo !== 'numero' && cfg.tipo !== 'moeda' &&
+        all.some(r => r.pctRealizado !== null && r.pctRealizado !== undefined && r.pctRealizado !== 0);
+      const periodoLbl = p => { if(!p) return ''; const [y,m]=p.split('-'); return m&&y ? new Date(parseInt(y),parseInt(m)-1,1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}) : p; };
+      const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replace('.',','); };
+
+      let chartCfg;
+      if(chartType==='yoy' && hasPercentage) {
+        const byYearMonth = {};
+        all.forEach(r => { if(!r.periodo) return; const [yr,mo]=r.periodo.split('-'); if(!yr||!mo) return; if(!byYearMonth[yr]) byYearMonth[yr]={}; byYearMonth[yr][mo]=r.pctRealizado; });
+        const years = Object.keys(byYearMonth).sort().slice(-3);
+        const months = [...new Set(all.map(r=>r.periodo?.slice(5,7)).filter(Boolean))].sort();
+        const monthLabels = months.map(m => { const d=new Date(2000,parseInt(m)-1,1); return d.toLocaleString('pt-BR',{month:'short'}); });
+        const palette = ['#0a2540','#00a86b','#e8a020'];
+        chartCfg = { type:'bar', data:{ labels:monthLabels, datasets:years.map((yr,yi)=>({ label:yr, data:months.map(m=>byYearMonth[yr]?.[m]??null), backgroundColor:palette[yi]+'cc', borderColor:palette[yi], borderWidth:1.5, borderRadius:4 })) }, options:{ responsive:false, animation:false, plugins:{ legend:{ labels:{ font:{size:13} } }, tooltip:{enabled:false} }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+'%', font:{size:12} } }, x:{ ticks:{ font:{size:12} } } } } };
+      } else if(hasPercentage) {
+        const last18 = all.slice(-18);
+        const pctClass = (v, c) => { const thr = c?.pctVerde||90; return v>=thr?'verde':v>=(c?.pctAmarelo||70)?'amarelo':'vermelho'; };
+        chartCfg = { type:'bar', data:{ labels:last18.map(r=>periodoLbl(r.periodo)), datasets:[{ label:'% Realizado', data:last18.map(r=>r.pctRealizado), backgroundColor:last18.map(r=>{ const cl=pctClass(r.pctRealizado,cfg); return cl==='verde'?'rgba(22,163,74,.8)':cl==='amarelo'?'rgba(234,179,8,.8)':'rgba(220,38,38,.8)'; }), borderRadius:4, order:2 }, { label:'% Índice (meta)', data:last18.map(()=>100), type:'line', borderColor:'#0a2540', backgroundColor:'rgba(10,37,64,.08)', borderWidth:2.5, pointRadius:3, tension:.3, fill:false, order:1 }] }, options:{ responsive:false, animation:false, plugins:{ legend:{ labels:{ font:{size:13} } }, tooltip:{enabled:false} }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+'%', font:{size:12} } }, x:{ ticks:{ font:{size:10}, maxRotation:45 } } } } };
+      } else {
+        const last18 = all.slice(-18);
+        const realizadoAbs = last18.map(r=>r.realizado!==undefined?r.realizado:null);
+        let metaAbs = last18.map(r=>r.meta!==undefined?r.meta:null);
+        const hasMeta = metaAbs.some(m=>m!==null&&m!==0);
+        if(!hasMeta) { const last12=all.slice(-12).filter(r=>r.realizado!==null&&r.realizado!==undefined&&r.realizado!==0); if(last12.length>0) { const med=last12.reduce((s,r)=>s+r.realizado,0)/last12.length; metaAbs=last18.map(()=>med); } }
+        if(cfg.metaRef!==null&&cfg.metaRef!==undefined) metaAbs=last18.map(()=>cfg.metaRef);
+        const bgColors=realizadoAbs.map((v,i)=>{ if(v===null)return'#cbd5e1'; const m=metaAbs[i]; if(!m)return'rgba(10,37,64,.7)'; const r=v/m*100; return r>=90?'rgba(22,163,74,.8)':r>=70?'rgba(234,179,8,.8)':'rgba(220,38,38,.8)'; });
+        chartCfg = { type:'bar', data:{ labels:last18.map(r=>periodoLbl(r.periodo)), datasets:[{ label:'Realizado', data:realizadoAbs, backgroundColor:bgColors, borderRadius:4, order:2 },{ label:'Meta', data:metaAbs, type:'line', borderColor:'#0a2540', backgroundColor:'rgba(10,37,64,.08)', borderWidth:2.5, pointRadius:3, tension:.3, fill:false, order:1 }] }, options:{ responsive:false, animation:false, plugins:{ legend:{ labels:{ font:{size:13} } }, tooltip:{enabled:false} }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmtN(v), font:{size:12} } }, x:{ ticks:{ font:{size:10}, maxRotation:45 } } } } };
+      }
+
+      const chart = new Chart(canvas, chartCfg);
+      setTimeout(() => {
+        const dataUrl = canvas.toDataURL('image/png');
+        chart.destroy();
+        document.body.removeChild(canvas);
+        resolve(dataUrl);
+      }, 100);
+    });
+
+    for(let idx=0; idx<selectedCodigos.length; idx++) {
+      const codigo = selectedCodigos[idx];
+      const ind = allInds.find(i => i.codigo === codigo);
+      const cfg = (typeof _getOverride === 'function') ? _getOverride(codigo) : {};
+      const resDoInd = resultados.filter(r=>r.codigo===codigo).sort((a,b)=>(a.periodo||'').localeCompare(b.periodo||''));
+      const resDesc  = resultados.filter(r=>r.codigo===codigo).sort((a,b)=>(b.periodo||'').localeCompare(a.periodo||''));
+      const tituloInd = [codigo, ind?.enunciado].filter(Boolean).join(' — ');
+      showToast(`Processando indicador ${idx+1}/${selectedCodigos.length}: ${codigo}…`, 'info');
+      const periodoLbl = p => { if(!p) return ''; const [y,m]=p.split('-'); return m&&y ? new Date(parseInt(y),parseInt(m)-1,1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}) : p; };
+      const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replace('.',','); };
+
+      // Slide: ficha + gráfico
+      const sInd = pres.addSlide();
+      addIndHdr(sInd, tituloInd, `Indicadores · ${idx+1}/${selectedCodigos.length}`);
+
+      const fichaRows = [
+        ['Código', codigo||'—'],
+        ['Divisão', ind?.divisao||'—'],
+        ['Responsável', ind?.responsavel||'—'],
+        ['Periodicidade', ind?.periodicidade||'—'],
+        ['Meta', ind?.meta ? String(ind.meta) : '—'],
+        ['Unidade', cfg?.unidade||'—'],
+      ];
+      const rowH=0.36, fichaY=0.95, fichaW=3.5;
+      fichaRows.forEach(([lbl,val],ri) => {
+        const ry=fichaY+ri*rowH;
+        sInd.addShape(pres.ShapeType.rect,{x:0.2,y:ry,w:fichaW,h:rowH,fill:{color:ri%2===0?'EFF6FF':'FFFFFF'},line:{color:'D1D9F0',pt:0.5}});
+        sInd.addText(lbl,{x:0.25,y:ry,w:1.1,h:rowH,fontSize:9,bold:true,color:CI.blue,valign:'middle'});
+        sInd.addText(val,{x:1.4,y:ry,w:fichaW-1.25,h:rowH,fontSize:9,color:'1E293B',valign:'middle',wrap:true});
+      });
+
+      const imgB64 = await _srChartToBase64(codigo, 'evo');
+      if(imgB64) {
+        sInd.addImage({data:imgB64,x:3.85,y:0.9,w:5.95,h:3.1});
+        sInd.addText('Evolução dos Resultados',{x:3.85,y:4.0,w:5.95,h:0.28,fontSize:9,italic:true,color:CI.muted,align:'center'});
+      } else {
+        sInd.addText('Sem dados de resultados disponíveis.',{x:3.85,y:2.5,w:5.95,h:1,fontSize:11,color:CI.muted,align:'center',valign:'middle',italic:true});
+      }
+
+      if(resDesc.length>0) {
+        const last6=resDesc.slice(0,6).reverse();
+        const unidade=cfg?.unidade||'';
+        const tblY=4.35, colW=[1.5,1.2,1.2,1.1,4.8];
+        const hdrs=['Período','Realizado','Meta','% Realiz.','Análise'];
+        let cx=0.2;
+        hdrs.forEach((h,ci)=>{
+          sInd.addShape(pres.ShapeType.rect,{x:cx,y:tblY,w:colW[ci],h:0.3,fill:{color:CI.navy}});
+          sInd.addText(h,{x:cx+0.03,y:tblY,w:colW[ci]-0.06,h:0.3,fontSize:8.5,bold:true,color:CI.white,valign:'middle',align:ci>0&&ci<4?'center':'left'});
+          cx+=colW[ci];
+        });
+        last6.forEach((r,ri)=>{
+          const ry=tblY+0.3+ri*0.28, bg=ri%2===0?'F8FAFC':'FFFFFF';
+          cx=0.2;
+          const cells=[
+            periodoLbl(r.periodo),
+            r.realizado!==null&&r.realizado!==undefined ? fmtN(r.realizado)+(unidade?' '+unidade:'') : '—',
+            r.meta!==null&&r.meta!==undefined ? fmtN(r.meta)+(unidade?' '+unidade:'') : '—',
+            r.pctRealizado!==null&&r.pctRealizado!==undefined ? fmtN(r.pctRealizado)+'%' : '—',
+            r.analise||'—',
+          ];
+          cells.forEach((cell,ci)=>{
+            sInd.addShape(pres.ShapeType.rect,{x:cx,y:ry,w:colW[ci],h:0.28,fill:{color:bg},line:{color:'E2E8F0',pt:0.5}});
+            sInd.addText(cell,{x:cx+0.03,y:ry,w:colW[ci]-0.06,h:0.28,fontSize:8,color:'1E293B',valign:'middle',align:ci>0&&ci<4?'center':'left',wrap:false});
+            cx+=colW[ci];
+          });
+        });
+      }
+
+      // Slide YoY (se aplicável)
+      const hasPercentage = cfg.tipo!=='numero' && cfg.tipo!=='moeda' &&
+        resDoInd.some(r=>r.pctRealizado!==null&&r.pctRealizado!==undefined&&r.pctRealizado!==0);
+      if(hasPercentage && resDoInd.length>0) {
+        const imgYoy = await _srChartToBase64(codigo, 'yoy');
+        if(imgYoy) {
+          const sYoy = pres.addSlide();
+          addIndHdr(sYoy, tituloInd + ' — Comparativo Anual (YoY)', `Indicadores · ${idx+1}/${selectedCodigos.length}`);
+          sYoy.addImage({data:imgYoy,x:1.5,y:0.95,w:7,h:4.5});
+        }
+      }
+
+      // Slide análise IA
+      if(usarIA && resDoInd.length>0) {
+        showToast(`Analisando ${codigo} com IA…`, 'info');
+        const periodoLblFull = p => { if(!p) return ''; const [y,m]=p.split('-'); return m&&y ? new Date(parseInt(y),parseInt(m)-1,1).toLocaleString('pt-BR',{month:'long',year:'numeric'}) : p; };
+        const serieTexto = resDoInd.slice(-18).map(r =>
+          `${periodoLblFull(r.periodo)}: realizado=${r.realizado!==null&&r.realizado!==undefined?fmtN(r.realizado):'?'}${cfg?.unidade?' '+cfg.unidade:''}, meta=${r.meta!==null&&r.meta!==undefined?fmtN(r.meta):'?'}, %realizado=${r.pctRealizado!==null&&r.pctRealizado!==undefined?fmtN(r.pctRealizado)+'%':'?'}, análise="${r.analise||''}"`)
+          .join('\n');
+        const promptIA = `Você é um analista de indicadores de desempenho do setor público. Analise a variação temporal dos resultados do indicador abaixo e produza um texto conciso (4 a 6 frases) em português, apontando: (1) a tendência geral (melhora, piora, estabilidade); (2) os meses/períodos de melhor e pior desempenho; (3) se o indicador está atingindo a meta na maioria dos períodos; (4) alguma observação relevante sobre sazonalidade ou mudanças bruscas. Seja objetivo, claro e técnico.\n\nIndicador: ${ind?.enunciado||codigo}\nCódigo: ${codigo}\nDivisão: ${ind?.divisao||'—'}\nMeta: ${ind?.meta||'—'}\nPeriodicidade: ${ind?.periodicidade||'—'}\n\nSérie histórica (últimos 18 períodos):\n${serieTexto}\n\nResponda apenas com o texto da análise, sem listas, sem títulos, sem markdown.`;
+        let textoIA = '(Análise IA indisponível)';
+        try { textoIA = (await callGemini(promptIA)).trim(); } catch(e) { textoIA = 'Não foi possível obter análise da IA para este indicador.'; }
+        const sIA = pres.addSlide();
+        addIndHdr(sIA, tituloInd + ' — Análise de Variação Temporal', '🤖 Análise IA');
+        sIA.addShape(pres.ShapeType.rect,{x:0.4,y:0.95,w:9.2,h:4.5,fill:{color:'F0F7FF'},line:{color:'C7D7F5',pt:1},rectRadius:0.12});
+        sIA.addText('🤖  Análise de Variação Temporal — Inteligência Artificial',{x:0.55,y:1.1,w:8.9,h:0.4,fontSize:12,bold:true,color:CI.blue});
+        sIA.addText(textoIA,{x:0.55,y:1.6,w:8.9,h:3.7,fontSize:12,color:'1E293B',valign:'top',wrap:true});
+      }
+    }
+  }
+
   // ── Salvar ─────────────────────────────────────────────
-  const fname = 'StatusReport_EPP_' + mNames[now.getMonth()] + '_' + year + '.pptx';
+  const trNomes = ['1T','2T','3T','4T'];
+  const fname = `StatusReport_EPP_${trNomes[qCur-1]}_${year}.pptx`;
   await pres.writeFile({ fileName: fname });
   showToast('✅ Status Report exportado: ' + fname, 'success');
 }
