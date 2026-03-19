@@ -12036,19 +12036,33 @@ function openBackupModal() {
   openModal('backup-modal');
 }
 
-function exportBackup() {
+async function exportBackup() {
+  const btn = document.querySelector('#backup-modal .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Coletando dados...'; }
   try {
     harvestEditables();
     const allKeys = Object.keys(DATA).filter(k => k !== 'd' && k !== 'r' && k !== 'pat');
+
+    // Fetch all Supabase tables for a complete server-side backup
+    const supaData = {};
+    if (supaClient) {
+      const tables = ['gestpop_workspace','gestpop_editors','gestpop_requests','gestpop_history','gestpop_access_logs'];
+      for (const table of tables) {
+        const { data, error } = await supaClient.from(table).select('*');
+        if (!error && data) supaData[table] = data;
+      }
+    }
+
     const payload = {
-      _version: 2,
+      _version: 3,
       _exported: new Date().toISOString(),
       _app: 'SIGA',
       d:    DATA.d,
       r:    DATA.r,
       pat:  DATA.pat || [],
       audits: DATA.audits || { plans:[], executions:[], nonconformities:[], actions:[] },
-      newPops: allKeys.map(k => ({ key: k, data: DATA[k] }))
+      newPops: allKeys.map(k => ({ key: k, data: DATA[k] })),
+      supabase: supaData
     };
     const json = JSON.stringify(payload, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -12063,6 +12077,8 @@ function exportBackup() {
     closeModal('backup-modal');
   } catch(e) {
     showToast('Erro ao exportar: ' + e.message, 'warn');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇ Baixar arquivo de backup (.json)'; }
   }
 }
 
