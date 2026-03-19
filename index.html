@@ -2463,7 +2463,10 @@
           <div style="font-size:12px;color:var(--text-muted);">Use o editor de fluxo para desenhar, ajustar e exportar o diagrama.</div>
         </div>
       </div>
-      <button onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="flex-shrink:0;padding:8px 16px;background:var(--cage-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🎨 Abrir Editor de Fluxo</button>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button onclick="exportFluxoWord('d')" style="padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">📄 Exportar Fluxo</button>
+        <button onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="padding:8px 16px;background:var(--cage-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🎨 Desenhar Fluxo</button>
+      </div>
     </div>
     <div class="flow-mode-header">
       <div>
@@ -2832,7 +2835,10 @@
           <div style="font-size:12px;color:var(--text-muted);">Use o editor de fluxo para desenhar, ajustar e exportar o diagrama.</div>
         </div>
       </div>
-      <button onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="flex-shrink:0;padding:8px 16px;background:var(--cage-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🎨 Abrir Editor de Fluxo</button>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button onclick="exportFluxoWord('r')" style="padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">📄 Exportar Fluxo</button>
+        <button onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="padding:8px 16px;background:var(--cage-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🎨 Desenhar Fluxo</button>
+      </div>
     </div>
     <div class="flow-mode-header">
       <div>
@@ -3227,8 +3233,10 @@ Fim"></textarea>
       <!-- Excalidraw iframe -->
       <div id="fd-canvas-wrap" style="flex:1;overflow:hidden;position:relative;">
         <div id="fd-exc-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:white;z-index:2;flex-direction:column;gap:12px;">
-          <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="80 20" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="1s" repeatCount="indefinite"/></circle></svg>
-          <div style="font-size:13px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando Excalidraw…</div>
+          <svg id="fd-exc-spinner" width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="80 20" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="1s" repeatCount="indefinite"/></circle></svg>
+          <div id="fd-exc-loading-msg" style="font-size:13px;color:#64748b;font-family:'DM Sans',sans-serif;">Carregando Excalidraw…</div>
+          <div id="fd-exc-loading-sub" style="font-size:11px;color:#94a3b8;display:none;">Aguardando módulos externos (esm.sh)…</div>
+          <button id="fd-exc-retry-btn" onclick="fdRetryExcalidraw()" style="display:none;padding:8px 20px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">↺ Tentar novamente</button>
         </div>
         <iframe id="fd-excalidraw-frame" style="width:100%;height:100%;border:none;display:block;" src="about:blank" allow="clipboard-read; clipboard-write"></iframe>
       </div>
@@ -19343,6 +19351,113 @@ function auditRenderHeatmap() {
 }
 
 // ── EXPORTAÇÃO RELATÓRIO WORD ───────────────────────────────
+function exportFluxoWord(p) {
+  const pop = DATA[p];
+  if(!pop) { showToast('Dados do processo não encontrados.', 'error'); return; }
+  const steps = pop.steps || [];
+  if(!steps.length) { showToast('Nenhuma etapa cadastrada no fluxo.', 'warn'); return; }
+
+  const processName = pop.meta?.name || 'Processo';
+  const today = new Date().toLocaleDateString('pt-BR');
+  const typeIcon = { atividade:'▶', evento:'●', decisao:'◆', observacao:'💬' };
+  const typeLabel = { atividade:'Atividade', evento:'Evento', decisao:'Decisão', observacao:'Observação' };
+
+  function renderStepsHtml(mode) {
+    return steps.map((step, i) => {
+      const s = resolveStep(step, mode);
+      const actRows = s.actions.map(a => {
+        const obj = actionObj(a);
+        const icon = typeIcon[obj.type] || '▶';
+        const lbl  = typeLabel[obj.type] || 'Atividade';
+        const actor = obj.actor ? `<span style="color:#64748b;font-size:9pt;"> — 👤 ${obj.actor}</span>` : '';
+        const extras = [
+          obj.duracao     ? `⏱ ${obj.duracao}` : '',
+          obj.sistemas    ? `💻 ${obj.sistemas}` : '',
+          obj.documentos  ? `📎 ${obj.documentos}` : '',
+        ].filter(Boolean).join(' &nbsp;·&nbsp; ');
+        let html = `<tr>
+          <td style="width:28px;text-align:center;color:#64748b;font-size:10pt;">${icon}</td>
+          <td style="font-size:10pt;">${obj.text}${actor}${extras ? `<div style="font-size:8.5pt;color:#94a3b8;margin-top:2px;">${extras}</div>` : ''}</td>
+          <td style="width:90px;font-size:8.5pt;color:#475569;">${lbl}</td>
+        </tr>`;
+        if(obj.type === 'decisao' && Array.isArray(obj.branches)) {
+          obj.branches.forEach(br => {
+            html += `<tr style="background:#fffbeb;">
+              <td style="padding-left:20px;color:#f59e0b;font-size:9pt;">↳</td>
+              <td colspan="2" style="font-size:9pt;color:#92400e;">${br.label || '—'}: ${br.target || '—'}</td>
+            </tr>`;
+          });
+        }
+        return html;
+      }).join('');
+
+      return `
+      <div style="margin-bottom:18px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;page-break-inside:avoid;">
+        <div style="background:#1e3a5f;color:white;padding:8px 14px;display:flex;align-items:center;gap:10px;">
+          <span style="background:white;color:#1e3a5f;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11pt;flex-shrink:0;">${i+1}</span>
+          <div>
+            <div style="font-weight:700;font-size:12pt;">${s.title || '(sem título)'}</div>
+            ${s.subtitle ? `<div style="font-size:9pt;opacity:.75;">${s.subtitle}</div>` : ''}
+          </div>
+          ${s.responsible ? `<div style="margin-left:auto;font-size:9pt;background:rgba(255,255,255,.15);padding:2px 10px;border-radius:12px;white-space:nowrap;">👤 ${s.responsible}</div>` : ''}
+        </div>
+        ${actRows ? `<table style="width:100%;border-collapse:collapse;">${actRows}</table>` : '<p style="padding:8px 14px;color:#94a3b8;font-size:9pt;margin:0;">Sem ações cadastradas.</p>'}
+        ${s.note ? `<div style="padding:6px 14px;background:#f0fdf4;border-top:1px solid #bbf7d0;font-size:9pt;color:#065f46;">💬 ${s.note}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  const hasTobeData = steps.some(s => {
+    const tb = s.tobe || {};
+    return tb.title || (Array.isArray(tb.actions) && tb.actions.length);
+  });
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1e293b; margin: 0; padding: 0; }
+    .cover { background: #1e3a5f; color: white; padding: 48px 48px 36px; }
+    .cover h1 { font-size: 24pt; margin: 0 0 4px; font-weight: 700; }
+    .cover .sub { font-size: 12pt; color: #93c5fd; margin: 0; }
+    .cover .meta { margin-top: 22px; font-size: 9.5pt; color: #cbd5e1; line-height: 2; }
+    .cover .meta strong { color: #f1f5f9; }
+    .section { padding: 28px 48px; }
+    h2 { font-size: 13pt; color: #1e3a5f; border-left: 4px solid #2563eb; padding-left: 10px; margin: 0 0 16px; }
+    table td { padding: 6px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    .footer { background: #f1f5f9; padding: 16px 48px; font-size: 8.5pt; color: #64748b; }
+  </style></head><body>
+  <div class="cover">
+    <h1>Fluxo do Processo</h1>
+    <p class="sub">${processName}</p>
+    <div class="meta">
+      <strong>Modo:</strong> AS IS — Estado Atual<br>
+      <strong>Etapas:</strong> ${steps.length}<br>
+      <strong>Data de exportação:</strong> ${today}
+    </div>
+  </div>
+  <div class="section">
+    <h2>1. Fluxo AS IS — Estado Atual</h2>
+    ${renderStepsHtml('asis')}
+  </div>
+  ${hasTobeData ? `
+  <div class="section" style="border-top:2px solid #e2e8f0;">
+    <h2>2. Fluxo TO BE — Estado Futuro</h2>
+    ${renderStepsHtml('tobe')}
+  </div>` : ''}
+  <div class="footer">
+    <strong>CAGE-RS</strong> · Contadoria e Auditoria-Geral do Estado · SIGA &nbsp;|&nbsp; ${processName} &nbsp;|&nbsp; Emitido em ${today}
+  </div>
+  </body></html>`;
+
+  const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const safe = processName.replace(/[^a-zA-Z0-9À-ÿ\s]/g, '_').replace(/\s+/g, '_');
+  a.href = url; a.download = 'Fluxo_' + safe + '.doc';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📄 Fluxo exportado para Word!', 'success');
+}
+
 function auditExportRelatorioWord(planId) {
   auditEnsure();
   const plan = DATA.audits.plans.find(p => p.id === planId);
@@ -19915,26 +20030,79 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
   }
 
   // ── Ensure Excalidraw iframe is initialised ───────────────────
+  let _pendingCbs = [];
+  let _loadTimeout = null;
+
+  function _showExcLoadingError() {
+    const msg = document.getElementById('fd-exc-loading-msg');
+    const sub = document.getElementById('fd-exc-loading-sub');
+    const btn = document.getElementById('fd-exc-retry-btn');
+    const spinner = document.getElementById('fd-exc-spinner');
+    if (msg) msg.textContent = 'Não foi possível carregar o Excalidraw.';
+    if (sub) { sub.textContent = 'Verifique sua conexão ou tente novamente.'; sub.style.display = 'block'; }
+    if (btn) btn.style.display = 'inline-block';
+    if (spinner) spinner.style.display = 'none';
+  }
+
   function _ensureFrame(cb) {
     const frame = document.getElementById('fd-excalidraw-frame');
     if (!frame) return;
     if (_excReady) { if (cb) cb(frame); return; }
-    if (!_excBlobUrl) {
-      const blob = new Blob([_getExcalidrawHtml()], { type: 'text/html' });
-      _excBlobUrl = URL.createObjectURL(blob);
-      frame.src = _excBlobUrl;
-    }
-    const onReady = ev => {
-      if (ev.data?.type === 'EXC_READY') {
-        _excReady = true;
+    if (cb) _pendingCbs.push(cb);
+    if (_excBlobUrl) return; // already loading, just queued cb
+
+    const blob = new Blob([_getExcalidrawHtml()], { type: 'text/html' });
+    _excBlobUrl = URL.createObjectURL(blob);
+    frame.src = _excBlobUrl;
+
+    // Show sub-hint after 5 s
+    const hintTimer = setTimeout(() => {
+      const sub = document.getElementById('fd-exc-loading-sub');
+      if (sub && !_excReady) sub.style.display = 'block';
+    }, 5000);
+
+    // Timeout after 25 s → show error
+    _loadTimeout = setTimeout(() => {
+      if (!_excReady) {
+        clearTimeout(hintTimer);
         window.removeEventListener('message', onReady);
-        const loading = document.getElementById('fd-exc-loading');
-        if (loading) loading.style.display = 'none';
-        if (cb) cb(frame);
+        _showExcLoadingError();
       }
+    }, 25000);
+
+    const onReady = ev => {
+      if (ev.data?.type !== 'EXC_READY') return;
+      _excReady = true;
+      clearTimeout(hintTimer);
+      clearTimeout(_loadTimeout);
+      window.removeEventListener('message', onReady);
+      const loading = document.getElementById('fd-exc-loading');
+      if (loading) loading.style.display = 'none';
+      const pending = _pendingCbs.splice(0);
+      pending.forEach(fn => fn(frame));
     };
     window.addEventListener('message', onReady);
   }
+
+  window.fdRetryExcalidraw = function() {
+    _excReady   = false;
+    _excBlobUrl = null;
+    _pendingCbs = [];
+    clearTimeout(_loadTimeout);
+    const frame = document.getElementById('fd-excalidraw-frame');
+    if (frame) frame.src = 'about:blank';
+    const loading = document.getElementById('fd-exc-loading');
+    const msg     = document.getElementById('fd-exc-loading-msg');
+    const sub     = document.getElementById('fd-exc-loading-sub');
+    const btn     = document.getElementById('fd-exc-retry-btn');
+    const spinner = document.getElementById('fd-exc-spinner');
+    if (loading)  loading.style.display  = 'flex';
+    if (msg)      msg.textContent        = 'Carregando Excalidraw…';
+    if (sub)      sub.style.display      = 'none';
+    if (btn)      btn.style.display      = 'none';
+    if (spinner)  spinner.style.display  = '';
+    _fdLoad();
+  };
 
   // ── Send Mermaid code to Excalidraw iframe ────────────────────
   function _render(mermaidCode) {
