@@ -11413,7 +11413,13 @@ async function loadFromCloud() {
 
     setSyncStatus('synced');
     updateLastSaveChip(data);
-    showToast('☁️ Conteúdo carregado!', 'success');
+    if (_syncingFromRealtime) {
+      showToast(`🔄 Sincronizado com alterações de ${_syncingFromRealtime}`, 'success');
+      _syncingFromRealtime = null;
+    } else {
+      showToast('☁️ Conteúdo carregado!', 'success');
+    }
+    _subscribeWorkspaceChanges(workspaceId);
     console.log('loadFromCloud: OK');
     // Refresh BPMN image if the module is currently visible
     try {
@@ -11899,6 +11905,7 @@ async function signOut() {
   }
   window._signoutPending = false;
   try { _stopPresenceHeartbeat(); } catch(e) {}
+  try { if(_realtimeChannel){ supaClient.removeChannel(_realtimeChannel); _realtimeChannel=null; _subscribedWsId=null; } } catch(e) {}
   try { await _clearPresence(); } catch(e) {}
   try { await logAccessEvent('logout'); } catch(e) {}
   try { await supaClient.auth.signOut({ scope: 'local' }); } catch(e) {}
@@ -17817,6 +17824,9 @@ function eppMonTab(sub, el) {
 
 // ── PRESENCE: heartbeat ────────────────────────────────────────────
 let _presenceTimer = null;
+let _realtimeChannel = null;
+let _subscribedWsId   = null;
+let _syncingFromRealtime = null; // nome de quem disparou o sync via realtime
 async function _upsertPresence() {
   if(!supaClient || !currentUserEmail) return;
   try {
@@ -17839,6 +17849,41 @@ function _startPresenceHeartbeat() {
 function _stopPresenceHeartbeat() {
   clearInterval(_presenceTimer);
   _presenceTimer = null;
+}
+
+// ── REALTIME WORKSPACE SYNC ─────────────────────────────────────────
+function _subscribeWorkspaceChanges(wsId) {
+  if (!supaClient || !wsId) return;
+  if (_subscribedWsId === wsId) return; // já inscrito neste workspace
+  // Remove canal anterior se existir
+  if (_realtimeChannel) {
+    try { supaClient.removeChannel(_realtimeChannel); } catch(e) {}
+    _realtimeChannel = null;
+  }
+  _subscribedWsId = wsId;
+  _realtimeChannel = supaClient
+    .channel('workspace-sync-' + wsId)
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'gestpop_workspace',
+      filter: `id=eq.${wsId}`
+    }, payload => {
+      const updatedBy = payload.new?.updated_by;
+      // Ignorar salvamentos feitos pelo próprio usuário
+      if (updatedBy && updatedBy === currentUserEmail) return;
+      const name = payload.new?.updated_by_name || updatedBy || 'outro usuário';
+      // Se está em modo edição com alterações não salvas, apenas avisar
+      const unsavedDot = document.getElementById('unsaved-dot');
+      if (editMode && unsavedDot && unsavedDot.style.display !== 'none') {
+        showToast(`⚠️ ${name} salvou alterações. Finalize ou descarte as suas para sincronizar.`, 'warn');
+        return;
+      }
+      _syncingFromRealtime = name;
+      loadFromCloud();
+    })
+    .subscribe();
+  console.log('[realtime] Inscrito no workspace', wsId);
 }
 
 // ── ACCESS LOG ─────────────────────────────────────────────────────
