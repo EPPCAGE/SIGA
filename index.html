@@ -1583,74 +1583,74 @@
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
       <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
         <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
-        <div class="home-card-title">Procedimentos Operacionais</div>
-        <div class="home-card-desc">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Procedimentos Operacionais</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
         <div class="home-card-footer" id="home-pops-count">—</div>
       </div>
       <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
         <div class="home-card-icon" style="background:#f5f3ff;color:#8b5cf6;">🏛</div>
-        <div class="home-card-title">Arquitetura de Processos</div>
-        <div class="home-card-desc">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Arquitetura de Processos</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
         <div class="home-card-footer" id="home-arq-count">—</div>
       </div>
       <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
         <div class="home-card-icon" style="background:#fffbeb;color:#f59e0b;">📊</div>
-        <div class="home-card-title">Cadeia de Valor e Mapa Estratégico</div>
-        <div class="home-card-desc">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Cadeia de Valor e Mapa Estratégico</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
         <div class="home-card-footer">Imagens configuráveis</div>
       </div>
       <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
         <div class="home-card-icon" style="background:#fff1f2;color:#dc2626;">🔍</div>
-        <div class="home-card-title">Auditoria de Processos</div>
-        <div class="home-card-desc">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Auditoria de Processos</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
         <div class="home-card-footer" id="home-audit-count">—</div>
       </div>
       <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
         <div class="home-card-icon" style="background:#fffbeb;color:#e8a020;">📈</div>
-        <div class="home-card-title">Indicadores CAGE</div>
-        <div class="home-card-desc">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Indicadores CAGE</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
       </div>
       <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
         <div class="home-card-icon" style="background:#eef2ff;color:#6366f1;">🏗️</div>
-        <div class="home-card-title">Modelador BPMN 2.0</div>
-        <div class="home-card-desc">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Modelador BPMN 2.0</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
         <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
       </div>
       <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
         <div class="home-card-icon" style="background:#ecfdf5;color:#10b981;">🗒</div>
-        <div class="home-card-title">Quadro de Esboço</div>
-        <div class="home-card-desc">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Quadro de Esboço</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
         <div class="home-card-footer">Canvas interativo</div>
       </div>
       <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
         <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
-        <div class="home-card-title">SIGA Processos</div>
-        <div class="home-card-desc">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">SIGA Processos</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </div>
       <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
         <div class="home-card-icon" style="background:#f8fafc;color:#64748b;">🔍</div>
-        <div class="home-card-title">Busca Global</div>
-        <div class="home-card-desc">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Busca Global</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
         <div class="home-card-footer">Busca em tempo real</div>
       </div>
       <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
         <div class="home-card-icon" style="background:#fff1f2;color:#e11d48;">📚</div>
-        <div class="home-card-title">Documentos e Manuais</div>
-        <div class="home-card-desc">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Documentos e Manuais</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
         <div class="home-card-footer" id="home-repo-count">—</div>
       </div>
       <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
         <div class="home-card-icon" style="background:#f0f9ff;color:#0ea5e9;">💧</div>
-        <div class="home-card-title">Drops de Conhecimento</div>
-        <div class="home-card-desc">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Drops de Conhecimento</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
         <div class="home-card-footer" id="home-drops-count">—</div>
       </div>
       <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
         <div class="home-card-icon" style="background:#fdf2f8;color:#ec4899;">💡</div>
-        <div class="home-card-title">Caixinha de Ideias</div>
-        <div class="home-card-desc">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
+        <div class="home-card-title" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Caixinha de Ideias</div>
+        <div class="home-card-desc" contenteditable="true" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
         <div class="home-card-footer">Formulário Microsoft Forms</div>
       </div>
     </div>
