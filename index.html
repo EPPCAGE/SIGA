@@ -7617,6 +7617,19 @@ function mountNewPopTab(key, label, silent=false) {
       </div>
     </div>
     <div id="${key}-fluxo" class="section">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:12px 16px;background:linear-gradient(135deg,#f0f5ff,#e8f4ff);border:1px solid #c7d9f0;border-radius:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">🎨</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Precisa editar ou corrigir o fluxograma?</div>
+            <div style="font-size:12px;color:var(--text-muted);">Use o editor de fluxo para desenhar, ajustar e exportar o diagrama.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <button onclick="exportFluxoWord('${key}')" style="padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">📄 Exportar Fluxo</button>
+          <button onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="padding:8px 16px;background:var(--cage-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🎨 Desenhar Fluxo</button>
+        </div>
+      </div>
       <div class="flow-mode-header">
         <div>
           <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Modo de Visualização do Fluxo</div>
