@@ -11103,7 +11103,23 @@ async function saveToCloud(attempt=1) {
         })
         .eq('id', workspaceId)
         .select('id, updated_at, updated_by_name')
-        .single());
+        .maybeSingle());
+      // Se o UPDATE não encontrou a linha (workspaceId inválido/expirado), fazer INSERT
+      if(!error && !saved) {
+        console.warn('[saveToCloud] UPDATE retornou 0 linhas — workspaceId inválido, recriando workspace');
+        workspaceId = null;
+        sessionStorage.removeItem('gestpop_wsid');
+        ({ error, data: saved } = await supaClient
+          .from('gestpop_workspace')
+          .insert({
+            data:            payload,
+            updated_by:      currentUserEmail,
+            updated_by_name: currentUserName
+          })
+          .select('id, updated_at, updated_by_name')
+          .maybeSingle());
+        if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); }
+      }
     } else {
       // Primeiro uso: INSERT
       ({ error, data: saved } = await supaClient
@@ -11114,7 +11130,7 @@ async function saveToCloud(attempt=1) {
           updated_by_name: currentUserName
         })
         .select('id, updated_at, updated_by_name')
-        .single());
+        .maybeSingle());
       if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); }
     }
 
