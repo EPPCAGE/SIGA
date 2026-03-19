@@ -677,31 +677,11 @@
   .backup-import-preview strong { color:var(--cage-blue); }
 
 
-  /* ── QUADRO BRANCO ───────────────────────────────────────── */
+  /* ── QUADRO DE ESBOÇO (Excalidraw) ───────────────────────── */
   #quadro-module { display:none; }
   .quadro-toolbar { background:var(--cage-blue); padding:10px 20px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-bottom:2px solid var(--cage-accent); }
-  .quadro-tool-group { display:flex; align-items:center; gap:4px; padding:0 8px; border-right:1px solid rgba(255,255,255,.15); }
-  .quadro-tool-group:last-child { border-right:none; }
   .q-btn { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08); color:rgba(255,255,255,.8); transition:all .15s; white-space:nowrap; }
   .q-btn:hover { background:rgba(255,255,255,.18); color:white; }
-  .q-btn.active { background:var(--cage-accent); border-color:var(--cage-accent); color:white; }
-  .q-btn.danger { border-color:rgba(239,68,68,.5); color:#fca5a5; }
-  .q-btn.danger:hover { background:rgba(239,68,68,.25); }
-  .q-color-dot { width:18px; height:18px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:border-color .15s; flex-shrink:0; }
-  .q-color-dot.selected { border-color:white; }
-  .quadro-canvas-wrap { position:relative; overflow:hidden; background:#f0f4f8; }
-  .quadro-canvas-inner { position:absolute; top:0; left:0; transform-origin:0 0; }
-  .q-postit { position:absolute; border-radius:4px; padding:10px 12px; min-width:120px; min-height:80px; cursor:grab; box-shadow:3px 4px 12px rgba(0,0,0,.18); font-size:13px; font-weight:500; line-height:1.4; word-break:break-word; resize:none; border:none; font-family:inherit; overflow:hidden; user-select:none; }
-  .q-postit:focus { outline:2px solid var(--cage-accent); cursor:text; box-shadow:3px 4px 20px rgba(0,0,0,.28); }
-  .q-postit.selected { outline:2px solid #3b82f6; }
-  .q-postit-del { position:absolute; top:3px; right:4px; background:none; border:none; font-size:10px; cursor:pointer; color:rgba(0,0,0,.35); opacity:0; transition:opacity .15s; }
-  .q-postit:hover .q-postit-del { opacity:1; }
-  .q-actor { position:absolute; border:2px solid; border-radius:8px; background:rgba(255,255,255,.7); padding:8px 14px; font-size:12px; font-weight:700; cursor:grab; text-align:center; min-width:100px; box-shadow:0 2px 8px rgba(0,0,0,.12); }
-  .q-lane { position:absolute; border:2px dashed; border-radius:8px; opacity:.35; pointer-events:none; }
-  .q-label { position:absolute; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); pointer-events:none; }
-  svg.q-arrows { position:absolute; top:0; left:0; pointer-events:none; overflow:visible; }
-  .q-arrow-line { stroke:#64748b; stroke-width:2; fill:none; marker-end:url(#arrowhead); }
-  .q-arrow-line.selected { stroke:#3b82f6; stroke-width:3; }
 
   /* ── BUSCA GLOBAL ────────────────────────────────────────── */
   .search-input-wrap { position:relative; display:flex; align-items:center; }
@@ -2209,55 +2189,21 @@
   </div>
 </div>
 
-<!-- QUADRO BRANCO -->
-<div id="quadro-module" style="display:none;">
+<!-- QUADRO DE ESBOÇO — Excalidraw -->
+<div id="quadro-module" style="display:none;flex-direction:column;height:100vh;">
   <div class="quadro-toolbar">
-    <div class="quadro-tool-group">
-      <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;">Ferramentas</span>
-    </div>
-    <div class="quadro-tool-group">
-      <button class="q-btn active" id="qtool-postit" onclick="setQuadroTool('postit')">🟨 Post-it</button>
-      <button class="q-btn" id="qtool-actor" onclick="setQuadroTool('actor')">👤 Ator</button>
-      <button class="q-btn" id="qtool-arrow" onclick="setQuadroTool('arrow')">→ Seta</button>
-      <button class="q-btn" id="qtool-select" onclick="setQuadroTool('select')">↖ Selecionar</button>
-    </div>
-    <div class="quadro-tool-group">
-      <span style="font-size:11px;color:rgba(255,255,255,.4);">Cor:</span>
-      <div class="q-color-dot selected" data-color="#fef08a" style="background:#fef08a;" onclick="setQuadroColor('#fef08a',this)" title="Amarelo"></div>
-      <div class="q-color-dot" data-color="#bbf7d0" style="background:#bbf7d0;" onclick="setQuadroColor('#bbf7d0',this)" title="Verde"></div>
-      <div class="q-color-dot" data-color="#bfdbfe" style="background:#bfdbfe;" onclick="setQuadroColor('#bfdbfe',this)" title="Azul"></div>
-      <div class="q-color-dot" data-color="#fecaca" style="background:#fecaca;" onclick="setQuadroColor('#fecaca',this)" title="Vermelho"></div>
-      <div class="q-color-dot" data-color="#e9d5ff" style="background:#e9d5ff;" onclick="setQuadroColor('#e9d5ff',this)" title="Roxo"></div>
-      <div class="q-color-dot" data-color="#fed7aa" style="background:#fed7aa;" onclick="setQuadroColor('#fed7aa',this)" title="Laranja"></div>
-    </div>
-    <div class="quadro-tool-group">
-      <button class="q-btn editor-only" onclick="quadroUndo()" title="Desfazer (Ctrl+Z)">↩ Desfazer</button>
-      <button class="q-btn editor-only" onclick="quadroClear()" title="Limpar tudo">🗑 Limpar</button>
-    </div>
-    <div class="quadro-tool-group">
-      <button class="q-btn" onclick="quadroExportImg()">⬇ Exportar PNG</button>
-    </div>
+    <span style="font-size:13px;font-weight:700;color:white;letter-spacing:.4px;">✏️ Quadro de Esboço</span>
+    <span style="font-size:11px;color:rgba(255,255,255,.45);margin-left:6px;">— Excalidraw</span>
     <div style="flex:1;"></div>
-    <button class="q-btn" onclick="showQuadroModule(false)">✕ Fechar</button>
+    <button class="q-btn editor-only" onclick="quadroSaveCloud()" title="Salvar quadro na nuvem (preserva entre sessões)">☁️ Salvar</button>
+    <button class="q-btn" onclick="showQuadroModule(false)" title="Fechar">✕ Fechar</button>
   </div>
-  <div id="quadro-hint" style="background:#fffbeb;border-bottom:1px solid #fde68a;padding:6px 20px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:8px;">
-    <span id="quadro-hint-text">Clique no quadro para adicionar um Post-it. Arraste para mover. Dê duplo clique para editar o texto.</span>
-    <button onclick="document.getElementById('quadro-hint').style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#92400e;font-size:14px;">✕</button>
-  </div>
-  <div id="quadro-canvas-wrap" class="quadro-canvas-wrap" style="height:calc(100vh - 130px);">
-    <div id="quadro-canvas-inner" class="quadro-canvas-inner" style="width:3000px;height:2000px;">
-      <svg id="q-arrows-svg" class="q-arrows" width="3000" height="2000">
-        <defs>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
-          </marker>
-          <marker id="arrowhead-sel" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
-          </marker>
-        </defs>
-      </svg>
-    </div>
-  </div>
+  <iframe id="excalidraw-frame"
+    src="https://excalidraw.com?embed=1"
+    style="flex:1;width:100%;border:none;display:block;"
+    allow="clipboard-read; clipboard-write"
+    title="Excalidraw — Quadro de Esboço">
+  </iframe>
 </div>
 
 <!-- MODAL PLANO DE TRABALHO -->
@@ -11074,6 +11020,8 @@ async function saveToCloud(attempt=1) {
     indicadoresCage: DATA.indicadoresCage || { indicadores: [], resultados: [] },
     patrocinadores:  DATA.patrocinadores  || null,
     config:          DATA.config          || null,
+    aptCatalog:      Array.isArray(DATA.aptCatalog) && DATA.aptCatalog.length > 0 ? DATA.aptCatalog : null,
+    quadro:          DATA.quadro          || null,
   };
 
   try {
@@ -11259,6 +11207,10 @@ async function loadFromCloud() {
     if(Array.isArray(payload.patrocinadores)) DATA.patrocinadores = payload.patrocinadores;
     if(payload.config && typeof payload.config === 'object') DATA.config = payload.config;
     try { applyConfigToDropdowns(); } catch(e) {}
+    // Catálogo de apontamentos (não conformidades) — persiste itens customizados
+    if(Array.isArray(payload.aptCatalog) && payload.aptCatalog.length > 0) DATA.aptCatalog = payload.aptCatalog;
+    // Quadro de esboço (Excalidraw)
+    if(payload.quadro && typeof payload.quadro === 'object') DATA.quadro = payload.quadro;
     if(payload.indicadoresCage && typeof payload.indicadoresCage === 'object') {
       DATA.indicadoresCage = {
         indicadores: Array.isArray(payload.indicadoresCage.indicadores) ? payload.indicadoresCage.indicadores : [],
@@ -11867,394 +11819,57 @@ document.addEventListener('keydown', e => { if((e.ctrlKey||e.metaKey) && e.key==
 
 
 
-// ═══ QUADRO BRANCO ══════════════════════════════════════════
-// Estado global
-let _qTool    = 'postit';   // postit | actor | arrow | select
-let _qColor   = '#fef08a';
-let _qItems   = [];         // {id,type,x,y,w,h,text,color}
-let _qArrows  = [];         // {id,x1,y1,x2,y2,fromId,toId}
-let _qHistory = [];
-let _qItemId  = 0;
-let _qSelected = null;      // selected item id or arrow id
-let _qArrowSrc = null;      // {id, cx, cy} — first click for arrow mode
-let _qScale = 1, _qOffX = 0, _qOffY = 0;
-let _qPanActive = false, _qPanStart = {x:0,y:0,ox:0,oy:0};
-const ACTOR_COLORS = ['#0a2540','#15803d','#1d4ed8','#9333ea','#c2410c'];
+// ═══ QUADRO DE ESBOÇO — Excalidraw ══════════════════════════
 
-// ── Module show/hide ─────────────────────────────────────────
 function showQuadroModule(show=true) {
   if(!show) { showHome(); return; }
   hideHome();
   hideAllModules();
-  document.getElementById('quadro-module').style.display = 'block';
-  initQuadro();
+  document.getElementById('quadro-module').style.display = 'flex';
+  _excalidrawInit();
 }
 
-// ── Init (once) ──────────────────────────────────────────────
-function initQuadro() {
-  const wrap = document.getElementById('quadro-canvas-wrap');
-  if(wrap._qInited) return;
-  wrap._qInited = true;
+// ── Excalidraw integration ───────────────────────────────────
+function _excalidrawInit() {
+  const frame = document.getElementById('excalidraw-frame');
+  if(frame._inited) return;
+  frame._inited = true;
 
-  // Click on canvas → add item, or complete arrow
-  wrap.addEventListener('click', ev => {
-    if(ev.target.closest('[data-qid]') || ev.target.closest('[data-qaid]')) return;
-    const {cx,cy} = screenToCanvas(ev.clientX, ev.clientY);
-    if(_qTool==='postit') { qSaveHistory(); addPostit(cx,cy); }
-    if(_qTool==='actor')  { qSaveHistory(); addActor(cx,cy); }
-    if(_qTool==='arrow' && _qArrowSrc) {
-      // clicking on empty canvas cancels arrow
-      _qArrowSrc=null;
-      document.getElementById('quadro-hint-text').textContent='Clique em um elemento para iniciar a seta.';
-      renderArrowLayer();
-    }
-  });
-
-  // Pan: Alt+drag OR middle button
-  wrap.addEventListener('mousedown', ev => {
-    if(ev.button===1 || (ev.button===0 && ev.altKey)) {
-      _qPanActive=true;
-      _qPanStart={x:ev.clientX,y:ev.clientY,ox:_qOffX,oy:_qOffY};
-      wrap.style.cursor='grabbing'; ev.preventDefault();
-    }
-  });
-  window.addEventListener('mousemove', ev => {
-    if(!_qPanActive) return;
-    _qOffX = _qPanStart.ox + (ev.clientX-_qPanStart.x);
-    _qOffY = _qPanStart.oy + (ev.clientY-_qPanStart.y);
-    applyQTransform();
-  });
-  window.addEventListener('mouseup', () => {
-    if(_qPanActive){ _qPanActive=false; document.getElementById('quadro-canvas-wrap').style.cursor='default'; }
-  });
-
-  // Scroll zoom
-  wrap.addEventListener('wheel', ev => {
-    ev.preventDefault();
-    const f = ev.deltaY<0?1.1:0.91;
-    const rect=wrap.getBoundingClientRect();
-    const mx=ev.clientX-rect.left, my=ev.clientY-rect.top;
-    _qOffX = mx-(mx-_qOffX)*f;
-    _qOffY = my-(my-_qOffY)*f;
-    _qScale = Math.max(0.15,Math.min(4,_qScale*f));
-    applyQTransform();
-  },{passive:false});
-
-  // Keyboard
-  document.addEventListener('keydown', ev => {
-    if(document.getElementById('quadro-module').style.display==='none') return;
-    if((ev.ctrlKey||ev.metaKey) && ev.key==='z'){ ev.preventDefault(); quadroUndo(); }
-    if((ev.key==='Delete'||ev.key==='Backspace') && _qSelected && document.activeElement.tagName!=='TEXTAREA' && !document.activeElement.isContentEditable){
-      ev.preventDefault(); qDeleteSelected();
-    }
-    if(ev.key==='Escape'){ _qArrowSrc=null; qDeselect(); renderArrowLayer(); }
-  });
-}
-
-function screenToCanvas(sx,sy){
-  const rect=document.getElementById('quadro-canvas-wrap').getBoundingClientRect();
-  return {cx:(sx-rect.left-_qOffX)/_qScale, cy:(sy-rect.top-_qOffY)/_qScale};
-}
-function applyQTransform(){
-  document.getElementById('quadro-canvas-inner').style.transform=`translate(${_qOffX}px,${_qOffY}px) scale(${_qScale})`;
-}
-
-// ── Tools ────────────────────────────────────────────────────
-function setQuadroTool(tool){
-  _qTool=tool; _qArrowSrc=null;
-  document.querySelectorAll('[id^="qtool-"]').forEach(b=>b.classList.remove('active'));
-  const btn=document.getElementById('qtool-'+tool);
-  if(btn) btn.classList.add('active');
-  const hints={
-    postit:'Clique no quadro para adicionar um Post-it. Duplo clique para editar. Del para apagar.',
-    actor: 'Clique para adicionar um Ator/Setor. Duplo clique para renomear.',
-    arrow: 'Clique em um elemento (origem) → depois clique em outro (destino). Clique numa seta para selecioná-la.',
-    select:'Clique para selecionar. Arraste para mover. Del para apagar.'
-  };
-  document.getElementById('quadro-hint-text').textContent=hints[tool]||'';
-  document.getElementById('quadro-hint').style.display='flex';
-}
-function setQuadroColor(color,dot){
-  _qColor=color;
-  document.querySelectorAll('.q-color-dot').forEach(d=>d.classList.remove('selected'));
-  dot.classList.add('selected');
-}
-
-// ── History ──────────────────────────────────────────────────
-function qSaveHistory(){
-  _qHistory.push(JSON.stringify({items:_qItems,arrows:_qArrows}));
-  if(_qHistory.length>40) _qHistory.shift();
-}
-function quadroUndo(){
-  if(!isEditor) return;
-  if(!_qHistory.length) return;
-  const s=JSON.parse(_qHistory.pop());
-  _qItems=s.items; _qArrows=s.arrows; _qSelected=null; _qArrowSrc=null;
-  reRenderQuadro();
-}
-function quadroClear(){
-  if(!isEditor) { showToast('🔒 Apenas editores podem limpar o quadro.', 'warn'); return; }
-  if(!confirm('Limpar todo o quadro?')) return;
-  qSaveHistory(); _qItems=[]; _qArrows=[]; _qSelected=null; _qArrowSrc=null;
-  reRenderQuadro();
-}
-
-// ── Add items ────────────────────────────────────────────────
-function addPostit(x,y){
-  const id='qi_'+(++_qItemId);
-  _qItems.push({id,type:'postit',x,y,w:150,h:100,text:'Ação / Etapa',color:_qColor});
-  renderItem(_qItems[_qItems.length-1]);
-}
-function addActor(x,y){
-  const id='qi_'+(++_qItemId);
-  const col=ACTOR_COLORS[_qItems.filter(i=>i.type==='actor').length%ACTOR_COLORS.length];
-  _qItems.push({id,type:'actor',x,y,w:140,h:50,text:'Ator / Setor',color:col});
-  renderItem(_qItems[_qItems.length-1]);
-}
-
-// ── Render a single item DOM node ───────────────────────────
-function renderItem(item){
-  // Remove old if exists
-  const old=document.querySelector(`[data-qid="${item.id}"]`);
-  if(old) old.remove();
-
-  const el=document.createElement('div');
-  el.dataset.qid=item.id;
-  el.style.position='absolute';
-  el.style.left=item.x+'px';
-  el.style.top=item.y+'px';
-  el.style.width=item.w+'px';
-  el.style.minHeight=item.h+'px';
-  el.style.boxSizing='border-box';
-  el.style.zIndex=item.type==='postit'?10:5;
-  el.style.userSelect='none';
-
-  if(item.type==='postit'){
-    el.style.cssText+=`;background:${item.color};border-radius:4px;padding:10px 28px 10px 10px;font-size:13px;font-weight:500;line-height:1.45;word-break:break-word;box-shadow:3px 4px 12px rgba(0,0,0,.2);cursor:grab;`;
-    el.textContent=item.text;
-
-    // Delete button always visible on hover
-    const del=document.createElement('button');
-    del.textContent='✕';
-    del.title='Apagar (ou Del)';
-    del.style.cssText='position:absolute;top:4px;right:5px;background:rgba(0,0,0,.15);border:none;border-radius:3px;width:18px;height:18px;font-size:10px;cursor:pointer;display:none;line-height:1;padding:0;';
-    el.appendChild(del);
-    el.addEventListener('mouseenter',()=>{ del.style.display='block'; });
-    el.addEventListener('mouseleave',()=>{ del.style.display='none'; });
-    del.addEventListener('click',ev=>{ ev.stopPropagation(); qSaveHistory(); qRemoveItem(item.id); });
-
-    // Double click to edit
-    el.addEventListener('dblclick',ev=>{
-      if(ev.target===del) return;
-      const ta=document.createElement('textarea');
-      ta.value=item.text;
-      ta.style.cssText=`width:100%;height:100%;min-height:80px;border:none;background:transparent;resize:none;font:inherit;font-size:13px;outline:none;padding:0;box-sizing:border-box;cursor:text;`;
-      el.textContent='';
-      el.appendChild(ta);
-      ta.focus(); ta.select();
-      const finish=()=>{
-        item.text=ta.value;
-        el.textContent=item.text;
-        el.appendChild(del);
-      };
-      ta.addEventListener('blur',finish);
-      ta.addEventListener('keydown',ev2=>{ if(ev2.key==='Escape'||((ev2.ctrlKey||ev2.metaKey)&&ev2.key==='Enter')) ta.blur(); });
-    });
-  } else {
-    // Actor
-    el.style.cssText+=`;border:2px solid ${item.color};border-radius:8px;background:${item.color}20;color:${item.color};padding:8px 24px 8px 10px;font-size:12px;font-weight:700;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.12);cursor:grab;`;
-    el.textContent=item.text;
-
-    const del=document.createElement('button');
-    del.textContent='✕';
-    del.title='Apagar';
-    del.style.cssText='position:absolute;top:4px;right:5px;background:rgba(0,0,0,.1);border:none;border-radius:3px;width:18px;height:18px;font-size:10px;cursor:pointer;display:none;padding:0;';
-    el.appendChild(del);
-    el.addEventListener('mouseenter',()=>del.style.display='block');
-    el.addEventListener('mouseleave',()=>del.style.display='none');
-    del.addEventListener('click',ev=>{ ev.stopPropagation(); qSaveHistory(); qRemoveItem(item.id); });
-
-    el.addEventListener('dblclick',()=>{
-      const newName=prompt('Nome do ator/setor:',item.text);
-      if(newName && newName.trim()){ item.text=newName.trim(); el.textContent=item.text; el.appendChild(del); }
-    });
-  }
-
-  // Click = select (or start arrow)
-  el.addEventListener('mousedown',ev=>{
-    if(ev.target.tagName==='BUTTON') return;
-    ev.stopPropagation();
-    if(_qTool==='arrow'){
-      const cx=item.x+item.w/2, cy=item.y+(item.h||50)/2;
-      if(!_qArrowSrc){
-        _qArrowSrc={id:item.id,cx,cy};
-        qSelectItem(item.id);
-        document.getElementById('quadro-hint-text').textContent='Agora clique no elemento DESTINO da seta.';
-      } else {
-        if(_qArrowSrc.id===item.id){ _qArrowSrc=null; qDeselect(); return; }
-        qSaveHistory();
-        const ax1=_qArrowSrc.cx, ay1=_qArrowSrc.cy;
-        const arrow={id:'qa_'+(++_qItemId),fromId:_qArrowSrc.id,toId:item.id,x1:ax1,y1:ay1,x2:cx,y2:cy};
-        _qArrows.push(arrow);
-        _qArrowSrc=null;
-        qDeselect();
-        renderArrowLayer();
-        document.getElementById('quadro-hint-text').textContent='Seta criada! Clique em outro elemento para continuar ou mude de ferramenta.';
+  window.addEventListener('message', ev => {
+    try {
+      if(!ev.origin || !ev.origin.includes('excalidraw')) return;
+      const msg = ev.data;
+      if(!msg || typeof msg !== 'object') return;
+      // Capture scene updates emitted by Excalidraw embed
+      if(msg.type === 'SCENE_CHANGE' || msg.type === 'scene-change') {
+        DATA.quadro = { elements: msg.elements, appState: msg.appState, files: msg.files };
       }
-      return;
-    }
-    // Select mode or any other: start drag
-    qSelectItem(item.id);
-    startQDrag(ev,item,el);
+      // On ready, restore saved scene
+      if(msg.type === 'READY' || msg.type === 'ready') {
+        _excalidrawRestoreScene();
+      }
+    } catch(e) { /* ignore cross-origin errors */ }
   });
 
-  document.getElementById('quadro-canvas-inner').appendChild(el);
-}
-
-// ── Drag items ───────────────────────────────────────────────
-function startQDrag(ev,item,el){
-  if(document.activeElement.tagName==='TEXTAREA') return;
-  ev.preventDefault();
-  const startX=ev.clientX, startY=ev.clientY, ox=item.x, oy=item.y;
-  let moved=false;
-  const onMove=e=>{
-    const dx=(e.clientX-startX)/_qScale;
-    const dy=(e.clientY-startY)/_qScale;
-    if(Math.abs(dx)+Math.abs(dy)>2) moved=true;
-    item.x=ox+dx; item.y=oy+dy;
-    el.style.left=item.x+'px'; el.style.top=item.y+'px';
-    updateConnectedArrows(item.id);
-  };
-  const onUp=()=>{
-    window.removeEventListener('mousemove',onMove);
-    window.removeEventListener('mouseup',onUp);
-    if(moved) qSaveHistory();
-    el.style.cursor='grab';
-  };
-  el.style.cursor='grabbing';
-  window.addEventListener('mousemove',onMove);
-  window.addEventListener('mouseup',onUp);
-}
-
-// ── Arrow layer (SVG) ────────────────────────────────────────
-function renderArrowLayer(){
-  const svg=document.getElementById('q-arrows-svg');
-  // Keep defs
-  const defs=svg.querySelector('defs');
-  svg.innerHTML='';
-  if(defs) svg.appendChild(defs);
-
-  // In-progress ghost arrow if _qArrowSrc
-  _qArrows.forEach(a=>{
-    const sel=(_qSelected===a.id);
-    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-
-    // Wide invisible hit area
-    const hit=document.createElementNS('http://www.w3.org/2000/svg','line');
-    hit.setAttribute('x1',a.x1); hit.setAttribute('y1',a.y1);
-    hit.setAttribute('x2',a.x2); hit.setAttribute('y2',a.y2);
-    hit.setAttribute('stroke','transparent'); hit.setAttribute('stroke-width','18');
-    hit.style.cursor='pointer';
-    hit.addEventListener('click',ev=>{ ev.stopPropagation(); qSelectArrow(a.id); });
-
-    // Visual line
-    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
-    line.setAttribute('x1',a.x1); line.setAttribute('y1',a.y1);
-    line.setAttribute('x2',a.x2); line.setAttribute('y2',a.y2);
-    line.setAttribute('stroke',sel?'#3b82f6':'#64748b');
-    line.setAttribute('stroke-width',sel?'3':'2');
-    line.setAttribute('marker-end',sel?'url(#arrowhead-sel)':'url(#arrowhead)');
-    line.setAttribute('fill','none');
-    line.style.pointerEvents='none';
-
-    // Delete button (midpoint) shown when selected
-    if(sel){
-      const mx=(a.x1+a.x2)/2, my=(a.y1+a.y2)/2;
-      const delBtn=document.createElementNS('http://www.w3.org/2000/svg','g');
-      delBtn.style.cursor='pointer';
-      const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      circle.setAttribute('cx',mx); circle.setAttribute('cy',my);
-      circle.setAttribute('r','12'); circle.setAttribute('fill','#ef4444'); circle.setAttribute('stroke','white'); circle.setAttribute('stroke-width','2');
-      const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
-      txt.setAttribute('x',mx); txt.setAttribute('y',my+4);
-      txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','white');
-      txt.setAttribute('font-size','14'); txt.setAttribute('font-weight','bold');
-      txt.textContent='✕';
-      txt.style.pointerEvents='none';
-      delBtn.appendChild(circle); delBtn.appendChild(txt);
-      delBtn.addEventListener('click',ev=>{ ev.stopPropagation(); qSaveHistory(); _qArrows=_qArrows.filter(x=>x.id!==a.id); _qSelected=null; renderArrowLayer(); });
-      g.appendChild(delBtn);
-    }
-
-    g.appendChild(hit);
-    g.appendChild(line);
-    svg.appendChild(g);
+  frame.addEventListener('load', () => {
+    // Fallback: try to restore after the frame loads (in case READY fires before listener is set)
+    setTimeout(_excalidrawRestoreScene, 800);
   });
 }
 
-function updateConnectedArrows(itemId){
-  const item=_qItems.find(i=>i.id===itemId);
-  if(!item) return;
-  _qArrows.forEach(a=>{
-    if(a.fromId===itemId){ a.x1=item.x+item.w/2; a.y1=item.y+(item.h||50)/2; }
-    if(a.toId===itemId)  { a.x2=item.x+item.w/2; a.y2=item.y+(item.h||50)/2; }
-  });
-  renderArrowLayer();
+function _excalidrawRestoreScene() {
+  const frame = document.getElementById('excalidraw-frame');
+  if(!frame || !DATA.quadro) return;
+  try {
+    frame.contentWindow.postMessage({ type: 'SCENE_UPDATE', payload: DATA.quadro }, 'https://excalidraw.com');
+  } catch(e) { console.warn('[Excalidraw] restore failed:', e); }
 }
 
-// ── Selection ────────────────────────────────────────────────
-function qSelectItem(id){
-  _qSelected=id;
-  document.querySelectorAll('[data-qid]').forEach(el=>{
-    el.style.outline = el.dataset.qid===id ? '2.5px solid #3b82f6' : '';
-    el.style.outlineOffset = '2px';
-  });
-}
-function qSelectArrow(id){
-  _qSelected=id;
-  document.querySelectorAll('[data-qid]').forEach(el=>{ el.style.outline=''; });
-  renderArrowLayer();
-  // Show delete hint
-  document.getElementById('quadro-hint-text').textContent='Seta selecionada — clique em ✕ para apagar, ou pressione Del.';
-  document.getElementById('quadro-hint').style.display='flex';
-}
-function qDeselect(){
-  _qSelected=null;
-  document.querySelectorAll('[data-qid]').forEach(el=>{ el.style.outline=''; });
-  renderArrowLayer();
-}
-function qDeleteSelected(){
-  if(!_qSelected) return;
-  qSaveHistory();
-  const isArrow=_qSelected.startsWith('qa_');
-  if(isArrow){ _qArrows=_qArrows.filter(a=>a.id!==_qSelected); renderArrowLayer(); }
-  else { qRemoveItem(_qSelected); }
-  _qSelected=null;
-}
-function qRemoveItem(id){
-  _qItems=_qItems.filter(i=>i.id!==id);
-  _qArrows=_qArrows.filter(a=>a.fromId!==id&&a.toId!==id);
-  const el=document.querySelector(`[data-qid="${id}"]`);
-  if(el) el.remove();
-  renderArrowLayer();
-}
-
-// ── Full re-render ───────────────────────────────────────────
-function reRenderQuadro(){
-  document.querySelectorAll('[data-qid]').forEach(e=>e.remove());
-  _qItemId=0;
-  _qItems.forEach(item=>{
-    _qItemId=Math.max(_qItemId,parseInt(item.id.split('_')[1]||0));
-    renderItem(item);
-  });
-  _qArrows.forEach(a=>{
-    _qItemId=Math.max(_qItemId,parseInt(a.id.split('_')[1]||0));
-  });
-  renderArrowLayer();
-}
-
-function quadroExportImg(){
-  showToast('Para exportar: pressione F11 para tela cheia, depois use a captura de tela do seu sistema (Print Screen ou Ferramenta de Recorte).','success');
+function quadroSaveCloud() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem salvar.','warn'); return; }
+  // DATA.quadro is kept in sync via message listener; persist to cloud now
+  saveToCloud();
+  showToast('☁️ Quadro salvo!', 'success');
 }
 
 // ═══ BACKUP EXPORT / IMPORT ════════════════════════════════
@@ -22109,13 +21724,13 @@ function matComputeMetrics(p, version='asis') {
 }
 
 function matComputeRisco(metrics, indispensaveis, sistIndispensaveis) {
-  // decisões×2 + handoffs×2 + pessoas×5 + sistemas×3 + eventos início×1.5 + eventos fim×1
+  // decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas críticos×3 + eventos início×1,5 + eventos fim×1
   // Múltiplos pontos de entrada/saída indicam processo com fluxos complexos e não-lineares.
   // Nota: distribuição NÃO é somada aqui — as atividades de distribuição já geram
   // handoffs estruturais detectados pela troca de ator, evitando dupla contagem.
   const score = (metrics.totalDecisions * 2) + (metrics.totalHandoffs * 2)
               + (indispensaveis * 5) + ((sistIndispensaveis || 0) * 3)
-              + (metrics.totalStartEvents * 1.5) + (metrics.totalEndEvents * 1);
+              + ((metrics.totalStartEvents || 0) * 1.5) + ((metrics.totalEndEvents || 0) * 1);
   let label, cls;
   if(score <= 15)      { label = 'Baixo'; cls = '#22c55e'; }
   else if(score <= 35) { label = 'Médio'; cls = '#eab308'; }
@@ -22285,7 +21900,7 @@ function matRender(p) {
     <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:6px;">📊 Índices Calculados</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
       ${indexCard('Risco Operacional ↓', risco.score.toFixed(1), risco.label, risco.cls,
-        `decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3<br>Escala: ≤15 baixo · ≤35 médio · &gt;35 alto`)}
+        `decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas críticos×3 + eventos início×1,5 + eventos fim×1<br>Escala: ≤15 baixo · ≤35 médio · &gt;35 alto`)}
       ${(()=>{
         const ld = metrics.totalExecucao + metrics.totalApprovals + metrics.totalControle;
         const lr = ld > 0 ? metrics.totalExecucao / ld : null;
@@ -22607,7 +22222,7 @@ function matExportPdf(p) {
           <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Sentido</th><th>Barra</th></tr>
           ${[
             ['👥 Percepção da Equipe',  '30%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
-            ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas indispensáveis×3. Valor bruto invertido → maior pontuação = menor risco.'],
+            ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas críticos×3 + eventos início×1,5 + eventos fim×1. Score bruto alto → nota baixa.'],
             ['🌿 Lean Operacional',     '30%', final.normLean,      '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma atividade opinada existe.'],
             ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades com sistema registrado ou marcadas como automáticas (⚙️), incluindo atividades dentro de decisões.'],
             ['⚙️ Automação',            '10%', final.normAutomacao, '#7c3aed', '100 = totalmente automatizado', 'Percentual de atividades marcadas com ⚙️ (automático) ÷ total de atividades. Marque via ícone ⚙️ em cada atividade no fluxo.'],
