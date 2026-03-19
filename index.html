@@ -20104,56 +20104,61 @@ function statusModalUpdateSubList() {
 
   // ── Excalidraw iframe HTML (loaded via blob URL) ──────────────
   function _getExcalidrawHtml() {
+    // Abordagem oficial (docs.excalidraw.com):
+    //   import do caminho dist/dev/index.js com ?external=react,react-dom
+    //   → esm.sh referencia os mesmos URLs de React, sem duplicação de instância
+    //   CSS e EXCALIDRAW_ASSET_PATH carregados explicitamente (obrigatório no novo build)
     return `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <style>*{box-sizing:border-box;margin:0;padding:0}html,body,#root{width:100%;height:100%;overflow:hidden}</style>
+<link rel="stylesheet" href="https://esm.sh/@excalidraw/excalidraw@0.17.6/dist/dev/index.css">
+<script>window.EXCALIDRAW_ASSET_PATH = "https://esm.sh/@excalidraw/excalidraw@0.17.6/dist/prod/";<\/script>
 </head><body><div id="root"></div>
-<!-- React + ReactDOM UMD: instância única compartilhada com o Excalidraw -->
-<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"><\/script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"><\/script>
-<!-- Excalidraw UMD: usa os globals React/ReactDOM já carregados acima -->
-<script src="https://unpkg.com/@excalidraw/excalidraw@0.17.6/dist/excalidraw.production.min.js"><\/script>
-<!-- ESM apenas para mermaid-to-excalidraw (sem dependência React, bundle seguro) -->
 <script type="module">
+import React from 'https://esm.sh/react@18.3.1';
+import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client';
+import * as ExLib from 'https://esm.sh/@excalidraw/excalidraw@0.17.6/dist/dev/index.js?external=react,react-dom';
+
+const { Excalidraw, exportToSvg, exportToBlob } = ExLib;
+if (!Excalidraw) {
+  document.getElementById('root').textContent = 'Erro: Excalidraw não carregou.';
+  window.parent?.postMessage({ type: 'EXC_ERROR', error: 'export_not_found' }, '*');
+  throw new Error('Excalidraw export not found');
+}
+
 let parseMermaidToExcalidraw = null;
 try {
   const m = await import('https://esm.sh/@excalidraw/mermaid-to-excalidraw?bundle');
   parseMermaidToExcalidraw = m.parseMermaidToExcalidraw ?? m.default?.parseMermaidToExcalidraw ?? null;
 } catch(e) { /* text-to-flowchart indisponível */ }
 
-if (typeof ExcalidrawLib === 'undefined' || !ExcalidrawLib.Excalidraw) {
-  document.getElementById('root').textContent = 'Erro: Excalidraw não carregou (UMD ausente).';
-  window.parent?.postMessage({ type: 'EXC_ERROR', error: 'umd_not_loaded' }, '*');
-} else {
-  const { Excalidraw, exportToSvg, exportToBlob } = ExcalidrawLib;
-  let _api = null;
-  function App() {
-    React.useEffect(() => {
-      window.parent.postMessage({ type: 'EXC_READY' }, '*');
-      window.addEventListener('message', async ev => {
-        const d = ev.data || {};
-        if (d.type === 'LOAD_MERMAID') {
-          if (!parseMermaidToExcalidraw) { console.warn('parseMermaidToExcalidraw não disponível'); return; }
-          try {
-            const res = await parseMermaidToExcalidraw(d.code);
-            const els = res.elements || res;
-            if (_api) { _api.updateScene({ elements: els }); setTimeout(() => _api.scrollToContent(els, { fitToViewport: true }), 80); }
-          } catch(e) { console.error('mermaid→excalidraw', e); }
-        } else if (d.type === 'LOAD_SCENE') {
-          if (_api && d.elements) { _api.updateScene({ elements: d.elements, files: d.files || {} }); setTimeout(() => _api.scrollToContent(d.elements, { fitToViewport: true }), 80); }
-        } else if (d.type === 'GET_SCENE') {
-          if (_api) window.parent.postMessage({ type: 'SCENE_DATA', elements: _api.getSceneElements(), files: _api.getFiles() }, '*');
-        } else if (d.type === 'EXPORT_SVG') {
-          if (_api) { const s = await exportToSvg({ elements: _api.getSceneElements(), files: _api.getFiles(), appState: { ..._api.getAppState(), exportWithDarkMode: false } }); window.parent.postMessage({ type: 'SVG_DATA', svg: new XMLSerializer().serializeToString(s) }, '*'); }
-        } else if (d.type === 'EXPORT_PNG') {
-          if (_api) { const b = await exportToBlob({ elements: _api.getSceneElements(), files: _api.getFiles(), appState: _api.getAppState(), mimeType: 'image/png', quality: 0.95 }); const r = new FileReader(); r.onload = () => window.parent.postMessage({ type: 'PNG_DATA', dataUrl: r.result }, '*'); r.readAsDataURL(b); }
-        }
-      });
-    }, []);
-    return React.createElement(Excalidraw, { excalidrawAPI: a => { _api = a; }, theme: 'light', langCode: 'pt-BR' });
-  }
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
+let _api = null;
+function App() {
+  React.useEffect(() => {
+    window.parent.postMessage({ type: 'EXC_READY' }, '*');
+    window.addEventListener('message', async ev => {
+      const d = ev.data || {};
+      if (d.type === 'LOAD_MERMAID') {
+        if (!parseMermaidToExcalidraw) { console.warn('parseMermaidToExcalidraw não disponível'); return; }
+        try {
+          const res = await parseMermaidToExcalidraw(d.code);
+          const els = res.elements || res;
+          if (_api) { _api.updateScene({ elements: els }); setTimeout(() => _api.scrollToContent(els, { fitToViewport: true }), 80); }
+        } catch(e) { console.error('mermaid→excalidraw', e); }
+      } else if (d.type === 'LOAD_SCENE') {
+        if (_api && d.elements) { _api.updateScene({ elements: d.elements, files: d.files || {} }); setTimeout(() => _api.scrollToContent(d.elements, { fitToViewport: true }), 80); }
+      } else if (d.type === 'GET_SCENE') {
+        if (_api) window.parent.postMessage({ type: 'SCENE_DATA', elements: _api.getSceneElements(), files: _api.getFiles() }, '*');
+      } else if (d.type === 'EXPORT_SVG') {
+        if (_api) { const s = await exportToSvg({ elements: _api.getSceneElements(), files: _api.getFiles(), appState: { ..._api.getAppState(), exportWithDarkMode: false } }); window.parent.postMessage({ type: 'SVG_DATA', svg: new XMLSerializer().serializeToString(s) }, '*'); }
+      } else if (d.type === 'EXPORT_PNG') {
+        if (_api) { const b = await exportToBlob({ elements: _api.getSceneElements(), files: _api.getFiles(), appState: _api.getAppState(), mimeType: 'image/png', quality: 0.95 }); const r = new FileReader(); r.onload = () => window.parent.postMessage({ type: 'PNG_DATA', dataUrl: r.result }, '*'); r.readAsDataURL(b); }
+      }
+    });
+  }, []);
+  return React.createElement(Excalidraw, { excalidrawAPI: a => { _api = a; }, theme: 'light' });
 }
+createRoot(document.getElementById('root')).render(React.createElement(App, null));
 <\/script></body></html>`;
   }
 
