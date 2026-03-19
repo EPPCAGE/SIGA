@@ -20095,15 +20095,21 @@ function statusModalUpdateSubList() {
 <script type="module">
 import React from 'https://esm.sh/react@18';
 import { createRoot } from 'https://esm.sh/react-dom@18/client';
-import * as ExLib from 'https://esm.sh/@excalidraw/excalidraw@0.17.6?bundle&deps=react@18,react-dom@18';
-const { Excalidraw, exportToSvg, exportToBlob } = ExLib;
-// parseMermaidToExcalidraw is re-exported from the main bundle in 0.17.x
-let parseMermaidToExcalidraw = ExLib.parseMermaidToExcalidraw;
+// Sem ?bundle: compartilha a mesma instância de React (evita dois contextos e React error #130)
+import * as ExLib from 'https://esm.sh/@excalidraw/excalidraw@0.17.6?deps=react@18,react-dom@18';
+const Excalidraw   = ExLib.Excalidraw   ?? ExLib.default?.Excalidraw   ?? ExLib.default;
+const exportToSvg  = ExLib.exportToSvg  ?? ExLib.default?.exportToSvg;
+const exportToBlob = ExLib.exportToBlob ?? ExLib.default?.exportToBlob;
+if (!Excalidraw) {
+  document.getElementById('root').textContent = 'Erro: Excalidraw não carregou.';
+  window.parent?.postMessage({ type: 'EXC_ERROR', error: 'export_not_found' }, '*');
+  throw new Error('Excalidraw export not found');
+}
+let parseMermaidToExcalidraw = ExLib.parseMermaidToExcalidraw ?? ExLib.default?.parseMermaidToExcalidraw ?? null;
 if (!parseMermaidToExcalidraw) {
-  // fallback: try loading the separate package (any available version)
   try {
-    const m = await import('https://esm.sh/@excalidraw/mermaid-to-excalidraw?bundle');
-    parseMermaidToExcalidraw = m.parseMermaidToExcalidraw;
+    const m = await import('https://esm.sh/@excalidraw/mermaid-to-excalidraw?deps=react@18,react-dom@18');
+    parseMermaidToExcalidraw = m.parseMermaidToExcalidraw ?? m.default?.parseMermaidToExcalidraw ?? null;
   } catch(e) { parseMermaidToExcalidraw = null; }
 }
 let _api = null;
