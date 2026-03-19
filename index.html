@@ -16744,14 +16744,15 @@ ${JSON.stringify(dadosParaIA, null, 2)}`;
 
   // Obter imagem do fluxo (se disponível)
   const imgSrc = pop._fluxoObjectUrl || pop.fluxoImgUrl || pop.fluxoImg || null;
-  output.innerHTML = _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetings, normas, aiData, imgSrc);
+  output.innerHTML = _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetings, normas, aiData, imgSrc, mode);
 
   btn.disabled = false;
   spinner.style.display = 'none';
   output.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetings, normas, ai, imgSrc) {
+function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetings, normas, ai, imgSrc, mode) {
+  const isTobe = mode === 'tobe';
   const esc  = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const fmt  = s => esc(s).replace(/\n/g,'<br>');
   const paras = s => s ? String(s).split(/\n{2,}|\n/).filter(Boolean).map(p => `<p class="rel-p">${fmt(p)}</p>`).join('') : '';
@@ -16844,17 +16845,17 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
   }
 
   // 4.4 Principais Etapas
-  h += `<h3 class="rel-h2">4.4 Principais Etapas do Processo</h3>`;
+  h += `<h3 class="rel-h2">4.4 Principais Etapas do Processo${isTobe ? ' <span style="font-size:11px;font-weight:400;color:#059669;">(TO BE)</span>' : ''}</h3>`;
   if (steps.length) {
-    h += `<ol class="rel-ul">${steps.map((s, i) => `<li><strong>${esc(s.title || 'Etapa ' + (i+1))}</strong>${s.responsible ? ' <span style="color:#64748b;font-size:12px;">— ' + esc(s.responsible) + '</span>' : ''}</li>`).join('')}</ol>`;
+    h += `<ol class="rel-ul">${steps.map((s, i) => { const rs = resolveStep(s, mode || 'asis'); return `<li><strong>${esc(rs.title || 'Etapa ' + (i+1))}</strong>${rs.responsible ? ' <span style="color:#64748b;font-size:12px;">— ' + esc(rs.responsible) + '</span>' : ''}</li>`; }).join('')}</ol>`;
   } else {
     h += `<p class="rel-empty">Nenhuma etapa cadastrada na aba Fluxo.</p>`;
   }
 
-  // ── 5. Diagnóstico AS IS ───────────────────────────────────
-  h += `<h2 class="rel-h1">5. Diagnóstico do Processo Atual (AS IS)</h2>`;
+  // ── 5. Diagnóstico ─────────────────────────────────────────
+  h += `<h2 class="rel-h1">5. ${isTobe ? 'Análise do Processo Futuro (TO BE)' : 'Diagnóstico do Processo Atual (AS IS)'}</h2>`;
   if (ai.visao_geral_funcionamento) {
-    h += `<h3 class="rel-h2">5.1 Visão Geral do Funcionamento Atual</h3>${paras(ai.visao_geral_funcionamento)}`;
+    h += `<h3 class="rel-h2">5.1 Visão Geral do ${isTobe ? 'Processo Futuro' : 'Funcionamento Atual'}</h3>${paras(ai.visao_geral_funcionamento)}`;
   }
   h += `<h3 class="rel-h2">5.2 Gargalos Identificados</h3>${list(ai.gargalos)}`;
   h += `<h3 class="rel-h2">5.3 Retrabalhos Identificados</h3>${list(ai.retrabalhos)}`;
