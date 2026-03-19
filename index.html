@@ -1409,8 +1409,7 @@
   <div style="display:flex;gap:8px;align-items:center;">
     <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;" onclick="discardChanges()">↩ Descartar</button>
     <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="saveToStorage()">💾 Salvar</button>
-    <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;color:#059669;border-color:#059669;" onclick="openNewVersionModal()">📌 Nova Versão</button>
-    <button class="btn btn-success" style="font-size:12px;padding:7px 14px;" onclick="exportHTML()">⬇ Exportar HTML</button>
+    <button id="nova-versao-btn" class="btn btn-outline" style="font-size:12px;padding:7px 14px;color:#059669;border-color:#059669;" onclick="openNewVersionModal()">📌 Nova Versão</button>
   </div>
 </div>
 
@@ -5428,6 +5427,7 @@ function switchPop(pop, tabEl) {
   if(editMode) enableEditables(true);
   try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) {}
   if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { console.error('[matRender switchPop]', e); }
+  _syncNovaVersaoBtn();
 }
 
 // ═══ NAV ══════════════════════════════════════
@@ -5459,6 +5459,11 @@ function showSection(id, tab, silent) {
 }
 
 // ═══ EDIT MODE ════════════════════════════════
+function _syncNovaVersaoBtn() {
+  const btn = document.getElementById('nova-versao-btn');
+  if(btn) btn.style.display = currentPop ? '' : 'none';
+}
+
 function toggleEditMode(forceState) {
   // Bloquear modo edição para viewers — apenas força desativar é permitido
   if(!isEditor && (forceState === undefined || forceState === true)) {
@@ -5494,6 +5499,7 @@ function toggleEditMode(forceState) {
       saveToCloud();
     }
   }
+  _syncNovaVersaoBtn();
 }
 
 // ── Drag-and-Drop para reorganização de layout em modo edição ──────────────────
