@@ -21185,7 +21185,9 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
       const last18 = all.slice(-18);
       const labels = last18.map(r => _periodoLabel(r.periodo));
       const realizado = last18.map(r => r.pctRealizado);
-      const pctIndice = last18.map(() => 100);
+      const metaRefPct = (cfg.metaRef !== null && cfg.metaRef !== undefined) ? cfg.metaRef : 100;
+      const pctIndice = last18.map(() => metaRefPct);
+      const pctMetaLabel = (cfg.metaRef !== null && cfg.metaRef !== undefined) ? '% Índice (meta configurada)' : '% Índice (meta)';
 
       const ctxEvo = document.getElementById('indcage-chart-evolucao');
       if(ctxEvo) {
@@ -21195,7 +21197,7 @@ createRoot(document.getElementById('root')).render(React.createElement(App, null
             labels,
             datasets: [
               { label:'% Realizado', data: realizado, backgroundColor: realizado.map(v => { if(v===null) return '#cbd5e1'; const cls=_pctClass(v,cfg); return cls==='pct-verde'?'rgba(22,163,74,.7)':cls==='pct-amarelo'?'rgba(234,179,8,.7)':'rgba(220,38,38,.7)'; }), borderRadius:4, order:2 },
-              { label:'% Índice (meta)', data: pctIndice, type:'line', borderColor:'#0a2540', backgroundColor:'rgba(10,37,64,.08)', borderWidth:2, pointRadius:3, tension:.3, fill:false, order:1 }
+              { label: pctMetaLabel, data: pctIndice, type:'line', borderColor:'#0a2540', backgroundColor:'rgba(10,37,64,.08)', borderWidth:2, pointRadius:3, tension:.3, fill:false, order:1 }
             ]
           },
           options: {
