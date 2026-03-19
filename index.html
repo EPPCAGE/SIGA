@@ -19998,8 +19998,16 @@ function statusModalUpdateSubList() {
 import React from 'https://esm.sh/react@18';
 import { createRoot } from 'https://esm.sh/react-dom@18/client';
 import * as ExLib from 'https://esm.sh/@excalidraw/excalidraw@0.17.6?bundle&deps=react@18,react-dom@18';
-import { parseMermaidToExcalidraw } from 'https://esm.sh/@excalidraw/mermaid-to-excalidraw@0.2.3?bundle';
 const { Excalidraw, exportToSvg, exportToBlob } = ExLib;
+// parseMermaidToExcalidraw is re-exported from the main bundle in 0.17.x
+let parseMermaidToExcalidraw = ExLib.parseMermaidToExcalidraw;
+if (!parseMermaidToExcalidraw) {
+  // fallback: try loading the separate package (any available version)
+  try {
+    const m = await import('https://esm.sh/@excalidraw/mermaid-to-excalidraw?bundle');
+    parseMermaidToExcalidraw = m.parseMermaidToExcalidraw;
+  } catch(e) { parseMermaidToExcalidraw = null; }
+}
 let _api = null;
 function App() {
   React.useEffect(() => {
@@ -20008,6 +20016,7 @@ function App() {
       const d = ev.data || {};
       if (d.type === 'LOAD_MERMAID') {
         try {
+          if (!parseMermaidToExcalidraw) { console.warn('parseMermaidToExcalidraw not available'); return; }
           const res = await parseMermaidToExcalidraw(d.code);
           const els = res.elements || res;
           if (_api) { _api.updateScene({ elements: els }); setTimeout(() => _api.scrollToContent(els, { fitToViewport: true }), 80); }
