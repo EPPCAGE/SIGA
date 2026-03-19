@@ -12888,6 +12888,16 @@ async function buildPptx(D, _popKey) {
           if(fill > 0) s.addShape(pres.ShapeType.rect, { x:5.1, y:y+0.04, w:fill, h:0.28, fill:{ color:c.color } });
           s.addText((c.val||0) + '%', { x:5.1+bw+0.1, y, w:0.7, h:0.35, fontSize:10, color:c.color, bold:true, valign:'middle', margin:0 });
         });
+        // ── Notas de rodapé com fórmulas ──────────────────────────────
+        s.addShape(pres.ShapeType.rect, { x:3.4, y:4.9, w:6.2, h:0.005, fill:{ color:'D0D0D0' } });
+        s.addText(
+          '⚠️ Risco: decisões×2 + handoffs×2 + indispensáveis×5 + sistemas×3 + eventos início×1,5 + eventos fim×1  →  100×e^(−score/45)',
+          { x:3.4, y:4.91, w:6.2, h:0.3, fontSize:7, color:C.muted, margin:0, italic:true }
+        );
+        s.addText(
+          'Pesos finais: Equipe 30% · Risco 20% · Lean 30% · Digitalização 10% · Automação 10%',
+          { x:3.4, y:5.2, w:6.2, h:0.25, fontSize:7, color:C.muted, margin:0, italic:true }
+        );
       }
     } catch(e) { console.warn('[PPT maturidade]', e.message); }
   }
