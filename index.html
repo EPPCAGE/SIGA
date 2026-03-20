@@ -5500,6 +5500,9 @@ function switchPop(pop, tabEl) {
   try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) {}
   if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { console.error('[matRender switchPop]', e); }
   _syncNovaVersaoBtn();
+  try { renderFicha(prefix); }       catch(e) { console.warn('renderFicha switchPop', e); }
+  try { renderSipoc(prefix); }       catch(e) { console.warn('renderSipoc switchPop', e); }
+  try { renderFlowPreview(prefix); } catch(e) { console.warn('renderFlowPreview switchPop', e); }
 }
 
 // ═══ NAV ══════════════════════════════════════
@@ -11941,6 +11944,9 @@ async function loadFromCloud() {
         }
         try { loadAcomp(key); } catch(e) { console.warn('loadAcomp', key, e); }
         try { renderVersionBadge(key); } catch(e) {}
+        try { renderFicha(key); }       catch(e) { console.warn('renderFicha', key, e); }
+        try { renderSipoc(key); }       catch(e) { console.warn('renderSipoc', key, e); }
+        try { renderFlowPreview(key); } catch(e) { console.warn('renderFlowPreview', key, e); }
       });
     }
 
