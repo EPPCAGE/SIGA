@@ -1529,70 +1529,8 @@
   <!-- KPIs -->
   <div id="home-stats" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:hidden;margin-bottom:36px;"></div>
 
-  <!-- ══ SELETOR DE MÓDULO ══ -->
-  <div id="home-selector" style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:40px;">
-
-    <!-- Gestão de Processos -->
-    <div onclick="showHomeBlock('processos')" style="flex:1;min-width:260px;cursor:pointer;border-radius:18px;border:2px solid #d1fae5;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 100%);padding:36px 32px;display:flex;flex-direction:column;gap:14px;transition:box-shadow .18s,transform .18s;" onmouseover="this.style.boxShadow='0 8px 32px rgba(0,168,107,.18)';this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='';this.style.transform='';">
-      <div style="width:52px;height:52px;background:linear-gradient(135deg,#00a86b,#059669);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(0,168,107,.3);">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <!-- nó topo -->
-          <circle cx="12" cy="4.5" r="2.2"/>
-          <!-- nó esq -->
-          <circle cx="4.5" cy="18" r="2.2"/>
-          <!-- nó dir -->
-          <circle cx="19.5" cy="18" r="2.2"/>
-          <!-- conexões -->
-          <line x1="10.4" y1="6.4" x2="6.1" y2="16.1"/>
-          <line x1="13.6" y1="6.4" x2="17.9" y2="16.1"/>
-          <line x1="6.7" y1="18" x2="17.3" y2="18"/>
-        </svg>
-      </div>
-      <div>
-        <div class="home-selector-title" contenteditable="false" style="font-size:22px;font-weight:900;color:#0a2540;line-height:1.2;">Gestão EPP</div>
-        <div class="home-selector-sub" contenteditable="false" style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.5;">Mapeamento, análise, melhoria e documentação de processos institucionais</div>
-      </div>
-      <div style="display:inline-flex;align-items:center;gap:6px;margin-top:4px;background:#00a86b;color:#fff;font-size:13px;font-weight:700;padding:8px 18px;border-radius:8px;width:fit-content;">Acessar →</div>
-    </div>
-
-    <!-- Gestão de Projetos -->
-    <div onclick="showHomeBlock('projetos')" style="flex:1;min-width:260px;cursor:pointer;border-radius:18px;border:2px solid #bfdbfe;background:linear-gradient(135deg,#eff6ff 0%,#f0f7ff 100%);padding:36px 32px;display:flex;flex-direction:column;gap:14px;transition:box-shadow .18s,transform .18s;" onmouseover="this.style.boxShadow='0 8px 32px rgba(59,130,246,.18)';this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='';this.style.transform='';">
-      <div style="width:52px;height:52px;background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(59,130,246,.3);">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <!-- moldura kanban -->
-          <rect x="2" y="3" width="20" height="18" rx="2"/>
-          <!-- divisórias das colunas -->
-          <line x1="9" y1="3" x2="9" y2="21"/>
-          <line x1="15" y1="3" x2="15" y2="21"/>
-          <!-- cards coluna 1 -->
-          <rect x="3.2" y="6" width="4.6" height="3" rx="0.6"/>
-          <rect x="3.2" y="11" width="4.6" height="3" rx="0.6"/>
-          <!-- card coluna 2 -->
-          <rect x="10.2" y="6" width="3.6" height="3" rx="0.6"/>
-          <!-- cards coluna 3 -->
-          <rect x="16.2" y="6" width="4.6" height="3" rx="0.6"/>
-          <rect x="16.2" y="11" width="4.6" height="3" rx="0.6"/>
-        </svg>
-      </div>
-      <div>
-        <div class="home-selector-title" contenteditable="false" style="font-size:22px;font-weight:900;color:#0a2540;line-height:1.2;">SIGA Projetos</div>
-        <div class="home-selector-sub" contenteditable="false" style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.5;">Planejamento, acompanhamento e controle de projetos institucionais</div>
-      </div>
-      <div style="display:inline-flex;align-items:center;gap:6px;margin-top:4px;background:#3b82f6;color:#fff;font-size:13px;font-weight:700;padding:8px 18px;border-radius:8px;width:fit-content;">Acessar →</div>
-    </div>
-
-  </div>
-
-  <!-- ══ BLOCO 1: GESTÃO DE PROCESSOS ══ -->
-  <div id="home-block-processos" style="display:none;margin-bottom:40px;">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-      <button onclick="showHomeSelector()" style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:5px 12px;font-size:12px;color:#64748b;cursor:pointer;margin-right:4px;">← Voltar</button>
-      <div style="width:5px;height:28px;background:#00a86b;border-radius:3px;flex-shrink:0;"></div>
-      <div>
-        <div style="font-size:18px;font-weight:800;color:#0a2540;line-height:1.2;">Gestão EPP</div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">Mapeamento, análise, melhoria e documentação de processos institucionais</div>
-      </div>
-    </div>
+  <!-- ══ MÓDULOS ══ -->
+  <div id="home-block-processos" style="display:block;margin-bottom:40px;">
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
       <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
         <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
@@ -1669,24 +1607,6 @@
     </div>
   </div>
 
-  <!-- ══ BLOCO 2: GESTÃO DE PROJETOS ══ -->
-  <div id="home-block-projetos" style="display:none;margin-bottom:40px;">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-      <button onclick="showHomeSelector()" style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:5px 12px;font-size:12px;color:#64748b;cursor:pointer;margin-right:4px;">← Voltar</button>
-      <div style="width:5px;height:28px;background:#3b82f6;border-radius:3px;flex-shrink:0;"></div>
-      <div>
-        <div style="font-size:18px;font-weight:800;color:#0a2540;line-height:1.2;">SIGA Projetos</div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">Planejamento, acompanhamento e controle de projetos institucionais</div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
-      <div style="border-radius:14px;border:2px dashed #bfdbfe;background:#f0f7ff;padding:28px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:140px;gap:10px;">
-        <div style="font-size:32px;">🚧</div>
-        <div style="font-size:14px;font-weight:700;color:#1d4ed8;">Em desenvolvimento</div>
-        <div style="font-size:12px;color:#64748b;line-height:1.5;">Os módulos do SIGA Projetos estão sendo desenvolvidos e serão disponibilizados em breve.</div>
-      </div>
-    </div>
-  </div>
 
   <!-- Rodapé de contato -->
   <div style="margin-top:20px;padding-top:24px;border-top:1px solid #e2e8f0;text-align:center;font-size:13px;color:#64748b;line-height:1.7;">
@@ -11394,6 +11314,48 @@ window.addEventListener('beforeunload', () => {
     console.log('[beforeunload] fetch keepalive enviado OK');
   } catch(e) { console.warn('[beforeunload] save failed:', e); }
 });
+// Mapa de aliases a normalizar em todos os campos de texto dos POPs e PAT
+const _UNIDADE_ALIASES = {
+  'DTTI': 'Divisão de Transparência e Tecnologia da Informação',
+};
+
+function _normalizeUnidades() {
+  const TEXT_FIELDS = ['patrocinador','unidade','area','gerente','equipe','equipeResponsavel','solicitante','elaborado','revisado'];
+  let changed = false;
+  const fix = v => {
+    if (typeof v !== 'string') return v;
+    const alias = _UNIDADE_ALIASES[v.trim()];
+    if (alias) { changed = true; return alias; }
+    return v;
+  };
+
+  // Normalizar todos os POPs (d, r e pop_*)
+  ['d','r',...Object.keys(DATA).filter(k=>k.startsWith('pop_'))].forEach(k => {
+    const meta = DATA[k]?.meta;
+    if (!meta) return;
+    TEXT_FIELDS.forEach(f => { if (meta[f]) meta[f] = fix(meta[f]); });
+    if (Array.isArray(meta.atores))  meta.atores  = meta.atores.map(fix);
+    if (Array.isArray(meta.objEstrategicos)) meta.objEstrategicos = meta.objEstrategicos.map(fix);
+  });
+
+  // Normalizar lista de patrocinadores
+  if (Array.isArray(DATA.patrocinadores)) {
+    DATA.patrocinadores = [...new Set(DATA.patrocinadores.map(fix))];
+  }
+
+  // Normalizar atividades do PAT
+  if (Array.isArray(DATA.pat)) {
+    DATA.pat.forEach(item => {
+      if (item.area)       item.area       = fix(item.area);
+      if (item.gerente)    item.gerente    = fix(item.gerente);
+      if (item.unidade)    item.unidade    = fix(item.unidade);
+      if (item.patrocinador) item.patrocinador = fix(item.patrocinador);
+    });
+  }
+
+  return changed;
+}
+
 async function saveToCloud(attempt=1) {
   console.log('[saveToCloud] attempt='+attempt+' user='+!!currentUser+' editor='+isEditor+' supaClient='+!!supaClient+' email='+currentUserEmail);
   if(!currentUser) { console.warn('[saveToCloud] BLOQUEADO: sem currentUser'); showToast('Faça login primeiro.','warn'); return; }
@@ -12126,6 +12088,13 @@ async function initSupabase() {
       await checkEditorPermission();
       await loadFromCloud();
       window._appInitialized = true;
+      // Normalizar nomes de divisões/unidades e salvar se houve mudanças
+      try {
+        if (isEditor && _normalizeUnidades()) {
+          console.log('[normalizaUnidades] Nomes normalizados — salvando...');
+          saveToCloud();
+        }
+      } catch(e) { console.warn('[normalizaUnidades]', e); }
       // Log de acesso e presença
       try { logAccessEvent('login'); } catch(e) {}
       try { _startPresenceHeartbeat(); } catch(e) {}
@@ -16288,26 +16257,19 @@ function showHome() {
 
   const home = document.getElementById('home-page');
   home.style.display = 'block';
-  showHomeSelector();
   homeRefresh();
 }
 
 function showHomeSelector() {
-  const sel = document.getElementById('home-selector');
-  const bp  = document.getElementById('home-block-processos');
-  const bpr = document.getElementById('home-block-projetos');
-  if(sel) sel.style.display = 'flex';
-  if(bp)  bp.style.display  = 'none';
-  if(bpr) bpr.style.display = 'none';
+  // Selector removido — mantida por compatibilidade com chamadas existentes
+  const bp = document.getElementById('home-block-processos');
+  if(bp) bp.style.display = 'block';
 }
 
 function showHomeBlock(block) {
-  const sel = document.getElementById('home-selector');
-  const bp  = document.getElementById('home-block-processos');
-  const bpr = document.getElementById('home-block-projetos');
-  if(sel) sel.style.display = 'none';
-  if(bp)  bp.style.display  = block === 'processos' ? 'block' : 'none';
-  if(bpr) bpr.style.display = block === 'projetos'  ? 'block' : 'none';
+  // Blocos unificados — mantida por compatibilidade
+  const bp = document.getElementById('home-block-processos');
+  if(bp) bp.style.display = 'block';
 }
 
 function hideHome() {
