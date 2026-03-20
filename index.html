@@ -3945,7 +3945,7 @@
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-outline audit-edit-only" onclick="auditOpenPlanModal(_auditCurrentPlanId)" style="font-size:12px;">✏️ Editar Plano</button>
-        <button class="btn btn-outline" onclick="auditExportRelatorioWord(_auditCurrentPlanId)" style="font-size:12px;color:#1e40af;border-color:#bfdbfe;">📄 Relatório Word</button>
+        <button class="btn btn-outline" onclick="auditExportPlanDoc(_auditCurrentPlanId)" style="font-size:12px;color:#1e40af;border-color:#bfdbfe;">📋 Exportar Plano</button>
       </div>
     </div>
 
@@ -3965,7 +3965,10 @@
     <div id="audit-tab-exec" class="audit-tab-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
         <div style="font-size:14px;font-weight:600;color:#0a2540;">Execução de Auditorias</div>
-        <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Nova Execução</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-outline" onclick="auditExportRelatorioFinal(_auditCurrentPlanId)" style="font-size:12px;color:#1e40af;border-color:#bfdbfe;">📄 Exportar Relatório Final</button>
+          <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Nova Execução</button>
+        </div>
       </div>
       <div id="audit-exec-list"></div>
       <div id="audit-exec-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
@@ -20492,136 +20495,371 @@ function exportFluxoWord(p) {
   showToast('📄 Fluxo exportado para Word!', 'success');
 }
 
-function auditExportRelatorioWord(planId) {
-  auditEnsure();
-  const plan = DATA.audits.plans.find(p => p.id === planId);
-  if(!plan) { showToast('Plano não encontrado.', 'error'); return; }
-
-  const execs  = DATA.audits.executions.filter(e => e.planId === planId);
-  const ncs    = DATA.audits.nonconformities.filter(n => n.planId === planId);
-  const actions = DATA.audits.actions.filter(a => ncs.some(n => n.id === a.ncId));
-
-  const today = new Date().toLocaleDateString('pt-BR');
-  const fmtD  = d => d ? new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR') : '—';
-  const grav  = { critica:'Crítica', moderada:'Moderada', leve:'Leve' };
-  const ncStatus = { aberta:'Aberta', 'em-andamento':'Em Andamento', resolvida:'Resolvida' };
-  const acStatus = { pendente:'Pendente', 'em-andamento':'Em Andamento', concluida:'Concluída' };
-
-  // Conformidade summary
-  let totalPergs = 0, conforme = 0, parcial = 0, naoConf = 0, na = 0;
-  execs.forEach(e => { (e.checklist||[]).forEach(c => { totalPergs++;
-    if(c.conformidade==='C') conforme++;
-    else if(c.conformidade==='PC') parcial++;
-    else if(c.conformidade==='NC') naoConf++;
-    else na++;
-  }); });
-  const pct = totalPergs ? Math.round((conforme/totalPergs)*100) : 0;
-
-  const ncBadgeColor = { critica:'#991b1b', moderada:'#92400e', leve:'#065f46' };
-  const ncBg         = { critica:'#fee2e2', moderada:'#fef3c7', leve:'#d1fae5' };
-
-  const style = `
+// ── Helpers compartilhados de exportação de auditoria ──────────────────────
+function _auditDocStyle() {
+  return `
     body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1e293b; margin: 0; padding: 0; }
-    .cover { background: #1e3a5f; color: white; padding: 60px 48px 48px; margin-bottom: 0; }
-    .cover h1 { font-size: 26pt; margin: 0 0 6px; font-weight: 700; }
-    .cover .subtitle { font-size: 13pt; color: #93c5fd; margin: 0; }
-    .cover .meta { margin-top: 28px; font-size: 10pt; color: #cbd5e1; line-height: 1.9; }
+    .cover { background: #1e3a5f; color: white; padding: 60px 48px 48px; }
+    .cover h1 { font-size: 26pt; margin: 0 0 8px; font-weight: 700; letter-spacing: -0.5px; }
+    .cover .subtitle { font-size: 13pt; color: #93c5fd; margin: 0 0 4px; }
+    .cover .meta { margin-top: 28px; font-size: 10pt; color: #cbd5e1; line-height: 2; }
     .cover .meta strong { color: #f1f5f9; }
     .section { padding: 32px 48px; border-bottom: 1px solid #e2e8f0; }
     .section:last-child { border-bottom: none; }
     h2 { font-size: 14pt; color: #1e3a5f; border-left: 4px solid #2563eb; padding-left: 10px; margin: 0 0 18px; }
-    h3 { font-size: 11pt; color: #1e40af; margin: 18px 0 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 12px; }
-    th { background: #1e3a5f; color: white; padding: 7px 10px; text-align: left; font-weight: 600; }
-    td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    h3 { font-size: 11pt; color: #1e40af; margin: 20px 0 8px; font-weight: 700; }
+    p { font-size: 10.5pt; line-height: 1.75; color: #334155; margin: 0 0 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 16px; }
+    th { background: #1e3a5f; color: white; padding: 8px 12px; text-align: left; font-weight: 600; font-size: 9.5pt; }
+    td { padding: 7px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
     tr:nth-child(even) td { background: #f8fafc; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 9pt; font-weight: 600; }
+    .badge { display: inline-block; padding: 2px 9px; border-radius: 4px; font-size: 9pt; font-weight: 700; }
     .badge-C  { background: #d1fae5; color: #065f46; }
     .badge-PC { background: #fef3c7; color: #92400e; }
     .badge-NC { background: #fee2e2; color: #991b1b; }
     .badge-NA { background: #f1f5f9; color: #475569; }
     .kpi-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-    .kpi { flex: 1; min-width: 100px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; text-align: center; }
-    .kpi .val { font-size: 22pt; font-weight: 700; color: #1e3a5f; }
+    .kpi { flex: 1; min-width: 110px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; text-align: center; }
+    .kpi .val { font-size: 24pt; font-weight: 700; color: #1e3a5f; }
     .kpi .lbl { font-size: 9pt; color: #64748b; margin-top: 2px; }
-    .nc-card { border-left: 4px solid; margin-bottom: 12px; padding: 10px 14px; border-radius: 0 6px 6px 0; }
-    .footer { background: #f1f5f9; padding: 20px 48px; font-size: 9pt; color: #64748b; }
-    .sig-table td { border: none; border-top: 1px solid #94a3b8; padding: 6px 4px 2px; font-size: 9.5pt; text-align: center; width: 33%; }
+    .ai-box { background: #f0f7ff; border-left: 4px solid #2563eb; border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 0 0 16px; }
+    .ai-box p { color: #1e3a5f; margin: 0; }
+    .rec-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+    .rec-num { background: #2563eb; color: white; border-radius: 50%; width: 22px; height: 22px; min-width: 22px; display: flex; align-items: center; justify-content: center; font-size: 9pt; font-weight: 700; }
+    .footer { background: #f1f5f9; padding: 20px 48px; font-size: 9pt; color: #64748b; border-top: 1px solid #e2e8f0; }
+    .sig-table { margin-top: 8px; }
+    .sig-table td { border: none; border-top: 2px solid #94a3b8; padding: 8px 4px 2px; font-size: 9.5pt; text-align: center; width: 33%; }
+    .tag-critica { background:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:4px; font-size:9pt; font-weight:700; }
+    .tag-moderada { background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:4px; font-size:9pt; font-weight:700; }
+    .tag-leve { background:#d1fae5; color:#065f46; padding:2px 8px; border-radius:4px; font-size:9pt; font-weight:700; }
+    .divider { height: 1px; background: #e2e8f0; margin: 16px 0; }
   `;
+}
 
+function _auditDownloadDoc(html, filename) {
+  const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Exportar Plano de Auditoria (com IA) ───────────────────────────────────
+async function auditExportPlanDoc(planId) {
+  auditEnsure();
+  const plan = DATA.audits.plans.find(p => p.id === planId);
+  if(!plan) { showToast('Plano não encontrado.', 'error'); return; }
+
+  showToast('🤖 Gerando plano com IA, aguarde…', 'info');
+
+  const today = new Date().toLocaleDateString('pt-BR');
+  const fmtD  = d => d ? new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR') : '—';
+
+  const criteriosArr = Array.isArray(plan.criterios) ? plan.criterios : [];
+  const criteriosText = criteriosArr.length
+    ? criteriosArr.map((c,i) => `${i+1}. ${c.titulo}${c.descricao ? ': '+c.descricao : ''}`).join('\n')
+    : '(não informados)';
+
+  const prompt = `Você é um especialista em auditoria governamental e controle interno na administração pública. Com base nos dados do plano de auditoria abaixo, escreva em português brasileiro formal e técnico:
+
+1. "justificativa": Parágrafo de Justificativa e Contexto (4-6 frases). Explique a relevância estratégica desta auditoria, o que motivou sua realização e qual valor ela agrega ao controle interno.
+2. "metodologia": Parágrafo de Metodologia (4-5 frases). Descreva como a auditoria será conduzida: técnicas de coleta de evidências, análise documental, entrevistas, aplicação de checklist, amostragem.
+3. "consideracoes": Parágrafo de Considerações Gerais (3-4 frases). Comente sobre os resultados esperados, riscos identificados e importância do acompanhamento pós-auditoria.
+
+DADOS DO PLANO:
+Processo: ${plan.processoNome || '—'}
+Unidade auditada: ${plan.unidade || '—'}
+Auditor responsável: ${plan.auditor || '—'}
+Objetivo: ${plan.objetivo || '—'}
+Escopo: ${plan.escopo || '—'}
+Período coberto: ${plan.periodo || '—'}
+Data prevista: ${fmtD(plan.dataPrevista)}
+Status: ${plan.status || '—'}
+Critérios de auditoria:
+${criteriosText}
+
+Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
+{"justificativa":"...","metodologia":"...","consideracoes":"..."}`;
+
+  let ai = { justificativa: '', metodologia: '', consideracoes: '' };
+  try {
+    const raw   = await callGemini(prompt);
+    const match = raw.match(/\{[\s\S]*\}/);
+    if(match) ai = { ...ai, ...JSON.parse(match[0]) };
+  } catch(e) {
+    console.warn('auditExportPlanDoc AI:', e);
+    ai.justificativa = 'Texto gerado automaticamente indisponível. Preencha esta seção manualmente.';
+  }
+
+  const criteriosHtml = criteriosArr.length
+    ? `<table><tr><th style="width:5%">#</th><th style="width:32%">Critério</th><th>Descrição</th></tr>` +
+      criteriosArr.map((c,i) => `<tr><td style="text-align:center;font-weight:700;">${i+1}</td><td><strong>${c.titulo||'—'}</strong></td><td>${c.descricao||'—'}</td></tr>`).join('') +
+      `</table>`
+    : `<p style="color:#94a3b8;font-size:10pt;font-style:italic;">Critérios não informados no plano.</p>`;
+
+  const statusLabels = { planejada:'Planejada', em_execucao:'Em Execução', concluida:'Concluída', cancelada:'Cancelada' };
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Plano de Auditoria</title><style>${_auditDocStyle()}</style></head><body>
+
+<div class="cover">
+  <div style="font-size:9pt;letter-spacing:2.5px;color:#93c5fd;text-transform:uppercase;margin-bottom:18px;font-weight:600;">CAGE-RS · SIGA · Auditoria Interna</div>
+  <h1>Plano de Auditoria</h1>
+  <p class="subtitle">${plan.processoNome || plan.objetivo || '—'}</p>
+  <div style="margin-top:6px;display:inline-block;background:rgba(255,255,255,0.15);border-radius:20px;padding:3px 14px;font-size:9pt;color:#e0f2fe;">${statusLabels[plan.status] || plan.status || '—'}</div>
+  <div class="meta">
+    <strong>Unidade auditada:</strong> ${plan.unidade||'—'}<br>
+    <strong>Auditor responsável:</strong> ${plan.auditor||'—'}<br>
+    <strong>Data prevista de execução:</strong> ${fmtD(plan.dataPrevista)}<br>
+    <strong>Período auditado:</strong> ${plan.periodo||'—'}<br>
+    <strong>Data de emissão do plano:</strong> ${today}
+  </div>
+</div>
+
+<div class="section" style="padding-top:36px;">
+  <h2>1. Objetivo da Auditoria</h2>
+  <p>${plan.objetivo||'—'}</p>
+  ${plan.escopo ? `<h3>Escopo</h3><p>${plan.escopo}</p>` : ''}
+</div>
+
+<div class="section">
+  <h2>2. Justificativa e Contexto</h2>
+  <div class="ai-box"><p>${ai.justificativa}</p></div>
+</div>
+
+<div class="section">
+  <h2>3. Critérios de Auditoria</h2>
+  ${criteriosHtml}
+</div>
+
+<div class="section">
+  <h2>4. Equipe e Responsabilidades</h2>
+  <table>
+    <tr><th style="width:40%">Função</th><th>Responsável / Unidade</th></tr>
+    <tr><td>Auditor Responsável</td><td>${plan.auditor||'—'}</td></tr>
+    <tr><td>Equipe / Unidade Auditada</td><td>${plan.unidade||'—'}</td></tr>
+    <tr><td>Supervisão CAGE-RS</td><td>Contadoria e Auditoria-Geral do Estado</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h2>5. Cronograma</h2>
+  <table>
+    <tr><th style="width:50%">Etapa</th><th>Previsão</th></tr>
+    <tr><td>Início da auditoria</td><td>${fmtD(plan.dataPrevista)}</td></tr>
+    <tr><td>Período auditado</td><td>${plan.periodo||'—'}</td></tr>
+    <tr><td>Emissão do plano</td><td>${today}</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h2>6. Metodologia</h2>
+  <div class="ai-box"><p>${ai.metodologia}</p></div>
+</div>
+
+<div class="section">
+  <h2>7. Considerações Gerais</h2>
+  <div class="ai-box"><p>${ai.consideracoes}</p></div>
+</div>
+
+<div class="section">
+  <h2>8. Assinaturas</h2>
+  <p style="font-size:10pt;color:#64748b;margin-bottom:32px;">Os abaixo assinados declaram ciência e concordância com os termos e objetivos deste Plano de Auditoria.</p>
+  <table class="sig-table"><tr>
+    <td><br><br><br>_________________________________<br><strong>${plan.auditor||'Auditor'}</strong><br><span style="color:#64748b;font-size:9pt;">Auditor Responsável</span></td>
+    <td><br><br><br>_________________________________<br><strong>${plan.unidade||'Equipe Auditada'}</strong><br><span style="color:#64748b;font-size:9pt;">Responsável da Unidade Auditada</span></td>
+    <td><br><br><br>_________________________________<br><strong>CAGE-RS</strong><br><span style="color:#64748b;font-size:9pt;">Supervisão / Controle Interno</span></td>
+  </tr></table>
+</div>
+
+<div class="footer">
+  <strong>CAGE-RS</strong> · Contadoria e Auditoria-Geral do Estado · SIGA &nbsp;|&nbsp; Emitido em ${today} &nbsp;|&nbsp; Documento de uso interno.
+</div>
+</body></html>`;
+
+  const safeName = (plan.processoNome||plan.objetivo||'auditoria').replace(/[^a-zA-Z0-9À-ÿ\s]/g,'_').replace(/\s+/g,'_');
+  _auditDownloadDoc(html, 'Plano_Auditoria_' + safeName + '.doc');
+  showToast('📋 Plano de Auditoria exportado!', 'success');
+}
+
+// ── Exportar Relatório Final de Auditoria (com IA) ─────────────────────────
+async function auditExportRelatorioFinal(planId) {
+  auditEnsure();
+  const plan = DATA.audits.plans.find(p => p.id === planId);
+  if(!plan) { showToast('Plano não encontrado.', 'error'); return; }
+
+  showToast('🤖 Gerando relatório final com IA, aguarde…', 'info');
+
+  const today  = new Date().toLocaleDateString('pt-BR');
+  const fmtD   = d => d ? new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR') : '—';
+  const grav   = { critica:'Crítica', moderada:'Moderada', leve:'Leve' };
+  const ncSt   = { aberta:'Aberta', 'em-andamento':'Em Andamento', resolvida:'Resolvida' };
+  const acSt   = { pendente:'Pendente', 'em-andamento':'Em Andamento', concluida:'Concluída', cancelada:'Cancelada' };
+  const ncBgC  = { critica:'#fee2e2', moderada:'#fef3c7', leve:'#d1fae5' };
+  const ncTxC  = { critica:'#991b1b', moderada:'#92400e', leve:'#065f46' };
+
+  const execs   = DATA.audits.executions.filter(e => e.planId === planId);
+  const ncs     = DATA.audits.nonconformities.filter(n => n.planId === planId);
+  const actions = DATA.audits.actions.filter(a => ncs.some(n => n.id === a.ncId));
+
+  // KPIs de conformidade
+  let totalQ = 0, conforme = 0, parcial = 0, naoConf = 0, naQ = 0;
+  execs.forEach(e => (e.checklist||[]).forEach(c => {
+    totalQ++;
+    if(c.conformidade==='C')  conforme++;
+    else if(c.conformidade==='PC') parcial++;
+    else if(c.conformidade==='NC') naoConf++;
+    else naQ++;
+  }));
+  const pct = totalQ ? Math.round((conforme/totalQ)*100) : 0;
+  const ncCritica  = ncs.filter(n=>n.gravidade==='critica').length;
+  const ncModerada = ncs.filter(n=>n.gravidade==='moderada').length;
+  const ncLeve     = ncs.filter(n=>n.gravidade==='leve').length;
+  const acConcluidas = actions.filter(a=>a.status==='concluida').length;
+
+  // Contexto para IA
+  const ncsCtx = ncs.map((n,i) =>
+    `NC ${i+1} [${n.gravidade||'—'}]: Etapa "${n.etapa||'—'}" — ${n.descricao||'—'}. Causa: ${n.causaProvavel||'—'}. Status: ${ncSt[n.status]||n.status||'—'}.`
+  ).join('\n');
+
+  const actCtx = actions.map((a,i) =>
+    `Ação ${i+1}: ${a.acao||'—'} | Resp: ${a.responsavel||'—'} | Prazo: ${fmtD(a.prazo)} | Status: ${acSt[a.status]||'—'}.`
+  ).join('\n');
+
+  const checkCtx = execs.map((e,i) => {
+    const nc = (e.checklist||[]).filter(c=>c.conformidade==='NC').map(c=>c.pergunta).join('; ');
+    return `Execução ${i+1} (${fmtD(e.dataExecucao)}): ${totalQ} critérios | Obs: ${e.observacoes||'—'} | NCs no checklist: ${nc||'nenhuma'}`;
+  }).join('\n');
+
+  const prompt = `Você é um auditor sênior da administração pública. Com base nos dados reais da auditoria abaixo, escreva em português brasileiro formal e técnico:
+
+1. "sumario": Sumário Executivo (5-7 frases). Descreva o processo auditado, o período, os principais achados, o índice de conformidade e a situação geral. Seja direto e objetivo.
+2. "analise": Análise dos Achados (5-7 frases). Analise os padrões das não conformidades, as causas raízes identificadas, o impacto para o órgão e os riscos de controle interno.
+3. "recomendacoes": Array com 4-6 recomendações práticas e específicas para melhoria, baseadas nos achados reais. Cada recomendação deve ser uma frase de ação concreta.
+4. "conclusao": Conclusão (3-4 frases). Avaliação geral do nível de conformidade, prioridade das ações corretivas e próximos passos recomendados.
+
+DADOS DA AUDITORIA:
+Processo: ${plan.processoNome || '—'}
+Unidade auditada: ${plan.unidade || '—'}
+Auditor: ${plan.auditor || '—'}
+Objetivo: ${plan.objetivo || '—'}
+Período: ${plan.periodo || '—'}
+Execuções realizadas: ${execs.length}
+Total de critérios avaliados: ${totalQ}
+Conformes: ${conforme} | Parciais: ${parcial} | Não conformes: ${naoConf} | N/A: ${naQ}
+Índice de conformidade: ${pct}%
+Não conformidades: ${ncs.length} (críticas: ${ncCritica}, moderadas: ${ncModerada}, leves: ${ncLeve})
+Ações corretivas: ${actions.length} (concluídas: ${acConcluidas})
+
+EXECUÇÕES:
+${checkCtx || '(nenhuma)'}
+
+NÃO CONFORMIDADES:
+${ncsCtx || '(nenhuma)'}
+
+AÇÕES CORRETIVAS:
+${actCtx || '(nenhuma)'}
+
+Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
+{"sumario":"...","analise":"...","recomendacoes":["...","...","..."],"conclusao":"..."}`;
+
+  let ai = { sumario: '', analise: '', recomendacoes: [], conclusao: '' };
+  try {
+    const raw   = await callGemini(prompt);
+    const match = raw.match(/\{[\s\S]*\}/);
+    if(match) ai = { ...ai, ...JSON.parse(match[0]) };
+  } catch(e) {
+    console.warn('auditExportRelatorioFinal AI:', e);
+    ai.sumario = 'Resumo executivo indisponível (IA offline). Complete esta seção manualmente.';
+  }
+
+  const recsHtml = Array.isArray(ai.recomendacoes) && ai.recomendacoes.length
+    ? ai.recomendacoes.map((r,i) => `<div class="rec-item"><div class="rec-num">${i+1}</div><p style="margin:0;font-size:10.5pt;">${r}</p></div>`).join('')
+    : '<p style="color:#94a3b8;font-size:10pt;">Nenhuma recomendação gerada.</p>';
+
+  // Checklist HTML
   let checklistHtml = '';
   if(execs.length) {
     execs.forEach((ex, idx) => {
-      const checklist = ex.checklist || [];
-      checklistHtml += `<h3>Execução ${idx+1} — ${fmtD(ex.dataExecucao)}</h3>`;
-      if(ex.observacoes) checklistHtml += `<p style="font-size:10pt;color:#475569;margin:0 0 10px;">${ex.observacoes}</p>`;
-      if(checklist.length) {
-        checklistHtml += `<table><tr><th style="width:55%">Critério / Pergunta</th><th style="width:12%">Conformidade</th><th>Observação</th></tr>`;
-        checklist.forEach(c => {
-          const cl = c.conformidade||'NA';
-          checklistHtml += `<tr><td>${c.pergunta||'—'}</td><td><span class="badge badge-${cl}">${cl}</span></td><td>${c.observacao||''}</td></tr>`;
+      const cl = ex.checklist || [];
+      checklistHtml += `<h3>Execução ${idx+1} &nbsp;—&nbsp; ${fmtD(ex.dataExecucao)}</h3>`;
+      if(ex.observacoes) checklistHtml += `<p style="font-size:10pt;color:#475569;margin:0 0 10px;font-style:italic;">${ex.observacoes}</p>`;
+      if(cl.length) {
+        checklistHtml += `<table><tr><th style="width:55%">Critério / Pergunta</th><th style="width:12%">Resultado</th><th>Observação</th></tr>`;
+        cl.forEach(c => {
+          const r = c.conformidade||'NA';
+          checklistHtml += `<tr><td>${c.pergunta||c.item||'—'}</td><td><span class="badge badge-${r}">${r==='C'?'Conforme':r==='PC'?'Parcial':r==='NC'?'Não Conforme':'N/A'}</span></td><td>${c.observacao||''}</td></tr>`;
         });
         checklistHtml += `</table>`;
       } else {
-        checklistHtml += `<p style="color:#94a3b8;font-size:10pt;">Nenhum critério registrado.</p>`;
+        checklistHtml += `<p style="color:#94a3b8;font-size:10pt;font-style:italic;">Nenhum critério avaliado.</p>`;
       }
     });
   } else {
-    checklistHtml = '<p style="color:#94a3b8;font-size:10pt;">Nenhuma execução registrada para este plano.</p>';
+    checklistHtml = '<p style="color:#94a3b8;font-size:10pt;font-style:italic;">Nenhuma execução registrada para este plano.</p>';
   }
 
+  // NCs HTML
   let ncHtml = '';
   if(ncs.length) {
-    ncHtml = `<table><tr><th style="width:5%">#</th><th style="width:15%">Gravidade</th><th style="width:20%">Etapa</th><th style="width:30%">Descrição</th><th>Causa Provável</th><th style="width:12%">Status</th></tr>`;
+    ncHtml = `<table><tr><th style="width:4%">#</th><th style="width:12%">Gravidade</th><th style="width:20%">Etapa</th><th style="width:32%">Descrição</th><th>Causa Provável</th><th style="width:12%">Status</th></tr>`;
     ncs.forEach((nc, i) => {
       const g = nc.gravidade||'leve';
-      ncHtml += `<tr><td>${i+1}</td><td><span class="badge" style="background:${ncBg[g]};color:${ncBadgeColor[g]}">${grav[g]||g}</span></td><td>${nc.etapa||'—'}</td><td>${nc.descricao||'—'}</td><td>${nc.causaProvavel||'—'}</td><td>${ncStatus[nc.status]||nc.status||'—'}</td></tr>`;
+      ncHtml += `<tr><td style="text-align:center;font-weight:700;">${i+1}</td><td><span class="badge" style="background:${ncBgC[g]};color:${ncTxC[g]}">${grav[g]||g}</span></td><td>${nc.etapa||'—'}</td><td>${nc.descricao||'—'}</td><td>${nc.causaProvavel||'—'}</td><td>${ncSt[nc.status]||nc.status||'—'}</td></tr>`;
     });
     ncHtml += `</table>`;
   } else {
-    ncHtml = '<p style="color:#94a3b8;font-size:10pt;">Nenhuma não conformidade registrada.</p>';
+    ncHtml = '<p style="color:#94a3b8;font-size:10pt;font-style:italic;">Nenhuma não conformidade registrada.</p>';
   }
 
+  // Ações HTML
   let actHtml = '';
   if(actions.length) {
-    actHtml = `<table><tr><th>Ação</th><th style="width:15%">Responsável</th><th style="width:10%">Prazo</th><th style="width:12%">Status</th><th style="width:15%">Setor</th></tr>`;
+    actHtml = `<table><tr><th>Ação Corretiva</th><th style="width:16%">Responsável</th><th style="width:10%">Prazo</th><th style="width:12%">Status</th><th style="width:14%">Setor</th></tr>`;
     actions.forEach(a => {
-      actHtml += `<tr><td>${a.acao||'—'}</td><td>${a.responsavel||'—'}</td><td>${fmtD(a.prazo)}</td><td>${acStatus[a.status]||a.status||'—'}</td><td>${a.setor||'—'}</td></tr>`;
+      actHtml += `<tr><td>${a.acao||'—'}</td><td>${a.responsavel||'—'}</td><td>${fmtD(a.prazo)}</td><td>${acSt[a.status]||a.status||'—'}</td><td>${a.setor||'—'}</td></tr>`;
     });
     actHtml += `</table>`;
   } else {
-    actHtml = '<p style="color:#94a3b8;font-size:10pt;">Nenhuma ação cadastrada.</p>';
+    actHtml = '<p style="color:#94a3b8;font-size:10pt;font-style:italic;">Nenhuma ação corretiva registrada.</p>';
   }
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Auditoria</title><style>${style}</style></head><body>
+  const pctColor = pct >= 80 ? '#065f46' : pct >= 60 ? '#92400e' : '#991b1b';
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório Final de Auditoria</title><style>${_auditDocStyle()}</style></head><body>
+
 <div class="cover">
-  <div style="font-size:9pt;letter-spacing:2px;color:#93c5fd;text-transform:uppercase;margin-bottom:16px;">CAGE-RS · SIGA</div>
-  <h1>Relatório de Auditoria</h1>
-  <p class="subtitle">${plan.processoNome||plan.objetivo||'—'}</p>
+  <div style="font-size:9pt;letter-spacing:2.5px;color:#93c5fd;text-transform:uppercase;margin-bottom:18px;font-weight:600;">CAGE-RS · SIGA · Auditoria Interna</div>
+  <h1>Relatório Final de Auditoria</h1>
+  <p class="subtitle">${plan.processoNome || plan.objetivo || '—'}</p>
   <div class="meta">
-    <strong>Equipe auditada:</strong> ${plan.unidade||'—'}<br>
+    <strong>Unidade auditada:</strong> ${plan.unidade||'—'}<br>
     <strong>Auditor responsável:</strong> ${plan.auditor||'—'}<br>
-    <strong>Data prevista:</strong> ${fmtD(plan.dataPrevista)}<br>
     <strong>Período auditado:</strong> ${plan.periodo||'—'}<br>
-    <strong>Status do plano:</strong> ${plan.status||'—'}<br>
+    <strong>Execuções realizadas:</strong> ${execs.length}<br>
+    <strong>Índice de conformidade:</strong> <span style="font-weight:700;font-size:12pt;">${pct}%</span><br>
     <strong>Data de emissão:</strong> ${today}
   </div>
 </div>
 
-<div class="section" style="padding-top:28px;">
-  <h2>1. Objetivo e Critérios</h2>
-  <p style="font-size:10.5pt;line-height:1.7;">${plan.objetivo||'—'}</p>
-  ${plan.criterios ? `<p style="font-size:10pt;color:#475569;"><strong>Critérios:</strong> ${plan.criterios}</p>` : ''}
+<div class="section" style="padding-top:36px;">
+  <h2>1. Sumário Executivo</h2>
+  <div class="ai-box"><p>${ai.sumario}</p></div>
 </div>
 
 <div class="section">
-  <h2>2. Resumo de Conformidade</h2>
+  <h2>2. Painel de Conformidade</h2>
   <div class="kpi-row">
-    <div class="kpi"><div class="val">${totalPergs}</div><div class="lbl">Critérios avaliados</div></div>
+    <div class="kpi"><div class="val">${totalQ}</div><div class="lbl">Critérios avaliados</div></div>
     <div class="kpi"><div class="val" style="color:#065f46;">${conforme}</div><div class="lbl">Conformes</div></div>
-    <div class="kpi"><div class="val" style="color:#92400e;">${parcial}</div><div class="lbl">Parcialmente</div></div>
+    <div class="kpi"><div class="val" style="color:#92400e;">${parcial}</div><div class="lbl">Parcialmente conf.</div></div>
     <div class="kpi"><div class="val" style="color:#991b1b;">${naoConf}</div><div class="lbl">Não conformes</div></div>
-    <div class="kpi"><div class="val" style="color:#2563eb;">${pct}%</div><div class="lbl">Índice de conformidade</div></div>
+    <div class="kpi"><div class="val" style="color:${pctColor};">${pct}%</div><div class="lbl">Índice geral</div></div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="val" style="color:#991b1b;">${ncCritica}</div><div class="lbl">NCs Críticas</div></div>
+    <div class="kpi"><div class="val" style="color:#92400e;">${ncModerada}</div><div class="lbl">NCs Moderadas</div></div>
+    <div class="kpi"><div class="val" style="color:#065f46;">${ncLeve}</div><div class="lbl">NCs Leves</div></div>
+    <div class="kpi"><div class="val" style="color:#2563eb;">${acConcluidas}/${actions.length}</div><div class="lbl">Ações concluídas</div></div>
   </div>
 </div>
 
@@ -20631,38 +20869,48 @@ function auditExportRelatorioWord(planId) {
 </div>
 
 <div class="section">
-  <h2>4. Não Conformidades</h2>
+  <h2>4. Não Conformidades Identificadas</h2>
   ${ncHtml}
 </div>
 
 <div class="section">
-  <h2>5. Plano de Ação</h2>
+  <h2>5. Análise dos Achados</h2>
+  <div class="ai-box"><p>${ai.analise}</p></div>
+</div>
+
+<div class="section">
+  <h2>6. Plano de Ação Corretiva</h2>
   ${actHtml}
 </div>
 
 <div class="section">
-  <h2>6. Assinaturas</h2>
-  <p style="font-size:10pt;color:#64748b;margin-bottom:28px;">Atestamos que as informações contidas neste relatório são fiéis aos registros de auditoria realizados.</p>
+  <h2>7. Recomendações</h2>
+  ${recsHtml}
+</div>
+
+<div class="section">
+  <h2>8. Conclusão</h2>
+  <div class="ai-box"><p>${ai.conclusao}</p></div>
+</div>
+
+<div class="section">
+  <h2>9. Assinaturas</h2>
+  <p style="font-size:10pt;color:#64748b;margin-bottom:32px;">Atestamos que as informações contidas neste relatório são fidedignas aos registros da auditoria realizada e que os achados e recomendações foram devidamente comunicados à unidade auditada.</p>
   <table class="sig-table"><tr>
-    <td><br><br><br>_________________________________<br>${plan.auditor||'Auditor'}<br><span style="color:#94a3b8;font-size:8.5pt;">Auditor Responsável</span></td>
-    <td><br><br><br>_________________________________<br>${plan.unidade||'Equipe'}<br><span style="color:#94a3b8;font-size:8.5pt;">Responsável da Equipe Auditada</span></td>
-    <td><br><br><br>_________________________________<br>CAGE-RS<br><span style="color:#94a3b8;font-size:8.5pt;">Supervisão / CAGE</span></td>
+    <td><br><br><br>_________________________________<br><strong>${plan.auditor||'Auditor'}</strong><br><span style="color:#64748b;font-size:9pt;">Auditor Responsável</span></td>
+    <td><br><br><br>_________________________________<br><strong>${plan.unidade||'Equipe Auditada'}</strong><br><span style="color:#64748b;font-size:9pt;">Responsável da Unidade Auditada</span></td>
+    <td><br><br><br>_________________________________<br><strong>CAGE-RS</strong><br><span style="color:#64748b;font-size:9pt;">Supervisão / Controle Interno</span></td>
   </tr></table>
 </div>
 
 <div class="footer">
-  <strong>CAGE-RS</strong> · Contadoria e Auditoria-Geral do Estado · SIGA &nbsp;|&nbsp; Emitido em ${today} &nbsp;|&nbsp; Este documento é de uso interno.
+  <strong>CAGE-RS</strong> · Contadoria e Auditoria-Geral do Estado · SIGA &nbsp;|&nbsp; Emitido em ${today} &nbsp;|&nbsp; Documento confidencial de uso interno.
 </div>
 </body></html>`;
 
-  const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
   const safeName = (plan.processoNome||plan.objetivo||'auditoria').replace(/[^a-zA-Z0-9À-ÿ\s]/g,'_').replace(/\s+/g,'_');
-  a.href = url; a.download = 'Relatorio_Auditoria_' + safeName + '.doc';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('📄 Relatório Word exportado!', 'success');
+  _auditDownloadDoc(html, 'Relatorio_Final_Auditoria_' + safeName + '.doc');
+  showToast('📄 Relatório Final exportado!', 'success');
 }
 
 
