@@ -23307,6 +23307,38 @@ function matAuditDetails(p, version) {
 
             if(baType === 'atividade') audit.activities.push({ step: stepName, text: baTxt });
             if(baType === 'decisao')   audit.decisions.push({ step: stepName, text: baTxt });
+            if(baType === 'evento') {
+              const baEtipo = ba.eventoTipo || '';
+              if(baEtipo === 'inicio')        audit.startEvents.push({ step: stepName, text: baTxt });
+              else if(baEtipo === 'encerramento') audit.endEvents.push({ step: stepName, text: baTxt });
+            }
+            // Decisão aninhada (nível 3): processar sub-ramos
+            if(baType === 'decisao' && Array.isArray(ba.branches)) {
+              ba.branches.forEach(nbranch => {
+                (nbranch.actions || []).forEach(nba => {
+                  const nbaType = nba.type || 'atividade';
+                  const nbaTxt  = nba.text || '';
+                  if(nbaType === 'atividade') audit.activities.push({ step: stepName, text: nbaTxt });
+                  if(nbaType === 'decisao')   audit.decisions.push({ step: stepName, text: nbaTxt });
+                  if(nbaType === 'evento') {
+                    const nbaEtipo = nba.eventoTipo || '';
+                    if(nbaEtipo === 'inicio')        audit.startEvents.push({ step: stepName, text: nbaTxt });
+                    else if(nbaEtipo === 'encerramento') audit.endEvents.push({ step: stepName, text: nbaTxt });
+                  }
+                  if(nbaType === 'atividade' && nba.loop) audit.loops.push({ step: stepName, text: nbaTxt });
+                  if(nbaType === 'atividade') {
+                    const nbaActor = nba.actor || '';
+                    if(nbaActor && prevActor && nbaActor.toLowerCase() !== prevActor.toLowerCase()) {
+                      const key = `${prevActor.toLowerCase()}→${nbaActor.toLowerCase()}`;
+                      if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: nbaActor }); }
+                    }
+                    if(nbaActor) { prevActor = nbaActor; audit.actors.add(nbaActor); }
+                    if(nba.automatico || (nba.sistemas && nba.sistemas.trim()))
+                      audit.digitalized.push({ step: stepName, text: nbaTxt, sistemas: nba.sistemas || '⚙️ automático' });
+                  }
+                });
+              });
+            }
 
             const baBurocByNat = (baNat === 'aprovacao' || baNat === 'revisao');
             const baBurocByKw  = !baNat && APPROVAL_KW.some(k => baTextLow.includes(k));
@@ -23482,6 +23514,39 @@ function matComputeMetrics(p, version='asis') {
               if(baActor) { prevActor = baActor; allActors.add(baActor.toLowerCase()); }
             }
             if(baType === 'decisao') totalDecisions++;
+            if(baType === 'evento') {
+              if(ba.eventoTipo === 'inicio') totalStartEvents++;
+              else if(ba.eventoTipo === 'encerramento') totalEndEvents++;
+            }
+            // Decisão aninhada dentro do caminho (nível 3): processar seus sub-ramos
+            if(baType === 'decisao' && Array.isArray(ba.branches)) {
+              ba.branches.forEach(nbranch => {
+                (nbranch.actions || []).forEach(nba => {
+                  const nbaType = nba.type || 'atividade';
+                  if(nbaType === 'evento') {
+                    if(nba.eventoTipo === 'inicio') totalStartEvents++;
+                    else if(nba.eventoTipo === 'encerramento') totalEndEvents++;
+                  }
+                  if(nbaType === 'atividade') {
+                    totalActivities++;
+                    const nbaNat = nba.natureza || '';
+                    if(nbaNat) {
+                      anyNatDefined = true;
+                      if(nbaNat === 'execucao') totalExecucao++;
+                      else if(nbaNat === 'controle') totalControle++;
+                      else if(nbaNat === 'distribuicao') totalDistribuicao++;
+                      else if(nbaNat === 'comunicacao') totalComunicacao++;
+                      else if(nbaNat === 'planejamento') totalPlanejamento++;
+                    }
+                    if(nba.automatico) totalAutomatico++;
+                    if(nba.loop) totalLoops++;
+                    if(nba.automatico || (nba.sistemas && nba.sistemas.trim())) actionsWithSistema++;
+                    if(nba.sistemas && nba.sistemas.trim())
+                      nba.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
+                  }
+                });
+              });
+            }
             const baBurocByNat = (baNat === 'aprovacao' || baNat === 'revisao');
             const baBurocByKw  = !baNat && APPROVAL_KW.some(k => baTextLow.includes(k));
             if(baBurocByNat || baBurocByKw) decisionHasApproval = true;
