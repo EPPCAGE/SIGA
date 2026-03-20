@@ -11654,9 +11654,6 @@ async function loadFromCloud() {
       });
       const homePage = document.getElementById('home-page');
       if(homePage && homePage.style.display !== 'none') homeRefresh();
-      try {
-        if(isEditor && localStorage.getItem('gestpop_editMode') === '1' && !editMode) toggleEditMode(true);
-      } catch(e) {}
       return;
     }
 
@@ -11770,12 +11767,6 @@ async function loadFromCloud() {
         showBpmn(document.querySelector('.nav-tab.active'));
       }
     } catch(e) { console.warn('bpmn refresh after cloud load:', e); }
-    // Restaurar modo edição se o usuário era editor e estava em modo edição antes do reload
-    try {
-      if(isEditor && localStorage.getItem('gestpop_editMode') === '1' && !editMode) {
-        toggleEditMode(true);
-      }
-    } catch(e) {}
 
   } catch(e) {
     setSyncStatus('error');
