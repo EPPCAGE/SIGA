@@ -9572,7 +9572,11 @@ async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
   if(!supaClient || !toEmail) return false;
   try {
     const { data: { session } } = await supaClient.auth.getSession();
-    const token = session?.access_token || SUPA_KEY;
+    const token = session?.access_token;
+    if(!token) {
+      console.warn('[sendAlertEmail] Sessão ausente; envio cancelado.');
+      return false;
+    }
     const resp = await fetch(`${SUPA_URL}/functions/v1/send-alert-email`, {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
@@ -11885,7 +11889,7 @@ async function exportBackup() {
     const a    = document.createElement('a');
     const date = new Date().toISOString().slice(0,10);
     a.href     = url;
-    a.download = `gestproc-backup-${date}.json`;
+    a.download = `siga-backup-${date}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('✅ Backup exportado com sucesso!', 'success');
@@ -14686,6 +14690,15 @@ function _updateVersionBars() {
 
 let _ckPop = 'd', _ckIdx = -1;
 
+function escapeHtml(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Parseia texto colado em array de itens [{text, checked}]
 function _parseChecklistText(raw) {
   return raw.split('\n')
@@ -14717,7 +14730,7 @@ function previewChecklist() {
   const items = _parseChecklistText(text);
   const prev = document.getElementById('ck-preview');
   document.getElementById('ck-preview-count').textContent = items.length;
-  document.getElementById('ck-preview-list').innerHTML = items.map(i => `<li>${i.text}</li>`).join('');
+  document.getElementById('ck-preview-list').innerHTML = items.map(i => `<li>${escapeHtml(i.text)}</li>`).join('');
   prev.style.display = items.length ? 'block' : 'none';
 }
 
@@ -14775,11 +14788,13 @@ function renderChecklists(p) {
     const total = ck.items.length;
     const pct = total ? Math.round(done / total * 100) : 0;
     const stepLabel = ck.stepIndex >= 0 && steps[ck.stepIndex] ? `Etapa ${ck.stepIndex+1}: ${steps[ck.stepIndex].title||''}` : 'Processo geral';
+    const titleSafe = escapeHtml(ck.title);
+    const stepSafe = escapeHtml(stepLabel);
     return `<div class="ck-card">
       <div class="ck-header">
         <div>
-          <div class="ck-title">${ck.title}</div>
-          <span class="ck-step-badge">⚙️ ${stepLabel}</span>
+          <div class="ck-title">${titleSafe}</div>
+          <span class="ck-step-badge">⚙️ ${stepSafe}</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="ck-progress">${done}/${total} (${pct}%)</span>
@@ -14792,7 +14807,7 @@ function renderChecklists(p) {
         ${ck.items.map((it, ii) => `
           <li class="ck-item" onclick="toggleChecklistItem('${p}',${ci},${ii})">
             <input type="checkbox" ${it.checked ? 'checked' : ''} onclick="event.stopPropagation();toggleChecklistItem('${p}',${ci},${ii})">
-            <span class="ck-item-text${it.checked ? ' done' : ''}">${it.text}</span>
+            <span class="ck-item-text${it.checked ? ' done' : ''}">${escapeHtml(it.text)}</span>
           </li>`).join('')}
       </ul>
     </div>`;
@@ -14850,10 +14865,10 @@ function renderPa(p) {
   el.innerHTML = items.map((it,i) => `
     <tr>
       <td style="font-weight:700;color:var(--cage-blue);">${i+1}</td>
-      <td>${it.desc}</td>
-      <td>${it.resp}</td>
+      <td>${escapeHtml(it.desc)}</td>
+      <td>${escapeHtml(it.resp)}</td>
       <td>${it.prazo ? new Date(it.prazo+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
-      <td><span class="pa-status ${it.status}">${statusLabel[it.status]||it.status}</span></td>
+      <td><span class="pa-status ${it.status}">${escapeHtml(statusLabel[it.status]||it.status)}</span></td>
       <td style="white-space:nowrap;">
         <button class="edit-add-btn" onclick="openPaModal('${p}',${i})">✏️</button>
         <button class="edit-rm-btn" onclick="deletePa('${p}',${i})">✕</button>
@@ -19727,41 +19742,40 @@ function exportFluxoWord(p) {
 // ── Helpers compartilhados de exportação de auditoria ──────────────────────
 function _auditDocStyle() {
   return `
-    body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1e293b; margin: 0; padding: 0; }
-    .cover { background: #1e3a5f; color: white; padding: 60px 48px 48px; }
-    .cover h1 { font-size: 26pt; margin: 0 0 8px; font-weight: 700; letter-spacing: -0.5px; }
-    .cover .subtitle { font-size: 13pt; color: #93c5fd; margin: 0 0 4px; }
-    .cover .meta { margin-top: 28px; font-size: 10pt; color: #cbd5e1; line-height: 2; }
-    .cover .meta strong { color: #f1f5f9; }
-    .section { padding: 32px 48px; border-bottom: 1px solid #e2e8f0; }
+    body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; font-size: 10.5pt; color: #1f2937; margin: 0; padding: 0; background: #f3f6fb; }
+    .doc-shell { max-width: 860px; margin: 18px auto; background: #ffffff; border: 1px solid #dbe4f0; }
+    .cover { background: #0f2d4d; color: white; padding: 44px 44px 36px; }
+    .cover h1 { font-size: 24pt; margin: 0 0 6px; font-weight: 700; letter-spacing: -0.2px; }
+    .cover .subtitle { font-size: 12pt; color: #c6dcff; margin: 0 0 4px; }
+    .cover .meta { margin-top: 22px; font-size: 9.8pt; color: #d9e4f2; line-height: 1.8; }
+    .cover .meta strong { color: #f8fbff; }
+    .section { padding: 24px 44px; border-bottom: 1px solid #e6edf5; }
     .section:last-child { border-bottom: none; }
-    h2 { font-size: 14pt; color: #1e3a5f; border-left: 4px solid #2563eb; padding-left: 10px; margin: 0 0 18px; }
-    h3 { font-size: 11pt; color: #1e40af; margin: 20px 0 8px; font-weight: 700; }
-    p { font-size: 10.5pt; line-height: 1.75; color: #334155; margin: 0 0 12px; }
-    table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 16px; }
-    th { background: #1e3a5f; color: white; padding: 8px 12px; text-align: left; font-weight: 600; font-size: 9.5pt; }
-    td { padding: 7px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
-    tr:nth-child(even) td { background: #f8fafc; }
-    .badge { display: inline-block; padding: 2px 9px; border-radius: 4px; font-size: 9pt; font-weight: 700; }
-    .badge-C  { background: #d1fae5; color: #065f46; }
+    h2 { font-size: 13pt; color: #0f2d4d; margin: 0 0 14px; font-weight: 700; }
+    h3 { font-size: 10.5pt; color: #1d4f82; margin: 16px 0 8px; font-weight: 700; }
+    p { font-size: 10.3pt; line-height: 1.65; color: #334155; margin: 0 0 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 9.8pt; margin-bottom: 12px; }
+    th { background: #eaf1f9; color: #102a43; padding: 8px 10px; text-align: left; font-weight: 700; border: 1px solid #d5e1ef; }
+    td { padding: 7px 10px; border: 1px solid #e1e9f2; vertical-align: top; }
+    tr:nth-child(even) td { background: #fbfdff; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 8.8pt; font-weight: 700; }
+    .badge-C  { background: #dcfce7; color: #166534; }
     .badge-PC { background: #fef3c7; color: #92400e; }
     .badge-NC { background: #fee2e2; color: #991b1b; }
     .badge-NA { background: #f1f5f9; color: #475569; }
-    .kpi-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-    .kpi { flex: 1; min-width: 110px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; text-align: center; }
-    .kpi .val { font-size: 24pt; font-weight: 700; color: #1e3a5f; }
-    .kpi .lbl { font-size: 9pt; color: #64748b; margin-top: 2px; }
-    .ai-box { background: #f0f7ff; border-left: 4px solid #2563eb; border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 0 0 16px; }
+    .kpi-grid { width: 100%; border-collapse: separate; border-spacing: 8px; margin-bottom: 10px; }
+    .kpi-grid td { background: #f7fafc; border: 1px solid #dce7f3; border-radius: 8px; text-align: center; padding: 10px 6px; }
+    .kpi-grid .val { display: block; font-size: 18pt; font-weight: 700; color: #0f2d4d; line-height: 1.1; }
+    .kpi-grid .lbl { display: block; font-size: 8.8pt; color: #64748b; margin-top: 3px; }
+    .ai-box { background: #f7fbff; border: 1px solid #dbe9f7; border-left: 4px solid #2563eb; border-radius: 6px; padding: 12px 14px; margin: 0 0 12px; }
     .ai-box p { color: #1e3a5f; margin: 0; }
-    .rec-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
-    .rec-num { background: #2563eb; color: white; border-radius: 50%; width: 22px; height: 22px; min-width: 22px; display: flex; align-items: center; justify-content: center; font-size: 9pt; font-weight: 700; }
-    .footer { background: #f1f5f9; padding: 20px 48px; font-size: 9pt; color: #64748b; border-top: 1px solid #e2e8f0; }
-    .sig-table { margin-top: 8px; }
-    .sig-table td { border: none; border-top: 2px solid #94a3b8; padding: 8px 4px 2px; font-size: 9.5pt; text-align: center; width: 33%; }
-    .tag-critica { background:#fee2e2; color:#991b1b; padding:2px 8px; border-radius:4px; font-size:9pt; font-weight:700; }
-    .tag-moderada { background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:4px; font-size:9pt; font-weight:700; }
-    .tag-leve { background:#d1fae5; color:#065f46; padding:2px 8px; border-radius:4px; font-size:9pt; font-weight:700; }
-    .divider { height: 1px; background: #e2e8f0; margin: 16px 0; }
+    .rec-item { display: table; width: 100%; margin-bottom: 8px; }
+    .rec-num { display: table-cell; width: 28px; text-align: center; font-size: 9pt; font-weight: 700; color: #1d4ed8; }
+    .rec-text { display: table-cell; font-size: 10.3pt; color: #334155; }
+    .footer { background: #f8fafc; padding: 14px 44px; font-size: 8.8pt; color: #64748b; border-top: 1px solid #e2e8f0; }
+    .sig-table { margin-top: 8px; border-collapse: separate; border-spacing: 12px 0; }
+    .sig-table td { border: none; padding: 8px 4px 2px; font-size: 9.2pt; text-align: center; width: 33%; }
+    .sig-line { border-top: 1.8px solid #94a3b8; margin: 28px 0 6px; }
   `;
 }
 
@@ -19828,7 +19842,7 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
 
   const statusLabels = { planejada:'Planejada', em_execucao:'Em Execução', concluida:'Concluída', cancelada:'Cancelada' };
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Plano de Auditoria</title><style>${_auditDocStyle()}</style></head><body>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Plano de Auditoria</title><style>${_auditDocStyle()}</style></head><body><div class="doc-shell">
 
 <div class="cover">
   <div style="font-size:9pt;letter-spacing:2.5px;color:#93c5fd;text-transform:uppercase;margin-bottom:18px;font-weight:600;">CAGE-RS · SIGA · Auditoria Interna</div>
@@ -19894,16 +19908,16 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
   <h2>8. Assinaturas</h2>
   <p style="font-size:10pt;color:#64748b;margin-bottom:32px;">Os abaixo assinados declaram ciência e concordância com os termos e objetivos deste Plano de Auditoria.</p>
   <table class="sig-table"><tr>
-    <td><br><br><br>_________________________________<br><strong>${plan.auditor||'Auditor'}</strong><br><span style="color:#64748b;font-size:9pt;">Auditor Responsável</span></td>
-    <td><br><br><br>_________________________________<br><strong>${plan.unidade||'Equipe Auditada'}</strong><br><span style="color:#64748b;font-size:9pt;">Responsável da Unidade Auditada</span></td>
-    <td><br><br><br>_________________________________<br><strong>CAGE-RS</strong><br><span style="color:#64748b;font-size:9pt;">Supervisão / Controle Interno</span></td>
+    <td><div class="sig-line"></div><strong>${plan.auditor||'Auditor'}</strong><br><span style="color:#64748b;font-size:9pt;">Auditor Responsável</span></td>
+    <td><div class="sig-line"></div><strong>${plan.unidade||'Equipe Auditada'}</strong><br><span style="color:#64748b;font-size:9pt;">Responsável da Unidade Auditada</span></td>
+    <td><div class="sig-line"></div><strong>CAGE-RS</strong><br><span style="color:#64748b;font-size:9pt;">Supervisão / Controle Interno</span></td>
   </tr></table>
 </div>
 
 <div class="footer">
   <strong>CAGE-RS</strong> · Contadoria e Auditoria-Geral do Estado · SIGA &nbsp;|&nbsp; Emitido em ${today} &nbsp;|&nbsp; Documento de uso interno.
 </div>
-</body></html>`;
+</div></body></html>`;
 
   const safeName = (plan.processoNome||plan.objetivo||'auditoria').replace(/[^a-zA-Z0-9À-ÿ\s]/g,'_').replace(/\s+/g,'_');
   _auditDownloadDoc(html, 'Plano_Auditoria_' + safeName + '.doc');
@@ -20002,7 +20016,7 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
   }
 
   const recsHtml = Array.isArray(ai.recomendacoes) && ai.recomendacoes.length
-    ? ai.recomendacoes.map((r,i) => `<div class="rec-item"><div class="rec-num">${i+1}</div><p style="margin:0;font-size:10.5pt;">${r}</p></div>`).join('')
+    ? ai.recomendacoes.map((r,i) => `<div class="rec-item"><div class="rec-num">${i+1}.</div><div class="rec-text">${r}</div></div>`).join('')
     : '<p style="color:#94a3b8;font-size:10pt;">Nenhuma recomendação gerada.</p>';
 
   // Checklist HTML
@@ -20054,7 +20068,7 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
 
   const pctColor = pct >= 80 ? '#065f46' : pct >= 60 ? '#92400e' : '#991b1b';
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório Final de Auditoria</title><style>${_auditDocStyle()}</style></head><body>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório Final de Auditoria</title><style>${_auditDocStyle()}</style></head><body><div class="doc-shell">
 
 <div class="cover">
   <div style="font-size:9pt;letter-spacing:2.5px;color:#93c5fd;text-transform:uppercase;margin-bottom:18px;font-weight:600;">CAGE-RS · SIGA · Auditoria Interna</div>
@@ -20077,19 +20091,21 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
 
 <div class="section">
   <h2>2. Painel de Conformidade</h2>
-  <div class="kpi-row">
-    <div class="kpi"><div class="val">${totalQ}</div><div class="lbl">Critérios avaliados</div></div>
-    <div class="kpi"><div class="val" style="color:#065f46;">${conforme}</div><div class="lbl">Conformes</div></div>
-    <div class="kpi"><div class="val" style="color:#92400e;">${parcial}</div><div class="lbl">Parcialmente conf.</div></div>
-    <div class="kpi"><div class="val" style="color:#991b1b;">${naoConf}</div><div class="lbl">Não conformes</div></div>
-    <div class="kpi"><div class="val" style="color:${pctColor};">${pct}%</div><div class="lbl">Índice geral</div></div>
-  </div>
-  <div class="kpi-row">
-    <div class="kpi"><div class="val" style="color:#991b1b;">${ncCritica}</div><div class="lbl">NCs Críticas</div></div>
-    <div class="kpi"><div class="val" style="color:#92400e;">${ncModerada}</div><div class="lbl">NCs Moderadas</div></div>
-    <div class="kpi"><div class="val" style="color:#065f46;">${ncLeve}</div><div class="lbl">NCs Leves</div></div>
-    <div class="kpi"><div class="val" style="color:#2563eb;">${acConcluidas}/${actions.length}</div><div class="lbl">Ações concluídas</div></div>
-  </div>
+  <table class="kpi-grid">
+    <tr>
+      <td><span class="val">${totalQ}</span><span class="lbl">Critérios avaliados</span></td>
+      <td><span class="val" style="color:#166534;">${conforme}</span><span class="lbl">Conformes</span></td>
+      <td><span class="val" style="color:#92400e;">${parcial}</span><span class="lbl">Parcialmente conformes</span></td>
+      <td><span class="val" style="color:#991b1b;">${naoConf}</span><span class="lbl">Não conformes</span></td>
+      <td><span class="val" style="color:${pctColor};">${pct}%</span><span class="lbl">Índice geral</span></td>
+    </tr>
+    <tr>
+      <td><span class="val" style="color:#991b1b;">${ncCritica}</span><span class="lbl">NCs Críticas</span></td>
+      <td><span class="val" style="color:#92400e;">${ncModerada}</span><span class="lbl">NCs Moderadas</span></td>
+      <td><span class="val" style="color:#166534;">${ncLeve}</span><span class="lbl">NCs Leves</span></td>
+      <td colspan="2"><span class="val" style="color:#1d4ed8;">${acConcluidas}/${actions.length}</span><span class="lbl">Ações concluídas</span></td>
+    </tr>
+  </table>
 </div>
 
 <div class="section">
@@ -20126,16 +20142,16 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
   <h2>9. Assinaturas</h2>
   <p style="font-size:10pt;color:#64748b;margin-bottom:32px;">Atestamos que as informações contidas neste relatório são fidedignas aos registros da auditoria realizada e que os achados e recomendações foram devidamente comunicados à unidade auditada.</p>
   <table class="sig-table"><tr>
-    <td><br><br><br>_________________________________<br><strong>${plan.auditor||'Auditor'}</strong><br><span style="color:#64748b;font-size:9pt;">Auditor Responsável</span></td>
-    <td><br><br><br>_________________________________<br><strong>${plan.unidade||'Equipe Auditada'}</strong><br><span style="color:#64748b;font-size:9pt;">Responsável da Unidade Auditada</span></td>
-    <td><br><br><br>_________________________________<br><strong>CAGE-RS</strong><br><span style="color:#64748b;font-size:9pt;">Supervisão / Controle Interno</span></td>
+    <td><div class="sig-line"></div><strong>${plan.auditor||'Auditor'}</strong><br><span style="color:#64748b;font-size:9pt;">Auditor Responsável</span></td>
+    <td><div class="sig-line"></div><strong>${plan.unidade||'Equipe Auditada'}</strong><br><span style="color:#64748b;font-size:9pt;">Responsável da Unidade Auditada</span></td>
+    <td><div class="sig-line"></div><strong>CAGE-RS</strong><br><span style="color:#64748b;font-size:9pt;">Supervisão / Controle Interno</span></td>
   </tr></table>
 </div>
 
 <div class="footer">
   <strong>CAGE-RS</strong> · Contadoria e Auditoria-Geral do Estado · SIGA &nbsp;|&nbsp; Emitido em ${today} &nbsp;|&nbsp; Documento confidencial de uso interno.
 </div>
-</body></html>`;
+</div></body></html>`;
 
   const safeName = (plan.processoNome||plan.objetivo||'auditoria').replace(/[^a-zA-Z0-9À-ÿ\s]/g,'_').replace(/\s+/g,'_');
   _auditDownloadDoc(html, 'Relatorio_Final_Auditoria_' + safeName + '.doc');
@@ -25086,7 +25102,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
 const SW_VERSION = '4';
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/processoscage/sw.js?v=' + SW_VERSION).then(reg => {
+  navigator.serviceWorker.register('/sw.js?v=' + SW_VERSION).then(reg => {
     console.log('[SW] Registrado v' + SW_VERSION + ':', reg.scope);
     // Sem onupdatefound/reload: o SW já é network-first para HTML,
     // então o conteúdo mais recente é sempre servido da rede.

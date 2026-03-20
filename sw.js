@@ -1,7 +1,7 @@
-// ─── Service Worker — processoscage ───────────────────────────────────────────
+// ─── Service Worker — SIGA ───────────────────────────────────────────
 // Para forçar atualização em todos os usuários: incremente CACHE_VERSION abaixo.
-// Exemplo: 'processoscage-v1' → 'processoscage-v2'
-const CACHE_VERSION = 'processoscage-v2';
+// Exemplo: 'siga-v1' → 'siga-v2'
+const CACHE_VERSION = 'siga-v1';
 
 // ── Install: ativa imediatamente sem esperar abas antigas fecharem ────────────
 self.addEventListener('install', () => {

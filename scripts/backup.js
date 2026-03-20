@@ -41,10 +41,10 @@ async function main() {
     }
   }
 
-  const date = new Date().toISOString().slice(0, 10);
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const dir = path.join(process.cwd(), 'backups');
   fs.mkdirSync(dir, { recursive: true });
-  const filename = path.join(dir, `backup-${date}.json`);
+  const filename = path.join(dir, `backup-${stamp}.json`);
   fs.writeFileSync(filename, JSON.stringify(backup, null, 2), 'utf8');
   console.log(`\n✅ Backup salvo: ${filename}`);
 
