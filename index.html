@@ -3904,26 +3904,13 @@
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
       <button class="btn btn-outline" onclick="showHome()" style="font-size:13px;">← Início</button>
-      <button id="audit-new-btn" class="btn btn-primary" onclick="auditNewAction()" style="font-size:13px;display:none;">＋ Novo</button>
+      <button id="audit-new-btn" class="btn btn-primary audit-edit-only" onclick="auditOpenPlanModal()" style="font-size:13px;">＋ Novo Plano</button>
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div style="display:flex;gap:2px;border-bottom:2px solid #e2e8f0;margin-bottom:24px;overflow-x:auto;">
-    <button class="audit-tab active" data-tab="plans"    onclick="auditTab('plans',this)">📋 Planos de Auditoria</button>
-    <button class="audit-tab"        data-tab="exec"     onclick="auditTab('exec',this)">▶ Execução</button>
-    <button class="audit-tab"        data-tab="nc"       onclick="auditTab('nc',this)">⚠️ Não Conformidades</button>
-    <button class="audit-tab"        data-tab="actions"  onclick="auditTab('actions',this)">✅ Plano de Ação</button>
-    <button class="audit-tab"        data-tab="trail"    onclick="auditTab('trail',this)">🕐 Trilha</button>
-    <button class="audit-tab"        data-tab="heatmap"  onclick="auditTab('heatmap',this)">🗺 Matriz de Riscos</button>
-  </div>
-
-  <!-- Tab: Planos -->
-  <div id="audit-tab-plans" class="audit-tab-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:14px;font-weight:600;color:#0a2540;">Planos de Auditoria</div>
-      <button class="btn btn-primary audit-edit-only" onclick="auditOpenPlanModal()" style="font-size:12px;">＋ Novo Plano</button>
-    </div>
+  <!-- VIEW: Lista de Planos -->
+  <div id="audit-view-plans">
+    <div style="font-size:14px;font-weight:600;color:#0a2540;margin-bottom:16px;">Planos de Auditoria</div>
     <div id="audit-plans-list"></div>
     <div id="audit-plans-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
       <div style="font-size:48px;margin-bottom:12px;">📋</div>
@@ -3932,94 +3919,122 @@
     </div>
   </div>
 
-  <!-- Tab: Execução -->
-  <div id="audit-tab-exec" class="audit-tab-panel" style="display:none;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:14px;font-weight:600;color:#0a2540;">Execução de Auditorias</div>
-      <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Nova Execução</button>
-    </div>
-    <div id="audit-exec-list"></div>
-    <div id="audit-exec-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-      <div style="font-size:48px;margin-bottom:12px;">▶</div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma execução registrada</div>
-      <div style="font-size:13px;">Crie um plano de auditoria e inicie a execução com checklist</div>
-    </div>
-  </div>
+  <!-- VIEW: Pasta do Plano -->
+  <div id="audit-view-detail" style="display:none;">
 
-  <!-- Tab: NCs -->
-  <div id="audit-tab-nc" class="audit-tab-panel" style="display:none;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:14px;font-weight:600;color:#0a2540;">Não Conformidades</div>
-      <button class="btn btn-primary audit-edit-only" onclick="auditOpenNcModal()" style="font-size:12px;background:#dc2626;border-color:#dc2626;">＋ Registrar NC</button>
+    <!-- Breadcrumb + ações -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn btn-outline" onclick="auditClosePlan()" style="font-size:13px;">← Planos</button>
+        <div style="font-size:13px;color:#94a3b8;">/</div>
+        <div id="audit-plan-detail-title" style="font-size:15px;font-weight:700;color:#0a2540;max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-outline audit-edit-only" onclick="auditOpenPlanModal(_auditCurrentPlanId)" style="font-size:12px;">✏️ Editar Plano</button>
+        <button class="btn btn-outline" onclick="auditExportRelatorioWord(_auditCurrentPlanId)" style="font-size:12px;color:#1e40af;border-color:#bfdbfe;">📄 Relatório Word</button>
+      </div>
     </div>
-    <!-- Filtros NC -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-      <button class="audit-nc-filter active" data-g="" onclick="auditFilterNc('',this)">Todas</button>
-      <button class="audit-nc-filter" data-g="critica" onclick="auditFilterNc('critica',this)" style="--fc:#dc2626;">🔴 Crítica</button>
-      <button class="audit-nc-filter" data-g="moderada" onclick="auditFilterNc('moderada',this)" style="--fc:#f59e0b;">🟡 Moderada</button>
-      <button class="audit-nc-filter" data-g="leve" onclick="auditFilterNc('leve',this)" style="--fc:#22c55e;">🟢 Leve</button>
-    </div>
-    <div id="audit-nc-list"></div>
-    <div id="audit-nc-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-      <div style="font-size:48px;margin-bottom:12px;">✅</div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma não conformidade registrada</div>
-      <div style="font-size:13px;">Ótimo! Nenhuma NC encontrada ainda.</div>
-    </div>
-  </div>
 
-  <!-- Tab: Ações -->
-  <div id="audit-tab-actions" class="audit-tab-panel" style="display:none;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:14px;font-weight:600;color:#0a2540;">Plano de Ação — Correções</div>
-      <button class="btn btn-primary audit-edit-only" onclick="auditOpenActionModal()" style="font-size:12px;background:#0a2540;border-color:#0a2540;">＋ Nova Ação</button>
-    </div>
-    <!-- Filtros ação -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-      <button class="audit-nc-filter active" data-g="" onclick="auditFilterAction('',this)">Todas</button>
-      <button class="audit-nc-filter" data-g="pendente" onclick="auditFilterAction('pendente',this)">Pendente</button>
-      <button class="audit-nc-filter" data-g="em_andamento" onclick="auditFilterAction('em_andamento',this)">Em Andamento</button>
-      <button class="audit-nc-filter" data-g="concluida" onclick="auditFilterAction('concluida',this)">Concluída</button>
-    </div>
-    <div id="audit-actions-list"></div>
-    <div id="audit-actions-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-      <div style="font-size:48px;margin-bottom:12px;">✅</div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma ação cadastrada</div>
-      <div style="font-size:13px;">Registre não conformidades e crie ações corretivas</div>
-    </div>
-  </div>
+    <!-- Resumo do plano -->
+    <div id="audit-plan-summary" style="margin-bottom:20px;"></div>
 
-  <!-- Tab: Trilha de Auditoria -->
-  <div id="audit-tab-trail" class="audit-tab-panel" style="display:none;">
-    <div style="font-size:14px;font-weight:600;color:#0a2540;margin-bottom:20px;">Trilha de Auditoria — Linha do Tempo</div>
-    <div id="audit-trail-list" style="position:relative;padding-left:32px;">
-      <div style="position:absolute;left:11px;top:0;bottom:0;width:2px;background:#e2e8f0;border-radius:2px;"></div>
+    <!-- Subabas do plano -->
+    <div style="display:flex;gap:2px;border-bottom:2px solid #e2e8f0;margin-bottom:24px;overflow-x:auto;">
+      <button class="audit-tab active" data-ptab="exec"    onclick="auditPlanSubTab('exec',this)">▶ Execução</button>
+      <button class="audit-tab"        data-ptab="nc"      onclick="auditPlanSubTab('nc',this)">⚠️ Não Conformidades</button>
+      <button class="audit-tab"        data-ptab="actions" onclick="auditPlanSubTab('actions',this)">✅ Plano de Ação</button>
+      <button class="audit-tab"        data-ptab="trail"   onclick="auditPlanSubTab('trail',this)">🕐 Trilha</button>
+      <button class="audit-tab"        data-ptab="heatmap" onclick="auditPlanSubTab('heatmap',this)">🗺 Matriz de Riscos</button>
     </div>
-    <div id="audit-trail-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-      <div style="font-size:48px;margin-bottom:12px;">🕐</div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhum evento registrado</div>
-      <div style="font-size:13px;">A trilha aparece conforme planos, execuções e NCs são criados</div>
-    </div>
-  </div>
 
-  <!-- Tab: Matriz de Riscos -->
-  <div id="audit-tab-heatmap" class="audit-tab-panel" style="display:none;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:14px;font-weight:600;color:#0a2540;">Matriz de Riscos por Processo / Etapa</div>
-      <div style="font-size:12px;color:#64748b;">Incidência de não conformidades por etapa do processo</div>
+    <!-- Painel: Execução -->
+    <div id="audit-tab-exec" class="audit-tab-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:14px;font-weight:600;color:#0a2540;">Execução de Auditorias</div>
+        <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Nova Execução</button>
+      </div>
+      <div id="audit-exec-list"></div>
+      <div id="audit-exec-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">▶</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma execução registrada</div>
+        <div style="font-size:13px;">Inicie a execução com checklist para este plano</div>
+      </div>
     </div>
-    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;font-size:12px;align-items:center;">
-      <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#dcfce7;border-radius:3px;border:1px solid #86efac;"></span> 0 NCs</span>
-      <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fef9c3;border-radius:3px;border:1px solid #fde047;"></span> 1-2 NCs</span>
-      <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fed7aa;border-radius:3px;border:1px solid #fb923c;"></span> 3-4 NCs</span>
-      <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fecaca;border-radius:3px;border:1px solid #f87171;"></span> 5+ NCs</span>
+
+    <!-- Painel: NCs -->
+    <div id="audit-tab-nc" class="audit-tab-panel" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:14px;font-weight:600;color:#0a2540;">Não Conformidades</div>
+        <button class="btn btn-primary audit-edit-only" onclick="auditOpenNcModal()" style="font-size:12px;background:#dc2626;border-color:#dc2626;">＋ Registrar NC</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="audit-nc-filter active" data-g="" onclick="auditFilterNc('',this)">Todas</button>
+        <button class="audit-nc-filter" data-g="critica" onclick="auditFilterNc('critica',this)">🔴 Crítica</button>
+        <button class="audit-nc-filter" data-g="moderada" onclick="auditFilterNc('moderada',this)">🟡 Moderada</button>
+        <button class="audit-nc-filter" data-g="leve" onclick="auditFilterNc('leve',this)">🟢 Leve</button>
+      </div>
+      <div id="audit-nc-list"></div>
+      <div id="audit-nc-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">✅</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma não conformidade registrada</div>
+        <div style="font-size:13px;">Ótimo! Nenhuma NC encontrada neste plano.</div>
+      </div>
     </div>
-    <div id="audit-heatmap-body"></div>
-    <div id="audit-heatmap-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-      <div style="font-size:48px;margin-bottom:12px;">🗺</div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Sem dados suficientes</div>
-      <div style="font-size:13px;">Registre não conformidades vinculadas a processos para visualizar a matriz</div>
+
+    <!-- Painel: Ações -->
+    <div id="audit-tab-actions" class="audit-tab-panel" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:14px;font-weight:600;color:#0a2540;">Plano de Ação — Correções</div>
+        <button class="btn btn-primary audit-edit-only" onclick="auditOpenActionModal()" style="font-size:12px;background:#0a2540;border-color:#0a2540;">＋ Nova Ação</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="audit-nc-filter active" data-g="" onclick="auditFilterAction('',this)">Todas</button>
+        <button class="audit-nc-filter" data-g="pendente" onclick="auditFilterAction('pendente',this)">Pendente</button>
+        <button class="audit-nc-filter" data-g="em_andamento" onclick="auditFilterAction('em_andamento',this)">Em Andamento</button>
+        <button class="audit-nc-filter" data-g="concluida" onclick="auditFilterAction('concluida',this)">Concluída</button>
+      </div>
+      <div id="audit-actions-list"></div>
+      <div id="audit-actions-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">✅</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma ação cadastrada</div>
+        <div style="font-size:13px;">Registre não conformidades e crie ações corretivas</div>
+      </div>
     </div>
-  </div>
+
+    <!-- Painel: Trilha -->
+    <div id="audit-tab-trail" class="audit-tab-panel" style="display:none;">
+      <div style="font-size:14px;font-weight:600;color:#0a2540;margin-bottom:20px;">Trilha de Auditoria — Linha do Tempo</div>
+      <div id="audit-trail-list" style="position:relative;padding-left:32px;">
+        <div style="position:absolute;left:11px;top:0;bottom:0;width:2px;background:#e2e8f0;border-radius:2px;"></div>
+      </div>
+      <div id="audit-trail-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">🕐</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhum evento registrado</div>
+        <div style="font-size:13px;">A trilha aparece conforme execuções e NCs são criadas neste plano</div>
+      </div>
+    </div>
+
+    <!-- Painel: Matriz de Riscos -->
+    <div id="audit-tab-heatmap" class="audit-tab-panel" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:14px;font-weight:600;color:#0a2540;">Matriz de Riscos por Etapa</div>
+        <div style="font-size:12px;color:#64748b;">Incidência de não conformidades por etapa do processo</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;font-size:12px;align-items:center;">
+        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#dcfce7;border-radius:3px;border:1px solid #86efac;"></span> 0 NCs</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fef9c3;border-radius:3px;border:1px solid #fde047;"></span> 1-2 NCs</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fed7aa;border-radius:3px;border:1px solid #fb923c;"></span> 3-4 NCs</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fecaca;border-radius:3px;border:1px solid #f87171;"></span> 5+ NCs</span>
+      </div>
+      <div id="audit-heatmap-body"></div>
+      <div id="audit-heatmap-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">🗺</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Sem dados suficientes</div>
+        <div style="font-size:13px;">Registre não conformidades neste plano para visualizar a matriz</div>
+      </div>
+    </div>
+
+  </div><!-- /audit-view-detail -->
 </div>
 
 <!-- ═══ MODAL: Plano de Auditoria ═══ -->
@@ -5558,6 +5573,14 @@ function enableEditables(on) {
 
 let _autoSaveTimer = null;
 let _editSnapshot  = null; // deep snapshot taken on edit mode entry (kept for reference)
+
+// Debounced save — agrupa mudanças rápidas em um único save para reduzir IO no Supabase
+function scheduleSave(delay = 4000) {
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(() => {
+    if (currentUser && window._appInitialized) saveToCloud();
+  }, delay);
+}
 let _undoStack     = [];   // undo history (max 40 states)
 let _undoShadow    = null; // state captured AFTER the last change — pushed on the NEXT change
 
@@ -5607,7 +5630,7 @@ function markChanged(quick=false) {
   _autoSaveTimer = setTimeout(() => {
     // Só auto-salvar após app totalmente inicializado (evita salvar durante load)
     if(currentUser && window._appInitialized) saveToCloud();
-  }, quick ? 800 : 1500);
+  }, quick ? 3000 : 5000);
 }
 
 function undoLastChange() {
@@ -5712,6 +5735,7 @@ function sanitizePop(p) {
   if(!d.versionNum)                d.versionNum = 1;
   if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
   if(!Array.isArray(d.checklists))     d.checklists = [];
+  if(!d.etapasProgress)                d.etapasProgress = {};
   if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
   if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
   if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
@@ -6112,7 +6136,6 @@ function toggleAutomatico(p, si, ai) {
   actions[ai] = a;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleLoop(p, si, ai) {
@@ -6124,7 +6147,6 @@ function toggleLoop(p, si, ai) {
   actions[ai] = a;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleAutomaticoBranch(p, si, ai, bi, bai) {
@@ -6138,7 +6160,6 @@ function toggleAutomaticoBranch(p, si, ai, bi, bai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleLoopBranch(p, si, ai, bi, bai) {
@@ -6152,7 +6173,6 @@ function toggleLoopBranch(p, si, ai, bi, bai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleAutomaticoNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
@@ -6168,7 +6188,6 @@ function toggleAutomaticoNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleLoopNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
@@ -6184,7 +6203,6 @@ function toggleLoopNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function addStepAction(p,si){
@@ -8829,7 +8847,7 @@ function patAddNew() {
   DATA.patrocinadores.push(val);
   input.value = '';
   patRenderList();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Patrocinador adicionado!','success');
 }
 function patRemove(idx) {
@@ -8837,7 +8855,7 @@ function patRemove(idx) {
   if(!DATA.patrocinadores) DATA.patrocinadores = [...PATROCINADORES_DEFAULT];
   DATA.patrocinadores.splice(idx, 1);
   patRenderList();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('Patrocinador removido.','success');
 }
 
@@ -9517,7 +9535,7 @@ function saveContadorGeral() {
   const val = (document.getElementById('cfg-contador-geral-input')?.value || '').trim();
   setConfig('contadorGeral', val);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Contador-Geral salvo!','success');
 }
 
@@ -9573,7 +9591,7 @@ function configAddEquipeUnidade() {
   document.getElementById('cfg-new-eu-equipe').value  = '';
   document.getElementById('cfg-new-eu-unidade').value = '';
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Vínculo adicionado!','success');
 }
 
@@ -9583,7 +9601,7 @@ function configRemoveEquipeUnidade(i) {
   items.splice(i, 1);
   setConfig('equipeUnidade', items);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('Vínculo removido.','success');
 }
 
@@ -9653,7 +9671,7 @@ function toggleEquipeSkill(equipe, skill, tipo) {
   rec[tipo] = arr;
   setConfig('equipeCompetencias', items);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
 }
 
 // ── Catálogo de Não Conformidades (APT Catalog) ──────────────────────────────
@@ -9758,19 +9776,19 @@ function cfgAptField(i, field, val) {
   if(!isEditor) return;
   auditEnsure();
   DATA.aptCatalog[i][field] = val;
-  saveToCloud();
+  scheduleSave(4000);
 }
 function cfgAptRecSave(i, ri, val) {
   if(!isEditor) return;
   auditEnsure();
   DATA.aptCatalog[i].recomendacoes[ri] = val;
-  saveToCloud();
+  scheduleSave(4000);
 }
 function cfgAptRecDel(i, ri) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
   auditEnsure();
   DATA.aptCatalog[i].recomendacoes.splice(ri, 1);
-  saveToCloud();
+  scheduleSave(4000);
   renderConfigPanel();
 }
 function cfgAptRecAdd(i) {
@@ -9782,7 +9800,7 @@ function cfgAptRecAdd(i) {
   if(!Array.isArray(DATA.aptCatalog[i].recomendacoes)) DATA.aptCatalog[i].recomendacoes = [];
   DATA.aptCatalog[i].recomendacoes.push(val);
   inp.value = '';
-  saveToCloud();
+  scheduleSave(4000);
   renderConfigPanel();
   // Reabrir o painel do item
   setTimeout(() => { const el = document.getElementById('cfg-apt-edit-'+i); if(el) el.style.display='block'; }, 0);
@@ -9792,7 +9810,7 @@ function cfgAptDel(i) {
   const apt = DATA.aptCatalog[i];
   if(!confirm(`Excluir "${apt?.apontamento}"?`)) return;
   DATA.aptCatalog.splice(i, 1);
-  saveToCloud();
+  scheduleSave(4000);
   renderConfigPanel();
   showToast('🗑 Apontamento excluído.', 'success');
 }
@@ -9801,7 +9819,7 @@ function cfgAptAdd() {
   auditEnsure();
   const id = 'APT-C' + String(Date.now()).slice(-5);
   DATA.aptCatalog.push({ id, categoria:'Personalizado', criticidade:'Alta', apontamento:'Novo apontamento', impacto:'', descricao:'', recomendacoes:[] });
-  saveToCloud();
+  scheduleSave(4000);
   renderConfigPanel();
   // Abre o editor do novo item
   setTimeout(() => {
@@ -10039,7 +10057,7 @@ function configAddItem(key) {
   input.value = '';
   renderConfigPanel();
   applyConfigToDropdowns();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Item adicionado!','success');
 }
 
@@ -10050,7 +10068,7 @@ function configRemoveItem(key, idx) {
   setConfig(key, items);
   renderConfigPanel();
   applyConfigToDropdowns();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('Item removido.','success');
 }
 
@@ -10075,7 +10093,7 @@ function configSaveEdit(key, idx) {
   setConfig(key, items);
   renderConfigPanel();
   applyConfigToDropdowns();
-  saveToCloud();
+  scheduleSave(4000);
 }
 
 function configAddStatus(key) {
@@ -10092,7 +10110,7 @@ function configAddStatus(key) {
   setConfig(key, items);
   valInp.value = ''; lblInp.value = '';
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Status adicionado!','success');
 }
 
@@ -10102,7 +10120,7 @@ function configRemoveStatus(key, idx) {
   items.splice(idx, 1);
   setConfig(key, items);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('Status removido.','success');
 }
 
@@ -10126,7 +10144,7 @@ function configSaveStatusLabel(key, idx) {
   items[idx] = { ...items[idx], label: val };
   setConfig(key, items);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
 }
 
 // ── Servidores EPP management ────────────────────────────────────────────────
@@ -10144,7 +10162,7 @@ function configAddServidor() {
   setConfig('servidoresEPP', srvs);
   nomeInp.value = ''; if(emailInp) emailInp.value = '';
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Servidor adicionado!','success');
 }
 
@@ -10154,7 +10172,7 @@ function configRemoveServidor(idx) {
   srvs.splice(idx, 1);
   setConfig('servidoresEPP', srvs);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('Servidor removido.','success');
 }
 
@@ -10170,7 +10188,7 @@ function configSaveServidor(idx, field, value) {
     const alertasCard = grid.children[1]; // second card is alertas
     if(alertasCard) alertasCard.outerHTML = _renderCfgCardAlertas('📧 Alertas por E-mail','Defina quem recebe cada tipo de alerta automático por e-mail.');
   }
-  saveToCloud();
+  scheduleSave(4000);
 }
 
 // ── Alertas por E-mail management ────────────────────────────────────────────
@@ -10583,68 +10601,28 @@ let _patTipoFilter = '';
 let _patEditIdx = null;
 
 function patCheckDeadlines() {
-  // DATA.pat é array simples (não tem .items)
+  // Alertas visuais apenas para editores e admins
+  if(!isEditor && !isAdmin) return;
+
   const patItems = Array.isArray(DATA.pat) ? DATA.pat : [];
   if(!patItems.length) return;
   const today = new Date(); today.setHours(0,0,0,0);
+  const in1   = new Date(today); in1.setDate(in1.getDate() + 1);
   const in7   = new Date(today); in7.setDate(in7.getDate() + 7);
 
   const overdue = [];
-  const soon    = [];
+  const urgente = []; // vence amanhã (1 dia)
+  const soon    = []; // vence em 2-7 dias
 
   patItems.forEach((item, i) => {
     if(!item.fim || ['concluido','cancelado'].includes(item.status)) return;
     const d = new Date(item.fim + 'T00:00:00');
     if(isNaN(d)) return;
-    if(d < today)  overdue.push({ ...item, idx: i });
-    else if(d <= in7) soon.push({ ...item, idx: i, dias: Math.round((d - today) / 86400000) });
+    const dias = Math.round((d - today) / 86400000);
+    if(d < today)        overdue.push({ ...item, idx: i });
+    else if(d <= in1)    urgente.push({ ...item, idx: i, dias });
+    else if(d <= in7)    soon.push({ ...item, idx: i, dias });
   });
-
-  if(!overdue.length && !soon.length) return;
-
-  // Criar ou atualizar banner de alertas
-  let banner = document.getElementById('pat-deadline-banner');
-  if(!banner) {
-    banner = document.createElement('div');
-    banner.id = 'pat-deadline-banner';
-    banner.style.cssText = 'position:fixed;top:70px;right:16px;z-index:1500;max-width:360px;display:flex;flex-direction:column;gap:8px;';
-    document.body.appendChild(banner);
-  }
-
-  banner.innerHTML = '';
-
-  overdue.forEach(item => {
-    const el = document.createElement('div');
-    el.style.cssText = 'background:#fee2e2;border:1.5px solid #fca5a5;border-radius:12px;padding:12px 14px;box-shadow:0 4px 16px rgba(220,38,38,.15);cursor:pointer;';
-    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
-      <div>
-        <div style="font-size:12px;font-weight:800;color:#dc2626;text-transform:uppercase;letter-spacing:.05em;">⏰ Prazo Estourado</div>
-        <div style="font-size:13px;font-weight:600;color:#991b1b;margin-top:2px;">${item.titulo||'Atividade sem título'}</div>
-        <div style="font-size:11px;color:#b91c1c;margin-top:2px;">Previsto: ${new Date(item.fim+'T00:00:00').toLocaleDateString('pt-BR')} · ${item.responsavel||'sem responsável'}</div>
-      </div>
-      <button onclick="this.closest('#pat-deadline-banner').removeChild(this.closest('div[style]'))" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>
-    </div>`;
-    el.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { showEppModule('pat'); } };
-    banner.appendChild(el);
-  });
-
-  soon.forEach(item => {
-    const el = document.createElement('div');
-    el.style.cssText = 'background:#fef9c3;border:1.5px solid #fde047;border-radius:12px;padding:12px 14px;box-shadow:0 4px 16px rgba(234,179,8,.15);cursor:pointer;';
-    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
-      <div>
-        <div style="font-size:12px;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.05em;">⚠️ Vence em ${item.dias === 0 ? 'hoje' : item.dias + ' dia' + (item.dias > 1 ? 's' : '')}</div>
-        <div style="font-size:13px;font-weight:600;color:#92400e;margin-top:2px;">${item.titulo||'Atividade sem título'}</div>
-        <div style="font-size:11px;color:#a16207;margin-top:2px;">Previsto: ${new Date(item.fim+'T00:00:00').toLocaleDateString('pt-BR')} · ${item.responsavel||'sem responsável'}</div>
-      </div>
-      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#d97706;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>
-    </div>`;
-    el.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { showEppModule('pat'); } };
-    banner.appendChild(el);
-  });
-
-  // Auto-dismiss after 12s
-  setTimeout(() => { if(banner) banner.style.opacity = '0'; setTimeout(() => banner?.remove(), 600); }, 12000);
 
   // ── Auto-marcar itens PAT vencidos como "atrasado" ───────
   let patChanged = false;
@@ -10655,6 +10633,67 @@ function patCheckDeadlines() {
     }
   });
   if(patChanged) { markChanged(); }
+
+  if(!overdue.length && !urgente.length && !soon.length) return;
+
+  // Criar ou atualizar banner de alertas
+  let banner = document.getElementById('pat-deadline-banner');
+  if(!banner) {
+    banner = document.createElement('div');
+    banner.id = 'pat-deadline-banner';
+    banner.style.cssText = 'position:fixed;top:70px;right:16px;z-index:1500;max-width:360px;display:flex;flex-direction:column;gap:8px;';
+    document.body.appendChild(banner);
+  }
+  banner.innerHTML = '';
+
+  overdue.forEach(item => {
+    const el = document.createElement('div');
+    el.style.cssText = 'background:#fee2e2;border:1.5px solid #fca5a5;border-radius:12px;padding:12px 14px;box-shadow:0 4px 16px rgba(220,38,38,.15);cursor:pointer;';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:12px;font-weight:800;color:#dc2626;text-transform:uppercase;letter-spacing:.05em;">⏰ Prazo Estourado — PAT</div>
+        <div style="font-size:13px;font-weight:600;color:#991b1b;margin-top:2px;">${item.titulo||'Atividade sem título'}</div>
+        <div style="font-size:11px;color:#b91c1c;margin-top:2px;">Previsto: ${new Date(item.fim+'T00:00:00').toLocaleDateString('pt-BR')} · ${item.responsavel||'sem responsável'}</div>
+      </div>
+      <button onclick="this.closest('#pat-deadline-banner').removeChild(this.closest('div[style]'))" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>
+    </div>`;
+    el.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { showEppModule('pat'); } };
+    banner.appendChild(el);
+  });
+
+  urgente.forEach(item => {
+    const el = document.createElement('div');
+    el.style.cssText = 'background:#fff7ed;border:2px solid #f97316;border-radius:12px;padding:12px 14px;box-shadow:0 4px 20px rgba(249,115,22,.30);cursor:pointer;animation:pulse-border .8s ease-in-out 3;';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:12px;font-weight:800;color:#ea580c;text-transform:uppercase;letter-spacing:.05em;">🔔 Vence ${item.dias===0?'HOJE':'AMANHÃ'} — PAT</div>
+        <div style="font-size:13px;font-weight:600;color:#9a3412;margin-top:2px;">${item.titulo||'Atividade sem título'}</div>
+        <div style="font-size:11px;color:#c2410c;margin-top:2px;">Previsto: ${new Date(item.fim+'T00:00:00').toLocaleDateString('pt-BR')} · ${item.responsavel||'sem responsável'}</div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#ea580c;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>
+    </div>`;
+    el.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { showEppModule('pat'); } };
+    banner.appendChild(el);
+  });
+
+  soon.forEach(item => {
+    const el = document.createElement('div');
+    el.style.cssText = 'background:#fef9c3;border:1.5px solid #fde047;border-radius:12px;padding:12px 14px;box-shadow:0 4px 16px rgba(234,179,8,.15);cursor:pointer;';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:12px;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.05em;">⚠️ Vence em ${item.dias} dia${item.dias>1?'s':''} — PAT</div>
+        <div style="font-size:13px;font-weight:600;color:#92400e;margin-top:2px;">${item.titulo||'Atividade sem título'}</div>
+        <div style="font-size:11px;color:#a16207;margin-top:2px;">Previsto: ${new Date(item.fim+'T00:00:00').toLocaleDateString('pt-BR')} · ${item.responsavel||'sem responsável'}</div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#d97706;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>
+    </div>`;
+    el.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { showEppModule('pat'); } };
+    banner.appendChild(el);
+  });
+
+  // Auto-dismiss after 15s (urgente fica mais tempo)
+  const delay = urgente.length ? 15000 : 12000;
+  setTimeout(() => { if(banner) banner.style.opacity = '0'; setTimeout(() => banner?.remove(), 600); }, delay);
 }
 
 // ── Verificar prazos do Plano de Ação dos mapeamentos ───────────────────────
@@ -10688,6 +10727,9 @@ function checkActionsDeadlines() {
   });
 
   if(changed) markChanged();
+
+  // Banners de alerta apenas para editores e admins
+  if(!isEditor && !isAdmin) return;
   if(!overdueActs.length && !soonActs.length) return;
 
   // Banner de alertas de plano de ação
@@ -10904,7 +10946,7 @@ function renderPatCards() {
     const linkedPlan = item.tipo === 'Auditoria'
       ? (DATA.audits?.plans||[]).find(p => p.patId === item.id) : null;
     const auditVinc = linkedPlan
-      ? `<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;" onclick="event.stopPropagation();showModule('audit-module');setTimeout(()=>auditOpenPlanModal('${linkedPlan.id}'),200)" title="Abrir plano de auditoria">📋 Auditoria: ${linkedPlan.processoNome||linkedPlan.objetivo||'Ver plano'} · <span style="background:#${AUDIT_STATUS_BG[linkedPlan.status]||'F3F4F6'};color:${AUDIT_STATUS_COL[linkedPlan.status]||'#6B7280'};border-radius:6px;padding:1px 6px;">${AUDIT_STATUS_LABEL[linkedPlan.status]||linkedPlan.status}</span></span>`
+      ? `<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;" onclick="event.stopPropagation();showAuditModule();setTimeout(()=>auditOpenPlan('${linkedPlan.id}'),200)" title="Abrir pasta do plano de auditoria">📋 Auditoria: ${linkedPlan.processoNome||linkedPlan.objetivo||'Ver plano'} · <span style="background:#${AUDIT_STATUS_BG[linkedPlan.status]||'F3F4F6'};color:${AUDIT_STATUS_COL[linkedPlan.status]||'#6B7280'};border-radius:6px;padding:1px 6px;">${AUDIT_STATUS_LABEL[linkedPlan.status]||linkedPlan.status}</span></span>`
       : '';
     return `
     <div class="pat-card">
@@ -11289,8 +11331,9 @@ function sanitizePopData(pd) {
   if(!Array.isArray(pd.roles))      pd.roles      = [];
   if(!Array.isArray(pd.indicators)) pd.indicators = [];
   if(!Array.isArray(pd.revisions))  pd.revisions  = [];
-  if(!pd.meta)   pd.meta   = {};
-  if(!pd.ficha)  pd.ficha  = {};
+  if(!pd.meta)              pd.meta            = {};
+  if(!pd.ficha)             pd.ficha           = {};
+  if(!pd.etapasProgress)    pd.etapasProgress  = {};
   return pd;
 }
 
@@ -11655,7 +11698,6 @@ async function saveToCloud(attempt=1) {
     if(_dirtyPops.size === 0) document.getElementById('unsaved-dot').style.display = 'none';
     showToast('☁️ Dados salvos!', 'success');
     updateLastSaveChip(saved);
-    logHistory('Salvou alterações').catch(e => console.warn('logHistory:', e));
 
   } catch(e) {
     _saveInProgress = false;
@@ -14620,7 +14662,183 @@ function renderFicha(p) {
     }
   } catch(e) { /* arqGetData indisponível */ }
 
-  el.innerHTML = statusBadge + fieldHtml + arqInfoHtml + matBadgeHtml;
+  const _progHtml = _renderFichaProgressHtml(p);
+  el.innerHTML = `<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+    <div style="flex:1;min-width:240px;">${statusBadge}${fieldHtml}${arqInfoHtml}${matBadgeHtml}</div>
+    <div style="min-width:200px;width:240px;border-left:2px solid var(--cage-border);padding-left:20px;">${_progHtml}</div>
+  </div>`;
+}
+
+// ═══ EVOLUÇÃO DO MAPEAMENTO — checklist de fases com cronômetro ════════
+
+const _ETAPAS_MAP = [
+  { id:'entendimento', label:'Entendimento',  optional:false },
+  { id:'desenho',      label:'Desenho',       optional:false },
+  { id:'redesenho',    label:'Redesenho',     optional:false },
+  { id:'planoAcao',    label:'Plano de Ação', optional:true  },
+  { id:'documentacao', label:'Documentação',  optional:false },
+  { id:'revisao',      label:'Revisão',       optional:false },
+  { id:'aprovacao',    label:'Aprovação',     optional:false },
+  { id:'concluido',    label:'Concluído',     optional:false },
+];
+
+function _initEtapas(p) {
+  if(!DATA[p].etapasProgress) DATA[p].etapasProgress = {};
+  _ETAPAS_MAP.forEach(e => {
+    if(!DATA[p].etapasProgress[e.id])
+      DATA[p].etapasProgress[e.id] = { ok:false, na:false, inicio:null, fim:null };
+  });
+  return DATA[p].etapasProgress;
+}
+
+function toggleEtapaMap(p, etapaId) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const ep    = _initEtapas(p);
+  const today = new Date().toISOString().slice(0,10);
+  const ids   = _ETAPAS_MAP.map(e => e.id);
+  const idx   = ids.indexOf(etapaId);
+  const et    = ep[etapaId];
+
+  if(et.ok) {
+    // Desmarcar
+    et.ok  = false;
+    et.fim = null;
+    // Limpar início da próxima fase se ela ainda não foi marcada
+    if(idx < ids.length - 1 && !ep[ids[idx + 1]].ok) ep[ids[idx + 1]].inicio = null;
+  } else {
+    // Marcar
+    et.ok  = true;
+    et.na  = false;
+    et.fim = today;
+    if(!et.inicio) et.inicio = today;
+    // Registrar início automático da próxima fase
+    if(idx < ids.length - 1 && !ep[ids[idx + 1]].inicio)
+      ep[ids[idx + 1]].inicio = today;
+
+    // Efeito especial: Entendimento → status em_andamento + dataInicio
+    if(etapaId === 'entendimento') {
+      if(!DATA[p].meta.dataInicio) DATA[p].meta.dataInicio = today;
+      if(!['concluido','suspenso'].includes(DATA[p].meta.statusMap))
+        DATA[p].meta.statusMap = 'em_andamento';
+    }
+    // Efeito especial: Concluído → status concluido + dataEfetiva
+    if(etapaId === 'concluido') {
+      DATA[p].meta.statusMap = 'concluido';
+      if(!DATA[p].meta.dataEfetiva) DATA[p].meta.dataEfetiva = today;
+    }
+  }
+  markChanged();
+  renderFicha(p);
+}
+
+function toggleEtapaNA(p, etapaId) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const ep = _initEtapas(p);
+  const et = ep[etapaId];
+  if(et.ok) return; // Já marcado como feito — não pode ser N/A
+  et.na = !et.na;
+  et.fim = et.na ? new Date().toISOString().slice(0,10) : null;
+  markChanged();
+  renderFicha(p);
+}
+
+function _renderFichaProgressHtml(p) {
+  const ep    = _initEtapas(p);
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // "Redesenho" só aparece se o tipo de trabalho for "Redesenho" ou "Mapeamento e Redesenho"
+  const tipoTrabalho = (DATA[p]?.meta?.tipo || '').toLowerCase();
+  const tiposComRedesenho = ['redesenho', 'mapeamento e redesenho'];
+  const etapas = _ETAPAS_MAP.filter(e =>
+    e.id !== 'redesenho' || tiposComRedesenho.some(t => tipoTrabalho.includes(t))
+  );
+
+  const total = etapas.length;
+  const done  = etapas.filter(e => ep[e.id]?.ok || ep[e.id]?.na).length;
+  const pct   = total > 0 ? Math.round(done / total * 100) : 0;
+  const barColor = pct === 100 ? '#16a34a' : pct >= 60 ? '#d97706' : '#3b82f6';
+
+  const fmtD = str => {
+    if(!str) return '';
+    try { return new Date(str+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); }
+    catch(e){ return str; }
+  };
+  const diffDays = (a, b) => {
+    if(!a) return null;
+    const dA = new Date(a+'T00:00:00');
+    const dB = b ? new Date(b+'T00:00:00') : today;
+    const d  = Math.round((dB - dA) / 86400000);
+    return d >= 0 ? d : null;
+  };
+
+  const itemsHtml = etapas.map((e, i) => {
+    const st      = ep[e.id] || {};
+    const isDone  = !!st.ok;
+    const isNA    = !!st.na;
+    const durDone = isDone ? diffDays(st.inicio, st.fim) : null;
+    const durAtiv = !isDone && !isNA && st.inicio ? diffDays(st.inicio, null) : null;
+
+    const circleStyle = isDone
+      ? 'width:18px;height:18px;border-radius:50%;background:#16a34a;border:2px solid #16a34a;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;'
+      : isNA
+        ? 'width:18px;height:18px;border-radius:50%;background:#e2e8f0;border:2px solid #cbd5e1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;'
+        : 'width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid #cbd5e1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;';
+
+    const labelStyle = isDone
+      ? 'font-size:12px;font-weight:600;color:#15803d;'
+      : isNA
+        ? 'font-size:12px;font-weight:500;color:#94a3b8;text-decoration:line-through;'
+        : durAtiv !== null
+          ? 'font-size:12px;font-weight:600;color:#1d4ed8;'
+          : 'font-size:12px;font-weight:500;color:var(--text-primary);';
+
+    const checkSvg = isDone
+      ? `<svg width="9" height="9" viewBox="0 0 9 9"><polyline points="1,4.5 3.5,7 8,1.5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+      : '';
+
+    let subParts = [];
+    if(isDone) {
+      if(st.fim) subParts.push(fmtD(st.fim));
+      if(durDone !== null) subParts.push(durDone + (durDone === 1 ? ' dia' : ' dias'));
+    } else if(durAtiv !== null) {
+      subParts.push('⏳ ' + durAtiv + (durAtiv === 1 ? ' dia' : ' dias'));
+    }
+    const subColor = isDone ? '#86efac' : durAtiv !== null ? '#93c5fd' : '#94a3b8';
+    const subHtml  = subParts.length
+      ? `<div style="font-size:10px;color:${subColor};margin-top:1px;">${subParts.join(' · ')}</div>`
+      : '';
+
+    const naBtn = e.optional
+      ? `<button onclick="event.stopPropagation();toggleEtapaNA('${p}','${e.id}')" title="${isNA?'Desfazer N/A':'Não se aplica'}" style="margin-left:4px;background:${isNA?'#ede9fe':'#f1f5f9'};border:1px solid ${isNA?'#a78bfa':'#e2e8f0'};color:${isNA?'#7c3aed':'#94a3b8'};font-size:9px;padding:1px 5px;border-radius:4px;cursor:pointer;font-weight:700;line-height:1.4;">N/A</button>`
+      : '';
+
+    const sep = i < etapas.length - 1 ? 'border-bottom:1px solid var(--cage-border);' : '';
+
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;${sep}">
+      <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}">${checkSvg}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;">
+          <span style="${labelStyle}">${e.label}</span>${naBtn}
+        </div>
+        ${subHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div>
+    <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid var(--cage-border);">Evolução</div>
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+        <span style="font-size:11px;color:var(--text-muted);">Progresso</span>
+        <span style="font-size:14px;font-weight:800;color:${barColor};">${pct}%</span>
+      </div>
+      <div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;">
+        <div style="height:8px;width:${pct}%;background:${barColor};border-radius:6px;transition:width .5s ease;"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:3px;">${done} de ${total} etapas</div>
+    </div>
+    ${itemsHtml}
+  </div>`;
 }
 
 // ═══ GENERIC MODAL HELPERS ════════════════
@@ -19124,7 +19342,8 @@ function _ncNewCatalogItem() {
   _ncFilterCatalog();
 }
 
-let _auditCurrentTab = 'plans';
+let _auditCurrentPlanId    = null;
+let _auditCurrentPlanSubTab = 'exec';
 let _auditEditPlanId = null;
 let _auditEditExecId = null;
 let _auditEditNcId   = null;
@@ -19150,21 +19369,73 @@ function showAuditModule(show=true) {
   hideAllModules();
   auditEnsure();
   document.getElementById('audit-module').style.display = 'block';
-  // Ocultar botões de criação para viewers
-  const editOnlyBtns = document.querySelectorAll('#audit-module .audit-edit-only');
-  editOnlyBtns.forEach(b => b.style.display = isEditor ? '' : 'none');
-  auditTab(_auditCurrentTab);
+  if(_auditCurrentPlanId) {
+    auditOpenPlan(_auditCurrentPlanId, _auditCurrentPlanSubTab);
+  } else {
+    auditShowPlansView();
+  }
 }
 
-function auditTab(tab, el) {
-  _auditCurrentTab = tab;
-  document.querySelectorAll('.audit-tab').forEach(t => t.classList.remove('active'));
+function auditShowPlansView() {
+  _auditCurrentPlanId = null;
+  document.getElementById('audit-view-plans').style.display = 'block';
+  document.getElementById('audit-view-detail').style.display = 'none';
+  const newBtn = document.getElementById('audit-new-btn');
+  if(newBtn) { newBtn.style.display = isEditor ? '' : 'none'; newBtn.textContent = '＋ Novo Plano'; newBtn.onclick = function(){ auditOpenPlanModal(); }; }
+  document.querySelectorAll('#audit-module .audit-edit-only').forEach(b => b.style.display = isEditor ? '' : 'none');
+  auditRenderPlans();
+}
+
+function auditOpenPlan(planId, subTab) {
+  auditEnsure();
+  const plan = DATA.audits.plans.find(p => p.id === planId);
+  if(!plan) { auditShowPlansView(); return; }
+  _auditCurrentPlanId = planId;
+  document.getElementById('audit-view-plans').style.display = 'none';
+  document.getElementById('audit-view-detail').style.display = 'block';
+  document.getElementById('audit-plan-detail-title').textContent = plan.processoNome || plan.objetivo || 'Plano';
+  const newBtn = document.getElementById('audit-new-btn');
+  if(newBtn) newBtn.style.display = 'none';
+  document.querySelectorAll('#audit-module .audit-edit-only').forEach(b => b.style.display = isEditor ? '' : 'none');
+  auditRenderPlanSummary(plan);
+  auditPlanSubTab(subTab || _auditCurrentPlanSubTab || 'exec');
+}
+
+function auditClosePlan() {
+  _auditCurrentPlanId = null;
+  _auditCurrentPlanSubTab = 'exec';
+  _auditNcFilter = '';
+  _auditActFilter = '';
+  auditShowPlansView();
+}
+
+function auditRenderPlanSummary(plan) {
+  const el = document.getElementById('audit-plan-summary');
+  if(!el || !plan) return;
+  const patItem = plan.patId ? (DATA.pat||[]).find(pt => pt.id === plan.patId) : null;
+  const ncCount   = DATA.audits.nonconformities.filter(nc => nc.planId === plan.id).length;
+  const execCount = DATA.audits.executions.filter(e => e.planId === plan.id).length;
+  el.innerHTML = '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">'+
+    _auditBadge(plan.status||'planejada')+
+    (plan.objetivo ? '<span style="font-size:13px;color:#475569;flex:1;min-width:160px;">'+plan.objetivo+'</span>' : '')+
+    '<span style="font-size:12px;color:#64748b;">👤 '+(plan.auditor||'—')+'</span>'+
+    '<span style="font-size:12px;color:#64748b;">📅 '+_fmtDate(plan.dataPrevista)+'</span>'+
+    '<span style="font-size:12px;color:#64748b;">🏢 '+(plan.unidade||'—')+'</span>'+
+    (patItem ? '<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;">📅 PTA: '+patItem.titulo+'</span>' : '')+
+    '<span style="font-size:12px;color:#94a3b8;">▶ '+execCount+' execução(ões)</span>'+
+    '<span style="font-size:12px;color:#94a3b8;">⚠️ '+ncCount+' NC(s)</span>'+
+    (plan.processo ? '<button onclick="auditGoToProcess(\''+plan.processo+'\')" style="background:none;border:none;padding:0;cursor:pointer;font-size:12px;color:#2563eb;text-decoration:underline;font-weight:600;">🔗 Ver mapeamento</button>' : '')+
+  '</div>';
+}
+
+function auditPlanSubTab(tab, el) {
+  _auditCurrentPlanSubTab = tab;
+  document.querySelectorAll('#audit-view-detail .audit-tab').forEach(t => t.classList.remove('active'));
   if(el) el.classList.add('active');
-  else { const found = document.querySelector('.audit-tab[data-tab="'+tab+'"]'); if(found) found.classList.add('active'); }
-  document.querySelectorAll('.audit-tab-panel').forEach(p => p.style.display='none');
+  else { const found = document.querySelector('#audit-view-detail .audit-tab[data-ptab="'+tab+'"]'); if(found) found.classList.add('active'); }
+  document.querySelectorAll('#audit-view-detail .audit-tab-panel').forEach(p => p.style.display='none');
   const panel = document.getElementById('audit-tab-' + tab);
   if(panel) panel.style.display = 'block';
-  if(tab === 'plans')   auditRenderPlans();
   if(tab === 'exec')    auditRenderExec();
   if(tab === 'nc')      auditRenderNc();
   if(tab === 'actions') auditRenderActions();
@@ -19202,15 +19473,9 @@ function auditRenderPlans() {
     const patBadge  = patItem
       ? '<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap;">📅 PTA: '+patItem.titulo+'</span>'
       : '';
-    const procLink = p.processo
-      ? '<button onclick="event.stopPropagation();auditGoToProcess(\''+p.processo+'\')" title="Ver mapeamento do processo" style="background:none;border:none;padding:0;cursor:pointer;font-size:12px;color:#2563eb;text-decoration:underline;font-weight:600;">🔗 Ver mapeamento</button>'
-      : '';
-    return '<div class="audit-card" onclick="auditOpenPlanModal(\''+p.id+'\')">'+
+    return '<div class="audit-card" onclick="auditOpenPlan(\''+p.id+'\')" style="cursor:pointer;" title="Abrir pasta do plano">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
-        '<div style="display:flex;flex-direction:column;gap:2px;">'+
-          '<div class="audit-card-title">📋 '+(p.processoNome||p.processo||'(sem processo)')+'</div>'+
-          (procLink ? '<div>'+procLink+'</div>' : '')+
-        '</div>'+
+        '<div class="audit-card-title">📁 '+(p.processoNome||p.processo||'(sem processo)')+'</div>'+
         _auditBadge(p.status||'planejada')+
       '</div>'+
       (patBadge ? '<div style="margin-bottom:8px;">'+patBadge+'</div>' : '')+
@@ -19226,7 +19491,7 @@ function auditRenderPlans() {
           '<span>▶ '+execCount+' execução(ões)</span>'+
           '<span>⚠️ '+ncCount+' NC(s)</span>'+
         '</div>'+
-        '<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;color:#1e40af;border-color:#bfdbfe;" onclick="event.stopPropagation();auditExportRelatorioWord(\''+p.id+'\')">📄 Relatório Word</button>'+
+        '<span style="font-size:11px;color:#2563eb;font-weight:600;">Abrir pasta →</span>'+
       '</div></div>';
   }).join('');
 }
@@ -19332,17 +19597,19 @@ function auditSavePlan() {
     }
   }
   auditClosePlanModal();
-  auditRenderPlans();
   saveToCloud();
   showToast('✅ Plano salvo!', 'success');
+  auditOpenPlan(plan.id);
 }
 function auditDeletePlan() {
   if(!isEditor) { showToast('🔒 Apenas editores podem excluir planos.','warn'); return; }
   const p = DATA.audits.plans.find(x=>x.id===_auditEditPlanId);
   if(!confirm('Excluir o plano "'+(p?.processoNome||p?.objetivo)+'"?')) return;
   DATA.audits.plans = DATA.audits.plans.filter(x=>x.id!==_auditEditPlanId);
-  auditClosePlanModal(); auditRenderPlans(); saveToCloud();
+  auditClosePlanModal();
+  saveToCloud();
   showToast('🗑 Plano excluído.', 'success');
+  auditShowPlansView();
 }
 
 // ── EXECUÇÃO / CHECKLIST ────────────────────────────────────────
@@ -19352,7 +19619,8 @@ function auditRenderExec() {
   auditEnsure();
   const list = document.getElementById('audit-exec-list');
   const empty = document.getElementById('audit-exec-empty');
-  const execs = DATA.audits.executions;
+  let execs = DATA.audits.executions;
+  if(_auditCurrentPlanId) execs = execs.filter(e => e.planId === _auditCurrentPlanId);
   if(!execs.length) { list.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
   list.innerHTML = execs.map(e => {
@@ -19382,8 +19650,9 @@ function auditOpenExecModal(id) {
   _auditEditExecId = id || null;
   const exec = id ? DATA.audits.executions.find(e=>e.id===id) : null;
   const planSel = document.getElementById('ae-plan');
+  const _execPreselect = exec?.planId || (!id && _auditCurrentPlanId) || '';
   planSel.innerHTML = '<option value="">— Selecione o plano —</option>' +
-    DATA.audits.plans.map(p=>'<option value="'+p.id+'"'+(exec?.planId===p.id?' selected':'')+'>'+( p.processoNome||p.objetivo)+'</option>').join('');
+    DATA.audits.plans.map(p=>'<option value="'+p.id+'"'+(_execPreselect===p.id?' selected':'')+'>'+( p.processoNome||p.objetivo)+'</option>').join('');
   document.getElementById('ae-data').value    = exec?.dataExecucao || '';
   document.getElementById('ae-status').value  = exec?.status       || 'em_andamento';
   document.getElementById('ae-obs').value     = exec?.observacoes  || '';
@@ -19594,6 +19863,7 @@ function auditRenderNc() {
   const list = document.getElementById('audit-nc-list');
   const empty = document.getElementById('audit-nc-empty');
   let ncs = DATA.audits.nonconformities;
+  if(_auditCurrentPlanId) ncs = ncs.filter(nc => nc.planId === _auditCurrentPlanId);
   if(_auditNcFilter) ncs = ncs.filter(nc=>nc.gravidade===_auditNcFilter);
   if(!ncs.length) { list.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
@@ -19622,7 +19892,7 @@ function auditRenderNc() {
 
 function auditFilterNc(g, el) {
   _auditNcFilter = g;
-  document.querySelectorAll('.audit-nc-filter').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#audit-tab-nc .audit-nc-filter').forEach(b=>b.classList.remove('active'));
   if(el) el.classList.add('active');
   auditRenderNc();
 }
@@ -19641,8 +19911,9 @@ function auditOpenNcModal(id) {
   _ncRenderRecs();
   // Plan select — popula e dispara auditNcPlanChange para pré-preencher processo e etapas
   const planSel = document.getElementById('nc-plan');
+  const _ncPreselect = nc?.planId || (!id && _auditCurrentPlanId) || '';
   planSel.innerHTML = '<option value="">— Sem vínculo —</option>' +
-    DATA.audits.plans.map(p=>'<option value="'+p.id+'"'+(nc?.planId===p.id?' selected':'')+'>'+( p.processoNome||p.objetivo)+'</option>').join('');
+    DATA.audits.plans.map(p=>'<option value="'+p.id+'"'+(_ncPreselect===p.id?' selected':'')+'>'+( p.processoNome||p.objetivo)+'</option>').join('');
   auditNcPlanChange(); // preenche nc-processo e nc-etapa options a partir do plano selecionado
   // Restaura valores salvos (sobrepõe o pré-preenchimento se NC já existe)
   if(nc) {
@@ -19684,6 +19955,7 @@ function auditSaveNc() {
     if(i>=0) DATA.audits.nonconformities[i]=nc; else DATA.audits.nonconformities.push(nc);
   } else { DATA.audits.nonconformities.push(nc); }
   auditCloseNcModal(); auditRenderNc(); saveToCloud();
+  if(_auditCurrentPlanId) auditRenderPlanSummary(DATA.audits.plans.find(p=>p.id===_auditCurrentPlanId));
   showToast('✅ NC registrada!', 'success');
 }
 function auditDeleteNc() {
@@ -19691,6 +19963,7 @@ function auditDeleteNc() {
   if(!confirm('Excluir esta não conformidade?')) return;
   DATA.audits.nonconformities = DATA.audits.nonconformities.filter(n=>n.id!==_auditEditNcId);
   auditCloseNcModal(); auditRenderNc(); saveToCloud();
+  if(_auditCurrentPlanId) auditRenderPlanSummary(DATA.audits.plans.find(p=>p.id===_auditCurrentPlanId));
   showToast('🗑 NC excluída.', 'success');
 }
 
@@ -19700,6 +19973,10 @@ function auditRenderActions() {
   const list = document.getElementById('audit-actions-list');
   const empty = document.getElementById('audit-actions-empty');
   let acts = DATA.audits.actions;
+  if(_auditCurrentPlanId) {
+    const planNcIds = DATA.audits.nonconformities.filter(nc=>nc.planId===_auditCurrentPlanId).map(nc=>nc.id);
+    acts = acts.filter(a => planNcIds.includes(a.ncId));
+  }
   if(_auditActFilter) acts = acts.filter(a=>a.status===_auditActFilter);
   if(!acts.length) { list.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
@@ -19723,7 +20000,7 @@ function auditRenderActions() {
 
 function auditFilterAction(s, el) {
   _auditActFilter = s;
-  document.querySelectorAll('#audit-tab-actions .audit-nc-filter').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#audit-tab-actions .audit-nc-filter').forEach(b => b.classList.remove('active'));
   if(el) el.classList.add('active');
   auditRenderActions();
 }
@@ -19734,8 +20011,11 @@ function auditOpenActionModal(id) {
   _auditEditActId = id||null;
   const ac = id ? DATA.audits.actions.find(a=>a.id===id) : null;
   const ncSel = document.getElementById('ac-nc');
+  const _acNcPool = _auditCurrentPlanId
+    ? DATA.audits.nonconformities.filter(nc => nc.planId === _auditCurrentPlanId)
+    : DATA.audits.nonconformities;
   ncSel.innerHTML = '<option value="">— Sem vínculo —</option>' +
-    DATA.audits.nonconformities.map(nc=>'<option value="'+nc.id+'"'+(ac?.ncId===nc.id?' selected':'')+'>'+(nc.processo||'NC')+' — '+((nc.descricao||'').substring(0,50))+'</option>').join('');
+    _acNcPool.map(nc=>'<option value="'+nc.id+'"'+(ac?.ncId===nc.id?' selected':'')+'>'+(nc.processo||'NC')+' — '+((nc.descricao||'').substring(0,50))+'</option>').join('');
   document.getElementById('ac-acao').value       = ac?.acao        || '';
   document.getElementById('ac-responsavel').value= ac?.responsavel || '';
   document.getElementById('ac-prazo').value      = ac?.prazo       || '';
@@ -19797,15 +20077,22 @@ function auditRenderTrail() {
   const empty = document.getElementById('audit-trail-empty');
   if(!list) return;
 
-  // Coletar todos os eventos cronológicos
+  // Coletar eventos cronológicos — filtrados pelo plano atual se houver
   const events = [];
-  (DATA.audits.plans||[]).forEach(p => {
+  const _tPid = _auditCurrentPlanId;
+  const _tPlans = _tPid ? (DATA.audits.plans||[]).filter(p=>p.id===_tPid) : (DATA.audits.plans||[]);
+  const _tExecs = _tPid ? (DATA.audits.executions||[]).filter(e=>e.planId===_tPid) : (DATA.audits.executions||[]);
+  const _tNcs   = _tPid ? (DATA.audits.nonconformities||[]).filter(nc=>nc.planId===_tPid) : (DATA.audits.nonconformities||[]);
+  const _tNcIds = _tNcs.map(nc=>nc.id);
+  const _tActs  = _tPid ? (DATA.audits.actions||[]).filter(a=>_tNcIds.includes(a.ncId)) : (DATA.audits.actions||[]);
+
+  _tPlans.forEach(p => {
     events.push({ ts: p.criadoEm, type:'plan', icon:'📋', color:'#0a2540',
       title:'Plano criado: ' + (p.processoNome||p.objetivo||'Plano'),
       detail: (p.auditor ? '👤 ' + p.auditor : '') + (p.dataPrevista ? ' · 📅 ' + _fmtDate(p.dataPrevista) : ''),
       badge: p.status, badgeClass: p.status });
   });
-  (DATA.audits.executions||[]).forEach(e => {
+  _tExecs.forEach(e => {
     const plan = (DATA.audits.plans||[]).find(p=>p.id===e.planId);
     const conf = (e.checklist||[]).filter(c=>c.conformidade==='conforme').length;
     const nc   = (e.checklist||[]).filter(c=>c.conformidade==='nao_conforme').length;
@@ -19815,7 +20102,7 @@ function auditRenderTrail() {
       detail: `✅ ${conf}/${tot} conformes` + (nc ? ` · ⚠️ ${nc} NC(s)` : '') + (e.dataExecucao ? ' · ' + _fmtDate(e.dataExecucao) : ''),
       badge: e.status, badgeClass: e.status });
   });
-  (DATA.audits.nonconformities||[]).forEach(nc => {
+  _tNcs.forEach(nc => {
     const GR = { leve:'#ca8a04', moderada:'#ea580c', critica:'#dc2626' };
     events.push({ ts: nc.criadoEm, type:'nc', icon:'⚠️', color: GR[nc.gravidade]||'#ea580c',
       title:'NC registrada: ' + (nc.processo||nc.etapa||'Não Conformidade'),
@@ -19823,7 +20110,7 @@ function auditRenderTrail() {
               (nc.descricao ? ' · ' + nc.descricao.substring(0,100) + (nc.descricao.length>100?'…':'') : ''),
       badge: nc.status, badgeClass: nc.status });
   });
-  (DATA.audits.actions||[]).forEach(a => {
+  _tActs.forEach(a => {
     const overdue = a.prazo && a.status!=='concluida' && a.status!=='cancelada' && new Date(a.prazo+'T23:59:59') < new Date();
     events.push({ ts: a.criadoEm, type:'action', icon:'✅', color: overdue ? '#dc2626' : '#15803d',
       title:'Ação: ' + (a.acao||'').substring(0,80),
@@ -19866,8 +20153,9 @@ function auditRenderHeatmap() {
   const empty = document.getElementById('audit-heatmap-empty');
   if(!body) return;
 
-  // Agrupa NCs por processo e etapa
-  const ncs = DATA.audits.nonconformities || [];
+  // Agrupa NCs por processo e etapa — filtradas pelo plano atual
+  let ncs = DATA.audits.nonconformities || [];
+  if(_auditCurrentPlanId) ncs = ncs.filter(nc => nc.planId === _auditCurrentPlanId);
   if(!ncs.length) { body.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
 
