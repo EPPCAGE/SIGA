@@ -14746,8 +14746,15 @@ function _renderFichaProgressHtml(p) {
   const ep    = _initEtapas(p);
   const today = new Date(); today.setHours(0,0,0,0);
 
-  const total = _ETAPAS_MAP.length;
-  const done  = _ETAPAS_MAP.filter(e => ep[e.id]?.ok || ep[e.id]?.na).length;
+  // "Redesenho" só aparece se o tipo de trabalho for "Redesenho" ou "Mapeamento e Redesenho"
+  const tipoTrabalho = (DATA[p]?.meta?.tipo || '').toLowerCase();
+  const tiposComRedesenho = ['redesenho', 'mapeamento e redesenho'];
+  const etapas = _ETAPAS_MAP.filter(e =>
+    e.id !== 'redesenho' || tiposComRedesenho.some(t => tipoTrabalho.includes(t))
+  );
+
+  const total = etapas.length;
+  const done  = etapas.filter(e => ep[e.id]?.ok || ep[e.id]?.na).length;
   const pct   = total > 0 ? Math.round(done / total * 100) : 0;
   const barColor = pct === 100 ? '#16a34a' : pct >= 60 ? '#d97706' : '#3b82f6';
 
@@ -14764,7 +14771,7 @@ function _renderFichaProgressHtml(p) {
     return d >= 0 ? d : null;
   };
 
-  const itemsHtml = _ETAPAS_MAP.map((e, i) => {
+  const itemsHtml = etapas.map((e, i) => {
     const st      = ep[e.id] || {};
     const isDone  = !!st.ok;
     const isNA    = !!st.na;
@@ -14805,7 +14812,7 @@ function _renderFichaProgressHtml(p) {
       ? `<button onclick="event.stopPropagation();toggleEtapaNA('${p}','${e.id}')" title="${isNA?'Desfazer N/A':'Não se aplica'}" style="margin-left:4px;background:${isNA?'#ede9fe':'#f1f5f9'};border:1px solid ${isNA?'#a78bfa':'#e2e8f0'};color:${isNA?'#7c3aed':'#94a3b8'};font-size:9px;padding:1px 5px;border-radius:4px;cursor:pointer;font-weight:700;line-height:1.4;">N/A</button>`
       : '';
 
-    const sep = i < _ETAPAS_MAP.length - 1 ? 'border-bottom:1px solid var(--cage-border);' : '';
+    const sep = i < etapas.length - 1 ? 'border-bottom:1px solid var(--cage-border);' : '';
 
     return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;${sep}">
       <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}">${checkSvg}</div>
