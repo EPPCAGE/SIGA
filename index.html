@@ -40,6 +40,9 @@
   /* EDIT MODE */
   body.edit-mode .header{background:#7c3a00;}
   body.edit-mode .nav-tabs{background:#7c3a00;}
+  /* Cockpit: esconder barra de processo e tabs com !important para resistir a qualquer re-render do JS */
+  body.cockpit-active .nav-tabs,
+  body.cockpit-active #pop-switcher-bar { display:none!important; }
   body.edit-mode .edit-bar{display:flex;}
   body.edit-mode .edit-toggle{background:var(--edit-color);color:#7c3a00;}
   body.edit-mode [contenteditable="true"]{outline:2px dashed var(--edit-border);border-radius:4px;padding:2px 4px;cursor:text;transition:all .15s;}
@@ -9072,13 +9075,17 @@ function applySidebarNav() {
   const container = document.getElementById('sidebar-nav-btns');
   if(!container) return;
   const order = getConfig('modulosOrdem');
-  if(!Array.isArray(order) || order.length === 0) return;
-  order.forEach(({key, visible}) => {
-    const btn = container.querySelector(`[data-mod="${key}"]`);
-    if(!btn) return;
-    btn.style.display = visible === false ? 'none' : '';
-    container.appendChild(btn);
-  });
+  if(Array.isArray(order) && order.length > 0) {
+    order.forEach(({key, visible}) => {
+      const btn = container.querySelector(`[data-mod="${key}"]`);
+      if(!btn) return;
+      btn.style.display = visible === false ? 'none' : '';
+      container.appendChild(btn);
+    });
+  }
+  // Cockpit sempre no final, independente de qualquer config salva
+  const cockpit = container.querySelector('[data-mod="cockpit"]');
+  if(cockpit) container.appendChild(cockpit);
   applySidebarBtnColors();
 }
 
@@ -10982,6 +10989,7 @@ function hideAllModules() {
   const sw  = document.getElementById('pop-switcher-bar');
   if(nav) nav.style.display = 'none';
   if(sw)  sw.style.display  = 'none';
+  document.body.classList.remove('cockpit-active'); // remove proteção CSS quando sai do cockpit
 }
 
 const ADMIN_EMAIL = 'f.ctourinho@gmail.com';
@@ -16458,6 +16466,7 @@ function renderPopsGrid() {
 
 function popDeleteWork(key) {
   if(!confirm('Excluir este mapeamento? Esta ação não pode ser desfeita.')) return;
+  _dirtyPops.add(key); // impede o fetch-merge de restaurar este POP do servidor
   delete DATA[key];
   saveToCloud();
   showToast('Mapeamento excluído.', 'success');
@@ -17628,6 +17637,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function deleteMapeamento(key) {
   const name = DATA[key]?.meta?.name || key;
   if(!confirm(`Excluir o mapeamento "${name}"?\nEssa ação não pode ser desfeita.`)) return;
+  _dirtyPops.add(key); // impede o fetch-merge de restaurar este POP do servidor
   delete DATA[key];
   // Remove pop-content DOM element
   const domIdMap = { d: 'pop-denuncias', r: 'pop-representacoes' };
@@ -20484,8 +20494,12 @@ function statusModalAutoFill() {
   let _donutChart = null;
 
   window.showCockpitModule = function() {
-    hideAllModules();
-    if (typeof hideHome === 'function') hideHome();
+    hideAllModules(); // já oculta nav-tabs e pop-switcher-bar
+    // Ocultar home-page diretamente — NÃO chamar hideHome() porque ela
+    // re-exibe nav-tabs e pop-switcher-bar (a barra "PROCESSO: Tratar Denúncias")
+    const home = document.getElementById('home-page');
+    if (home) home.style.display = 'none';
+    document.body.classList.add('cockpit-active'); // CSS !important esconde nav-tabs e pop-switcher-bar permanentemente
     document.getElementById('cockpit-module').style.display = 'block';
     _renderCockpit();
   };
