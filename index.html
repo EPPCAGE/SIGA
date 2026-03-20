@@ -5735,6 +5735,7 @@ function sanitizePop(p) {
   if(!d.versionNum)                d.versionNum = 1;
   if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
   if(!Array.isArray(d.checklists))     d.checklists = [];
+  if(!d.etapasProgress)                d.etapasProgress = {};
   if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
   if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
   if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
@@ -11330,8 +11331,9 @@ function sanitizePopData(pd) {
   if(!Array.isArray(pd.roles))      pd.roles      = [];
   if(!Array.isArray(pd.indicators)) pd.indicators = [];
   if(!Array.isArray(pd.revisions))  pd.revisions  = [];
-  if(!pd.meta)   pd.meta   = {};
-  if(!pd.ficha)  pd.ficha  = {};
+  if(!pd.meta)              pd.meta            = {};
+  if(!pd.ficha)             pd.ficha           = {};
+  if(!pd.etapasProgress)    pd.etapasProgress  = {};
   return pd;
 }
 
@@ -14660,7 +14662,176 @@ function renderFicha(p) {
     }
   } catch(e) { /* arqGetData indisponível */ }
 
-  el.innerHTML = statusBadge + fieldHtml + arqInfoHtml + matBadgeHtml;
+  const _progHtml = _renderFichaProgressHtml(p);
+  el.innerHTML = `<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
+    <div style="flex:1;min-width:240px;">${statusBadge}${fieldHtml}${arqInfoHtml}${matBadgeHtml}</div>
+    <div style="min-width:200px;width:240px;border-left:2px solid var(--cage-border);padding-left:20px;">${_progHtml}</div>
+  </div>`;
+}
+
+// ═══ EVOLUÇÃO DO MAPEAMENTO — checklist de fases com cronômetro ════════
+
+const _ETAPAS_MAP = [
+  { id:'entendimento', label:'Entendimento',  optional:false },
+  { id:'desenho',      label:'Desenho',       optional:false },
+  { id:'redesenho',    label:'Redesenho',     optional:false },
+  { id:'planoAcao',    label:'Plano de Ação', optional:true  },
+  { id:'documentacao', label:'Documentação',  optional:false },
+  { id:'revisao',      label:'Revisão',       optional:false },
+  { id:'aprovacao',    label:'Aprovação',     optional:false },
+  { id:'concluido',    label:'Concluído',     optional:false },
+];
+
+function _initEtapas(p) {
+  if(!DATA[p].etapasProgress) DATA[p].etapasProgress = {};
+  _ETAPAS_MAP.forEach(e => {
+    if(!DATA[p].etapasProgress[e.id])
+      DATA[p].etapasProgress[e.id] = { ok:false, na:false, inicio:null, fim:null };
+  });
+  return DATA[p].etapasProgress;
+}
+
+function toggleEtapaMap(p, etapaId) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const ep    = _initEtapas(p);
+  const today = new Date().toISOString().slice(0,10);
+  const ids   = _ETAPAS_MAP.map(e => e.id);
+  const idx   = ids.indexOf(etapaId);
+  const et    = ep[etapaId];
+
+  if(et.ok) {
+    // Desmarcar
+    et.ok  = false;
+    et.fim = null;
+    // Limpar início da próxima fase se ela ainda não foi marcada
+    if(idx < ids.length - 1 && !ep[ids[idx + 1]].ok) ep[ids[idx + 1]].inicio = null;
+  } else {
+    // Marcar
+    et.ok  = true;
+    et.na  = false;
+    et.fim = today;
+    if(!et.inicio) et.inicio = today;
+    // Registrar início automático da próxima fase
+    if(idx < ids.length - 1 && !ep[ids[idx + 1]].inicio)
+      ep[ids[idx + 1]].inicio = today;
+
+    // Efeito especial: Entendimento → status em_andamento + dataInicio
+    if(etapaId === 'entendimento') {
+      if(!DATA[p].meta.dataInicio) DATA[p].meta.dataInicio = today;
+      if(!['concluido','suspenso'].includes(DATA[p].meta.statusMap))
+        DATA[p].meta.statusMap = 'em_andamento';
+    }
+    // Efeito especial: Concluído → status concluido + dataEfetiva
+    if(etapaId === 'concluido') {
+      DATA[p].meta.statusMap = 'concluido';
+      if(!DATA[p].meta.dataEfetiva) DATA[p].meta.dataEfetiva = today;
+    }
+  }
+  markChanged();
+  renderFicha(p);
+}
+
+function toggleEtapaNA(p, etapaId) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const ep = _initEtapas(p);
+  const et = ep[etapaId];
+  if(et.ok) return; // Já marcado como feito — não pode ser N/A
+  et.na = !et.na;
+  et.fim = et.na ? new Date().toISOString().slice(0,10) : null;
+  markChanged();
+  renderFicha(p);
+}
+
+function _renderFichaProgressHtml(p) {
+  const ep    = _initEtapas(p);
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const total = _ETAPAS_MAP.length;
+  const done  = _ETAPAS_MAP.filter(e => ep[e.id]?.ok || ep[e.id]?.na).length;
+  const pct   = total > 0 ? Math.round(done / total * 100) : 0;
+  const barColor = pct === 100 ? '#16a34a' : pct >= 60 ? '#d97706' : '#3b82f6';
+
+  const fmtD = str => {
+    if(!str) return '';
+    try { return new Date(str+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); }
+    catch(e){ return str; }
+  };
+  const diffDays = (a, b) => {
+    if(!a) return null;
+    const dA = new Date(a+'T00:00:00');
+    const dB = b ? new Date(b+'T00:00:00') : today;
+    const d  = Math.round((dB - dA) / 86400000);
+    return d >= 0 ? d : null;
+  };
+
+  const itemsHtml = _ETAPAS_MAP.map((e, i) => {
+    const st      = ep[e.id] || {};
+    const isDone  = !!st.ok;
+    const isNA    = !!st.na;
+    const durDone = isDone ? diffDays(st.inicio, st.fim) : null;
+    const durAtiv = !isDone && !isNA && st.inicio ? diffDays(st.inicio, null) : null;
+
+    const circleStyle = isDone
+      ? 'width:18px;height:18px;border-radius:50%;background:#16a34a;border:2px solid #16a34a;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;'
+      : isNA
+        ? 'width:18px;height:18px;border-radius:50%;background:#e2e8f0;border:2px solid #cbd5e1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;'
+        : 'width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid #cbd5e1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;';
+
+    const labelStyle = isDone
+      ? 'font-size:12px;font-weight:600;color:#15803d;'
+      : isNA
+        ? 'font-size:12px;font-weight:500;color:#94a3b8;text-decoration:line-through;'
+        : durAtiv !== null
+          ? 'font-size:12px;font-weight:600;color:#1d4ed8;'
+          : 'font-size:12px;font-weight:500;color:var(--text-primary);';
+
+    const checkSvg = isDone
+      ? `<svg width="9" height="9" viewBox="0 0 9 9"><polyline points="1,4.5 3.5,7 8,1.5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+      : '';
+
+    let subParts = [];
+    if(isDone) {
+      if(st.fim) subParts.push(fmtD(st.fim));
+      if(durDone !== null) subParts.push(durDone + (durDone === 1 ? ' dia' : ' dias'));
+    } else if(durAtiv !== null) {
+      subParts.push('⏳ ' + durAtiv + (durAtiv === 1 ? ' dia' : ' dias'));
+    }
+    const subColor = isDone ? '#86efac' : durAtiv !== null ? '#93c5fd' : '#94a3b8';
+    const subHtml  = subParts.length
+      ? `<div style="font-size:10px;color:${subColor};margin-top:1px;">${subParts.join(' · ')}</div>`
+      : '';
+
+    const naBtn = e.optional
+      ? `<button onclick="event.stopPropagation();toggleEtapaNA('${p}','${e.id}')" title="${isNA?'Desfazer N/A':'Não se aplica'}" style="margin-left:4px;background:${isNA?'#ede9fe':'#f1f5f9'};border:1px solid ${isNA?'#a78bfa':'#e2e8f0'};color:${isNA?'#7c3aed':'#94a3b8'};font-size:9px;padding:1px 5px;border-radius:4px;cursor:pointer;font-weight:700;line-height:1.4;">N/A</button>`
+      : '';
+
+    const sep = i < _ETAPAS_MAP.length - 1 ? 'border-bottom:1px solid var(--cage-border);' : '';
+
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;${sep}">
+      <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}">${checkSvg}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;">
+          <span style="${labelStyle}">${e.label}</span>${naBtn}
+        </div>
+        ${subHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div>
+    <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid var(--cage-border);">Evolução</div>
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+        <span style="font-size:11px;color:var(--text-muted);">Progresso</span>
+        <span style="font-size:14px;font-weight:800;color:${barColor};">${pct}%</span>
+      </div>
+      <div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;">
+        <div style="height:8px;width:${pct}%;background:${barColor};border-radius:6px;transition:width .5s ease;"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:3px;">${done} de ${total} etapas</div>
+    </div>
+    ${itemsHtml}
+  </div>`;
 }
 
 // ═══ GENERIC MODAL HELPERS ════════════════
