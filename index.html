@@ -11396,7 +11396,7 @@ async function saveToCloud(attempt=1) {
           // Outro usuário pode ter alterado este POP — usar versão do servidor
           DATA[key] = pd;
           try { sanitizePop(key); } catch(e) {}
-          try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', false); } catch(e) {}
+          try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) {}
         });
       }
     } catch(e) {
@@ -18319,7 +18319,7 @@ function _silentlyMergeNewPops(serverData) {
     if (!key || !key.startsWith('pop_') || DATA[key] || !pd || typeof pd !== 'object') return;
     DATA[key] = pd;
     try { sanitizePop(key); } catch(e) {}
-    try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', false); } catch(e) {}
+    try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) {}
     merged++;
   });
   if (merged > 0) console.log('[mergeNewPops] ' + merged + ' POP(s) mesclado(s) silenciosamente do servidor');
