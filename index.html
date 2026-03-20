@@ -40,6 +40,9 @@
   /* EDIT MODE */
   body.edit-mode .header{background:#7c3a00;}
   body.edit-mode .nav-tabs{background:#7c3a00;}
+  /* Cockpit: esconder barra de processo e tabs com !important para resistir a qualquer re-render do JS */
+  body.cockpit-active .nav-tabs,
+  body.cockpit-active #pop-switcher-bar { display:none!important; }
   body.edit-mode .edit-bar{display:flex;}
   body.edit-mode .edit-toggle{background:var(--edit-color);color:#7c3a00;}
   body.edit-mode [contenteditable="true"]{outline:2px dashed var(--edit-border);border-radius:4px;padding:2px 4px;cursor:text;transition:all .15s;}
@@ -10986,6 +10989,7 @@ function hideAllModules() {
   const sw  = document.getElementById('pop-switcher-bar');
   if(nav) nav.style.display = 'none';
   if(sw)  sw.style.display  = 'none';
+  document.body.classList.remove('cockpit-active'); // remove proteção CSS quando sai do cockpit
 }
 
 const ADMIN_EMAIL = 'f.ctourinho@gmail.com';
@@ -20495,6 +20499,7 @@ function statusModalAutoFill() {
     // re-exibe nav-tabs e pop-switcher-bar (a barra "PROCESSO: Tratar Denúncias")
     const home = document.getElementById('home-page');
     if (home) home.style.display = 'none';
+    document.body.classList.add('cockpit-active'); // CSS !important esconde nav-tabs e pop-switcher-bar permanentemente
     document.getElementById('cockpit-module').style.display = 'block';
     _renderCockpit();
   };
