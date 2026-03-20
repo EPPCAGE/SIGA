@@ -119,8 +119,6 @@
   .pop-tab{padding:7px 18px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.55);transition:all .2s;border:1.5px solid transparent;white-space:nowrap;margin-right:6px;}
   .pop-tab:hover{color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.2);}
   .pop-tab.active{color:white;border-color:var(--pop-color);background:rgba(255,255,255,.08);}
-  .pop-tab.pop-denuncias.active{--pop-color:#00a86b;}
-  .pop-tab.pop-representacoes.active{--pop-color:#60a5fa;}
   .pop-tab.pop-novo.active{--pop-color:#f59e0b;}
   .pop-tab.pop-novo{color:rgba(255,255,255,.7);}
 
@@ -2326,760 +2324,6 @@
 
 
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- POP 1: DENÚNCIAS -->
-<!-- ═══════════════════════════════════════════ -->
-<div id="pop-denuncias" class="pop-content active">
-
-  <!-- VISÃO GERAL -->
-  <section id="d-visao-geral" class="section active">
-    <div class="pop-banner denuncias fade-up">
-      <div class="pop-banner-icon">📋</div>
-      <div>
-        <div class="pop-banner-title">Tratar Denúncias</div>
-        <div class="pop-banner-sub">Macroprocesso: Promoção da Integridade e Prevenção à Corrupção · Processo: Tratar Denúncias e Representações</div>
-      </div>
-      <div class="pop-banner-meta">
-        <span class="badge badge-green" id="d-rev-badge">Rev. 0 · Mar/2026</span>
-        <div class="version-badge-wrap" style="margin-top:4px;">
-          <span class="ver-badge" id="d-ver-badge" onclick="openVersionSelector('d',this)">v1</span>
-        </div>
-      </div>
-    </div>
-    <div class="overview-grid fade-up delay-1" id="d-overview-grid">
-      <div class="metric-card green"><div class="metric-icon">📊</div>
-        <span class="metric-value" contenteditable="false" id="d-metric-vol-pre" oninput="calcHorasEcon('d');markChanged()">—</span>
-        <span class="metric-label">Vol. Mensal Pré</span></div>
-      <div class="metric-card blue"><div class="metric-icon">📉</div>
-        <span class="metric-value" contenteditable="false" id="d-metric-vol-pos" oninput="calcHorasEcon('d');markChanged()">—</span>
-        <span class="metric-label">Vol. Mensal Pós</span></div>
-      <div class="metric-card gold"><div class="metric-icon">⏱</div>
-        <span class="metric-value" contenteditable="false" id="d-metric-ciclo-pre" oninput="calcHorasEcon('d');markChanged()">—</span>
-        <span class="metric-label">Ciclo Pré (h)</span></div>
-      <div class="metric-card red"><div class="metric-icon">⚡</div>
-        <span class="metric-value" contenteditable="false" id="d-metric-ciclo-pos" oninput="calcHorasEcon('d');markChanged()">—</span>
-        <span class="metric-label">Ciclo Pós (h)</span></div>
-      <div class="metric-card teal"><div class="metric-icon">💡</div>
-        <span class="metric-value" id="d-metric-horas" style="font-size:22px;">—</span>
-        <span class="metric-label">Horas Economizadas</span></div>
-    </div>
-    <div id="d-ficha-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
-      <div class="card-header"><span class="card-title">📋 Ficha Técnica</span><button class="btn btn-outline" onclick="openStatusModal('d')" style="font-size:11px;padding:4px 10px;margin-left:auto;" id="d-ficha-edit-btn">✏️ Editar</button></div>
-      <div class="card-body" id="d-ficha-body" style="padding:16px;"></div>
-    </div>
-    <div id="d-flow-preview-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
-      <div class="card-header">
-        <span class="card-title">🔀 Diagrama de Fluxo</span>
-        <button class="btn btn-outline" onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="font-size:11px;padding:4px 10px;margin-left:auto;">✏️ Editar</button>
-      </div>
-      <div id="d-flow-preview-body" style="padding:12px 16px;overflow-x:auto;background:#f8fafc;border-radius:0 0 12px 12px;text-align:center;"></div>
-    </div>
-    <div class="two-col fade-up delay-1">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Objetivo</span></div>
-        <div class="card-body">
-          <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:12px;" contenteditable="false" data-key="d:obj">O subprocesso <strong>Tratar Denúncias</strong> tem como objetivo realizar o <strong>recebimento, tratamento, apuração e comunicação de resultados</strong> de denúncias pela CAGE.</p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-            <div style="background:var(--cage-light);border-radius:8px;padding:10px 14px;font-size:12px;">
-              <div style="color:var(--text-muted);margin-bottom:2px;">Entrada</div>
-              <div style="font-weight:600;color:var(--cage-blue);" contenteditable="false" data-key="d:entrada_resumo">Denúncia por FalaBR, e-mail ou presencialmente</div>
-            </div>
-            <div style="background:var(--cage-light);border-radius:8px;padding:10px 14px;font-size:12px;">
-              <div style="color:var(--text-muted);margin-bottom:2px;">Saída</div>
-              <div style="font-weight:600;color:var(--cage-blue);" contenteditable="false" data-key="d:saida_resumo">Denúncia tratada e comunicação de resultados</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Siglas</span><button class="edit-add-btn" onclick="addSigla('d-sigla-grid')">+ Sigla</button></div>
-        <div class="card-body" style="padding:16px;"><div class="sigla-grid" id="d-sigla-grid">
-          <div class="sigla-item"><div class="sigla-abbr" contenteditable="false" data-key="d:s1a">FalaBR</div><div class="sigla-def" contenteditable="false" data-key="d:s1d">Plataforma Integrada de Ouvidoria e Acesso à Informação do Poder Executivo Federal</div><button class="edit-rm-btn" onclick="this.closest('.sigla-item').remove();markChanged()">✕</button></div>
-          <div class="sigla-item"><div class="sigla-abbr" contenteditable="false" data-key="d:s2a">SAEWEB</div><div class="sigla-def" contenteditable="false" data-key="d:s2d">Sistema eletrônico de organização do fluxo de trabalho de auditorias</div><button class="edit-rm-btn" onclick="this.closest('.sigla-item').remove();markChanged()">✕</button></div>
-          <div class="sigla-item"><div class="sigla-abbr" contenteditable="false" data-key="d:s3a">PPI</div><div class="sigla-def" contenteditable="false" data-key="d:s3d">Procedimento Preliminar de Investigação</div><button class="edit-rm-btn" onclick="this.closest('.sigla-item').remove();markChanged()">✕</button></div>
-          <div class="sigla-item"><div class="sigla-abbr" contenteditable="false" data-key="d:s4a">DIR</div><div class="sigla-def" contenteditable="false" data-key="d:s4d">Divisão de Integridade e Responsabilização</div><button class="edit-rm-btn" onclick="this.closest('.sigla-item').remove();markChanged()">✕</button></div>
-        </div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FLUXO -->
-  <section id="d-fluxo" class="section">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:12px 16px;background:linear-gradient(135deg,#f0f5ff,#e8f4ff);border:1px solid #c7d9f0;border-radius:10px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:22px;">🎨</span>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Precisa editar ou corrigir o fluxograma?</div>
-          <div style="font-size:12px;color:var(--text-muted);">Use o editor de fluxo para desenhar, ajustar e exportar o diagrama.</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;flex-shrink:0;">
-        <button onclick="exportFluxoWord('d')" style="padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">📄 Exportar Fluxo</button>
-        <button onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="padding:8px 16px;background:var(--cage-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🎨 Desenhar Fluxo</button>
-      </div>
-    </div>
-    <div class="flow-mode-header">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Modo de Visualização do Fluxo</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Alterne entre o estado atual e o estado proposto do processo</div>
-      </div>
-      <div class="flow-mode-toggle">
-        <button class="flow-mode-btn active-asis" data-mode="asis" onclick="setFlowMode('asis')">📌 AS IS — Atual</button>
-        <button class="flow-mode-btn" data-mode="tobe" onclick="setFlowMode('tobe')">📋 TO BE — Futuro</button>
-      </div>
-    </div>
-    <div id="d-step-tracker" class="step-tracker"></div>
-    <div id="d-step-panel"></div>
-    <div class="nav-buttons">
-      <button class="btn btn-outline" id="d-btn-prev" onclick="navStep('d',-1)">← Anterior</button>
-      <span class="step-pos" id="d-step-pos"></span>
-      <button class="btn btn-primary" id="d-btn-next" onclick="navStep('d',1)">Próximo →</button>
-    </div>
-    <button id="d-add-step-btn" class="edit-add-btn" style="display:none;" onclick="addStep('d')">+ Etapa</button>
-  </section>
-
-  <!-- RESPONSABILIDADES -->
-  <section id="d-responsabilidades" class="section">
-    <div class="card fade-up" style="margin-bottom:20px;">
-      <div class="card-header"><span class="card-title">Gerente do Processo</span></div>
-      <div class="card-body">
-        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--cage-light);border-radius:8px;">
-          <div style="width:44px;height:44px;border-radius:50%;background:rgba(26,74,122,.12);display:flex;align-items:center;justify-content:center;font-size:22px;">👔</div>
-          <div>
-            <div style="font-weight:600;font-size:14px;color:var(--cage-blue);" contenteditable="false" data-key="d:ger_nome">Chefe da Seção de Apuração e Operações</div>
-            <div style="font-size:12px;color:var(--text-muted);" contenteditable="false" data-key="d:ger_desc">Responsável pelo gerenciamento e monitoramento do subprocesso</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="flow-mode-header" style="margin-bottom:16px;">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Responsáveis por Modo</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Exibir responsáveis do fluxo AS IS ou TO BE</div>
-      </div>
-      <div class="flow-mode-toggle">
-        <button class="flow-mode-btn active-asis" data-mode="asis" onclick="setFlowMode('asis')">📌 AS IS — Atual</button>
-        <button class="flow-mode-btn" data-mode="tobe" onclick="setFlowMode('tobe')">📋 TO BE — Futuro</button>
-      </div>
-    </div>
-    <div class="role-grid fade-up delay-1" id="d-role-grid"></div>
-  </section>
-
-  <!-- INDICADORES -->
-  <section id="d-indicadores" class="section">
-    <div class="card fade-up" style="margin-bottom:20px;"><div class="card-body" style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
-      <div style="display:flex;align-items:center;gap:10px;"><span>💡</span><p style="font-size:13px;color:var(--text-secondary);">Indicadores listados como <strong>sugestões</strong> — metas pendentes de definição.</p></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-add-ind" id="d-add-ind" onclick="addIndicator('d')">＋ Novo Indicador</button>
-        <button class="btn-add-ind" onclick="openIndSisplanPicker('d')" style="background:#e0f2fe;color:#0369a1;border-color:#7dd3fc;">🔗 Vincular SISPLAN</button>
-      </div>
-    </div></div>
-    <div class="indicator-grid fade-up delay-1" id="d-indicator-grid"></div>
-  </section>
-
-  <!-- FAQ -->
-  <section id="d-faq" class="section">
-    <div class="card fade-up" style="margin-bottom:20px;"><div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-      <div style="display:flex;align-items:center;gap:8px;"><span>⚠️</span><span style="font-size:13px;color:var(--text-muted);">Perguntas <strong>pendentes</strong> ainda não têm resposta consolidada no POP.</span></div>
-      <div><button class="edit-add-btn" id="d-add-faq" onclick="addFaq('d')">+ Pergunta</button><button class="edit-add-btn" id="d-faq-ia-btn" onclick="generateFaqIA('d')" style="background:#7c3aed;color:white;border-color:#7c3aed;margin-left:4px;">🤖 Gerar com IA</button></div>
-    </div></div>
-    <div class="faq-list fade-up delay-1" id="d-faq-container"></div>
-  </section>
-
-  <!-- NORMAS -->
-  <section id="d-normas" class="section">
-    <div class="two-col">
-      <div class="card fade-up">
-        <div class="card-header"><span class="card-title">Normas Correlatas</span><button class="edit-add-btn" onclick="addNorma('d')">+ Norma</button></div>
-        <div class="card-body" style="padding:16px;"><div class="norm-list" id="d-norm-list"></div></div>
-      </div>
-      <div>
-        <div class="card fade-up delay-1" style="margin-bottom:16px;">
-          <div class="card-header"><span class="card-title">Controle de Revisões</span><button class="edit-add-btn" onclick="openRevModal('d')">+ Revisão</button></div>
-          <div class="card-body" style="padding:0;">
-            <table class="rev-table"><thead><tr><th>Rev.</th><th>Data</th><th>Descrição</th><th>Autor</th></tr></thead>
-            <tbody id="d-rev-body"></tbody></table>
-          </div>
-        </div>
-        <div class="card fade-up delay-2">
-          <div class="card-header"><span class="card-title">Elaboração e Aprovação</span></div>
-          <div class="card-body">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;">
-              <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Elaborado por</div>
-                <div style="font-weight:600;font-size:13px;" contenteditable="false" data-key="d:el_nome">Edison Weber Woycinck</div>
-                <div style="font-size:12px;color:var(--text-muted);" contenteditable="false" data-key="d:el_func">Auditor do Estado</div>
-                <div style="font-size:11px;color:var(--text-muted);" contenteditable="false" data-key="d:el_data">02/03/2026</div></div>
-              <div style="border-left:1px solid var(--cage-border);border-right:1px solid var(--cage-border);">
-                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Revisado por</div>
-                <div style="font-weight:600;font-size:13px;" contenteditable="false" data-key="d:rv_nome">Felipe Cesar Tourinho</div>
-                <div style="font-size:12px;color:var(--text-muted);" contenteditable="false" data-key="d:rv_func">Coordenador do EPP</div>
-                <div style="font-size:11px;color:var(--text-muted);" contenteditable="false" data-key="d:rv_data">10/03/2026</div></div>
-              <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Aprovado por</div>
-                <div style="font-weight:600;font-size:13px;" contenteditable="false" data-key="d:ap_nome">—</div>
-                <div style="font-size:12px;color:var(--text-muted);" contenteditable="false" data-key="d:ap_func">Pendente</div>
-                <div style="font-size:11px;color:var(--text-muted);" contenteditable="false" data-key="d:ap_data">—</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- RISCOS -->
-  <section id="d-riscos" class="section">
-    <div class="section-inner">
-      <div class="card fade-up" style="margin-bottom:16px;">
-        <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:13px;color:var(--text-secondary);">⚠️ Riscos e oportunidades identificados no processo, ranqueados por nota de risco.</div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;" id="d-risk-ia-btn" onclick="generateRisksIA('d')">✨ Gerar por IA</button>
-            <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openRiskModal('d')">＋ Adicionar</button>
-          </div>
-        </div>
-      </div>
-      <div id="d-risk-grid" class="risk-matrix"></div>
-    </div>
-  </section>
-
-  <!-- PLANO DE AÇÃO -->
-  <section id="d-plano-acao" class="section">
-    <div class="section-inner">
-      <div class="card fade-up">
-        <div class="card-header">
-          <span class="card-title">✅ Plano de Ação</span>
-          <button class="btn btn-primary" style="font-size:12px;padding:6px 12px;" onclick="openPaModal('d')">＋ Nova Ação</button>
-        </div>
-        <div class="card-body" style="padding:0;overflow-x:auto;">
-          <table class="pa-table">
-            <thead><tr><th>#</th><th>Ação</th><th>Responsável</th><th>Prazo</th><th>Status</th><th></th></tr></thead>
-            <tbody id="d-pa-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- REUNIÕES -->
-  <section id="d-reunioes" class="section">
-    <div class="section-inner">
-      <div class="card fade-up" style="margin-bottom:16px;">
-        <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:13px;color:var(--text-secondary);">🤝 Registro de reuniões realizadas com a equipe de mapeamento.</div>
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openMeetModal('d')">＋ Registrar Reunião</button>
-        </div>
-      </div>
-      <div id="d-meet-list"></div>
-    </div>
-  </section>
-
-  <!-- CHECKLISTS -->
-  <section id="d-checklists" class="section">
-    <div class="section-inner">
-      <div class="card fade-up" style="margin-bottom:16px;">
-        <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:13px;color:var(--text-secondary);">☑️ Checklists vinculados às etapas do processo para uso durante a execução.</div>
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openChecklistModal('d')">＋ Novo Checklist</button>
-        </div>
-      </div>
-      <div id="d-ck-list"></div>
-    </div>
-  </section>
-
-
-  <!-- ACOMPANHAMENTO -->
-  <section id="d-acompanhamento" class="section">
-    <div class="section-inner">
-      <div class="card fade-up" style="margin-bottom:20px;">
-        <div class="card-body" style="padding:16px 20px;">
-          <div style="font-size:15px;font-weight:600;color:#0a2540;margin-bottom:4px;">📋 Reuniões de Acompanhamento Pós-Mapeamento</div>
-          <div style="font-size:13px;color:var(--text-secondary);">Registro das reuniões de acompanhamento realizadas após o mapeamento do processo. São previstas no mínimo duas reuniões: uma com 6 meses e outra com 1 ano.</div>
-        </div>
-      </div>
-      <div id="d-acomp-list">
-        <!-- Reunião 1: 6 meses -->
-        <div class="card fade-up" style="margin-bottom:20px;" id="d-acomp-card-6m">
-          <div class="card-body" style="padding:20px 24px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
-              <div style="background:#0a2540;color:#00a86b;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px;border:1.5px solid #00a86b;">6 MESES</div>
-              <div style="font-size:15px;font-weight:600;color:#0a2540;">1ª Reunião de Acompanhamento</div>
-              <button onclick="gerarAtaAcomp('d','6m')" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="Gerar Ata da 1ª Reunião">📄 Gerar Ata</button>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-              <div>
-                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Data de Realização</label>
-                <input type="date" id="d-acomp-6m-data" class="modal-input" style="width:100%;" oninput="saveAcomp('d')">
-              </div>
-              <div>
-                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Situação da Implementação</label>
-                <select id="d-acomp-6m-situacao" class="modal-input" style="width:100%;" onchange="toggleAcompJustif('d','6m');saveAcomp('d')">
-                  <option value="">— Selecione —</option>
-                  <option value="de_acordo">✅ De acordo</option>
-                  <option value="parcialmente">⚠️ Parcialmente implementado</option>
-                  <option value="nao_implementado">❌ Não implementado</option>
-                </select>
-              </div>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Participantes</label>
-              <textarea id="d-acomp-6m-participantes" class="modal-input" rows="2" placeholder="Liste os participantes da reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('d')"></textarea>
-            </div>
-            <div id="d-acomp-6m-justif-wrap" style="margin-bottom:16px;display:none;">
-              <label style="font-size:12px;font-weight:600;color:#c0392b;display:block;margin-bottom:6px;">Justificativa da Não Implementação / Implementação Parcial</label>
-              <textarea id="d-acomp-6m-justif" class="modal-input" rows="3" placeholder="Descreva os motivos da não implementação ou implementação parcial..." style="width:100%;resize:vertical;border-color:#fca5a5;" oninput="saveAcomp('d')"></textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Inconformidades Identificadas</label>
-              <textarea id="d-acomp-6m-inconformidades" class="modal-input" rows="3" placeholder="Registre as inconformidades observadas em relação ao processo definido..." style="width:100%;resize:vertical;" oninput="saveAcomp('d')"></textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Recomendações de Melhorias</label>
-              <textarea id="d-acomp-6m-recomendacoes" class="modal-input" rows="3" placeholder="Registre as recomendações de melhorias identificadas..." style="width:100%;resize:vertical;" oninput="saveAcomp('d')"></textarea>
-            </div>
-            <div>
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Encaminhamentos</label>
-              <textarea id="d-acomp-6m-encaminhamentos" class="modal-input" rows="3" placeholder="Registre os encaminhamentos definidos na reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('d')"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Reunião 2: 1 ano -->
-        <div class="card fade-up" style="margin-bottom:20px;" id="d-acomp-card-1a">
-          <div class="card-body" style="padding:20px 24px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
-              <div style="background:#0a2540;color:#e8a020;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px;border:1.5px solid #e8a020;">1 ANO</div>
-              <div style="font-size:15px;font-weight:600;color:#0a2540;">2ª Reunião de Acompanhamento</div>
-              <button onclick="gerarAtaAcomp('d','1a')" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="Gerar Ata da 2ª Reunião">📄 Gerar Ata</button>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-              <div>
-                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Data de Realização</label>
-                <input type="date" id="d-acomp-1a-data" class="modal-input" style="width:100%;" oninput="saveAcomp('d')">
-              </div>
-              <div>
-                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Situação da Implementação</label>
-                <select id="d-acomp-1a-situacao" class="modal-input" style="width:100%;" onchange="toggleAcompJustif('d','1a');saveAcomp('d')">
-                  <option value="">— Selecione —</option>
-                  <option value="de_acordo">✅ De acordo</option>
-                  <option value="parcialmente">⚠️ Parcialmente implementado</option>
-                  <option value="nao_implementado">❌ Não implementado</option>
-                </select>
-              </div>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Participantes</label>
-              <textarea id="d-acomp-1a-participantes" class="modal-input" rows="2" placeholder="Liste os participantes da reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('d')"></textarea>
-            </div>
-            <div id="d-acomp-1a-justif-wrap" style="margin-bottom:16px;display:none;">
-              <label style="font-size:12px;font-weight:600;color:#c0392b;display:block;margin-bottom:6px;">Justificativa da Não Implementação / Implementação Parcial</label>
-              <textarea id="d-acomp-1a-justif" class="modal-input" rows="3" placeholder="Descreva os motivos da não implementação ou implementação parcial..." style="width:100%;resize:vertical;border-color:#fca5a5;" oninput="saveAcomp('d')"></textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Inconformidades Identificadas</label>
-              <textarea id="d-acomp-1a-inconformidades" class="modal-input" rows="3" placeholder="Registre as inconformidades observadas em relação ao processo definido..." style="width:100%;resize:vertical;" oninput="saveAcomp('d')"></textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Recomendações de Melhorias</label>
-              <textarea id="d-acomp-1a-recomendacoes" class="modal-input" rows="3" placeholder="Registre as recomendações de melhorias identificadas..." style="width:100%;resize:vertical;" oninput="saveAcomp('d')"></textarea>
-            </div>
-            <div>
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Encaminhamentos</label>
-              <textarea id="d-acomp-1a-encaminhamentos" class="modal-input" rows="3" placeholder="Registre os encaminhamentos definidos na reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('d')"></textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- COMPETÊNCIAS -->
-  <!-- MATURIDADE -->
-  <section id="d-maturidade" class="section">
-    <div class="section-inner">
-      <div id="d-maturidade-body"></div>
-    </div>
-  </section>
-
-</div><!-- /pop-denuncias -->
-
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- POP 2: REPRESENTAÇÕES -->
-<!-- ═══════════════════════════════════════════ -->
-<div id="pop-representacoes" class="pop-content">
-
-  <!-- VISÃO GERAL -->
-  <section id="r-visao-geral" class="section active">
-    <div class="pop-banner representacoes fade-up">
-      <div class="pop-banner-icon">📄</div>
-      <div>
-        <div class="pop-banner-title">Tratar Representações</div>
-        <div class="pop-banner-sub">Macroprocesso: Promoção da Integridade e Prevenção à Corrupção · Processo: Tratar Denúncias e Representações</div>
-      </div>
-      <div class="pop-banner-meta">
-        <span class="badge badge-blue" id="r-rev-badge">Rev. 0 · Mar/2026</span>
-        <div class="version-badge-wrap" style="margin-top:4px;">
-          <span class="ver-badge" id="r-ver-badge" onclick="openVersionSelector('r',this)">v1</span>
-        </div>
-      </div>
-    </div>
-    <div class="overview-grid fade-up delay-1" id="r-overview-grid">
-      <div class="metric-card green"><div class="metric-icon">📊</div>
-        <span class="metric-value" contenteditable="false" id="r-metric-vol-pre" oninput="calcHorasEcon('r');markChanged()">—</span>
-        <span class="metric-label">Vol. Mensal Pré</span></div>
-      <div class="metric-card blue"><div class="metric-icon">📉</div>
-        <span class="metric-value" contenteditable="false" id="r-metric-vol-pos" oninput="calcHorasEcon('r');markChanged()">—</span>
-        <span class="metric-label">Vol. Mensal Pós</span></div>
-      <div class="metric-card gold"><div class="metric-icon">⏱</div>
-        <span class="metric-value" contenteditable="false" id="r-metric-ciclo-pre" oninput="calcHorasEcon('r');markChanged()">—</span>
-        <span class="metric-label">Ciclo Pré (h)</span></div>
-      <div class="metric-card red"><div class="metric-icon">⚡</div>
-        <span class="metric-value" contenteditable="false" id="r-metric-ciclo-pos" oninput="calcHorasEcon('r');markChanged()">—</span>
-        <span class="metric-label">Ciclo Pós (h)</span></div>
-      <div class="metric-card teal"><div class="metric-icon">💡</div>
-        <span class="metric-value" id="r-metric-horas" style="font-size:22px;">—</span>
-        <span class="metric-label">Horas Economizadas</span></div>
-    </div>
-    <div id="r-ficha-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
-      <div class="card-header"><span class="card-title">📋 Ficha Técnica</span><button class="btn btn-outline" onclick="openStatusModal('r')" style="font-size:11px;padding:4px 10px;margin-left:auto;" id="r-ficha-edit-btn">✏️ Editar</button></div>
-      <div class="card-body" id="r-ficha-body" style="padding:16px;"></div>
-    </div>
-    <div id="r-flow-preview-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
-      <div class="card-header">
-        <span class="card-title">🔀 Diagrama de Fluxo</span>
-        <button class="btn btn-outline" onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="font-size:11px;padding:4px 10px;margin-left:auto;">✏️ Editar</button>
-      </div>
-      <div id="r-flow-preview-body" style="padding:12px 16px;overflow-x:auto;background:#f8fafc;border-radius:0 0 12px 12px;text-align:center;"></div>
-    </div>
-    <div class="two-col fade-up delay-1">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Objetivo</span></div>
-        <div class="card-body">
-          <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:12px;" contenteditable="false" data-key="r:obj">O subprocesso <strong>Tratar Representações</strong> tem como objetivo realizar o <strong>recebimento, tratamento, apuração e comunicação de resultados</strong> de representações recebidas por Ofício de outros órgãos.</p>
-          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;font-size:13px;color:#1e40af;margin-top:10px;">
-            ⚠️ A representação <strong>pode conter prazo</strong> ou indicar de modo genérico como "maior brevidade possível".
-          </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-            <div style="background:var(--cage-light);border-radius:8px;padding:10px 14px;font-size:12px;">
-              <div style="color:var(--text-muted);margin-bottom:2px;">Entrada</div>
-              <div style="font-weight:600;color:var(--cage-blue);" contenteditable="false" data-key="r:entrada_resumo">Representação recebida por Ofício</div>
-            </div>
-            <div style="background:var(--cage-light);border-radius:8px;padding:10px 14px;font-size:12px;">
-              <div style="color:var(--text-muted);margin-bottom:2px;">Saída</div>
-              <div style="font-weight:600;color:var(--cage-blue);" contenteditable="false" data-key="r:saida_resumo">Representação apurada e comunicação de resultados</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Siglas</span><button class="edit-add-btn" onclick="addSigla('r-sigla-grid')">+ Sigla</button></div>
-        <div class="card-body" style="padding:16px;"><div class="sigla-grid" id="r-sigla-grid">
-          <div class="sigla-item"><div class="sigla-abbr" contenteditable="false" data-key="r:s1a">SAEWEB</div><div class="sigla-def" contenteditable="false" data-key="r:s1d">Sistema eletrônico de organização do fluxo de trabalho de auditorias</div><button class="edit-rm-btn" onclick="this.closest('.sigla-item').remove();markChanged()">✕</button></div>
-          <div class="sigla-item"><div class="sigla-abbr" contenteditable="false" data-key="r:s2a">PPI</div><div class="sigla-def" contenteditable="false" data-key="r:s2d">Procedimento Preliminar de Investigação</div><button class="edit-rm-btn" onclick="this.closest('.sigla-item').remove();markChanged()">✕</button></div>
-          <div class="sigla-item"><div class="sigla-abbr" contenteditable="false" data-key="r:s3a">DIR</div><div class="sigla-def" contenteditable="false" data-key="r:s3d">Divisão de Integridade e Responsabilização</div><button class="edit-rm-btn" onclick="this.closest('.sigla-item').remove();markChanged()">✕</button></div>
-          <div class="sigla-item"><div class="sigla-abbr" contenteditable="false" data-key="r:s4a">SEI/PROA</div><div class="sigla-def" contenteditable="false" data-key="r:s4d">Sistemas de processo eletrônico para envio de documentos a órgãos externos</div><button class="edit-rm-btn" onclick="this.closest('.sigla-item').remove();markChanged()">✕</button></div>
-        </div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FLUXO -->
-  <section id="r-fluxo" class="section">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:12px 16px;background:linear-gradient(135deg,#f0f5ff,#e8f4ff);border:1px solid #c7d9f0;border-radius:10px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:22px;">🎨</span>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Precisa editar ou corrigir o fluxograma?</div>
-          <div style="font-size:12px;color:var(--text-muted);">Use o editor de fluxo para desenhar, ajustar e exportar o diagrama.</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;flex-shrink:0;">
-        <button onclick="exportFluxoWord('r')" style="padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">📄 Exportar Fluxo</button>
-        <button onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="padding:8px 16px;background:var(--cage-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🎨 Desenhar Fluxo</button>
-      </div>
-    </div>
-    <div class="flow-mode-header">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Modo de Visualização do Fluxo</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Alterne entre o estado atual e o estado proposto do processo</div>
-      </div>
-      <div class="flow-mode-toggle">
-        <button class="flow-mode-btn active-asis" data-mode="asis" onclick="setFlowMode('asis')">📌 AS IS — Atual</button>
-        <button class="flow-mode-btn" data-mode="tobe" onclick="setFlowMode('tobe')">📋 TO BE — Futuro</button>
-      </div>
-    </div>
-    <div id="r-step-tracker" class="step-tracker"></div>
-    <div id="r-step-panel"></div>
-    <div class="nav-buttons">
-      <button class="btn btn-outline" id="r-btn-prev" onclick="navStep('r',-1)">← Anterior</button>
-      <span class="step-pos" id="r-step-pos"></span>
-      <button class="btn btn-primary" id="r-btn-next" onclick="navStep('r',1)">Próximo →</button>
-    </div>
-    <button id="r-add-step-btn" class="edit-add-btn" style="display:none;" onclick="addStep('r')">+ Etapa</button>
-  </section>
-
-  <!-- RESPONSABILIDADES -->
-  <section id="r-responsabilidades" class="section">
-    <div class="card fade-up" style="margin-bottom:20px;">
-      <div class="card-header"><span class="card-title">Gerente do Processo</span></div>
-      <div class="card-body">
-        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--cage-light);border-radius:8px;">
-          <div style="width:44px;height:44px;border-radius:50%;background:rgba(26,74,122,.12);display:flex;align-items:center;justify-content:center;font-size:22px;">👔</div>
-          <div>
-            <div style="font-weight:600;font-size:14px;color:var(--cage-blue);" contenteditable="false" data-key="r:ger_nome">Chefe da Seção de Apuração e Operações</div>
-            <div style="font-size:12px;color:var(--text-muted);" contenteditable="false" data-key="r:ger_desc">Responsável pelo gerenciamento e monitoramento do subprocesso</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="flow-mode-header" style="margin-bottom:16px;">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--cage-blue);">Responsáveis por Modo</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Exibir responsáveis do fluxo AS IS ou TO BE</div>
-      </div>
-      <div class="flow-mode-toggle">
-        <button class="flow-mode-btn active-asis" data-mode="asis" onclick="setFlowMode('asis')">📌 AS IS — Atual</button>
-        <button class="flow-mode-btn" data-mode="tobe" onclick="setFlowMode('tobe')">📋 TO BE — Futuro</button>
-      </div>
-    </div>
-    <div class="role-grid fade-up delay-1" id="r-role-grid"></div>
-  </section>
-
-  <!-- INDICADORES -->
-  <section id="r-indicadores" class="section">
-    <div class="card fade-up" style="margin-bottom:20px;"><div class="card-body" style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
-      <div style="display:flex;align-items:center;gap:10px;"><span>💡</span><p style="font-size:13px;color:var(--text-secondary);">Indicadores listados como <strong>sugestões</strong> — metas pendentes de definição.</p></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-add-ind" id="r-add-ind" onclick="addIndicator('r')">＋ Novo Indicador</button>
-        <button class="btn-add-ind" onclick="openIndSisplanPicker('r')" style="background:#e0f2fe;color:#0369a1;border-color:#7dd3fc;">🔗 Vincular SISPLAN</button>
-      </div>
-    </div></div>
-    <div class="indicator-grid fade-up delay-1" id="r-indicator-grid"></div>
-  </section>
-
-  <!-- FAQ -->
-  <section id="r-faq" class="section">
-    <div class="card fade-up" style="margin-bottom:20px;"><div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-      <div style="display:flex;align-items:center;gap:8px;"><span>⚠️</span><span style="font-size:13px;color:var(--text-muted);">Perguntas <strong>pendentes</strong> ainda não têm resposta consolidada no POP.</span></div>
-      <div><button class="edit-add-btn" id="r-add-faq" onclick="addFaq('r')">+ Pergunta</button><button class="edit-add-btn" id="r-faq-ia-btn" onclick="generateFaqIA('r')" style="background:#7c3aed;color:white;border-color:#7c3aed;margin-left:4px;">🤖 Gerar com IA</button></div>
-    </div></div>
-    <div class="faq-list fade-up delay-1" id="r-faq-container"></div>
-  </section>
-
-  <!-- NORMAS -->
-  <section id="r-normas" class="section">
-    <div class="two-col">
-      <div class="card fade-up">
-        <div class="card-header"><span class="card-title">Normas Correlatas</span><button class="edit-add-btn" onclick="addNorma('r')">+ Norma</button></div>
-        <div class="card-body" style="padding:16px;"><div class="norm-list" id="r-norm-list"></div></div>
-      </div>
-      <div>
-        <div class="card fade-up delay-1" style="margin-bottom:16px;">
-          <div class="card-header"><span class="card-title">Controle de Revisões</span><button class="edit-add-btn" onclick="openRevModal('r')">+ Revisão</button></div>
-          <div class="card-body" style="padding:0;">
-            <table class="rev-table"><thead><tr><th>Rev.</th><th>Data</th><th>Descrição</th><th>Autor</th></tr></thead>
-            <tbody id="r-rev-body"></tbody></table>
-          </div>
-        </div>
-        <div class="card fade-up delay-2">
-          <div class="card-header"><span class="card-title">Elaboração e Aprovação</span></div>
-          <div class="card-body">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;">
-              <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Elaborado por</div>
-                <div style="font-weight:600;font-size:13px;" contenteditable="false" data-key="r:el_nome">Edison Weber Woycinck</div>
-                <div style="font-size:12px;color:var(--text-muted);" contenteditable="false" data-key="r:el_func">Auditor do Estado</div>
-                <div style="font-size:11px;color:var(--text-muted);" contenteditable="false" data-key="r:el_data">09/03/2026</div></div>
-              <div style="border-left:1px solid var(--cage-border);border-right:1px solid var(--cage-border);">
-                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Revisado por</div>
-                <div style="font-weight:600;font-size:13px;" contenteditable="false" data-key="r:rv_nome">Felipe Cesar Tourinho</div>
-                <div style="font-size:12px;color:var(--text-muted);" contenteditable="false" data-key="r:rv_func">Coordenador do EPP</div>
-                <div style="font-size:11px;color:var(--text-muted);" contenteditable="false" data-key="r:rv_data">10/03/2026</div></div>
-              <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Aprovado por</div>
-                <div style="font-weight:600;font-size:13px;" contenteditable="false" data-key="r:ap_nome">—</div>
-                <div style="font-size:12px;color:var(--text-muted);" contenteditable="false" data-key="r:ap_func">Pendente</div>
-                <div style="font-size:11px;color:var(--text-muted);" contenteditable="false" data-key="r:ap_data">—</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- RISCOS -->
-  <section id="r-riscos" class="section">
-    <div class="section-inner">
-      <div class="card fade-up" style="margin-bottom:16px;">
-        <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:13px;color:var(--text-secondary);">⚠️ Riscos e oportunidades identificados no processo, ranqueados por nota de risco.</div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;" id="r-risk-ia-btn" onclick="generateRisksIA('r')">✨ Gerar por IA</button>
-            <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openRiskModal('r')">＋ Adicionar</button>
-          </div>
-        </div>
-      </div>
-      <div id="r-risk-grid" class="risk-matrix"></div>
-    </div>
-  </section>
-
-  <!-- PLANO DE AÇÃO -->
-  <section id="r-plano-acao" class="section">
-    <div class="section-inner">
-      <div class="card fade-up">
-        <div class="card-header">
-          <span class="card-title">✅ Plano de Ação</span>
-          <button class="btn btn-primary" style="font-size:12px;padding:6px 12px;" onclick="openPaModal('r')">＋ Nova Ação</button>
-        </div>
-        <div class="card-body" style="padding:0;overflow-x:auto;">
-          <table class="pa-table">
-            <thead><tr><th>#</th><th>Ação</th><th>Responsável</th><th>Prazo</th><th>Status</th><th></th></tr></thead>
-            <tbody id="r-pa-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- REUNIÕES -->
-  <section id="r-reunioes" class="section">
-    <div class="section-inner">
-      <div class="card fade-up" style="margin-bottom:16px;">
-        <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:13px;color:var(--text-secondary);">🤝 Registro de reuniões realizadas com a equipe de mapeamento.</div>
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openMeetModal('r')">＋ Registrar Reunião</button>
-        </div>
-      </div>
-      <div id="r-meet-list"></div>
-    </div>
-  </section>
-
-  <!-- CHECKLISTS -->
-  <section id="r-checklists" class="section">
-    <div class="section-inner">
-      <div class="card fade-up" style="margin-bottom:16px;">
-        <div class="card-body" style="padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:13px;color:var(--text-secondary);">☑️ Checklists vinculados às etapas do processo para uso durante a execução.</div>
-          <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openChecklistModal('r')">＋ Novo Checklist</button>
-        </div>
-      </div>
-      <div id="r-ck-list"></div>
-    </div>
-  </section>
-
-
-  <!-- ACOMPANHAMENTO -->
-  <section id="r-acompanhamento" class="section">
-    <div class="section-inner">
-      <div class="card fade-up" style="margin-bottom:20px;">
-        <div class="card-body" style="padding:16px 20px;">
-          <div style="font-size:15px;font-weight:600;color:#0a2540;margin-bottom:4px;">📋 Reuniões de Acompanhamento Pós-Mapeamento</div>
-          <div style="font-size:13px;color:var(--text-secondary);">Registro das reuniões de acompanhamento realizadas após o mapeamento do processo. São previstas no mínimo duas reuniões: uma com 6 meses e outra com 1 ano.</div>
-        </div>
-      </div>
-      <div id="r-acomp-list">
-        <!-- Reunião 1: 6 meses -->
-        <div class="card fade-up" style="margin-bottom:20px;" id="r-acomp-card-6m">
-          <div class="card-body" style="padding:20px 24px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
-              <div style="background:#0a2540;color:#00a86b;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px;border:1.5px solid #00a86b;">6 MESES</div>
-              <div style="font-size:15px;font-weight:600;color:#0a2540;">1ª Reunião de Acompanhamento</div>
-              <button onclick="gerarAtaAcomp('r','6m')" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="Gerar Ata da 1ª Reunião">📄 Gerar Ata</button>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-              <div>
-                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Data de Realização</label>
-                <input type="date" id="r-acomp-6m-data" class="modal-input" style="width:100%;" oninput="saveAcomp('r')">
-              </div>
-              <div>
-                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Situação da Implementação</label>
-                <select id="r-acomp-6m-situacao" class="modal-input" style="width:100%;" onchange="toggleAcompJustif('r','6m');saveAcomp('r')">
-                  <option value="">— Selecione —</option>
-                  <option value="de_acordo">✅ De acordo</option>
-                  <option value="parcialmente">⚠️ Parcialmente implementado</option>
-                  <option value="nao_implementado">❌ Não implementado</option>
-                </select>
-              </div>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Participantes</label>
-              <textarea id="r-acomp-6m-participantes" class="modal-input" rows="2" placeholder="Liste os participantes da reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('r')"></textarea>
-            </div>
-            <div id="r-acomp-6m-justif-wrap" style="margin-bottom:16px;display:none;">
-              <label style="font-size:12px;font-weight:600;color:#c0392b;display:block;margin-bottom:6px;">Justificativa da Não Implementação / Implementação Parcial</label>
-              <textarea id="r-acomp-6m-justif" class="modal-input" rows="3" placeholder="Descreva os motivos da não implementação ou implementação parcial..." style="width:100%;resize:vertical;border-color:#fca5a5;" oninput="saveAcomp('r')"></textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Inconformidades Identificadas</label>
-              <textarea id="r-acomp-6m-inconformidades" class="modal-input" rows="3" placeholder="Registre as inconformidades observadas em relação ao processo definido..." style="width:100%;resize:vertical;" oninput="saveAcomp('r')"></textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Recomendações de Melhorias</label>
-              <textarea id="r-acomp-6m-recomendacoes" class="modal-input" rows="3" placeholder="Registre as recomendações de melhorias identificadas..." style="width:100%;resize:vertical;" oninput="saveAcomp('r')"></textarea>
-            </div>
-            <div>
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Encaminhamentos</label>
-              <textarea id="r-acomp-6m-encaminhamentos" class="modal-input" rows="3" placeholder="Registre os encaminhamentos definidos na reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('r')"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Reunião 2: 1 ano -->
-        <div class="card fade-up" style="margin-bottom:20px;" id="r-acomp-card-1a">
-          <div class="card-body" style="padding:20px 24px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
-              <div style="background:#0a2540;color:#e8a020;font-weight:700;font-size:13px;padding:5px 12px;border-radius:20px;border:1.5px solid #e8a020;">1 ANO</div>
-              <div style="font-size:15px;font-weight:600;color:#0a2540;">2ª Reunião de Acompanhamento</div>
-              <button onclick="gerarAtaAcomp('r','1a')" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:6px 14px;background:#0a2540;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="Gerar Ata da 2ª Reunião">📄 Gerar Ata</button>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-              <div>
-                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Data de Realização</label>
-                <input type="date" id="r-acomp-1a-data" class="modal-input" style="width:100%;" oninput="saveAcomp('r')">
-              </div>
-              <div>
-                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Situação da Implementação</label>
-                <select id="r-acomp-1a-situacao" class="modal-input" style="width:100%;" onchange="toggleAcompJustif('r','1a');saveAcomp('r')">
-                  <option value="">— Selecione —</option>
-                  <option value="de_acordo">✅ De acordo</option>
-                  <option value="parcialmente">⚠️ Parcialmente implementado</option>
-                  <option value="nao_implementado">❌ Não implementado</option>
-                </select>
-              </div>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Participantes</label>
-              <textarea id="r-acomp-1a-participantes" class="modal-input" rows="2" placeholder="Liste os participantes da reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('r')"></textarea>
-            </div>
-            <div id="r-acomp-1a-justif-wrap" style="margin-bottom:16px;display:none;">
-              <label style="font-size:12px;font-weight:600;color:#c0392b;display:block;margin-bottom:6px;">Justificativa da Não Implementação / Implementação Parcial</label>
-              <textarea id="r-acomp-1a-justif" class="modal-input" rows="3" placeholder="Descreva os motivos da não implementação ou implementação parcial..." style="width:100%;resize:vertical;border-color:#fca5a5;" oninput="saveAcomp('r')"></textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Inconformidades Identificadas</label>
-              <textarea id="r-acomp-1a-inconformidades" class="modal-input" rows="3" placeholder="Registre as inconformidades observadas em relação ao processo definido..." style="width:100%;resize:vertical;" oninput="saveAcomp('r')"></textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Recomendações de Melhorias</label>
-              <textarea id="r-acomp-1a-recomendacoes" class="modal-input" rows="3" placeholder="Registre as recomendações de melhorias identificadas..." style="width:100%;resize:vertical;" oninput="saveAcomp('r')"></textarea>
-            </div>
-            <div>
-              <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Encaminhamentos</label>
-              <textarea id="r-acomp-1a-encaminhamentos" class="modal-input" rows="3" placeholder="Registre os encaminhamentos definidos na reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('r')"></textarea>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- MATURIDADE -->
-  <section id="r-maturidade" class="section">
-    <div class="section-inner">
-      <div id="r-maturidade-body"></div>
-    </div>
-  </section>
-
-</div><!-- /pop-representacoes -->
-
-
 
 <!-- ═══════════════════════════════════════════ -->
 <!-- BPMN MODULE (global, not per-pop) -->
@@ -5173,8 +4417,8 @@
 <script>
 // ═══ DATA ════════════════════════════════════
 const DATA = {
-  d: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Denúncias" }, ficha: {}, flowDiagram: null },
-  r: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Representações" }, ficha: {}, flowDiagram: null },
+  d: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Denúncias", macro:"Promoção da Integridade e Prevenção à Corrupção", processo:"Tratar Denúncias e Representações", desc:"O subprocesso Tratar Denúncias tem como objetivo realizar o recebimento, tratamento, apuração e comunicação de resultados de denúncias pela CAGE.", input:"Denúncia por FalaBR, e-mail ou presencialmente", output:"Denúncia tratada e comunicação de resultados", elaborado:"Edison Weber Woycinck", revisado:"Felipe Cesar Tourinho" }, ficha: {}, flowDiagram: null },
+  r: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Representações", macro:"Promoção da Integridade e Prevenção à Corrupção", processo:"Tratar Denúncias e Representações", desc:"O subprocesso Tratar Representações tem como objetivo realizar o recebimento, tratamento, apuração e comunicação de resultados de representações recebidas por Ofício de outros órgãos.", input:"Representação recebida por Ofício", output:"Representação apurada e comunicação de resultados", elaborado:"Edison Weber Woycinck", revisado:"Felipe Cesar Tourinho" }, ficha: {}, flowDiagram: null },
   homeCards: {}
 };
 
@@ -5274,34 +4518,7 @@ function saveToStorage() {
   }
 }
 
-function loadFromStorage() {
-  return false; // localStorage desativado — dados vêm exclusivamente do Supabase
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return false;
-    const payload = JSON.parse(raw);
-    // Restore d and r
-    if(payload.d) Object.assign(DATA.d, payload.d);
-    if(payload.r) Object.assign(DATA.r, payload.r);
-    if(payload.pat) DATA.pat = payload.pat;
-    // Restore new pops
-    if(payload.newPops && payload.newPops.length > 0) {
-      payload.newPops.forEach(({ key, data }) => {
-        DATA[key] = data;
-        mountNewPopTab(key, data.meta?.name || 'POP');
-      });
-    }
-    // Re-render existing pops
-    renderStep('d', DATA.d.currentStep || 0);
-    renderRoles('d'); renderIndicators('d'); renderFaq('d'); renderNormas('d'); renderRevisions('d'); renderSiglas('d'); renderMetrics('d');
-    renderStep('r', DATA.r.currentStep || 0);
-    renderRoles('r'); renderIndicators('r'); renderFaq('r'); renderNormas('r'); renderRevisions('r'); renderSiglas('r'); renderMetrics('r');
-    return true;
-  } catch(e) {
-    console.warn('Erro ao carregar dados salvos:', e);
-    return false;
-  }
-}
+function loadFromStorage() { return false; } // dados vêm exclusivamente do Supabase
 
 function harvestEditables() {
   // Read contenteditable fields back into DATA
@@ -5426,9 +4643,25 @@ function clearStorage() {
   location.reload();
 }
 
+// Inicializa os POPs base (d e r) dinamicamente usando o mesmo template dos POPs novos
+function _initBasePops() {
+  mountNewPopTab('d', DATA.d.meta.name, true);
+  const bannerD = document.querySelector('#pop-d .pop-banner');
+  if(bannerD) { bannerD.classList.remove('novo'); bannerD.classList.add('denuncias'); bannerD.removeAttribute('style'); }
+  const iconD = document.querySelector('#pop-d .pop-banner-icon');
+  if(iconD) iconD.textContent = '📋';
+
+  mountNewPopTab('r', DATA.r.meta.name, true);
+  const bannerR = document.querySelector('#pop-r .pop-banner');
+  if(bannerR) { bannerR.classList.remove('novo'); bannerR.classList.add('representacoes'); bannerR.removeAttribute('style'); }
+  const iconR = document.querySelector('#pop-r .pop-banner-icon');
+  if(iconR) iconR.textContent = '⚖️';
+}
+
 // Auto-load on startup
 document.addEventListener('DOMContentLoaded', () => {
   loadFromStorage();
+  _initBasePops();
   // Show home immediately — cloud load will update content without navigating away
   showHome();
 });
@@ -5446,8 +4679,6 @@ function popKey(pop) {
   return pop;
 }
 function popDomId(pop) {
-  if(pop === 'd') return 'denuncias';
-  if(pop === 'r') return 'representacoes';
   return pop;
 }
 
@@ -7860,7 +7091,7 @@ function mountNewPopTab(key, label, silent=false) {
   // (tab element kept for legacy switchPop calls but not inserted into DOM)
   // renderSidebar will pick it up via DATA keys
 
-  // 2. Build full pop-content HTML from scratch (pop-denuncias is an empty div — never clone it)
+  // 2. Build full pop-content HTML from scratch
   const m = DATA[key]?.meta || {};
   const today = new Date().toLocaleDateString('pt-BR');
   const div = document.createElement('div');
@@ -14608,8 +13839,7 @@ function renderMetrics(p) {
 function renderBanner(p) {
   const m = DATA[p]?.meta || {};
   if(!m.bannerIcon && !m.bannerSub && !m.name) return;
-  const _popId = p === 'd' ? 'denuncias' : p === 'r' ? 'representacoes' : p;
-  const popEl  = document.getElementById('pop-' + _popId);
+  const popEl  = document.getElementById('pop-' + p);
   if(!popEl) return;
   const bannerTitle = popEl.querySelector('.pop-banner-title');
   const bannerSub   = popEl.querySelector('.pop-banner-sub');
@@ -16780,8 +16010,8 @@ function showPopGallery() {
     gallery.id = 'pop-gallery-panel';
     gallery.className = 'pop-content active';
     gallery.style.cssText = 'padding:32px;max-width:900px;margin:0 auto;';
-    // Insert after pop-representacoes
-    const anchor = document.getElementById('pop-representacoes');
+    // Insert after pop-r
+    const anchor = document.getElementById('pop-r');
     if(anchor?.parentNode) anchor.parentNode.insertBefore(gallery, anchor.nextSibling);
     else document.body.appendChild(gallery);
   } else {
@@ -17022,7 +16252,7 @@ function showBpmnFromHome() {
     const pops = ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))];
     if (pops.length) {
       // Simula seleção do primeiro POP sem mudar a navegação visual
-      currentPop = pops[0] === 'd' ? 'denuncias' : pops[0] === 'r' ? 'representacoes' : pops[0];
+      currentPop = pops[0];
     }
   }
   const tab = document.getElementById('tab-fd');
@@ -18103,8 +17333,7 @@ function deleteMapeamento(key) {
   _dirtyPops.add(key); // impede o fetch-merge de restaurar este POP do servidor
   delete DATA[key];
   // Remove pop-content DOM element
-  const domIdMap = { d: 'pop-denuncias', r: 'pop-representacoes' };
-  const domId = domIdMap[key] || (key.startsWith('pop_') ? key : 'pop-' + key);
+  const domId = 'pop-' + key;
   const el = document.getElementById(domId);
   if(el) el.remove();
   // Switch to first available pop
@@ -21275,8 +20504,7 @@ function saveStatusModal() {
     if(nw) nw.popVinc = p;
   }
   // Sync capa (banner) visível no DOM
-  const _popId = p === 'd' ? 'denuncias' : p === 'r' ? 'representacoes' : p;
-  const _popEl = document.getElementById('pop-' + _popId);
+  const _popEl = document.getElementById('pop-' + p);
   if(_popEl) {
     const bannerTitle = _popEl.querySelector('.pop-banner-title');
     const bannerSub   = _popEl.querySelector('.pop-banner-sub');
@@ -22165,21 +21393,6 @@ Regras obrigatórias:
   function _flowJsonToMermaid(flowArr) {
     const dir = _direction || 'LR';
     const lines = [`flowchart ${dir}`];
-    nodes.forEach(n => {
-      const lbl = n.label.replace(/"/g, "'");
-      if (n.type === 'start' || n.type === 'end') lines.push(`  ${n.id}(["${lbl}"])`);
-      else if (n.type === 'decision') lines.push(`  ${n.id}{"${lbl}"}`);
-      else lines.push(`  ${n.id}["${lbl}"]`);
-    });
-    edges.forEach(e => {
-      lines.push(e.label ? `  ${e.from} -->|"${e.label}"| ${e.to}` : `  ${e.from} --> ${e.to}`);
-    });
-    return lines.join('\n');
-  }
-
-  function _flowJsonToMermaid(flowArr) {
-    const dir = _direction || 'LR';
-    const lines = [`flowchart ${dir}`];
     flowArr.forEach(n => {
       const lbl = (n.name || n.id).replace(/"/g, "'");
       if (n.type === 'start' || n.type === 'end') lines.push(`  ${n.id}(["${lbl}"])`);
@@ -22602,7 +21815,7 @@ Regras obrigatórias:
 
   window.indcageGoToPop = function(popKey) {
     if(typeof switchPop === 'function' && (popKey === 'd' || popKey === 'r')) {
-      switchPop(popKey === 'd' ? 'denuncias' : 'representacoes');
+      switchPop(popKey);
     }
   };
 
