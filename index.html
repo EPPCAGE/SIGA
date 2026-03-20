@@ -11510,6 +11510,10 @@ async function saveToCloud(attempt=1) {
 
   try { harvestEditables(); } catch(e) { console.warn('harvestEditables:', e); }
 
+  // Capturar quais POPs estão dirty AGORA (antes de construir o payload).
+  // Após o save, remover APENAS estes da lista — POPs sujos DURANTE o save permanecem para o próximo ciclo.
+  const _popsIncludedInThisSave = new Set(_dirtyPops);
+
   const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores','homeCards','aptCatalog','quadro']);
   const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
   // Strip session-only transient fields (prefixed with _) before persisting
@@ -11643,9 +11647,12 @@ async function saveToCloud(attempt=1) {
     }
 
     _saveInProgress = false;
-    _dirtyPops.clear(); // após save bem-sucedido, nenhum POP é mais "dirty"
+    // Remover apenas os POPs que foram incluídos neste save.
+    // POPs dirtied DURANTE o save (ex: snapshot de maturidade salvo em paralelo) permanecem
+    // marcados para o próximo ciclo de save e não serão sobrescritos pelo fetch-merge.
+    _popsIncludedInThisSave.forEach(k => _dirtyPops.delete(k));
     setSyncStatus('synced');
-    document.getElementById('unsaved-dot').style.display = 'none';
+    if(_dirtyPops.size === 0) document.getElementById('unsaved-dot').style.display = 'none';
     showToast('☁️ Dados salvos!', 'success');
     updateLastSaveChip(saved);
     logHistory('Salvou alterações').catch(e => console.warn('logHistory:', e));
