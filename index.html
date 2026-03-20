@@ -2367,6 +2367,13 @@
       <div class="card-header"><span class="card-title">📋 Ficha Técnica</span><button class="btn btn-outline" onclick="openStatusModal('d')" style="font-size:11px;padding:4px 10px;margin-left:auto;" id="d-ficha-edit-btn">✏️ Editar</button></div>
       <div class="card-body" id="d-ficha-body" style="padding:16px;"></div>
     </div>
+    <div id="d-flow-preview-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
+      <div class="card-header">
+        <span class="card-title">🔀 Diagrama de Fluxo</span>
+        <button class="btn btn-outline" onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="font-size:11px;padding:4px 10px;margin-left:auto;">✏️ Editar</button>
+      </div>
+      <div id="d-flow-preview-body" style="padding:12px 16px;overflow-x:auto;background:#f8fafc;border-radius:0 0 12px 12px;text-align:center;"></div>
+    </div>
     <div class="two-col fade-up delay-1">
       <div class="card">
         <div class="card-header"><span class="card-title">Objetivo</span></div>
@@ -2735,6 +2742,13 @@
     <div id="r-ficha-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
       <div class="card-header"><span class="card-title">📋 Ficha Técnica</span><button class="btn btn-outline" onclick="openStatusModal('r')" style="font-size:11px;padding:4px 10px;margin-left:auto;" id="r-ficha-edit-btn">✏️ Editar</button></div>
       <div class="card-body" id="r-ficha-body" style="padding:16px;"></div>
+    </div>
+    <div id="r-flow-preview-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
+      <div class="card-header">
+        <span class="card-title">🔀 Diagrama de Fluxo</span>
+        <button class="btn btn-outline" onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="font-size:11px;padding:4px 10px;margin-left:auto;">✏️ Editar</button>
+      </div>
+      <div id="r-flow-preview-body" style="padding:12px 16px;overflow-x:auto;background:#f8fafc;border-radius:0 0 12px 12px;text-align:center;"></div>
     </div>
     <div class="two-col fade-up delay-1">
       <div class="card">
@@ -7807,6 +7821,13 @@ function mountNewPopTab(key, label, silent=false) {
         <div class="card-header"><span class="card-title">📊 SIPOC</span></div>
         <div class="sipoc-body" style="padding:12px 16px;overflow-x:auto;"></div>
       </div>
+      <div id="${key}-flow-preview-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
+        <div class="card-header">
+          <span class="card-title">🔀 Diagrama de Fluxo</span>
+          <button class="btn btn-outline" onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="font-size:11px;padding:4px 10px;margin-left:auto;">✏️ Editar</button>
+        </div>
+        <div id="${key}-flow-preview-body" style="padding:12px 16px;overflow-x:auto;background:#f8fafc;border-radius:0 0 12px 12px;text-align:center;"></div>
+      </div>
     </div>
     <div id="${key}-fluxo" class="section">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:12px 16px;background:linear-gradient(135deg,#f0f5ff,#e8f4ff);border:1px solid #c7d9f0;border-radius:10px;">
@@ -11859,6 +11880,7 @@ async function loadFromCloud() {
         try { renderMetrics(p); }   catch(e) { console.warn('renderMetrics',p,e); }
         try { renderFicha(p); }     catch(e) { console.warn('renderFicha',p,e); }
         try { renderSipoc(p); }     catch(e) { console.warn('renderSipoc',p,e); }
+        try { renderFlowPreview(p); } catch(e) { console.warn('renderFlowPreview',p,e); }
         try { loadAcomp(p); }       catch(e) { console.warn('loadAcomp',p,e); }
         try { renderVersionBadge(p); } catch(e) {}
       } catch(e) { console.warn('Render error for', p, e); }
@@ -14542,6 +14564,27 @@ function renderSipoc(p) {
         : (getItems(c.key).map(item=>`<div class="sipoc-item">${item}</div>`).join('') || '<div style="color:#94a3b8;font-size:11px;font-style:italic;">Não informado</div>')
       }</div>
     </div>`).join('')}</div>`;
+}
+
+// ═══ PREVIEW DO FLUXO NA VISÃO GERAL ══════════════════
+async function renderFlowPreview(p) {
+  const card = document.getElementById(p + '-flow-preview-card');
+  if(!card) return;
+  const mermaidCode = DATA[p]?.flowDiagram?.mermaid;
+  if(!mermaidCode || !window.mermaid) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const body = document.getElementById(p + '-flow-preview-body');
+  if(!body) return;
+  body.innerHTML = '<div style="color:#64748b;font-size:12px;padding:12px;">Carregando diagrama…</div>';
+  try {
+    const id = 'fpp-' + p + '-' + Date.now();
+    const { svg } = await mermaid.render(id, mermaidCode);
+    body.innerHTML = svg;
+    const svgEl = body.querySelector('svg');
+    if(svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto'; }
+  } catch(e) {
+    body.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:12px;">Erro ao renderizar o diagrama de fluxo.</div>';
+  }
 }
 
 // ═══ FICHA TÉCNICA ════════════════════════════════════
@@ -21517,11 +21560,38 @@ function statusModalAutoFill() {
   let _currentMode = 'mermaid'; // 'mermaid' | 'bpmn'
   let _renderedSvg = null; // cached SVG for export
   let _fdZoomLevel = 1.0;
+  let _fdBaseW = 0, _fdBaseH = 0; // dimensões naturais do SVG após renderização
 
   window.fdApplyZoom = function() {
-    const svgEl = document.querySelector('#fd-mermaid-output svg');
+    const output = document.getElementById('fd-mermaid-output');
+    const svgEl  = output?.querySelector('svg');
     if(!svgEl) return;
-    svgEl.style.zoom = _fdZoomLevel;
+
+    // Capturar dimensões naturais uma única vez (antes de qualquer override)
+    if(!_fdBaseW || !_fdBaseH) {
+      const vb = svgEl.getAttribute('viewBox');
+      if(vb) {
+        const parts = vb.trim().split(/[\s,]+/).map(Number);
+        _fdBaseW = parts[2] || 0;
+        _fdBaseH = parts[3] || 0;
+      }
+      if(!_fdBaseW) {
+        const r = svgEl.getBoundingClientRect();
+        _fdBaseW = r.width  || 800;
+        _fdBaseH = r.height || 600;
+      }
+    }
+
+    if(_fdZoomLevel === 1) {
+      svgEl.style.width    = '';
+      svgEl.style.height   = '';
+      svgEl.style.maxWidth = '100%';
+    } else {
+      svgEl.style.maxWidth = 'none';
+      svgEl.style.width    = (_fdBaseW * _fdZoomLevel) + 'px';
+      svgEl.style.height   = (_fdBaseH * _fdZoomLevel) + 'px';
+    }
+
     const lbl = document.getElementById('fd-zoom-label');
     if(lbl) lbl.textContent = Math.round(_fdZoomLevel * 100) + '%';
   };
@@ -21587,6 +21657,7 @@ function statusModalAutoFill() {
       const id  = 'fdm-' + Date.now();
       const { svg } = await mermaid.render(id, code);
       _renderedSvg  = svg;
+      _fdBaseW = 0; _fdBaseH = 0; // resetar cache para o novo SVG
       output.innerHTML = svg;
       const svgEl = output.querySelector('svg');
       if (svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto'; }
@@ -21688,6 +21759,7 @@ Regras obrigatórias:
     markChanged();
     saveToCloud();
     showToast('Fluxo salvo!', 'success');
+    try { renderFlowPreview(p); } catch(e) {}
   };
 
   // ── Export SVG ────────────────────────────────────────────────
