@@ -3601,111 +3601,58 @@
               <div style="padding-bottom:14px;padding-left:0;padding-top:4px;flex:1;">
                 <div style="font-size:13px;font-weight:600;color:var(--cage-blue);margin-bottom:4px;">Envie seu arquivo + copie este prompt</div>
                 <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;position:relative;">
-                  <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.6;font-style:italic;white-space:pre-wrap;" id="npop-prompt-text"># PROMPT COMPLETO — EXTRAÇÃO DE POP CAGE → GESPROC-RS
-Analise o documento de processo enviado (POP, manual de processo ou relatório de processo) e extraia todas as informações estruturadas para o sistema SIGA da CAGE-RS.
-Leia o documento INTEIRO antes de estruturar os dados. Nunca invente informações. Se um campo não existir no documento, retorne "" ou []. Retorne APENAS JSON puro, sem explicações, sem blocos markdown.
+                  <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.6;font-style:italic;white-space:pre-wrap;" id="npop-prompt-text"># EXTRAÇÃO DE POP — SIGA/CAGE-RS
+Analise o documento e extraia as informações abaixo. Leia o documento INTEIRO antes de estruturar. Nunca invente dados ausentes. Retorne APENAS JSON puro, sem markdown.
 
-# REGRA CRÍTICA — LIMPEZA
-1. Todos os campos começam vazios. 2. Nunca reutilize informações de documentos anteriores. 3. Cada documento gera um JSON totalmente independente.
+# 1. METADADOS BÁSICOS
+nome, macro, processo, subprocesso, unidade, elaborado, revisado, aprovado, versao, data_emissao, desc (objetivo do processo), input (entradas/insumos), output (saídas/produtos), fornecedores (quem fornece insumos), clientes (quem recebe o resultado).
 
-# METADADOS DO PROCESSO
-Extraia os seguintes campos de cabeçalho/identificação do documento:
-- "nome": nome/título principal do processo (ex: "Elaboração de Material Informativo")
-- "titulo": título completo ou subtítulo descritivo, se houver
-- "macro": macroprocesso ao qual pertence (ex: "Comunicação Institucional")
-- "processo": nome do processo pai, se o documento descreve um subprocesso
-- "subprocesso": nome do subprocesso, se aplicável
-- "unidade": unidade organizacional responsável (divisão, setor, departamento)
-- "gerente": nome do gerente ou responsável pelo processo
-- "area_responsavel": área responsável pelo processo (pode ser igual à unidade)
-- "solicitante": quem solicitou o mapeamento
-- "patrocinador": patrocinador ou gestor que aprova o mapeamento
-- "equipe": membros da equipe de mapeamento (separados por vírgula)
-- "atores": lista de atores/participantes do processo como array de strings []
-- "elaborado": nome de quem elaborou o documento
-- "revisado": nome de quem revisou
-- "aprovado": nome de quem aprovou
-- "versao": versão do documento (ex: "1.0", "2.1")
-- "data_emissao": data de emissão ou aprovação do documento
-- "desc": objetivo ou finalidade do processo (texto descritivo)
-- "input": entradas/insumos do processo (o que dispara ou alimenta o processo)
-- "output": saídas/produtos do processo (o que é gerado ao final)
-- "resultados": resultados esperados e benefícios do processo
-- "fornecedores": quem fornece insumos ao processo
-- "clientes": quem recebe os resultados/produtos do processo
-- "sistemas": sistemas de informação, softwares e plataformas usados no processo (campo global, não por ação)
-- "canais_entrada": canais pelos quais chegam solicitações ao processo (lista de strings [])
+# 2. EXECUTORES
+executores[] — uma entrada por executor (NUNCA concatene nomes com ";").
+Cada executor: "name" (nome exato), "title" (cargo/função), "duties" (responsabilidades gerais, array de strings).
+O campo "actor" de cada action em steps[] deve usar EXATAMENTE o "name" do executor responsável.
 
-# SIGLAS
-Extraia TODAS as siglas e abreviações presentes no documento.
-Para cada uma inclua o significado completo como "descricao". Não invente siglas ausentes no documento.
+# 3. ETAPAS DE EXECUÇÃO (steps[]) — FOCO PRINCIPAL
+⚠️ Inclua APENAS as fases de execução operacional do processo — o que os executores realmente fazem.
+NÃO inclua: FAQ, Formulários, Anexos, Glossário, Indicadores, Normas, Objetivo, Escopo ou qualquer seção informacional.
 
-# EXECUTORES DO PROCESSO
-REGRA CRÍTICA: crie uma entrada SEPARADA em executores[] para CADA executor.
-Se o documento listar "Auxiliar administrativo; Analista; Auditor", gere 3 objetos distintos — NUNCA em uma única entrada.
-No campo "actor" de CADA action dentro de steps[], use EXATAMENTE o mesmo texto do campo "name" do executor responsável.
-O campo "title" deve conter o cargo/função. O campo "duties" deve conter as responsabilidades gerais desse executor.
-
-# CLASSIFICAÇÃO DAS AÇÕES (campo "type")
-- atividade: qualquer ação executável pelo responsável (ex: "Registrar processo", "Encaminhar relatório")
-- decisao: ponto de escolha com caminhos distintos — formulado como pergunta ou condição (ex: "Documentação completa?", "Aprovado?")
-- evento: marco de início ou fim do processo ou de uma etapa (ex: "Início", "Fim", "Receber solicitação")
-- observacao: explicações, notas, OBS:, textos entre parênteses que não são ações
-
-NUNCA classifique perguntas ou condicionais como "atividade". NUNCA omita uma linha — cada bullet, item numerado ou parágrafo de ação vira uma action separada.
-
-# CAMPO "natureza" DAS AÇÕES
-- "aprovacao": ação de aprovar, autorizar, validar, homologar, atestar, dar parecer favorável
-- "revisao": ação de revisar, corrigir, ajustar, devolver para correção, reenviar
-Deixe "natureza" como "" nas demais ações.
-
-# CAMPO "sistemas" DAS AÇÕES
-Se a ação mencionar uso de um sistema ou plataforma específica, preencha "sistemas" com o nome.
-Deixe "" se não houver sistema mencionado naquela ação específica.
-
-# ETAPAS DO PROCESSO (campo steps[]) — REGRA MAIS IMPORTANTE
-⚠️ steps[] deve conter APENAS as etapas de EXECUÇÃO DO PROCESSO — ou seja, as fases/seções que descrevem atividades operacionais realizadas pelos executores.
-
-NÃO inclua em steps[] seções como: FAQ, Perguntas Frequentes, Formulários, Modelos, Anexos, Glossário, Siglas, Indicadores, Normas, Referências, Histórico de Revisões, Objetivo, Escopo, Definições, ou qualquer seção administrativa/informacional.
-
-COMO IDENTIFICAR AS ETAPAS DE EXECUÇÃO:
-1. Procure pela seção de "Execução", "Procedimento", "Descrição das Atividades", "Fluxo do Processo" ou equivalente.
-2. Dentro dessa seção, cada fase/sub-seção com ações concretas realizadas por executores = uma step.
-3. Se não houver seção explícita de execução, use a inteligência para identificar quais partes do documento descrevem O QUE OS EXECUTORES FAZEM (tarefas, verificações, decisões, aprovações).
-4. NUNCA mescle duas fases de execução em uma única step. NUNCA omita uma fase de execução.
-5. Se o documento não tem fases explícitas, crie uma step por fase lógica distinta da execução.
+Identifique a seção de "Execução", "Procedimento" ou "Descrição das Atividades".
+Cada fase/agrupamento lógico dessa seção = uma step (macro-etapa).
+NUNCA mescle fases distintas. NUNCA omita uma fase de execução.
 
 Para cada step:
-- "title": título exato da seção como aparece no documento (ex: "2.3 Execução do processo")
-- "subtitle": subtítulo ou descrição breve da seção, se houver
-- "responsible": nome do executor principal desta etapa (mesmo texto de executores[].name)
-- "note": texto de observação ou nota geral da etapa (null se não houver)
-- "actions": lista com UMA entrada por linha/item de atividade da seção
+- "title": nome da fase/etapa (ex: "Recebimento da Solicitação")
+- "responsible": nome do executor principal (igual a executores[].name)
+- "note": observação geral da etapa, se houver (null se não houver)
+- "actions": lista de ações desta etapa — UMA por linha/bullet/item
 
-REGRAS PARA actions[]:
-1. Cada linha, bullet point ou item numerado = uma action separada. NUNCA agrupe duas linhas em uma só.
-2. Preserve o texto exato do documento — não resuma, não parafraseie.
-3. Se uma linha descreve uma decisão (contém "?", "se", "caso", "quando", "verificar se"), classifique como "decisao".
-4. Para "decisao", use "branches" com os caminhos (label + actions). NÃO crie actions soltas no nível da etapa para os caminhos de uma decisão.
-5. Nunca pule linhas por parecerem redundantes — inclua tudo.
-6. APENAS "atividade" tem "actor" e "sistemas" preenchidos. Para "decisao", "evento" e "observacao", deixe "actor":"" e "sistemas":"".
+Para cada action:
+- "type": "atividade" | "decisao" | "evento" | "observacao"
+  · atividade = ação executável (ex: "Registrar no sistema")
+  · decisao = ponto de escolha com caminhos (ex: "Documentação completa?") — NUNCA classifique pergunta/condição como atividade
+  · evento = marco de início/fim (ex: "Receber e-mail", "Arquivar processo")
+  · observacao = nota, OBS:, texto explicativo que não é ação
+- "text": texto exato do documento — não resuma, não parafraseie
+- "actor": nome exato do executor (só para "atividade"; "" para os demais tipos)
+- "natureza": "aprovacao" (aprovar/validar/homologar) | "revisao" (revisar/corrigir/devolver) | "" (demais)
+- "sistemas": nome do sistema mencionado na ação (só para "atividade"; "" se não houver)
+- "branches": para "decisao", liste os caminhos: [{"label":"Sim","actions":[...]},{"label":"Não","actions":[...]}]
 
-# FLUXO DETALHADO (campo flow[])
-Mapeie TODOS os passos sem simplificar. Inclua exceções, loops e todos os caminhos de cada decisão.
-id único por nó (n1, n2, ...); nós de decisão têm label obrigatório nas setas; pelo menos um "start" e um "end".
+# 4. FLUXO (flow[]) — IMPORTANTE
+Mapeie TODOS os nós da execução. Inclua loops, exceções e todos os caminhos de decisão.
+- id único por nó (n1, n2, ...)
+- type: "start" | "task" | "decision" | "end"
+- next[]: destinos com label obrigatório nas setas de decisão
+- Obrigatório: pelo menos um "start" e um "end"
 
-# FORMATO FINAL DO JSON
-{"nome":"","titulo":"","macro":"","processo":"","subprocesso":"","unidade":"","gerente":"","area_responsavel":"","solicitante":"","patrocinador":"","equipe":"","atores":[],"elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","output":"","resultados":"","fornecedores":"","clientes":"","sistemas":"","canais_entrada":[],"siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":"","branches":[{"label":"Sim","actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":""}]},{"label":"Não","actions":[]}]}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}
+# FORMATO JSON
+{"nome":"","macro":"","processo":"","subprocesso":"","unidade":"","elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","output":"","fornecedores":"","clientes":"","executores":[{"name":"","title":"","duties":[]}],"steps":[{"title":"","responsible":"","note":null,"actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":"","branches":[]}]}],"flow":[{"id":"n1","type":"start","name":"Início","actor":"","next":[{"id":"n2","label":""}]}]}
 
-VALIDAÇÃO FINAL OBRIGATÓRIA:
-✓ steps[] contém APENAS fases de execução — FAQ, formulários, indicadores, glossário e seções administrativas NÃO são steps
-✓ steps[].actions[] tem UMA action por linha/item — nenhuma linha omitida ou agrupada
-✓ siglas[] contém TODAS as siglas do documento, cada uma como entrada separada
-✓ executores[] tem uma entrada por executor (nunca concatenados com ";" em um único name)
-✓ steps[].actions[].actor usa o nome EXATO de um executor em executores[].name
-✓ steps[].actions[].natureza preenchida para ações de aprovação ou revisão
-✓ ações do tipo "decisao" possuem "branches" com os caminhos (nunca caminhos soltos no nível da etapa)
-✓ flow[] possui pelo menos um "start" e um "end", todos os caminhos de decisão mapeados, loops incluídos</div>
+VALIDAÇÃO:
+✓ steps[] contém APENAS fases de execução operacional
+✓ Cada linha de ação = uma action separada (nunca agrupe)
+✓ Decisões usam "branches" — nunca são classificadas como "atividade"
+✓ flow[] tem pelo menos um "start" e um "end", todos os caminhos de decisão mapeados</div>
                   <button onclick="copyNpopPrompt()" id="npop-copy-btn"
                     style="margin-top:8px;padding:5px 12px;background:var(--cage-blue);color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
                     📋 Copiar prompt
@@ -20142,25 +20089,22 @@ async function npopExtractWithGemini(file) {
     msg.textContent = 'Enviando para o Gemini...';
 
     const prompt = document.getElementById('npop-prompt-text')?.textContent?.trim() ||
-`# PROMPT COMPLETO — EXTRAÇÃO DE POP CAGE → GESPROC-RS
-Analise o documento de processo enviado e extraia todas as informações estruturadas para o sistema SIGA da CAGE-RS. Leia o documento INTEIRO antes de estruturar. Nunca invente informações. Retorne APENAS JSON puro, sem markdown.
+`# EXTRAÇÃO DE POP — SIGA/CAGE-RS
+Analise o documento e extraia as informações abaixo. Leia o documento INTEIRO antes de estruturar. Nunca invente dados ausentes. Retorne APENAS JSON puro, sem markdown.
 
-METADADOS: extraia nome, titulo, macro, processo, subprocesso, unidade, gerente, area_responsavel, solicitante, patrocinador, equipe, atores[], elaborado, revisado, aprovado, versao, data_emissao, desc, input, output, resultados, fornecedores, clientes, sistemas, canais_entrada[].
-SIGLAS: extraia TODAS as siglas do documento, cada uma como entrada separada em siglas[].
-EXECUTORES: crie uma entrada SEPARADA para cada executor — nunca concatene nomes. Use o nome exato no campo "actor" de cada action.
+METADADOS: nome, macro, processo, subprocesso, unidade, elaborado, revisado, aprovado, versao, data_emissao, desc (objetivo), input (entradas), output (saídas), fornecedores, clientes.
 
-ETAPAS (steps[]) — REGRA MAIS IMPORTANTE:
-⚠️ steps[] deve conter APENAS as fases de EXECUÇÃO DO PROCESSO — atividades operacionais realizadas pelos executores. NÃO inclua: FAQ, Perguntas Frequentes, Formulários, Anexos, Glossário, Siglas, Indicadores, Normas, Referências, Histórico de Revisões, Objetivo, Escopo ou qualquer seção informacional/administrativa.
-Identifique a seção de "Execução", "Procedimento" ou "Descrição das Atividades" e mapeie apenas as fases dessa seção. Se não houver seção explícita, use inteligência para distinguir o que descreve TAREFAS DOS EXECUTORES do restante. NUNCA mescle fases de execução. NUNCA omita uma fase de execução.
+EXECUTORES: executores[] — uma entrada por executor (NUNCA concatene com ";"). Cada executor: "name" (nome exato), "title" (cargo), "duties" (responsabilidades, array). O campo "actor" de cada action usa EXATAMENTE o "name" do executor.
 
-AÇÕES (actions[]): cada linha/bullet/item = uma action separada. NUNCA agrupe. Preserve o texto exato.
-Para "decisao", use "branches" com os caminhos. APENAS "atividade" tem "actor" e "sistemas" preenchidos.
-NATUREZA: "aprovacao" para aprovar/validar; "revisao" para revisar/corrigir; "" nas demais.
+ETAPAS (steps[]) — FOCO PRINCIPAL:
+⚠️ steps[] contém APENAS fases de execução operacional — o que os executores fazem. NÃO inclua: FAQ, Formulários, Anexos, Glossário, Indicadores, Normas, Objetivo, Escopo. Identifique a seção de "Execução", "Procedimento" ou "Descrição das Atividades". Cada fase/agrupamento lógico = uma step. NUNCA mescle fases. NUNCA omita fase de execução.
+Cada step: "title" (nome da fase), "responsible" (nome do executor principal), "note" (observação geral ou null), "actions" (lista de ações).
+Cada action: "type" (atividade|decisao|evento|observacao), "text" (texto exato, não resuma), "actor" (só atividade), "natureza" (aprovacao|revisao|""), "sistemas" (só atividade), "branches" (só decisao: [{label,actions}]).
+NUNCA classifique pergunta/condição como atividade. Cada linha/bullet = uma action separada.
 
-FLUXO (flow[]): mapeie TODOS os passos — inclua exceções, loops, todos os caminhos de decisão. start+end obrigatórios.
+FLUXO (flow[]): mapeie TODOS os nós da execução. Inclua loops, exceções e todos os caminhos de decisão. type: start|task|decision|end. next[]: destinos com label nas setas de decisão. Obrigatório: pelo menos um start e um end.
 
-FORMATO:
-{"nome":"","titulo":"","macro":"","processo":"","subprocesso":"","unidade":"","gerente":"","area_responsavel":"","solicitante":"","patrocinador":"","equipe":"","atores":[],"elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","output":"","resultados":"","fornecedores":"","clientes":"","sistemas":"","canais_entrada":[],"siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":"","branches":[{"label":"Sim","actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":""}]},{"label":"Não","actions":[]}]}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}`;
+FORMATO: {"nome":"","macro":"","processo":"","subprocesso":"","unidade":"","elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","output":"","fornecedores":"","clientes":"","executores":[{"name":"","title":"","duties":[]}],"steps":[{"title":"","responsible":"","note":null,"actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":"","branches":[]}]}],"flow":[{"id":"n1","type":"start","name":"Início","actor":"","next":[{"id":"n2","label":""}]}]}`;
 
     pbar.style.width = '60%';
     msg.textContent = 'Gemini analisando o documento...';
