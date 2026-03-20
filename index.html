@@ -20925,28 +20925,6 @@ function statusModalAutoFill() {
     }
   }
 
-  function _renderCoverage(pops) {
-    const el = document.getElementById('cockpit-coverage-grid');
-    if (!el || !window.CAGE_PROCESSOS) return;
-    const macros = [...new Set(CAGE_PROCESSOS.map(p => p.macroprocesso))].filter(Boolean);
-    const mappedNames = new Set(pops.map(k => DATA[k].meta?.name?.toLowerCase?.()));
-
-    el.innerHTML = macros.map(macro => {
-      const procs = CAGE_PROCESSOS.filter(p => p.macroprocesso === macro);
-      const mapped = procs.filter(p => mappedNames.has(p.subprocesso?.toLowerCase()) || mappedNames.has(p.processo?.toLowerCase())).length;
-      const pct = procs.length ? Math.round(mapped/procs.length*100) : 0;
-      return `<div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-          <span style="font-size:12px;font-weight:600;color:#374151;">${macro}</span>
-          <span style="font-size:12px;font-weight:700;color:#0ea5e9;">${pct}% <span style="font-weight:400;color:#94a3b8;">(${mapped}/${procs.length})</span></span>
-        </div>
-        <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
-          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#0ea5e9,#0284c7);border-radius:4px;transition:width .5s;"></div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
   function _renderPopSelector(pops) {
     const sel = document.getElementById('cockpit-pop-selector');
     if (!sel) return;
