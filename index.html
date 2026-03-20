@@ -16458,6 +16458,7 @@ function renderPopsGrid() {
 
 function popDeleteWork(key) {
   if(!confirm('Excluir este mapeamento? Esta ação não pode ser desfeita.')) return;
+  _dirtyPops.add(key); // impede o fetch-merge de restaurar este POP do servidor
   delete DATA[key];
   saveToCloud();
   showToast('Mapeamento excluído.', 'success');
@@ -17628,6 +17629,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function deleteMapeamento(key) {
   const name = DATA[key]?.meta?.name || key;
   if(!confirm(`Excluir o mapeamento "${name}"?\nEssa ação não pode ser desfeita.`)) return;
+  _dirtyPops.add(key); // impede o fetch-merge de restaurar este POP do servidor
   delete DATA[key];
   // Remove pop-content DOM element
   const domIdMap = { d: 'pop-denuncias', r: 'pop-representacoes' };
@@ -20484,8 +20486,11 @@ function statusModalAutoFill() {
   let _donutChart = null;
 
   window.showCockpitModule = function() {
-    hideAllModules();
-    if (typeof hideHome === 'function') hideHome();
+    hideAllModules(); // já oculta nav-tabs e pop-switcher-bar
+    // Ocultar home-page diretamente — NÃO chamar hideHome() porque ela
+    // re-exibe nav-tabs e pop-switcher-bar (a barra "PROCESSO: Tratar Denúncias")
+    const home = document.getElementById('home-page');
+    if (home) home.style.display = 'none';
     document.getElementById('cockpit-module').style.display = 'block';
     _renderCockpit();
   };
