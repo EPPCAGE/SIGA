@@ -4038,9 +4038,9 @@
           </select>
         </div>
         <div style="grid-column:1/-1;">
-          <label class="audit-label">Unidade Auditada</label>
+          <label class="audit-label">Equipe Auditada</label>
           <select class="modal-input" id="ap-unidade">
-            <option value="">— Selecione a unidade —</option>
+            <option value="">— Selecione a equipe —</option>
           </select>
         </div>
         <div style="grid-column:1/-1;">
@@ -19262,15 +19262,11 @@ function auditOpenPlanModal(id) {
 function auditClosePlanModal() { document.getElementById('audit-plan-modal').style.display='none'; }
 
 function auditPlanProcessoChange() {
-  const pKey = document.getElementById('ap-processo').value;
   const sel   = document.getElementById('ap-unidade');
   const saved = sel.value;
-  const roles = (pKey && Array.isArray(DATA[pKey]?.roles)) ? DATA[pKey].roles : [];
-  sel.innerHTML = '<option value="">— Selecione a unidade —</option>' +
-    roles.map(r => {
-      const label = r.name + (r.title ? ' — ' + r.title : '');
-      return `<option value="${label}"${saved===label?' selected':''}>${label}</option>`;
-    }).join('');
+  const equipes = getConfig('equipes');
+  sel.innerHTML = '<option value="">— Selecione a equipe —</option>' +
+    equipes.map(e => `<option value="${e}"${saved===e?' selected':''}>${e}</option>`).join('');
 }
 
 function auditNcPlanChange() {
@@ -20131,7 +20127,7 @@ function auditExportRelatorioWord(planId) {
   <h1>Relatório de Auditoria</h1>
   <p class="subtitle">${plan.processoNome||plan.objetivo||'—'}</p>
   <div class="meta">
-    <strong>Unidade auditada:</strong> ${plan.unidade||'—'}<br>
+    <strong>Equipe auditada:</strong> ${plan.unidade||'—'}<br>
     <strong>Auditor responsável:</strong> ${plan.auditor||'—'}<br>
     <strong>Data prevista:</strong> ${fmtD(plan.dataPrevista)}<br>
     <strong>Período auditado:</strong> ${plan.periodo||'—'}<br>
@@ -20177,7 +20173,7 @@ function auditExportRelatorioWord(planId) {
   <p style="font-size:10pt;color:#64748b;margin-bottom:28px;">Atestamos que as informações contidas neste relatório são fiéis aos registros de auditoria realizados.</p>
   <table class="sig-table"><tr>
     <td><br><br><br>_________________________________<br>${plan.auditor||'Auditor'}<br><span style="color:#94a3b8;font-size:8.5pt;">Auditor Responsável</span></td>
-    <td><br><br><br>_________________________________<br>${plan.unidade||'Unidade'}<br><span style="color:#94a3b8;font-size:8.5pt;">Gestor da Unidade Auditada</span></td>
+    <td><br><br><br>_________________________________<br>${plan.unidade||'Equipe'}<br><span style="color:#94a3b8;font-size:8.5pt;">Responsável da Equipe Auditada</span></td>
     <td><br><br><br>_________________________________<br>CAGE-RS<br><span style="color:#94a3b8;font-size:8.5pt;">Supervisão / CAGE</span></td>
   </tr></table>
 </div>
