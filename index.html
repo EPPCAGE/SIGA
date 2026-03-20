@@ -3293,7 +3293,7 @@
 <div id="cockpit-module" style="display:none;max-width:1200px;margin:0 auto;padding:24px 32px 80px;">
 
   <!-- Header -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
     <div>
       <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#0ea5e9;margin-bottom:4px;">CAGE-RS · Gestão EPP</div>
       <h2 style="font-family:'DM Serif Display',serif;font-size:28px;color:#0a2540;margin:0;line-height:1.2;">🎯 Cockpit de Gestão</h2>
@@ -3302,7 +3302,10 @@
     <button onclick="showHome()" style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:7px 16px;font-size:12px;color:#64748b;cursor:pointer;">← Página Inicial</button>
   </div>
 
-  <!-- KPI Row -->
+  <!-- Stats Row (mesmos indicadores da home) -->
+  <div id="cockpit-stats-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:20px;"></div>
+
+  <!-- KPI Row (status dos mapeamentos) -->
   <div id="cockpit-kpi-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;"></div>
 
   <!-- Mid row: donut + rankings -->
@@ -3329,6 +3332,28 @@
       <div id="cockpit-ranking-list" style="display:flex;flex-direction:column;gap:6px;"></div>
     </div>
 
+  </div>
+
+  <!-- Horas economizadas -->
+  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;">
+    <div style="font-size:13px;font-weight:800;color:#0a2540;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;">⏱ Impacto: Horas Economizadas</div>
+    <div id="cockpit-horas-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;"></div>
+  </div>
+
+  <!-- Distribuição de POPs -->
+  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div style="font-size:13px;font-weight:800;color:#0a2540;text-transform:uppercase;letter-spacing:.05em;">📊 Distribuição de POPs</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="cockpit-dist-filters">
+        <button onclick="cockpitDistBy('macro')" data-dist="macro" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #0ea5e9;background:#0ea5e9;color:#fff;">Macroprocesso</button>
+        <button onclick="cockpitDistBy('patrocinador')" data-dist="patrocinador" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;">Patrocinador</button>
+        <button onclick="cockpitDistBy('area')" data-dist="area" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;">Área</button>
+        <button onclick="cockpitDistBy('obj')" data-dist="obj" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;">Obj. Estratégico</button>
+      </div>
+    </div>
+    <div style="position:relative;height:260px;">
+      <canvas id="cockpit-dist-chart"></canvas>
+    </div>
   </div>
 
   <!-- Process Inspector (full width) -->
@@ -20532,17 +20557,138 @@ function statusModalAutoFill() {
 
   function _renderCockpit() {
     const pops = _allPops();
+    _renderStats(pops);
     _renderKpis(pops);
     _renderDonut(pops);
     _renderRankings(pops);
+    _renderHoras(pops);
+    _renderDistChart(pops, 'macro');
     _renderPopSelector(pops);
+  }
+
+  function _renderStats(pops) {
+    const el = document.getElementById('cockpit-stats-row');
+    if (!el) return;
+    const data = (typeof arqGetData === 'function') ? arqGetData() : [];
+    const macros = new Set(data.map(r => r.macroprocesso)).size;
+    const procs  = new Set(data.map(r => r.macroprocesso + '|' + r.processo)).size;
+    const subprocN = data.filter(r => r.subprocesso && r.subprocesso.trim()).length;
+    const procsMapeados = data.filter(r => r.mapeado === true).length;
+    const allPopKeys = ['d', 'r', ...pops];
+    const faqN = allPopKeys.reduce((s, k) => s + (DATA[k]?.faqs?.length || 0), 0);
+    const riscosN = allPopKeys.reduce((s, k) => s + (DATA[k]?.risks?.length || 0), 0);
+    const indicadoresN = DATA.indicadoresCage?.indicadores?.length || 0;
+    const auditConcluidasN = (DATA.audits?.plans || []).filter(p => p.status === 'concluida').length;
+    const stats = [
+      { label:'Macroprocessos',      val: macros,           color:'#0a2540' },
+      { label:'Processos',           val: procs,            color:'#8b5cf6' },
+      { label:'Subprocessos',        val: subprocN,         color:'#0369a1' },
+      { label:'Proc. mapeados',      val: procsMapeados,    color:'#00a86b' },
+      { label:'FAQs cadastradas',    val: faqN,             color:'#d97706' },
+      { label:'Riscos mapeados',     val: riscosN,          color:'#dc2626' },
+      { label:'Indicadores',         val: indicadoresN,     color:'#7c3aed' },
+      { label:'Auditorias concluídas', val: auditConcluidasN, color:'#15803d' },
+    ];
+    el.innerHTML = stats.map(s => `
+      <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:12px 14px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
+        <div style="font-size:22px;font-weight:800;color:${s.color};font-family:'JetBrains Mono',monospace;line-height:1.1;">${s.val}</div>
+        <div style="font-size:10px;color:#64748b;font-weight:600;margin-top:3px;">${s.label}</div>
+      </div>`).join('');
+  }
+
+  function _renderHoras(pops) {
+    const el = document.getElementById('cockpit-horas-row');
+    if (!el) return;
+    const allPopKeys = ['d', 'r', ...pops];
+    const horasList = allPopKeys.map(k => {
+      const meta = DATA[k]?.meta || {};
+      const vPre = parseFloat(meta.volPre)   || 0;
+      const vPos = parseFloat(meta.volPos)   || 0;
+      const cPre = parseFloat(meta.cicloPre) || 0;
+      const cPos = parseFloat(meta.cicloPos) || 0;
+      const mensal = (vPre * cPre) - (vPos * cPos);
+      return { key: k, nome: meta.name || k, mensal, anual: mensal * 12 };
+    }).filter(h => h.mensal > 0);
+    const totalAnual  = horasList.reduce((s, h) => s + h.anual, 0);
+    const totalMensal = horasList.reduce((s, h) => s + h.mensal, 0);
+    // Últimos 12 meses = totalAnual (já é base anual)
+    const cards = [
+      { label:'Horas economizadas / ano', value: totalAnual > 0 ? Math.round(totalAnual).toLocaleString('pt-BR') + ' h' : '—', sub:'Base anualizada de todos os processos redesenhados', color:'#00a86b', icon:'⏱' },
+      { label:'Horas economizadas / mês', value: totalMensal > 0 ? Math.round(totalMensal).toLocaleString('pt-BR') + ' h' : '—', sub:'Soma mensal da diferença Vol × Ciclo (antes − depois)', color:'#0ea5e9', icon:'📅' },
+      { label:'Processos com ganho',      value: horasList.length,  sub:'Com métricas de volume e ciclo preenchidas', color:'#8b5cf6', icon:'✅' },
+    ];
+    el.innerHTML = cards.map(c => `
+      <div style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;border-left:4px solid ${c.color};padding:16px 18px;">
+        <div style="font-size:20px;margin-bottom:4px;">${c.icon}</div>
+        <div style="font-size:24px;font-weight:900;color:${c.color};font-family:'JetBrains Mono',monospace;">${c.value}</div>
+        <div style="font-size:11px;font-weight:700;color:#334155;margin-top:2px;">${c.label}</div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:3px;">${c.sub}</div>
+      </div>`).join('');
+  }
+
+  let _distChart = null;
+  window.cockpitDistBy = function(dim) {
+    const pops = _allPops();
+    // update button styles
+    document.querySelectorAll('#cockpit-dist-filters button').forEach(b => {
+      const active = b.dataset.dist === dim;
+      b.style.background = active ? '#0ea5e9' : '#f8fafc';
+      b.style.color       = active ? '#fff'    : '#334155';
+      b.style.borderColor = active ? '#0ea5e9' : '#e2e8f0';
+    });
+    _renderDistChart(pops, dim);
+  };
+
+  function _renderDistChart(pops, dim) {
+    const canvas = document.getElementById('cockpit-dist-chart');
+    if (!canvas || !window.Chart) return;
+    // Group pops by dimension
+    const counts = {};
+    pops.forEach(k => {
+      const meta = DATA[k]?.meta || {};
+      let keys = [];
+      if (dim === 'macro')        keys = [meta.macro || '(sem macroprocesso)'];
+      else if (dim === 'patrocinador') keys = [meta.patrocinador || '(sem patrocinador)'];
+      else if (dim === 'area')    keys = [meta.unidade || meta.area || '(sem área)'];
+      else if (dim === 'obj')     keys = (meta.objEstrategicos?.length) ? meta.objEstrategicos : ['(sem objetivo)'];
+      keys.forEach(key => { counts[key] = (counts[key] || 0) + 1; });
+    });
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const labels = sorted.map(e => e[0]);
+    const values = sorted.map(e => e[1]);
+    const palette = ['#0ea5e9','#8b5cf6','#00a86b','#f59e0b','#ef4444','#0369a1','#7c3aed','#15803d','#d97706','#dc2626','#94a3b8','#334155'];
+    const colors  = labels.map((_, i) => palette[i % palette.length]);
+    if (_distChart) { _distChart.destroy(); _distChart = null; }
+    _distChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ data: values, backgroundColor: colors, borderRadius: 6, borderSkipped: false }]
+      },
+      options: {
+        indexAxis: labels.length > 6 ? 'y' : 'x',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.parsed[labels.length > 6 ? 'x' : 'y']} POP(s)` } }
+        },
+        scales: {
+          x: { grid: { display: labels.length <= 6 }, ticks: { font: { size: 11 } } },
+          y: { grid: { display: labels.length > 6  }, ticks: { font: { size: 11 } }, beginAtZero: true }
+        }
+      }
+    });
   }
 
   function _renderRankings(pops) {
     const el = document.getElementById('cockpit-ranking-list');
     if (!el) return;
     const ranked = pops
-      .map(k => ({ k, name: DATA[k].meta?.name || k, score: DATA[k].maturity?.score }))
+      .map(k => {
+        const res = (typeof matComputeFinal === 'function') ? matComputeFinal(k) : null;
+        return { k, name: DATA[k].meta?.name || k, score: res?.final ?? null, level: res?.level, color: res?.levelColor, icon: res?.levelIcon };
+      })
       .filter(x => x.score != null)
       .sort((a,b) => b.score - a.score)
       .slice(0, 6);
@@ -20551,15 +20697,14 @@ function statusModalAutoFill() {
       return;
     }
     const medals = ['🥇','🥈','🥉'];
-    const stars = n => [1,2,3,4,5].map(i => `<span style="font-size:12px;color:${i<=n?'#8b5cf6':'#e2e8f0'};">★</span>`).join('');
     el.innerHTML = ranked.map((x,i) => `
       <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #f1f5f9;">
         <span style="font-size:16px;width:24px;text-align:center;flex-shrink:0;">${medals[i] || `<span style="font-size:12px;color:#94a3b8;font-weight:700;">${i+1}</span>`}</span>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:700;color:#0a2540;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${x.name}</div>
+          <div style="font-size:10px;color:${x.color || '#94a3b8'};">${x.icon || ''} ${x.level || ''}</div>
         </div>
-        <div style="display:flex;gap:2px;flex-shrink:0;">${stars(x.score)}</div>
-        <span style="font-size:12px;font-weight:700;color:#8b5cf6;min-width:28px;text-align:right;flex-shrink:0;">${x.score}/5</span>
+        <span style="font-size:13px;font-weight:800;color:${x.color || '#8b5cf6'};min-width:42px;text-align:right;flex-shrink:0;">${x.score}/100</span>
       </div>`).join('');
   }
 
