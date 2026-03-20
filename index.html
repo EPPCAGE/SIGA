@@ -12133,8 +12133,13 @@ async function initSupabase() {
     document.getElementById('auth-overlay').style.display = 'flex';
     return;
   }
-  // Forçar novo login a cada reload/F5 — limpar sessão salva antes de criar o cliente
-  try { localStorage.removeItem('gestpop_auth'); } catch(e) {}
+  // Forçar novo login a cada reload/F5 — mas NÃO limpar quando estamos retornando de OAuth
+  // (o code_verifier do PKCE pode estar armazenado dentro do mesmo key e seria apagado,
+  //  fazendo a troca de código falhar e criando um loop infinito de redirecionamento)
+  const _isOAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
+  if (!_isOAuthCallback) {
+    try { localStorage.removeItem('gestpop_auth'); } catch(e) {}
+  }
 
   // Liberar qualquer Web Lock travado da sessão anterior antes de criar o cliente
   if (typeof navigator !== 'undefined' && navigator.locks) {
