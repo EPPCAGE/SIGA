@@ -1420,7 +1420,7 @@
     <span class="unsaved" id="unsaved-dot">● Alterações não salvas</span>
   </div>
   <div style="display:flex;gap:8px;align-items:center;">
-    <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;" onclick="discardChanges()">↩ Descartar</button>
+    <button id="undo-btn" class="btn btn-outline" style="font-size:12px;padding:7px 14px;" onclick="undoLastChange()" disabled title="Nada para desfazer">↩ Desfazer</button>
     <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="saveToStorage()">💾 Salvar</button>
     <button id="nova-versao-btn" class="btn btn-outline" style="font-size:12px;padding:7px 14px;color:#059669;border-color:#059669;" onclick="openNewVersionModal()">📌 Nova Versão</button>
   </div>
@@ -5436,8 +5436,9 @@ function toggleEditMode(forceState) {
   Object.keys(DATA).filter(k => !k.startsWith('_') && !_skipMetrics.has(k)).forEach(k => {
     try { renderMetrics(k); } catch(e) {}
   });
-  // Snapshot ao entrar no modo edição — base para o "Descartar alterações"
-  if(editMode) _takeEditSnapshot();
+  // Snapshot ao entrar no modo edição — inicializa pilha de undo
+  if(editMode) { _takeEditSnapshot(); }
+  else { _undoStack = []; _undoShadow = null; _updateUndoBtn(); }
   try { _updateVersionBars(); } catch(e) {}
   // Persistir estado do modo edição entre recarregamentos
   try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) {}
@@ -5556,21 +5557,46 @@ function enableEditables(on) {
 }
 
 let _autoSaveTimer = null;
-let _editSnapshot  = null; // deep snapshot of DATA+REPO_DOCS+DROPS taken on edit mode entry
+let _editSnapshot  = null; // deep snapshot taken on edit mode entry (kept for reference)
+let _undoStack     = [];   // undo history (max 40 states)
+let _undoShadow    = null; // state captured AFTER the last change — pushed on the NEXT change
+
+const _UNDO_MAX = 40;
+
+function _snapshotData() {
+  return JSON.parse(JSON.stringify(DATA));
+}
 
 function _takeEditSnapshot() {
   try {
-    _editSnapshot = {
-      DATA:      JSON.parse(JSON.stringify(DATA)),
-      REPO_DOCS: JSON.parse(JSON.stringify(REPO_DOCS || [])),
-      DROPS:     JSON.parse(JSON.stringify(DROPS     || [])),
-    };
+    _editSnapshot = { DATA: _snapshotData() };
+    // Initialise shadow (= state before the FIRST change)
+    _undoShadow = _snapshotData();
+    _undoStack  = [];
+    _updateUndoBtn();
   } catch(e) { console.warn('_takeEditSnapshot failed:', e); }
+}
+
+function _updateUndoBtn() {
+  const btn = document.getElementById('undo-btn');
+  if(!btn) return;
+  const n = _undoStack.length;
+  btn.disabled = n === 0;
+  btn.title = n > 0 ? `Desfazer (${n} ${n === 1 ? 'alteração' : 'alterações'})` : 'Nada para desfazer';
 }
 
 // quick=true: salvar em 800ms (usado em blur — usuário terminou de editar o campo)
 // quick=false: salvar em 1500ms (usado em ações estruturais — add/remove itens, etc.)
 function markChanged(quick=false) {
+  // Push shadow (state before this change) to undo stack
+  if(editMode && _undoShadow) {
+    _undoStack.push(_undoShadow);
+    if(_undoStack.length > _UNDO_MAX) _undoStack.shift();
+  }
+  // Update shadow to current (already-modified) state — will be "before" the NEXT change
+  try { _undoShadow = _snapshotData(); } catch(e) {}
+  _updateUndoBtn();
+
   document.getElementById('unsaved-dot').style.display = 'inline-block';
   // Registrar qual POP foi modificado para evitar sobrescrever trabalho de outras sessões
   if (currentPop) _dirtyPops.add(currentPop);
@@ -5584,13 +5610,29 @@ function markChanged(quick=false) {
   }, quick ? 800 : 1500);
 }
 
-function discardChanges() {
-  if(!confirm('Descartar todas as alterações não salvas? Os dados serão recarregados da nuvem.')) return;
-  clearTimeout(_autoSaveTimer);
-  loadFromCloud().then(() => {
-    showToast('↩ Alterações descartadas. Dados recarregados da nuvem.', 'success');
-    document.getElementById('unsaved-dot').style.display = 'none';
-  }).catch(e => { showToast('Erro ao recarregar dados: ' + e.message, 'warn'); });
+function undoLastChange() {
+  if(!_undoStack.length) { showToast('Nada para desfazer.', 'warn'); return; }
+  const prev = _undoStack.pop();
+  // Restore DATA keys from snapshot
+  const prevKeys = new Set(Object.keys(prev));
+  Object.keys(DATA).forEach(k => { if(!prevKeys.has(k)) delete DATA[k]; });
+  Object.assign(DATA, prev);
+  // Update shadow to current restored state
+  try { _undoShadow = _snapshotData(); } catch(e) {}
+  _updateUndoBtn();
+  // Re-render current POP if open
+  if(currentPop) {
+    const p = popPrefix(currentPop);
+    if(DATA[p]) {
+      try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) {}
+      try { renderTracker(p); } catch(e) {}
+      try { renderMetrics(p); } catch(e) {}
+    }
+  }
+  const n = _undoStack.length;
+  const undoMsg = n > 0 ? `↩ Desfeito. Mais ${n} ${n === 1 ? 'passo' : 'passos'} disponíveis.` : '↩ Desfeito. Estado inicial restaurado.';
+  showToast(undoMsg, 'success');
+  document.getElementById('unsaved-dot').style.display = n > 0 ? 'inline-block' : 'none';
 }
 
 // ═══ STEPS ════════════════════════════════════
