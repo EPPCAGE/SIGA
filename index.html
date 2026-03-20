@@ -11243,6 +11243,16 @@ document.addEventListener('visibilitychange', () => {
     clearTimeout(_autoSaveTimer);
     saveToCloud();
   }
+  // Ao retornar para a aba, recarregar do servidor se não estiver em modo edição
+  // e se passaram mais de 60s desde o último carregamento — evita perda de dados
+  // criados em outras máquinas enquanto esta aba estava em background
+  if(document.visibilityState === 'visible' && currentUser && window._appInitialized && !editMode) {
+    const elapsed = Date.now() - _lastLoadedAt;
+    if(elapsed > 60000) { // só recarregar se faz mais de 60s
+      console.log('[visibilitychange] Tab voltou ao foco — recarregando dados do servidor');
+      loadFromCloud();
+    }
+  }
 });
 
 // Salvar ao fechar/atualizar a página usando fetch keepalive=true
@@ -11359,6 +11369,12 @@ async function saveToCloud(attempt=1) {
   }
   _saveInProgress = true;
   setSyncStatus('syncing');
+
+  // Mesclar POPs pendentes do servidor antes de salvar (evita apagar POPs criados em outra sessão)
+  if (_pendingServerMerge) {
+    _silentlyMergeNewPops(_pendingServerMerge);
+    _pendingServerMerge = null;
+  }
 
   try { harvestEditables(); } catch(e) { console.warn('harvestEditables:', e); }
 
@@ -11675,6 +11691,7 @@ async function loadFromCloud() {
     }, 800);
 
     setSyncStatus('synced');
+    _lastLoadedAt = Date.now(); // registrar momento do carregamento para controle de re-sync
     updateLastSaveChip(data);
     if (_syncingFromRealtime) {
       showToast(`🔄 Sincronizado com alterações de ${_syncingFromRealtime}`, 'success');
@@ -18240,6 +18257,8 @@ let _presenceTimer = null;
 let _realtimeChannel = null;
 let _subscribedWsId   = null;
 let _syncingFromRealtime = null; // nome de quem disparou o sync via realtime
+let _pendingServerMerge = null; // dados do servidor aguardando merge (recebidos via realtime durante edit mode)
+let _lastLoadedAt = 0; // timestamp da última carga completa do servidor
 async function _upsertPresence() {
   if(!supaClient || !currentUserEmail) return;
   try {
@@ -18265,6 +18284,23 @@ function _stopPresenceHeartbeat() {
 }
 
 // ── REALTIME WORKSPACE SYNC ─────────────────────────────────────────
+
+// Mescla silenciosamente POPs novos vindos do servidor que não existem localmente.
+// Usado quando não é possível fazer loadFromCloud completo (ex.: usuário em modo edição).
+function _silentlyMergeNewPops(serverData) {
+  if (!serverData?.newPops) return;
+  let merged = 0;
+  serverData.newPops.forEach(({ key, data: pd }) => {
+    // Só adicionar POPs que não existem localmente — nunca sobrescrever trabalho local
+    if (!key || !key.startsWith('pop_') || DATA[key] || !pd || typeof pd !== 'object') return;
+    DATA[key] = pd;
+    try { sanitizePop(key); } catch(e) {}
+    try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', false); } catch(e) {}
+    merged++;
+  });
+  if (merged > 0) console.log('[mergeNewPops] ' + merged + ' POP(s) mesclado(s) silenciosamente do servidor');
+}
+
 function _subscribeWorkspaceChanges(wsId) {
   if (!supaClient || !wsId) return;
   if (_subscribedWsId === wsId) return; // já inscrito neste workspace
@@ -18286,9 +18322,12 @@ function _subscribeWorkspaceChanges(wsId) {
       // Ignorar salvamentos feitos pelo próprio usuário
       if (updatedBy && updatedBy === currentUserEmail) return;
       const name = payload.new?.updated_by_name || updatedBy || 'outro usuário';
-      // Se está em modo edição com alterações não salvas, apenas avisar
+      // Se está em modo edição com alterações não salvas, mesclar novos POPs silenciosamente
+      // e avisar o usuário — sem fazer reload completo que sobrescreveria o trabalho local
       const unsavedDot = document.getElementById('unsaved-dot');
       if (editMode && unsavedDot && unsavedDot.style.display !== 'none') {
+        _pendingServerMerge = payload.new?.data; // guardar para mesclar antes do próximo save
+        _silentlyMergeNewPops(payload.new?.data);
         showToast(`⚠️ ${name} salvou alterações. Finalize ou descarte as suas para sincronizar.`, 'warn');
         return;
       }
