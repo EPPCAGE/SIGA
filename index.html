@@ -2008,6 +2008,19 @@
     </div>
   </div>
 
+  <!-- Logo da Barra Superior -->
+  <div class="card fade-up" style="margin-bottom:20px;">
+    <div class="card-header"><span class="card-title">🏷 Logo da Barra Superior</span></div>
+    <div class="card-body" style="padding:20px;display:flex;gap:20px;align-items:flex-start;">
+      <div style="flex:1;">
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">URL da Imagem</label>
+        <input class="modal-input" id="gp-logo-barra-url" type="url" placeholder="https://..." oninput="saveGlobalParam('logoHeaderUrl',this.value);applyHeaderBtnColors();_gpLogoBarraPreview(this.value)">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Aparece no canto esquerdo da barra superior em formato triangular alargado. Deixe vazio para usar o ícone padrão.</div>
+      </div>
+      <div id="gp-logo-barra-preview" style="width:120px;height:44px;border:2px dashed var(--cage-border);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;color:var(--text-muted);background:var(--cage-light);">🖼</div>
+    </div>
+  </div>
+
   <!-- Logotipo -->
   <div class="card fade-up" style="margin-bottom:20px;">
     <div class="card-header"><span class="card-title">🖼 Logotipo (Página Inicial)</span></div>
@@ -3287,17 +3300,17 @@
   </div>
 
   <!-- KPI Row -->
-  <div id="cockpit-kpi-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px;"></div>
+  <div id="cockpit-kpi-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;"></div>
 
-  <!-- Main grid: left = donut + status, right = POP inspector -->
+  <!-- Mid row: donut + rankings -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;align-items:start;">
 
-    <!-- Status donut card -->
+    <!-- Status donut -->
     <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);">
       <div style="font-size:13px;font-weight:800;color:#0a2540;margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em;">📊 Mapeamentos por Status</div>
       <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
-        <div style="position:relative;width:160px;height:160px;flex-shrink:0;">
-          <canvas id="cockpit-donut-chart" width="160" height="160"></canvas>
+        <div style="position:relative;width:140px;height:140px;flex-shrink:0;">
+          <canvas id="cockpit-donut-chart" width="140" height="140"></canvas>
           <div id="cockpit-donut-center" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
             <div style="font-size:26px;font-weight:800;color:#0a2540;" id="cockpit-donut-total">0</div>
             <div style="font-size:10px;color:#64748b;font-weight:600;">TOTAL</div>
@@ -3307,37 +3320,28 @@
       </div>
     </div>
 
-    <!-- POP Inspector card -->
+    <!-- Rankings por maturidade -->
     <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);">
-      <div style="font-size:13px;font-weight:800;color:#0a2540;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;">🔍 Inspetor de Processo</div>
-      <select id="cockpit-pop-selector" onchange="cockpitLoadPop()" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#0a2540;background:#f8fafc;margin-bottom:14px;">
-        <option value="">— Selecione um processo —</option>
-      </select>
-      <div id="cockpit-pop-detail" style="display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;" id="cockpit-pop-kpis"></div>
-        <div style="display:flex;flex-direction:column;gap:8px;" id="cockpit-pop-sections"></div>
-      </div>
-      <div id="cockpit-pop-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:20px 0;">Selecione um processo para ver seus detalhes</div>
+      <div style="font-size:13px;font-weight:800;color:#0a2540;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;">🏆 Ranking de Maturidade</div>
+      <div id="cockpit-ranking-list" style="display:flex;flex-direction:column;gap:6px;"></div>
     </div>
 
   </div>
 
-  <!-- Timeline trimestral -->
-  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:13px;font-weight:800;color:#0a2540;text-transform:uppercase;letter-spacing:.05em;">📅 Linha do Tempo — <span id="cockpit-timeline-label">Trimestre Atual</span></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="cockpit-timeline-legend"></div>
+  <!-- Process Inspector (full width) -->
+  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.05);">
+    <div style="font-size:13px;font-weight:800;color:#0a2540;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;">🔍 Inspetor de Processo</div>
+    <select id="cockpit-pop-selector" onchange="cockpitLoadPop()" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#0a2540;background:#f8fafc;margin-bottom:16px;cursor:pointer;">
+      <option value="">— Selecione um processo para inspecionar —</option>
+    </select>
+    <div id="cockpit-pop-detail" style="display:none;">
+      <div id="cockpit-pop-header" style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid #f1f5f9;"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:20px;" id="cockpit-pop-kpis"></div>
+      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">🗺 Mapa do Processo</div>
+      <div id="cockpit-pop-flow" style="overflow-x:auto;padding-bottom:12px;"></div>
+      <div id="cockpit-pop-inds" style="margin-top:16px;"></div>
     </div>
-    <div id="cockpit-timeline-wrap" style="overflow-x:auto;padding-bottom:8px;">
-      <div id="cockpit-timeline-grid" style="min-width:600px;"></div>
-    </div>
-  </div>
-
-  <!-- Divider before existing EPP dashboard metrics -->
-  <div style="display:flex;align-items:center;gap:14px;margin:8px 0;">
-    <div style="flex:1;height:1px;background:linear-gradient(90deg,#e2e8f0,transparent);"></div>
-    <div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;">Métricas Detalhadas</div>
-    <div style="flex:1;height:1px;background:linear-gradient(270deg,#e2e8f0,transparent);"></div>
+    <div id="cockpit-pop-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:32px 0;">Selecione um processo para ver seu mapa, etapas e indicadores</div>
   </div>
 
 </div><!-- /cockpit-module -->
@@ -9106,13 +9110,25 @@ function applyHeaderBtnColors() {
   const logoDiv = document.querySelector('.header-logo');
   if(logoDiv) {
     if(gp.logoHeaderUrl) {
-      logoDiv.innerHTML = `<img src="${gp.logoHeaderUrl}" style="width:34px;height:34px;object-fit:contain;border-radius:6px;" onerror="this.style.display='none'">`;
-    } else if(gp.logoHeaderBg || gp.logoHeaderColor || gp.logoHeaderText) {
+      logoDiv.style.cssText = 'width:auto;max-width:140px;height:48px;background:transparent;border-radius:0;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);overflow:hidden;flex-shrink:0;padding:0;';
+      logoDiv.innerHTML = `<img src="${gp.logoHeaderUrl}" style="height:48px;width:auto;max-width:140px;object-fit:contain;display:block;" onerror="this.style.display='none'">`;
+    } else {
+      logoDiv.style.cssText = '';
       const bg    = gp.logoHeaderBg    || '#0a2540';
       const color = gp.logoHeaderColor || '#00a86b';
       const text  = gp.logoHeaderText  || 'EPP';
       logoDiv.innerHTML = `<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="34" height="34" rx="5" fill="${bg}" stroke="${color}" stroke-width="2"/><text x="18" y="24" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="${color}" text-anchor="middle">${text}</text></svg>`;
     }
+  }
+}
+
+function _gpLogoBarraPreview(url) {
+  const el = document.getElementById('gp-logo-barra-preview');
+  if(!el) return;
+  if(url) {
+    el.innerHTML = `<img src="${url}" style="height:44px;width:auto;max-width:116px;object-fit:contain;display:block;" onerror="this.innerHTML='❌'">`;
+  } else {
+    el.innerHTML = '🖼';
   }
 }
 
@@ -9158,6 +9174,10 @@ function eppRenderParams() {
   if(nomEl) nomEl.value = gp.nomeSistema || '';
   const subEl = document.getElementById('gp-subtitulo');
   if(subEl) subEl.value = gp.subtitulo || '';
+
+  // Logo barra superior
+  const logoBarraEl = document.getElementById('gp-logo-barra-url');
+  if(logoBarraEl) { logoBarraEl.value = gp.logoHeaderUrl || ''; _gpLogoBarraPreview(gp.logoHeaderUrl || ''); }
 
   // Logo
   const logoEl = document.getElementById('gp-logo-url');
@@ -20398,15 +20418,7 @@ function statusModalAutoFill() {
     hideAllModules();
     if (typeof hideHome === 'function') hideHome();
     document.getElementById('cockpit-module').style.display = 'block';
-    // Also show the existing EPP dashboard panel with all existing metrics
-    const dash = document.getElementById('epp-dash-panel');
-    if (dash) {
-      dash.style.display = 'block';
-      // Override its top padding so it flows naturally below cockpit sections
-      dash.style.paddingTop = '0';
-    }
     _renderCockpit();
-    if (typeof eppRenderDashboard === 'function') eppRenderDashboard();
   };
 
   function _allPops() {
@@ -20437,8 +20449,33 @@ function statusModalAutoFill() {
     const pops = _allPops();
     _renderKpis(pops);
     _renderDonut(pops);
-    _renderTimeline(pops);
+    _renderRankings(pops);
     _renderPopSelector(pops);
+  }
+
+  function _renderRankings(pops) {
+    const el = document.getElementById('cockpit-ranking-list');
+    if (!el) return;
+    const ranked = pops
+      .map(k => ({ k, name: DATA[k].meta?.name || k, score: DATA[k].maturity?.score }))
+      .filter(x => x.score != null)
+      .sort((a,b) => b.score - a.score)
+      .slice(0, 6);
+    if (!ranked.length) {
+      el.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:12px 0;">Nenhum processo com maturidade avaliada ainda.</div>';
+      return;
+    }
+    const medals = ['🥇','🥈','🥉'];
+    const stars = n => [1,2,3,4,5].map(i => `<span style="font-size:12px;color:${i<=n?'#8b5cf6':'#e2e8f0'};">★</span>`).join('');
+    el.innerHTML = ranked.map((x,i) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #f1f5f9;">
+        <span style="font-size:16px;width:24px;text-align:center;flex-shrink:0;">${medals[i] || `<span style="font-size:12px;color:#94a3b8;font-weight:700;">${i+1}</span>`}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:700;color:#0a2540;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${x.name}</div>
+        </div>
+        <div style="display:flex;gap:2px;flex-shrink:0;">${stars(x.score)}</div>
+        <span style="font-size:12px;font-weight:700;color:#8b5cf6;min-width:28px;text-align:right;flex-shrink:0;">${x.score}/5</span>
+      </div>`).join('');
   }
 
   function _renderKpis(pops) {
@@ -20607,39 +20644,102 @@ function statusModalAutoFill() {
     if (detail) detail.style.display = '';
     if (empty)  empty.style.display  = 'none';
 
-    const m    = DATA[k].meta || {};
-    const st   = _calcStatus(m);
+    const m     = DATA[k].meta || {};
+    const st    = _calcStatus(m);
     const stCol = _statusColor(st);
     const steps = DATA[k].steps || [];
     const inds  = DATA[k].indicators || [];
     const risks = DATA[k].risks || [];
     const mat   = DATA[k].maturity || {};
 
+    // ── Header row ──
+    const hdrEl = document.getElementById('cockpit-pop-header');
+    if (hdrEl) {
+      const fmt = d => new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR');
+      hdrEl.innerHTML = `
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:19px;font-weight:800;color:#0a2540;line-height:1.2;">${m.name || k}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:4px;">${[m.macro, m.processo, m.unidade].filter(Boolean).join(' · ')}</div>
+          ${m.gerente ? `<div style="font-size:12px;color:#64748b;margin-top:2px;">👤 ${m.gerente}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+          <span style="background:${stCol}18;color:${stCol};border:1.5px solid ${stCol}40;border-radius:20px;padding:5px 16px;font-size:12px;font-weight:700;">${_statusLabel(st)}</span>
+          ${m.dataInicio ? `<span style="font-size:12px;color:#64748b;background:#f1f5f9;padding:4px 10px;border-radius:8px;">📅 ${fmt(m.dataInicio)}</span>` : ''}
+          ${m.dataPrevista ? `<span style="font-size:12px;color:#64748b;background:#f1f5f9;padding:4px 10px;border-radius:8px;">🏁 ${fmt(m.dataPrevista)}</span>` : ''}
+        </div>`;
+    }
+
+    // ── Mini KPIs ──
     const kpisEl = document.getElementById('cockpit-pop-kpis');
     if (kpisEl) {
+      const stars = n => n != null ? [1,2,3,4,5].map(i=>`<span style="font-size:11px;color:${i<=n?'#8b5cf6':'#e2e8f0'};">★</span>`).join('') : '—';
       kpisEl.innerHTML = [
-        { label:'Status', value: _statusLabel(st), color: stCol },
-        { label:'Etapas', value: steps.length, color: '#f59e0b' },
-        { label:'Indicadores', value: inds.length, color: '#0ea5e9' },
-        { label:'Riscos', value: risks.length, color: '#ef4444' },
-      ].map(d => `<div style="background:#f8fafc;border-radius:10px;padding:12px;border-left:3px solid ${d.color};">
-          <div style="font-size:16px;font-weight:800;color:${d.color};">${d.value}</div>
-          <div style="font-size:10px;color:#64748b;font-weight:600;margin-top:2px;">${d.label}</div>
+        { label:'Etapas',       value: steps.length,  color:'#f59e0b', icon:'⚙️' },
+        { label:'Indicadores',  value: inds.length,   color:'#0ea5e9', icon:'📊' },
+        { label:'Riscos',       value: risks.length,  color:'#ef4444', icon:'⚠️' },
+        { label:'Maturidade',   value: mat.score != null ? `${mat.score}/5` : '—', color:'#8b5cf6', icon:'📈',
+          extra: mat.score != null ? `<div style="margin-top:4px;">${stars(mat.score)}</div>` : '' },
+      ].map(d => `
+        <div style="background:#f8fafc;border-radius:12px;padding:14px;border-left:3px solid ${d.color};text-align:center;">
+          <div style="font-size:18px;margin-bottom:4px;">${d.icon}</div>
+          <div style="font-size:22px;font-weight:800;color:${d.color};font-family:'JetBrains Mono',monospace;">${d.value}</div>
+          ${d.extra || ''}
+          <div style="font-size:10px;color:#64748b;font-weight:600;margin-top:4px;">${d.label}</div>
         </div>`).join('');
     }
 
-    const sectEl = document.getElementById('cockpit-pop-sections');
-    if (sectEl) {
-      const matScore = mat.score != null ? `<span style="font-weight:700;color:#8b5cf6;">${mat.score}/5</span>` : '—';
-      sectEl.innerHTML = `
-        <div style="font-size:12px;color:#374151;"><strong>Processo:</strong> ${m.name || k}</div>
-        ${m.unidade ? `<div style="font-size:12px;color:#374151;"><strong>Unidade:</strong> ${m.unidade}</div>` : ''}
-        ${m.gerente  ? `<div style="font-size:12px;color:#374151;"><strong>Gerente:</strong> ${m.gerente}</div>` : ''}
-        ${m.dataInicio ? `<div style="font-size:12px;color:#374151;"><strong>Início:</strong> ${new Date(m.dataInicio+'T12:00:00Z').toLocaleDateString('pt-BR')}</div>` : ''}
-        ${m.dataPrevista ? `<div style="font-size:12px;color:#374151;"><strong>Previsão:</strong> ${new Date(m.dataPrevista+'T12:00:00Z').toLocaleDateString('pt-BR')}</div>` : ''}
-        <div style="font-size:12px;color:#374151;"><strong>Maturidade:</strong> ${matScore}</div>
-        ${steps.length ? `<div style="margin-top:8px;"><div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Etapas</div>
-          <div style="display:flex;flex-direction:column;gap:3px;">${steps.slice(0,5).map((s,i) => `<div style="font-size:11px;color:#374151;padding:4px 8px;background:#f8fafc;border-radius:5px;">${i+1}. ${s.title||s.subtitle||'—'}</div>`).join('')}${steps.length>5?`<div style="font-size:11px;color:#94a3b8;">+ ${steps.length-5} mais…</div>`:''}</div></div>` : ''}`;
+    // ── Visual flow map ──
+    const flowEl = document.getElementById('cockpit-pop-flow');
+    if (flowEl) {
+      if (!steps.length) {
+        flowEl.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:20px;background:#f8fafc;border-radius:10px;">Nenhuma etapa mapeada ainda para este processo.</div>';
+      } else {
+        const palette = ['#0ea5e9','#00a86b','#8b5cf6','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16'];
+        const cards = steps.map((s, i) => {
+          const col  = palette[i % palette.length];
+          const acts = s.actions || [];
+          const actsHtml = acts.slice(0,3).map(a => {
+            const txt = (a.text || '').slice(0,50);
+            const icon = a.type === 'decisao' ? '◆' : '•';
+            return `<div style="font-size:10px;color:#475569;margin-top:3px;padding-left:6px;border-left:2px solid ${col}50;line-height:1.3;">${icon} ${txt}${(a.text||'').length>50?'…':''}</div>`;
+          }).join('');
+          const more = acts.length > 3 ? `<div style="font-size:10px;color:#94a3b8;margin-top:3px;">+${acts.length-3} atividades</div>` : '';
+          const arrow = i < steps.length-1
+            ? `<div style="display:flex;align-items:center;padding:0 6px;flex-shrink:0;"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 9h10M10 5l4 4-4 4" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`
+            : '';
+          return `
+            <div style="display:flex;align-items:stretch;gap:0;flex-shrink:0;">
+              <div style="width:180px;background:#fff;border:1.5px solid ${col}55;border-top:3px solid ${col};border-radius:10px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.05);">
+                <div style="font-size:9px;font-weight:800;color:${col};letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px;">Etapa ${i+1}</div>
+                <div style="font-size:12px;font-weight:700;color:#0a2540;line-height:1.3;margin-bottom:4px;">${s.title || '—'}</div>
+                ${s.responsible ? `<div style="font-size:10px;color:#64748b;margin-bottom:4px;">👤 ${s.responsible}</div>` : ''}
+                ${actsHtml}${more}
+              </div>
+              ${arrow}
+            </div>`;
+        }).join('');
+
+        flowEl.innerHTML = `<div style="display:flex;align-items:flex-start;gap:0;min-width:max-content;padding:4px 2px;">${cards}</div>`;
+      }
+    }
+
+    // ── Indicators ──
+    const indsEl = document.getElementById('cockpit-pop-inds');
+    if (indsEl) {
+      if (inds.length) {
+        indsEl.innerHTML = `
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;border-top:1px solid #f1f5f9;padding-top:16px;">📊 Indicadores</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+            ${inds.map(ind => `
+              <div style="background:#f8fafc;border-radius:10px;padding:12px;border:1px solid #e2e8f0;">
+                <div style="font-size:13px;font-weight:700;color:#0a2540;margin-bottom:4px;">${ind.icon||'📊'} ${ind.title||'—'}</div>
+                ${ind.meta ? `<div style="font-size:11px;color:#0ea5e9;font-weight:600;">Meta: ${ind.meta}</div>` : ''}
+                ${ind.periodicidade ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${ind.periodicidade}</div>` : ''}
+              </div>`).join('')}
+          </div>`;
+      } else {
+        indsEl.innerHTML = '';
+      }
     }
   };
 
