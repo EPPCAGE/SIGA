@@ -3603,79 +3603,105 @@
                 <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;position:relative;">
                   <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.6;font-style:italic;white-space:pre-wrap;" id="npop-prompt-text"># PROMPT COMPLETO — EXTRAÇÃO DE POP CAGE → GESPROC-RS
 Analise o documento de processo enviado (POP, manual de processo ou relatório de processo) e extraia todas as informações estruturadas para o sistema SIGA da CAGE-RS.
-Leia o documento INTEIRO antes de estruturar os dados. Nunca invente informações. Se um campo não existir no documento, retorne null ou lista vazia. Retorne APENAS JSON puro, sem explicações.
+Leia o documento INTEIRO antes de estruturar os dados. Nunca invente informações. Se um campo não existir no documento, retorne "" ou []. Retorne APENAS JSON puro, sem explicações, sem blocos markdown.
 
 # REGRA CRÍTICA — LIMPEZA
-1. Todos os campos começam vazios. 2. Nunca reutilize informações de processos anteriores. 3. Cada documento gera um JSON totalmente independente.
+1. Todos os campos começam vazios. 2. Nunca reutilize informações de documentos anteriores. 3. Cada documento gera um JSON totalmente independente.
+
+# METADADOS DO PROCESSO
+Extraia os seguintes campos de cabeçalho/identificação do documento:
+- "nome": nome/título principal do processo (ex: "Elaboração de Material Informativo")
+- "titulo": título completo ou subtítulo descritivo, se houver
+- "macro": macroprocesso ao qual pertence (ex: "Comunicação Institucional")
+- "processo": nome do processo pai, se o documento descreve um subprocesso
+- "subprocesso": nome do subprocesso, se aplicável
+- "unidade": unidade organizacional responsável (divisão, setor, departamento)
+- "gerente": nome do gerente ou responsável pelo processo
+- "area_responsavel": área responsável pelo processo (pode ser igual à unidade)
+- "solicitante": quem solicitou o mapeamento
+- "patrocinador": patrocinador ou gestor que aprova o mapeamento
+- "equipe": membros da equipe de mapeamento (separados por vírgula)
+- "atores": lista de atores/participantes do processo como array de strings []
+- "elaborado": nome de quem elaborou o documento
+- "revisado": nome de quem revisou
+- "aprovado": nome de quem aprovou
+- "versao": versão do documento (ex: "1.0", "2.1")
+- "data_emissao": data de emissão ou aprovação do documento
+- "desc": objetivo ou finalidade do processo (texto descritivo)
+- "input": entradas/insumos do processo (o que dispara ou alimenta o processo)
+- "output": saídas/produtos do processo (o que é gerado ao final)
+- "resultados": resultados esperados e benefícios do processo
+- "fornecedores": quem fornece insumos ao processo
+- "clientes": quem recebe os resultados/produtos do processo
+- "sistemas": sistemas de informação, softwares e plataformas usados no processo (campo global, não por ação)
+- "canais_entrada": canais pelos quais chegam solicitações ao processo (lista de strings [])
 
 # SIGLAS
-Extraia TODAS as siglas e abreviações presentes no documento (ex: CAGE, CGE, TCE, POP, SAEWEB, SEI, SIAPC).
+Extraia TODAS as siglas e abreviações presentes no documento.
 Para cada uma inclua o significado completo como "descricao". Não invente siglas ausentes no documento.
 
 # EXECUTORES DO PROCESSO
 REGRA CRÍTICA: crie uma entrada SEPARADA em executores[] para CADA executor.
 Se o documento listar "Auxiliar administrativo; Analista; Auditor", gere 3 objetos distintos — NUNCA em uma única entrada.
-No campo "actor" de CADA action dentro de steps[], use EXATAMENTE o mesmo texto do campo "name" do executor responsável por aquela ação.
-O campo "title" deve conter o cargo/função do executor. O campo "duties" deve conter as responsabilidades gerais desse executor (não as atividades do processo).
+No campo "actor" de CADA action dentro de steps[], use EXATAMENTE o mesmo texto do campo "name" do executor responsável.
+O campo "title" deve conter o cargo/função. O campo "duties" deve conter as responsabilidades gerais desse executor.
 
 # CLASSIFICAÇÃO DAS AÇÕES (campo "type")
-- atividade: qualquer ação executável pelo responsável (ex: "Registrar processo", "Encaminhar relatório", "Verificar documentação")
-- decisao: ponto de escolha com caminhos distintos — geralmente formulado como pergunta ou condição (ex: "Documentação completa?", "Aprovado?", "Se sim:", "Caso contrário:")
-- evento: marco de início ou fim do processo ou de uma etapa (ex: "Receber solicitação", "Processo encerrado", "Início", "Fim")
+- atividade: qualquer ação executável pelo responsável (ex: "Registrar processo", "Encaminhar relatório")
+- decisao: ponto de escolha com caminhos distintos — formulado como pergunta ou condição (ex: "Documentação completa?", "Aprovado?")
+- evento: marco de início ou fim do processo ou de uma etapa (ex: "Início", "Fim", "Receber solicitação")
 - observacao: explicações, notas, OBS:, textos entre parênteses que não são ações
 
-NUNCA classifique perguntas ou condicionais como "atividade". NUNCA omita uma linha do documento — cada bullet, item numerado ou parágrafo de ação vira uma action separada.
+NUNCA classifique perguntas ou condicionais como "atividade". NUNCA omita uma linha — cada bullet, item numerado ou parágrafo de ação vira uma action separada.
 
 # CAMPO "natureza" DAS AÇÕES
-Preencha o campo "natureza" quando a ação envolver:
 - "aprovacao": ação de aprovar, autorizar, validar, homologar, atestar, dar parecer favorável
-- "revisao": ação de revisar, corrigir, ajustar, complementar, devolver para correção, reenviar
-
-Deixe "natureza" como string vazia "" nas demais ações.
+- "revisao": ação de revisar, corrigir, ajustar, devolver para correção, reenviar
+Deixe "natureza" como "" nas demais ações.
 
 # CAMPO "sistemas" DAS AÇÕES
-Se a ação mencionar uso de um sistema, software ou plataforma (ex: SEI, SIAPC, SAEWEB, e-mail, planilha Excel, portal), preencha "sistemas" com o nome do sistema.
-Deixe "sistemas" como string vazia "" se não houver sistema mencionado.
+Se a ação mencionar uso de um sistema ou plataforma específica, preencha "sistemas" com o nome.
+Deixe "" se não houver sistema mencionado naquela ação específica.
 
 # ETAPAS DO PROCESSO (campo steps[]) — REGRA MAIS IMPORTANTE
-CADA seção numerada, fase, subprocesso ou agrupamento lógico de atividades do documento vira uma entrada separada em steps[].
-NUNCA mescle duas seções distintas em uma única step. NUNCA omita uma seção.
+⚠️ ATENÇÃO: o número de entradas em steps[] DEVE ser igual ao número de seções/fases identificadas no documento.
+
+COMO CONTAR AS ETAPAS:
+1. Leia o documento inteiro e liste TODAS as seções, fases ou agrupamentos numerados.
+2. Cada seção = uma step. Se o documento tem seções "2.1 Início", "2.2 Recebimento", "2.3 Análise", "2.4 Execução", "2.5 Encerramento" → steps[] deve ter 5 entradas.
+3. NUNCA mescle duas seções em uma única step. NUNCA omita uma seção.
+4. Se o documento não tem seções numeradas explícitas, crie uma step por fase lógica distinta do processo.
 
 Para cada step:
-- "title": título exato da seção/fase como aparece no documento
+- "title": título exato da seção como aparece no documento (ex: "2.3 Execução do processo")
 - "subtitle": subtítulo ou descrição breve da seção, se houver
-- "responsible": nome do executor principal responsável por essa etapa (mesmo texto de executores[].name)
-- "note": texto de observação, OBS ou nota geral da etapa, se houver (null se não houver)
+- "responsible": nome do executor principal desta etapa (mesmo texto de executores[].name)
+- "note": texto de observação ou nota geral da etapa (null se não houver)
 - "actions": lista com UMA entrada por linha/item de atividade da seção
 
-REGRAS PARA actions[] — LEIA COM ATENÇÃO:
-1. Cada linha, bullet point ou item numerado do documento = uma action separada. NUNCA agrupe duas linhas em uma só action.
-2. Preserve o texto exato do documento no campo "text" — não resuma, não parafraseie.
+REGRAS PARA actions[]:
+1. Cada linha, bullet point ou item numerado = uma action separada. NUNCA agrupe duas linhas em uma só.
+2. Preserve o texto exato do documento — não resuma, não parafraseie.
 3. Se uma linha descreve uma decisão (contém "?", "se", "caso", "quando", "verificar se"), classifique como "decisao".
-4. Para ações do tipo "decisao", use o campo "branches" para representar os caminhos possíveis. Cada caminho tem "label" (ex: "Sim", "Não", "Aprovado", "Reprovado") e "actions" (lista de ações daquele caminho). NÃO crie actions separadas no nível da etapa para os caminhos de uma decisão — elas devem estar DENTRO do branches[] da decisão correspondente.
-5. Se uma linha menciona envio para aprovação, volta para revisão, ou aguardar retorno — inclua como action com a natureza correspondente (dentro do caminho adequado se for resultado de uma decisão).
-6. Nunca pule linhas por parecerem redundantes ou óbvias — inclua tudo.
-7. APENAS ações do tipo "atividade" devem ter "actor" e "sistemas" preenchidos. Para "decisao", "evento" e "observacao", deixe "actor":"" e "sistemas":"".
+4. Para "decisao", use "branches" com os caminhos (label + actions). NÃO crie actions soltas no nível da etapa para os caminhos de uma decisão.
+5. Nunca pule linhas por parecerem redundantes — inclua tudo.
+6. APENAS "atividade" tem "actor" e "sistemas" preenchidos. Para "decisao", "evento" e "observacao", deixe "actor":"" e "sistemas":"".
 
 # FLUXO DETALHADO (campo flow[])
-Mapeie TODOS os passos do processo SEM simplificar. Inclua obrigatoriamente:
-- Exceções e tratamentos de erro (ex: "Documentação inválida?" → caminho Não)
-- Loops de retorno (setas voltando para etapas anteriores — o "next" pode apontar para um "id" já usado antes)
-- Todos os caminhos de cada decisão com seus respectivos rótulos
-- O "actor" de cada nó "task" deve ser o nome EXATO do executor correspondente
-Regras técnicas: id único por nó (n1, n2, ...); nós de decisão têm label obrigatório nas setas ("Sim"/"Não" ou equivalente); pelo menos um nó "start" e um "end".
+Mapeie TODOS os passos sem simplificar. Inclua exceções, loops e todos os caminhos de cada decisão.
+id único por nó (n1, n2, ...); nós de decisão têm label obrigatório nas setas; pelo menos um "start" e um "end".
 
 # FORMATO FINAL DO JSON
-{"nome":"","macro":"","processo":"","subprocesso":"","area_responsavel":"","divisao":"","titulo":"","elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","canais_entrada":[],"output":"","siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":"","branches":[{"label":"Sim","actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":""}]},{"label":"Não","actions":[]}]}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}
+{"nome":"","titulo":"","macro":"","processo":"","subprocesso":"","unidade":"","gerente":"","area_responsavel":"","solicitante":"","patrocinador":"","equipe":"","atores":[],"elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","output":"","resultados":"","fornecedores":"","clientes":"","sistemas":"","canais_entrada":[],"siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":"","branches":[{"label":"Sim","actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":""}]},{"label":"Não","actions":[]}]}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}
 
 VALIDAÇÃO FINAL OBRIGATÓRIA:
+✓ steps[] tem UMA entrada por seção do documento — conte as seções e compare com o número de steps
+✓ steps[].actions[] tem UMA action por linha/item — nenhuma linha omitida ou agrupada
 ✓ siglas[] contém TODAS as siglas do documento, cada uma como entrada separada
 ✓ executores[] tem uma entrada por executor (nunca concatenados com ";" em um único name)
-✓ steps[] contém UMA entrada por seção/fase do documento — nenhuma seção omitida ou mesclada
-✓ steps[].actions[] tem UMA action por linha/item do documento — nenhuma linha omitida ou agrupada
 ✓ steps[].actions[].actor usa o nome EXATO de um executor em executores[].name
 ✓ steps[].actions[].natureza preenchida para ações de aprovação ou revisão
-✓ ações do tipo "decisao" possuem "branches" com os caminhos e suas sub-ações (nunca caminhos soltos no nível da etapa)
+✓ ações do tipo "decisao" possuem "branches" com os caminhos (nunca caminhos soltos no nível da etapa)
 ✓ flow[] possui pelo menos um "start" e um "end", todos os caminhos de decisão mapeados, loops incluídos</div>
                   <button onclick="copyNpopPrompt()" id="npop-copy-btn"
                     style="margin-top:8px;padding:5px 12px;background:var(--cage-blue);color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
@@ -8229,14 +8255,37 @@ function applyIaResult(parsed) {
   DATA[key] = {
     currentStep: 0,
     meta: {
-      name:      parsed.nome      || 'Novo Mapeamento',
-      macro:     parsed.macro     || '',
-      processo:  parsed.processo  || '',
-      elaborado: parsed.elaborado || '',
-      revisado:  parsed.revisado  || '',
-      desc:      parsed.desc      || '',
-      input:     parsed.input     || '',
-      output:    parsed.output    || '',
+      name:              parsed.nome             || 'Novo Mapeamento',
+      macro:             parsed.macro            || '',
+      processo:          parsed.processo         || '',
+      sub:               parsed.subprocesso      || '',
+      unidade:           parsed.unidade          || parsed.divisao || parsed.area_responsavel || '',
+      gerente:           parsed.gerente          || '',
+      area:              parsed.area_responsavel || parsed.unidade || '',
+      solicitante:       parsed.solicitante      || '',
+      patrocinador:      parsed.patrocinador      || '',
+      equipe:            parsed.equipe           || '',
+      atores:            Array.isArray(parsed.atores) ? parsed.atores : [],
+      elaborado:         parsed.elaborado        || '',
+      revisado:          parsed.revisado         || '',
+      desc:              parsed.desc             || '',
+      input:             parsed.input            || '',
+      output:            parsed.output           || '',
+      resultados:        parsed.resultados       || '',
+      fornecedores:      parsed.fornecedores     || '',
+      clientes:          parsed.clientes         || '',
+      sistemas:          parsed.sistemas         || '',
+      statusMap:         'planejado',
+      dataInicio:        '',
+      dataPrevista:      '',
+      dataEfetiva:       '',
+    },
+    sipoc: {
+      fornecedores: _splitLines(parsed.fornecedores),
+      entradas:     _splitLines(parsed.input),
+      processo:     parsed.nome || '',
+      saidas:       _splitLines(parsed.output),
+      clientes:     _splitLines(parsed.clientes),
     },
     steps,
     roles: (() => {
@@ -20091,22 +20140,23 @@ async function npopExtractWithGemini(file) {
 
     const prompt = document.getElementById('npop-prompt-text')?.textContent?.trim() ||
 `# PROMPT COMPLETO — EXTRAÇÃO DE POP CAGE → GESPROC-RS
-Analise o documento de processo enviado e extraia todas as informações estruturadas para o sistema SIGA da CAGE-RS. Leia o documento INTEIRO antes de estruturar. Nunca invente informações. Retorne APENAS JSON puro.
+Analise o documento de processo enviado e extraia todas as informações estruturadas para o sistema SIGA da CAGE-RS. Leia o documento INTEIRO antes de estruturar. Nunca invente informações. Retorne APENAS JSON puro, sem markdown.
 
+METADADOS: extraia nome, titulo, macro, processo, subprocesso, unidade, gerente, area_responsavel, solicitante, patrocinador, equipe, atores[], elaborado, revisado, aprovado, versao, data_emissao, desc, input, output, resultados, fornecedores, clientes, sistemas, canais_entrada[].
 SIGLAS: extraia TODAS as siglas do documento, cada uma como entrada separada em siglas[].
-EXECUTORES: crie uma entrada SEPARADA para cada executor — nunca concatene nomes com ";" em um único "name". Use o nome exato do executor no campo "actor" de cada action.
-CLASSIFICAÇÃO: atividade=ação executável · decisao=ponto de escolha/condição · evento=marco início/fim · observacao=comentário/OBS
-NATUREZA: preencha "natureza":"aprovacao" para ações de aprovar/validar/homologar; "natureza":"revisao" para revisar/corrigir/devolver; "" nas demais.
-SISTEMAS e ACTOR: preencha apenas em ações do tipo "atividade". Para "decisao", "evento" e "observacao", deixe "actor":"" e "sistemas":"".
+EXECUTORES: crie uma entrada SEPARADA para cada executor — nunca concatene nomes. Use o nome exato no campo "actor" de cada action.
 
-ETAPAS (steps[]): cada seção/fase do documento = uma step separada. NUNCA mescle seções. NUNCA omita seção.
-AÇÕES (actions[]): cada linha/bullet/item numerado = uma action separada. NUNCA agrupe linhas. NUNCA omita linha. Preserve o texto exato.
-Para ações do tipo "decisao", use o campo "branches" para os caminhos (ex: [{"label":"Sim","actions":[...]},{"label":"Não","actions":[...]}]). NÃO crie actions separadas no nível da etapa para os caminhos de uma decisão.
+ETAPAS (steps[]) — REGRA MAIS IMPORTANTE:
+⚠️ CONTE todas as seções/fases do documento. O número de steps[] DEVE ser igual ao número de seções. Se o documento tem seções 2.1, 2.2, 2.3, 2.4, 2.5 → steps[] deve ter 5 entradas. NUNCA mescle seções. NUNCA omita seção.
 
-FLUXO (flow[]): mapeie TODOS os passos sem simplificar — inclua exceções, loops de retorno, todos os caminhos de decisão. flow[] tem start+end+todos os caminhos.
+AÇÕES (actions[]): cada linha/bullet/item = uma action separada. NUNCA agrupe. Preserve o texto exato.
+Para "decisao", use "branches" com os caminhos. APENAS "atividade" tem "actor" e "sistemas" preenchidos.
+NATUREZA: "aprovacao" para aprovar/validar; "revisao" para revisar/corrigir; "" nas demais.
+
+FLUXO (flow[]): mapeie TODOS os passos — inclua exceções, loops, todos os caminhos de decisão. start+end obrigatórios.
 
 FORMATO:
-{"nome":"","macro":"","processo":"","subprocesso":"","area_responsavel":"","divisao":"","titulo":"","elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","canais_entrada":[],"output":"","siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":"","branches":[{"label":"Sim","actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":""}]},{"label":"Não","actions":[]}]}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}`;
+{"nome":"","titulo":"","macro":"","processo":"","subprocesso":"","unidade":"","gerente":"","area_responsavel":"","solicitante":"","patrocinador":"","equipe":"","atores":[],"elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","output":"","resultados":"","fornecedores":"","clientes":"","sistemas":"","canais_entrada":[],"siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":"","branches":[{"label":"Sim","actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":""}]},{"label":"Não","actions":[]}]}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}`;
 
     pbar.style.width = '60%';
     msg.textContent = 'Gemini analisando o documento...';
