@@ -3173,6 +3173,10 @@
         <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
         <button onclick="fdExportSVG()" title="Exportar SVG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">⬇ SVG</button>
         <button onclick="fdExportPNG()" title="Exportar PNG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">⬇ PNG</button>
+        <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
+        <button onclick="fdZoom(-0.15)" title="Diminuir zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">−</button>
+        <span id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;">100%</span>
+        <button onclick="fdZoom(+0.15)" title="Aumentar zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">+</button>
         <button onclick="fdSave()" title="Salvar (Ctrl+S)" style="padding:4px 9px;background:rgba(0,168,107,.3);color:#4ade80;border:1px solid rgba(0,168,107,.5);border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;">☁️ Salvar</button>
       </div>
       <!-- Mermaid diagram area -->
@@ -5783,13 +5787,25 @@ function buildNestedBranchesHTML(p, si, ai, bi, bai, branches, em) {
         ? `<span class="natureza-badge" style="background:${_nc.bg};color:${_nc.color};">${_nc.icon ? _nc.icon+' ':''} ${_nc.label}</span>` : '';
       const nbaEdit = em ? `<button class="edit-rm-btn" style="margin-left:auto;" onclick="openNestedBranchActionModal('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})" title="Editar">✏️</button>` : '';
       const nbaRm   = em ? `<button class="edit-rm-btn" onclick="rmNestedBranchAction('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})">✕</button>` : '';
+      const nbaLoopBtn = (nbo.type === 'atividade' && em)
+        ? `<button class="edit-rm-btn loop-toggle-btn${nbo.loop ? ' loop-on' : ''}" onclick="toggleLoopNestedBranch('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})" title="${nbo.loop ? 'Loop/retrabalho — clique para desmarcar' : 'Marcar como loop/retrabalho'}" style="margin-left:4px;background:${nbo.loop ? '#fef3c7' : 'transparent'};color:${nbo.loop ? '#b45309' : '#94a3b8'};border:1px solid ${nbo.loop ? '#b4530944' : '#e2e8f0'};font-size:13px;">🔄</button>`
+        : '';
+      const nbaAutoBtn = (nbo.type === 'atividade' && em)
+        ? `<button class="edit-rm-btn auto-toggle-btn${nbo.automatico ? ' auto-on' : ''}" onclick="toggleAutomaticoNestedBranch('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})" title="${nbo.automatico ? 'Automático — clique para desmarcar' : 'Marcar como automático'}" style="margin-left:4px;background:${nbo.automatico ? '#dcfce7' : 'transparent'};color:${nbo.automatico ? '#16a34a' : '#94a3b8'};border:1px solid ${nbo.automatico ? '#16a34a44' : '#e2e8f0'};font-size:13px;">⚙️</button>`
+        : '';
+      const nbaLoopHint = (nbo.type === 'atividade' && _hintDetectLoop(nbo))
+        ? `<span title="Possível loop/retrabalho detectado — clique em 🔄 para confirmar" style="font-size:11px;color:#b45309;background:#fef3c7;border:1px solid #b4530933;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">🔄?</span>`
+        : '';
+      const nbaAutomHint = (nbo.type === 'atividade' && _hintDetectAutom(nbo))
+        ? `<span title="Possível automação detectada — clique em ⚙️ para confirmar" style="font-size:11px;color:#0891b2;background:#e0f2fe;border:1px solid #0891b233;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">⚙️?</span>`
+        : '';
       return `<li class="branch-action-item" data-type="${nbo.type}">
         <span class="action-icon" style="color:${nbt.color};font-size:12px;margin-top:1px;flex-shrink:0;">${nbt.icon}</span>
         <div class="branch-action-body">
-          <span class="branch-action-text">${nbo.text}</span>${nbaNatBadge}
+          <span class="branch-action-text">${nbo.text}</span>${nbaNatBadge}${nbaLoopHint}${nbaAutomHint}
           ${nbaActor}
         </div>
-        ${nbaEdit}${nbaRm}
+        ${nbaLoopBtn}${nbaAutoBtn}${nbaEdit}${nbaRm}
       </li>`;
     }).join('');
     const addNbaBtn = em ? `<button class="add-branch-action-btn" onclick="addNestedBranchAction('${p}',${si},${ai},${bi},${bai},${nbi})">+ Ação</button>` : '';
@@ -6091,6 +6107,38 @@ function toggleLoopBranch(p, si, ai, bi, bai) {
   const a = actionObj((parent.branches[bi].actions || [])[bai]);
   a.loop = !a.loop;
   parent.branches[bi].actions[bai] = a;
+  actions[ai] = parent;
+  markChanged();
+  renderStep(p, si);
+  if(currentUser && window._appInitialized) saveToCloud();
+}
+
+function toggleAutomaticoNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem marcar automações.', 'warn'); return; }
+  const step = DATA[p].steps[si];
+  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const parent = actionObj(actions[ai]);
+  const subDec = actionObj((parent.branches[bi].actions || [])[bai]);
+  const a = actionObj((subDec.branches[nbi].actions || [])[nbai]);
+  a.automatico = !a.automatico;
+  subDec.branches[nbi].actions[nbai] = a;
+  parent.branches[bi].actions[bai] = subDec;
+  actions[ai] = parent;
+  markChanged();
+  renderStep(p, si);
+  if(currentUser && window._appInitialized) saveToCloud();
+}
+
+function toggleLoopNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem marcar loops.', 'warn'); return; }
+  const step = DATA[p].steps[si];
+  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const parent = actionObj(actions[ai]);
+  const subDec = actionObj((parent.branches[bi].actions || [])[bai]);
+  const a = actionObj((subDec.branches[nbi].actions || [])[nbai]);
+  a.loop = !a.loop;
+  subDec.branches[nbi].actions[nbai] = a;
+  parent.branches[bi].actions[bai] = subDec;
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
@@ -21061,6 +21109,22 @@ function statusModalAutoFill() {
   let _direction   = 'LR';
   let _currentMode = 'mermaid'; // 'mermaid' | 'bpmn'
   let _renderedSvg = null; // cached SVG for export
+  let _fdZoomLevel = 1.0;
+
+  window.fdApplyZoom = function() {
+    const svgEl = document.querySelector('#fd-mermaid-output svg');
+    if(!svgEl) return;
+    svgEl.style.zoom = _fdZoomLevel;
+    const lbl = document.getElementById('fd-zoom-label');
+    if(lbl) lbl.textContent = Math.round(_fdZoomLevel * 100) + '%';
+  };
+
+  // delta=0 resets to 100%
+  window.fdZoom = function(delta) {
+    if(delta === 0) _fdZoomLevel = 1.0;
+    else _fdZoomLevel = Math.max(0.2, Math.min(3, _fdZoomLevel + delta));
+    fdApplyZoom();
+  };
 
   // ── Mode switching ────────────────────────────────────────────
   window.fdSetMode = function(mode) {
@@ -21119,6 +21183,7 @@ function statusModalAutoFill() {
       output.innerHTML = svg;
       const svgEl = output.querySelector('svg');
       if (svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto'; }
+      fdApplyZoom();
     } catch(e) {
       output.innerHTML = `<div style="color:#ef4444;font-size:13px;padding:20px;font-family:'JetBrains Mono',monospace;">Erro no código Mermaid:<br><br>${e.message}</div>`;
     }
