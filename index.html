@@ -9072,13 +9072,17 @@ function applySidebarNav() {
   const container = document.getElementById('sidebar-nav-btns');
   if(!container) return;
   const order = getConfig('modulosOrdem');
-  if(!Array.isArray(order) || order.length === 0) return;
-  order.forEach(({key, visible}) => {
-    const btn = container.querySelector(`[data-mod="${key}"]`);
-    if(!btn) return;
-    btn.style.display = visible === false ? 'none' : '';
-    container.appendChild(btn);
-  });
+  if(Array.isArray(order) && order.length > 0) {
+    order.forEach(({key, visible}) => {
+      const btn = container.querySelector(`[data-mod="${key}"]`);
+      if(!btn) return;
+      btn.style.display = visible === false ? 'none' : '';
+      container.appendChild(btn);
+    });
+  }
+  // Cockpit sempre no final, independente de qualquer config salva
+  const cockpit = container.querySelector('[data-mod="cockpit"]');
+  if(cockpit) container.appendChild(cockpit);
   applySidebarBtnColors();
 }
 
