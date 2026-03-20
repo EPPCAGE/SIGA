@@ -3340,6 +3340,12 @@
     <div id="cockpit-horas-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;"></div>
   </div>
 
+  <!-- Cobertura por Macroprocesso -->
+  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;">
+    <div style="font-size:13px;font-weight:800;color:#0a2540;margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em;">🗺 Cobertura de Mapeamento por Macroprocesso</div>
+    <div id="cockpit-coverage-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+
   <!-- Distribuição de POPs -->
   <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
@@ -20553,8 +20559,60 @@ function statusModalAutoFill() {
     _renderDonut(pops);
     _renderRankings(pops);
     _renderHoras(pops);
+    _renderCoverage();
     _renderDistChart(pops, 'macro');
     _renderPopSelector(pops);
+  }
+
+  function _renderCoverage() {
+    const el = document.getElementById('cockpit-coverage-list');
+    if (!el) return;
+    const arqData = (typeof arqGetData === 'function') ? arqGetData() : [];
+    if (!arqData.length) { el.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:16px;">Sem dados de arquitetura de processos.</div>'; return; }
+
+    // Group by macroprocesso
+    const macroMap = {};
+    arqData.forEach(r => {
+      const m = r.macroprocesso || '(sem macroprocesso)';
+      if (!macroMap[m]) macroMap[m] = { total: 0, mapeados: 0 };
+      macroMap[m].total++;
+      if (r.mapeado) macroMap[m].mapeados++;
+    });
+
+    const totalGeral = arqData.length;
+    const mapeadosGeral = arqData.filter(r => r.mapeado).length;
+    const pctGeral = totalGeral ? Math.round(mapeadosGeral / totalGeral * 100) : 0;
+
+    const entries = Object.entries(macroMap).sort((a, b) => {
+      const pa = a[1].total ? a[1].mapeados / a[1].total : 0;
+      const pb = b[1].total ? b[1].mapeados / b[1].total : 0;
+      return pb - pa;
+    });
+
+    const col = pct => pct === 100 ? '#15803d' : pct >= 60 ? '#f59e0b' : '#ef4444';
+
+    el.innerHTML =
+      // Resumo geral
+      `<div style="display:flex;align-items:center;gap:14px;padding:10px 14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;margin-bottom:4px;">
+        <div style="font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.05em;">Total geral</div>
+        <div style="flex:1;background:#e2e8f0;border-radius:4px;height:8px;overflow:hidden;">
+          <div style="height:100%;background:#15803d;border-radius:4px;width:${pctGeral}%;transition:width .4s;"></div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:#15803d;min-width:36px;text-align:right;">${pctGeral}%</div>
+        <div style="font-size:11px;color:#64748b;min-width:60px;text-align:right;">${mapeadosGeral}/${totalGeral}</div>
+      </div>` +
+      entries.map(([macro, d]) => {
+        const pct = d.total ? Math.round(d.mapeados / d.total * 100) : 0;
+        const c = col(pct);
+        return `<div style="display:flex;align-items:center;gap:14px;padding:7px 14px;border-radius:8px;background:#f8fafc;border:1px solid #f1f5f9;">
+          <div style="flex:0 0 220px;font-size:12px;font-weight:600;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${macro}">${macro}</div>
+          <div style="flex:1;background:#e2e8f0;border-radius:4px;height:7px;overflow:hidden;">
+            <div style="height:100%;background:${c};border-radius:4px;width:${pct}%;transition:width .4s;"></div>
+          </div>
+          <div style="font-size:12px;font-weight:700;color:${c};min-width:36px;text-align:right;">${pct}%</div>
+          <div style="font-size:11px;color:#94a3b8;min-width:52px;text-align:right;">${d.mapeados}/${d.total}</div>
+        </div>`;
+      }).join('');
   }
 
   function _renderStats(pops) {
@@ -20587,10 +20645,11 @@ function statusModalAutoFill() {
       </div>`).join('');
   }
 
-  function _renderHoras(pops) {
+  function _renderHoras(_pops) {
     const el = document.getElementById('cockpit-horas-row');
     if (!el) return;
-    const allPopKeys = ['d', 'r', ...pops];
+    // Usar mesmo padrão do EPP dashboard: lê DATA diretamente
+    const allPopKeys = ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))];
     const horasList = allPopKeys.map(k => {
       const meta = DATA[k]?.meta || {};
       const vPre = parseFloat(meta.volPre)   || 0;
@@ -20645,28 +20704,36 @@ function statusModalAutoFill() {
       keys.forEach(key => { counts[key] = (counts[key] || 0) + 1; });
     });
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    const labels = sorted.map(e => e[0]);
+    const fullLabels = sorted.map(e => e[0]);
     const values = sorted.map(e => e[1]);
+    const trunc = s => s.length > 24 ? s.slice(0, 22) + '…' : s;
+    const axisLabels = fullLabels.map(trunc);
+    const horiz = fullLabels.length > 5;
     const palette = ['#0ea5e9','#8b5cf6','#00a86b','#f59e0b','#ef4444','#0369a1','#7c3aed','#15803d','#d97706','#dc2626','#94a3b8','#334155'];
-    const colors  = labels.map((_, i) => palette[i % palette.length]);
+    const colors  = fullLabels.map((_, i) => palette[i % palette.length]);
     if (_distChart) { _distChart.destroy(); _distChart = null; }
     _distChart = new Chart(canvas, {
       type: 'bar',
       data: {
-        labels,
+        labels: axisLabels,
         datasets: [{ data: values, backgroundColor: colors, borderRadius: 6, borderSkipped: false }]
       },
       options: {
-        indexAxis: labels.length > 6 ? 'y' : 'x',
+        indexAxis: horiz ? 'y' : 'x',
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.parsed[labels.length > 6 ? 'x' : 'y']} POP(s)` } }
+          tooltip: {
+            callbacks: {
+              title: ctx => fullLabels[ctx[0].dataIndex],
+              label: ctx => ` ${ctx.parsed[horiz ? 'x' : 'y']} POP(s)`
+            }
+          }
         },
         scales: {
-          x: { grid: { display: labels.length <= 6 }, ticks: { font: { size: 11 } } },
-          y: { grid: { display: labels.length > 6  }, ticks: { font: { size: 11 } }, beginAtZero: true }
+          x: { grid: { display: !horiz }, ticks: { font: { size: 11 } } },
+          y: { grid: { display: horiz  }, ticks: { font: { size: 11 } }, beginAtZero: !horiz }
         }
       }
     });
@@ -20707,7 +20774,7 @@ function statusModalAutoFill() {
     const totalSteps = pops.reduce((s,k) => s + (DATA[k].steps?.length || 0), 0);
 
     const kpis = [
-      { label:'Total de Processos', value: total,        color:'#0ea5e9', icon:'📋' },
+      { label:'Total de POPs',       value: total,        color:'#0ea5e9', icon:'📋' },
       { label:'Em Andamento',       value: emAnd,        color:'#00a86b', icon:'🔄' },
       { label:'Concluídos',         value: concluido,    color:'#8b5cf6', icon:'✅' },
       { label:'Atrasados',          value: atrasado,     color:'#ef4444', icon:'⚠️' },
