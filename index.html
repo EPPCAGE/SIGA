@@ -5163,6 +5163,8 @@
   </div>
 </div>
 
+<button id="btn-nav-back" onclick="goBack()" style="display:none;position:fixed;top:14px;left:14px;z-index:3500;background:#0a2540;color:white;border:none;border-radius:8px;padding:7px 16px 7px 12px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 14px rgba(0,0,0,.35);align-items:center;gap:6px;white-space:nowrap;">← Voltar</button>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -5179,6 +5181,81 @@ let editMode = false;
 let currentPop = '';
 let currentSection = 'visao-geral';
 let flowMode = 'asis'; // 'asis' | 'tobe'
+
+// ── Histórico de navegação in-app ────────────────────────────
+let _navStack = [];
+
+function _captureState() {
+  const homeEl  = document.getElementById('home-page');
+  if(homeEl && homeEl.style.display !== 'none') return { type:'home' };
+  const auditEl = document.getElementById('audit-module');
+  if(auditEl && auditEl.style.display !== 'none') {
+    const detail = document.getElementById('audit-view-detail');
+    if(detail && detail.style.display !== 'none' && _auditCurrentPlanId)
+      return { type:'audit-plan', planId:_auditCurrentPlanId, subTab:_auditCurrentPlanSubTab };
+    return { type:'audit' };
+  }
+  const eppEl = document.getElementById('epp-module');
+  if(eppEl && eppEl.style.display !== 'none') return { type:'epp', tab:_eppCurrentTab };
+  const fdEl = document.getElementById('fd-module');
+  if(fdEl && fdEl.style.display !== 'none') return { type:'fd', pop:currentPop };
+  if(currentPop) return { type:'pop', pop:currentPop, section:currentSection };
+  return { type:'home' };
+}
+
+function _navPush() {
+  const state = _captureState();
+  const top = _navStack[_navStack.length - 1];
+  if(top && JSON.stringify(top) === JSON.stringify(state)) return;
+  _navStack.push(state);
+  if(_navStack.length > 20) _navStack.shift();
+  _updateBackBtn();
+}
+
+function _updateBackBtn() {
+  const btn = document.getElementById('btn-nav-back');
+  if(!btn) return;
+  btn.style.display = _navStack.length ? 'inline-flex' : 'none';
+}
+
+function _restoreState(state) {
+  switch(state.type) {
+    case 'home':
+      _navStack = []; _updateBackBtn();
+      showHome();
+      break;
+    case 'pop':
+      switchPop(state.pop);
+      if(state.section && state.section !== 'visao-geral')
+        setTimeout(() => showSection(state.section), 120);
+      break;
+    case 'audit':
+      _auditCurrentPlanId = null;
+      showAuditModule();
+      break;
+    case 'audit-plan':
+      _auditCurrentPlanId     = state.planId;
+      _auditCurrentPlanSubTab = state.subTab || 'exec';
+      showAuditModule();
+      break;
+    case 'epp':
+      showEppModule(state.tab);
+      break;
+    case 'fd':
+      if(state.pop) currentPop = state.pop;
+      showFlowDesigner();
+      break;
+    default:
+      showHome();
+  }
+}
+
+function goBack() {
+  if(!_navStack.length) { showHome(); return; }
+  const state = _navStack.pop();
+  _updateBackBtn();
+  _restoreState(state);
+}
 
 // ═══ POP SWITCHER ═════════════════════════════
 // pop = 'denuncias' | 'representacoes'  →  prefix = 'd' | 'r'
@@ -5372,6 +5449,7 @@ function popDomId(pop) {
 }
 
 function switchPop(pop, tabEl) {
+  _navPush();
   // Esconder galeria se estiver ativa
   const gal = document.getElementById('pop-gallery-panel');
   if(gal) gal.classList.remove('active');
@@ -16640,6 +16718,9 @@ function showHome() {
   // Turn off edit mode if active
   if(editMode) toggleEditMode();
 
+  _navStack = [];
+  _updateBackBtn();
+
   const home = document.getElementById('home-page');
   home.style.display = 'block';
   homeRefresh();
@@ -18590,6 +18671,7 @@ function dropsCloseLightbox() {
 let _eppCurrentTab = 'pat';
 
 function showEppModule(tab) {
+  _navPush();
   tab = tab || _eppCurrentTab || 'pat';
   hideHome();
   hideAllModules();
@@ -19419,6 +19501,7 @@ function auditEnsure() {
 
 function showAuditModule(show=true) {
   if(!show) { showHome(); return; }
+  _navPush();
   hideHome();
   hideAllModules();
   auditEnsure();
@@ -19444,6 +19527,9 @@ function auditOpenPlan(planId, subTab) {
   auditEnsure();
   const plan = DATA.audits.plans.find(p => p.id === planId);
   if(!plan) { auditShowPlansView(); return; }
+  // Empurrar estado de lista apenas se estamos na lista (não no goBack)
+  const detailVisible = document.getElementById('audit-view-detail')?.style.display !== 'none';
+  if(!detailVisible) _navPush();
   _auditCurrentPlanId = planId;
   document.getElementById('audit-view-plans').style.display = 'none';
   document.getElementById('audit-view-detail').style.display = 'block';
@@ -19469,16 +19555,23 @@ function auditRenderPlanSummary(plan) {
   const patItem = plan.patId ? (DATA.pat||[]).find(pt => pt.id === plan.patId) : null;
   const ncCount   = DATA.audits.nonconformities.filter(nc => nc.planId === plan.id).length;
   const execCount = DATA.audits.executions.filter(e => e.planId === plan.id).length;
-  el.innerHTML = '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">'+
+  const escopoHtml = plan.escopo
+    ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0;font-size:12px;color:#475569;width:100%;"><strong style="color:#64748b;">Escopo:</strong> '+plan.escopo+'</div>'
+    : '';
+  el.innerHTML = '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 18px;">'+
+    '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">'+
     _auditBadge(plan.status||'planejada')+
     (plan.objetivo ? '<span style="font-size:13px;color:#475569;flex:1;min-width:160px;">'+plan.objetivo+'</span>' : '')+
     '<span style="font-size:12px;color:#64748b;">👤 '+(plan.auditor||'—')+'</span>'+
     '<span style="font-size:12px;color:#64748b;">📅 '+_fmtDate(plan.dataPrevista)+'</span>'+
+    (plan.periodo ? '<span style="font-size:12px;color:#64748b;">🗓 '+plan.periodo+'</span>' : '')+
     '<span style="font-size:12px;color:#64748b;">🏢 '+(plan.unidade||'—')+'</span>'+
     (patItem ? '<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;">📅 PTA: '+patItem.titulo+'</span>' : '')+
     '<span style="font-size:12px;color:#94a3b8;">▶ '+execCount+' execução(ões)</span>'+
     '<span style="font-size:12px;color:#94a3b8;">⚠️ '+ncCount+' NC(s)</span>'+
     (plan.processo ? '<button onclick="auditGoToProcess(\''+plan.processo+'\')" style="background:none;border:none;padding:0;cursor:pointer;font-size:12px;color:#2563eb;text-decoration:underline;font-weight:600;">🔗 Ver mapeamento</button>' : '')+
+    '</div>'+
+    escopoHtml+
   '</div>';
 }
 
@@ -21615,6 +21708,7 @@ function statusModalAutoFill() {
 
   // ── Show tab (entry point) ────────────────────────────────────
   window.showFlowDesigner = function(tab) {
+    _navPush();
     hideHome();
     hideAllModules();
     const nav = document.querySelector('.nav-tabs');
