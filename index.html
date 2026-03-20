@@ -20491,7 +20491,9 @@ function statusModalAutoFill() {
   };
 
   function _allPops() {
-    return Object.keys(DATA).filter(k => k !== '_valorHora' && k !== 'pat' && k !== 'config' && k !== 'indicadoresCage' && typeof DATA[k] === 'object' && DATA[k]?.meta);
+    // Apenas mapeamentos criados pelo usuário (chave pop_*). As chaves 'd' e 'r'
+    // são estruturas legadas fixas no código e não representam mapeamentos reais.
+    return Object.keys(DATA).filter(k => k.startsWith('pop_') && typeof DATA[k] === 'object' && DATA[k]?.meta);
   }
 
   function _statusColor(st) {
