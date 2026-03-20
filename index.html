@@ -6002,7 +6002,7 @@ function renderStep(p, i) {
       markChanged(true); // quick=true: salvar em 800ms após blur
     });
   });
-  container.querySelectorAll('[data-ai]').forEach(el => {
+  container.querySelectorAll('[data-ai]:not([data-field])').forEach(el => {
     el.addEventListener('blur', function() {
       const pp=this.dataset.sp, si=parseInt(this.dataset.si), ai=parseInt(this.dataset.ai);
       const step = DATA[pp].steps[si];
