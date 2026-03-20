@@ -16777,7 +16777,32 @@ FLUXO DO PROCESSO:
 ${fluxoTexto}`;
 
   try {
-    const respText = await callGeminiProxy(prompt);
+    // Tentar incluir imagem BPMN se disponível (visão enriquecida)
+    let respText;
+    const bpmnSrc = pop._fluxoObjectUrl || pop.fluxoImgUrl || pop.fluxoImg || null;
+    if (bpmnSrc) {
+      try {
+        let base64Bpmn, mimeTypeBpmn;
+        if (bpmnSrc.startsWith('data:')) {
+          // Legacy base64 data URL
+          const [header, data] = bpmnSrc.split(',');
+          base64Bpmn  = data;
+          mimeTypeBpmn = (header.match(/:(.*?);/) || [])[1] || 'image/png';
+        } else {
+          // blob: URL or https: URL — fetch and convert
+          const resp = await fetch(bpmnSrc);
+          const blob = await resp.blob();
+          base64Bpmn   = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+          mimeTypeBpmn = blob.type || 'image/png';
+        }
+        respText = await callGeminiProxy(prompt, { data: base64Bpmn, mimeType: mimeTypeBpmn });
+      } catch(imgErr) {
+        console.warn('[AI Analysis] Falha ao carregar imagem BPMN, prosseguindo sem ela:', imgErr);
+        respText = await callGeminiProxy(prompt);
+      }
+    } else {
+      respText = await callGeminiProxy(prompt);
+    }
 
     // Extrair JSON da resposta (pode vir com texto extra)
     const jsonMatch = respText.match(/\{[\s\S]*\}/);
@@ -20169,6 +20194,14 @@ function auditExportRelatorioWord(planId) {
 // ═══════════════════════════════════════════════════════════
 // GEMINI: Extração de POP + BPMN (duas chamadas separadas)
 // ═══════════════════════════════════════════════════════════
+function blobToBase64(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
 async function npopExtractWithGemini() {
   const popFile  = _npopFile;
   const bpmnFile = window._npopBpmnFile || null;
@@ -24033,6 +24066,8 @@ function matSaveSnapshot(p) {
   });
   mat.snapshots.sort((a,b) => a.date.localeCompare(b.date));
   markChanged();
+  // Salvar imediatamente na nuvem (independente do modo edição)
+  if(currentUser && window._appInitialized) saveToCloud();
   showToast('✅ Nota de maturidade salva!', 'success');
   matRender(p);
 }
@@ -24041,6 +24076,7 @@ function matDeleteSnapshot(p, idx) {
   const mat = matGetData(p);
   if(Array.isArray(mat.snapshots)) mat.snapshots.splice(idx, 1);
   markChanged();
+  if(currentUser && window._appInitialized) saveToCloud();
   matRender(p);
 }
 function matRenderHistory(p, snapshots) {
