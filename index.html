@@ -1400,10 +1400,10 @@
           onfocus="openSearchModal()" oninput="runSearch(this.value)" autocomplete="off">
         <button class="search-clear" id="search-clear-btn" onclick="clearSearch()">✕</button>
       </div>
-      <button class="edit-toggle" id="new-pop-btn" onclick="openNovoPop()" style="background:rgba(245,158,11,.2);color:#fcd34d;display:none;" title="Criar novo mapeamento">＋ Novo Mapeamento</button>
-      <button id="backup-btn" class="edit-toggle" onclick="openBackupModal()" title="Exportar/Importar backup dos dados" style="background:rgba(96,165,250,.15);color:#93c5fd;">💾 Backup</button>
-      <button class="edit-toggle" onclick="exportPptx()" id="ppt-btn" style="background:rgba(232,160,32,.22);color:#fcd34d;" title="Exportar apresentação PowerPoint">📊 Exportar PPT</button>
-      <button class="edit-toggle" onclick="saveToCloud()" id="save-btn" style="background:rgba(0,168,107,.25);color:#4ade80;" title="Salvar na nuvem (Ctrl+S)">☁️ Salvar</button>
+      <button class="edit-toggle" id="new-pop-btn" onclick="openNovoPop()" style="display:none;" title="Criar novo mapeamento">＋ Novo Mapeamento</button>
+      <button id="backup-btn" class="edit-toggle" onclick="openBackupModal()" title="Exportar/Importar backup dos dados">💾 Backup</button>
+      <button class="edit-toggle" onclick="exportPptx()" id="ppt-btn" title="Exportar apresentação PowerPoint">📊 Exportar PPT</button>
+      <button class="edit-toggle" onclick="saveToCloud()" id="save-btn" title="Salvar na nuvem (Ctrl+S)">☁️ Salvar</button>
       <button class="edit-toggle" onclick="toggleEditMode()" id="edit-toggle">✏️ Modo Edição</button>
     </div>
   </div>
@@ -1441,7 +1441,7 @@
       <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
       <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:rgba(232,160,32,.12);color:#fcd34d;border-color:rgba(232,160,32,.3);">📈 Indicadores CAGE</button>
       <button data-mod="organograma" data-sortkey="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:rgba(99,102,241,.12);color:#c7d2fe;border-color:rgba(99,102,241,.3);">🏛 Organograma CAGE</button>
-      <button data-mod="cockpit"     data-sortkey="cockpit"     class="sidebar-pat-btn" onclick="closeSidebar();showCockpitModule();" style="margin-top:8px;background:rgba(14,165,233,.15);color:#38bdf8;border-color:rgba(14,165,233,.35);font-weight:800;">🎯 Cockpit de Gestão</button>
+      <button data-mod="cockpit"     data-sortkey="cockpit"     class="sidebar-pat-btn" onclick="closeSidebar();showCockpitModule();" style="margin-top:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">🎯 Cockpit de Gestão</button>
     </div>
   </div>
   <div class="sidebar-list" id="sidebar-list"></div>
@@ -8977,11 +8977,11 @@ const _MODULES_NAV = [
 ];
 
 const _HEADER_BTNS_DEF = [
-  { key:'new-pop', id:'new-pop-btn', label:'＋ Novo Mapeamento', defBg:'rgba(245,158,11,.2)',  defColor:'#fcd34d' },
-  { key:'backup',  id:'backup-btn',  label:'💾 Backup',          defBg:'rgba(96,165,250,.15)', defColor:'#93c5fd' },
-  { key:'ppt',     id:'ppt-btn',     label:'📊 Exportar PPT',    defBg:'rgba(232,160,32,.22)', defColor:'#fcd34d' },
-  { key:'save',    id:'save-btn',    label:'☁️ Salvar',          defBg:'rgba(0,168,107,.25)',  defColor:'#4ade80' },
-  { key:'edit',    id:'edit-toggle', label:'✏️ Modo Edição',     defBg:'rgba(255,255,255,.1)', defColor:'#ffffff' },
+  { key:'new-pop', id:'new-pop-btn', label:'＋ Novo Mapeamento', defBg:'rgba(255,255,255,.12)', defColor:'rgba(255,255,255,.85)' },
+  { key:'backup',  id:'backup-btn',  label:'💾 Backup',          defBg:'rgba(255,255,255,.12)', defColor:'rgba(255,255,255,.85)' },
+  { key:'ppt',     id:'ppt-btn',     label:'📊 Exportar PPT',    defBg:'rgba(255,255,255,.12)', defColor:'rgba(255,255,255,.85)' },
+  { key:'save',    id:'save-btn',    label:'☁️ Salvar',          defBg:'rgba(255,255,255,.12)', defColor:'rgba(255,255,255,.85)' },
+  { key:'edit',    id:'edit-toggle', label:'✏️ Modo Edição',     defBg:'rgba(255,255,255,.12)', defColor:'rgba(255,255,255,.85)' },
 ];
 
 function _gpGet() { return getConfig('parametrosGlobais') || {}; }
