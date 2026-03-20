@@ -2008,6 +2008,19 @@
     </div>
   </div>
 
+  <!-- Logo da Barra Superior -->
+  <div class="card fade-up" style="margin-bottom:20px;">
+    <div class="card-header"><span class="card-title">🏷 Logo da Barra Superior</span></div>
+    <div class="card-body" style="padding:20px;display:flex;gap:20px;align-items:flex-start;">
+      <div style="flex:1;">
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">URL da Imagem</label>
+        <input class="modal-input" id="gp-logo-barra-url" type="url" placeholder="https://..." oninput="saveGlobalParam('logoHeaderUrl',this.value);applyHeaderBtnColors();_gpLogoBarraPreview(this.value)">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Aparece no canto esquerdo da barra superior em formato triangular alargado. Deixe vazio para usar o ícone padrão.</div>
+      </div>
+      <div id="gp-logo-barra-preview" style="width:120px;height:44px;border:2px dashed var(--cage-border);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;color:var(--text-muted);background:var(--cage-light);">🖼</div>
+    </div>
+  </div>
+
   <!-- Logotipo -->
   <div class="card fade-up" style="margin-bottom:20px;">
     <div class="card-header"><span class="card-title">🖼 Logotipo (Página Inicial)</span></div>
@@ -9106,13 +9119,25 @@ function applyHeaderBtnColors() {
   const logoDiv = document.querySelector('.header-logo');
   if(logoDiv) {
     if(gp.logoHeaderUrl) {
-      logoDiv.innerHTML = `<img src="${gp.logoHeaderUrl}" style="width:34px;height:34px;object-fit:contain;border-radius:6px;" onerror="this.style.display='none'">`;
-    } else if(gp.logoHeaderBg || gp.logoHeaderColor || gp.logoHeaderText) {
+      logoDiv.style.cssText = 'width:auto;max-width:140px;height:48px;background:transparent;border-radius:0;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);overflow:hidden;flex-shrink:0;padding:0;';
+      logoDiv.innerHTML = `<img src="${gp.logoHeaderUrl}" style="height:48px;width:auto;max-width:140px;object-fit:contain;display:block;" onerror="this.style.display='none'">`;
+    } else {
+      logoDiv.style.cssText = '';
       const bg    = gp.logoHeaderBg    || '#0a2540';
       const color = gp.logoHeaderColor || '#00a86b';
       const text  = gp.logoHeaderText  || 'EPP';
       logoDiv.innerHTML = `<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="34" height="34" rx="5" fill="${bg}" stroke="${color}" stroke-width="2"/><text x="18" y="24" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="${color}" text-anchor="middle">${text}</text></svg>`;
     }
+  }
+}
+
+function _gpLogoBarraPreview(url) {
+  const el = document.getElementById('gp-logo-barra-preview');
+  if(!el) return;
+  if(url) {
+    el.innerHTML = `<img src="${url}" style="height:44px;width:auto;max-width:116px;object-fit:contain;display:block;" onerror="this.innerHTML='❌'">`;
+  } else {
+    el.innerHTML = '🖼';
   }
 }
 
@@ -9158,6 +9183,10 @@ function eppRenderParams() {
   if(nomEl) nomEl.value = gp.nomeSistema || '';
   const subEl = document.getElementById('gp-subtitulo');
   if(subEl) subEl.value = gp.subtitulo || '';
+
+  // Logo barra superior
+  const logoBarraEl = document.getElementById('gp-logo-barra-url');
+  if(logoBarraEl) { logoBarraEl.value = gp.logoHeaderUrl || ''; _gpLogoBarraPreview(gp.logoHeaderUrl || ''); }
 
   // Logo
   const logoEl = document.getElementById('gp-logo-url');
