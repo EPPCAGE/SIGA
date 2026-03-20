@@ -5558,6 +5558,14 @@ function enableEditables(on) {
 
 let _autoSaveTimer = null;
 let _editSnapshot  = null; // deep snapshot taken on edit mode entry (kept for reference)
+
+// Debounced save — agrupa mudanças rápidas em um único save para reduzir IO no Supabase
+function scheduleSave(delay = 4000) {
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(() => {
+    if (currentUser && window._appInitialized) saveToCloud();
+  }, delay);
+}
 let _undoStack     = [];   // undo history (max 40 states)
 let _undoShadow    = null; // state captured AFTER the last change — pushed on the NEXT change
 
@@ -5607,7 +5615,7 @@ function markChanged(quick=false) {
   _autoSaveTimer = setTimeout(() => {
     // Só auto-salvar após app totalmente inicializado (evita salvar durante load)
     if(currentUser && window._appInitialized) saveToCloud();
-  }, quick ? 800 : 1500);
+  }, quick ? 3000 : 5000);
 }
 
 function undoLastChange() {
@@ -6112,7 +6120,6 @@ function toggleAutomatico(p, si, ai) {
   actions[ai] = a;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleLoop(p, si, ai) {
@@ -6124,7 +6131,6 @@ function toggleLoop(p, si, ai) {
   actions[ai] = a;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleAutomaticoBranch(p, si, ai, bi, bai) {
@@ -6138,7 +6144,6 @@ function toggleAutomaticoBranch(p, si, ai, bi, bai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleLoopBranch(p, si, ai, bi, bai) {
@@ -6152,7 +6157,6 @@ function toggleLoopBranch(p, si, ai, bi, bai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleAutomaticoNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
@@ -6168,7 +6172,6 @@ function toggleAutomaticoNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function toggleLoopNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
@@ -6184,7 +6187,6 @@ function toggleLoopNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
   actions[ai] = parent;
   markChanged();
   renderStep(p, si);
-  if(currentUser && window._appInitialized) saveToCloud();
 }
 
 function addStepAction(p,si){
@@ -8829,7 +8831,7 @@ function patAddNew() {
   DATA.patrocinadores.push(val);
   input.value = '';
   patRenderList();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Patrocinador adicionado!','success');
 }
 function patRemove(idx) {
@@ -8837,7 +8839,7 @@ function patRemove(idx) {
   if(!DATA.patrocinadores) DATA.patrocinadores = [...PATROCINADORES_DEFAULT];
   DATA.patrocinadores.splice(idx, 1);
   patRenderList();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('Patrocinador removido.','success');
 }
 
@@ -9517,7 +9519,7 @@ function saveContadorGeral() {
   const val = (document.getElementById('cfg-contador-geral-input')?.value || '').trim();
   setConfig('contadorGeral', val);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Contador-Geral salvo!','success');
 }
 
@@ -9573,7 +9575,7 @@ function configAddEquipeUnidade() {
   document.getElementById('cfg-new-eu-equipe').value  = '';
   document.getElementById('cfg-new-eu-unidade').value = '';
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Vínculo adicionado!','success');
 }
 
@@ -9583,7 +9585,7 @@ function configRemoveEquipeUnidade(i) {
   items.splice(i, 1);
   setConfig('equipeUnidade', items);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('Vínculo removido.','success');
 }
 
@@ -9653,7 +9655,7 @@ function toggleEquipeSkill(equipe, skill, tipo) {
   rec[tipo] = arr;
   setConfig('equipeCompetencias', items);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
 }
 
 // ── Catálogo de Não Conformidades (APT Catalog) ──────────────────────────────
@@ -9758,19 +9760,19 @@ function cfgAptField(i, field, val) {
   if(!isEditor) return;
   auditEnsure();
   DATA.aptCatalog[i][field] = val;
-  saveToCloud();
+  scheduleSave(4000);
 }
 function cfgAptRecSave(i, ri, val) {
   if(!isEditor) return;
   auditEnsure();
   DATA.aptCatalog[i].recomendacoes[ri] = val;
-  saveToCloud();
+  scheduleSave(4000);
 }
 function cfgAptRecDel(i, ri) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
   auditEnsure();
   DATA.aptCatalog[i].recomendacoes.splice(ri, 1);
-  saveToCloud();
+  scheduleSave(4000);
   renderConfigPanel();
 }
 function cfgAptRecAdd(i) {
@@ -9782,7 +9784,7 @@ function cfgAptRecAdd(i) {
   if(!Array.isArray(DATA.aptCatalog[i].recomendacoes)) DATA.aptCatalog[i].recomendacoes = [];
   DATA.aptCatalog[i].recomendacoes.push(val);
   inp.value = '';
-  saveToCloud();
+  scheduleSave(4000);
   renderConfigPanel();
   // Reabrir o painel do item
   setTimeout(() => { const el = document.getElementById('cfg-apt-edit-'+i); if(el) el.style.display='block'; }, 0);
@@ -9792,7 +9794,7 @@ function cfgAptDel(i) {
   const apt = DATA.aptCatalog[i];
   if(!confirm(`Excluir "${apt?.apontamento}"?`)) return;
   DATA.aptCatalog.splice(i, 1);
-  saveToCloud();
+  scheduleSave(4000);
   renderConfigPanel();
   showToast('🗑 Apontamento excluído.', 'success');
 }
@@ -9801,7 +9803,7 @@ function cfgAptAdd() {
   auditEnsure();
   const id = 'APT-C' + String(Date.now()).slice(-5);
   DATA.aptCatalog.push({ id, categoria:'Personalizado', criticidade:'Alta', apontamento:'Novo apontamento', impacto:'', descricao:'', recomendacoes:[] });
-  saveToCloud();
+  scheduleSave(4000);
   renderConfigPanel();
   // Abre o editor do novo item
   setTimeout(() => {
@@ -10039,7 +10041,7 @@ function configAddItem(key) {
   input.value = '';
   renderConfigPanel();
   applyConfigToDropdowns();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Item adicionado!','success');
 }
 
@@ -10050,7 +10052,7 @@ function configRemoveItem(key, idx) {
   setConfig(key, items);
   renderConfigPanel();
   applyConfigToDropdowns();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('Item removido.','success');
 }
 
@@ -10075,7 +10077,7 @@ function configSaveEdit(key, idx) {
   setConfig(key, items);
   renderConfigPanel();
   applyConfigToDropdowns();
-  saveToCloud();
+  scheduleSave(4000);
 }
 
 function configAddStatus(key) {
@@ -10092,7 +10094,7 @@ function configAddStatus(key) {
   setConfig(key, items);
   valInp.value = ''; lblInp.value = '';
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Status adicionado!','success');
 }
 
@@ -10102,7 +10104,7 @@ function configRemoveStatus(key, idx) {
   items.splice(idx, 1);
   setConfig(key, items);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('Status removido.','success');
 }
 
@@ -10126,7 +10128,7 @@ function configSaveStatusLabel(key, idx) {
   items[idx] = { ...items[idx], label: val };
   setConfig(key, items);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
 }
 
 // ── Servidores EPP management ────────────────────────────────────────────────
@@ -10144,7 +10146,7 @@ function configAddServidor() {
   setConfig('servidoresEPP', srvs);
   nomeInp.value = ''; if(emailInp) emailInp.value = '';
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('✅ Servidor adicionado!','success');
 }
 
@@ -10154,7 +10156,7 @@ function configRemoveServidor(idx) {
   srvs.splice(idx, 1);
   setConfig('servidoresEPP', srvs);
   renderConfigPanel();
-  saveToCloud();
+  scheduleSave(4000);
   showToast('Servidor removido.','success');
 }
 
@@ -10170,7 +10172,7 @@ function configSaveServidor(idx, field, value) {
     const alertasCard = grid.children[1]; // second card is alertas
     if(alertasCard) alertasCard.outerHTML = _renderCfgCardAlertas('📧 Alertas por E-mail','Defina quem recebe cada tipo de alerta automático por e-mail.');
   }
-  saveToCloud();
+  scheduleSave(4000);
 }
 
 // ── Alertas por E-mail management ────────────────────────────────────────────
@@ -11655,7 +11657,6 @@ async function saveToCloud(attempt=1) {
     if(_dirtyPops.size === 0) document.getElementById('unsaved-dot').style.display = 'none';
     showToast('☁️ Dados salvos!', 'success');
     updateLastSaveChip(saved);
-    logHistory('Salvou alterações').catch(e => console.warn('logHistory:', e));
 
   } catch(e) {
     _saveInProgress = false;
