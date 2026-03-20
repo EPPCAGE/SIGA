@@ -1526,9 +1526,6 @@
     </div>
   </div>
 
-  <!-- KPIs -->
-  <div id="home-stats" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:hidden;margin-bottom:36px;"></div>
-
   <!-- ══ MÓDULOS ══ -->
   <div id="home-block-processos" style="display:block;margin-bottom:40px;">
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
@@ -16488,28 +16485,6 @@ function homeRefresh() {
   const indicadoresN = DATA.indicadoresCage?.indicadores?.length || 0;
   auditEnsure();
   const auditConcluidasN = (DATA.audits.plans||[]).filter(p => p.status === 'concluida').length;
-
-  let _statsArr = [
-    { key:'procs-mapeados', label: 'Processos mapeados',      val: procsMapeados,     color: '#00a86b' },
-    { key:'macros',         label: 'Macroprocessos',          val: macros,            color: '#0a2540' },
-    { key:'procs',          label: 'Processos',               val: procs,             color: '#8b5cf6' },
-    { key:'subprocs',       label: 'Subprocessos',            val: subprocN,          color: '#0369a1' },
-    { key:'faqs',           label: 'FAQs cadastradas',        val: faqN,              color: '#d97706' },
-    { key:'riscos',         label: 'Riscos mapeados',         val: riscosN,           color: '#dc2626' },
-    { key:'indicadores',    label: 'Indicadores',             val: indicadoresN,      color: '#7c3aed' },
-    { key:'audits',         label: 'Auditorias concluídas',   val: auditConcluidasN,  color: '#15803d' },
-  ];
-  const _statsOrder = DATA.config?.uiOrder?.homeStats;
-  if(_statsOrder?.length) {
-    _statsArr.sort((a, b) => {
-      const ia = _statsOrder.indexOf(a.key), ib = _statsOrder.indexOf(b.key);
-      return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
-    });
-  }
-  document.getElementById('home-stats').innerHTML = _statsArr.map(s => `<div data-sortkey="${s.key}" style="background:white;border-radius:8px;padding:7px 10px;box-shadow:0 2px 6px rgba(0,0,0,.06);flex:1 1 0;min-width:0;white-space:nowrap;">
-    <div style="font-size:18px;font-weight:700;color:${s.color};line-height:1.2;">${s.val}</div>
-    <div style="font-size:10px;color:#64748b;margin-top:1px;">${s.label}</div>
-  </div>`).join('');
 
   // Count labels
   const pcEl = document.getElementById('home-pops-count');
