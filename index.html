@@ -3664,13 +3664,16 @@ Se a ação mencionar uso de um sistema ou plataforma específica, preencha "sis
 Deixe "" se não houver sistema mencionado naquela ação específica.
 
 # ETAPAS DO PROCESSO (campo steps[]) — REGRA MAIS IMPORTANTE
-⚠️ ATENÇÃO: o número de entradas em steps[] DEVE ser igual ao número de seções/fases identificadas no documento.
+⚠️ steps[] deve conter APENAS as etapas de EXECUÇÃO DO PROCESSO — ou seja, as fases/seções que descrevem atividades operacionais realizadas pelos executores.
 
-COMO CONTAR AS ETAPAS:
-1. Leia o documento inteiro e liste TODAS as seções, fases ou agrupamentos numerados.
-2. Cada seção = uma step. Se o documento tem seções "2.1 Início", "2.2 Recebimento", "2.3 Análise", "2.4 Execução", "2.5 Encerramento" → steps[] deve ter 5 entradas.
-3. NUNCA mescle duas seções em uma única step. NUNCA omita uma seção.
-4. Se o documento não tem seções numeradas explícitas, crie uma step por fase lógica distinta do processo.
+NÃO inclua em steps[] seções como: FAQ, Perguntas Frequentes, Formulários, Modelos, Anexos, Glossário, Siglas, Indicadores, Normas, Referências, Histórico de Revisões, Objetivo, Escopo, Definições, ou qualquer seção administrativa/informacional.
+
+COMO IDENTIFICAR AS ETAPAS DE EXECUÇÃO:
+1. Procure pela seção de "Execução", "Procedimento", "Descrição das Atividades", "Fluxo do Processo" ou equivalente.
+2. Dentro dessa seção, cada fase/sub-seção com ações concretas realizadas por executores = uma step.
+3. Se não houver seção explícita de execução, use a inteligência para identificar quais partes do documento descrevem O QUE OS EXECUTORES FAZEM (tarefas, verificações, decisões, aprovações).
+4. NUNCA mescle duas fases de execução em uma única step. NUNCA omita uma fase de execução.
+5. Se o documento não tem fases explícitas, crie uma step por fase lógica distinta da execução.
 
 Para cada step:
 - "title": título exato da seção como aparece no documento (ex: "2.3 Execução do processo")
@@ -3695,7 +3698,7 @@ id único por nó (n1, n2, ...); nós de decisão têm label obrigatório nas se
 {"nome":"","titulo":"","macro":"","processo":"","subprocesso":"","unidade":"","gerente":"","area_responsavel":"","solicitante":"","patrocinador":"","equipe":"","atores":[],"elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","output":"","resultados":"","fornecedores":"","clientes":"","sistemas":"","canais_entrada":[],"siglas":[{"sigla":"","descricao":""}],"executores":[{"name":"","title":"","duties":[]}],"normas":[{"icon":"📄","code":"","name":""}],"steps":[{"title":"","subtitle":"","responsible":"","actions":[{"type":"atividade|decisao|evento|observacao","text":"","actor":"","natureza":"aprovacao|revisao|","sistemas":"","branches":[{"label":"Sim","actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":""}]},{"label":"Não","actions":[]}]}],"note":null}],"flow":[{"id":"","type":"start|task|decision|end","name":"","actor":"","next":[{"id":"","label":"Sim|Não|ou vazio"}]}],"indicators":[{"icon":"📊","title":"","desc":"","tag":"perc|time","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"faqs":[{"q":"","a":null,"pending":true}]}
 
 VALIDAÇÃO FINAL OBRIGATÓRIA:
-✓ steps[] tem UMA entrada por seção do documento — conte as seções e compare com o número de steps
+✓ steps[] contém APENAS fases de execução — FAQ, formulários, indicadores, glossário e seções administrativas NÃO são steps
 ✓ steps[].actions[] tem UMA action por linha/item — nenhuma linha omitida ou agrupada
 ✓ siglas[] contém TODAS as siglas do documento, cada uma como entrada separada
 ✓ executores[] tem uma entrada por executor (nunca concatenados com ";" em um único name)
@@ -20147,7 +20150,8 @@ SIGLAS: extraia TODAS as siglas do documento, cada uma como entrada separada em 
 EXECUTORES: crie uma entrada SEPARADA para cada executor — nunca concatene nomes. Use o nome exato no campo "actor" de cada action.
 
 ETAPAS (steps[]) — REGRA MAIS IMPORTANTE:
-⚠️ CONTE todas as seções/fases do documento. O número de steps[] DEVE ser igual ao número de seções. Se o documento tem seções 2.1, 2.2, 2.3, 2.4, 2.5 → steps[] deve ter 5 entradas. NUNCA mescle seções. NUNCA omita seção.
+⚠️ steps[] deve conter APENAS as fases de EXECUÇÃO DO PROCESSO — atividades operacionais realizadas pelos executores. NÃO inclua: FAQ, Perguntas Frequentes, Formulários, Anexos, Glossário, Siglas, Indicadores, Normas, Referências, Histórico de Revisões, Objetivo, Escopo ou qualquer seção informacional/administrativa.
+Identifique a seção de "Execução", "Procedimento" ou "Descrição das Atividades" e mapeie apenas as fases dessa seção. Se não houver seção explícita, use inteligência para distinguir o que descreve TAREFAS DOS EXECUTORES do restante. NUNCA mescle fases de execução. NUNCA omita uma fase de execução.
 
 AÇÕES (actions[]): cada linha/bullet/item = uma action separada. NUNCA agrupe. Preserve o texto exato.
 Para "decisao", use "branches" com os caminhos. APENAS "atividade" tem "actor" e "sistemas" preenchidos.
