@@ -4072,7 +4072,12 @@
         </div>
         <div style="grid-column:1/-1;">
           <label class="audit-label">Critérios de Auditoria</label>
-          <input class="modal-input" id="ap-criterios" type="text" placeholder="Ex: POP vigente, normas internas, indicadores de desempenho">
+          <div id="ap-criterios-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+          <button type="button" onclick="auditAddCriterio()" style="background:#f0f9ff;border:1px dashed #7dd3fc;color:#0369a1;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;width:100%;">＋ Adicionar Critério</button>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label class="audit-label">Escopo da Auditoria</label>
+          <textarea class="modal-input" id="ap-escopo" rows="2" placeholder="Descreva o escopo da auditoria (processos, unidades, período, limites)..." style="resize:vertical;min-height:60px;"></textarea>
         </div>
         <div>
           <label class="audit-label">Status</label>
@@ -4084,8 +4089,14 @@
           </select>
         </div>
         <div>
-          <label class="audit-label">Período (ex: 01/01 a 31/03/2025)</label>
-          <input class="modal-input" id="ap-periodo" type="text" placeholder="Período de referência">
+          <label class="audit-label">Período</label>
+          <select class="modal-input" id="ap-periodo">
+            <option value="">— Selecione —</option>
+            <option value="1º Trimestre">1º Trimestre</option>
+            <option value="2º Trimestre">2º Trimestre</option>
+            <option value="3º Trimestre">3º Trimestre</option>
+            <option value="4º Trimestre">4º Trimestre</option>
+          </select>
         </div>
         <div style="grid-column:1/-1;">
           <label class="audit-label">📅 Trabalho do Plano de Trabalho Anual (PTA) vinculado</label>
@@ -19514,7 +19525,16 @@ function auditOpenPlanModal(id) {
   document.getElementById('ap-objetivo').value   = plan?.objetivo   || 'Verificar aderência do processo ao POP vigente';
   document.getElementById('ap-auditor').value    = plan?.auditor    || '';
   document.getElementById('ap-data').value       = plan?.dataPrevista || '';
-  document.getElementById('ap-criterios').value  = plan?.criterios  || '';
+  // Popula lista de critérios (suporte a legado: string → array)
+  const criteriosList = document.getElementById('ap-criterios-list');
+  criteriosList.innerHTML = '';
+  const existingCrit = plan?.criterios;
+  if(Array.isArray(existingCrit)) {
+    existingCrit.forEach(c => auditAddCriterio(c.titulo || '', c.descricao || ''));
+  } else if(typeof existingCrit === 'string' && existingCrit) {
+    auditAddCriterio(existingCrit, '');
+  }
+  document.getElementById('ap-escopo').value     = plan?.escopo     || '';
   document.getElementById('ap-status').value     = plan?.status     || 'planejada';
   document.getElementById('ap-periodo').value    = plan?.periodo    || '';
   // Popula selector de trabalhos do PTA tipo Auditoria
@@ -19560,6 +19580,21 @@ function auditNcPlanChange() {
   }
 }
 
+function auditAddCriterio(titulo='', descricao='') {
+  const list = document.getElementById('ap-criterios-list');
+  if(!list) return;
+  const item = document.createElement('div');
+  item.className = 'ap-criterio-item';
+  item.style.cssText = 'border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;background:#f8fafc;display:flex;flex-direction:column;gap:6px;';
+  item.innerHTML = `<div style="display:flex;gap:6px;align-items:center;">
+    <input class="modal-input ap-crit-titulo" style="flex:1;font-size:13px;" placeholder="Título do critério" value="${titulo.replace(/"/g,'&quot;')}">
+    <button type="button" onclick="this.closest('.ap-criterio-item').remove()" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:18px;line-height:1;padding:0 2px;" title="Remover">✕</button>
+  </div>
+  <textarea class="modal-input ap-crit-desc" rows="2" placeholder="Descrição (opcional)" style="resize:vertical;min-height:48px;font-size:12px;">${descricao}</textarea>`;
+  list.appendChild(item);
+  item.querySelector('.ap-crit-titulo').focus();
+}
+
 function auditSavePlan() {
   if(!isEditor) { showToast('🔒 Apenas editores podem salvar planos.','warn'); return; }
   auditEnsure();
@@ -19576,9 +19611,13 @@ function auditSavePlan() {
     objetivo,
     auditor,
     dataPrevista:  document.getElementById('ap-data').value,
-    criterios:     document.getElementById('ap-criterios').value.trim(),
+    criterios:     Array.from(document.querySelectorAll('#ap-criterios-list .ap-criterio-item')).map(el => ({
+                     titulo:    el.querySelector('.ap-crit-titulo')?.value.trim() || '',
+                     descricao: el.querySelector('.ap-crit-desc')?.value.trim()  || '',
+                   })).filter(c => c.titulo),
+    escopo:        document.getElementById('ap-escopo').value.trim(),
     status:        document.getElementById('ap-status').value,
-    periodo:       document.getElementById('ap-periodo').value.trim(),
+    periodo:       document.getElementById('ap-periodo').value,
     patId:         document.getElementById('ap-pat-vinc').value || null,
     criadoEm:      _auditEditPlanId ? (DATA.audits.plans.find(p=>p.id===_auditEditPlanId)?.criadoEm || new Date().toISOString()) : new Date().toISOString(),
   };
