@@ -5654,6 +5654,8 @@ function _takeEditSnapshot() {
 // quick=false: salvar em 1500ms (usado em ações estruturais — add/remove itens, etc.)
 function markChanged(quick=false) {
   document.getElementById('unsaved-dot').style.display = 'inline-block';
+  // Registrar qual POP foi modificado para evitar sobrescrever trabalho de outras sessões
+  if (currentPop) _dirtyPops.add(currentPop);
   clearTimeout(_autoSaveTimer);
   // Enquanto o modo edição estiver ativo, NÃO auto-salvar.
   // O usuário deve clicar em 💾 Salvar manualmente.
@@ -11376,6 +11378,31 @@ async function saveToCloud(attempt=1) {
     _pendingServerMerge = null;
   }
 
+  // ── Fetch-merge-save: buscar estado atual do servidor e preservar POPs não modificados localmente
+  // Isso evita que o save de uma sessão sobrescreva alterações feitas por outras sessões
+  // em processos diferentes. Cada usuário só "vence" nos POPs que ele realmente tocou.
+  if (workspaceId) {
+    try {
+      const { data: serverRow } = await supaClient
+        .from('gestpop_workspace')
+        .select('data')
+        .eq('id', workspaceId)
+        .maybeSingle();
+      if (serverRow?.data?.newPops) {
+        serverRow.data.newPops.forEach(({ key, data: pd }) => {
+          if (!key?.startsWith('pop_') || !pd || typeof pd !== 'object') return;
+          if (_dirtyPops.has(key)) return; // este usuário modificou — manter versão local
+          // Outro usuário pode ter alterado este POP — usar versão do servidor
+          DATA[key] = pd;
+          try { sanitizePop(key); } catch(e) {}
+          try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', false); } catch(e) {}
+        });
+      }
+    } catch(e) {
+      console.warn('[saveToCloud] fetch-merge falhou (continuando com dados locais):', e);
+    }
+  }
+
   try { harvestEditables(); } catch(e) { console.warn('harvestEditables:', e); }
 
   const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores','homeCards','aptCatalog','quadro']);
@@ -11511,6 +11538,7 @@ async function saveToCloud(attempt=1) {
     }
 
     _saveInProgress = false;
+    _dirtyPops.clear(); // após save bem-sucedido, nenhum POP é mais "dirty"
     setSyncStatus('synced');
     document.getElementById('unsaved-dot').style.display = 'none';
     showToast('☁️ Dados salvos!', 'success');
@@ -11692,6 +11720,7 @@ async function loadFromCloud() {
 
     setSyncStatus('synced');
     _lastLoadedAt = Date.now(); // registrar momento do carregamento para controle de re-sync
+    _dirtyPops.clear(); // carregamento fresh do servidor — tudo sincronizado, nada é dirty
     updateLastSaveChip(data);
     if (_syncingFromRealtime) {
       showToast(`🔄 Sincronizado com alterações de ${_syncingFromRealtime}`, 'success');
@@ -18259,6 +18288,7 @@ let _subscribedWsId   = null;
 let _syncingFromRealtime = null; // nome de quem disparou o sync via realtime
 let _pendingServerMerge = null; // dados do servidor aguardando merge (recebidos via realtime durante edit mode)
 let _lastLoadedAt = 0; // timestamp da última carga completa do servidor
+let _dirtyPops = new Set(); // chaves de POPs modificados localmente desde o último carregamento do servidor
 async function _upsertPresence() {
   if(!supaClient || !currentUserEmail) return;
   try {
