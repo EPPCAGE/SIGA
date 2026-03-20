@@ -10600,68 +10600,28 @@ let _patTipoFilter = '';
 let _patEditIdx = null;
 
 function patCheckDeadlines() {
-  // DATA.pat é array simples (não tem .items)
+  // Alertas visuais apenas para editores e admins
+  if(!isEditor && !isAdmin) return;
+
   const patItems = Array.isArray(DATA.pat) ? DATA.pat : [];
   if(!patItems.length) return;
   const today = new Date(); today.setHours(0,0,0,0);
+  const in1   = new Date(today); in1.setDate(in1.getDate() + 1);
   const in7   = new Date(today); in7.setDate(in7.getDate() + 7);
 
   const overdue = [];
-  const soon    = [];
+  const urgente = []; // vence amanhã (1 dia)
+  const soon    = []; // vence em 2-7 dias
 
   patItems.forEach((item, i) => {
     if(!item.fim || ['concluido','cancelado'].includes(item.status)) return;
     const d = new Date(item.fim + 'T00:00:00');
     if(isNaN(d)) return;
-    if(d < today)  overdue.push({ ...item, idx: i });
-    else if(d <= in7) soon.push({ ...item, idx: i, dias: Math.round((d - today) / 86400000) });
+    const dias = Math.round((d - today) / 86400000);
+    if(d < today)        overdue.push({ ...item, idx: i });
+    else if(d <= in1)    urgente.push({ ...item, idx: i, dias });
+    else if(d <= in7)    soon.push({ ...item, idx: i, dias });
   });
-
-  if(!overdue.length && !soon.length) return;
-
-  // Criar ou atualizar banner de alertas
-  let banner = document.getElementById('pat-deadline-banner');
-  if(!banner) {
-    banner = document.createElement('div');
-    banner.id = 'pat-deadline-banner';
-    banner.style.cssText = 'position:fixed;top:70px;right:16px;z-index:1500;max-width:360px;display:flex;flex-direction:column;gap:8px;';
-    document.body.appendChild(banner);
-  }
-
-  banner.innerHTML = '';
-
-  overdue.forEach(item => {
-    const el = document.createElement('div');
-    el.style.cssText = 'background:#fee2e2;border:1.5px solid #fca5a5;border-radius:12px;padding:12px 14px;box-shadow:0 4px 16px rgba(220,38,38,.15);cursor:pointer;';
-    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
-      <div>
-        <div style="font-size:12px;font-weight:800;color:#dc2626;text-transform:uppercase;letter-spacing:.05em;">⏰ Prazo Estourado</div>
-        <div style="font-size:13px;font-weight:600;color:#991b1b;margin-top:2px;">${item.titulo||'Atividade sem título'}</div>
-        <div style="font-size:11px;color:#b91c1c;margin-top:2px;">Previsto: ${new Date(item.fim+'T00:00:00').toLocaleDateString('pt-BR')} · ${item.responsavel||'sem responsável'}</div>
-      </div>
-      <button onclick="this.closest('#pat-deadline-banner').removeChild(this.closest('div[style]'))" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>
-    </div>`;
-    el.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { showEppModule('pat'); } };
-    banner.appendChild(el);
-  });
-
-  soon.forEach(item => {
-    const el = document.createElement('div');
-    el.style.cssText = 'background:#fef9c3;border:1.5px solid #fde047;border-radius:12px;padding:12px 14px;box-shadow:0 4px 16px rgba(234,179,8,.15);cursor:pointer;';
-    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
-      <div>
-        <div style="font-size:12px;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.05em;">⚠️ Vence em ${item.dias === 0 ? 'hoje' : item.dias + ' dia' + (item.dias > 1 ? 's' : '')}</div>
-        <div style="font-size:13px;font-weight:600;color:#92400e;margin-top:2px;">${item.titulo||'Atividade sem título'}</div>
-        <div style="font-size:11px;color:#a16207;margin-top:2px;">Previsto: ${new Date(item.fim+'T00:00:00').toLocaleDateString('pt-BR')} · ${item.responsavel||'sem responsável'}</div>
-      </div>
-      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#d97706;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>
-    </div>`;
-    el.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { showEppModule('pat'); } };
-    banner.appendChild(el);
-  });
-
-  // Auto-dismiss after 12s
-  setTimeout(() => { if(banner) banner.style.opacity = '0'; setTimeout(() => banner?.remove(), 600); }, 12000);
 
   // ── Auto-marcar itens PAT vencidos como "atrasado" ───────
   let patChanged = false;
@@ -10672,6 +10632,67 @@ function patCheckDeadlines() {
     }
   });
   if(patChanged) { markChanged(); }
+
+  if(!overdue.length && !urgente.length && !soon.length) return;
+
+  // Criar ou atualizar banner de alertas
+  let banner = document.getElementById('pat-deadline-banner');
+  if(!banner) {
+    banner = document.createElement('div');
+    banner.id = 'pat-deadline-banner';
+    banner.style.cssText = 'position:fixed;top:70px;right:16px;z-index:1500;max-width:360px;display:flex;flex-direction:column;gap:8px;';
+    document.body.appendChild(banner);
+  }
+  banner.innerHTML = '';
+
+  overdue.forEach(item => {
+    const el = document.createElement('div');
+    el.style.cssText = 'background:#fee2e2;border:1.5px solid #fca5a5;border-radius:12px;padding:12px 14px;box-shadow:0 4px 16px rgba(220,38,38,.15);cursor:pointer;';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:12px;font-weight:800;color:#dc2626;text-transform:uppercase;letter-spacing:.05em;">⏰ Prazo Estourado — PAT</div>
+        <div style="font-size:13px;font-weight:600;color:#991b1b;margin-top:2px;">${item.titulo||'Atividade sem título'}</div>
+        <div style="font-size:11px;color:#b91c1c;margin-top:2px;">Previsto: ${new Date(item.fim+'T00:00:00').toLocaleDateString('pt-BR')} · ${item.responsavel||'sem responsável'}</div>
+      </div>
+      <button onclick="this.closest('#pat-deadline-banner').removeChild(this.closest('div[style]'))" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>
+    </div>`;
+    el.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { showEppModule('pat'); } };
+    banner.appendChild(el);
+  });
+
+  urgente.forEach(item => {
+    const el = document.createElement('div');
+    el.style.cssText = 'background:#fff7ed;border:2px solid #f97316;border-radius:12px;padding:12px 14px;box-shadow:0 4px 20px rgba(249,115,22,.30);cursor:pointer;animation:pulse-border .8s ease-in-out 3;';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:12px;font-weight:800;color:#ea580c;text-transform:uppercase;letter-spacing:.05em;">🔔 Vence ${item.dias===0?'HOJE':'AMANHÃ'} — PAT</div>
+        <div style="font-size:13px;font-weight:600;color:#9a3412;margin-top:2px;">${item.titulo||'Atividade sem título'}</div>
+        <div style="font-size:11px;color:#c2410c;margin-top:2px;">Previsto: ${new Date(item.fim+'T00:00:00').toLocaleDateString('pt-BR')} · ${item.responsavel||'sem responsável'}</div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#ea580c;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>
+    </div>`;
+    el.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { showEppModule('pat'); } };
+    banner.appendChild(el);
+  });
+
+  soon.forEach(item => {
+    const el = document.createElement('div');
+    el.style.cssText = 'background:#fef9c3;border:1.5px solid #fde047;border-radius:12px;padding:12px 14px;box-shadow:0 4px 16px rgba(234,179,8,.15);cursor:pointer;';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-size:12px;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.05em;">⚠️ Vence em ${item.dias} dia${item.dias>1?'s':''} — PAT</div>
+        <div style="font-size:13px;font-weight:600;color:#92400e;margin-top:2px;">${item.titulo||'Atividade sem título'}</div>
+        <div style="font-size:11px;color:#a16207;margin-top:2px;">Previsto: ${new Date(item.fim+'T00:00:00').toLocaleDateString('pt-BR')} · ${item.responsavel||'sem responsável'}</div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#d97706;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>
+    </div>`;
+    el.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { showEppModule('pat'); } };
+    banner.appendChild(el);
+  });
+
+  // Auto-dismiss after 15s (urgente fica mais tempo)
+  const delay = urgente.length ? 15000 : 12000;
+  setTimeout(() => { if(banner) banner.style.opacity = '0'; setTimeout(() => banner?.remove(), 600); }, delay);
 }
 
 // ── Verificar prazos do Plano de Ação dos mapeamentos ───────────────────────
@@ -10705,6 +10726,9 @@ function checkActionsDeadlines() {
   });
 
   if(changed) markChanged();
+
+  // Banners de alerta apenas para editores e admins
+  if(!isEditor && !isAdmin) return;
   if(!overdueActs.length && !soonActs.length) return;
 
   // Banner de alertas de plano de ação
