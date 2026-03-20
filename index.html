@@ -5586,7 +5586,7 @@ function _dndSaveOrder(key, container) {
   DATA.config = DATA.config || {};
   DATA.config.uiOrder = DATA.config.uiOrder || {};
   DATA.config.uiOrder[key] = [...container.children].map(c => c.dataset.sortkey).filter(Boolean);
-  markChanged();
+  markChanged(true, true);
 }
 
 // Aplica ordem salva nos elementos estáticos (nav tabs, sidebar, home cards)
@@ -5716,7 +5716,7 @@ function _updateUndoBtn() {
 
 // quick=true: salvar em 800ms (usado em blur — usuário terminou de editar o campo)
 // quick=false: salvar em 1500ms (usado em ações estruturais — add/remove itens, etc.)
-function markChanged(quick=false) {
+function markChanged(quick=false, explicit=false) {
   // Push shadow (state before this change) to undo stack
   if(editMode && _undoShadow) {
     _undoStack.push(_undoShadow);
@@ -5730,13 +5730,14 @@ function markChanged(quick=false) {
   // Registrar qual POP foi modificado para evitar sobrescrever trabalho de outras sessões
   if (currentPop) _dirtyPops.add(currentPop);
   clearTimeout(_autoSaveTimer);
-  // Enquanto o modo edição estiver ativo, NÃO auto-salvar.
-  // O usuário deve clicar em 💾 Salvar manualmente.
-  if(editMode) return;
+  // Enquanto o modo edição estiver ativo, NÃO auto-salvar edições de texto inline
+  // (usuário pode estar no meio de uma digitação). Porém ações explícitas (salvar reunião,
+  // marcar automático, etc.) devem ser salvas mesmo em editMode (explicit=true).
+  if(editMode && !explicit) return;
   _autoSaveTimer = setTimeout(() => {
     // Só auto-salvar após app totalmente inicializado (evita salvar durante load)
     if(currentUser && window._appInitialized) saveToCloud();
-  }, quick ? 3000 : 5000);
+  }, quick ? 1500 : 3000);
 }
 
 function undoLastChange() {
@@ -6137,7 +6138,7 @@ function renderStep(p, i) {
         actions.splice(toIdx, 0, moved);
         _dragIdx = null;
         renderStep(p, i);
-        markChanged();
+        markChanged(true, true);
       });
     });
   }
@@ -6240,7 +6241,7 @@ function toggleAutomatico(p, si, ai) {
   const a = actionObj(actions[ai]);
   a.automatico = !a.automatico;
   actions[ai] = a;
-  markChanged();
+  markChanged(true, true);
   renderStep(p, si);
 }
 
@@ -6251,7 +6252,7 @@ function toggleLoop(p, si, ai) {
   const a = actionObj(actions[ai]);
   a.loop = !a.loop;
   actions[ai] = a;
-  markChanged();
+  markChanged(true, true);
   renderStep(p, si);
 }
 
@@ -6264,7 +6265,7 @@ function toggleAutomaticoBranch(p, si, ai, bi, bai) {
   a.automatico = !a.automatico;
   parent.branches[bi].actions[bai] = a;
   actions[ai] = parent;
-  markChanged();
+  markChanged(true, true);
   renderStep(p, si);
 }
 
@@ -6277,7 +6278,7 @@ function toggleLoopBranch(p, si, ai, bi, bai) {
   a.loop = !a.loop;
   parent.branches[bi].actions[bai] = a;
   actions[ai] = parent;
-  markChanged();
+  markChanged(true, true);
   renderStep(p, si);
 }
 
@@ -6292,7 +6293,7 @@ function toggleAutomaticoNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
   subDec.branches[nbi].actions[nbai] = a;
   parent.branches[bi].actions[bai] = subDec;
   actions[ai] = parent;
-  markChanged();
+  markChanged(true, true);
   renderStep(p, si);
 }
 
@@ -6307,7 +6308,7 @@ function toggleLoopNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
   subDec.branches[nbi].actions[nbai] = a;
   parent.branches[bi].actions[bai] = subDec;
   actions[ai] = parent;
-  markChanged();
+  markChanged(true, true);
   renderStep(p, si);
 }
 
@@ -6318,11 +6319,11 @@ function addStepAction(p,si){
     if(!step.tobe) step.tobe = {};
     if(!Array.isArray(step.tobe.actions)) step.tobe.actions = [];
     step.tobe.actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''});
-    renderStep(p,si); markChanged();
+    renderStep(p,si); markChanged(true, true);
     openActionModal(p, si, step.tobe.actions.length-1);
   } else {
     step.actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''});
-    renderStep(p,si); markChanged();
+    renderStep(p,si); markChanged(true, true);
     openActionModal(p, si, step.actions.length-1);
   }
 }
@@ -6350,7 +6351,7 @@ function rmStepAction(p,si,ai){
   } else {
     step.actions.splice(ai,1);
   }
-  renderStep(p,si); markChanged();
+  renderStep(p,si); markChanged(true, true);
 }
 
 function copyFlowAsIsToTobe(p) {
@@ -6373,7 +6374,7 @@ function copyFlowAsIsToTobe(p) {
     s.tobe.documentos  = s.documentos  || '';
     s.tobe.observacoes = s.observacoes || '';
   });
-  renderStep(p, DATA[p].currentStep); markChanged();
+  renderStep(p, DATA[p].currentStep); markChanged(true, true);
   showToast('⎘ AS IS copiado para o TO BE (' + steps.length + ' etapa(s)).', 'success');
 }
 
@@ -6397,7 +6398,7 @@ function copyFlowTobeToAsis(p) {
     if(tb.documentos)                                s.documentos  = tb.documentos;
     if(tb.observacoes)                               s.observacoes = tb.observacoes;
   });
-  renderStep(p, DATA[p].currentStep); markChanged();
+  renderStep(p, DATA[p].currentStep); markChanged(true, true);
   showToast('⎘ TO BE copiado para o AS IS (' + steps.length + ' etapa(s)).', 'success');
 }
 
@@ -6415,7 +6416,7 @@ function clearCurrentFlow(p) {
     }
   });
   renderStep(p, DATA[p].currentStep);
-  markChanged();
+  markChanged(true, true);
   showToast(`🗑 Fluxo ${label} inteiro limpo (${total} etapa(s)).`, 'success');
 }
 function navStep(p,dir){ const n=DATA[p].currentStep+dir; if(n>=0&&n<DATA[p].steps.length){DATA[p].currentStep=n;renderStep(p,n);} }
@@ -6634,8 +6635,8 @@ function renderRoles(p) {
   }).join('');
   if(editMode) enableEditables(true);
 }
-function addRoleDuty(p,ri){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} DATA[p].roles[ri].duties.push('Nova atribuição'); renderRoles(p); markChanged(); }
-function rmRoleDuty(p,ri,di){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} DATA[p].roles[ri].duties.splice(di,1); renderRoles(p); markChanged(); }
+function addRoleDuty(p,ri){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} DATA[p].roles[ri].duties.push('Nova atribuição'); renderRoles(p); markChanged(true, true); }
+function rmRoleDuty(p,ri,di){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} DATA[p].roles[ri].duties.splice(di,1); renderRoles(p); markChanged(true, true); }
 
 // ═══ INDICATORS ═══════════════════════════════
 // ═══ SISPLAN MINI-CHART HELPERS ════════════════
@@ -6812,11 +6813,11 @@ function renderIndicators(p) {
 function addIndicator(p){
   if(!isEditor) { showToast('🔒 Apenas editores podem adicionar indicadores.', 'warn'); return; }
   DATA[p].indicators.push({icon:'📌',title:'Novo Indicador',desc:'Descrição do indicador.',tag:'perc',formula:'',fonte:'',periodicidade:'',responsavel:'',meta:''});
-  renderIndicators(p); markChanged();
+  renderIndicators(p); markChanged(true, true);
   // Open modal for the new indicator immediately
   openIndModal(p, DATA[p].indicators.length-1);
 }
-function rmIndicator(p,i){ if(!isEditor) { showToast('🔒 Apenas editores podem remover indicadores.', 'warn'); return; } DATA[p].indicators.splice(i,1); renderIndicators(p); markChanged(); } // kept for compatibility
+function rmIndicator(p,i){ if(!isEditor) { showToast('🔒 Apenas editores podem remover indicadores.', 'warn'); return; } DATA[p].indicators.splice(i,1); renderIndicators(p); markChanged(true, true); } // kept for compatibility
 
 // ═══ INDICATOR GRID EVENT DELEGATION ════════════
 // Attach listeners directly after each render — most reliable approach
@@ -6830,7 +6831,7 @@ function attachIndListeners(p) {
       DATA[p].indicators.splice(idx, 1);
       renderIndicators(p);
       attachIndListeners(p);
-      markChanged();
+      markChanged(true, true);
     };
   });
   grid.querySelectorAll('.ind-edit-btn').forEach(btn => {
@@ -6868,7 +6869,7 @@ function saveIndModal(){
   ind.periodicidade= document.getElementById('im-period').value.trim();
   ind.responsavel  = document.getElementById('im-resp').value.trim();
   ind.meta         = document.getElementById('im-meta').value.trim();
-  renderIndicators(_indPop); closeIndModal(); markChanged();
+  renderIndicators(_indPop); closeIndModal(); markChanged(true, true);
   showToast('✅ Indicador salvo!','success');
 }
 
@@ -6928,7 +6929,7 @@ function confirmIndFromSisplan(indId) {
   });
   renderIndicators(p);
   attachIndListeners(p);
-  markChanged();
+  markChanged(true, true);
   closeIndSisplanPicker();
   showToast('✅ Indicador SISPLAN vinculado!', 'success');
   // Open modal to let user refine
@@ -6978,11 +6979,11 @@ function saveFaqModal() {
   else DATA[_faqP].faqs.push(entry);
   closeModal('faq-modal');
   renderFaq(_faqP);
-  markChanged();
+  markChanged(true, true);
   showToast('Pergunta salva!','success');
 }
 function addFaq(p){ openFaqModal(p, null); }
-function rmFaq(p,i){ if(!isEditor) { showToast('🔒 Apenas editores podem remover perguntas.', 'warn'); return; } DATA[p].faqs.splice(i,1); renderFaq(p); markChanged(); }
+function rmFaq(p,i){ if(!isEditor) { showToast('🔒 Apenas editores podem remover perguntas.', 'warn'); return; } DATA[p].faqs.splice(i,1); renderFaq(p); markChanged(true, true); }
 
 async function generateFaqIA(p) {
   pickFlowMode('Gerar FAQ de qual fluxo?', 'As perguntas serão baseadas nas etapas e ações do fluxo escolhido.', mode => _generateFaqIAWithMode(p, mode));
@@ -7046,7 +7047,7 @@ async function _generateFaqIAWithMode(p, mode) {
     if(!Array.isArray(faqs)) throw new Error('Formato inválido');
     faqs.forEach(f => { if(f.q && f.a) DATA[p].faqs.push({q:f.q, a:f.a, pending:false}); });
     renderFaq(p);
-    markChanged();
+    markChanged(true, true);
     showToast(`✅ ${faqs.length} perguntas geradas pelo Gemini!`,'success');
   } catch(e) {
     console.error(e);
@@ -7103,11 +7104,11 @@ function saveNorma() {
   else DATA[_normaP].normas.push(norma);
   closeModal('norma-modal');
   renderNormas(_normaP);
-  markChanged();
+  markChanged(true, true);
   showToast('Norma salva!','success');
 }
 function addNorma(p){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} _normaP=p; _normaIdx=null; openNormaModal(p,null); }
-function rmNorma(p,i){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} DATA[p].normas.splice(i,1); renderNormas(p); markChanged(); }
+function rmNorma(p,i){ if(!isEditor){showToast('🔒 Apenas editores.','warn');return;} DATA[p].normas.splice(i,1); renderNormas(p); markChanged(true, true); }
 
 // ═══ LIST HELPERS ════════════════════════════
 function renderSiglas(p) {
@@ -7132,9 +7133,9 @@ function addSigla(gridId) {
   if(!grid) return;
   const div = document.createElement('div');
   div.className = 'sigla-item';
-  div.innerHTML = `<div class="sigla-abbr" contenteditable="${editMode?'true':'false'}" data-key="">SIGLA</div><div class="sigla-def" contenteditable="${editMode?'true':'false'}" data-key="" style="flex:1;">Definição</div><button class="edit-rm-btn" onclick="this.closest('.sigla-item').remove();markChanged()">✕</button>`;
+  div.innerHTML = `<div class="sigla-abbr" contenteditable="${editMode?'true':'false'}" data-key="">SIGLA</div><div class="sigla-def" contenteditable="${editMode?'true':'false'}" data-key="" style="flex:1;">Definição</div><button class="edit-rm-btn" onclick="this.closest('.sigla-item').remove();markChanged(true,true)">✕</button>`;
   grid.appendChild(div);
-  markChanged();
+  markChanged(true, true);
 }
 
 // ═══ REVISIONS ════════════════════════════════
@@ -7307,7 +7308,7 @@ async function uploadFluxoImgToStorage(popKey, file) {
       DATA[popKey].fluxoImgPath = path;
       DATA[popKey].fluxoImg     = null; // never store base64 in DB
       showToast('✅ Imagem salva em alta qualidade no storage!', 'success');
-      markChanged();
+      markChanged(true, true);
     }
   } catch(e) {
     showToast('⚠️ Erro inesperado no storage: ' + e.message, 'warn');
@@ -7410,7 +7411,7 @@ function resetBpmn() {
     DATA[p].fluxoImgPath    = null;
     DATA[p].fluxoImgName    = null;
   }
-  markChanged();
+  markChanged(true, true);
 }
 
 function loadImageFile(file) {
@@ -7437,7 +7438,7 @@ function loadImageFile(file) {
 
   // Upload to Supabase Storage → save only the URL in DATA
   uploadFluxoImgToStorage(p, file);
-  markChanged();
+  markChanged(true, true);
 }
 
 
@@ -8186,7 +8187,7 @@ function addStep(p) {
   });
   DATA[p].currentStep = DATA[p].steps.length - 1;
   renderStep(p, DATA[p].currentStep);
-  markChanged();
+  markChanged(true, true);
 }
 
 // ── Helper: remove step ───────────────────────
@@ -8198,7 +8199,7 @@ function rmStep(p, si) {
   DATA[p].currentStep = Math.max(0, Math.min(DATA[p].currentStep, DATA[p].steps.length - 1));
   renderTracker(p);
   renderStep(p, DATA[p].currentStep);
-  markChanged();
+  markChanged(true, true);
   showToast('🗑 Etapa apagada.', 'success');
 }
 
@@ -8212,7 +8213,7 @@ function moveStep(p, si, dir) {
   DATA[p].currentStep = ni;
   renderTracker(p);
   renderStep(p, ni);
-  markChanged();
+  markChanged(true, true);
 }
 
 // ── Helper: move action to another step ───────
@@ -8236,7 +8237,7 @@ function moveActionToStep() {
   }
   closeActionModal();
   renderStep(_actP, _actSi);
-  markChanged();
+  markChanged(true, true);
   showToast(`📤 Ação movida para Etapa ${toIdx + 1}.`, 'success');
 }
 
@@ -8253,7 +8254,7 @@ function addDecisionBranch(p, si, ai) {
   if(!Array.isArray(action.branches)) action.branches = [];
   action.branches.push({ label: `Caminho ${action.branches.length + 1}`, actions: [] });
   actions[ai] = action;
-  renderStep(p, si); markChanged();
+  renderStep(p, si); markChanged(true, true);
 }
 
 function rmDecisionBranch(p, si, ai, bi) {
@@ -8263,7 +8264,7 @@ function rmDecisionBranch(p, si, ai, bi) {
   const action = actionObj(actions[ai]);
   if(Array.isArray(action.branches)) action.branches.splice(bi, 1);
   actions[ai] = action;
-  renderStep(p, si); markChanged();
+  renderStep(p, si); markChanged(true, true);
 }
 
 function addBranchAction(p, si, ai, bi) {
@@ -8274,7 +8275,7 @@ function addBranchAction(p, si, ai, bi) {
   if(!Array.isArray(action.branches[bi].actions)) action.branches[bi].actions = [];
   action.branches[bi].actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:'',natureza:''});
   actions[ai] = action;
-  renderStep(p, si); markChanged();
+  renderStep(p, si); markChanged(true, true);
   openBranchActionModal(p, si, ai, bi, action.branches[bi].actions.length - 1);
 }
 
@@ -8284,7 +8285,7 @@ function rmBranchAction(p, si, ai, bi, bai) {
   const action = actionObj(actions[ai]);
   action.branches[bi].actions.splice(bai, 1);
   actions[ai] = action;
-  renderStep(p, si); markChanged();
+  renderStep(p, si); markChanged(true, true);
 }
 
 // ── Gestão de caminhos em decisões ANINHADAS ──────────────────────────────
@@ -8306,7 +8307,7 @@ function addNestedDecisionBranch(p, si, ai, bi, bai) {
   const { actions, parent, subDec } = _nestedDecision(p, si, ai, bi, bai);
   subDec.branches.push({ label: `Caminho ${subDec.branches.length + 1}`, actions: [] });
   _saveNestedDecision(p, si, ai, bi, bai, actions, parent, subDec);
-  renderStep(p, si); markChanged();
+  renderStep(p, si); markChanged(true, true);
 }
 
 function rmNestedDecisionBranch(p, si, ai, bi, bai, nbi) {
@@ -8315,7 +8316,7 @@ function rmNestedDecisionBranch(p, si, ai, bi, bai, nbi) {
   const { actions, parent, subDec } = _nestedDecision(p, si, ai, bi, bai);
   subDec.branches.splice(nbi, 1);
   _saveNestedDecision(p, si, ai, bi, bai, actions, parent, subDec);
-  renderStep(p, si); markChanged();
+  renderStep(p, si); markChanged(true, true);
 }
 
 function addNestedBranchAction(p, si, ai, bi, bai, nbi) {
@@ -8325,7 +8326,7 @@ function addNestedBranchAction(p, si, ai, bi, bai, nbi) {
   subDec.branches[nbi].actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:'',natureza:''});
   const nbai = subDec.branches[nbi].actions.length - 1;
   _saveNestedDecision(p, si, ai, bi, bai, actions, parent, subDec);
-  renderStep(p, si); markChanged();
+  renderStep(p, si); markChanged(true, true);
   openNestedBranchActionModal(p, si, ai, bi, bai, nbi, nbai);
 }
 
@@ -8334,7 +8335,7 @@ function rmNestedBranchAction(p, si, ai, bi, bai, nbi, nbai) {
   const { actions, parent, subDec } = _nestedDecision(p, si, ai, bi, bai);
   subDec.branches[nbi].actions.splice(nbai, 1);
   _saveNestedDecision(p, si, ai, bi, bai, actions, parent, subDec);
-  renderStep(p, si); markChanged();
+  renderStep(p, si); markChanged(true, true);
 }
 
 function openNestedBranchActionModal(p, si, ai, bi, bai, nbi, nbai) {
@@ -8388,7 +8389,7 @@ function openNestedBranchActionModal(p, si, ai, bi, bai, nbi, nbai) {
 function addRole(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem adicionar atores.', 'warn'); return; }
   DATA[p].roles.push({ cls:'role-green', icon:'👤', name:'Novo Ator', title:'Função', duties:['Atribuição a definir'] });
-  renderRoles(p); markChanged();
+  renderRoles(p); markChanged(true, true);
 }
 
 // ── Show edit-add-btn for addStep in edit mode ─
@@ -8841,7 +8842,7 @@ function saveActionModal() {
   renderStep(_actP, _actSi);
   renderRoles(_actP);
   closeActionModal();
-  markChanged();
+  markChanged(true, true);
   // Salvar diretamente — o usuário clicou em "Salvar" explicitamente
   if(currentUser && window._appInitialized) saveToCloud();
   showToast('✅ Ação salva!', 'success');
@@ -10046,7 +10047,7 @@ function configAddNatureza() {
   while (list.some(x => x.key === key)) key = base + '_' + (n++);
   list.push({ key, label, icon, bg, color });
   setConfig('naturezaAtividade', list);
-  markChanged();
+  markChanged(true, true);
   renderConfigPanel();
   _rebuildNaturezaBtns();
   showToast('✅ Natureza adicionada!', 'success');
@@ -10057,7 +10058,7 @@ function configRemoveNatureza(idx) {
   if (list.length <= 1) { showToast('Mantenha ao menos uma natureza.', 'warn'); return; }
   list.splice(idx, 1);
   setConfig('naturezaAtividade', list);
-  markChanged();
+  markChanged(true, true);
   renderConfigPanel();
   _rebuildNaturezaBtns();
   showToast('Natureza removida.', 'success');
@@ -10068,7 +10069,7 @@ function configSaveNatureza(idx, field, value) {
   if (!list[idx]) return;
   list[idx][field] = value;
   setConfig('naturezaAtividade', list);
-  markChanged();
+  markChanged(true, true);
   // Atualizar preview inline sem re-renderizar o painel inteiro
   const container = document.getElementById('cfg-list-naturezaAtividade');
   if (container) {
@@ -11165,7 +11166,7 @@ function savePat() {
   else DATA.pat.push(item);
   closeModal('pat-modal');
   renderPat();
-  markChanged();
+  markChanged(true, true);
   showToast(_patEditIdx !== null ? '✅ Atividade atualizada!' : '✅ Atividade adicionada!', 'success');
 }
 
@@ -11173,7 +11174,7 @@ function deletePat(idx) {
   if(!confirm('Remover esta atividade do Plano de Trabalho?')) return;
   DATA.pat.splice(idx, 1);
   renderPat();
-  markChanged();
+  markChanged(true, true);
   showToast('Atividade removida.', 'success');
 }
 
@@ -12726,7 +12727,7 @@ function importBackup() {
     });
     renderSidebar();
     closeModal('backup-modal');
-    markChanged();
+    markChanged(true, true);
     // Auto-save to cloud if logged in
     if(currentUser) saveToCloud();
     showToast('✅ Backup importado com sucesso!', 'success');
@@ -14865,7 +14866,7 @@ function toggleEtapaMap(p, etapaId) {
       if(!DATA[p].meta.dataEfetiva) DATA[p].meta.dataEfetiva = today;
     }
   }
-  markChanged();
+  markChanged(true, true);
   renderFicha(p);
 }
 
@@ -14876,7 +14877,7 @@ function toggleEtapaNA(p, etapaId) {
   if(et.ok) return; // Já marcado como feito — não pode ser N/A
   et.na = !et.na;
   et.fim = et.na ? new Date().toISOString().slice(0,10) : null;
-  markChanged();
+  markChanged(true, true);
   renderFicha(p);
 }
 
@@ -15079,7 +15080,7 @@ function saveRisk() {
   else DATA[_riskPop].risks.push(item);
   closeModal('risk-modal');
   renderRisks(_riskPop);
-  markChanged();
+  markChanged(true, true);
 }
 
 function renderRisks(p) {
@@ -15119,7 +15120,7 @@ function renderRisks(p) {
 function deleteRisk(p,i) {
   if(!confirm('Remover este item?')) return;
   DATA[p].risks.splice(i,1);
-  renderRisks(p); markChanged();
+  renderRisks(p); markChanged(true, true);
 }
 
 async function generateRisksIA(p) {
@@ -15175,7 +15176,7 @@ Valores possíveis para "treat": "Mitigar", "Aceitar", "Transferir", "Eliminar",
       });
     });
     renderRisks(p);
-    markChanged();
+    markChanged(true, true);
     showToast(`✅ ${items.length} itens gerados pela IA e adicionados.`, 'success');
   } catch(e) {
     showToast('❌ Erro ao gerar riscos: ' + (e.message || e), 'error');
@@ -15277,7 +15278,7 @@ function _doCreateVersion() {
   try { renderFicha(p); }         catch(e) {}
   renderVersionBadge(p);
   _updateVersionBars();
-  markChanged();
+  markChanged(true, true);
   showToast(`📌 v${nextV} criada! Use "↩ Repetir versão anterior" nas abas que quiser herdar da v${curV}.`, 'success');
 }
 
@@ -15391,7 +15392,7 @@ function repeatPrevVersion(p, sectionId) {
     if(snap[f] !== undefined) d[f] = JSON.parse(JSON.stringify(snap[f]));
   });
   _reRenderPop(p);
-  markChanged();
+  markChanged(true, true);
   showToast(`↩ "${label}" copiado da v${cur-1}.`, 'success');
 }
 
@@ -15507,7 +15508,7 @@ function saveChecklist() {
 
   closeModal('ck-modal');
   renderChecklists(_ckPop);
-  markChanged();
+  markChanged(true, true);
   showToast('☑️ Checklist salvo!', 'success');
 }
 
@@ -15523,7 +15524,7 @@ function deleteChecklist(p, ci) {
   if(!confirm('Remover este checklist?')) return;
   DATA[p].checklists.splice(ci, 1);
   renderChecklists(p);
-  markChanged();
+  markChanged(true, true);
 }
 
 function renderChecklists(p) {
@@ -15587,7 +15588,7 @@ function savePa() {
   if(_paIdx >= 0) DATA[_paPop].actions_plan[_paIdx] = item;
   else DATA[_paPop].actions_plan.push(item);
   closeModal('pa-modal');
-  renderPa(_paPop); markChanged();
+  renderPa(_paPop); markChanged(true, true);
 }
 function renderPa(p) {
   // Atualiza status atrasado antes de renderizar
@@ -15628,7 +15629,7 @@ function renderPa(p) {
 }
 function deletePa(p,i) {
   if(!confirm('Remover esta ação?')) return;
-  DATA[p].actions_plan.splice(i,1); renderPa(p); markChanged();
+  DATA[p].actions_plan.splice(i,1); renderPa(p); markChanged(true, true);
 }
 
 // ═══ REUNIÕES ═════════════════════════════
@@ -15656,7 +15657,7 @@ function saveAcomp(pop) {
     });
   });
   DATA[pop].acompanhamento = acomp;
-  markChanged();
+  markChanged(true, true);
 }
 
 function loadAcomp(pop) {
@@ -15789,7 +15790,7 @@ function saveMeet() {
   if(_meetIdx >= 0) DATA[_meetPop].meetings[_meetIdx] = item;
   else DATA[_meetPop].meetings.push(item);
   closeModal('meet-modal');
-  renderMeetings(_meetPop); markChanged();
+  renderMeetings(_meetPop); markChanged(true, true);
 }
 function renderMeetings(p) {
   const el = document.getElementById(p + '-meet-list');
@@ -15819,7 +15820,7 @@ function renderMeetings(p) {
 }
 function deleteMeet(p,i) {
   if(!confirm('Remover este registro?')) return;
-  DATA[p].meetings.splice(i,1); renderMeetings(p); markChanged();
+  DATA[p].meetings.splice(i,1); renderMeetings(p); markChanged(true, true);
 }
 
 
@@ -16554,7 +16555,7 @@ function eppLogoClick() {
   if(url === null) return; // cancelled
   DATA._logoUrl = url.trim();
   eppLogoRefresh();
-  markChanged();
+  markChanged(true, true);
 }
 
 // ═══ SEGUNDO LOGO (upload) ══════════════════════════════════════
@@ -16585,7 +16586,7 @@ function logo2Remove() {
   if(!isEditor) return;
   DATA._logo2Url = '';
   logo2Refresh();
-  markChanged();
+  markChanged(true, true);
 }
 
 function logo2FileSelected(file) {
@@ -16597,7 +16598,7 @@ function logo2FileSelected(file) {
   reader.onload = () => {
     DATA._logo2Url = reader.result; // data URL base64
     logo2Refresh();
-    markChanged();
+    markChanged(true, true);
     // Tenta também enviar para storage (substitui pelo URL permanente se bem-sucedido)
     uploadLogo2ToStorage(file);
   };
@@ -16629,7 +16630,7 @@ async function uploadLogo2ToStorage(file) {
       DATA._logo2Url = data.publicUrl;
       logo2Refresh();
       showToast('✅ Segundo logo salvo com sucesso!', 'success');
-      markChanged();
+      markChanged(true, true);
     }
   } catch(e) {
     showToast('⚠️ Erro inesperado no storage: ' + e.message, 'warn');
@@ -16668,7 +16669,7 @@ function biImgRemove(type) {
   const key = type === 'cadeia' ? '_cadeiaValorImg' : '_mapaEstrategicoImg';
   DATA[key] = '';
   biImgRefresh(type);
-  markChanged();
+  markChanged(true, true);
 }
 
 function biImgFileSelected(file, type) {
@@ -16680,7 +16681,7 @@ function biImgFileSelected(file, type) {
   reader.onload = () => {
     DATA[key] = reader.result; // base64 temporário para exibição imediata
     biImgRefresh(type);
-    markChanged();
+    markChanged(true, true);
     showToast('✅ Imagem carregada! Salvando na nuvem...', 'success');
     uploadBiImgToStorage(file, type); // substitui base64 por URL permanente
   };
@@ -16709,7 +16710,7 @@ async function uploadBiImgToStorage(file, type) {
       DATA[key] = data.publicUrl;
       biImgRefresh(type);
       showToast('✅ Imagem salva permanentemente na nuvem!', 'success');
-      markChanged();
+      markChanged(true, true);
     }
   } catch(e) {
     showToast('⚠️ Erro inesperado no storage: ' + e.message, 'warn');
@@ -19356,7 +19357,7 @@ function eppSetValorHora() {
   if(val === null) return;
   const num = parseFloat(val.replace(',','.'));
   DATA._valorHora = isNaN(num) ? null : num;
-  markChanged();
+  markChanged(true, true);
   eppRenderDashboard();
 }
 
@@ -20885,7 +20886,7 @@ function saveRevision() {
   DATA[_revPop].revisions.push({ num, date, desc, author });
   document.getElementById('rev-modal').classList.remove('open');
   renderRevisions(_revPop);
-  markChanged();
+  markChanged(true, true);
   showToast('✅ Revisão registrada!','success');
 }
 
@@ -21045,7 +21046,7 @@ function saveStatusModal() {
   if(DATA[p]?.meta?.statusMap === 'concluido') {
     if(typeof arqSyncFromPops === 'function') arqSyncFromPops();
   }
-  markChanged();
+  markChanged(true, true);
   showToast('✅ Status atualizado!', 'success');
 }
 
@@ -21856,7 +21857,7 @@ Regras obrigatórias:
     if (!DATA[p].flowDiagram) DATA[p].flowDiagram = {};
     DATA[p].flowDiagram.mermaid = code;
     DATA[p].flowDiagram.text    = code;
-    markChanged();
+    markChanged(true, true);
     saveToCloud();
     showToast('Fluxo salvo!', 'success');
     try { renderFlowPreview(p); } catch(e) {}
@@ -22014,7 +22015,7 @@ Regras obrigatórias:
       if (!DATA[p]) return;
       if (!DATA[p].flowDiagram) DATA[p].flowDiagram = {};
       DATA[p].flowDiagram.bpmnXml = xml;
-      markChanged();
+      markChanged(true, true);
       saveToCloud();
       showToast('✅ Diagrama BPMN salvo!', 'success');
     } catch(e) {
@@ -22319,7 +22320,7 @@ Regras obrigatórias:
     }
     indcageCloseModal();
     indcageRenderIndicadores();
-    markChanged();
+    markChanged(true, true);
     showToast('✅ Indicador salvo!', 'success');
   };
 
@@ -22328,7 +22329,7 @@ Regras obrigatórias:
     ensureData();
     DATA.indicadoresCage.indicadores = DATA.indicadoresCage.indicadores.filter(i => i.id !== id);
     indcageRenderIndicadores();
-    markChanged();
+    markChanged(true, true);
     showToast('Indicador removido.', 'success');
   };
 
@@ -22346,7 +22347,7 @@ Regras obrigatórias:
       !(i.fonte || '').toLowerCase().includes('importado sisplan')
     );
     indcageRenderIndicadores();
-    markChanged();
+    markChanged(true, true);
     saveToCloud();
     showToast(`🗑 ${importados.length} indicador(es) SISPLAN removidos.`, 'success');
   };
@@ -22485,7 +22486,7 @@ Regras obrigatórias:
       }
     });
 
-    markChanged();
+    markChanged(true, true);
     saveToCloud();
     if(statusEl) statusEl.textContent = `✅ ${newRows.length} registros importados`;
     showToast(`📥 ${newRows.length} resultados importados com sucesso!`, 'success');
@@ -22497,7 +22498,7 @@ Regras obrigatórias:
     ensureData();
     DATA.indicadoresCage.sisplanUrl      = document.getElementById('indcage-sync-url')?.value.trim()  || '';
     DATA.indicadoresCage.sisplanAutoSync = document.getElementById('indcage-sync-auto')?.checked || false;
-    markChanged();
+    markChanged(true, true);
   };
 
   window.indcageLoadUrlConfig = function() {
@@ -22605,7 +22606,7 @@ Regras obrigatórias:
     if(!confirm('Remover todos os resultados importados? Os indicadores cadastrados serão mantidos.')) return;
     ensureData();
     DATA.indicadoresCage.resultados = [];
-    markChanged();
+    markChanged(true, true);
     indcageRenderResultados();
     showToast('Resultados removidos.', 'success');
   };
@@ -23127,7 +23128,7 @@ Regras obrigatórias:
       _savedAt: new Date().toISOString()
     };
 
-    if(typeof markChanged === 'function') markChanged();
+    if(typeof markChanged === "function") markChanged(true, true);
 
     const msg = document.getElementById('cfg-saved-msg');
     if(msg) { msg.style.display = 'inline'; setTimeout(() => { msg.style.display = 'none'; }, 2500); }
@@ -23141,7 +23142,7 @@ Regras obrigatórias:
     if(!confirm('Restaurar configurações padrão para este indicador?')) return;
     ensureData();
     delete DATA.indicadoresCage.overrides[_cfgCurrentCodigo];
-    if(typeof markChanged === 'function') markChanged();
+    if(typeof markChanged === "function") markChanged(true, true);
     indcageRenderResultados();
   };
 
@@ -23595,7 +23596,7 @@ function compToggle(p, cat, val) {
   const idx = comp[cat].indexOf(val);
   if(idx >= 0) comp[cat].splice(idx, 1);
   else          comp[cat].push(val);
-  markChanged();
+  markChanged(true, true);
   compRender(p);
 }
 
@@ -23610,14 +23611,14 @@ function compAddCustom(p, cat) {
   }
   comp[cat].push(val);
   inp.value = '';
-  markChanged();
+  markChanged(true, true);
   compRender(p);
 }
 
 function compRemove(p, cat, idx) {
   const comp = compGetData(p);
   comp[cat].splice(idx, 1);
-  markChanged();
+  markChanged(true, true);
   compRender(p);
 }
 
@@ -23815,7 +23816,7 @@ function matGetData(p) {
 function matSetVersion(p, v) {
   const mat = matGetData(p);
   mat.version = v;
-  markChanged();
+  markChanged(true, true);
   matRender(p);
 }
 
@@ -24245,21 +24246,21 @@ function matSetAnswer(p, idx, val) {
   const mat = matGetData(p);
   if(!Array.isArray(mat.answers)) mat.answers = new Array(10).fill(null);
   mat.answers[idx] = val;
-  markChanged();
+  markChanged(true, true);
   matRender(p);
 }
 
 function matSetIndispensaveis(p, val) {
   const mat = matGetData(p);
   mat.indispensaveis = parseInt(val) || 0;
-  markChanged();
+  markChanged(true, true);
   matRender(p);
 }
 
 function matSetSistIndispensaveis(p, val) {
   const mat = matGetData(p);
   mat.sistIndispensaveis = parseInt(val) || 0;
-  markChanged();
+  markChanged(true, true);
   matRender(p);
 }
 
@@ -24569,7 +24570,7 @@ function matSaveSnapshot(p) {
     normAutomacao: final.normAutomacao,
   });
   mat.snapshots.sort((a,b) => a.date.localeCompare(b.date));
-  markChanged();
+  markChanged(true, true);
   // Salvar imediatamente na nuvem (independente do modo edição)
   if(currentUser && window._appInitialized) saveToCloud();
   showToast('✅ Nota de maturidade salva!', 'success');
@@ -24579,7 +24580,7 @@ function matDeleteSnapshot(p, idx) {
   if(!confirm('Remover este registro do histórico?')) return;
   const mat = matGetData(p);
   if(Array.isArray(mat.snapshots)) mat.snapshots.splice(idx, 1);
-  markChanged();
+  markChanged(true, true);
   if(currentUser && window._appInitialized) saveToCloud();
   matRender(p);
 }
@@ -24998,7 +24999,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
     const text = await callGemini(prompt);
     mat.geminiAnalysis = text;
     mat.lastAnalysis   = new Date().toLocaleString('pt-BR');
-    markChanged();
+    markChanged(true, true);
 
     resultDiv.innerHTML = `<div style="white-space:pre-wrap;font-size:13px;line-height:1.8;color:#1e293b;">${
       text
