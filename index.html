@@ -5525,6 +5525,14 @@ function _dndApplyOrder() {
   reorder(document.getElementById('nav-tabs-inner'),  order.navTabs);
   reorder(document.getElementById('sidebar-nav-btns'), order.sidebarNav);
   reorder(document.getElementById('home-cards-grid'),  order.homeCards);
+
+  // Garantir que o botão "Cockpit de Gestão" seja SEMPRE o último na sidebar,
+  // independente de qualquer reordenação salva pelo usuário em modo edição.
+  const _sbn = document.getElementById('sidebar-nav-btns');
+  if (_sbn) {
+    const _cockpitBtn = _sbn.querySelector('[data-mod="cockpit"]');
+    if (_cockpitBtn) _sbn.appendChild(_cockpitBtn);
+  }
 }
 
 // Reinicia apenas o Sortable dos stat cards (pois o DOM é recriado pelo homeRefresh)
@@ -11396,7 +11404,9 @@ async function saveToCloud(attempt=1) {
           // Outro usuário pode ter alterado este POP — usar versão do servidor
           DATA[key] = pd;
           try { sanitizePop(key); } catch(e) {}
-          try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) {}
+          if (!document.getElementById('pop-' + key)) {
+            try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) {}
+          }
         });
       }
     } catch(e) {
@@ -20654,6 +20664,26 @@ function statusModalAutoFill() {
   function _renderDistChart(pops, dim) {
     const canvas = document.getElementById('cockpit-dist-chart');
     if (!canvas || !window.Chart) return;
+
+    // Sem POPs: mostrar estado vazio, preservando o canvas para reuso posterior
+    let _distNoData = document.getElementById('cockpit-dist-nodata');
+    if (!pops.length) {
+      if (_distChart) { _distChart.destroy(); _distChart = null; }
+      canvas.style.display = 'none';
+      if (!_distNoData) {
+        _distNoData = document.createElement('div');
+        _distNoData.id = 'cockpit-dist-nodata';
+        _distNoData.style.cssText = 'height:260px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;text-align:center;';
+        _distNoData.textContent = 'Nenhum mapeamento cadastrado para exibir distribuição.';
+        canvas.parentElement.appendChild(_distNoData);
+      }
+      _distNoData.style.display = 'flex';
+      return;
+    }
+    // Restaurar canvas e ocultar mensagem de sem dados
+    canvas.style.display = '';
+    if (_distNoData) _distNoData.style.display = 'none';
+
     // Group pops by dimension
     const counts = {};
     pops.forEach(k => {
@@ -20766,7 +20796,25 @@ function statusModalAutoFill() {
     const canvas = document.getElementById('cockpit-donut-chart');
     if (!canvas || !window.Chart) return;
 
+    // Limpar gráfico anterior
     if (_donutChart) { _donutChart.destroy(); _donutChart = null; }
+
+    // Sem mapeamentos: mostrar estado vazio em vez de gráfico em branco
+    if (total === 0) {
+      const legend = document.getElementById('cockpit-donut-legend');
+      if (legend) legend.innerHTML = '<div style="color:#94a3b8;font-size:12px;line-height:1.6;">Nenhum mapeamento cadastrado.<br>Crie POPs para visualizar o painel.</div>';
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 16;
+        ctx.beginPath();
+        ctx.arc(70, 70, 54, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      return;
+    }
+
     _donutChart = new Chart(canvas, {
       type: 'doughnut',
       data: {
