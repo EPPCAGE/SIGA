@@ -20252,6 +20252,38 @@ function parseAiJson(text) {
   try { return JSON.parse(repairJsonString(clean)); } catch(e) { throw e; }
 }
 
+function _npopFileBaseName(name) {
+  return String(name || '')
+    .replace(/\.[^.]+$/, '')
+    .replace(/[\-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function _npopLooksGenericName(v) {
+  const s = String(v || '').trim().toLowerCase();
+  return !s ||
+    s.includes('extração de pop') ||
+    s.includes('extracao de pop') ||
+    s.includes('documento pop') ||
+    s.includes('siga/cage-rs') ||
+    s.includes('processo do arquivo');
+}
+
+async function _npopExtractSourceText(popFile) {
+  const ext = (popFile?.name || '').split('.').pop().toLowerCase();
+  if(ext === 'pdf') {
+    const text = await repoExtractPdfText(popFile);
+    return String(text || '').trim();
+  }
+  // DOC/DOCX nao sao extraiveis com confianca no fluxo atual.
+  // Evita chamar IA sem contexto (que gera processo ficticio/genérico).
+  if(ext === 'doc' || ext === 'docx') {
+    throw new Error('No momento, a extração inteligente está estável para PDF. Exporte o POP para PDF e tente novamente.');
+  }
+  throw new Error('Formato de POP não suportado para extração inteligente. Use PDF.');
+}
+
 function blobToBase64(blob) {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -20278,8 +20310,13 @@ async function npopExtractWithGemini() {
 
   try {
     // ── Chamada 1: POP → metadados + executores + etapas (sem flow) ──
-    const base64 = await blobToBase64(popFile);
-    const mimeType = popFile.type || 'application/pdf';
+    // Causa raiz corrigida: o proxy so anexava image/*; PDF/DOCX eram ignorados.
+    // Agora extraimos o texto do PDF e passamos no prompt.
+    const popTextRaw = await _npopExtractSourceText(popFile);
+    if(!popTextRaw) {
+      throw new Error('Não foi possível ler texto do PDF enviado. Verifique se o arquivo não está protegido/escaneado sem OCR.');
+    }
+    const popText = popTextRaw.slice(0, 16000);
     pbar.style.width = '25%';
     msg.textContent = 'Extraindo metadados e etapas do POP...';
 
@@ -20323,13 +20360,26 @@ Para cada action:
 VALIDAÇÃO:
 ✓ steps[] contém APENAS fases de execução operacional
 ✓ Cada linha de ação = uma action separada (nunca agrupe)
-✓ Decisões usam "branches" — nunca são classificadas como "atividade"`;
+✓ Decisões usam "branches" — nunca são classificadas como "atividade"
+
+# TEXTO DO POP (FONTE)
+${popText}`;
 
     pbar.style.width = '50%';
     msg.textContent = 'Processando resposta do POP...';
 
-    const text = await callGeminiProxy(promptPop, { data: base64, mimeType }, { maxTokens: 8000 });
+    const text = await callGeminiProxy(promptPop, null, { maxTokens: 8000 });
     const extracted = parseAiJson(text);
+
+    // Se o modelo devolver nome genérico (eco do prompt), usa nome do arquivo.
+    const modelName = extracted.nome || extracted.titulo || extracted.processo || '';
+    if(_npopLooksGenericName(modelName)) {
+      const byFile = _npopFileBaseName(popFile.name);
+      if(byFile) {
+        extracted.processo = byFile;
+        if(!extracted.nome) extracted.nome = byFile;
+      }
+    }
 
     // ── Chamada 2 (opcional): BPMN → flow[] ──
     if(bpmnFile) {
