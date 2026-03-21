@@ -11499,10 +11499,22 @@ async function _resolveFreshAccessToken() {
 }
 
 async function callGeminiProxy(prompt, image = null, options = {}) {
-  void prompt;
-  void image;
-  void options;
-  throw new Error('Módulo de IA remota desabilitado no modo local.');
+  const resp = await fetch(API_URL + '/ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt:    String(prompt || '').slice(0, 24000),
+      image:     image  || undefined,
+      maxTokens: options.maxTokens || undefined
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error || 'Erro na IA (' + resp.status + ')');
+  }
+  const data = await resp.json();
+  if (!data.text) throw new Error('Resposta vazia da IA');
+  return data.text;
 }
 
 async function callGemini(prompt) {

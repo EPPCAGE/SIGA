@@ -135,6 +135,55 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'POST' && url.pathname === '/ai') {
+      const AI_TOKEN = process.env.SIGA_AI_TOKEN || '';
+      const AI_API_URL = process.env.SIGA_AI_API_URL || 'https://models.github.ai/inference/chat/completions';
+      const AI_MODEL  = process.env.SIGA_AI_MODEL  || 'openai/gpt-4.1-mini';
+
+      if (!AI_TOKEN) {
+        sendJson(res, 503, { ok: false, error: 'IA não configurada — defina SIGA_AI_TOKEN no ambiente' });
+        return;
+      }
+
+      const body   = await collectRequestBody(req);
+      const parsed = body ? JSON.parse(body) : {};
+      const prompt = typeof parsed.prompt === 'string' ? parsed.prompt.slice(0, 24000) : '';
+      if (!prompt) {
+        sendJson(res, 400, { ok: false, error: 'Campo obrigatório: prompt' });
+        return;
+      }
+
+      const maxTokens  = Math.min(Math.max(Number(parsed.maxTokens) || 1800, 256), 16384);
+      const userContent = [{ type: 'text', text: prompt }];
+      const img = parsed.image;
+      if (img && typeof img === 'object' && img.data && img.mimeType) {
+        userContent.push({ type: 'image_url', image_url: { url: `data:${img.mimeType};base64,${img.data}` } });
+      }
+
+      const aiResp = await fetch(AI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AI_TOKEN}` },
+        body: JSON.stringify({
+          model: AI_MODEL,
+          messages: [
+            { role: 'system', content: 'Você é um assistente para análise de processos da CAGE-RS. Responda em português de forma objetiva e estruturada.' },
+            { role: 'user',   content: userContent.length === 1 ? prompt : userContent }
+          ],
+          max_tokens: maxTokens
+        })
+      });
+
+      const aiData = await aiResp.json();
+      if (!aiResp.ok) {
+        sendJson(res, aiResp.status, { ok: false, error: aiData?.error?.message || 'Erro na API de IA' });
+        return;
+      }
+
+      const text = aiData?.choices?.[0]?.message?.content || '';
+      sendJson(res, 200, { ok: true, text });
+      return;
+    }
+
     sendJson(res, 404, { ok: false, error: 'Not found' });
   } catch (error) {
     const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;

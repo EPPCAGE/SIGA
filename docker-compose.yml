@@ -9,6 +9,13 @@ services:
       PORT: 3000
       SIGA_DATA_FILE: /data/local-data.json
       SIGA_MAX_BODY_BYTES: 52428800
+      # ── IA / GitHub Copilot ──────────────────────────────────────────
+      # Gere um PAT em https://github.com/settings/tokens com escopo model:read
+      # (ou use um token de Organization do GitHub Copilot).
+      # Descomente e preencha para habilitar os recursos de IA no sistema.
+      # SIGA_AI_TOKEN: ghp_xxxxxxxxxxxxxxxxxxxx
+      # SIGA_AI_MODEL: openai/gpt-4.1-mini          # modelo padrao
+      # SIGA_AI_API_URL: https://models.github.ai/inference/chat/completions
     volumes:
       - ./data:/data
     restart: unless-stopped

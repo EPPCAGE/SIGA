@@ -4,22 +4,23 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') ?? Deno.env.get('gemini_api_key') ?? '';
 const GITHUB_COPILOT_TOKEN = Deno.env.get('GITHUB_COPILOT_TOKEN') ?? Deno.env.get('GITHUB_TOKEN') ?? '';
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') ?? Deno.env.get('gemini_api_key') ?? '';
 
-// Prefer Gemini when key is available; fall back to GitHub Models.
-const USE_GEMINI = !!GEMINI_API_KEY;
-const AI_API_URL = USE_GEMINI
-  ? 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
-  : (Deno.env.get('GITHUB_COPILOT_API_URL') ?? 'https://models.github.ai/inference/chat/completions');
-const AI_TOKEN = USE_GEMINI ? GEMINI_API_KEY : GITHUB_COPILOT_TOKEN;
-const PRIMARY_MODEL = USE_GEMINI
-  ? (Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash-lite')
-  : (Deno.env.get('GITHUB_COPILOT_MODEL') ?? 'openai/gpt-4.1-mini');
-const ADMIN_EMAIL = 'f.ctourinho@gmail.com';
-const FALLBACK_MODELS = USE_GEMINI
-  ? ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro']
-  : ['openai/gpt-4o-mini', 'openai/gpt-4.1', 'openai/gpt-4.1-mini'];
+// Prefer GitHub Copilot when token is available; fall back to Gemini.
+const USE_GITHUB = !!GITHUB_COPILOT_TOKEN;
+const AI_API_URL = USE_GITHUB
+  ? (Deno.env.get('GITHUB_COPILOT_API_URL') ?? 'https://models.github.ai/inference/chat/completions')
+  : 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+const AI_TOKEN = USE_GITHUB ? GITHUB_COPILOT_TOKEN : GEMINI_API_KEY;
+const PRIMARY_MODEL = USE_GITHUB
+  ? (Deno.env.get('GITHUB_COPILOT_MODEL') ?? 'openai/gpt-4.1-mini')
+  : (Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash-lite');
+// Lido de env para evitar hardcode de e-mail no código-fonte.
+const ADMIN_EMAIL = Deno.env.get('SIGA_ADMIN_EMAIL') ?? '';
+const FALLBACK_MODELS = USE_GITHUB
+  ? ['openai/gpt-4o-mini', 'openai/gpt-4.1', 'openai/gpt-4.1-mini']
+  : ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'];
 
 const MAX_PROMPT_CHARS = 24000;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
