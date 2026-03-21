@@ -12,7 +12,6 @@
 <title>SIGA — Sistema Integrado de Gestão de Atividades da CAGE</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230a2540'/%3E%3Crect x='2' y='2' width='28' height='28' rx='4' fill='none' stroke='%2300a86b' stroke-width='2'/%3E%3Ctext x='16' y='22' font-family='Arial,sans-serif' font-size='13' font-weight='bold' fill='%2300a86b' text-anchor='middle'%3EEPP%3C/text%3E%3C/svg%3E">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.4/Sortable.min.js"></script>
@@ -24,6 +23,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="./public-config.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -1353,9 +1353,9 @@
       </svg>
     </div>
     <div class="auth-sub">Faça login para acessar e sincronizar seus dados</div>
-    <button class="auth-google-btn" onclick="signInGoogle()">
+    <button class="auth-google-btn" onclick="signInMicrosoft()">
       <svg class="auth-google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Entrar com Google
+      Entrar com Microsoft Entra ID
     </button>
     <div class="auth-status" id="auth-status"></div>
   </div>
@@ -6550,65 +6550,46 @@ function showBpmnImage(dataUrl) {
 }
 
 
-// ── Supabase Storage para imagens de fluxo ──────────────────
+// ── Armazenamento local para imagens de fluxo ────────────────
 async function uploadFluxoImgToStorage(popKey, file) {
-  if(!supaClient || !currentUser) {
-    showToast('⚠️ Faça login para salvar a imagem na nuvem. Ela ficará disponível só nesta sessão.', 'warn');
-    return;
-  }
-  showToast('⏳ Enviando imagem para o storage...', 'success');
+  showToast('⏳ Processando imagem localmente...', 'success');
   try {
-    const ext  = file.name.split('.').pop().toLowerCase() || 'png';
-    const path = `fluxo-${popKey}-${Date.now()}.${ext}`;
-    const { error } = await supaClient.storage
-      .from('gestpop-images')
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if(error) {
-      // Bucket may not exist yet
-      if(error.message && error.message.includes('Bucket not found')) {
-        showToast('⚠️ Bucket "gestpop-images" não encontrado no Supabase Storage. Crie-o no Dashboard → Storage → New bucket (nome: gestpop-images, público).', 'warn');
-      } else {
-        showToast('⚠️ Erro no storage: ' + error.message + '. A imagem ficará só nesta sessão.', 'warn');
-      }
-      console.warn('Storage upload failed:', error.message);
-      return;
-    }
-    // Get public URL
-    const { data } = supaClient.storage.from('gestpop-images').getPublicUrl(path);
-    if(data?.publicUrl) {
-      DATA[popKey].fluxoImgUrl  = data.publicUrl;
-      DATA[popKey].fluxoImgPath = path;
-      DATA[popKey].fluxoImg     = null; // never store base64 in DB
-      showToast('✅ Imagem salva em alta qualidade no storage!', 'success');
-      markChanged(true, true);
-    }
+    const b64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Falha ao ler arquivo'));
+      reader.readAsDataURL(file);
+    });
+    DATA[popKey].fluxoImgUrl  = b64;
+    DATA[popKey].fluxoImgPath = 'local/fluxo-' + Date.now();
+    DATA[popKey].fluxoImg     = b64;
+    showToast('✅ Imagem salva localmente!', 'success');
+    markChanged(true, true);
   } catch(e) {
-    showToast('⚠️ Erro inesperado no storage: ' + e.message, 'warn');
-    console.warn('Storage error:', e);
+    showToast('⚠️ Erro ao processar imagem: ' + e.message, 'warn');
   }
 }
 
 async function loadFluxoImgFromStorage(popKey) {
-  // Priority 1: in-memory object URL from this session (best quality)
+  // Priority 1: in-memory object URL from this session
   const objUrl = DATA[popKey]?._fluxoObjectUrl;
   if(objUrl) {
     document.getElementById('bpmn-file-name').textContent = DATA[popKey].fluxoImgName || 'Imagem';
     showBpmnImage(objUrl);
     return true;
   }
-  // Priority 2: Supabase Storage URL (full quality, persisted)
-  const storageUrl = DATA[popKey]?.fluxoImgUrl;
-  if(storageUrl) {
+  // Priority 2: persisted local data URL
+  const localUrl = DATA[popKey]?.fluxoImgUrl;
+  if(localUrl) {
     document.getElementById('bpmn-file-name').textContent = DATA[popKey].fluxoImgName || 'Imagem salva';
-    showBpmnImage(storageUrl);
+    showBpmnImage(localUrl);
     return true;
   }
-  // Priority 3: legacy base64 in DATA (old sessions before storage migration)
+  // Priority 3: legacy base64 in DATA
   const b64 = DATA[popKey]?.fluxoImg;
   if(b64) {
     document.getElementById('bpmn-file-name').textContent = DATA[popKey].fluxoImgName || 'Imagem (legado)';
     showBpmnImage(b64);
-    showToast('💡 Imagem em formato antigo. Faça o upload novamente para melhorar a qualidade.', 'warn');
     return true;
   }
   return false;
@@ -6788,11 +6769,6 @@ function openNovoPop() {
     const nome = window.prompt('Qual é o seu nome? (será registrado como elaborador dos mapeamentos)');
     if(nome?.trim()) {
       localStorage.setItem('cage_nome_usuario', nome.trim());
-      // Persistir no perfil do editor para ficar disponível em outras máquinas
-      if(currentUserEmail && supaClient) {
-        supaClient.from('gestpop_editors').update({ display_name: nome.trim() })
-          .eq('email', currentUserEmail).then(() => {});
-      }
     }
   }
 
@@ -9759,26 +9735,9 @@ function getAlertSubscribers(tipoAlerta) {
 }
 
 async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
-  if(!supaClient || !toEmail) return false;
-  try {
-    const { data: { session } } = await supaClient.auth.getSession();
-    const token = session?.access_token;
-    if(!token) {
-      console.warn('[sendAlertEmail] Sessão ausente; envio cancelado.');
-      return false;
-    }
-    const resp = await fetch(`${SUPA_URL}/functions/v1/send-alert-email`, {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
-      body: JSON.stringify({ to: toEmail, nome: toNome, subject, html: htmlBody }),
-    });
-    if(!resp.ok) { console.warn('[sendAlertEmail] HTTP', resp.status, await resp.text()); return false; }
-    console.log(`[sendAlertEmail] Enviado para ${toEmail}: ${subject}`);
-    return true;
-  } catch(e) {
-    console.error('[sendAlertEmail] erro:', e);
-    return false;
-  }
+  if(!toEmail) return false;
+  console.warn('[sendAlertEmail] desabilitado em modo local:', { toEmail, toNome, subject, htmlBody });
+  return false;
 }
 
 function _buildAlertHtml(tipo, popName, popKey, extra) {
@@ -10632,46 +10591,29 @@ function hideAllModules() {
 const ADMIN_EMAIL = 'f.ctourinho@gmail.com';
 
 async function checkEditorPermission() {
-  if(!currentUser) return;
-  currentUserEmail = currentUser.email;
-  currentUserName  = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+  currentUserEmail = currentUser?.email || 'local@admin';
+  currentUserName  = currentUser?.user_metadata?.full_name || currentUserEmail.split('@')[0];
 
-  // Admin sempre tem acesso total, independente da tabela
-  if(currentUserEmail === ADMIN_EMAIL) {
+  if ((SIGA_AUTH.mode || 'local') === 'entra') {
+    const entraCfg = SIGA_AUTH.entra || {};
+    const email = (currentUserEmail || '').toLowerCase();
+    const adminEmails = (entraCfg.adminEmails || []).map((e) => String(e).toLowerCase());
+    const editorEmails = (entraCfg.editorEmails || []).map((e) => String(e).toLowerCase());
+
+    isAdmin = adminEmails.includes(email);
+    isEditor = isAdmin || editorEmails.includes(email);
+    isViewer = !isEditor;
+  } else {
+    // Modo local: sempre admin/editor
     isEditor = true;
     isAdmin  = true;
     isViewer = false;
-    applyPermissions();
-    homeRefresh();
-    document.getElementById('perm-panel').style.display = 'flex';
-    return;
-  }
-
-  // maybeSingle() retorna null sem erro quando não há registro (evita PGRST116)
-  const { data, error } = await supaClient
-    .from('gestpop_editors')
-    .select('*')
-    .eq('email', currentUserEmail)
-    .maybeSingle();
-
-  if(error) {
-    console.error('checkEditorPermission error:', error);
-    isEditor = false; isAdmin = false; isViewer = false;
-  } else if(data) {
-    isAdmin  = !!data.is_admin;
-    isEditor = data.role !== 'viewer'; // viewer não é editor
-    isViewer = data.role === 'viewer';
-    console.log('[checkEditorPermission] email='+currentUserEmail+' role='+data.role+' isEditor='+isEditor);
-  } else {
-    isEditor = false;
-    isAdmin  = false;
-    isViewer = false;
-    console.warn('[checkEditorPermission] email='+currentUserEmail+' NÃO encontrado em gestpop_editors → isEditor=false');
   }
 
   applyPermissions();
   homeRefresh();
-  document.getElementById('perm-panel').style.display = 'flex';
+  const permPanel = document.getElementById('perm-panel');
+  if(permPanel) permPanel.style.display = 'flex';
 }
 
 function _applyPermissionsCore() {
@@ -10778,12 +10720,7 @@ function eppExitViewerPreview() {
 }
 
 async function showAccessRequestOverlay() {
-  // Verificar se já tem solicitação pendente (maybeSingle evita erro PGRST116 quando não existe)
-  const { data: existing } = await supaClient
-    .from('gestpop_requests')
-    .select('status')
-    .eq('email', currentUserEmail)
-    .maybeSingle();
+  const existing = LOCAL_ACCESS.requests.find(r => r.email === currentUserEmail) || null;
 
   let msg = '';
   if(existing?.status === 'pendente') {
@@ -10828,20 +10765,19 @@ async function showAccessRequestOverlay() {
 async function submitAccessRequest() {
   const motivo = document.getElementById('req-motivo')?.value.trim() || '';
   document.getElementById('req-status').textContent = 'Enviando...';
-  const { error } = await supaClient.from('gestpop_requests').upsert({
+  const existing = LOCAL_ACCESS.requests.find(r => r.email === currentUserEmail);
+  const payload = {
     email: currentUserEmail,
     name:  currentUserName,
     motivo,
     status: 'pendente',
     requested_at: new Date().toISOString()
-  }, { onConflict: 'email' });
-  if(error) {
-    document.getElementById('req-status').textContent = '⚠️ Erro: ' + error.message;
-  } else {
-    document.getElementById('req-status').innerHTML =
-      '<span style="color:#16a34a;font-weight:600;">✅ Solicitação enviada! O administrador será notificado.</span>';
-    setTimeout(() => showAccessRequestOverlay(), 1500);
-  }
+  };
+  if(existing) Object.assign(existing, payload);
+  else LOCAL_ACCESS.requests.push(payload);
+  document.getElementById('req-status').innerHTML =
+    '<span style="color:#16a34a;font-weight:600;">✅ Solicitação registrada localmente.</span>';
+  setTimeout(() => showAccessRequestOverlay(), 1500);
 }
 
 // ── sanitizePopData — garante estrutura mínima de um POP ────
@@ -10986,25 +10922,13 @@ window.addEventListener('beforeunload', (e) => {
 
   console.log('[beforeunload] payload final: ' + reqBody.length + ' bytes (limite: ' + KEEPALIVE_LIMIT + ')');
 
-  const headers = {
-    'Content-Type':  'application/json',
-    'apikey':        SUPA_KEY,
-    'Authorization': 'Bearer ' + currentAccessToken,
-    'Prefer':        'return=minimal'
-  };
-
   try {
-    if(workspaceId) {
-      console.log('[beforeunload] PATCH workspaceId='+workspaceId+' payload='+reqBody.length+'bytes');
-      fetch(`${SUPA_URL}/rest/v1/gestpop_workspace?id=eq.${workspaceId}`, {
-        method: 'PATCH', keepalive: true, headers, body: reqBody
-      });
-    } else {
-      console.log('[beforeunload] POST novo workspace payload='+reqBody.length+'bytes');
-      fetch(`${SUPA_URL}/rest/v1/gestpop_workspace`, {
-        method: 'POST', keepalive: true, headers, body: reqBody
-      });
-    }
+    fetch(API_URL + '/data', {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: reqBody
+    });
     console.log('[beforeunload] fetch keepalive enviado OK');
   } catch(e) { console.warn('[beforeunload] save failed:', e); }
 });
@@ -11051,43 +10975,35 @@ function _normalizeUnidades() {
 }
 
 async function saveToCloud(attempt=1) {
-  console.log('[saveToCloud] attempt='+attempt+' user='+!!currentUser+' editor='+isEditor+' supaClient='+!!supaClient+' email='+currentUserEmail);
-  if(!currentUser) { console.warn('[saveToCloud] BLOQUEADO: sem currentUser'); showToast('Faça login primeiro.','warn'); return; }
-  if(!supaClient)  { console.warn('[saveToCloud] BLOQUEADO: supaClient null'); showToast('⚠️ Supabase não inicializado. Recarregue a página.','warn'); return; }
-  if(!isEditor)    { console.warn('[saveToCloud] BLOQUEADO: isEditor=false (email='+currentUserEmail+')'); showToast('Sem permissão para salvar.','warn'); return; }
+  console.log('[saveToCloud] attempt='+attempt+' editor='+isEditor);
+  if(!isEditor) { console.warn('[saveToCloud] BLOQUEADO: isEditor=false'); showToast('Sem permissão para salvar.','warn'); return; }
 
   // Se já está salvando, enfileirar apenas 1 chamada extra
   if(_saveInProgress && attempt === 1) {
     _saveQueue++;
-    if(_saveQueue > 1) { _saveQueue--; return; } // já tem 1 na fila, ignorar
+    if(_saveQueue > 1) { _saveQueue--; return; }
     await new Promise(r => setTimeout(r, 2500));
     _saveQueue = 0;
-    if(_saveInProgress) return; // ainda ocupado após espera
+    if(_saveInProgress) return;
   }
   _saveInProgress = true;
   setSyncStatus('syncing');
 
-  // Mesclar POPs pendentes do servidor antes de salvar (evita apagar POPs criados em outra sessão)
+  // Mesclar POPs pendentes do servidor antes de salvar
   if (_pendingServerMerge) {
     _silentlyMergeNewPops(_pendingServerMerge);
     _pendingServerMerge = null;
   }
 
-  // ── Fetch-merge-save: buscar estado atual do servidor e preservar POPs não modificados localmente
-  // Isso evita que o save de uma sessão sobrescreva alterações feitas por outras sessões
-  // em processos diferentes. Cada usuário só "vence" nos POPs que ele realmente tocou.
-  if (workspaceId) {
-    try {
-      const { data: serverRow } = await supaClient
-        .from('gestpop_workspace')
-        .select('data')
-        .eq('id', workspaceId)
-        .maybeSingle();
+  // ── Fetch-merge: buscar estado atual do servidor e preservar POPs não modificados
+  try {
+    const serverRes = await fetch(API_URL + '/data');
+    if (serverRes.ok) {
+      const serverRow = await serverRes.json();
       if (serverRow?.data?.newPops) {
         serverRow.data.newPops.forEach(({ key, data: pd }) => {
           if (!key?.startsWith('pop_') || !pd || typeof pd !== 'object') return;
-          if (_dirtyPops.has(key)) return; // este usuário modificou — manter versão local
-          // Outro usuário pode ter alterado este POP — usar versão do servidor
+          if (_dirtyPops.has(key)) return;
           DATA[key] = pd;
           try { sanitizePop(key); } catch(e) {}
           if (!document.getElementById('pop-' + key)) {
@@ -11095,20 +11011,17 @@ async function saveToCloud(attempt=1) {
           }
         });
       }
-    } catch(e) {
-      console.warn('[saveToCloud] fetch-merge falhou (continuando com dados locais):', e);
     }
+  } catch(e) {
+    console.warn('[saveToCloud] fetch-merge falhou (continuando com dados locais):', e);
   }
 
   try { harvestEditables(); } catch(e) { console.warn('harvestEditables:', e); }
 
-  // Capturar quais POPs estão dirty AGORA (antes de construir o payload).
-  // Após o save, remover APENAS estes da lista — POPs sujos DURANTE o save permanecem para o próximo ciclo.
   const _popsIncludedInThisSave = new Set(_dirtyPops);
 
   const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores','homeCards','aptCatalog','quadro']);
   const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
-  // Strip session-only transient fields (prefixed with _) before persisting
   function _stripTransient(obj) {
     if(!obj || typeof obj !== 'object') return obj;
     const out = {};
@@ -11137,111 +11050,19 @@ async function saveToCloud(attempt=1) {
   };
 
   try {
-    // Se não temos workspaceId, buscar o registro existente
-    if(!workspaceId) {
-      const { data: existing, error: fetchErr } = await supaClient
-        .from('gestpop_workspace')
-        .select('id')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if(fetchErr) console.warn('saveToCloud: fetch workspaceId error', fetchErr);
-      if(existing?.id) { workspaceId = existing.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}; }
-      else console.log('saveToCloud: nenhum workspace existente — será criado');
-    }
-
-    let error, saved;
-    if(workspaceId) {
-      // UPDATE no registro existente
-      ({ error, data: saved } = await supaClient
-        .from('gestpop_workspace')
-        .update({
-          data:            payload,
-          updated_at:      new Date().toISOString(),
-          updated_by:      currentUserEmail,
-          updated_by_name: currentUserName
-        })
-        .eq('id', workspaceId)
-        .select('id, updated_at, updated_by_name')
-        .maybeSingle());
-      // Se o UPDATE não encontrou a linha (workspaceId inválido/expirado):
-      // re-consultar antes de criar nova linha, para evitar duplicatas
-      if(!error && !saved) {
-        console.warn('[saveToCloud] UPDATE retornou 0 linhas — re-consultando workspace existente');
-        workspaceId = null;
-        sessionStorage.removeItem('gestpop_wsid');
-        try { localStorage.removeItem('gestpop_wsid'); } catch(e) {}
-        const { data: recheck } = await supaClient
-          .from('gestpop_workspace')
-          .select('id')
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if(recheck?.id) {
-          // Linha encontrada — usar ela para o UPDATE
-          workspaceId = recheck.id;
-          sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}
-          ({ error, data: saved } = await supaClient
-            .from('gestpop_workspace')
-            .update({ data: payload, updated_at: new Date().toISOString(), updated_by: currentUserEmail, updated_by_name: currentUserName })
-            .eq('id', workspaceId)
-            .select('id, updated_at, updated_by_name')
-            .maybeSingle());
-        } else {
-          // Realmente não existe nenhuma linha — INSERT
-          console.log('[saveToCloud] Nenhuma linha encontrada — criando workspace');
-          ({ error, data: saved } = await supaClient
-            .from('gestpop_workspace')
-            .insert({ data: payload, updated_by: currentUserEmail, updated_by_name: currentUserName })
-            .select('id, updated_at, updated_by_name')
-            .maybeSingle());
-          if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}; }
-        }
-      }
-    } else {
-      // Primeiro uso nesta sessão: buscar linha existente antes de inserir
-      const { data: existing2 } = await supaClient
-        .from('gestpop_workspace')
-        .select('id')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if(existing2?.id) {
-        workspaceId = existing2.id;
-        sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}
-        ({ error, data: saved } = await supaClient
-          .from('gestpop_workspace')
-          .update({ data: payload, updated_at: new Date().toISOString(), updated_by: currentUserEmail, updated_by_name: currentUserName })
-          .eq('id', workspaceId)
-          .select('id, updated_at, updated_by_name')
-          .maybeSingle());
-      } else {
-        ({ error, data: saved } = await supaClient
-          .from('gestpop_workspace')
-          .insert({ data: payload, updated_by: currentUserEmail, updated_by_name: currentUserName })
-          .select('id, updated_at, updated_by_name')
-          .maybeSingle());
-        if(saved?.id) { workspaceId = saved.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {}; }
-      }
-    }
-
-    if(error) {
-      console.error('saveToCloud error:', error);
-      if(attempt < 3) {
-        _saveInProgress = false;
-        await new Promise(r => setTimeout(r, attempt * 1500));
-        return saveToCloud(attempt + 1);
-      }
-      _saveInProgress = false;
-      setSyncStatus('error');
-      showToast('❌ Erro ao salvar: ' + error.message, 'warn');
-      return;
-    }
+    const res = await fetch(API_URL + '/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data:            payload,
+        updated_by:      currentUserEmail,
+        updated_by_name: currentUserName
+      })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const saved = await res.json();
 
     _saveInProgress = false;
-    // Remover apenas os POPs que foram incluídos neste save.
-    // POPs dirtied DURANTE o save (ex: snapshot de maturidade salvo em paralelo) permanecem
-    // marcados para o próximo ciclo de save e não serão sobrescritos pelo fetch-merge.
     _popsIncludedInThisSave.forEach(k => _dirtyPops.delete(k));
     setSyncStatus('synced');
     if(_dirtyPops.size === 0) document.getElementById('unsaved-dot').style.display = 'none';
@@ -11252,12 +11073,11 @@ async function saveToCloud(attempt=1) {
     _saveInProgress = false;
     console.error('saveToCloud exception:', e);
     if(attempt < 3) {
-      _saveInProgress = false;
       await new Promise(r => setTimeout(r, attempt * 1500));
       return saveToCloud(attempt + 1);
     }
     setSyncStatus('error');
-    showToast('❌ Erro inesperado: ' + e.message, 'warn');
+    showToast('❌ Erro ao salvar: ' + e.message, 'warn');
   }
 }
 
@@ -11267,51 +11087,12 @@ async function loadFromCloud() {
   console.log('📥 loadFromCloud iniciando...');
 
   try {
-    // Buscar o registro mais recente (com timeout de 12s para evitar hang indefinido)
-    console.log('[loadFromCloud] enviando query gestpop_workspace...');
-    const QUERY_TIMEOUT_MS = 12000;
-    let timeoutId;
-    const timeoutPromise = new Promise((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error('timeout')), QUERY_TIMEOUT_MS);
-    });
-    const queryPromise = supaClient
-      .from('gestpop_workspace')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    let { data, error } = await Promise.race([queryPromise, timeoutPromise])
-      .catch(async (err) => {
-        if(err.message === 'timeout') {
-          console.warn('[loadFromCloud] query timeout após ' + QUERY_TIMEOUT_MS + 'ms — tentando novamente...');
-          // Segunda tentativa com timeout de 20s
-          const timeout2Promise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('timeout2')), 20000)
-          );
-          return Promise.race([
-            supaClient
-              .from('gestpop_workspace')
-              .select('*')
-              .order('updated_at', { ascending: false })
-              .limit(1)
-              .maybeSingle(),
-            timeout2Promise
-          ]).catch(err2 => {
-            console.error('[loadFromCloud] Segunda tentativa também falhou:', err2.message);
-            return { data: null, error: { message: 'Timeout na conexão com o banco de dados. Verifique sua conexão.' } };
-          });
-        }
-        throw err;
-      });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(API_URL + '/data', { signal: controller.signal });
     clearTimeout(timeoutId);
-    console.log('[loadFromCloud] query retornou — data:', !!data, 'error:', error?.message);
-
-    if(error) {
-      console.error('loadFromCloud query error:', error);
-      setSyncStatus('error');
-      showToast('Erro ao carregar dados: ' + error.message, 'warn');
-      return;
-    }
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
 
     if(!data || !data.data || Object.keys(data.data).length === 0) {
       console.log('loadFromCloud: workspace vazio ou inexistente — usando dados padrão');
@@ -11432,7 +11213,6 @@ async function loadFromCloud() {
     } else {
       showToast('☁️ Conteúdo carregado!', 'success');
     }
-    _subscribeWorkspaceChanges(workspaceId);
     console.log('loadFromCloud: OK');
     // Refresh BPMN image if the module is currently visible
     try {
@@ -11445,18 +11225,6 @@ async function loadFromCloud() {
   } catch(e) {
     setSyncStatus('error');
     console.error('loadFromCloud exception:', e);
-    console.error('Stack:', e.stack);
-    // Tentar identificar qual dado causou o erro
-    try {
-      const { data: dbg } = await supaClient.from('gestpop_workspace').select('data').order('updated_at',{ascending:false}).limit(1).maybeSingle();
-      if(dbg?.data) {
-        const pl = dbg.data;
-        console.log('DEBUG payload keys:', Object.keys(pl));
-        console.log('DEBUG d.steps length:', pl.d?.steps?.length, 'currentStep:', pl.d?.currentStep);
-        console.log('DEBUG r.steps length:', pl.r?.steps?.length, 'currentStep:', pl.r?.currentStep);
-        console.log('DEBUG newPops:', pl.newPops?.length);
-      }
-    } catch(dbgErr) { console.warn('debug query failed:', dbgErr); }
     showToast('Erro ao carregar: ' + e.message + ' — veja Console (F12) para detalhes', 'warn');
   }
 }
@@ -11468,20 +11236,47 @@ function updateLastSaveChip(data) {
     const dt = new Date(data.updated_at).toLocaleString('pt-BR');
     chip.textContent = '💾 ' + (data.updated_by_name||data.updated_by) + ' · ' + dt;
   } else {
-    // Fetch latest (maybeSingle evita erro PGRST116 quando não há registros)
-    supaClient.from('gestpop_workspace').select('updated_at,updated_by_name,updated_by')
-      .order('updated_at',{ascending:false}).limit(1).maybeSingle()
-      .then(({data:d}) => { if(d) { const dt=new Date(d.updated_at).toLocaleString('pt-BR'); chip.textContent='💾 '+(d.updated_by_name||d.updated_by)+' · '+dt; }})
-      .catch(e => console.warn('updateLastSaveChip:', e));
+    chip.textContent = '💾 Dados locais';
+  }
+}
+
+const LOCAL_ACCESS = {
+  requests: [],
+  editors: [],
+  history: [],
+  accessLogs: []
+};
+
+function _ensureLocalAccessState() {
+  if(!LOCAL_ACCESS.editors.length) {
+    LOCAL_ACCESS.editors.push({
+      email: currentUserEmail || 'local@admin',
+      name: currentUserName || 'Administrador Local',
+      is_admin: true,
+      role: 'editor',
+      added_at: new Date().toISOString()
+    });
+  }
+  const hasSelf = LOCAL_ACCESS.editors.some(e => e.email === (currentUserEmail || 'local@admin'));
+  if(!hasSelf) {
+    LOCAL_ACCESS.editors.push({
+      email: currentUserEmail || 'local@admin',
+      name: currentUserName || 'Administrador Local',
+      is_admin: true,
+      role: 'editor',
+      added_at: new Date().toISOString()
+    });
   }
 }
 
 async function logHistory(action) {
-  await supaClient.from('gestpop_history').insert({
+  LOCAL_ACCESS.history.unshift({
     action,
-    updated_by: currentUserEmail,
-    updated_by_name: currentUserName
+    updated_by: currentUserEmail || 'local@admin',
+    updated_by_name: currentUserName || 'Administrador Local',
+    created_at: new Date().toISOString()
   });
+  if(LOCAL_ACCESS.history.length > 200) LOCAL_ACCESS.history.length = 200;
 }
 
 // ── PERMISSIONS MODAL ──────────────────────────────────────
@@ -11519,9 +11314,10 @@ async function loadRequestsList() {
   if(!isAdmin) return;
   const el = document.getElementById(_pid('requests-list'));
   if(!el) return;
+  _ensureLocalAccessState();
   el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Carregando...</div>';
-  const { data } = await supaClient.from('gestpop_requests').select('*').order('requested_at', { ascending: false });
-  const pending = (data||[]).filter(r => r.status === 'pendente');
+  const data = LOCAL_ACCESS.requests.slice().sort((a,b) => new Date(b.requested_at) - new Date(a.requested_at));
+  const pending = data.filter(r => r.status === 'pendente');
   // Atualiza badges nos dois contextos
   ['req-badge','epp-u-req-badge'].forEach(id => {
     const badge = document.getElementById(id);
@@ -11548,12 +11344,17 @@ async function loadRequestsList() {
 }
 
 async function handleRequest(email, name, action) {
-  await supaClient.from('gestpop_requests').update({ status: action }).eq('email', email);
+  const req = LOCAL_ACCESS.requests.find(r => r.email === email && r.status === 'pendente');
+  if(req) req.status = action;
   if(action === 'aprovado') {
-    await supaClient.from('gestpop_editors').upsert(
-      { email, name: name || email, is_admin: false, role: 'viewer', added_at: new Date().toISOString() },
-      { onConflict: 'email' }
-    );
+    const existing = LOCAL_ACCESS.editors.find(e => e.email === email);
+    if(existing) {
+      existing.name = name || email;
+      existing.is_admin = false;
+      existing.role = 'viewer';
+    } else {
+      LOCAL_ACCESS.editors.push({ email, name: name || email, is_admin: false, role: 'viewer', added_at: new Date().toISOString() });
+    }
     showToast('✅ Acesso aprovado para ' + email + ' (Visualizador)', 'success');
   } else {
     showToast('Solicitação de ' + email + ' rejeitada.', 'warn');
@@ -11565,8 +11366,9 @@ async function handleRequest(email, name, action) {
 async function loadEditorList() {
   const el = document.getElementById(_pid('editor-list'));
   if(!el) return;
+  _ensureLocalAccessState();
   el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Carregando...</div>';
-  const { data } = await supaClient.from('gestpop_editors').select('*').order('added_at');
+  const data = LOCAL_ACCESS.editors.slice().sort((a,b) => new Date(a.added_at) - new Date(b.added_at));
   if(!data?.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:16px 0;">Nenhum usuário cadastrado.</div>'; return; }
   el.innerHTML = data.map(e => {
     const isSelf    = e.email === currentUserEmail;
@@ -11599,11 +11401,13 @@ async function loadEditorList() {
 async function setEditorRole(email, role) {
   const labels = { viewer: 'Visualizador', editor: 'Editor', admin: 'Admin' };
   if(!confirm(`Alterar perfil de ${email} para ${labels[role]}?`)) return;
-  const is_admin = role === 'admin';
-  const { error } = await supaClient.from('gestpop_editors')
-    .update({ is_admin, role: role === 'admin' ? 'editor' : role }).eq('email', email);
-  if(error) showToast('Erro: ' + error.message, 'warn');
-  else { showToast(`✓ ${email} → ${labels[role]}`, 'success'); loadEditorList(); }
+  const target = LOCAL_ACCESS.editors.find(e => e.email === email);
+  if(!target) { showToast('Usuário não encontrado.', 'warn'); return; }
+  target.is_admin = role === 'admin';
+  target.role = role === 'admin' ? 'editor' : role;
+  await logHistory('Alterou perfil: ' + email + ' -> ' + labels[role]);
+  showToast(`✓ ${email} → ${labels[role]}`, 'success');
+  loadEditorList();
 }
 
 async function toggleEditorRole(email, makeAdmin) {
@@ -11621,10 +11425,20 @@ async function saveNewEditor() {
   const role  = document.getElementById(_pid('new-role'))?.value || 'viewer';
   const is_admin = role === 'admin';
   if(!email) { showToast('Informe o e-mail.','warn'); return; }
-  const { error } = await supaClient.from('gestpop_editors').upsert(
-    { email, name, is_admin, role: role === 'admin' ? 'editor' : role }, { onConflict: 'email' }
-  );
-  if(error) { showToast('Erro: ' + error.message,'warn'); return; }
+  const existing = LOCAL_ACCESS.editors.find(e => e.email === email);
+  if(existing) {
+    existing.name = name || existing.name;
+    existing.is_admin = is_admin;
+    existing.role = role === 'admin' ? 'editor' : role;
+  } else {
+    LOCAL_ACCESS.editors.push({
+      email,
+      name,
+      is_admin,
+      role: role === 'admin' ? 'editor' : role,
+      added_at: new Date().toISOString()
+    });
+  }
   await logHistory('Adicionou editor: ' + email);
   showToast('Editor adicionado!','success');
   document.getElementById(_pid('add-row')).style.display = 'none';
@@ -11636,7 +11450,7 @@ async function saveNewEditor() {
 
 async function removeEditor(email) {
   if(!confirm('Remover ' + email + ' dos editores?')) return;
-  await supaClient.from('gestpop_editors').delete().eq('email', email);
+  LOCAL_ACCESS.editors = LOCAL_ACCESS.editors.filter(e => e.email !== email);
   await logHistory('Removeu editor: ' + email);
   showToast('Editor removido.','success');
   loadEditorList();
@@ -11645,8 +11459,7 @@ async function removeEditor(email) {
 async function loadHistoryList() {
   const el = document.getElementById(_pid('history-list'));
   el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0;">Carregando...</div>';
-  const { data } = await supaClient.from('gestpop_history')
-    .select('*').order('created_at', { ascending: false }).limit(30);
+  const data = LOCAL_ACCESS.history.slice(0, 30);
   if(!data?.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">Nenhuma alteração registrada.</div>'; return; }
   el.innerHTML = data.map(h => {
     const dt = new Date(h.created_at).toLocaleString('pt-BR');
@@ -11665,10 +11478,10 @@ async function loadHistoryList() {
 // ── Hook into initSupabase to check permissions after login ──
 const _origOnAuthChange = null;
 
-// ═══ SUPABASE / AUTH ══════════════════════════
-const SUPA_URL = 'https://qdpkkzdlpdwoqqmbzpll.supabase.co';
-// ── IA (GitHub Copilot via proxy seguro no Supabase) ───────────
-const COPILOT_PROXY_URL = `${SUPA_URL}/functions/v1/copilot-proxy`;
+// ═══ BACKEND LOCAL / AUTH ═════════════════════
+const SIGA_RUNTIME = window.__SIGA_RUNTIME__ || {};
+const SIGA_AUTH = SIGA_RUNTIME.auth || { mode: 'local', entra: { adminEmails: [], editorEmails: [] } };
+const API_URL = window.__SIGA_API_URL__ || SIGA_RUNTIME.apiUrl || (location.port === '5173' ? 'http://localhost:3000' : '/api');
 // ── Arquitetura de Processos CAGE-RS (importado da planilha) ──
 const CAGE_PROCESSOS = [{"macroprocesso":"Auditoria","processo":"Realizar Tomada de Contas Especial","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe DAUD","area":"Divisão de Auditoria","objetivo":"Apurar a responsabilidade por ocorrências que resultem em dano ao erário (patrimônio público) e promover o ressarcimento desse prejuízo.","fornecedores":"Tribunal de Contas do Estado","entradas":"Ofício de solicitação de realização de tomada de contas especial","entregas":"Relatório de tomada de contas especial","clientes":"órgãos do estado, tribunal de contas do estado","objEstrategicos":["Promover a integridade pública e privada e fortalecer a prevenção à corrupção","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Auditoria","processo":"Realizar Inspeção","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Coordenadores setoriais; Coordenadores seccionais","area":"DCO e DAUD","objetivo":"Gerar valor para a gestão por meio de orientações, recomendações de melhorias processuais e identificação de pontos de controle e irregularidades.","fornecedores":"Denúncias - Canal Fala BR, E-mail, Telefone, Órgãos, Seccionais, Gabinetes","entradas":"Solicitações de Auditoria, Achados da atividade de controle, Denúncias recebidas.","entregas":"Documentos de auditoria - Relatórios, comunicados e notificações.","clientes":"Órgão auditado, TCE, MP, Governador.","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos","Otimizar a contribuição da auditoria para o aprimoramento dos processos da gestão pública estadual"]},{"macroprocesso":"Auditoria","processo":"Gerenciar Auditorias","subprocesso":"Executar Auditorias","natureza":"FINALÍSTICO","gerente":"Coordenadores setoriais; Chefe DAUD","area":"Divisão de Auditoria","objetivo":"Fornecer uma avaliação independente e objetiva sobre o escopo de Auditoria.","fornecedores":"\"Chefia da Divisão\nSeção de Planejamento\"","entradas":"Escopo de trabalho elaborado e aprovado pela chefia da divisão e pelo planejamento.\nPlano de trabalho elaborado pela equipe.","entregas":"Avaliação do escopo da auditoria","clientes":"Chefia da Divisão;\nGestão da entidade auditada;\nSeção de Planejamento;\nSeção de consultoria e revisão.","mapeado":true,"objEstrategicos":[]},{"macroprocesso":"Auditoria","processo":"Gerenciar Auditorias","subprocesso":"Emitir Relatório de Auditoria","natureza":"FINALÍSTICO","gerente":"Chefe seção de supervisão técnica (DAUD)","area":"Divisão de Auditoria","objetivo":"Comunicar de forma clara e concisa os resultados dos trabalhos de auditoria","fornecedores":"\"Equipes de auditoria\nEquipe de revisão\"","entradas":"Resultados dos testes e achados de auditoria.\nRevisão do documento e insumos e recomendações adequadas.","entregas":"Comunicados e Relatórios de auditoria e Pareceres de exercício.\nPublicação no Portal da Transparência daqueles documentos não protegidos por grau de sigilo.","clientes":"Gestores das entidades, Secretaria da pasta, MP, TCE Polícia Civil, Comissão Permanente de Responsabilização da Pessoa Jurídica (CRPJ) e a sociedade.","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos","Aprimorar os Processos de Auditoria, com Base nas Melhores Práticas Internacionais","Otimizar a contribuição da auditoria para o aprimoramento dos processos da gestão pública estadual"]},{"macroprocesso":"Auditoria","processo":"Gerenciar Auditorias","subprocesso":"Monitorar Recomendações de Auditorias","natureza":"FINALÍSTICO","gerente":"Coordenadores setoriais; Chefe DAUD","area":"Divisão de Auditoria","objetivo":"Verificar se houve atendimento das recomendações ou saneamento das impropriedades identificadas.\nVerificar se as medidas implementadas pelas Entidades auditadas estão de acordo com as recomendações emitidas ou com o plano de ação acordado e se as medidas adotadas foram suficientes para solucionar a situação apontada como inadequada frente aos critérios adotados.","fornecedores":"\"Equipes de auditoria\nEquipe de revisão\"","entradas":"Comunicados e Relatórios emitidos \nBoas práticas internacionais de Auditoria \nPlanilha Excel de acompanhamento dos apontamentos e recomendações (preenchida no trabalho anterior)","entregas":"Apontamento de follow-up nos Comunicados e Relatórios;\nPlanilha Excel de acompanhamento dos apontamentos e recomendações preenchida e atualizada.","clientes":"Chefia da Divisão \nGestão da entidade auditada \nSeção de Planejamento \nSeção de Consultoria e Revisão \nSetorial de Auditoria responsável pela entidade","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos","Aprimorar os Processos de Auditoria, com Base nas Melhores Práticas Internacionais","Otimizar a contribuição da auditoria para o aprimoramento dos processos da gestão pública estadual"]},{"macroprocesso":"Auditoria","processo":"Elaborar Plano Anual de Auditoria","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de planejamento e capacitação (DAUD)","area":"Divisão de Auditoria","objetivo":"Definir os trabalhos prioritários do próximo exercício","fornecedores":"\"DCI - Demanda Interna\nSeção de Planejamento, Chefia da Divisão - DCI, Gabinete da CAGE. \"","entradas":"\"Boas práticas de Auditoria;\nColeta das diretrizes da Gestão para elaboração do PAA.\"","entregas":"PAA aprovado","clientes":"Gabinete da CAGE e \nDCI","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Aprimorar os Processos de Auditoria, com Base nas Melhores Práticas Internacionais"]},{"macroprocesso":"Auditoria","processo":"Gerenciar Processo de Prestação de Contas Ordinárias","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de supervisão técnica (DAUD); Chefe seção de orientação e assessoramento (DCO)","area":"DCO e DAUD","objetivo":"Formalizar a opinião da CAGE em relação as contas do ordenador primário do exercício em referência","fornecedores":"Órgãos","entradas":"Documentos dos órgãos, dados acerca da execução orçamentária","entregas":"Relatório elaborado","clientes":"CAGE","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Promover a integridade pública e privada e fortalecer a prevenção à corrupção","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Auditoria","processo":"Gerenciar Auditorias","subprocesso":"Planejar Auditorias","natureza":"FINALÍSTICO","gerente":"Chefe seção de planejamento e capacitação (DAUD)","area":"Divisão de Auditoria","objetivo":"Definir os objetivos específicos e os procedimentos de auditoria que serão aplicados","fornecedores":"Seção de Planejamento","entradas":"PAA aprovado, elaborado e cadastrado no sistema","entregas":"Escopo de trabalho elaborado e aprovado pela chefia da divisão e pelo planejamento.","clientes":"Equipe de Auditoria\nChefia da Divisão\nSeção de Planejamento","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos","Aprimorar os Processos de Auditoria, com Base nas Melhores Práticas Internacionais","Otimizar a contribuição da auditoria para o aprimoramento dos processos da gestão pública estadual"]},{"macroprocesso":"Auditoria","processo":"Elaborar Relatório Anual de Auditoria","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de planejamento e capacitação (DAUD)","area":"Divisão de Auditoria","objetivo":"Apresentar e analisar os resultados dos trabalhos de auditoria do PAA","fornecedores":"Equipes de auditoria","entradas":"Relatórios de auditoria emitidos no ano","entregas":"Relatórios anual de auditoria","clientes":"Gabinete da CAGE e \nDCI","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Aprimorar os Processos de Auditoria, com Base nas Melhores Práticas Internacionais"]},{"macroprocesso":"Comunicação","processo":"Elaborar o Plano de Comunicação Anual","subprocesso":"","natureza":"GESTÃO","gerente":"Assessor de comunicação","area":"Gabinete da CAGE","objetivo":"Estruturar ações de comunicação com os  públicos externo e interno alinhado com a estratégia institucional","fornecedores":"","entradas":"","entregas":"Plano de comunicação","clientes":"CAGE","objEstrategicos":["Promover uma comunicação interna mais efetiva"]},{"macroprocesso":"Comunicação","processo":"Executar o Plano de Comunicação","subprocesso":"Elaborar Semanalmente Pautas de Comunicação","natureza":"GESTÃO","gerente":"Assessor de comunicação","area":"Gabinete da CAGE","objetivo":"Realizar o levantamento dos conteúdos mais relevantes para divulgação","fornecedores":"","entradas":"","entregas":"planejamento operacional de comunicação","clientes":"Assessoria de comunicação (ASCOM e SECOM)","objEstrategicos":["Promover uma comunicação interna mais efetiva"]},{"macroprocesso":"Comunicação","processo":"Executar o Plano de Comunicação","subprocesso":"Elaborar Materiais Institucionais e Peças de Comunicação","natureza":"GESTÃO","gerente":"Assessor de comunicação","area":"Gabinete da CAGE","objetivo":"Estabelecer uma comunicação efetiva, promovendo a aproximação e engajamento do público, e fortalecendo o relacionamento institucional da organização.","fornecedores":"Servidores e divisões da CAGE","entradas":"Solicitações dos servidores da CAGE. Publicações no DOE.","entregas":"Notícias, informes, materiais institucionais.","clientes":"CAGE, SEFAZ","mapeado":true,"objEstrategicos":["Promover uma comunicação interna mais efetiva"]},{"macroprocesso":"Comunicação","processo":"Executar o Plano de Comunicação","subprocesso":"Gerenciar Canais Virtuais de Comunicação","natureza":"GESTÃO","gerente":"Assessor de comunicação","area":"Gabinete da CAGE","objetivo":"Estabelecer uma comunicação efetiva, promovendo a aproximação e engajamento do público, e fortalecendo o relacionamento institucional da organização.","fornecedores":"","entradas":"","entregas":"Matérias e postagens no site,e redes sociais","clientes":"CAGE, imprensa e sociedade em geral","objEstrategicos":["Promover uma comunicação interna mais efetiva"]},{"macroprocesso":"Comunicação","processo":"Promover Eventos Institucionais","subprocesso":"Elaborar Plano Anual de Eventos","natureza":"GESTÃO","gerente":"Assessor de capacitação","area":"Gabinete da CAGE","objetivo":"Direcionar as ações de planejamento para execução dos eventos","fornecedores":"áreas da CAGE","entradas":"solicitações/necessidade de realização de eventos, calendário de eventos da sefaz","entregas":"cronograma para a realização de eventos","clientes":"CAGE","objEstrategicos":[]},{"macroprocesso":"Comunicação","processo":"Promover Eventos Institucionais","subprocesso":"Planejar e Executar os Eventos","natureza":"GESTÃO","gerente":"Assessor de capacitação","area":"Gabinete da CAGE","objetivo":"Realizar eventos previstos no Plano Anual de Eventos.","fornecedores":"GEPESC; Demandante do evento; Fornecedores externos de materiais/serviços.","entradas":"Previsão de evento no plano anual de eventos","entregas":"Evento realizado","clientes":"CAGE, orgão públicos, imprensa e sociedade em geral","mapeado":true,"objEstrategicos":["Fortalecer a credibilidade e a imagem da CAGE, desenvolvendo a comunicação e o relacionamento com o governo e a sociedade","Promover uma comunicação interna mais efetiva"]},{"macroprocesso":"Contabilidade","processo":"Gerenciar Estrutura Hierárquica de Centro de Custos","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de custos e controles gerenciais (DIE)","area":"Divisão de Informações Estratégicas","objetivo":"Gerenciar a manutenção dos centros de custos, apoiando os usuários na construção da estrutura de centro de custos","fornecedores":"","entradas":"","entregas":"Atendimento das demandas, aprovação da alteração da estrutura dos centros de custos","clientes":"Toda a administração direta e indireta","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Registros Orçamentários Contábeis e Patrimoniais","subprocesso":"Realizar Conciliação Contábil","natureza":"FINALÍSTICO","gerente":"Chefe seção de registro e controle contábil","area":"Divisão de Contabilidade","objetivo":"Verificação das contas bancárias pela confrontação do movimento bancário com o razão contábil.","fornecedores":"Bancos e órgãos","entradas":"\"Razão contábil FPE, extratos bancários enviados pelos órgãos ou extraídos do FPE.\nInformações sobre os lançamentos não conciliados realizados pelos órgãos.\"","entregas":"Informação contábil com qualidade, para a execução das políticas Públicas ou repasse a terceiros. Contas conciliadas.","clientes":"\"Usuários da informação contábil (TCE, SEFAZ, instituições financeiras etc) Administração Direta – na AD, quem realiza a conciliação bancária é a CAGE.\nObs.: Administração Indireta – em todos os entes do Estado, quem realiza a conciliação bancária são os contadores do próprio órgão.\"","mapeado":true,"objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Dar Suporte ao Cumprimento das Obrigações Fiscais E-social, DCTF WEB e EFD-REINF","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe da Seção de Obrigações Tributárias Acessórias","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Auxiliar no cumprimento das obrigações fiscais no que tange aos sistemas, E-SOCIAL, DCTF WEB E EFD-REINF dos órgãos do estado, inclusive relacionados a interpretação da legislação.","fornecedores":"Órgãos do estado, seccionais, contadores e entidades da administração indireta.","entradas":"Dados da execução da despesa","entregas":"Orientação aos usuários do sistema, geração da obrigação fiscal","clientes":"Núcleos operacionais do E-SOCIAL, DCTF WEB e EFD-REINF dos órgãos","mapeado":true,"objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar a Normatização Contábil","subprocesso":"Atualizar Ementários PCASP, Receita, Despesa e Fontes de Recurso","natureza":"FINALÍSTICO","gerente":"Chefe da seção de normatização contábil","area":"Divisão de Contabilidade","objetivo":"Manter o processo de acordo com as normas e padrões do plano da STN - 163/2001 e controlar as origens e aplicações dos recursos financeiros por fonte de recursos.","fornecedores":"","entradas":"Layouts das normas da STN","entregas":"Plano de contas e ementário atualizados","clientes":"Seção de informação legal e gerencial, SPGG, PROCERGS","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar a Normatização Contábil","subprocesso":"Criar Critérios Contábeis","natureza":"FINALÍSTICO","gerente":"Chefe da seção de normatização contábil","area":"Divisão de Contabilidade","objetivo":"Permitir a contabilização das transações executadas no FPE.","fornecedores":"","entradas":"Plano de Contas;\nNovas transações no FPE;\nTransações antigas que não foram contabilizadas ou foram contabilizadas incorretamente.","entregas":"Critérios atualizados e novos criados no FPE.","clientes":"Todos os usuários do FPE","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar a Normatização Contábil","subprocesso":"Elaborar Normas Contábeis","natureza":"FINALÍSTICO","gerente":"Chefe da seção de normatização contábil","area":"Divisão de Contabilidade","objetivo":"Padronização e normatização de políticas contábeis.","fornecedores":"","entradas":"Implantação de um novo procedimento contábil; \nExistencia de procedimento sendo executado pelos órgãos de forma despadronizada.","entregas":"Publicação das normas e treinamentos","clientes":"Todos os agentes públicos do estado que realizam transações que reflitam na contabilidade, especialmente no FPE.","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Elaborar Relatórios Contábeis","subprocesso":"Elaborar Relatórios Gerenciais","natureza":"FINALÍSTICO","gerente":"Chefe seção de informações legais e gerenciais (DCON)","area":"Divisão de Contabilidade","objetivo":"Gerar informação contábil/fiscal para a tomada de decisão.","fornecedores":"","entradas":"Fechamento mensal e anual (Processo - Realizar encerramento contábil anual).\nValidação dos cubos de informações do fechamento DTI.","entregas":"Publicação dos Relatórios gerenciais","clientes":"Gestores e em especial o Secretário(a) da Fazenda","objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva","Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Elaborar Relatórios Contábeis","subprocesso":"Elaborar Relatórios Legais (Contábeis, Fiscais)","natureza":"FINALÍSTICO","gerente":"Chefe seção de informações legais e gerenciais (DCON)","area":"Divisão de Contabilidade","objetivo":"Gerar informação contábil/fiscal para atendimento de dispositivos legais da lei de responsabilidade fiscal.","fornecedores":"","entradas":"Fechamento mensal e anual (Processo - Realizar encerramento contábil anual).","entregas":"Publicação dos relatórios legais.","clientes":"Gestores e em especial o Secretário(a) da Fazenda, Governo Federal, Tribunal de Contas do Estado e a sociedade em geral","objEstrategicos":["Aperfeiçoar a transparência pública e fomentar o controle social","Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva","Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Elaborar Relatórios Contábeis","subprocesso":"Elaborar Balanço Geral e Prestação de Contas","natureza":"FINALÍSTICO","gerente":"Chefe seção de informações legais e gerenciais (DCON)","area":"Divisão de Contabilidade","objetivo":"Dar transparência as finanças públicas do estado referentes aos exercício financeiro e cumprir a exigência legal.","fornecedores":"","entradas":"Transações contábeis realizadas no exercício.","entregas":"Publicação, entrega e divulgação","clientes":"TCE, Governador, Assembleia e Sociedade","objEstrategicos":["Aperfeiçoar a transparência pública e fomentar o controle social","Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Encerramento Contábil","subprocesso":"Realizar Encerramento Contábil Mensal","natureza":"FINALÍSTICO","gerente":"Chefe DTTI","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Garantir que o encerramento mensal no FPE seja realizado","fornecedores":"","entradas":"","entregas":"Encerramente contábil realizado com a disponibilização dos arquivos de dados mensais","clientes":"Contadores de todos os órgãos do estado","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Encerramento Contábil","subprocesso":"Realizar Encerramento Contábil Anual","natureza":"FINALÍSTICO","gerente":"Chefe DCON","area":"Divisão de Contabilidade","objetivo":"Garantir que todos os atos que alteram o patrimônio e o orçamento estejam registrados dentro de seu período de competência anual.","fornecedores":"","entradas":"Documentos suporte recebidos","entregas":"Disponibilizar dados contábeis registrados finais - Encerramento anual.","clientes":"Seção de informação legal e gerencial","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Registros Orçamentários Contábeis e Patrimoniais","subprocesso":"Realizar Registro de Execução de Despesa","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Registrar a execução da despesa (empenho, liquidação e retenção).","fornecedores":"Órgãos do Estado","entradas":"Solicitação feita via FPE associado a documentação via PROA / Email.","entregas":"Liquidação disponível no contas a pagar, registro da execução orçamentaria","clientes":"DPROF/ TE - Tesouro do Estado, todas as secretarias.","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados","Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Registros Orçamentários Contábeis e Patrimoniais","subprocesso":"Realizar Registro de Ingresso de Receita","natureza":"FINALÍSTICO","gerente":"Chefe seção de registro e controle contábil","area":"Divisão de Contabilidade","objetivo":"Registrar no FPE os valores recebidos pelo Estado, que serão utilizados nas políticas públicas (receitas orçamentárias) e repasses a terceiros (receitas extraorçamentárias).","fornecedores":"","entradas":"Razão contábil FPE, extratos bancários enviados pelos órgãos ou extraídos do FPE. \nInformações sobre os lançamentos não conciliados realizados pelos órgãos.","entregas":"Ingresso gera o orçamento para execução das políticas Públicas ou lastro para o repasse.","clientes":"Administração Direta – na AD, quem realiza os ingressos é a CAGE. \nObs.: Administração Indireta – em todos os entes do Estado, quem realiza os ingressos são os contadores do próprio órgão.","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Registros Orçamentários Contábeis e Patrimoniais","subprocesso":"Identificar e Validar Regras de Retenção de Tributos","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Registrar no FPE os valores da retenção de tributos em conformidade à legislação e ao contrato.","fornecedores":"Órgãos da administração direta","entradas":"PROA e solicitação de liquidação liberada no FPE com as previsões de retenção","entregas":"Retenções tributárias validadas","clientes":"Órgãos da administração direta","mapeado":true,"objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados","Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Cumprir Obrigação Fiscal DIRF","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe da Seção de Obrigações Tributárias Acessórias","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Cumprir a obrigação fiscal da DIRF  do poder executiva da administração direta","fornecedores":"","entradas":"Ambiente Nacional de Dados – Layout – webservice - TECHNE","entregas":"DIRF entregue","clientes":"Receita Federal, Administração direta do Poder Executivo, todos os credores do estado","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Controle","processo":"Elaborar e Monitorar Plano de Trabalho Anual","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe da Seção de Monitoramento e Análise de Riscos (DCO)","area":"Divisão de Controle e Orientação","objetivo":"Organizar as atividades realizadas pelas seccionais da DCD e ao mesmo tempo definir o escopo do trabalho considerando a disponibilidade de recursos humanos e de tempo com o objetivo de priorizar os processos mais relevantes.","fornecedores":"","entradas":"Dados do Orçamento da Secretaria, CAGE Gerencial, diretrizes da DCD, histórico de trabalhos da Seccional","entregas":"Plano de trabalho anual elaborado","clientes":"Seccionais, Gabinete DCD e CAGE","objEstrategicos":["Otimizar a utilização dos recursos públicos","Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Controle","processo":"Realizar o Controle de Contratações Diretas","subprocesso":"Controlar Locações","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar para que a contratação ocorra de acordo com os princípios e legislação aplicáveis","fornecedores":"Órgãos","entradas":"PROA instruido com a  minuta contratual e demais documentos aplicáveis","entregas":"Resgistro do empenho, informação do auditor se aplicável","clientes":"òrgão contratante","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar o Controle de Contratações Diretas","subprocesso":"Controlar Demais Contratações Diretas","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar para que a contratação ocorra de acordo com os princípios e legislação aplicáveis","fornecedores":"Órgãos","entradas":"PROA instruido com a  minuta contratual e demais documentos aplicáveis","entregas":"Resgistro do empenho, informação do auditor se aplicável","clientes":"òrgão contratante","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar  Despesas Executadas por Adiantamento de Numerário","subprocesso":"Controlar Concessão de Adiantamento","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar para que a concessão de adiantamento ocorra de acordo com os principios e legislação aplicáveis","fornecedores":"","entradas":"PROA instruido com os documentos aplicáveis","entregas":"Resgistro do empenho e liquidação do adiantamento de numerário.","clientes":"órgão e tesouraria","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar  Despesas Executadas por Adiantamento de Numerário","subprocesso":"Controlar Prestação de Contas de Adiantamento","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Avaliar a qualidade dos controles exercidos pela primeira linha de defesa, exercida pelos órgãos controlados, no processo de adiantamento de numerário.","fornecedores":"DEMAIS ÓRGÃOS DO ESTADO","entradas":"SOLICITAÇÃO VIA PROA E FPE","entregas":"parecer mensal de prestação de contas  e registro de todas as baixas do período","clientes":"demais órgãos do estado","mapeado":true,"objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Transferências Voluntárias","subprocesso":"Controlar a Celebração de Instrumentos de Repasse","natureza":"FINALÍSTICO","gerente":"Coordenador da seccional de Transferências Vol.","area":"Divisão de Controle e Orientação","objetivo":"Assegurar que a celebração das transferências voluntárias do estado seja realizada com efetividade e eficiência, garantindo que os recursos sejam aplicados de forma transparente e em conformidade com os objetivos pactuados, maximizando o impacto dos investimentos e o cumprimento das metas estabelecidas","fornecedores":"Secretarias e Órgãos do Estado","entradas":"Processo administrativo utilizado pelo órgão repassador (PROA, SEI ou SIM)","entregas":"Registro do Empenho \nInformação – Auditor\nRegistro da aprovação do instrumento pela Seccional","clientes":"Órgão concedente","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Transferências Voluntárias","subprocesso":"Controlar a Liquidação de Repasses","natureza":"FINALÍSTICO","gerente":"Coordenador da seccional de Transferências Vol.","area":"Divisão de Controle e Orientação","objetivo":"Verificar se os requisitos necessários para a liquidação das despesas públicas foram atendidos e realizar o registro contábil.","fornecedores":"Órgãos e Poderes de Estado","entradas":"Processo administrativo utilizado pelo órgão repassador (PROA, SEI ou SIM)","entregas":"Registro da liquidação","clientes":"Órgão concedente","mapeado":true,"objEstrategicos":["Otimizar a utilização dos recursos públicos","Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados","Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Transferências Voluntárias","subprocesso":"Controlar Aditivos e Alterações de Instrumentos de Transferências Voluntárias","natureza":"FINALÍSTICO","gerente":"Coordenador da seccional de Transferências Vol.","area":"Divisão de Controle e Orientação","objetivo":"Assegurar que as alterações promovidas nos instrumentos de transferências voluntárias celebrados preservem a efetividade e eficiência, garantindo que os recursos sejam aplicados de forma transparente e em conformidade com os objetivos pactuados, maximizando o impacto dos investimentos e o cumprimento das metas estabelecidas","fornecedores":"","entradas":"Processo administrativo utilizado pelo órgão repassador (PROA, SEI ou SIM)","entregas":"Registro do Empenho \nInformação – Auditor\nRegistro da aprovação do instrumento pela Seccional","clientes":"Órgão concedente","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Transferências Voluntárias","subprocesso":"Controlar a Prestação de Contas de Repasses","natureza":"FINALÍSTICO","gerente":"Coordenador da seccional de Transferências Vol.","area":"Divisão de Controle e Orientação","objetivo":"Avaliar a execução e prestação de contas de transferências voluntárias, de modo a verificar se os processos foram conduzidos com observância dos princípios que regem a administração pública, se a conclusão do objeto está devidamente comprovada e se houve efetividade na implementação da política pública relacionada.","fornecedores":"Órgãos","entradas":"Base de dados do FPE","entregas":"Comunicado de Auditoria; Comunicado Orientativo","clientes":"Órgão concedente","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Indenizações e Ressarcimentos","subprocesso":"Controlar Outros Ressarcimentos","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Garantir os controles das indenizações e ressarcimentos concedidos pelos órgãos do estado.","fornecedores":"Órgãos do estado","entradas":"Solicitações de empenho e liquidação no PROA e FPE","entregas":"Registro do empenho e da liquidação","clientes":"Órgão contratante","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Indenizações e Ressarcimentos","subprocesso":"Controlar o Pagamento de Diárias","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Garantir os controles das indenizações e ressarcimentos concedidos pelos órgãos do estado.","fornecedores":"Secretarias e Órgãos do Estado","entradas":"Recebimento via PROA para Empenho da despesa.\nRecebimento via PROA para liquidação da despesa.","entregas":"Diárias registradas.","clientes":"Órgãos da administração direta concedentes de diárias.","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Indenizações e Ressarcimentos","subprocesso":"Controlar Pagamento de Auxílio Funeral","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Garantir os controles das indenizações de auxílio funeral concedidas pelo Estado.","fornecedores":"Órgãos do Estado","entradas":"","entregas":"Registro do empenho e da liquidação","clientes":"Órgão contratante","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Licitações","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Coordenador seccional CELIC","area":"Divisão de Controle e Orientação","objetivo":"Garantir que os processos licitatórios sejam lícitos e eficientes, cumpram o seu objeto e  atendam as demandas do Estado.","fornecedores":"Órgãos da Administração Direta, Autarquias e Fundações - Por intermédio  da CELIC","entradas":"Processo na fase interna antes da publicação;\nProcesso em fase externa antes da homologação.","entregas":"Documento - Informação - para a CELIC (Publicação ou homologação, \ndevolução para correção do demandante ou correção interna da CELIC)","clientes":"CELIC","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar a Execução de Contratos Administrativos","subprocesso":"Controlar a Execução das Atas de Registro de preço","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Analisar as despesas executadas por meio de ata de registro de preço, verificando sua adequação ao parâmetros pré-estabelecidos, e atender a solicitação de empenho/liquidação.","fornecedores":"Órgãos do Estado","entradas":"PROA","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável","clientes":"Órgão contratante, Tesouraria e DNC/DTI","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar a Execução de Contratos Administrativos","subprocesso":"Controlar os Contratos de Serviços  Sem Dedicação Exclusiva de Mão de Obra","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar pela devida execução contratual conforme as condições da contratação e legislação aplicável","fornecedores":"","entradas":"PROA de empenho e liquidação","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável","clientes":"Órgão contratante, Tesouraria e DNC/DTI","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar a Execução de Contratos Administrativos","subprocesso":"Controlar Demais Contratos","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar pela devida execução contratual conforme as condições da contratação e legislação aplicável","fornecedores":"","entradas":"PROA de liquidação e empenho","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável","clientes":"Órgão contratante, Tesouraria e DNC/DTI","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar a Execução de Contratos Administrativos","subprocesso":"Controlar Contratos de Serviços com Dedicação Exclusiva de Mão de Obra","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar pela devida execução contratual conforme as condições da contratação e legislação aplicável","fornecedores":"Secretarias e Órgãos do Estado","entradas":"Recebimento via PROA para Empenho da despesa.\nRecebimento via PROA para liquidação da despesa.","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável","clientes":"Órgão contratante, Tesouraria e DNC/DTI","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar a Execução de Contratos Administrativos","subprocesso":"Controlar Despesas IEF","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar pela devida execução contratual conforme as condições da contratação e legislação aplicável","fornecedores":"","entradas":"análise dos painéis do CAGE gerencial","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável","clientes":"Órgão contratante, Tesouraria e DNC/DTI","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar Despesas de Obras e Serviços de Engenharia","subprocesso":"Controlar a contratação de obras e serviços de engenharia","natureza":"FINALÍSTICO","gerente":"Coordenador seccional de obras","area":"Divisão de Controle e Orientação","objetivo":"Garantir a adequada contratação e controle das obras públicas do estado.","fornecedores":"Secretarias e Órgãos do Estado","entradas":"Solicitação via PROA e FPE","entregas":"Nota de Empenho\nInformação - Auditor","clientes":"Órgãos ou secretarias","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar Despesas de Obras e Serviços de Engenharia","subprocesso":"Controlar a Fase de Liquidação de Faturas de Obras e Serviços de Engenharia","natureza":"FINALÍSTICO","gerente":"Coordenador seccional de obras","area":"Divisão de Controle e Orientação","objetivo":"Garantir que ocorram pagamentos de serviços efetivamente executados e atestados e assegurar que a empresa executora esteja regular com suas obrigações","fornecedores":"Secretarias e Órgãos do Estado","entradas":"Solicitação via PROA e FPE","entregas":"Nota de liquidação; notas financeiras (retenções); Informação - Auditor","clientes":"Órgãos, secretarias e tesourarias","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar Despesas de Obras e Serviços de Engenharia","subprocesso":"Controlar Aditivos e Alterações de Contratos de Obras ou Serviços de Engenharia","natureza":"FINALÍSTICO","gerente":"Coordenador seccional de obras","area":"Divisão de Controle e Orientação","objetivo":"Manter controle sobre as alterações contratuais relativos a obras ou serviços de engenharia.","fornecedores":"Órgãos públicos","entradas":"Minutas de aditivo, solicitação de empenho, apostilas.","entregas":"Informação dando de acordo ou não acerca do termo aditivo enviado pela secretaria. Empenho atendido quando é aditivo de valor.","clientes":"Órgãos públicos","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Folha de Pagamento","subprocesso":"Controlar a Destinação dos Recursos por Nota Financeira","natureza":"FINALÍSTICO","gerente":"Coordenador seccional da folha","area":"Divisão de Controle e Orientação","objetivo":"Garantir a tempestiva destinação dos recursos dos descontos dos servidores","fornecedores":"","entradas":"","entregas":"Notas financeiras no contas a pagar","clientes":"Tesouraria ou pagadoria dos órgãos","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Folha de Pagamento","subprocesso":"Controlar o Atendimento de Solicitações de Patronais","natureza":"FINALÍSTICO","gerente":"Coordenador seccional da folha","area":"Divisão de Controle e Orientação","objetivo":"Garantir o repasse financeiro ao orgão de previdência e saúde","fornecedores":"","entradas":"","entregas":"Liquidação disponível no contas a pagar, registro da execução orçamentaria","clientes":"Tesouraria ou pagadoria dos órgãos e Administração financeira","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Folha de Pagamento","subprocesso":"Contabilizar e Realizar o Ajuste Orçamentário da Folha","natureza":"FINALÍSTICO","gerente":"Coordenador seccional da folha","area":"Divisão de Controle e Orientação","objetivo":"Garantir o adequado registro dos fatos da folha.","fornecedores":"","entradas":"","entregas":"Contabilização da folha\nAjustes de folha","clientes":"Administração financeira e \nRH do Órgão","objEstrategicos":["Otimizar a utilização dos recursos públicos","Qualificar Informação Contábil"]},{"macroprocesso":"Controle","processo":"Realizar Controle Patrimonial e Almoxarifado","subprocesso":"Realizar o Controle Contábil do Patrimônio do Estado","natureza":"FINALÍSTICO","gerente":"Chefe DCO","area":"Divisão de Controle e Orientação","objetivo":"Zelar pelo adequado registro patrimonial do estado","fornecedores":"","entradas":"","entregas":"controle da conciliação contábil baseado na realização dos inventários","clientes":"Órgão contratante, TCE e DNC/DTI","objEstrategicos":["Otimizar a utilização dos recursos públicos","Qualificar Informação Contábil"]},{"macroprocesso":"Controle","processo":"Realizar Controle Patrimonial e Almoxarifado","subprocesso":"Realizar o Controle Contábil de Almoxarifado","natureza":"FINALÍSTICO","gerente":"Chefe DCO","area":"Divisão de Controle e Orientação","objetivo":"Zelar pelo adequado registro patrimonial do estado","fornecedores":"","entradas":"","entregas":"controle da conciliação contábil baseado na realização dos inventários","clientes":"Órgão contratante, TCE e DNC/DTI","objEstrategicos":["Otimizar a utilização dos recursos públicos","Qualificar Informação Contábil"]},{"macroprocesso":"Controle","processo":"Controlar o Pagamento de Auxílios","subprocesso":"Realizar o Controle dos Pagamentos Continuados de Auxílios","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Assegurar que a transferência seja destinada ao público alvo de cada projeto em conformidade com os seus regramentos próprios.","fornecedores":"Órgãos do Estado","entradas":"Necessidade de operacionalizar o pagamento de auxílios","entregas":"Registro do empenho e da liquidação\nInformação do Auditor, caso aplicável\nResultado do cruzamento de dados via SEI ou Painel CAGE-gerencial","clientes":"Órgãos e entidades","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar o Pagamento de Auxílios","subprocesso":"Realizar o Controle de Pagamentos Esporádicos de Auxílios","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Assegurar que a transferência seja destinada  ao público alvo de cada projeto em conformidade com os seus regramentos próprios","fornecedores":"","entradas":"","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável                                     Resultado do cruzamento de dados via PROA ou Painel CAGE-gerencial","clientes":"Órgãos ou secretarias","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Gestão Administrativa","processo":"Realizar Gestão Orçamentária e Financeira","subprocesso":"Elaborar a Proposta Orçamentária Anual","natureza":"APOIO","gerente":"Adjunto de gestão e tecnologia","area":"Gabinete da CAGE","objetivo":"Garantir os recursos necessários para a execução dos processos e projetos da CAGE contemplando todas as fontes de recursos como FUNSEFAZ, PROFISCO etc","fornecedores":"","entradas":"","entregas":"Proposta orçamentária elaborada","clientes":"CAGE","objEstrategicos":["Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão Administrativa","processo":"Realizar Gestão Orçamentária e Financeira","subprocesso":"Monitorar a Execução do Orçamento","natureza":"APOIO","gerente":"Adjunto de gestão e tecnologia","area":"Gabinete da CAGE","objetivo":"Garantir a execução do orçamento aprovado","fornecedores":"","entradas":"","entregas":"Relatório de execução do orçamento","clientes":"CAGE","objEstrategicos":["Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão Administrativa","processo":"Gerir Patrimônio Interno","subprocesso":"Realizar o Inventário","natureza":"APOIO","gerente":"Coordenador de gabinete","area":"Gabinete da CAGE","objetivo":"Verificar se o patrimônio está de acordo com os registro no sistema APE","fornecedores":"","entradas":"","entregas":"Relatório de bens que constam no ECC do gabinete","clientes":"DEPAD","objEstrategicos":["Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão Administrativa","processo":"Gerir Patrimônio Interno","subprocesso":"Realizar Sindicância Investigativa de Bens Não Encontrados no Inventário","natureza":"APOIO","gerente":"Presidente da comissão de sindicância","area":"Gabinete da CAGE","objetivo":"Investigar a falta de bens após mo inventário","fornecedores":"","entradas":"","entregas":"Relatório da comissão para o titular da CAGE","clientes":"SEFAZ","objEstrategicos":["Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão Administrativa","processo":"Gerir Patrimônio Interno","subprocesso":"Realizar  o Controle Permanente de Patrimônio","natureza":"APOIO","gerente":"Coordenador de gabinete","area":"Gabinete da CAGE","objetivo":"Registrar a entrada e a saída dos bens durante o ano para facilitar a realização do inventário","fornecedores":"","entradas":"","entregas":"Planilha de controle permanente","clientes":"Gabinete","objEstrategicos":["Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Gerir BI, Painéis Analíticos e Relatórios para Apoio à Gestão","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe da Seção de Inteligência de Dados","area":"Divisão de Informações Estratégicas","objetivo":"Desenvolver e implementar soluções tecnológicas de análise de dados para apoio a gestão.","fornecedores":"","entradas":"Insights da divisão e demandas recebidas dos órgãos - Reuniões, e-mail e contatos diretos.","entregas":"Desenvolvimento, manutenção e evolução de soluções tecnológicas","clientes":"Toda administração - Órgãos da administração Direta e indireta","objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Gerir BI, painéis Analíticos e Relatórios para Apoio à Auditoria e Controle","subprocesso":"Gerir a Arquitetura, integração e Armazenamento de Dados","natureza":"APOIO","gerente":"Chefe da Seção de Infraestrutura e Governança de Dados","area":"Divisão de Informações Estratégicas","objetivo":"","fornecedores":"","entradas":"","entregas":"Garantindo a disponibilidade dos dados para os painéis","clientes":"CAGE","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Gerir BI, painéis Analíticos e Relatórios para Apoio à Auditoria e Controle","subprocesso":"Gerir o Acesso aos Dados","natureza":"APOIO","gerente":"Chefe da Seção de Infraestrutura e Governança de Dados","area":"Divisão de Informações Estratégicas","objetivo":"Disponibilizar acesso aos paineis para os usurários credenciados","fornecedores":"","entradas":"","entregas":"Acesso aos painéis para os usuários credenciados","clientes":"CAGE","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Gerir BI, painéis Analíticos e Relatórios para Apoio à Auditoria e Controle","subprocesso":"Realizar Modelagem de Dados","natureza":"APOIO","gerente":"Chefe da Seção de Inteligência de Dados","area":"Divisão de Informações Estratégicas","objetivo":"Transformar os dados extraidos do sistema em informação para o usuário","fornecedores":"","entradas":"","entregas":"Entregar os dados em formato que possa ser utilizado nos painéis","clientes":"CAGE","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Gerir BI, painéis Analíticos e Relatórios para Apoio à Auditoria e Controle","subprocesso":"Realizar Teste de QA dos Painéis","natureza":"APOIO","gerente":"Chefe da Seção de Inteligência de Dados","area":"Divisão de Informações Estratégicas","objetivo":"Aferir a qualidade dos painéis disponibilizados","fornecedores":"","entradas":"","entregas":"Entregar a informação correta e tempestiva para os usuários","clientes":"CAGE","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Realizar Cruzamento, Análise e Mineração de dados","subprocesso":"","natureza":"APOIO","gerente":"Chefe da Seção de Inteligência de Dados","area":"Divisão de Informações Estratégicas","objetivo":"","fornecedores":"","entradas":"","entregas":"Relação dos cruzamentos realizados","clientes":"CAGE","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Gestão de Pessoas","processo":"Gerenciar o Recrutamento e Alocação de Pessoas","subprocesso":"Realizar o Concurso Público para o Cargo de Auditor do Estado","natureza":"APOIO","gerente":"Presidente da comissão de ingresso","area":"Gabinete da CAGE","objetivo":"Realizar o concurso público para admissão de novos auditores do estado na carreira,de forma eficaz e eficiente, e de acordo com as normas vigentes.","fornecedores":"CAGE","entradas":"Nomeação da comissão de realização do concurso público","entregas":"Concurso público homologado","clientes":"CAGE, candidatos","objEstrategicos":[]},{"macroprocesso":"Gestão de Pessoas","processo":"Gerenciar o Recrutamento e Alocação de Pessoas","subprocesso":"Realizar o Ingresso e a Alocação de Servidores","natureza":"APOIO","gerente":"Coordenador de Gestão Estratégica","area":"Gabinete da CAGE","objetivo":"Receber novos servidores, ambientar à CAGE, disponibilizar infraestrutura física e tecnológica para o trabalho, além de alocar pessoas nas áreas, para atuação em projetos e processos, considerando as competências individuais e as necessidades institucionais.","fornecedores":"DEPAD (GEPESC, DRH, SEINFRA), DETIC","entradas":"Nomeação de novos servidores/aprovação do GAE para nomeação","entregas":"Servidores recebidos e alocados nas áreas da CAGE.","clientes":"CAGE, novos servidores","mapeado":true,"objEstrategicos":["Gerir as pessoas com foco na estratégia"]},{"macroprocesso":"Gestão de Pessoas","processo":"Gerenciar o Desenvolvimento de Pessoas","subprocesso":"Elaborar e Executar Plano de Capacitação","natureza":"APOIO","gerente":"Assessor de capacitação","area":"Gabinete da CAGE","objetivo":"Capacitar servidores com base nas competências a serem desenvolvidas","fornecedores":"","entradas":"","entregas":"Plano elaborado e servidores treinados","clientes":"CAGE","objEstrategicos":["Gerir as pessoas com foco na estratégia"]},{"macroprocesso":"Gestão de TIC","processo":"Realizar manutenção corretiva e suporte aos usuários de TIC","subprocesso":"","natureza":"APOIO","gerente":"Chefe seção de suporte técnico e orientação a usuários de sistemas","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Garantir a adequada utilização dos sistemas apoiando os usuários em suas atividades operacionais.","fornecedores":"órgãos, cidadãos, empresas, servidores estaduais","entradas":"Solicitações de orientação na execução das atividades no sistema.\nSolicitação de correções de demandas corretivas (Bug´s do sistema).","entregas":"Atendimento das demandas;\nEncaminhamento da resolução para as áreas responsáveis\nElaboração e aplicação de treinamentos","clientes":"Os usuários dos sistemas, servidores, e interessados externos.","mapeado":true,"objEstrategicos":["Assegurar serviços de TIC para suportar os processos e a estratégia"]},{"macroprocesso":"Gestão de TIC","processo":"Gerenciar Projetos e Demandas de Desenvolvimento de Software","subprocesso":"","natureza":"APOIO","gerente":"Chefe seção de projetos e gerenciamento de Sistemas","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Promover a melhoria contínua da experiência do usuário dos sistemas de competência da CAGE.","fornecedores":"Usuários dos sistemas","entradas":"Solicitações de otimizações de processos, integrações entre sistemas.\nProjetos com origem em alguma Legislação. Projetos estratégicos.","entregas":"Funcionalidade implantada.","clientes":"Internas - Divisões da CAGE\nTesouro e Receita Estadual.\nExternas - Secretarias e administração indireta.\nGabinete do Governador.\nObrigações legais","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação","Assegurar serviços de TIC para suportar os processos e a estratégia"]},{"macroprocesso":"Gestão de TIC","processo":"Realizar Gestão Administrativa de Sistemas","subprocesso":"","natureza":"APOIO","gerente":"Chefe seção de projetos e gerenciamento de Sistemas","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Elaborar e gestionar os contratos novos e vigentes e realizar os atestes das faturas e entregas mensais.","fornecedores":"","entradas":"Autorização de início do processo de contratação.\nGestão do PROFISCO.\nGestão dos contratos pela DETIC.","entregas":"Contratos de TI da divisão concretizados.","clientes":"Divisões com contratos de TI","objEstrategicos":["Assegurar serviços de TIC para suportar os processos e a estratégia"]},{"macroprocesso":"Gestão de TIC","processo":"Gerenciar Políticas de Segurança de TIC","subprocesso":"","natureza":"APOIO","gerente":"Chefe DTTI","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Padronizar os projetos, procedimentos operacionais e otimizar a utilização de recursos de TIC no âmbito da CAGE.","fornecedores":"","entradas":"","entregas":"","clientes":"","objEstrategicos":["Assegurar serviços de TIC para suportar os processos e a estratégia"]},{"macroprocesso":"Gestão de TIC","processo":"Priorizar Demandas de Desenvolvimento de TIC","subprocesso":"","natureza":"APOIO","gerente":"Chefe seção de projetos e gerenciamento de Sistemas","area":"DTTI, DIE","objetivo":"Garantir o alinhamento estratégico dos projetos de TI e a transparecncia das demandas, bem como ampliar a eficiencia dos recursos de TI.","fornecedores":"Usuários dos sistemas.","entradas":"Formulário (forms) preenchido pelo solicitante.","entregas":"Fila de projetos ranqueados.","clientes":"CAGE","mapeado":true,"objEstrategicos":["Assegurar serviços de TIC para suportar os processos e a estratégia"]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Processos","subprocesso":"Auditar processos internos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"O subprocesso Auditar Processos Internos, parte do processo Gerenciar Processos, tem como objetivo obter evidências de que a execução dos processos da CAGE esteja aderente ao que foi planejado no mapeamento, garantindo a mitigação de riscos operacionais e agregando valor à execução processual por meio de recomendações de melhoria.","fornecedores":"Escritório de Processos","entradas":"inclusão do processo mapeado no plano de trabalho anual","entregas":"processo auditado","clientes":"áreas da CAGE","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação"]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar a Estratégia","subprocesso":"Elaborar Planejamento Estratégico","natureza":"GESTÃO","gerente":"Coordenador de Gestão Estratégica","area":"Gabinete da CAGE","objetivo":"Elaborar o mapa estratégico, desdobrar em projetos, iniciativas e atividades e monitorar a estratégia.","fornecedores":"Gestão e Unidades da CAGE","entradas":"Prioridades estratégicas da gestão, contexto interno e externo da CAGE.","entregas":"Mapa estratégico, alinhamento dos projetos e processos da CAGE aos objetivos estratégicos.","clientes":"Gestão e Unidades da CAGE","mapeado":true,"objEstrategicos":[]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar a Estratégia","subprocesso":"Realizar o Desdobramento da Estratégia","natureza":"GESTÃO","gerente":"Coordenador de Gestão Estratégica","area":"Gabinete da CAGE","objetivo":"Desdobrar o mapa estratégico em projetos, iniciativas e atividades.","fornecedores":"Gestão e Unidades da CAGE","entradas":"Prioridades estratégicas da gestão, contexto interno e externo da CAGE.","entregas":"Mapa estratégico, alinhamento dos projetos e processos da CAGE aos objetivos estratégicos.","clientes":"Gestão e Unidades da CAGE","mapeado":true,"objEstrategicos":[]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar a Estratégia","subprocesso":"Monitorar a Estratégia","natureza":"GESTÃO","gerente":"Coordenador de Gestão Estratégica","area":"Gabinete da CAGE","objetivo":"Monitorar a estratégia.","fornecedores":"Gestão e Unidades da CAGE","entradas":"Prioridades estratégicas da gestão, contexto interno e externo da CAGE.","entregas":"Mapa estratégico, alinhamento dos projetos e processos da CAGE aos objetivos estratégicos.","clientes":"Gestão e Unidades da CAGE","mapeado":true,"objEstrategicos":[]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Projetos e Portfólio","subprocesso":"Gerenciar Projetos Estratégicos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"Garantir a execução adequada dos projetos dentro do prazo, escopo, custo, provendo boas práticas, técnicas e ferramentas, a segurando a geração de valor público e a entrega de beneficios alinhado a estratégia.","fornecedores":"Comitê gestor de projetos","entradas":"Demanda de projeto aprovada e priorizada","entregas":"Projetos concluídos de acordo com os critérios de sucesso","clientes":"CAGE","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação","Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Projetos e Portfólio","subprocesso":"Gerenciar portfólio de projetos estratégicos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"Gerar valor público contínuo, equilibrando recursos, riscos e benefícios, mantendo o portfólio sempre alinhado e adaptável à estratégia da CAGE","fornecedores":"Comitê gestor de projetos, PMO, áreas demandantes","entradas":"Demanda de projeto para aprovação (formulário do PSA), demanda do comitê gestor de projetos, portfólio anterior, mapa estratégico.","entregas":"Portfólio gerenciado.","clientes":"CAGE","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação"]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Processos","subprocesso":"Realizar a Governança de Processos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"Gerir a arquitetura de processos da organização e o escritório de processos, garantindo o alinhamento com a estratégia da organização e buscando a efetividade dos processos","fornecedores":"","entradas":"","entregas":"Arquitetura de processos revisada e atualizada, cadeia de valor revisada e atualizada. Governança de processos estabelecida na CAGE.","clientes":"CAGE","objEstrategicos":[]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Processos","subprocesso":"Mapear e Redesenhar Processos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"Garantir a compreensão clara e compartilhada de todos os processos da organização.","fornecedores":"Gerentes de processo e áreas da CAGE","entradas":"Pedido de melhoria ou padronização de um processo","entregas":"Processos documentados e modelados","clientes":"SERVIDORES E ÁREAS DA CAGE","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação"]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Processos","subprocesso":"Monitorar, Revisar e Acompanhar Processos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"O processo de Monitorar, Revisar e Acompanhar Processos tem como objetivos realizar o acompanhamento dos processos previamente mapeados, verificando a adequação de sua execução em relação ao convencionado, e também monitorar os indicadores e a efetividade dos processos críticos da CAGE. \n\n indicadores de processo e tomada de ação em casos de desvio","fornecedores":"Áreas CAGE e DIE (painéis)","entradas":"Indicadores de processos e processos mapeados","entregas":"plano de ação em conjunto com o responsável pelo processo em casos de desvio; processos mapeados revisados; indicadores monitorados","clientes":"CAGE","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação"]},{"macroprocesso":"Orientação e Suporte à Tomada de Decisão","processo":"Elaborar e Revisar Atos Normativos","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Coordenador de Orientação e Normatização","area":"Divisão de Integridade e Responsabilização","objetivo":"Disciplinar temas de Controle Interno","fornecedores":"","entradas":"PROA","entregas":"Minuta do Normativo revisada.","clientes":"Órgãos, secretarias e entidades da administração pública\nPúblico interno da CAGE.","objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva"]},{"macroprocesso":"Orientação e Suporte à Tomada de Decisão","processo":"Realizar Orientações","subprocesso":"Realizar Orientações Via Emissão de Informação DEO","natureza":"FINALÍSTICO","gerente":"Chefe seção de orientação e assessoramento (DCO)","area":"Divisão de Integridade e Responsabilização","objetivo":"Emitir uma orientação, mediante consulta, que reflita o posicionamento da CAGE nas questões pertinentes ao controle interno.","fornecedores":"","entradas":"PROA, e-mail, TEAMS, WhatsApp, Portal de demandas (em implantação)","entregas":"Informação CAGE/DEO\nInformação solicitada - respondida via e-mail ou Teams","clientes":"Órgãos, secretarias e entidades da administração pública. Público interno da CAGE","objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva"]},{"macroprocesso":"Orientação e Suporte à Tomada de Decisão","processo":"Realizar Orientações","subprocesso":"Realizar Orientações e Serviços Via Portal E-CAGE","natureza":"FINALÍSTICO","gerente":"Chefe seção de supervisão técnica (DAUD); Coordenador seção de consultoria","area":"Divisão de Controle e Orientação","objetivo":"Atender às demandas por orientações ou serviços, encaminhadas via portal e-Cage.","fornecedores":"órgãos, cidadãos, empresas, servidores estaduais, servidores da CAGE.","entradas":"Demanda via portal E-CAGE.","entregas":"Orientação ou serviço prestado","clientes":"Adm direta e indireta, Poderes, servidores CAGE","mapeado":true,"objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva"]},{"macroprocesso":"Orientação e Suporte à Tomada de Decisão","processo":"Realizar Orientações","subprocesso":"Realizar Orientações Via PROA","natureza":"FINALÍSTICO","gerente":"Chefe seção de orientação e assessoramento (DCO)","area":"Divisão de Controle e Orientação","objetivo":"Emitir uma orientação, mediante consulta, que reflita o posicionamento da CAGE nas questões pertinentes ao controle interno.","fornecedores":"","entradas":"","entregas":"Informação. Respostas às consultas - PROA","clientes":"Órgão e e secretarias da administração direta\nPúblico interno (seccionais).","objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva"]},{"macroprocesso":"Promoção da Integridade e Prevenção à Corrupção","processo":"Avaliar Programas de Integridade","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de promoção da integridade","area":"Divisão de Integridade e Responsabilização","objetivo":"Avalia os programas de integridade das empresas contratadas pelo Estado para emitir certificado nos casos em que há indícios de efetividade mínima do programa.","fornecedores":"Empresas contratadas","entradas":"SCPI - Envio de documentos para avaliação de programas de integridade","entregas":"Decisão final de avaliação do programa de integridade, com a emissão ou indeferimento do certificado.","clientes":"Empresas contratadas\nÓrgãos e entidades contratantes","objEstrategicos":["Promover a integridade pública e privada e fortalecer a prevenção à corrupção"]},{"macroprocesso":"Promoção da Integridade e Prevenção à Corrupção","processo":"Participar em Procedimentos Preliminares de Investigação (PPI)","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de promoção da integridade","area":"Divisão de Integridade e Responsabilização","objetivo":"Conduz e emite relatório sobre uma investigação de atos de fraude ou corrupção, propondo instauração de par ou outras medidas pelo Ministério Público ou Polícia Civil","fornecedores":"","entradas":"","entregas":"Relatório final de PPI","clientes":"Estado e Sociedade Civil.","objEstrategicos":["Promover a cultura de integridade na Administração Pública"]},{"macroprocesso":"Promoção da Integridade e Prevenção à Corrupção","processo":"Participar em Processos Administrativos de Responsabilização","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de promoção da integridade","area":"Divisão de Integridade e Responsabilização","objetivo":"Conduz e emite relatório com proposta de decisão em  processos para apurar responsabilidade administrativa e aplicar penalidades a empresas por atos de corrupção e/ou fraude em licitações ou em contratos públicos.","fornecedores":"","entradas":"Denúncias enviadas à CRPJ, via PROA, FalaBR, e-mail, bem como notícias e detecção de situações por outros trabalhos da CAGE.","entregas":"Decisão publicada no Diário Oficial\nAplicação de multas e sanções","clientes":"Estado e Sociedade Civil.","objEstrategicos":["Promover a cultura de integridade na Administração Pública"]},{"macroprocesso":"Promoção da Integridade e Prevenção à Corrupção","processo":"Tratar Denúncias e Representações","subprocesso":"Tratar Denúncias","natureza":"FINALÍSTICO","gerente":"Chefe da seção de apuração e operações","area":"Divisão de Integridade e Responsabilização","objetivo":"Recebimento, tratamento, apuração e a comunicação de resultados de denúncias pela CAGE.","fornecedores":"Denunciantes e órgãos públicos em geral","entradas":"Denúncias, ofícios. (formas de recebimento: fala BR, e-mail, ofícios, teams, whatsapp ,telefone, pessoalmente)","entregas":"Comunicação de resultados (relatório de apuração, relatório de operações especiais, comunicado de auditoria, comunicado orientativo, nota de auditoria etc). Produtos referentes ao estado atual do processo.","clientes":"Órgãos de investigação e fiscalização (CRPJ, MP, PC etc), órgãos e entidades estaduais.","objEstrategicos":["Promover a integridade pública e privada e fortalecer a prevenção à corrupção"]},{"macroprocesso":"Promoção da Integridade e Prevenção à Corrupção","processo":"Tratar Denúncias e Representações","subprocesso":"Tratar representações","natureza":"FINALÍSTICO","gerente":"Chefe da seção de apuração e operações","area":"Divisão de Integridade e Responsabilização","objetivo":"Receber, apurar e tratar representações (ofícios) recebidos pela CAGE originários de outros órgãos de controle, tais como MP e Polícia Civil.","fornecedores":"Ministério Público, Polícia Civil e outros órgãos públicos","entradas":"Representação recebida.","entregas":"Relatório de apuração ou comunicado de auditoria","clientes":"LEI COMPLEMENTAR - 13451/2010 - Entidade Auditada, Secretaria, Tribunal de Contas, Assembleia Legislativa, Governo do Estado e MP.\nTermo de cooperação com a Polícia Civil - Polícia Civil.\nDe acordo com a Demanda CRPJ/CAGE","objEstrategicos":["Promover a integridade pública e privada e fortalecer a prevenção à corrupção"]},{"macroprocesso":"Transparência e Estímulo ao Controle Social","processo":"Gerenciar o Portal de Transparência de Estado","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de transparência","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Disponibilizar para a sociedade informações relacionadas às receitas e despesas do Estado.","fornecedores":"","entradas":"Normas legais legislação;\nAnálise do ranking de atendimento das normas;\nLei de acesso a informação;\nBID - Maturidade da gestão fiscal.","entregas":"Adequações legais, funcionais, novos conteúdos, entrega de dados e informações de interesse da sociedade com foco no cidadão.","clientes":"Sociedade em geral e entidades estatais e privadas com interesses nos dados.","objEstrategicos":["Aperfeiçoar a transparência pública e fomentar o controle social","Reestruturar as ações de transparência, com foco no cidadão"]},{"macroprocesso":"Transparência e Estímulo ao Controle Social","processo":"Atender às Demandas da Lei de Acesso à Informação (LAI) e Ouvidoria","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Gestor Local LAI","area":"Gabinete da CAGE","objetivo":"Responder no prazo legal os questionamentos encaminhados pelo cidadão por meio dos canais de atendimento da Ouvidoria Geral do Estado referentes aos assuntos inerentes à CAGE.","fornecedores":"GERENTE: GESTOR LOCAL DA LAI\n\nOuvidoria Geral do Estado e Cidadão","entradas":"Questionamentos encaminhados por meio da Central de Informação do estado - Central.rs.gov.br - Site do Governo do estado; \nCasa civil - analisa a  solicitação e distribui para as secretarias ou subsecretarias.","entregas":"Respostas aos questionamentos dos cidadãos.","clientes":"Cidadão solicitante e OGE.","mapeado":true,"objEstrategicos":["Aperfeiçoar a transparência pública e fomentar o controle social"]}];
 
@@ -11682,72 +11495,14 @@ function aiErrMsg(status, body) {
 }
 
 async function _resolveFreshAccessToken() {
-  // Always prefer the session token returned by Supabase; it may be auto-refreshed.
-  if(supaClient?.auth?.getSession) {
-    try {
-      const { data: { session } } = await supaClient.auth.getSession();
-      if(session?.access_token) {
-        currentAccessToken = session.access_token;
-        return session.access_token;
-      }
-    } catch(e) {
-      console.warn('[IA] getSession falhou:', e?.message || e);
-    }
-  }
-  return currentAccessToken || null;
+  return null;
 }
 
-// Todas as chamadas da IA passam pelo proxy seguro no Supabase.
-// O token de acesso do usuário é usado para autorização no backend.
 async function callGeminiProxy(prompt, image = null, options = {}) {
-  if((_gpGet().geminiEnabled ?? true) === false)
-    throw new Error('Integração com IA desabilitada. Reative em: EPP → Parâmetros Globais → Inteligência Artificial.');
-
-  let token = await _resolveFreshAccessToken();
-  if(!token) {
-    throw new Error('Sessão expirada. Faça login novamente para usar a IA.');
-  }
-
-  const body = { prompt };
-  if(image) body.image = image;  // { data: base64, mimeType }
-  if(options.maxTokens) body.maxTokens = options.maxTokens;
-
-  const doProxyCall = (accessToken) => fetch(COPILOT_PROXY_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPA_KEY,
-      'Authorization': 'Bearer ' + accessToken,
-    },
-    body: JSON.stringify(body)
-  });
-
-  let resp = await doProxyCall(token);
-
-  // If token expired mid-session, refresh once and retry transparently.
-  if(resp.status === 401 && supaClient?.auth?.refreshSession) {
-    try {
-      const { data: refreshed, error: refreshErr } = await supaClient.auth.refreshSession();
-      if(!refreshErr && refreshed?.session?.access_token) {
-        token = refreshed.session.access_token;
-        currentAccessToken = token;
-        resp = await doProxyCall(token);
-      }
-    } catch(e) {
-      console.warn('[IA] refreshSession falhou:', e?.message || e);
-    }
-  }
-
-  if(!resp.ok) {
-    if(resp.status === 401) {
-      throw new Error('Sessão expirada. Faça login novamente para usar a IA.');
-    }
-    const e = await resp.text();
-    throw new Error(aiErrMsg(resp.status, e));
-  }
-  const data = await resp.json();
-  if(data.error) throw new Error(data.error);
-  return data.text || '';
+  void prompt;
+  void image;
+  void options;
+  throw new Error('Módulo de IA remota desabilitado no modo local.');
 }
 
 async function callGemini(prompt) {
@@ -11757,202 +11512,132 @@ async function callGemini(prompt) {
 async function callGeminiVision(prompt, base64, mimeType) {
   return callGeminiProxy(prompt, { data: base64, mimeType });
 }
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkcGtremRscGR3b3FxbWJ6cGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNTU4NjYsImV4cCI6MjA4ODgzMTg2Nn0.PyZoWa1-LyNxzUhEkHBALpnVGXHGI7B9-tKal8J7cjA';
 let supaClient = null;
 let currentUser = null;
 
+// ── MODO LOCAL: login automático sem Supabase/OAuth ──────────────
 async function initSupabase() {
-  if(!window.supabase) {
-    console.error('[initSupabase] window.supabase não disponível — CDN falhou ao carregar.');
-    document.getElementById('auth-status').textContent = '⚠️ Falha ao carregar biblioteca. Recarregue a página.';
+  const authMode = SIGA_AUTH.mode || 'local';
+  console.log('[initSupabase] Modo ' + authMode + ' — backend: ' + API_URL);
+  window._appInitialized = false;
+
+  if (authMode === 'entra') {
     document.getElementById('auth-overlay').style.display = 'flex';
+    const status = document.getElementById('auth-status');
+    if (status) status.textContent = 'Entre com sua conta Microsoft Entra ID para continuar.';
     return;
   }
-  // Forçar novo login a cada reload/F5 — mas NÃO limpar quando estamos retornando de OAuth
-  // (o code_verifier do PKCE pode estar armazenado dentro do mesmo key e seria apagado,
-  //  fazendo a troca de código falhar e criando um loop infinito de redirecionamento)
-  const _isOAuthCallback = window.location.search.includes('code=') || window.location.hash.includes('access_token=');
-  if (!_isOAuthCallback) {
-    try { localStorage.removeItem('gestpop_auth'); } catch(e) {}
-  }
 
-  // Liberar qualquer Web Lock travado da sessão anterior antes de criar o cliente
-  if (typeof navigator !== 'undefined' && navigator.locks) {
-    try {
-      await navigator.locks.request(
-        'supabase-gotrue-token-refresh-gestpop_auth',
-        { steal: true },
-        async () => {} // adquire e libera imediatamente
-      );
-      console.log('[initSupabase] Web Lock liberado com sucesso');
-    } catch(e) {
-      console.warn('[initSupabase] Falha ao liberar Web Lock:', e?.message);
-    }
-  }
+  // Auto-login como administrador local
+  currentUser       = { email: 'local@admin', id: 'local' };
+  currentUserEmail  = 'local@admin';
+  currentUserName   = 'Administrador Local';
+  isEditor = true;
+  isAdmin  = true;
+  isViewer = false;
+
+  showUserUI(currentUser);
+  document.getElementById('auth-overlay').style.display = 'none';
 
   try {
-  supaClient = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
-    auth: {
-      persistSession: true,
-      storageKey: 'gestpop_auth',
-      storage: {
-        // Simple synchronous storage wrapper — avoids Web Locks API conflicts
-        getItem:    (k) => { try { return localStorage.getItem(k); }    catch(e) { return null; } },
-        setItem:    (k, v) => { try { localStorage.setItem(k, v); }     catch(e) {} },
-        removeItem: (k) => { try { localStorage.removeItem(k); }        catch(e) {} },
-      },
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    }
-  });
-  // Escopo global para que markChanged() possa verificar antes de auto-salvar
-  window._appInitialized = false;
-  let _loadingCloud   = false;   // evita carregamento duplo
-
-  async function _handleSession(user) {
-    if(!user) {
-      currentUser = null; isEditor = false; isAdmin = false;
-      window._appInitialized = false;
-      document.getElementById('auth-overlay').style.display = 'flex';
-      document.getElementById('user-chip').style.display = 'none';
-      document.getElementById('sync-indicator').style.display = 'none';
-      document.getElementById('access-request-overlay')?.remove();
-      return;
-    }
-
-    currentUser = user;
-    showUserUI(user);
-    document.getElementById('auth-overlay').style.display = 'none';
-
-    if(_loadingCloud) return;   // já está carregando
-    if(window._appInitialized) {
-      // Apenas renovar permissões sem recarregar dados (ex: TOKEN_REFRESHED)
-      await checkEditorPermission();
-      updateLastSaveChip(null); // garantir que o chip reflita o estado atual
-      return;
-    }
-    _loadingCloud = true;
+    await checkEditorPermission();
+    await loadFromCloud();
+    window._appInitialized = true;
     try {
-      await checkEditorPermission();
-      await loadFromCloud();
-      window._appInitialized = true;
-      // Normalizar nomes de divisões/unidades e salvar se houve mudanças
-      try {
-        if (isEditor && _normalizeUnidades()) {
-          console.log('[normalizaUnidades] Nomes normalizados — salvando...');
-          saveToCloud();
-        }
-      } catch(e) { console.warn('[normalizaUnidades]', e); }
-      // Log de acesso e presença
-      try { logAccessEvent('login'); } catch(e) {}
-      try { _startPresenceHeartbeat(); } catch(e) {}
-    } finally {
-      _loadingCloud = false;
-    }
+      if (isEditor && _normalizeUnidades()) {
+        console.log('[normalizaUnidades] Nomes normalizados — salvando...');
+        saveToCloud();
+      }
+    } catch(e) { console.warn('[normalizaUnidades]', e); }
+    try { logAccessEvent('login'); } catch(e) {}
+    try { _startPresenceHeartbeat(); } catch(e) {}
+  } catch(e) {
+    console.error('[initSupabase] Erro ao inicializar modo local:', e);
+    showToast('⚠️ Erro ao conectar ao backend local: ' + e.message, 'warn');
   }
+}
 
-  supaClient.auth.onAuthStateChange(async (event, session) => {
-    // Sempre manter o access token atualizado (inclusive no TOKEN_REFRESHED)
-    if(session?.access_token) currentAccessToken = session.access_token;
-    // INITIAL_SESSION é tratado pelo getSession() explícito abaixo (que roda após
-    // _initialize completar). Processar aqui causaria deadlock: _notifyAllSubscribers
-    // aguarda este callback, e o callback chama loadFromCloud() que internamente
-    // chama getSession() que aguarda initializePromise que aguarda _initialize()
-    // que aguarda _notifyAllSubscribers — ciclo infinito.
-    if(event === 'INITIAL_SESSION') return;
-    // Se app já inicializado: só processar logout real
-    if(window._appInitialized && event !== 'SIGNED_OUT') return;
-    // Se app ainda não inicializado mas token foi renovado com sessão válida,
-    // tratar como login (cobre caso de token expirado sendo renovado no reload)
-    await _handleSession(session?.user || null);
+let _msalClient = null;
+
+async function _loadMsalBrowser() {
+  if (window.msal?.PublicClientApplication) return window.msal;
+
+  await new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js';
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Falha ao carregar MSAL Browser'));
+    document.head.appendChild(script);
   });
 
-  // Verificar sessão existente imediatamente (sem esperar o evento)
-  const { data: { session: existingSession }, error: sessionErr } = await supaClient.auth.getSession();
-  console.log('[initSupabase] getSession:', existingSession ? 'sessão OK user='+existingSession.user?.email : 'sem sessão', sessionErr ? 'err='+sessionErr.message : '');
-  if(existingSession?.access_token) currentAccessToken = existingSession.access_token;
-  // Limpar URL após login (remove ?code=... ou #access_token=... da barra de endereço)
-  if(window.location.search || window.location.hash) {
-    try { window.history.replaceState(null, '', window.location.pathname); } catch(e) {}
-  }
-  if(existingSession?.user) {
-    await _handleSession(existingSession.user);
-  } else {
-    console.warn('[initSupabase] Nenhuma sessão ativa — exibindo tela de login');
-    document.getElementById('auth-overlay').style.display = 'flex';
-  }
-  } catch(e) {
-    console.error('[initSupabase] Erro fatal na inicialização:', e);
-    document.getElementById('auth-status').textContent = '⚠️ Erro ao inicializar: ' + e.message;
-    document.getElementById('auth-overlay').style.display = 'flex';
-  }
+  return window.msal;
 }
 
 async function signInMicrosoft() {
-  const statusEl = document.getElementById('auth-status');
-  statusEl.textContent = 'Redirecionando para a Microsoft...';
-  if(!supaClient) { statusEl.textContent = '⚠️ Sistema ainda carregando. Tente novamente.'; return; }
+  const authMode = SIGA_AUTH.mode || 'local';
+  if (authMode !== 'entra') {
+    showToast('⚠️ Login Microsoft ativo apenas quando auth.mode = entra.', 'warn');
+    return;
+  }
+
+  const cfg = SIGA_AUTH.entra || {};
+  if (!cfg.clientId || !cfg.tenantId) {
+    showToast('⚠️ Configure clientId e tenantId no public-config.js.', 'warn');
+    return;
+  }
+
   try {
-    const { data, error } = await supaClient.auth.signInWithOAuth({
-      provider: 'azure',
-      options: {
-        redirectTo: window.location.origin + window.location.pathname,
-        scopes: 'email profile openid'
-      }
+    const msalLib = await _loadMsalBrowser();
+
+    if (!_msalClient) {
+      _msalClient = new msalLib.PublicClientApplication({
+        auth: {
+          clientId: cfg.clientId,
+          authority: `https://login.microsoftonline.com/${cfg.tenantId}`,
+          redirectUri: cfg.redirectUri || window.location.origin,
+        },
+        cache: {
+          cacheLocation: 'sessionStorage',
+          storeAuthStateInCookie: false,
+        },
+      });
+    }
+
+    const loginRes = await _msalClient.loginPopup({
+      scopes: ['openid', 'profile', 'email', 'User.Read'],
+      prompt: 'select_account',
     });
-    if(error) statusEl.textContent = '⚠️ ' + error.message;
-  } catch(e) {
-    statusEl.textContent = '⚠️ Erro: ' + e.message;
-    console.error('Microsoft OAuth error:', e);
+
+    const account = loginRes.account;
+    currentAccessToken = loginRes.accessToken || null;
+    currentUser = {
+      id: account?.homeAccountId || account?.localAccountId || 'entra',
+      email: account?.username || '',
+      user_metadata: {
+        full_name: account?.name || account?.username || 'Usuario',
+      },
+    };
+
+    showUserUI(currentUser);
+    document.getElementById('auth-overlay').style.display = 'none';
+
+    await checkEditorPermission();
+    await loadFromCloud();
+    window._appInitialized = true;
+
+    try { logAccessEvent('login'); } catch(e) {}
+    try { _startPresenceHeartbeat(); } catch(e) {}
+    showToast('✅ Login Microsoft realizado.', 'success');
+  } catch (e) {
+    console.error('Login Microsoft falhou:', e);
+    showToast('❌ Falha no login Microsoft: ' + (e?.message || 'erro desconhecido'), 'warn');
   }
 }
 
-async function signInGoogle() {
-  const statusEl = document.getElementById('auth-status');
-  statusEl.textContent = 'Redirecionando para o Google...';
-  if(!supaClient) { statusEl.textContent = '⚠️ Sistema ainda carregando. Tente novamente.'; return; }
-  try {
-    const { data, error } = await supaClient.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + window.location.pathname,
-        queryParams: { prompt: 'select_account' }
-      }
-    });
-    if(error) statusEl.textContent = '⚠️ ' + error.message;
-  } catch(e) {
-    statusEl.textContent = '⚠️ Erro: ' + e.message;
-    console.error('Google OAuth error:', e);
-  }
-}
-
-let _emailCooldownUntil = 0;
-async function signInEmail() {
-  const email = document.getElementById('auth-email').value.trim().toLowerCase();
-  const statusEl = document.getElementById('auth-status');
-  if(!email) { statusEl.textContent = 'Informe seu e-mail.'; return; }
-  if(!email.endsWith('@sefaz.rs.gov.br') && email !== ADMIN_EMAIL) {
-    statusEl.textContent = '⛔ Acesso restrito a e-mails @sefaz.rs.gov.br';
-    return;
-  }
-  const now = Date.now();
-  if(now < _emailCooldownUntil) {
-    const secsLeft = Math.ceil((_emailCooldownUntil - now) / 1000);
-    statusEl.textContent = `⏳ Aguarde ${secsLeft}s antes de reenviar.`;
-    return;
-  }
-  statusEl.textContent = 'Enviando link...';
-  const { error } = await supaClient.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
-  if(error) {
-    statusEl.textContent = '⚠️ ' + error.message;
-  } else {
-    _emailCooldownUntil = Date.now() + 60_000;
-    statusEl.textContent = '✅ Link enviado! Verifique seu e-mail institucional. (aguarde 60s para reenviar)';
-  }
-}
+async function signInGoogle()    { return signInMicrosoft(); }
+async function signInEmail()     { showToast('⚠️ Login por e-mail desativado no modo local.', 'warn'); }
 
 async function signOut() {
-  // Usar toast de confirmação em vez de confirm() que pode ser bloqueado
   showToast('Clique novamente em ✕ para confirmar saída', 'warn');
   if(!window._signoutPending) {
     window._signoutPending = true;
@@ -11961,18 +11646,19 @@ async function signOut() {
   }
   window._signoutPending = false;
   try { _stopPresenceHeartbeat(); } catch(e) {}
-  try { if(_realtimeChannel){ supaClient.removeChannel(_realtimeChannel); _realtimeChannel=null; _subscribedWsId=null; } } catch(e) {}
   try { await _clearPresence(); } catch(e) {}
   try { await logAccessEvent('logout'); } catch(e) {}
-  try { await supaClient.auth.signOut({ scope: 'local' }); } catch(e) {}
-  try {
-    sessionStorage.removeItem('gestpop_wsid');
-    try { localStorage.removeItem('gestpop_wsid'); } catch(e) {}
-    workspaceId = null;
-    Object.keys(localStorage)
-      .filter(k => k.includes('supabase') || k.includes('gestpop_auth'))
-      .forEach(k => localStorage.removeItem(k));
-  } catch(e) {}
+
+  if ((SIGA_AUTH.mode || 'local') === 'entra' && _msalClient) {
+    try {
+      await _msalClient.logoutPopup({
+        postLogoutRedirectUri: window.location.origin,
+      });
+    } catch(e) {
+      console.warn('logoutPopup falhou:', e);
+    }
+  }
+
   window.location.href = window.location.origin + window.location.pathname;
 }
 
@@ -12099,16 +11785,6 @@ async function exportBackup() {
     harvestEditables();
     const allKeys = Object.keys(DATA).filter(k => k !== 'd' && k !== 'r' && k !== 'pat');
 
-    // Fetch all Supabase tables for a complete server-side backup
-    const supaData = {};
-    if (supaClient) {
-      const tables = ['gestpop_workspace','gestpop_editors','gestpop_requests','gestpop_history','gestpop_access_logs'];
-      for (const table of tables) {
-        const { data, error } = await supaClient.from(table).select('*');
-        if (!error && data) supaData[table] = data;
-      }
-    }
-
     const payload = {
       _version: 3,
       _exported: new Date().toISOString(),
@@ -12118,7 +11794,7 @@ async function exportBackup() {
       pat:  DATA.pat || [],
       audits: DATA.audits || { plans:[], executions:[], nonconformities:[], actions:[] },
       newPops: allKeys.map(k => ({ key: k, data: DATA[k] })),
-      supabase: supaData
+      localAccess: LOCAL_ACCESS
     };
     const json = JSON.stringify(payload, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -12617,21 +12293,7 @@ async function _loadCageLogoB64() {
   if(window._cageLogoB64Cache) return window._cageLogoB64Cache;
   const imgUrl = 'https://cage.fazenda.rs.gov.br/themes/padrao2019/images/logos/logo.png';
 
-  // Tentativa 1: proxy Supabase (servidor busca a imagem sem restrições de CORS)
-  try {
-    const proxyUrl = 'https://qdpkkzdlpdwoqqmbzpll.supabase.co/functions/v1/image-proxy';
-    const resp = await fetch(proxyUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY },
-      body: JSON.stringify({ url: imgUrl })
-    });
-    if(resp.ok) {
-      const data = await resp.json();
-      if(data.dataUrl) { window._cageLogoB64Cache = data.dataUrl; return data.dataUrl; }
-    }
-  } catch(e) { /* proxy indisponível — tenta direto */ }
-
-  // Tentativa 2: fetch direto (funciona se app estiver no mesmo domínio que cage.fazenda.rs.gov.br)
+  // Tentativa 1: fetch direto (funciona se app estiver no mesmo domínio que cage.fazenda.rs.gov.br)
   try {
     const resp = await fetch(imgUrl);
     if(resp.ok) {
@@ -12644,7 +12306,7 @@ async function _loadCageLogoB64() {
     }
   } catch(e) { /* CORS bloqueado */ }
 
-  // Tentativa 3: Image + canvas com crossOrigin (funciona se servidor enviar CORS headers)
+  // Tentativa 2: Image + canvas com crossOrigin (funciona se servidor enviar CORS headers)
   try {
     const b64 = await new Promise(resolve => {
       const img = new Image();
@@ -16089,34 +15751,20 @@ function logo2FileSelected(file) {
 }
 
 async function uploadLogo2ToStorage(file) {
-  if(!supaClient || !currentUser) {
-    showToast('⚠️ Faça login para salvar o logo na nuvem. Ele ficará disponível só nesta sessão.', 'warn');
-    return;
-  }
-  showToast('⏳ Enviando logo para o storage...', 'success');
+  showToast('⏳ Processando logo localmente...', 'success');
   try {
-    const ext  = file.name.split('.').pop().toLowerCase() || 'png';
-    const path = `logo2-${Date.now()}.${ext}`;
-    const { error } = await supaClient.storage
-      .from('gestpop-images')
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if(error) {
-      if(error.message && error.message.includes('Bucket not found')) {
-        showToast('⚠️ Bucket "gestpop-images" não encontrado no Supabase Storage.', 'warn');
-      } else {
-        showToast('⚠️ Erro no storage: ' + error.message, 'warn');
-      }
-      return;
-    }
-    const { data } = supaClient.storage.from('gestpop-images').getPublicUrl(path);
-    if(data?.publicUrl) {
-      DATA._logo2Url = data.publicUrl;
-      logo2Refresh();
-      showToast('✅ Segundo logo salvo com sucesso!', 'success');
-      markChanged(true, true);
-    }
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Falha ao ler arquivo'));
+      reader.readAsDataURL(file);
+    });
+    DATA._logo2Url = base64;
+    logo2Refresh();
+    showToast('✅ Segundo logo salvo localmente!', 'success');
+    markChanged(true, true);
   } catch(e) {
-    showToast('⚠️ Erro inesperado no storage: ' + e.message, 'warn');
+    showToast('⚠️ Erro ao processar logo: ' + e.message, 'warn');
   }
 }
 
@@ -16172,31 +15820,20 @@ function biImgFileSelected(file, type) {
 }
 
 async function uploadBiImgToStorage(file, type) {
-  if(!supaClient || !currentUser) {
-    showToast('⚠️ Faça login para persistir a imagem na nuvem. Ela ficará disponível só nesta sessão.', 'warn');
-    return;
-  }
   const key    = type === 'cadeia' ? '_cadeiaValorImg' : '_mapaEstrategicoImg';
-  const prefix = type === 'cadeia' ? 'cadeia-valor' : 'mapa-estrategico';
   try {
-    const ext  = file.name.split('.').pop().toLowerCase() || 'png';
-    const path = `${prefix}-${Date.now()}.${ext}`;
-    const { error } = await supaClient.storage
-      .from('gestpop-images')
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if(error) {
-      showToast('⚠️ Erro no storage: ' + error.message + '. Imagem salva só localmente.', 'warn');
-      return;
-    }
-    const { data } = supaClient.storage.from('gestpop-images').getPublicUrl(path);
-    if(data?.publicUrl) {
-      DATA[key] = data.publicUrl;
-      biImgRefresh(type);
-      showToast('✅ Imagem salva permanentemente na nuvem!', 'success');
-      markChanged(true, true);
-    }
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Falha ao ler arquivo'));
+      reader.readAsDataURL(file);
+    });
+    DATA[key] = base64;
+    biImgRefresh(type);
+    showToast('✅ Imagem salva localmente!', 'success');
+    markChanged(true, true);
   } catch(e) {
-    showToast('⚠️ Erro inesperado no storage: ' + e.message, 'warn');
+    showToast('⚠️ Erro ao processar imagem: ' + e.message, 'warn');
   }
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -17905,23 +17542,24 @@ async function repoSaveDoc() {
 
   if(repoPendingFile) {
     prog.style.display='block';
-    msg.textContent='Enviando arquivo...';
+    msg.textContent='Processando arquivo localmente...';
     bar.style.width='20%';
     try {
-      if(!supaClient) throw new Error('Supabase não disponível');
       const maxMB = 50;
       if(repoPendingFile.size > maxMB * 1024 * 1024) throw new Error(`Arquivo maior que ${maxMB}MB`);
 
-      const path = 'repo/' + Date.now() + '_' + repoPendingFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-      msg.textContent = 'Enviando ' + repoPendingFile.name + '...';
+      const path = 'repo-local/' + Date.now() + '_' + repoPendingFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      msg.textContent = 'Lendo ' + repoPendingFile.name + '...';
       bar.style.width = '30%';
 
-      const { data, error } = await supaClient.storage.from('gestpop-images').upload(path, repoPendingFile, { upsert: true, cacheControl: '3600' });
-
-      if(error) throw new Error(error.message + (error.statusCode ? ' ('+error.statusCode+')' : ''));
+      const localDataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Falha ao ler arquivo'));
+        reader.readAsDataURL(repoPendingFile);
+      });
       bar.style.width = '80%';
-      const { data: pub } = supaClient.storage.from('gestpop-images').getPublicUrl(path);
-      fileUrl  = pub.publicUrl;
+      fileUrl  = localDataUrl;
       filePath = path;
       fileName = repoPendingFile.name;
       fileSize = (repoPendingFile.size / 1024 / 1024).toFixed(2) + ' MB';
@@ -18092,14 +17730,16 @@ function dropsCloseModal() {
 async function dropCoverSelected(file) {
   if(!file) return;
   try {
-    if(!supaClient) throw new Error('Supabase não disponível');
-    const path = 'drops/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-    await supaClient.storage.from('gestpop-images').upload(path, file, { upsert: true });
-    const { data } = supaClient.storage.from('gestpop-images').getPublicUrl(path);
-    document.getElementById('drop-cover-url').value = data.publicUrl;
-    document.getElementById('drop-cover-img').src   = data.publicUrl;
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Falha ao ler arquivo'));
+      reader.readAsDataURL(file);
+    });
+    document.getElementById('drop-cover-url').value = dataUrl;
+    document.getElementById('drop-cover-img').src   = dataUrl;
     document.getElementById('drop-cover-preview').style.display='block';
-    showToast('✅ Capa enviada!', 'success');
+    showToast('✅ Capa carregada localmente!', 'success');
   } catch(e) { showToast('Erro no upload da capa: ' + e.message, 'error'); }
 }
 
@@ -18243,18 +17883,10 @@ let _pendingServerMerge = null; // dados do servidor aguardando merge (recebidos
 let _lastLoadedAt = 0; // timestamp da última carga completa do servidor
 let _dirtyPops = new Set(); // chaves de POPs modificados localmente desde o último carregamento do servidor
 async function _upsertPresence() {
-  if(!supaClient || !currentUserEmail) return;
-  try {
-    await supaClient.from('gestpop_presence').upsert({
-      email: currentUserEmail,
-      name:  currentUserName || currentUserEmail,
-      last_seen: new Date().toISOString()
-    }, { onConflict: 'email' });
-  } catch(e) {}
+  return;
 }
 async function _clearPresence() {
-  if(!supaClient || !currentUserEmail) return;
-  try { await supaClient.from('gestpop_presence').delete().eq('email', currentUserEmail); } catch(e) {}
+  return;
 }
 function _startPresenceHeartbeat() {
   _upsertPresence();
@@ -18285,52 +17917,18 @@ function _silentlyMergeNewPops(serverData) {
 }
 
 function _subscribeWorkspaceChanges(wsId) {
-  if (!supaClient || !wsId) return;
-  if (_subscribedWsId === wsId) return; // já inscrito neste workspace
-  // Remove canal anterior se existir
-  if (_realtimeChannel) {
-    try { supaClient.removeChannel(_realtimeChannel); } catch(e) {}
-    _realtimeChannel = null;
-  }
-  _subscribedWsId = wsId;
-  _realtimeChannel = supaClient
-    .channel('workspace-sync-' + wsId)
-    .on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'gestpop_workspace',
-      filter: `id=eq.${wsId}`
-    }, payload => {
-      const updatedBy = payload.new?.updated_by;
-      // Ignorar salvamentos feitos pelo próprio usuário
-      if (updatedBy && updatedBy === currentUserEmail) return;
-      const name = payload.new?.updated_by_name || updatedBy || 'outro usuário';
-      // Se está em modo edição com alterações não salvas, mesclar novos POPs silenciosamente
-      // e avisar o usuário — sem fazer reload completo que sobrescreveria o trabalho local
-      const unsavedDot = document.getElementById('unsaved-dot');
-      if (editMode && unsavedDot && unsavedDot.style.display !== 'none') {
-        _pendingServerMerge = payload.new?.data; // guardar para mesclar antes do próximo save
-        _silentlyMergeNewPops(payload.new?.data);
-        showToast(`⚠️ ${name} salvou alterações. Finalize ou descarte as suas para sincronizar.`, 'warn');
-        return;
-      }
-      _syncingFromRealtime = name;
-      loadFromCloud();
-    })
-    .subscribe();
-  console.log('[realtime] Inscrito no workspace', wsId);
+  _subscribedWsId = wsId || null;
 }
 
 // ── ACCESS LOG ─────────────────────────────────────────────────────
 async function logAccessEvent(action) {
-  if(!supaClient || !currentUserEmail) return;
-  try {
-    await supaClient.from('gestpop_access_logs').insert({
-      email:  currentUserEmail,
-      name:   currentUserName || currentUserEmail,
-      action
-    });
-  } catch(e) {}
+  LOCAL_ACCESS.accessLogs.unshift({
+    email: currentUserEmail || 'local@admin',
+    name: currentUserName || 'Administrador Local',
+    action,
+    created_at: new Date().toISOString()
+  });
+  if(LOCAL_ACCESS.accessLogs.length > 200) LOCAL_ACCESS.accessLogs.length = 200;
 }
 
 // ── MONITORING: online users ───────────────────────────────────────
@@ -18338,67 +17936,35 @@ function _isTableMissing(e) {
   return e?.message && (e.message.includes('schema cache') || e.message.includes('relation') || e.message.includes('does not exist') || e.message.includes('Could not find'));
 }
 
-const _MON_SETUP_SQL = `-- Execute no SQL Editor do Supabase (https://supabase.com/dashboard)
-
-create table if not exists public.gestpop_presence (
-  email     text primary key,
-  name      text,
-  last_seen timestamptz default now()
-);
-alter table public.gestpop_presence enable row level security;
-create policy "auth users full access" on public.gestpop_presence
-  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-
-create table if not exists public.gestpop_access_logs (
-  id         bigserial primary key,
-  email      text,
-  name       text,
-  action     text,
-  created_at timestamptz default now()
-);
-alter table public.gestpop_access_logs enable row level security;
-create policy "auth users insert" on public.gestpop_access_logs
-  for insert with check (auth.role() = 'authenticated');
-create policy "auth users select" on public.gestpop_access_logs
-  for select using (auth.role() = 'authenticated');`;
+const _MON_SETUP_SQL = 'Modo local ativo: monitoramento usa dados locais em memória.';
 
 function _monSetupBanner() {
   return `<div style="background:#fefce8;border:1.5px solid #fbbf24;border-radius:10px;padding:16px 20px;margin-bottom:4px;">
-    <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:8px;">⚙️ Configuração necessária — tabelas não encontradas</div>
-    <div style="font-size:12px;color:#78350f;margin-bottom:12px;">Execute o SQL abaixo no <a href="https://supabase.com/dashboard" target="_blank" style="color:#b45309;font-weight:700;">SQL Editor do Supabase</a> e recarregue esta aba:</div>
+    <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:8px;">⚙️ Modo local ativo</div>
+    <div style="font-size:12px;color:#78350f;margin-bottom:12px;">Não há configuração remota necessária para monitoramento.</div>
     <pre style="background:#1e293b;color:#e2e8f0;border-radius:8px;padding:14px;font-size:11px;overflow-x:auto;white-space:pre;line-height:1.5;">${_MON_SETUP_SQL}</pre>
-    <button onclick="navigator.clipboard.writeText(_MON_SETUP_SQL).then(()=>showToast('SQL copiado!','success'))" style="margin-top:10px;padding:6px 14px;background:#92400e;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">📋 Copiar SQL</button>
+    <button onclick="navigator.clipboard.writeText(_MON_SETUP_SQL).then(()=>showToast('Mensagem copiada!','success'))" style="margin-top:10px;padding:6px 14px;background:#92400e;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">📋 Copiar</button>
   </div>`;
 }
 
 async function eppLoadOnlineUsers() {
   const el = document.getElementById('mon-online-list');
   if(!el) return;
-  el.innerHTML = '<div class="mon-empty">Carregando...</div>';
-  try {
-    const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data, error } = await supaClient.from('gestpop_presence')
-      .select('*').gte('last_seen', cutoff).order('last_seen', { ascending: false });
-    if(error) throw error;
-    if(!data?.length) { el.innerHTML = '<div class="mon-empty">Nenhum usuário online no momento.</div>'; return; }
-    el.innerHTML = data.map(u => {
-      const secsAgo = Math.floor((Date.now() - new Date(u.last_seen)) / 1000);
-      const label = secsAgo < 60 ? 'agora mesmo' : Math.floor(secsAgo/60) + ' min atrás';
-      const away  = secsAgo > 120;
-      const av    = (u.name||'?').charAt(0).toUpperCase();
-      return `<div class="mon-online-card">
-        <div class="mon-online-dot${away?' away':''}"></div>
-        <div class="mon-online-avatar">${av}</div>
-        <div style="flex:1;min-width:0;">
-          <div class="mon-online-name">${u.name||u.email}</div>
-          <div class="mon-online-email">${u.email}</div>
-        </div>
-        <div class="mon-online-time">${label}</div>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    el.innerHTML = _isTableMissing(e) ? _monSetupBanner() : '<div class="mon-empty">Erro: ' + e.message + '</div>';
-  }
+  const me = {
+    name: currentUserName || 'Administrador Local',
+    email: currentUserEmail || 'local@admin',
+    last_seen: new Date().toISOString()
+  };
+  const av = (me.name || '?').charAt(0).toUpperCase();
+  el.innerHTML = `<div class="mon-online-card">
+    <div class="mon-online-dot"></div>
+    <div class="mon-online-avatar">${av}</div>
+    <div style="flex:1;min-width:0;">
+      <div class="mon-online-name">${me.name}</div>
+      <div class="mon-online-email">${me.email}</div>
+    </div>
+    <div class="mon-online-time">agora mesmo</div>
+  </div>`;
 }
 
 // ── MONITORING: change logs ────────────────────────────────────────
@@ -18412,18 +17978,11 @@ async function eppLoadChangeLogs(reset=false) {
   const more  = document.getElementById('mon-changes-more');
   if(!tbody) return;
   if(_changeLogsOffset === 0) tbody.innerHTML = '<tr><td colspan="3" style="color:var(--text-muted);padding:16px;text-align:center;">Carregando...</td></tr>';
-  try {
-    const { data, error } = await supaClient.from('gestpop_history')
-      .select('*').order('created_at', { ascending: false })
-      .range(_changeLogsOffset, _changeLogsOffset + _CHANGE_PAGE - 1);
-    if(error) throw error;
-    _changeLogsData = _changeLogsOffset === 0 ? (data||[]) : _changeLogsData.concat(data||[]);
-    _changeLogsOffset += (data||[]).length;
-    if(more) more.style.display = (data||[]).length === _CHANGE_PAGE ? '' : 'none';
-    eppFilterChangeLogs();
-  } catch(e) {
-    if(tbody) tbody.innerHTML = '<tr><td colspan="3" style="color:#dc2626;padding:16px;text-align:center;">Erro: ' + e.message + '</td></tr>';
-  }
+  const data = LOCAL_ACCESS.history.slice(_changeLogsOffset, _changeLogsOffset + _CHANGE_PAGE);
+  _changeLogsData = _changeLogsOffset === 0 ? (data||[]) : _changeLogsData.concat(data||[]);
+  _changeLogsOffset += (data||[]).length;
+  if(more) more.style.display = (data||[]).length === _CHANGE_PAGE ? '' : 'none';
+  eppFilterChangeLogs();
 }
 function eppLoadMoreChanges() { eppLoadChangeLogs(); }
 
@@ -18458,20 +18017,11 @@ async function eppLoadAccessLogs(reset=false) {
   const more  = document.getElementById('mon-access-more');
   if(!tbody) return;
   if(_accessLogsOffset === 0) tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);padding:16px;text-align:center;">Carregando...</td></tr>';
-  try {
-    const { data, error } = await supaClient.from('gestpop_access_logs')
-      .select('*').order('created_at', { ascending: false })
-      .range(_accessLogsOffset, _accessLogsOffset + _ACCESS_PAGE - 1);
-    if(error) throw error;
-    _accessLogsData = _accessLogsOffset === 0 ? (data||[]) : _accessLogsData.concat(data||[]);
-    _accessLogsOffset += (data||[]).length;
-    if(more) more.style.display = (data||[]).length === _ACCESS_PAGE ? '' : 'none';
-    eppFilterAccessLogs();
-  } catch(e) {
-    if(tbody) tbody.innerHTML = _isTableMissing(e)
-      ? `<tr><td colspan="4">${_monSetupBanner()}</td></tr>`
-      : '<tr><td colspan="4" style="color:#dc2626;padding:16px;text-align:center;">Erro: ' + e.message + '</td></tr>';
-  }
+  const data = LOCAL_ACCESS.accessLogs.slice(_accessLogsOffset, _accessLogsOffset + _ACCESS_PAGE);
+  _accessLogsData = _accessLogsOffset === 0 ? (data||[]) : _accessLogsData.concat(data||[]);
+  _accessLogsOffset += (data||[]).length;
+  if(more) more.style.display = (data||[]).length === _ACCESS_PAGE ? '' : 'none';
+  eppFilterAccessLogs();
 }
 function eppLoadMoreAccess() { eppLoadAccessLogs(); }
 

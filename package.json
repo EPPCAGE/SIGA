@@ -4,7 +4,14 @@
   "description": "",
   "main": "sw.js",
   "scripts": {
+    "local-backend": "node scripts/local-backend.js",
+    "local-frontend": "npx http-server . -p 5173",
     "backup": "node scripts/backup.js",
+    "migrate-workspace": "node scripts/migrate-workspace-ndjson.js",
+    "workspace-csv-stream": "node scripts/workspace-csv-stream.js",
+    "migrate-csv-tables": "node scripts/migrate-csv-tables.js",
+    "migrate-all": "node scripts/migrate-all.js",
+    "migrate-all-dry": "node scripts/migrate-all.js --dry-run",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
