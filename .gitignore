@@ -1,1 +1,9 @@
 node_modules/
+
+# Dados locais e backups — não versionar (podem conter dados reais)
+data/local-data.json
+backups/*.json
+backups/*.ndjson
+backups/*.csv
+backups/migration/
+siga-images.tar
