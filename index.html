@@ -20374,13 +20374,43 @@ FORMATO: {"flow":[{"id":"n1","type":"start","name":"Início","actor":"","next":[
     selectNpopMethod('manual');
 
     setTimeout(() => {
-      const nome = extracted.nome || extracted.titulo || '';
-      if(nome)                                         document.getElementById('nf-nome').value      = nome;
-      if(extracted.macro)                              document.getElementById('nf-macro').value     = extracted.macro;
-      if(extracted.desc || extracted.objetivo)         document.getElementById('nf-desc').value      = extracted.desc || extracted.objetivo;
-      if(extracted.input || extracted.entradas)        document.getElementById('nf-input').value     = extracted.input || extracted.entradas;
-      if(extracted.output || extracted.saidas)         document.getElementById('nf-output').value    = extracted.output || extracted.saidas;
-      if(extracted.elaborado || extracted.elaborador)  document.getElementById('nf-elaborado').value = extracted.elaborado || extracted.elaborador;
+      try {
+        // Macroprocesso (primeiro para popular a datalist de processo)
+        if(extracted.macro) {
+          document.getElementById('nf-macro').value = extracted.macro;
+          if(typeof npopUpdateProcessoList === 'function') npopUpdateProcessoList();
+        }
+        // Nome do processo → campo nf-processo
+        const nome = extracted.nome || extracted.titulo || extracted.processo || '';
+        if(nome) document.getElementById('nf-processo').value = nome;
+        // Subprocesso
+        if(extracted.subprocesso) {
+          document.getElementById('nf-subprocesso').value = extracted.subprocesso;
+          if(typeof npopUpdateSubprocessoList === 'function') npopUpdateSubprocessoList();
+          if(typeof npopAutoFill === 'function') npopAutoFill();
+        }
+        // Objetivo / descrição
+        const desc = extracted.desc || extracted.objetivo || '';
+        if(desc) document.getElementById('nf-desc').value = desc;
+        // Entradas / saídas
+        const inp = extracted.input || extracted.entradas || '';
+        if(inp) document.getElementById('nf-input').value = inp;
+        const out = extracted.output || extracted.saidas || '';
+        if(out) document.getElementById('nf-output').value = out;
+        // Fornecedores / clientes
+        if(extracted.fornecedores) document.getElementById('nf-fornecedores').value = extracted.fornecedores;
+        if(extracted.clientes)     document.getElementById('nf-clientes').value     = extracted.clientes;
+        // Equipe de mapeamento — vem de elaborado/elaborador/unidade
+        const equipe = extracted.elaborado || extracted.elaborador || '';
+        if(equipe) document.getElementById('nf-equipe').value = equipe;
+        // Unidade (readonly mas pode ser preenchido via IA)
+        if(extracted.unidade) {
+          const unEl = document.getElementById('nf-unidade');
+          if(unEl) { unEl.readOnly = false; unEl.value = extracted.unidade; unEl.readOnly = true; }
+        }
+      } catch(fieldErr) {
+        console.warn('[SIGA] Erro ao preencher campos da extração:', fieldErr);
+      }
 
       window._npopExtractedEtapas = extracted.steps || extracted.etapas || [];
       window._npopExtractedFull   = extracted;
