@@ -6757,9 +6757,17 @@ function openNovoPop() {
   if(!isEditor) { showToast('🔒 Apenas editores podem criar mapeamentos.', 'warn'); return; }
 
   // Primeiro uso: perguntar nome do usuário para usar como elaborador
+  // currentUserName vem do perfil Supabase — persiste entre máquinas
   if(!currentUserName && !localStorage.getItem('cage_nome_usuario')) {
     const nome = window.prompt('Qual é o seu nome? (será registrado como elaborador dos mapeamentos)');
-    if(nome?.trim()) localStorage.setItem('cage_nome_usuario', nome.trim());
+    if(nome?.trim()) {
+      localStorage.setItem('cage_nome_usuario', nome.trim());
+      // Persistir no perfil do editor para ficar disponível em outras máquinas
+      if(currentUserEmail && supaClient) {
+        supaClient.from('gestpop_editors').update({ display_name: nome.trim() })
+          .eq('email', currentUserEmail).then(() => {});
+      }
+    }
   }
 
   _npopMethod = 'manual';
@@ -10712,6 +10720,11 @@ document.addEventListener('visibilitychange', () => {
   // e se passaram mais de 60s desde o último carregamento — evita perda de dados
   // criados em outras máquinas enquanto esta aba estava em background
   if(document.visibilityState === 'visible' && currentUser && window._appInitialized && !editMode) {
+    if(sessionStorage.getItem('_pendingFullSave')) {
+      sessionStorage.removeItem('_pendingFullSave');
+      console.log('[visibilitychange] Executando save completo pendente (repoDocs/drops truncados no beforeunload)');
+      saveToCloud();
+    }
     const elapsed = Date.now() - _lastLoadedAt;
     if(elapsed > 60000) { // só recarregar se faz mais de 60s
       console.log('[visibilitychange] Tab voltou ao foco — recarregando dados do servidor');
@@ -10722,7 +10735,7 @@ document.addEventListener('visibilitychange', () => {
 
 // Salvar ao fechar/atualizar a página usando fetch keepalive=true
 // (único mecanismo que garante a requisição mesmo após o unload da página)
-window.addEventListener('beforeunload', () => {
+window.addEventListener('beforeunload', (e) => {
   // DEBUG: sempre logar para diagnóstico
   console.log('[beforeunload] user='+!!currentUser+' editor='+isEditor+' init='+window._appInitialized+' token='+!!currentAccessToken);
   if(!currentUser || !isEditor || !currentAccessToken) {
@@ -10740,6 +10753,11 @@ window.addEventListener('beforeunload', () => {
   const dotVisible = unsavedDot && unsavedDot.style.display === 'inline-block';
   console.log('[beforeunload] unsaved-dot visível:', dotVisible);
   if(!dotVisible) return;
+
+  // Exibir diálogo de confirmação padrão do browser — garante que o usuário pode cancelar
+  // e salvar antes de sair (evita perda de dados ao fechar aba acidentalmente)
+  e.preventDefault();
+  e.returnValue = '';
 
   // Colher estado atual do DOM antes do unload
   try { harvestEditables(); } catch(e) {}
@@ -10791,6 +10809,7 @@ window.addEventListener('beforeunload', () => {
       reqBody = fullBody;
     } else {
       console.warn('[beforeunload] repoDocs/drops excluídos para caber no limite keepalive (' + fullBody.length + ' bytes > ' + KEEPALIVE_LIMIT + ')');
+      sessionStorage.setItem('_pendingFullSave', '1');
     }
   }
 
