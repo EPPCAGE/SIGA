@@ -2849,11 +2849,11 @@
         <div id="npop-ia-form" style="display:none;margin-top:16px;">
           <div style="display:flex;flex-direction:column;gap:14px;">
 
-            <!-- POP Upload (obrigatório) -->
+            <!-- POP Upload (opcional: apenas referência local) -->
             <div>
               <div style="font-size:12px;font-weight:700;color:var(--cage-blue);margin-bottom:6px;">
-                📄 Documento POP <span style="color:#dc2626;">*</span>
-                <span style="font-weight:400;color:var(--text-muted);font-size:11px;"> — PDF ou Word do processo</span>
+                📄 Documento POP <span style="color:#94a3b8;font-weight:400;">(opcional)</span>
+                <span style="font-weight:400;color:var(--text-muted);font-size:11px;"> — não é necessário para gerar o prompt</span>
               </div>
               <div class="npop-upload-zone" id="npop-drop-zone"
                 onclick="document.getElementById('npop-file-input').click()"
@@ -2872,7 +2872,7 @@
               </div>
             </div>
 
-            <!-- BPMN Upload (opcional) -->
+            <!-- BPMN Upload (opcional: apenas referência local) -->
             <div>
               <div style="font-size:12px;font-weight:700;color:var(--cage-blue);margin-bottom:6px;">
                 🔀 Diagrama BPMN <span style="color:#94a3b8;font-weight:400;">(opcional)</span>
@@ -2898,7 +2898,7 @@
 
             <!-- Nota informativa -->
             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:12px;color:#1e40af;line-height:1.5;">
-              <strong>Fluxo com IA externa:</strong> anexe o POP e o BPMN, clique em <em>Gerar Prompt</em>, cole o prompt em uma IA externa junto com os 2 arquivos, depois cole aqui o JSON retornado e clique em <em>Importar JSON</em>.
+              <strong>Fluxo com IA externa:</strong> não precisa enviar arquivos no SIGA. Clique em <em>Gerar Prompt</em>, cole o prompt em uma IA externa e anexe lá o POP + BPMN; depois cole aqui o JSON retornado e clique em <em>Importar JSON</em>.
             </div>
 
             <button class="btn btn-outline" onclick="prepareNpopExternalPrompt()" style="width:100%;justify-content:center;font-size:13px;">
@@ -7056,12 +7056,8 @@ function _splitLines(str) {
 }
 
 function prepareNpopExternalPrompt() {
-  if(!_npopFile) {
-    showToast('Anexe o documento POP antes de gerar o prompt.', 'warn');
-    return;
-  }
-  const popName = _npopFile?.name || 'POP.pdf';
-  const bpmnName = window._npopBpmnFile?.name || '(nao anexado)';
+  const popName = '[ANEXAR NA IA EXTERNA] POP.pdf';
+  const bpmnName = '[ANEXAR NA IA EXTERNA] BPMN.png';
   const prompt =
 `Tarefa: Extrair um mapeamento de processo a partir dos arquivos enviados (POP + BPMN) e retornar APENAS JSON puro.
 
@@ -7075,6 +7071,8 @@ Regras criticas:
 3) Retornar apenas JSON, sem markdown, sem texto extra.
 4) Se houver conflito, o BPMN define a ordem do fluxo e o POP define metadados/atores/indicadores/FAQ.
 5) Nao usar nomes genericos como "Extracao de POP" para o processo.
+6) RESPONSABILIDADE DA ACAO: o ator/responsavel deve ser extraido por acao (action.actor), a partir do texto da propria acao e das secoes de responsabilidades do POP.
+7) NUNCA deduzir responsabilidades a partir de step.responsible; esse campo e apenas resumo da etapa.
 
 Campos obrigatorios de saida:
 - nome, macro, processo, subprocesso, unidade
@@ -7087,12 +7085,15 @@ Campos obrigatorios de saida:
 - normas[]: { icon, code, name }
 - steps[]: cada etapa com title, responsible, note, actions[]
 - flow[]: nos do fluxo com { id, type, name, actor, next:[{id,label}] }
+- Em cada action de steps[], preencher "actor" com o responsavel real daquela acao.
 
 Regras de steps/actions:
 - Capturar etapas reais de execucao do processo.
 - Nao incluir secoes administrativas sem fluxo (capa, glossario, anexos, etc.)
 - Para cada acao, usar type em: atividade | decisao | evento | observacao.
 - Para decisao, preencher branches com caminhos.
+- O campo step.responsible nao substitui action.actor.
+- Quando houver mais de um responsavel na mesma etapa, cada action deve apontar para seu actor correto.
 
 Formato JSON esperado:
 {
