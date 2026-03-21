@@ -11528,7 +11528,7 @@ async function _resolveFreshAccessToken() {
 
 // Todas as chamadas da IA passam pelo proxy seguro no Supabase.
 // O token de acesso do usuário é usado para autorização no backend.
-async function callGeminiProxy(prompt, image = null) {
+async function callGeminiProxy(prompt, image = null, options = {}) {
   if((_gpGet().geminiEnabled ?? true) === false)
     throw new Error('Integração com IA desabilitada. Reative em: EPP → Parâmetros Globais → Inteligência Artificial.');
 
@@ -11539,6 +11539,7 @@ async function callGeminiProxy(prompt, image = null) {
 
   const body = { prompt };
   if(image) body.image = image;  // { data: base64, mimeType }
+  if(options.maxTokens) body.maxTokens = options.maxTokens;
 
   const doProxyCall = (accessToken) => fetch(COPILOT_PROXY_URL, {
     method: 'POST',
@@ -20225,6 +20226,36 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
 // ═══════════════════════════════════════════════════════════
 // GEMINI: Extração de POP + BPMN (duas chamadas separadas)
 // ═══════════════════════════════════════════════════════════
+
+// Repara JSON com caracteres de controle sem escape dentro de strings
+function repairJsonString(str) {
+  let result = '';
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (escaped) { result += c; escaped = false; continue; }
+    if (c === '\\' && inString) { result += c; escaped = true; continue; }
+    if (c === '"') { inString = !inString; result += c; continue; }
+    if (inString) {
+      if (c === '\n') { result += '\\n'; continue; }
+      if (c === '\r') { result += '\\r'; continue; }
+      if (c === '\t') { result += '\\t'; continue; }
+    }
+    result += c;
+  }
+  return result;
+}
+
+function parseAiJson(text) {
+  let clean = text.trim();
+  const m = clean.match(/\{[\s\S]*\}/);
+  if (m) clean = m[0];
+  else clean = clean.replace(/```json|```/g, '').trim();
+  try { return JSON.parse(clean); } catch(_e) {}
+  try { return JSON.parse(repairJsonString(clean)); } catch(e) { throw e; }
+}
+
 function blobToBase64(blob) {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -20301,12 +20332,8 @@ VALIDAÇÃO:
     pbar.style.width = '50%';
     msg.textContent = 'Processando resposta do POP...';
 
-    const text = await callGeminiProxy(promptPop, { data: base64, mimeType });
-    let clean = text.trim();
-    const match = clean.match(/\{[\s\S]*\}/);
-    if(match) clean = match[0];
-    else clean = clean.replace(/```json|```/g,'').trim();
-    const extracted = JSON.parse(clean);
+    const text = await callGeminiProxy(promptPop, { data: base64, mimeType }, { maxTokens: 8000 });
+    const extracted = parseAiJson(text);
 
     // ── Chamada 2 (opcional): BPMN → flow[] ──
     if(bpmnFile) {
@@ -20334,12 +20361,8 @@ FORMATO: {"flow":[{"id":"n1","type":"start","name":"Início","actor":"","next":[
       pbar.style.width = '85%';
       msg.textContent = 'Processando fluxo do BPMN...';
 
-      const bpmnText = await callGeminiProxy(promptBpmn, { data: base64Bpmn, mimeType: mimeTypeBpmn });
-      let cleanBpmn = bpmnText.trim();
-      const matchBpmn = cleanBpmn.match(/\{[\s\S]*\}/);
-      if(matchBpmn) cleanBpmn = matchBpmn[0];
-      else cleanBpmn = cleanBpmn.replace(/```json|```/g,'').trim();
-      const bpmnResult = JSON.parse(cleanBpmn);
+      const bpmnText = await callGeminiProxy(promptBpmn, { data: base64Bpmn, mimeType: mimeTypeBpmn }, { maxTokens: 4000 });
+      const bpmnResult = parseAiJson(bpmnText);
       if(bpmnResult.flow) extracted.flow = bpmnResult.flow;
     }
 

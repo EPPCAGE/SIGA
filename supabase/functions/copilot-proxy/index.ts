@@ -208,7 +208,7 @@ serve(async (req: Request) => {
     });
   }
 
-  let body: { prompt?: string; image?: unknown };
+  let body: { prompt?: string; image?: unknown; maxTokens?: number };
   try {
     body = await req.json();
   } catch (_e) {
@@ -239,6 +239,9 @@ serve(async (req: Request) => {
     });
   }
 
+  const requestedTokens = typeof body?.maxTokens === 'number' ? body.maxTokens : 1800;
+  const resolvedMaxTokens = Math.min(Math.max(requestedTokens, 256), 16384);
+
   const basePayload = {
     messages: [
       {
@@ -251,7 +254,7 @@ serve(async (req: Request) => {
       },
     ],
     temperature: 0.2,
-    max_tokens: 1800,
+    max_tokens: resolvedMaxTokens,
   };
 
   const controller = new AbortController();
