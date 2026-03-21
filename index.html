@@ -6894,10 +6894,6 @@ function setNpopFile(file) {
   if(fc) fc.classList.add('show');
   const dz = document.getElementById('npop-drop-zone');
   if(dz) dz.style.display = 'none';
-  // If IA method selected, auto-trigger Gemini extraction
-  if(_npopMethod === 'ia' && typeof npopExtractWithGemini === 'function') {
-    npopExtractWithGemini(file);
-  }
 }
 
 function resetNpopFile() {
