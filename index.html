@@ -1403,7 +1403,6 @@
       </div>
       <button class="edit-toggle" id="new-pop-btn" onclick="openNovoPop()" style="display:none;" title="Criar novo mapeamento">＋ Novo Mapeamento</button>
       <button id="backup-btn" class="edit-toggle" onclick="openBackupModal()" title="Exportar/Importar backup dos dados">💾 Backup</button>
-      <button class="edit-toggle" onclick="exportPptx()" id="ppt-btn" title="Exportar apresentação PowerPoint">📊 Exportar PPT</button>
       <button class="edit-toggle" onclick="saveToCloud()" id="save-btn" title="Salvar na nuvem (Ctrl+S)">☁️ Salvar</button>
       <button class="edit-toggle" onclick="toggleEditMode()" id="edit-toggle">✏️ Modo Edição</button>
     </div>
@@ -7143,7 +7142,7 @@ function mountNewPopTab(key, label, silent=false) {
           <span class="metric-label">Horas Economizadas</span></div>
       </div>
       <div id="${key}-ficha-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
-        <div class="card-header"><span class="card-title">📋 Ficha Técnica</span><button class="btn btn-outline" onclick="openStatusModal('${key}')" style="font-size:11px;padding:4px 10px;margin-left:auto;">✏️ Editar</button></div>
+        <div class="card-header"><span class="card-title">📋 Ficha Técnica</span><div style="display:flex;gap:8px;margin-left:auto;"><button class="btn btn-outline" id="pop-relatar-btn" onclick="exportPptx()" style="font-size:11px;padding:4px 10px;">📊 Relatar POP</button><button class="btn btn-outline" onclick="openStatusModal('${key}')" style="font-size:11px;padding:4px 10px;">✏️ Editar</button></div></div>
         <div class="card-body" id="${key}-ficha-body" style="padding:16px;"></div>
       </div>
       <div id="${key}-sipoc-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
@@ -8414,7 +8413,6 @@ const _MODULES_NAV = [
 const _HEADER_BTNS_DEF = [
   { key:'new-pop', id:'new-pop-btn', label:'＋ Novo Mapeamento', defBg:'rgba(255,255,255,.12)', defColor:'rgba(255,255,255,.85)' },
   { key:'backup',  id:'backup-btn',  label:'💾 Backup',          defBg:'rgba(255,255,255,.12)', defColor:'rgba(255,255,255,.85)' },
-  { key:'ppt',     id:'ppt-btn',     label:'📊 Exportar PPT',    defBg:'rgba(255,255,255,.12)', defColor:'rgba(255,255,255,.85)' },
   { key:'save',    id:'save-btn',    label:'☁️ Salvar',          defBg:'rgba(255,255,255,.12)', defColor:'rgba(255,255,255,.85)' },
   { key:'edit',    id:'edit-toggle', label:'✏️ Modo Edição',     defBg:'rgba(255,255,255,.12)', defColor:'rgba(255,255,255,.85)' },
 ];
@@ -10501,8 +10499,6 @@ function _applyPermissionsCore() {
   const banner  = document.getElementById('readonly-banner');
   const editBtn = document.getElementById('edit-toggle');
   const saveBtn = document.getElementById('save-btn');
-  const pptBtn  = document.getElementById('ppt-btn');
-
   // Encontrar botão PAT especificamente (é o 4º sidebar-pat-btn)
   const allSidebarBtns = document.querySelectorAll('.sidebar-pat-btn');
   const patBtn = [...allSidebarBtns].find(b => b.textContent.includes('Plano de Trabalho'));
@@ -10528,7 +10524,6 @@ function _applyPermissionsCore() {
       banner.classList.remove('show');
       if(editBtn) editBtn.style.display = '';
       if(saveBtn) saveBtn.style.display = '';
-      if(pptBtn)  pptBtn.style.display  = '';
       if(patBtn)  patBtn.style.display  = '';
       const newPopBtn = document.getElementById('new-pop-btn');
       if(newPopBtn) newPopBtn.style.display = '';
@@ -10537,7 +10532,6 @@ function _applyPermissionsCore() {
       banner.classList.remove('show');
       if(editBtn) editBtn.style.display = 'none';
       if(saveBtn) saveBtn.style.display = 'none';
-      if(pptBtn)  pptBtn.style.display  = 'none';
       if(patBtn)  patBtn.style.display  = 'none';
       if(editMode) toggleEditMode();
       if(document.getElementById('pat-module')?.classList.contains('active')) {
@@ -11497,17 +11491,29 @@ function aiErrMsg(status, body) {
   return 'Erro da IA ' + status + ': ' + body.slice(0,150);
 }
 
+async function _resolveFreshAccessToken() {
+  // Always prefer the session token returned by Supabase; it may be auto-refreshed.
+  if(supaClient?.auth?.getSession) {
+    try {
+      const { data: { session } } = await supaClient.auth.getSession();
+      if(session?.access_token) {
+        currentAccessToken = session.access_token;
+        return session.access_token;
+      }
+    } catch(e) {
+      console.warn('[IA] getSession falhou:', e?.message || e);
+    }
+  }
+  return currentAccessToken || null;
+}
+
 // Todas as chamadas da IA passam pelo proxy seguro no Supabase.
 // O token de acesso do usuário é usado para autorização no backend.
 async function callGeminiProxy(prompt, image = null) {
   if((_gpGet().geminiEnabled ?? true) === false)
     throw new Error('Integração com IA desabilitada. Reative em: EPP → Parâmetros Globais → Inteligência Artificial.');
 
-  let token = currentAccessToken;
-  if(!token && supaClient?.auth?.getSession) {
-    const { data: { session } } = await supaClient.auth.getSession();
-    token = session?.access_token || null;
-  }
+  let token = await _resolveFreshAccessToken();
   if(!token) {
     throw new Error('Sessão expirada. Faça login novamente para usar a IA.');
   }
@@ -11515,17 +11521,36 @@ async function callGeminiProxy(prompt, image = null) {
   const body = { prompt };
   if(image) body.image = image;  // { data: base64, mimeType }
 
-  const resp = await fetch(COPILOT_PROXY_URL, {
+  const doProxyCall = (accessToken) => fetch(COPILOT_PROXY_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'apikey': SUPA_KEY,
-      'Authorization': 'Bearer ' + token,
+      'Authorization': 'Bearer ' + accessToken,
     },
     body: JSON.stringify(body)
   });
 
+  let resp = await doProxyCall(token);
+
+  // If token expired mid-session, refresh once and retry transparently.
+  if(resp.status === 401 && supaClient?.auth?.refreshSession) {
+    try {
+      const { data: refreshed, error: refreshErr } = await supaClient.auth.refreshSession();
+      if(!refreshErr && refreshed?.session?.access_token) {
+        token = refreshed.session.access_token;
+        currentAccessToken = token;
+        resp = await doProxyCall(token);
+      }
+    } catch(e) {
+      console.warn('[IA] refreshSession falhou:', e?.message || e);
+    }
+  }
+
   if(!resp.ok) {
+    if(resp.status === 401) {
+      throw new Error('Sessão expirada. Faça login novamente para usar a IA.');
+    }
     const e = await resp.text();
     throw new Error(aiErrMsg(resp.status, e));
   }
@@ -12376,9 +12401,8 @@ document.addEventListener('keydown', e => {
 
 // ═══ EXPORT PPTX ══════════════════════════════════════════════════════════
 async function exportPptx() {
-  const btn = document.getElementById('ppt-btn');
-  btn.textContent = '⏳ Gerando...';
-  btn.disabled = true;
+  const btn = document.getElementById('pop-relatar-btn');
+  if(btn) { btn.textContent = '⏳ Gerando...'; btn.disabled = true; }
   try {
     const p = popPrefix(currentPop);
     await buildPptx(DATA[p], p);
@@ -12386,8 +12410,7 @@ async function exportPptx() {
     console.error(e);
     showToast('Erro ao gerar PPT: ' + e.message, 'warn');
   }
-  btn.textContent = '📊 Exportar PPT';
-  btn.disabled = false;
+  if(btn) { btn.textContent = '📊 Relatar POP'; btn.disabled = false; }
 }
 
 // ── Helper compartilhado: carrega o logo CAGE como base64 (com cache e fallback) ──
