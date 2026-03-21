@@ -297,7 +297,9 @@ serve(async (req: Request) => {
       lastErrorCode = extractProviderErrorCode(data);
       const msg = extractProviderErrorMessage(data).toLowerCase();
       const isNoAccess = lastErrorCode === 'no_access' || msg.includes('no access to model');
-      if ((resp.status === 403 && isNoAccess) || resp.status === 404) {
+      const isOverloaded = resp.status === 503 || resp.status === 429 ||
+        msg.includes('overloaded') || msg.includes('high demand') || msg.includes('capacity');
+      if ((resp.status === 403 && isNoAccess) || resp.status === 404 || isOverloaded) {
         continue;
       }
 
