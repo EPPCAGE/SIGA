@@ -9,8 +9,10 @@ const DATA_FILE = process.env.SIGA_DATA_FILE
   ? path.resolve(process.env.SIGA_DATA_FILE)
   : path.resolve(__dirname, '..', 'backups', 'local-data.json');
 
+const ALLOWED_ORIGIN = process.env.SIGA_ALLOWED_ORIGIN || 'http://localhost:8080';
+
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type'
 };

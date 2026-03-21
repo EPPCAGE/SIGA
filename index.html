@@ -15,7 +15,7 @@
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.4/Sortable.min.js"></script>
-<script src="https://unpkg.com/bpmn-js@17/dist/bpmn-modeler.development.js"></script>
+<script src="https://unpkg.com/bpmn-js@17/dist/bpmn-modeler.production.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17/dist/assets/diagram-js.css">
 <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17/dist/assets/bpmn-js.css">
 <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17/dist/assets/bpmn-font/css/bpmn.css">
@@ -10588,7 +10588,7 @@ function hideAllModules() {
   document.body.classList.remove('cockpit-active'); // remove proteção CSS quando sai do cockpit
 }
 
-const ADMIN_EMAIL = 'f.ctourinho@gmail.com';
+// ADMIN_EMAIL removed — use isAdmin flag (set by checkEditorPermission from public-config.js)
 
 async function checkEditorPermission() {
   currentUserEmail = currentUser?.email || 'local@admin';
@@ -10684,7 +10684,7 @@ let _savedAdminState = null;
 function applyPermissions() {
   // Show/hide the "Simular Visualizador" button only for real admins
   const vBtn = document.getElementById('viewer-preview-btn');
-  if(vBtn) vBtn.style.display = (currentUserEmail === ADMIN_EMAIL && !_viewerPreviewActive) ? '' : 'none';
+  if(vBtn) vBtn.style.display = (isAdmin && !_viewerPreviewActive) ? '' : 'none';
   _applyPermissionsCore();
 }
 
