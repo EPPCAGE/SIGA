@@ -5786,7 +5786,7 @@ function renderRoles(p) {
   function collectFlowActions(actions, out) {
     (actions || []).forEach(a => {
       if(!a) return;
-      const obj = normalizeActionObj(a);
+      const obj = actionObj(a);
       if(obj.type !== 'observacao') out.push(obj);
       (obj.branches || []).forEach(b => collectFlowActions(b?.actions || [], out));
     });
