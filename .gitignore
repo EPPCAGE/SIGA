@@ -1,4 +1,7 @@
 node_modules/
+.claude/
+coverage/
+junit.xml
 
 # Dados locais e backups — não versionar (podem conter dados reais)
 data/local-data.json
