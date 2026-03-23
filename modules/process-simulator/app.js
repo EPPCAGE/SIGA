@@ -849,15 +849,19 @@ function renderSetupLaneProfiles() {
 function syncSetupInputsToMain() {
   const setupPath = $('setupHappyPath');
   const setupLead = $('setupLeadTime');
-  if (setupPath && $('happyPath')) $('happyPath').value = setupPath.value;
-  if (setupLead && $('leadTimeInformed')) $('leadTimeInformed').value = setupLead.value;
+  const setupTPE  = $('setupProcessingTime');
+  if (setupPath && $('happyPath'))              $('happyPath').value              = setupPath.value;
+  if (setupLead && $('leadTimeInformed'))       $('leadTimeInformed').value       = setupLead.value;
+  if (setupTPE  && $('processingTimeInformed')) $('processingTimeInformed').value = setupTPE.value;
 }
 
 function syncMainInputsToSetup() {
   const setupPath = $('setupHappyPath');
   const setupLead = $('setupLeadTime');
-  if (setupPath && $('happyPath')) setupPath.value = $('happyPath').value;
-  if (setupLead && $('leadTimeInformed')) setupLead.value = $('leadTimeInformed').value;
+  const setupTPE  = $('setupProcessingTime');
+  if (setupPath && $('happyPath'))              setupPath.value = $('happyPath').value;
+  if (setupLead && $('leadTimeInformed'))       setupLead.value = $('leadTimeInformed').value;
+  if (setupTPE  && $('processingTimeInformed')) setupTPE.value  = $('processingTimeInformed').value;
 }
 
 function isHandoffReadyLocal() {
@@ -1612,6 +1616,8 @@ function revealDashboard() {
   const section = $('dashboardSection');
   if (!section) return;
   section.classList.remove('hidden');
+  // Garante que o dashboard usa o TER das partículas animadas (_animatedTer)
+  if (graph) updateDashboard();
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -1634,6 +1640,17 @@ function parseLeadTimeInformedRequired() {
   const unit = String($('tpUnit')?.value || 'min');
   if (unit === 'h') return val * 60;
   if (unit === 'dias') return val * 60 * 8; // 1 dia util = 8h
+  return val; // minutos
+}
+
+function parseProcessingTimeInformed() {
+  const raw = String($('processingTimeInformed')?.value || '').trim();
+  if (!raw) return null;
+  const val = Number(raw);
+  if (!Number.isFinite(val) || val <= 0) return null;
+  const unit = String($('tpeUnit')?.value || 'min');
+  if (unit === 'h') return val * 60;
+  if (unit === 'dias') return val * 60 * 8;
   return val; // minutos
 }
 
@@ -1889,37 +1906,79 @@ function renderExecutiveKpis(metrics, base) {
   const hasAuto = Number.isFinite(metrics.topAuto);
   const hasInformed = Number.isFinite(metrics.leadTimeInformed);
 
-  // Conversao K e Gaveta
-  const kLine = metrics.kFactor !== null
-    ? `<div class="rc-kfactor">Conversão: 1 UT = ${metrics.kFactor.toFixed(2)} min reais</div>`
-    : '';
-  const gavetaLine = metrics.tempoGaveta !== null
-    ? `<div class="rc-gaveta ${metrics.tempoGaveta > 0 ? 'rc-gaveta-warn' : ''}">Tempo de Gaveta (fila/espera): ${_fmtMin(metrics.tempoGaveta)}</div>`
+  // Quando T.P. está preenchido, converte todos os tempos para minutos reais via kFactor
+  const hasK = metrics.kFactor !== null;
+  const fmtK  = (ut) => hasK ? _fmtMin(ut * metrics.kFactor) : _fmtUT(ut);
+  const subSuffix = hasK ? ' · tempo real' : '';
+
+  // Linha de conversão K
+  const kLine = hasK
+    ? `<div class="rc-kfactor">Conversão: 1 UT = ${metrics.kFactor.toFixed(2)} min reais — T.O.P., T.E.R. e T.O.P.Auto exibidos em tempo real</div>`
     : '';
 
-  // Card T.P. so aparece se informado
+  // Card T.P. só aparece se informado
   const tpCard = hasInformed
-    ? _resultCard('💬', 'T.P. — Tempo de Percepção', _fmtMin(metrics.leadTimeInformed), 'declarado pelo executor', 'O tempo de calendário (Lead Time). Inclui o tempo de gaveta — filas e esperas externas.', 'É o que o cidadão ou a empresa sente na ponta. O tempo total de espera.')
+    ? _resultCard('💬', 'T.P. — Tempo de Percepção', _fmtMin(metrics.leadTimeInformed), 'lead time total · declarado pelo executor', 'O tempo de calendário (Lead Time). É o que o cidadão sente na ponta — do insumo ao produto final, incluindo filas e gavetas.', 'Informe também o T.P.E. para calcular o Tempo de Gaveta.')
     : '';
 
-  // Card automacao
-  const autoCard = hasAuto
-    ? _resultCard('⚙️', 'T.O.P. Auto', _fmtUT(metrics.topAuto), 'caminho feliz com automações', 'T.O.P. projetado após confirmação das automações marcadas no cenário To-Be.', `Ganho potencial: ${(metrics.top > 0 ? ((metrics.top - metrics.topAuto) / metrics.top * 100) : 0).toFixed(1)}% de redução no T.O.P.`, 'rc-auto')
+  // Card T.P.E. só aparece se informado
+  const hasTPE = Number.isFinite(metrics.processingTimeInformed) && metrics.processingTimeInformed > 0;
+  const tpeCard = hasTPE
+    ? _resultCard('⚙', 'T.P.E. — Tempo de Processamento Estimado', _fmtMin(metrics.processingTimeInformed), 'sem filas/gaveta · declarado pelo executor', 'Tempo estimado para executar o processo sem tempos de fila ou espera passiva. Base para o cálculo do Tempo de Gaveta.', 'T.P.E. < T.P. — a diferença é o tempo desperdiçado em fila.')
     : '';
+
+  // Card Tempo de Gaveta = T.P. - T.P.E.
+  const hasGaveta = metrics.tempoGaveta !== null;
+  const gavetaPct = hasGaveta && hasInformed && metrics.leadTimeInformed > 0
+    ? ((metrics.tempoGaveta / metrics.leadTimeInformed) * 100).toFixed(1)
+    : null;
+  const gavetaCard = hasGaveta
+    ? _resultCard(
+        '🕰️',
+        'T.Gaveta — Tempo de Fila / Espera Passiva',
+        _fmtMin(metrics.tempoGaveta),
+        `${gavetaPct !== null ? gavetaPct + '% do T.P.' : ''} · T.P. − T.P.E.`,
+        'Tempo em que o processo fica parado na fila, gaveta ou aguardando decisão — sem nenhuma execução ativa.',
+        metrics.tempoGaveta > 0
+          ? 'Foco de gestão: reduzir o tempo de gaveta é o maior alavancador de eficiência operacional.'
+          : 'Processo sem tempo de gaveta identificado.',
+        metrics.tempoGaveta > 0 ? 'rc-gaveta-warn' : ''
+      )
+    : '';
+
+  // Card automacao (valor convertido quando kFactor disponível)
+  const autoCard = hasAuto
+    ? _resultCard('⚙️', 'T.O.P. Auto', topAutoDisp, 'caminho feliz com automações' + subSuffix, 'T.O.P. projetado após confirmação das automações marcadas no cenário To-Be.', `Ganho potencial: ${(metrics.top > 0 ? ((metrics.top - metrics.topAuto) / metrics.top * 100) : 0).toFixed(1)}% de redução no T.O.P.`, 'rc-auto')
+    : '';
+
+  // Linha ao vivo — converte se kFactor disponível
+  const liveUT = Number(liveSimulationStatus.avgLeadTime || 0);
+  const liveTerDisp = liveUT > 0
+    ? (hasK ? _fmtMin(liveUT * metrics.kFactor) : `${liveUT.toFixed(1)} UT`)
+    : '—';
+  const liveLineK = `<div class="mblock-live">
+    Bolinhas finalizadas: <strong id="liveTokensFinished">${liveSimulationStatus.finished}/${liveSimulationStatus.total}</strong> &nbsp;|
+    T.E.R. médio ao vivo: <strong id="liveLeadAvg">${liveTerDisp}</strong>
+  </div>`;
+
+  // Exibe "—" quando top = 0 (caminho feliz sem tarefas ou inválido)
+  const topDisp = metrics.top > 0 ? fmtK(metrics.top) : '—';
+  const topAutoDisp = metrics.topAuto > 0 ? fmtK(metrics.topAuto) : '—';
 
   box.className = 'kpi kpi-executive';
   box.innerHTML = `
     <div class="results-grid">
-      ${_resultCard('⚡', 'T.O.P. — Tempo Ótimo de Processamento', _fmtUT(metrics.top), 'caminho feliz, sem atritos', 'A régua de ouro da eficiência. Representa o tempo estritamente necessário para a execução das tarefas, removendo todas as burocracias, esperas e erros.', 'Se este processo fosse 100% fluido e sem interrupções, este seria o esforço real.')}
-      ${_resultCard('📊', 'T.E.R. — Tempo de Execução Realista', _fmtUT(metrics.ter), 'média das 100 partículas', 'O termômetro da realidade. É a média do tempo gasto pelas 100 partículas, contabilizando penalidades de handoffs, gateways e a probabilidade de retrabalho (loops).', 'Este é o custo atual do desenho do processo considerando o atrito administrativo.')}
+      ${_resultCard('⚡', 'T.O.P. — Tempo Ótimo de Processamento', topDisp, 'caminho feliz, sem atritos' + subSuffix, 'A régua de ouro da eficiência. Representa o tempo estritamente necessário para a execução das tarefas, removendo todas as burocracias, esperas e erros.', 'Se este processo fosse 100% fluido e sem interrupções, este seria o esforço real.')}
+      ${_resultCard('📊', 'T.E.R. — Tempo de Execução Realista', fmtK(metrics.ter), 'média das 100 partículas' + subSuffix, 'O termômetro da realidade. É a média do tempo gasto pelas 100 partículas, contabilizando penalidades de handoffs, gateways e a probabilidade de retrabalho (loops).', 'Este é o custo atual do desenho do processo considerando o atrito administrativo.')}
       ${tpCard}
+      ${tpeCard}
+      ${gavetaCard}
       ${_ipCard(metrics.ipRealVsIdeal)}
       ${_resultCard('🔀', 'Complexidade', String(metrics.complexidade), 'caminhos possíveis no processo', 'Quantidade de trajetos distintos que uma partícula pode percorrer do início ao fim, considerando todos os gateways e eventos de fim.', 'Quanto maior, mais variável é o comportamento do processo em campo.')}
       ${autoCard}
     </div>
     ${kLine}
-    ${gavetaLine}
-    ${liveLine}`;
+    ${liveLineK}`;
 }
 
 function refreshLiveSimulationStatus(tokens) {
@@ -2131,28 +2190,33 @@ function renderAutomaticInterpretation(metrics, base) {
     p3 = 'Todas as tarefas já estão automatizadas ou não há candidatos identificados para automação no cenário atual.';
   }
 
-  // Paragrafo 4: Analise de fila/gaveta (so se T.P. informado)
+  // Paragrafo 4: Analise de fila/gaveta (só se T.P. e T.P.E. informados)
   let p4 = '';
-  if (metrics.kFactor !== null && metrics.tempoGaveta !== null) {
-    const tp = Number(metrics.leadTimeInformed);
+  if (metrics.tempoGaveta !== null) {
+    const tp     = Number(metrics.leadTimeInformed);
+    const tpe    = Number(metrics.processingTimeInformed);
     const gaveta = Number(metrics.tempoGaveta);
     const gavetaPct = tp > 0 ? ((gaveta / tp) * 100).toFixed(1) : '0';
     const gavetaFmt = _fmtMin(gaveta);
-    p4 = `A diferença entre o T.E.R. (Simulado) e o T.P. (Percebido) sugere que <strong>${gavetaPct}%</strong> do tempo de vida do processo (<strong>${gavetaFmt}</strong>) é gasto em espera passiva (fila/gaveta), e não em execução ativa. O foco da gestão deve ser a redução do tempo de gaveta.`;
+    p4 = `O executor informou T.P. de <strong>${_fmtMin(tp)}</strong> e T.P.E. de <strong>${_fmtMin(tpe)}</strong>. Isso revela que <strong>${gavetaPct}%</strong> do tempo total (<strong>${gavetaFmt}</strong>) é gasto em espera passiva — filas, gavetas e aguardo de decisão — sem execução ativa. O foco da gestão deve ser a redução do Tempo de Gaveta.`;
+  } else if (Number.isFinite(metrics.leadTimeInformed)) {
+    p4 = 'T.P. informado. Informe também o <strong>T.P.E. (Tempo de Processamento Estimado)</strong> para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
   } else {
-    p4 = 'Informe o T.P. (Tempo de Percepção) para calcular o tempo de gaveta e medir o impacto das filas no processo.';
+    p4 = 'Informe o <strong>T.P.</strong> (Tempo de Percepção) e o <strong>T.P.E.</strong> (Tempo de Processamento Estimado) para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
   }
 
   const sStandard = semaphoreForPhillip('standard', ip);
   box.innerHTML = `
-    <div class="veredito-header">
-      <span class="semaforo ${sStandard.cls}">I.P.: ${sStandard.label}</span>
-    </div>
-    <div class="veredito-body">
-      <p class="veredito-p"><span class="veredito-num">1.</span> ${p1}</p>
-      <p class="veredito-p"><span class="veredito-num">2.</span> ${p2}</p>
-      <p class="veredito-p"><span class="veredito-num">3.</span> ${p3}</p>
-      <p class="veredito-p"><span class="veredito-num">4.</span> ${p4}</p>
+    <div class="veredito-box">
+      <div class="veredito-header">
+        <span class="semaforo ${sStandard.cls}">I.P.: ${sStandard.label}</span>
+      </div>
+      <div class="veredito-body">
+        <p class="veredito-p"><span class="veredito-num">1.</span><span>${p1}</span></p>
+        <p class="veredito-p"><span class="veredito-num">2.</span><span>${p2}</span></p>
+        <p class="veredito-p"><span class="veredito-num">3.</span><span>${p3}</span></p>
+        <p class="veredito-p"><span class="veredito-num">4.</span><span>${p4}</span></p>
+      </div>
     </div>`;
 }
 
@@ -2161,7 +2225,8 @@ function computeScenarioMetrics() {
 
   const base = calculateTEPAndIP(graph, 3500);
   const path = parseHappyPathRequired();
-  const leadTimeInformed = parseLeadTimeInformedRequired();
+  const leadTimeInformed      = parseLeadTimeInformedRequired();
+  const processingTimeInformed = parseProcessingTimeInformed();
 
   syncConfirmedAutoFromUi();
   const autoGraph = buildAutoScenarioGraph();
@@ -2170,13 +2235,23 @@ function computeScenarioMetrics() {
   // Usa o TER das 100 partículas animadas quando disponível,
   // assim o dashboard e o contador ao vivo mostram o mesmo número.
   const ter = (_animatedTer !== null && _animatedTer > 0) ? _animatedTer : base.tepReal;
-  const top = calculatePathTime(graph, path, true);      // T.O.P. = caminho feliz sem atrito
-  const topAuto = calculatePathTime(autoGraph, path, true);
   const terAuto = autoBase.tepReal;
 
-  if (top <= 0 || topAuto <= 0) {
-    throw new Error('Nao foi possivel calcular os cenarios ideais a partir do caminho feliz.');
-  }
+  // T.O.P. = caminho feliz sem atrito.
+  // Nunca lança exceção — falha no happy path mostra "—" no card sem derrubar os demais.
+  let top = 0;
+  try {
+    const t = calculatePathTime(graph, path, true);
+    if (t > 0) top = t;
+  } catch (_) { /* path inválido — top fica 0, card mostrará "—" */ }
+
+  // T.O.P. Auto = cenário com automações.
+  // Fallback para top quando não calculável.
+  let topAuto = top;
+  try {
+    const ta = calculatePathTime(autoGraph, path, true);
+    if (ta > 0) topAuto = ta;
+  } catch (_) { /* sem automações ou path inválido — usa top */ }
 
   // Conversao K: 1 UT = quantos minutos reais (usando T.P. como ancora)
   // K = T.P. (min) / T.E.R. (UT)
@@ -2184,10 +2259,12 @@ function computeScenarioMetrics() {
     ? leadTimeInformed / ter
     : null;
 
-  // Tempo de Gaveta = T.P. - (T.O.P. * K)  [tempo em fila/espera passiva]
-  const tempoGaveta = (kFactor !== null)
-    ? leadTimeInformed - (top * kFactor)
-    : null;
+  // Tempo de Gaveta = T.P. − T.P.E.  (fila + espera passiva)
+  // Só calculável quando ambos os campos estão preenchidos pelo executor
+  const tempoGaveta = (
+    Number.isFinite(leadTimeInformed) && leadTimeInformed > 0 &&
+    Number.isFinite(processingTimeInformed) && processingTimeInformed > 0
+  ) ? leadTimeInformed - processingTimeInformed : null;
 
   // Complexidade: numero de caminhos possiveis no processo
   const complexidade = calculateComplexity(graph);
@@ -2198,6 +2275,7 @@ function computeScenarioMetrics() {
     topAuto,
     terAuto,
     leadTimeInformed,
+    processingTimeInformed,
     kFactor,
     tempoGaveta,
     complexidade,
@@ -3188,7 +3266,7 @@ function animate(frameTimeMs = performance.now()) {
       t.speedFactor = 1;
     } else if (isLoopRepeatPass) {
       t.color = '#f39c12'; // Laranja: loop/retrabalho
-      t.speedFactor = 0.6;
+      t.speedFactor = 3.0; // Rápido: loop não deve atrasar o fim da simulação
     } else if (to?.type === 'timer') {
       t.color = '#f1c40f'; // Amarelo: semaoforo vermelho / evento timer (aguardando)
       t.speedFactor = 0.3; // Bem lento — simula a espera do timer
@@ -3235,6 +3313,8 @@ function animate(frameTimeMs = performance.now()) {
     refreshLiveSimulationStatus(window.__tokens);
     // Armazena o TER real das 100 partículas para o dashboard usar
     _animatedTer = liveSimulationStatus.avgLeadTime > 0 ? liveSimulationStatus.avgLeadTime : null;
+    // Re-renderiza o dashboard com o TER real (igual ao contador ao vivo)
+    updateDashboard();
     $('btnViewDashboard')?.classList.remove('hidden');
   }
 }
@@ -3887,9 +3967,15 @@ function wireEvents() {
   $('btnResetRules')?.addEventListener('click', () => { resetRulesToDefaults(); applyCalibration(); });
   $('btnSimulateRoi')?.addEventListener('click', runRoi);
 
-  // ── T.P.: recalcular automaticamente ao alterar o valor ou unidade ──
-  $('leadTimeInformed')?.addEventListener('change', () => { if (graph) updateDashboard(); });
-  $('tpUnit')?.addEventListener('change',           () => { if (graph) updateDashboard(); });
+  // ── T.P. e T.P.E.: recalcular automaticamente ao alterar valor ou unidade ──
+  $('leadTimeInformed')?.addEventListener('change',       () => { if (graph) updateDashboard(); });
+  $('tpUnit')?.addEventListener('change',                 () => { if (graph) updateDashboard(); });
+  $('processingTimeInformed')?.addEventListener('change', () => { if (graph) updateDashboard(); });
+  $('tpeUnit')?.addEventListener('change',                () => { if (graph) updateDashboard(); });
+  $('setupProcessingTime')?.addEventListener('change',    () => {
+    syncSetupInputsToMain();
+    if (graph) updateDashboard();
+  });
   $('btnReport')?.addEventListener('click', generateReport);
   const btnExtract = $('btnExtractVision');
   if (btnExtract) {

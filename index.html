@@ -941,13 +941,21 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    /* Verde Profundo em todos os módulos — sobrescreve inline styles */
+    border-top: 4px solid #1B3022 !important;
   }
-  .home-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.13); }
-  .home-card-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .home-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(27,48,34,.18); }
+  .home-card-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+    /* Fundo e ícone no verde profundo — sobrescreve inline styles */
+    background: #e3ede5 !important;
+    color: #1B3022 !important;
+  }
   .home-card-title { font-size: 15px; font-weight: 700; color: #1B3022; }
   .home-card-desc { font-size: 13px; color: #64748b; line-height: 1.5; flex: 1; }
   .home-card-footer { font-size: 12px; color: #94a3b8; font-weight: 500; margin-top: 4px; }
-  .home-card-editor-badge { color: #3b82f6; }
+  .home-card-editor-badge { color: #1B3022; font-weight: 600; }
   #home-stats > div { background: white; border-radius: 8px; padding: 7px 10px; box-shadow: 0 2px 6px rgba(0,0,0,.06); flex: 1 1 0; min-width: 0; }
 
 

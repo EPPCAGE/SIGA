@@ -68,7 +68,7 @@
         <summary>⏱ Tempo e Escala</summary>
         <div class="accordion-body">
           <label class="field">
-            <span>T.P. — Tempo de Percepção Real (opcional)</span>
+            <span>T.P. — Tempo de Percepção (opcional)</span>
             <div style="display:flex;gap:6px;">
               <input id="leadTimeInformed" type="number" min="0" step="0.1" placeholder="Ex: 240" style="flex:1;" />
               <select id="tpUnit" style="width:90px;">
@@ -77,7 +77,19 @@
                 <option value="dias">Dias</option>
               </select>
             </div>
-            <small>Base para calcular K (1 UT = X min) e Tempo de Gaveta.</small>
+            <small>Lead time total sentido pelo executor — do insumo ao produto final, incluindo filas e gavetas.</small>
+          </label>
+          <label class="field">
+            <span>T.P.E. — Tempo de Processamento Estimado (opcional)</span>
+            <div style="display:flex;gap:6px;">
+              <input id="processingTimeInformed" type="number" min="0" step="0.1" placeholder="Ex: 120" style="flex:1;" />
+              <select id="tpeUnit" style="width:90px;">
+                <option value="min">Minutos</option>
+                <option value="h">Horas</option>
+                <option value="dias">Dias</option>
+              </select>
+            </div>
+            <small>Tempo sem filas/gaveta, estimado pelo executor. <strong>T.Gaveta = T.P. − T.P.E.</strong></small>
           </label>
           <label>Velocidade da Simulação
             <input id="speed" type="range" min="0.5" max="10" value="1" step="0.1" />
@@ -276,8 +288,14 @@
           <input id="setupHappyPath" type="text" readonly placeholder="Caminho selecionado por cliques" />
         </div>
         <label class="field">
-          <span>Lead time informado pelo executor (min) - opcional</span>
+          <span>T.P. — Tempo de Percepção (min) — opcional</span>
           <input id="setupLeadTime" type="number" min="0" step="0.1" placeholder="Opcional" />
+          <small>Lead time total do processo (com filas/gaveta).</small>
+        </label>
+        <label class="field">
+          <span>T.P.E. — Tempo de Processamento Estimado (min) — opcional</span>
+          <input id="setupProcessingTime" type="number" min="0" step="0.1" placeholder="Opcional" />
+          <small>Tempo sem filas/gaveta. T.Gaveta = T.P. − T.P.E.</small>
         </label>
       </div>
 

@@ -1206,8 +1206,12 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   gap: 5px;
 }
 
-.result-card.rc-auto  { border-color: rgba(142, 68, 173, 0.5); background: rgba(142,68,173,0.08); }
-.result-card.rc-ip    { border-color: rgba(255,255,255,0.3); }
+.result-card.rc-auto       { border-color: rgba(142, 68, 173, 0.5); background: rgba(142,68,173,0.08); }
+.result-card.rc-ip         { border-color: rgba(255,255,255,0.3); }
+.result-card.rc-gaveta-warn {
+  border-color: rgba(243, 156, 18, 0.55);
+  background: rgba(243, 156, 18, 0.07);
+}
 
 .rc-icon  { font-size: 22px; }
 .rc-title { font-size: 11px; font-weight: 700; color: #9fb0c5; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -1273,9 +1277,13 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   padding: 20px 22px;
 }
 
-.veredito-header { margin-bottom: 14px; }
+.veredito-header {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+}
 
-.veredito-body { display: flex; flex-direction: column; gap: 12px; }
+.veredito-body { display: flex; flex-direction: column; gap: 14px; }
 
 .veredito-p {
   margin: 0;
@@ -1283,16 +1291,21 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   color: #0f1e36 !important;   /* texto escuro — fundo é branco */
   line-height: 1.7;
   display: flex;
+  align-items: flex-start;     /* número fica no topo mesmo com texto multilinhas */
   gap: 10px;
 }
 
-.veredito-p strong { color: #000000 !important; font-weight: 700; }
+.veredito-p > span:not(.veredito-num) { flex: 1; min-width: 0; }
+
+.veredito-p strong { color: #1a3a1a !important; font-weight: 700; }
 
 .veredito-num {
   font-weight: 700;
   color: #1a5c9e !important;   /* azul escuro legível no branco */
-  min-width: 20px;
+  min-width: 22px;
   flex-shrink: 0;
+  line-height: 1.7;            /* alinha ao baseline da primeira linha */
+  padding-top: 1px;
 }
 
 .veredito-parcial {
