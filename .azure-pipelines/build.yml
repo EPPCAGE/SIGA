@@ -1,0 +1,55 @@
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+      - dev
+      - feature/*
+
+pool:
+  name: "sefaz-self-hosted"
+
+variables:
+  NODE_VERSION: '20.x'
+
+steps:
+  - task: NodeTool@0
+    displayName: "Use Node.js $(NODE_VERSION)"
+    inputs:
+      versionSpec: "$(NODE_VERSION)"
+
+  - script: npm ci
+    displayName: "Install dependencies"
+
+  - script: npm run test
+    displayName: "Run unit tests"
+
+  - script: npm run test:coverage
+    displayName: "Run coverage"
+
+  - task: PublishTestResults@2
+    displayName: "Publish test results"
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: "**/junit.xml"
+      failTaskOnFailedTests: true
+    continueOnError: true
+
+  - task: PublishCodeCoverageResults@2
+    displayName: "Publish code coverage"
+    condition: succeededOrFailed()
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
+      reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
+    continueOnError: true
+
+  - script: npm audit --audit-level=high
+    displayName: "Security audit"
+    continueOnError: true
+
+  # TODO DETIC/SEFAZ: habilitar integração real do SonarQube neste pipeline.
+  - script: echo "SonarQube step pending DETIC project key and service connection"
+    displayName: "Static analysis placeholder"
