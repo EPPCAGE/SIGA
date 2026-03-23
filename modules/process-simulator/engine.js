@@ -1,11 +1,11 @@
 const RULES = {
-  firstManual: 10,
-  nextManual: 5,
-  automated: 1,
-  gatewayPenalty: 5,
+  firstManual: 20,
+  nextManual: 10,
+  automated: 0.5,
+  gatewayPenalty: 2.5,
   handoffSameSector: 10,
-  handoffDiffSector: 15,
-  handoffDiffOrg: 20,
+  handoffDiffSector: 20,
+  handoffDiffOrg: 40,
 };
 
 const LOOP_EXIT_PROB_AFTER_FIRST_PASS = 90;
@@ -140,6 +140,8 @@ function laneMetaOf(graph, node) {
 function nodeBaseTime(node, state, useIdeal) {
   if (!node) return 0;
   if (node.type === 'gateway') return useIdeal ? 0 : RULES.gatewayPenalty;
+  // Evento Timer: aguarda N UT definidas pelo usuario. Nao conta no T.O.P. (useIdeal).
+  if (node.type === 'timer') return useIdeal ? 0 : Number(node.timerUT || 0);
   if (node.type !== 'task') return 0;
   if (node.automated) return RULES.automated;
 
@@ -262,6 +264,7 @@ function runSinglePath(graph, opts = {}) {
     handoffs: new Map(),
     gateways: new Map(),
     loops: new Map(),
+    timers: new Map(),
   };
 
   const state = { manualCount: 0 };
@@ -276,6 +279,10 @@ function runSinglePath(graph, opts = {}) {
 
     if (current.type === 'gateway' && !useIdeal) {
       friction.gateways.set(current.id, (friction.gateways.get(current.id) || 0) + RULES.gatewayPenalty);
+    }
+    if (current.type === 'timer' && !useIdeal) {
+      const tUT = Number(current.timerUT || 0);
+      if (tUT > 0) friction.timers.set(current.id, (friction.timers.get(current.id) || 0) + tUT);
     }
 
     const out = outMap.get(current.id) || [];
@@ -293,7 +300,7 @@ function runSinglePath(graph, opts = {}) {
       friction.handoffs.set(key, (friction.handoffs.get(key) || 0) + hPenalty);
     }
 
-    // Loop rule: if revisits a node, account looped task time 2x for that path.
+    // Loop rule: ao revisitar uma tarefa, a pontuacao e somada como se fosse a primeira vez (dobra na pratica).
     const revisiting = visitedCounts.has(next.id);
     if (!useIdeal && revisiting && next.type === 'task') {
       const taskTime = next.automated ? RULES.automated : RULES.nextManual;
@@ -321,6 +328,7 @@ function mergeFriction(target, source) {
   for (const [k, v] of source.handoffs.entries()) target.handoffs.set(k, (target.handoffs.get(k) || 0) + v);
   for (const [k, v] of source.gateways.entries()) target.gateways.set(k, (target.gateways.get(k) || 0) + v);
   for (const [k, v] of source.loops.entries()) target.loops.set(k, (target.loops.get(k) || 0) + v);
+  for (const [k, v] of (source.timers || new Map()).entries()) target.timers.set(k, (target.timers.get(k) || 0) + v);
 }
 
 function edgeFor(graph, fromId, toId) {
@@ -353,7 +361,7 @@ export function calculatePathTime(graph, pathNodeIds, useIdeal = false) {
 
     total += handoffPenalty(graph, from, to, useIdeal);
 
-    // Regra de loop para caminho especificado: revisita de no conta 2x no trecho reexecutado.
+    // Regra de loop para caminho especificado: revisita pontua como primeira vez (dobra na pratica).
     if (!useIdeal && edge.isLoopReturn && to?.type === 'task') {
       total += to.automated ? RULES.automated : RULES.nextManual;
     }
@@ -406,6 +414,7 @@ export function calculateTEPAndIP(graph, runs = 3000) {
     handoffs: new Map(),
     gateways: new Map(),
     loops: new Map(),
+    timers: new Map(),
   };
 
   for (let i = 0; i < runs; i += 1) {
@@ -424,6 +433,7 @@ export function calculateTEPAndIP(graph, runs = 3000) {
   for (const [k, v] of aggFriction.handoffs.entries()) ranking.push({ type: 'handoff', key: k, total: v });
   for (const [k, v] of aggFriction.gateways.entries()) ranking.push({ type: 'gateway', key: k, total: v });
   for (const [k, v] of aggFriction.loops.entries()) ranking.push({ type: 'loop', key: k, total: v });
+  for (const [k, v] of aggFriction.timers.entries()) ranking.push({ type: 'timer', key: k, total: v });
   ranking.sort((a, b) => b.total - a.total);
 
   return {
@@ -466,6 +476,7 @@ export function normalizeGraph(raw) {
     node.org = node.org || '';
     node.lane = String(node.lane || node.executor || node.sector || node.id);
     node.automated = Boolean(node.automated);
+    if (node.type === 'timer') node.timerUT = Number(node.timerUT || 0);
   }
 
   for (const edge of g.edges) {
@@ -478,6 +489,39 @@ export function normalizeGraph(raw) {
   }
 
   return g;
+}
+
+export function calculateComplexity(graph) {
+  // Conta quantos caminhos possiveis existem do inicio ate qualquer fim.
+  // Arestas de loop (isLoopReturn) sao ignoradas para evitar contagem infinita.
+  const { nodeMap, outMap } = buildMaps(graph);
+  const start = (graph.nodes || []).find((n) => n.type === 'start');
+  if (!start) return 0;
+
+  const cleanOutMap = new Map();
+  for (const [id, edges] of outMap.entries()) {
+    cleanOutMap.set(id, (edges || []).filter((e) => !e.isLoopReturn));
+  }
+
+  const memo = new Map();
+  const inStack = new Set();
+
+  function countPaths(nodeId) {
+    if (memo.has(nodeId)) return memo.get(nodeId);
+    if (inStack.has(nodeId)) return 0;
+    const node = nodeMap.get(nodeId);
+    if (!node) { memo.set(nodeId, 0); return 0; }
+    if (node.type === 'end') { memo.set(nodeId, 1); return 1; }
+
+    inStack.add(nodeId);
+    const outs = cleanOutMap.get(nodeId) || [];
+    const total = outs.reduce((acc, e) => acc + countPaths(e.to), 0);
+    inStack.delete(nodeId);
+    memo.set(nodeId, Math.max(total, 0));
+    return memo.get(nodeId);
+  }
+
+  return countPaths(start.id);
 }
 
 export function gatewayNodes(graph) {

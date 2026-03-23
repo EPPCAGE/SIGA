@@ -12014,12 +12014,27 @@ function _simulatorInit(frame) {
       if(!msg || typeof msg !== 'object') return;
 
       if(msg.type === 'SIMULATOR_SAVE') {
-        const { graph, popKey } = msg.payload || {};
+        const { graph, popKey, linkedProcess, simResults } = msg.payload || {};
         if(!graph || !popKey) return;
         if(!DATA[popKey]) return;
         DATA[popKey].simulatorGraph = graph;
+        // Vincula processo da Arquitetura de Processos, se informado
+        if(linkedProcess) DATA[popKey].linkedProcess = linkedProcess;
+        // Salva o resumo das métricas de simulação
+        if(simResults)    DATA[popKey].simResults    = simResults;
         saveToCloud();
-        showToast('💾 Grafo do simulador salvo!', 'success');
+        const label = linkedProcess?.processo
+          ? `💾 Simulação salva — ${linkedProcess.processo}`
+          : '💾 Grafo do simulador salvo!';
+        showToast(label, 'success');
+      }
+
+      // ── Simulador solicita lista de processos da Arquitetura ──
+      if(msg.type === 'SIMULATOR_REQUEST_PROCESS_LIST') {
+        try {
+          const list = typeof arqGetData === 'function' ? arqGetData() : [];
+          ev.source?.postMessage({ type: 'SIGA_PROCESS_LIST', payload: { list } }, '*');
+        } catch(e2) { console.warn('[SIGA] arqGetData error:', e2); }
       }
     } catch(e) { console.warn('[SIGA] simulator message error:', e); }
   });
@@ -16601,19 +16616,17 @@ ${fluxoTexto}`;
           base64Bpmn   = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
           mimeTypeBpmn = blob.type || 'image/png';
         }
-        respText = await callGeminiProxy(prompt, { data: base64Bpmn, mimeType: mimeTypeBpmn });
+        respText = await callGeminiProxy(prompt, { data: base64Bpmn, mimeType: mimeTypeBpmn }, { maxTokens: 8192 });
       } catch(imgErr) {
         console.warn('[AI Analysis] Falha ao carregar imagem BPMN, prosseguindo sem ela:', imgErr);
-        respText = await callGeminiProxy(prompt);
+        respText = await callGeminiProxy(prompt, null, { maxTokens: 8192 });
       }
     } else {
-      respText = await callGeminiProxy(prompt);
+      respText = await callGeminiProxy(prompt, null, { maxTokens: 8192 });
     }
 
-    // Extrair JSON da resposta (pode vir com texto extra)
-    const jsonMatch = respText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Resposta da IA não continha JSON válido.');
-    const data = JSON.parse(jsonMatch[0]);
+    // Extrair JSON da resposta com reparo para respostas truncadas/parciais.
+    const data = parseAiJson(respText);
 
     const categorias = [
       { key: 'gargalos',        label: '🔴 Gargalos',                   cls: 'gargalos'       },
@@ -16891,10 +16904,8 @@ ${JSON.stringify(dadosParaIA, null, 2)}`;
 
   let aiData = {};
   try {
-    const respText = await callGeminiProxy(prompt);
-    const m = respText.match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('Resposta da IA não continha JSON válido.');
-    aiData = JSON.parse(m[0]);
+    const respText = await callGeminiProxy(prompt, null, { maxTokens: 12288 });
+    aiData = parseAiJson(respText);
   } catch (err) {
     output.innerHTML = `<div style="padding:20px;background:#fef2f2;border-radius:10px;color:#dc2626;font-size:13px;">
       <strong>Erro ao gerar relatório:</strong> ${err.message}

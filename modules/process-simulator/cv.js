@@ -248,6 +248,9 @@ function parseBpmnXml(doc) {
     parallelGateway: 'gateway',
     eventBasedGateway: 'gateway',
     complexGateway: 'gateway',
+    intermediateCatchEvent: 'timer_candidate',
+    intermediateThrowEvent: 'timer_candidate',
+    boundaryEvent: 'timer_candidate',
   };
 
   for (const el of elements) {
@@ -266,8 +269,20 @@ function parseBpmnXml(doc) {
       || ln === 'receiveTask'
       || ln === 'sendTask';
 
-    const mappedType = typeMap[ln] || (isTaskLike ? 'task' : '');
+    let mappedType = typeMap[ln] || (isTaskLike ? 'task' : '');
     if (!mappedType) continue;
+
+    // Resolver timer_candidate: e timer se tiver filho timerEventDefinition
+    if (mappedType === 'timer_candidate') {
+      const childNames = Array.from(el.querySelectorAll('*')).map((c) => localNameOf(c));
+      mappedType = childNames.includes('timerEventDefinition') ? 'timer' : 'task';
+    }
+
+    // startEvent com timerEventDefinition = timer de inicio (mantemos como start mas marcamos timer)
+    if (mappedType === 'start') {
+      const childNames = Array.from(el.querySelectorAll('*')).map((c) => localNameOf(c));
+      if (childNames.includes('timerEventDefinition')) mappedType = 'timer';
+    }
 
     const label = attrOf(el, ['name', 'Name']) || id;
     const automated = ln === 'serviceTask' || ln === 'scriptTask' || ln === 'businessRuleTask';
@@ -382,9 +397,24 @@ function parseXpdlXml(doc) {
     const label = attrOf(el, ['Name', 'name']) || id;
 
     let type = 'task';
-    if (Array.from(el.querySelectorAll('*')).some((c) => localNameOf(c) === 'Route')) type = 'gateway';
-    if (Array.from(el.querySelectorAll('*')).some((c) => localNameOf(c) === 'StartEvent')) type = 'start';
-    if (Array.from(el.querySelectorAll('*')).some((c) => localNameOf(c) === 'EndEvent')) type = 'end';
+    const allChildren = Array.from(el.querySelectorAll('*'));
+    if (allChildren.some((c) => localNameOf(c) === 'Route')) type = 'gateway';
+    if (allChildren.some((c) => localNameOf(c) === 'StartEvent')) type = 'start';
+    if (allChildren.some((c) => localNameOf(c) === 'EndEvent')) type = 'end';
+
+    // Detectar Evento Timer: IntermediateEvent com EventTypeCode/Trigger="Timer", ou filho TimerEventDetail
+    const isTimerEvent = allChildren.some((c) => {
+      const ln = localNameOf(c);
+      if (ln === 'TimerEventDetail' || ln === 'TriggerTimer') return true;
+      if (ln === 'IntermediateEvent') {
+        const code = attrOf(c, ['EventTypeCode', 'eventTypeCode', 'Trigger', 'trigger', 'Type', 'type']) || '';
+        if (/timer/i.test(code)) return true;
+        // filho TimerEventDetail dentro do IntermediateEvent
+        if (Array.from(c.querySelectorAll('*')).some((gc) => localNameOf(gc) === 'TimerEventDetail')) return true;
+      }
+      return false;
+    });
+    if (isTimerEvent) type = 'timer';
 
     const performerId = textOfFirstChildByLocalName(el, 'Performer');
     const laneRef = attrOf(el, ['Lane', 'LaneId', 'lane', 'laneId', 'Participant', 'participant']);

@@ -23,6 +23,7 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.2",
+    "mammoth": "^1.12.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

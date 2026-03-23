@@ -5,10 +5,12 @@ import {
   calculateTEPAndIP,
   calculatePathTime,
   simulate100Tokens,
+  calculateComplexity,
   gatewayNodes,
   outgoing,
   applyGatewayProbabilities,
   simulateRoi,
+  RULES,
 } from './engine.js';
 import { scanSuggestions, markAutomation, setLoopProbability } from './assistant.js';
 import { extractTopologyFromImage, extractTopologyFromSpreadsheetFile, extractTopologyFromWorkflowFile } from './cv.js';
@@ -39,8 +41,54 @@ let liveSimulationStatus = {
   avgLeadTime: 0,
 };
 
+// Processo vinculado (selecionado na Seção 0 do setup)
+let _linkedProcess = null; // { macroprocesso, processo, subprocesso, area, natureza }
+// Lista de processos recebida do pai SIGA via postMessage
+let _sigaProcessList = null;
+// Últimas métricas de simulação calculadas (para incluir no save)
+let _lastSimMetrics = null;
+
 const TOKEN_COUNT = 100;
 const TOKEN_LAUNCH_GAP_MS = 500;
+
+// TER calculado a partir das partículas animadas (100 runs).
+// Quando disponível, tem precedência sobre os 3500 do motor
+// para garantir que o contador ao vivo e o dashboard mostrem o mesmo valor.
+let _animatedTer = null;
+
+// Valores padrao dos pesos (espelho de RULES para reset)
+const RULES_DEFAULT = {
+  firstManual: 20,
+  nextManual: 10,
+  automated: 0.5,
+  gatewayPenalty: 2.5,
+  handoffSameSector: 10,
+  handoffDiffSector: 20,
+  handoffDiffOrg: 40,
+};
+
+function applyWeightsFromUI() {
+  const r = (id, fallback) => {
+    const v = Number($(`weight_${id}`)?.value);
+    return Number.isFinite(v) && v >= 0 ? v : fallback;
+  };
+  RULES.firstManual      = r('firstManual',      RULES_DEFAULT.firstManual);
+  RULES.nextManual       = r('nextManual',        RULES_DEFAULT.nextManual);
+  RULES.automated        = r('automated',         RULES_DEFAULT.automated);
+  RULES.gatewayPenalty   = r('gatewayPenalty',    RULES_DEFAULT.gatewayPenalty);
+  RULES.handoffSameSector = r('handoffSameSector', RULES_DEFAULT.handoffSameSector);
+  RULES.handoffDiffSector = r('handoffDiffSector', RULES_DEFAULT.handoffDiffSector);
+  RULES.handoffDiffOrg   = r('handoffDiffOrg',    RULES_DEFAULT.handoffDiffOrg);
+}
+
+function resetRulesToDefaults() {
+  Object.assign(RULES, RULES_DEFAULT);
+  const ids = Object.keys(RULES_DEFAULT);
+  for (const id of ids) {
+    const el = $(`weight_${id}`);
+    if (el) el.value = RULES_DEFAULT[id];
+  }
+}
 
 function cloneLocal(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -581,7 +629,7 @@ function handoffTypeOptions() {
     { v: '', t: 'Selecione' },
     { v: 'same_team', t: 'Mesma equipe' },
     { v: 'different_team', t: 'Outra equipe' },
-    { v: 'different_org', t: 'Outro orgao' },
+    { v: 'different_org', t: 'Outro órgão' },
   ];
 }
 
@@ -604,87 +652,55 @@ function renderHandoffWizard() {
   const box = $('handoffWizard');
   if (!box) return;
   if (!graph) {
-    box.textContent = 'Carregue um grafo para a IA reconhecer as raias.';
+    box.textContent = 'Carregue um grafo para detectar handoffs.';
     return;
   }
 
-  graph.handoffRules = graph.handoffRules || {};
-  graph.handoffActionRules = graph.handoffActionRules || {};
+  // Reaplica classificação automática com os dados atuais
+  autoApplyHandoffRulesFromLanes();
+
   const pairs = crossLaneTransitions();
-  const actionPairs = actionTransitionPairs();
 
-  const options = handoffTypeOptions();
-
-  const relations = pairs.map((p) => {
-    const current = graph.handoffRules?.[p.key] || '';
-    const opts = options
-      .map((o) => `<option value="${o.v}" ${o.v === current ? 'selected' : ''}>${o.t}</option>`)
-      .join('');
-    return `
-      <div class="handoff-rel-row">
-        <div><strong>${p.fromName}</strong> -> <strong>${p.toName}</strong></div>
-        <select data-handoff-key="${p.key}">${opts}</select>
-      </div>`;
-  }).join('');
-
-  const emptyMsg = pairs.length
-    ? ''
-    : '<div class="box" style="margin-top:8px;">Nao foram encontradas transicoes entre atores. Revise os atores na matriz de atividades para gerar handoffs automaticamente.</div>';
-
-  const actionPairOpts = ['<option value="">Selecione origem -> destino</option>']
-    .concat(actionPairs.map((p) => `<option value="${p.key}">${escapeHtml(p.fromLabel)} -> ${escapeHtml(p.toLabel)}</option>`))
-    .join('');
-
-  const actionRulesRows = Object.entries(graph.handoffActionRules || {}).map(([k, v]) => {
-    const [fromId, toId] = String(k).split('->');
-    const opts = options
-      .map((o) => `<option value="${o.v}" ${o.v === String(v || '') ? 'selected' : ''}>${o.t}</option>`)
-      .join('');
-    return `
-      <div class="handoff-rel-row" style="grid-template-columns:1.4fr 1fr auto;">
-        <div><strong>${escapeHtml(actionLabelById(fromId))}</strong> -> <strong>${escapeHtml(actionLabelById(toId))}</strong></div>
-        <select data-handoff-action-key="${escapeHtml(k)}">${opts}</select>
-        <button type="button" data-remove-action-handoff="${escapeHtml(k)}">Remover</button>
-      </div>`;
-  }).join('');
-
-  box.innerHTML = `
-    <div class="box" style="margin-bottom:8px;">As transicoes abaixo sao calculadas a partir dos atores definidos na matriz de atividades.</div>
-    ${emptyMsg}
-    ${relations}
-    <div class="box" style="margin-top:10px;">Handoff manual por acao (origem -> destino):</div>
-    <div class="handoff-rel-row" style="grid-template-columns:1.4fr 1fr auto;">
-      <select id="manualHandoffActionPair">${actionPairOpts}</select>
-      <select id="manualHandoffType">${options.map((o) => `<option value="${o.v}">${o.t}</option>`).join('')}</select>
-      <button id="addManualHandoffBtn" type="button">Adicionar</button>
-    </div>
-    ${actionRulesRows || '<div class="box">Nenhum handoff manual por acao cadastrado.</div>'}`;
-
-  const addBtn = $('addManualHandoffBtn');
-  if (addBtn) {
-    addBtn.onclick = () => {
-      const pair = String($('manualHandoffActionPair')?.value || '');
-      const type = String($('manualHandoffType')?.value || '');
-      if (!pair || !type) return;
-      graph.handoffActionRules = graph.handoffActionRules || {};
-      graph.handoffActionRules[pair] = type;
-      $('graphJson').value = JSON.stringify(graph, null, 2);
-      renderHandoffWizard();
-      renderSetupChecklist();
-    };
+  if (!pairs.length) {
+    box.innerHTML = '<div class="box" style="color:#2e7d4f;">✅ Nenhuma transição entre raias detectada. Não há handoffs neste processo.</div>';
+    return;
   }
 
-  box.querySelectorAll('[data-remove-action-handoff]').forEach((el) => {
-    el.addEventListener('click', () => {
-      const key = el.getAttribute('data-remove-action-handoff');
-      if (!key) return;
-      graph.handoffActionRules = graph.handoffActionRules || {};
-      delete graph.handoffActionRules[key];
-      $('graphJson').value = JSON.stringify(graph, null, 2);
-      renderHandoffWizard();
-      renderSetupChecklist();
-    });
+  const typeInfo = {
+    same_team:     { label: 'Mesma equipe',            penalty: '+10 UT', color: '#2e7d4f', bg: '#f0faf4' },
+    different_team:{ label: 'Outra equipe (mesmo órgão)', penalty: '+20 UT', color: '#8a6d3b', bg: '#fffbf0' },
+    different_org: { label: 'Outro órgão',             penalty: '+40 UT', color: '#8f3d3a', bg: '#fff5f5' },
+  };
+
+  // Verifica se todas as raias têm perfil preenchido
+  const missingProfiles = pairs.filter((p) => {
+    const fl = graph.lanes?.[p.fromLane] || {};
+    const tl = graph.lanes?.[p.toLane]   || {};
+    return !fl.team && !fl.org && !tl.team && !tl.org;
   });
+
+  const warning = missingProfiles.length
+    ? `<div class="box" style="background:#fffbf0;border-color:#d9a72a;color:#7a5c1e;margin-bottom:8px;">
+        ⚠ <strong>${missingProfiles.length} handoff(s)</strong> com perfil de raia incompleto na Seção 2.
+        Classificados como "Mesma equipe" por padrão. Complete Equipe e Órgão para maior precisão.
+       </div>`
+    : `<div class="box" style="background:#f0faf4;border-color:#2e7d4f;color:#1a5c38;margin-bottom:8px;">
+        ✅ Todos os handoffs classificados com base nos perfis das raias.
+       </div>`;
+
+  const rows = pairs.map((p) => {
+    const rule = graph.handoffRules?.[p.key] || 'same_team';
+    const info = typeInfo[rule] || typeInfo.same_team;
+    return `<div class="handoff-auto-row" style="background:${info.bg};">
+      <span class="haw-from">${escapeHtml(p.fromName)}</span>
+      <span class="haw-arrow">→</span>
+      <span class="haw-to">${escapeHtml(p.toName)}</span>
+      <span class="haw-badge" style="color:${info.color};border-color:${info.color}44;">${info.label}</span>
+      <span class="haw-penalty" style="color:${info.color};">${info.penalty}</span>
+    </div>`;
+  }).join('');
+
+  box.innerHTML = `${warning}${rows}`;
 }
 
 function syncActorAssignmentsFromWizard() {
@@ -720,6 +736,97 @@ function saveHandoffRulesFromWizard() {
   $('graphJson').value = JSON.stringify(graph, null, 2);
 }
 
+// Classifica automaticamente o tipo de handoff entre duas raias
+// baseado nos perfis (equipe/órgão) armazenados em graph.lanes
+function autoClassifyHandoff(fromLane, toLane) {
+  const fm = graph.lanes?.[fromLane] || {};
+  const tm = graph.lanes?.[toLane] || {};
+  const fo = String(fm.org || '').trim().toLowerCase();
+  const to_ = String(tm.org || '').trim().toLowerCase();
+  const ft = String(fm.team || fromLane).trim().toLowerCase();
+  const tt = String(tm.team || toLane).trim().toLowerCase();
+  if (fo && to_ && fo !== to_) return 'different_org';
+  if (ft !== tt) return 'different_team';
+  return 'same_team';
+}
+
+// Aplica automaticamente as regras de handoff para todos os pares de raias
+function autoApplyHandoffRulesFromLanes() {
+  if (!graph) return;
+  graph.handoffRules = graph.handoffRules || {};
+  const pairs = crossLaneTransitions();
+  for (const p of pairs) {
+    graph.handoffRules[p.key] = autoClassifyHandoff(p.fromLane, p.toLane);
+  }
+}
+
+// Salva atores + perfis de raia da Seção 2 para o graph
+function saveSetupTaskMatrixFromForm() {
+  if (!graph) return;
+  const nodeMap = new Map((graph.nodes || []).map((n) => [n.id, n]));
+  // Salva atores (data-task-actor)
+  document.querySelectorAll('input[data-task-actor]').forEach((el) => {
+    const nodeId = el.getAttribute('data-task-actor');
+    const actor = String(el.value || '').trim();
+    const node = nodeMap.get(nodeId);
+    if (!node || node.type !== 'task') return;
+    node.executor = actor;
+    node.lane = actor;
+  });
+  // Salva perfis de raia (data-lane-profile)
+  graph.lanes = graph.lanes || {};
+  document.querySelectorAll('[data-lane-profile]').forEach((row) => {
+    const lane = row.getAttribute('data-lane-profile');
+    const team = String(row.querySelector('[data-lp-team]')?.value || '').trim();
+    const org  = String(row.querySelector('[data-lp-org]')?.value  || '').trim();
+    graph.lanes[lane] = { ...(graph.lanes[lane] || {}), team, org };
+  });
+  autoApplyHandoffRulesFromLanes();
+  $('graphJson').value = JSON.stringify(graph, null, 2);
+}
+
+// Renderiza apenas a sub-seção "Perfil das Raias" (não reconstrói o task matrix)
+function renderSetupLaneProfiles() {
+  const box = $('setupLaneProfiles');
+  if (!box || !graph) return;
+  const lanes = uniqueLanes();
+  if (!lanes.length) {
+    box.innerHTML = '<div style="font-size:12px;color:#5a7a9a;">Nenhuma raia encontrada. Defina os atores acima.</div>';
+    return;
+  }
+  const focused = document.activeElement;
+  const focusedLane = focused?.closest('[data-lane-profile]')?.getAttribute('data-lane-profile');
+  const focusedField = focused?.getAttribute('data-lp-team') !== null ? 'team'
+    : focused?.getAttribute('data-lp-org') !== null ? 'org' : null;
+
+  const rows = lanes.map((lane) => {
+    const profile = graph.lanes?.[lane] || {};
+    const displayName = detectLaneName(lane);
+    return `<div class="lp-row" data-lane-profile="${escapeHtml(lane)}">
+      <span class="lp-raia" title="${escapeHtml(lane)}">${escapeHtml(displayName)}</span>
+      <input type="text" data-lp-team placeholder="Equipe (ex: Protocolo)" value="${escapeHtml(profile.team || '')}" />
+      <input type="text" data-lp-org  placeholder="Órgão (ex: SEFAZ)"    value="${escapeHtml(profile.org  || '')}" />
+    </div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div class="lp-head">
+      <span>Raia / Ator</span>
+      <span>Equipe</span>
+      <span>Órgão / Unidade</span>
+    </div>
+    ${rows}`;
+
+  // Restaura foco se estava num campo desta seção
+  if (focusedLane && focusedField) {
+    const newRow = box.querySelector(`[data-lane-profile="${CSS.escape(focusedLane)}"]`);
+    if (newRow) {
+      const attr = focusedField === 'team' ? '[data-lp-team]' : '[data-lp-org]';
+      newRow.querySelector(attr)?.focus();
+    }
+  }
+}
+
 function syncSetupInputsToMain() {
   const setupPath = $('setupHappyPath');
   const setupLead = $('setupLeadTime');
@@ -735,27 +842,17 @@ function syncMainInputsToSetup() {
 }
 
 function isHandoffReadyLocal() {
+  if (!graph) return false;
   const transitions = crossLaneTransitions();
-  const hasManualActionRules = Object.keys(graph?.handoffActionRules || {}).length > 0;
-  if (hasManualActionRules) return true;
-  if (!transitions.length) return true;
+  if (!transitions.length) return true; // Sem transições = sem handoffs = OK
 
-  let rulesReady = true;
+  // Auto-aplica se ainda não aplicado
+  autoApplyHandoffRulesFromLanes();
+
+  // Verifica se todas as transições têm uma regra definida
   for (const t of transitions) {
     const v = String(graph?.handoffRules?.[t.key] || '');
-    if (!['same_team', 'different_team', 'different_org'].includes(v)) {
-      rulesReady = false;
-      break;
-    }
-  }
-  if (rulesReady) return true;
-
-  const lanes = uniqueLanes();
-  for (const lane of lanes) {
-    const p = graph?.lanes?.[lane] || {};
-    if (!String(p.sector || '').trim() || !String(p.org || '').trim()) {
-      return false;
-    }
+    if (!['same_team', 'different_team', 'different_org'].includes(v)) return false;
   }
   return true;
 }
@@ -795,10 +892,170 @@ function collectSetupStatus() {
   return status;
 }
 
+// ─── Seção 0: Escolha do Processo (Arquitetura de Processos) ──────────────────
+
+function requestProcessListFromSiga() {
+  try {
+    window.parent.postMessage({ type: 'SIMULATOR_REQUEST_PROCESS_LIST' }, '*');
+  } catch (e) { /* standalone, sem pai */ }
+}
+
+// Cache das linhas filtradas para o handler de clique (evita closure stale)
+let _sec0Filtered = [];
+let _sidebarGwInputHandler = null;
+let _sidebarGwClickHandler = null;
+let _sidebarGwVersion = '';
+
+// Atualiza APENAS o <tbody> e o contador — nunca toca no <input>, preservando o foco
+function _sec0UpdateTable() {
+  const list = _sigaProcessList || [];
+  const search = ($('sec0Search')?.value || '').toLowerCase().trim();
+
+  _sec0Filtered = list.filter((p) => {
+    if (!search) return true;
+    const hay = `${p.macroprocesso || ''} ${p.processo || ''} ${p.subprocesso || ''} ${p.area || ''}`.toLowerCase();
+    return hay.includes(search);
+  });
+
+  const tbody = $('sec0Tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = _sec0Filtered.slice(0, 100).map((p, i) => {
+    const isLinked = _linkedProcess
+      && _linkedProcess.processo      === p.processo
+      && _linkedProcess.macroprocesso === p.macroprocesso
+      && (_linkedProcess.subprocesso || '') === (p.subprocesso || '');
+    return `<tr class="sec0-row${isLinked ? ' sec0-row-selected' : ''}" data-sec0-idx="${i}">
+      <td class="sec0-td-macro">${escapeHtml(p.macroprocesso || '')}</td>
+      <td class="sec0-td-proc"><strong>${escapeHtml(p.processo || '')}</strong>${p.subprocesso ? `<br><small class="sec0-sub">${escapeHtml(p.subprocesso)}</small>` : ''}</td>
+      <td class="sec0-td-nat">${escapeHtml(p.natureza || '')}</td>
+      <td class="sec0-td-area">${escapeHtml(p.area || '')}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" class="sec0-empty">Nenhum processo encontrado.</td></tr>';
+
+  const counter = $('sec0Counter');
+  if (counter) {
+    counter.textContent = search
+      ? `${_sec0Filtered.length} resultado(s) para "${search}"`
+      : `${list.length} processo(s)`;
+  }
+}
+
+// Reconstrói a ESTRUTURA (badge + campo de busca + tabela shell).
+// Chamado apenas quando os dados mudam (_sigaProcessList ou _linkedProcess).
+function renderSetupSection0() {
+  const box = $('setupSection0');
+  if (!box) return;
+
+  const list = _sigaProcessList || [];
+
+  // ── Modo sem lista (standalone) ──────────────────────────────────
+  if (!list.length) {
+    // Só reconstrói se ainda não estiver no modo manual (evita perder foco)
+    if (!box.querySelector('#linkedProcessName')) {
+      box.innerHTML = `
+        <div id="sec0Badge"></div>
+        <div class="sec0-manual-form">
+          <strong style="color:#0d2236;">Identifique o processo sendo simulado:</strong>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <input id="linkedProcessName"   type="text" placeholder="Nome do processo"
+              style="flex:2;min-width:160px;" value="${escapeHtml(_linkedProcess?.processo||'')}" />
+            <input id="linkedMacroName"     type="text" placeholder="Macroprocesso"
+              style="flex:1;min-width:120px;" value="${escapeHtml(_linkedProcess?.macroprocesso||'')}" />
+            <input id="linkedProcessArea"   type="text" placeholder="Área/Setor"
+              style="flex:1;min-width:120px;" value="${escapeHtml(_linkedProcess?.area||'')}" />
+            <button id="btnLinkProcessManual" type="button">Vincular</button>
+          </div>
+          <p style="font-size:12px;color:#3d546d;margin:8px 0 0;">
+            Lista de processos não disponível (simulador fora do SIGA). Preencha manualmente.
+          </p>
+        </div>`;
+
+      $('btnLinkProcessManual')?.addEventListener('click', () => {
+        _linkedProcess = {
+          processo:      String($('linkedProcessName')?.value || '').trim(),
+          macroprocesso: String($('linkedMacroName')?.value  || '').trim(),
+          area:          String($('linkedProcessArea')?.value || '').trim(),
+          natureza: '',
+          subprocesso: '',
+        };
+        _sec0RefreshBadge();
+        renderSetupChecklist();
+      });
+    } else {
+      // Já existe — só atualiza o badge
+      _sec0RefreshBadge();
+    }
+    return;
+  }
+
+  // ── Modo com lista (dentro do SIGA) ──────────────────────────────
+  // Só cria a estrutura uma vez; nas chamadas seguintes apenas atualiza badge + tabela
+  if (!box.querySelector('#sec0Search')) {
+    box.innerHTML = `
+      <div id="sec0Badge"></div>
+      <div style="margin:10px 0 8px;display:flex;gap:8px;align-items:center;">
+        <input id="sec0Search" type="text" placeholder="🔍 Buscar processo…"
+          autocomplete="off" spellcheck="false"
+          style="flex:1;background:#ffffff;color:#0d2236;border:1.5px solid rgba(60,110,180,0.45);
+                 border-radius:8px;padding:8px 12px;font-size:13px;outline:none;" />
+        <span id="sec0Counter" style="font-size:12px;color:#3d546d;white-space:nowrap;font-weight:500;"></span>
+      </div>
+      <div class="sec0-table-wrap">
+        <table class="sec0-table">
+          <thead><tr>
+            <th>Macroprocesso</th><th>Processo</th><th>Natureza</th><th>Área</th>
+          </tr></thead>
+          <tbody id="sec0Tbody"></tbody>
+        </table>
+      </div>`;
+
+    // Wiring feito UMA ÚNICA VEZ — nunca mais destrói o input
+    $('sec0Search')?.addEventListener('input', _sec0UpdateTable);
+
+    // Clique nas linhas via event delegation no tbody
+    $('sec0Tbody')?.addEventListener('click', (ev) => {
+      const tr = ev.target.closest('tr[data-sec0-idx]');
+      if (!tr) return;
+      const idx = Number(tr.getAttribute('data-sec0-idx'));
+      if (!Number.isFinite(idx) || !_sec0Filtered[idx]) return;
+      _linkedProcess = { ..._sec0Filtered[idx] };
+      _sec0UpdateTable();   // atualiza highlight sem recriar o input
+      _sec0RefreshBadge();
+      renderSetupChecklist();
+    });
+  }
+
+  // Atualiza badge e tabela (dados podem ter chegado agora)
+  _sec0RefreshBadge();
+  _sec0UpdateTable();
+}
+
+// Atualiza apenas o badge de processo vinculado (não toca no input)
+function _sec0RefreshBadge() {
+  const badge = $('sec0Badge');
+  if (!badge) return;
+  if (_linkedProcess?.processo) {
+    badge.innerHTML = `
+      <div class="linked-process-badge">
+        ✅ <strong>${escapeHtml(_linkedProcess.processo)}</strong>
+        <span>${escapeHtml(_linkedProcess.macroprocesso || '')}</span>
+        <button id="btnClearLinkedProcess" type="button">Alterar</button>
+      </div>`;
+    $('btnClearLinkedProcess')?.addEventListener('click', () => {
+      _linkedProcess = null;
+      _sec0RefreshBadge();
+      _sec0UpdateTable();
+      renderSetupChecklist();
+    });
+  } else {
+    badge.innerHTML = '';
+  }
+}
+
 function renderSetupChecklist() {
   const box = $('setupChecklist');
   if (!box) return;
-  syncSetupInputsToMain();
   const s = collectSetupStatus();
   const line = (ok, text) => `${ok ? 'OK' : 'PENDENTE'} - ${text}`;
   box.textContent = [
@@ -851,7 +1108,13 @@ function renderSetupTaskMatrix() {
       <span>Cenario auto (TEP ideal auto)</span>
     </div>
     <div class="task-matrix-body">${rows}</div>
-    <div class="box" style="margin-top:8px;">Use "Automatica" para o estado real do processo e "Automatizavel" para confirmar o potencial usado no indice de Phillip com TEP ideal auto.</div>`;
+    <div class="box" style="margin-top:8px;">Use "Automatica" para o estado real do processo e "Automatizavel" para confirmar o potencial usado no indice de Phillip com TEP ideal auto.</div>
+    <div class="lp-section">
+      <div class="lp-title">Perfil das Raias — Equipe e Órgão</div>
+      <div class="box lp-hint">Informe a equipe e o órgão de cada ator para que o sistema classifique os handoffs automaticamente. Raias com o mesmo órgão e equipe = sem atrito extra.</div>
+      <div id="setupLaneProfiles"></div>
+    </div>`;
+  renderSetupLaneProfiles();
 }
 
 function renderSetupGatewayEditor() {
@@ -872,11 +1135,26 @@ function renderSetupGatewayEditor() {
     const outs = outgoing(graph, gw.id);
     if (!outs.length) return `<div class="box"><strong>${gw.label || gw.id}</strong><div>Sem saidas.</div></div>`;
     const sum = outs.reduce((acc, e) => acc + Number(e.probability || 0), 0);
-    const rows = outs.map((e) => `
-      <label class="field" style="margin-bottom:4px;">
-        <span>${e.id} (${e.from} -> ${e.to})</span>
-        <input type="number" min="0" max="100" step="0.01" data-setup-gw="${gw.id}" data-setup-edge="${e.id}" value="${Number(e.probability || 0)}" />
-      </label>`).join('');
+    const rows = outs.map((e) => {
+      const targetNode = nodeById(e.to);
+      const targetLabel = targetNode?.label || targetNode?.id || e.to;
+      // Rótulo do caminho: prioriza label da aresta, depois label do nó destino
+      const edgeLabel = e.label ? escapeHtml(e.label) : escapeHtml(targetLabel);
+      const pct = Number(e.probability || 0);
+      const barColor = pct >= 70 ? '#2e7d4f' : pct >= 30 ? '#8a6d3b' : '#8f3d3a';
+      return `
+      <label class="field gw-path-row" style="margin-bottom:6px;">
+        <span class="gw-path-label">
+          <span class="gw-path-arrow">→</span> ${edgeLabel}
+          <span class="gw-path-target" style="color:#9fb0c5;font-size:11px;">(${escapeHtml(targetLabel)})</span>
+        </span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="number" min="0" max="100" step="1" data-setup-gw="${gw.id}" data-setup-edge="${e.id}" value="${pct}" style="width:80px;" />
+          <span style="font-size:12px;color:#9fb0c5;">%</span>
+          <div class="gw-prob-bar"><div class="gw-prob-fill" style="width:${pct}%;background:${barColor};"></div></div>
+        </div>
+      </label>`;
+    }).join('');
     return `
       <div class="box" style="margin-bottom:8px;">
         <strong>${gw.label || gw.id}</strong>
@@ -911,6 +1189,144 @@ function applySetupGatewayEdits() {
   refreshAll();
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// SIDEBAR GATEWAY PROBABILITY EDITOR
+// ═══════════════════════════════════════════════════════════════════
+
+function renderSidebarGatewayEditor() {
+  const box = $('sidebarGatewayBox');
+  if (!box) return;
+  if (!graph) {
+    box.innerHTML = '<div class="sgw-empty">Carregue um processo para ver os gateways.</div>';
+    _sidebarGwVersion = '';
+    return;
+  }
+
+  const gateways = (graph.nodes || []).filter((n) => n.type === 'gateway' && outgoing(graph, n.id).length > 0);
+  if (!gateways.length) {
+    box.innerHTML = '<div class="sgw-empty">Nenhum gateway no fluxo atual.</div>';
+    _sidebarGwVersion = '';
+    return;
+  }
+
+  const currentVersion = gateways.map((g) => g.id + ':' + outgoing(graph, g.id).map((e) => e.id).join(',')).join('|');
+
+  if (box.dataset.gwVersion === currentVersion) {
+    _refreshSidebarGwValues();
+    return;
+  }
+
+  box.dataset.gwVersion = currentVersion;
+
+  if (_sidebarGwInputHandler) box.removeEventListener('input', _sidebarGwInputHandler);
+  if (_sidebarGwClickHandler) box.removeEventListener('click', _sidebarGwClickHandler);
+
+  const html = gateways.map((gw) => {
+    const outs = outgoing(graph, gw.id);
+    const sum = outs.reduce((a, e) => a + Number(e.probability || 0), 0);
+    const sumColor = Math.abs(sum - 100) < 0.5 ? '#2e7d4f' : sum > 100 ? '#c0392b' : '#8a6d3b';
+    const rows = outs.map((e) => {
+      const targetNode = nodeById(e.to);
+      const targetLabel = targetNode?.label || targetNode?.id || e.to;
+      const edgeLabel = e.label ? escapeHtml(e.label) : escapeHtml(targetLabel);
+      const pct = Number(e.probability || 0);
+      return `<div class="sgw-row">
+        <span class="sgw-label">→ ${edgeLabel}</span>
+        <div class="sgw-input-wrap">
+          <input type="number" min="0" max="100" step="1" class="sgw-input"
+            data-sgw-id="${escapeHtml(gw.id)}" data-sgw-edge="${escapeHtml(e.id)}" value="${pct}" />
+          <span class="sgw-pct">%</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="sgw-gateway" data-sgw-gw="${escapeHtml(gw.id)}">
+      <div class="sgw-gw-header">
+        <span class="sgw-gw-name">◆ ${escapeHtml(gw.label || gw.id)}</span>
+        <button class="sgw-auto-btn" data-sgw-auto="${escapeHtml(gw.id)}" type="button">⚖ Auto</button>
+      </div>
+      ${rows}
+      <div class="sgw-sum" data-sgw-sum="${escapeHtml(gw.id)}" style="color:${sumColor};">Soma: ${sum.toFixed(0)}%${Math.abs(sum - 100) > 0.5 ? (sum > 100 ? ' ⚠ excede 100%' : ' ⚠ abaixo de 100%') : ' ✓'}</div>
+    </div>`;
+  }).join('');
+
+  box.innerHTML = html;
+
+  _sidebarGwInputHandler = _onSidebarGwInput;
+  _sidebarGwClickHandler = _onSidebarGwClick;
+  box.addEventListener('input', _sidebarGwInputHandler);
+  box.addEventListener('click', _sidebarGwClickHandler);
+}
+
+function _refreshSidebarGwValues() {
+  if (!graph) return;
+  const focused = document.activeElement;
+  document.querySelectorAll('input[data-sgw-id][data-sgw-edge]').forEach((inp) => {
+    if (inp === focused) return;
+    const edgeId = inp.getAttribute('data-sgw-edge');
+    const edge = (graph.edges || []).find((e) => e.id === edgeId);
+    if (edge) inp.value = String(Number(edge.probability || 0));
+  });
+  document.querySelectorAll('[data-sgw-sum]').forEach((el) => {
+    const gwId = el.getAttribute('data-sgw-sum');
+    const outs = outgoing(graph, gwId);
+    const sum = outs.reduce((a, e) => a + Number(e.probability || 0), 0);
+    const sumColor = Math.abs(sum - 100) < 0.5 ? '#2e7d4f' : sum > 100 ? '#c0392b' : '#8a6d3b';
+    el.style.color = sumColor;
+    el.textContent = `Soma: ${sum.toFixed(0)}%${Math.abs(sum - 100) > 0.5 ? (sum > 100 ? ' ⚠ excede 100%' : ' ⚠ abaixo de 100%') : ' ✓'}`;
+  });
+}
+
+function _onSidebarGwInput(ev) {
+  const inp = ev.target.closest('input[data-sgw-id]');
+  if (!inp || !graph) return;
+
+  const gwId = inp.getAttribute('data-sgw-id');
+
+  // Cap: prevent sum > 100%
+  const allInputs = Array.from(document.querySelectorAll(`input[data-sgw-id="${CSS.escape(gwId)}"]`));
+  const sumOthers = allInputs
+    .filter((i) => i !== inp)
+    .reduce((a, i) => a + Math.max(0, Number(i.value || 0)), 0);
+  const maxAllowed = Math.max(0, 100 - sumOthers);
+  if (Number(inp.value) > maxAllowed) inp.value = String(maxAllowed);
+
+  // Apply to graph silently (no refreshAll — avoids losing focus)
+  const probs = {};
+  allInputs.forEach((i) => { probs[i.getAttribute('data-sgw-edge')] = Math.max(0, Number(i.value || 0)); });
+  graph = applyGatewayProbabilities(graph, gwId, probs);
+  if ($('graphJson')) $('graphJson').value = JSON.stringify(graph, null, 2);
+
+  // Only update sum display — no full re-render
+  const sumEl = document.querySelector(`[data-sgw-sum="${CSS.escape(gwId)}"]`);
+  if (sumEl) {
+    const sum = Object.values(probs).reduce((a, v) => a + v, 0);
+    const sumColor = Math.abs(sum - 100) < 0.5 ? '#2e7d4f' : sum > 100 ? '#c0392b' : '#8a6d3b';
+    sumEl.style.color = sumColor;
+    sumEl.textContent = `Soma: ${sum.toFixed(0)}%${Math.abs(sum - 100) > 0.5 ? (sum > 100 ? ' ⚠ excede 100%' : ' ⚠ abaixo de 100%') : ' ✓'}`;
+  }
+}
+
+function _onSidebarGwClick(ev) {
+  const btn = ev.target.closest('button[data-sgw-auto]');
+  if (!btn || !graph) return;
+  const gwId = btn.getAttribute('data-sgw-auto');
+  const outs = outgoing(graph, gwId);
+  if (!outs.length) return;
+  const autoMap = defaultGatewayProbMap(outs.map((e) => ({ ...e, probability: 0 })));
+  const inputs = document.querySelectorAll(`input[data-sgw-id="${CSS.escape(gwId)}"]`);
+  const probs = {};
+  inputs.forEach((i) => {
+    const edgeId = i.getAttribute('data-sgw-edge');
+    const v = Number(autoMap[edgeId] || 0);
+    i.value = String(v);
+    probs[edgeId] = v;
+  });
+  graph = applyGatewayProbabilities(graph, gwId, probs);
+  if ($('graphJson')) $('graphJson').value = JSON.stringify(graph, null, 2);
+  _refreshSidebarGwValues();
+  drawGraph();
+}
+
 function renderSetupAutomationEditor() {
   const box = $('setupAutomationEditor');
   if (!box) return;
@@ -925,46 +1341,71 @@ function renderSetupLoopEditor() {
     return;
   }
 
-  const tasks = (graph.nodes || []).filter((n) => n.type === 'task');
-  if (tasks.length < 2) {
-    box.textContent = 'Sao necessarias ao menos duas atividades para configurar loops.';
+  const gateways = (graph.nodes || []).filter((n) => n.type === 'gateway');
+  const allNodes = (graph.nodes || []).filter((n) => n.type === 'task' || n.type === 'gateway');
+
+  if (!gateways.length) {
+    box.innerHTML = '<div class="box">Nenhum gateway encontrado. Adicione um gateway ao fluxo para configurar loops.</div>';
     return;
   }
 
-  const options = tasks.map((t) => `<option value="${t.id}">${t.label || t.id}</option>`).join('');
+  const gwOptions = gateways.map((g) => `<option value="${g.id}">${escapeHtml(g.label || g.id)}</option>`).join('');
+  const nodeOptions = allNodes.map((n) => `<option value="${n.id}">${escapeHtml(n.label || n.id)}</option>`).join('');
+
   const loopEdges = (graph.edges || []).filter((e) => e.isLoopReturn);
   const list = loopEdges.length
     ? loopEdges.map((e) => {
-      const from = nodeById(e.from);
-      const to = nodeById(e.to);
-      return `<div class="check-row" style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;">
-        <span>${from?.label || e.from} -> ${to?.label || e.to}</span>
-        <input type="number" min="1" max="99" step="1" value="${Number(e.probability || 30)}" data-loop-prob-edge="${e.id}" style="width:84px;" />
-        <button type="button" data-loop-remove-edge="${e.id}">Remover</button>
-      </div>`;
-    }).join('')
+        const from = nodeById(e.from);
+        const to   = nodeById(e.to);
+        const gwOuts = outgoing(graph, e.from);
+        const sum    = gwOuts.reduce((a, x) => a + Number(x.probability || 0), 0);
+        return `
+        <div class="loop-row">
+          <div class="loop-row-info">
+            <span class="loop-gw-name">🔀 ${escapeHtml(from?.label || e.from)}</span>
+            <span class="loop-arrow">→ retorna para →</span>
+            <span class="loop-target-name">📋 ${escapeHtml(to?.label || e.to)}</span>
+          </div>
+          <div class="loop-row-controls">
+            <label style="font-size:12px;">Prob. loop
+              <input type="number" min="1" max="99" step="1"
+                value="${Number(e.probability || 30)}"
+                data-loop-prob-edge="${e.id}"
+                style="width:72px;" />%
+            </label>
+            <span class="loop-sum-hint" style="font-size:11px;color:#9fb0c5;">
+              Soma saídas: ${sum.toFixed(0)}%
+            </span>
+            <button type="button" data-loop-remove-edge="${e.id}">Remover</button>
+          </div>
+        </div>`;
+      }).join('')
     : '<div class="box">Nenhum loop configurado.</div>';
 
   box.innerHTML = `
-    <div class="row" style="align-items:end;">
+    <div class="box" style="margin-bottom:10px;font-size:13px;">
+      Defina o <strong>gateway de decisão</strong> onde pode ocorrer o retrabalho e a <strong>ação de retorno</strong>.
+      A probabilidade do loop será integrada automaticamente com as probabilidades do gateway selecionado.
+    </div>
+    <div class="loop-form">
       <label class="field" style="flex:1;min-width:180px;">
-        <span>Acao origem (onde ocorre a decisao de retrabalho)</span>
-        <select id="setupLoopFrom">${options}</select>
+        <span>Gateway de origem (decisão de retrabalho)</span>
+        <select id="setupLoopFrom">${gwOptions}</select>
       </label>
       <label class="field" style="flex:1;min-width:180px;">
-        <span>Acao de retorno (para onde volta)</span>
-        <select id="setupLoopTo">${options}</select>
+        <span>Ação de retorno (para onde volta)</span>
+        <select id="setupLoopTo">${nodeOptions}</select>
       </label>
       <label class="field" style="width:120px;">
         <span>Prob. loop (%)</span>
         <input id="setupLoopProb" type="number" min="1" max="99" step="1" value="30" />
       </label>
-      <button id="btnSetupAddLoop" type="button">Adicionar Loop</button>
+      <button id="btnSetupAddLoop" type="button" style="align-self:flex-end;">Adicionar Loop</button>
     </div>
-    <div class="box" style="margin-top:8px;">Loops atuais:</div>
+    <div style="margin-top:12px;"><strong>Loops configurados:</strong></div>
     ${list}
     <div class="row" style="margin-top:8px;">
-      <button id="btnSetupApplyLoopProb" type="button">Aplicar Probabilidades de Loop</button>
+      <button id="btnSetupApplyLoopProb" type="button">Aplicar Probabilidades</button>
     </div>`;
 }
 
@@ -1077,12 +1518,16 @@ function saveSetupAutomationSelection() {
 
 function openSetupModal() {
   syncMainInputsToSetup();
+  // Auto-iguala probabilidades de gateways que ainda não têm distribuição válida
+  if (graph) autoFixGatewayProbabilitiesInGraph();
+  if (graph) autoApplyHandoffRulesFromLanes();
   $('setupModal')?.classList.remove('hidden');
+  renderSetupSection0();
+  requestProcessListFromSiga();
   renderSetupTaskMatrix();
   renderHandoffWizard();
   renderSetupPathPicker();
   renderSetupGatewayEditor();
-  renderSetupAutomationEditor();
   renderSetupLoopEditor();
   renderSetupChecklist();
 }
@@ -1137,9 +1582,13 @@ function parseLeadTimeInformedRequired() {
   if (!raw) return null;
   const val = Number(raw);
   if (!Number.isFinite(val) || val <= 0) {
-    throw new Error('Se informado, o lead time do executor deve ser maior que zero.');
+    throw new Error('Se informado, o T.P. deve ser maior que zero.');
   }
-  return val;
+  // Converter para minutos conforme unidade selecionada
+  const unit = String($('tpUnit')?.value || 'min');
+  if (unit === 'h') return val * 60;
+  if (unit === 'dias') return val * 60 * 8; // 1 dia util = 8h
+  return val; // minutos
 }
 
 function pct(part, total) {
@@ -1233,7 +1682,7 @@ function clampPct(value) {
 }
 
 function frictionTotalsByType(ranking) {
-  const out = { handoff: 0, gateway: 0, loop: 0 };
+  const out = { handoff: 0, gateway: 0, loop: 0, timer: 0 };
   for (const item of ranking || []) {
     const type = String(item?.type || '').toLowerCase();
     if (!Object.prototype.hasOwnProperty.call(out, type)) continue;
@@ -1330,76 +1779,107 @@ function _phillipCell(label, value, note) {
   </div>`;
 }
 
+function _fmtUT(v) {
+  return Number.isFinite(Number(v)) ? `${Number(v).toFixed(1)} UT` : '—';
+}
+
+function _fmtMin(v) {
+  if (!Number.isFinite(Number(v))) return '—';
+  const mins = Number(v);
+  if (mins >= 60) return `${(mins / 60).toFixed(1)} h`;
+  return `${mins.toFixed(0)} min`;
+}
+
+function _resultCard(icon, title, value, subtitle, definition, auditNote, extraClass = '') {
+  return `<div class="result-card ${extraClass}">
+    <div class="rc-icon">${icon}</div>
+    <div class="rc-title">${title}</div>
+    <div class="rc-value">${value}</div>
+    <div class="rc-subtitle">${subtitle}</div>
+    <div class="rc-definition">${definition}</div>
+    <div class="rc-audit">"${auditNote}"</div>
+  </div>`;
+}
+
+function _ipCard(ip) {
+  const color = Number.isFinite(Number(ip)) ? severityColorFromValue(ip) : '#8898aa';
+  const s = semaphoreForPhillip('x', ip);
+  const pctVal = clampPct(Number(ip || 0));
+  const gauge = `<div class="rc-gauge"><div class="rc-gauge-fill" style="width:${pctVal.toFixed(1)}%;background:${color};"></div></div>`;
+  const badge = `<span class="ph-badge" style="background:${color}22;color:${color};border:1px solid ${color}55;">${s.label}</span>`;
+  return `<div class="result-card rc-ip">
+    <div class="rc-icon">📐</div>
+    <div class="rc-title">I.P. — Índice de Phillip</div>
+    <div class="rc-value" style="color:${color};">${Number.isFinite(Number(ip)) ? `${pctVal.toFixed(1)}%` : '—'}</div>
+    ${gauge}${badge}
+    <div class="rc-definition">O percentual de aproveitamento do esforço. Mede quanto do T.E.R. é transformado em valor pelo T.O.P.</div>
+    <div class="rc-audit">"A nota de saúde do seu fluxo de trabalho."</div>
+  </div>`;
+}
+
 function renderExecutiveKpis(metrics, base) {
   const box = $('kpi');
   if (!box) return;
 
-  // Live tokens display update
   const liveLine = `<div class="mblock-live">
-    Tokens finalizados: <strong id="liveTokensFinished">${liveSimulationStatus.finished}</strong> &nbsp;|
-    Lead time médio: <strong id="liveLeadAvg">${Number(liveSimulationStatus.avgLeadTime || 0).toFixed(2)} min</strong>
+    Bolinhas finalizadas: <strong id="liveTokensFinished">${liveSimulationStatus.finished}/${liveSimulationStatus.total}</strong> &nbsp;|
+    T.E.R. médio ao vivo: <strong id="liveLeadAvg">${Number(liveSimulationStatus.avgLeadTime || 0).toFixed(1)} UT</strong>
   </div>`;
 
   if (!metrics) {
-    // Base only — no happy path yet
     const base_ = base || {};
-    const tepReal = Number(base_.tepReal || 0);
+    const terVal = Number(base_.tepReal || 0);
     box.className = 'kpi kpi-executive';
     box.innerHTML = `
-      <div class="sim-metrics">
-        <div class="mblock">
-          <div class="mblock-head"><span class="mblock-icon">📊</span><span class="mblock-title">Estimado</span><small class="mblock-sub">informe o caminho feliz para calcular TEP ideal e Índice de Phillip</small></div>
-          <div class="mblock-cells">
-            ${_metricCell('TEP Ideal', null, ' min', 'informe o caminho feliz')}
-            ${_metricCell('TEP Real', tepReal || null, ' min', 'com todo o atrito do processo')}
-            ${_phillipCell('Índice de Phillip', null, 'informe o caminho feliz')}
-          </div>
-        </div>
-        ${liveLine}
-      </div>`;
+      <div class="results-grid-partial">
+        ${_resultCard('⚡', 'T.O.P. — Tempo Ótimo', '—', 'informe o caminho feliz', 'A régua de ouro da eficiência. Tempo sem burocracias, esperas ou erros.', 'Se este processo fosse 100% fluido e sem interrupções, este seria o esforço real.')}
+        ${_resultCard('📊', 'T.E.R. — Tempo de Execução Realista', terVal > 0 ? _fmtUT(terVal) : '—', 'com todo o atrito do processo', 'O termômetro da realidade. Média do tempo das 100 partículas com todos os atritos.', 'Este é o custo atual do desenho do processo considerando o atrito administrativo.')}
+        ${_ipCard(null)}
+      </div>
+      ${liveLine}`;
     return;
   }
 
-  const hasAuto = Number.isFinite(metrics.tepIdealAuto) && Number.isFinite(metrics.tepRealAuto);
+  const hasAuto = Number.isFinite(metrics.topAuto);
   const hasInformed = Number.isFinite(metrics.leadTimeInformed);
+
+  // Conversao K e Gaveta
+  const kLine = metrics.kFactor !== null
+    ? `<div class="rc-kfactor">Conversão: 1 UT = ${metrics.kFactor.toFixed(2)} min reais</div>`
+    : '';
+  const gavetaLine = metrics.tempoGaveta !== null
+    ? `<div class="rc-gaveta ${metrics.tempoGaveta > 0 ? 'rc-gaveta-warn' : ''}">Tempo de Gaveta (fila/espera): ${_fmtMin(metrics.tempoGaveta)}</div>`
+    : '';
+
+  // Card T.P. so aparece se informado
+  const tpCard = hasInformed
+    ? _resultCard('💬', 'T.P. — Tempo de Percepção', _fmtMin(metrics.leadTimeInformed), 'declarado pelo executor', 'O tempo de calendário (Lead Time). Inclui o tempo de gaveta — filas e esperas externas.', 'É o que o cidadão ou a empresa sente na ponta. O tempo total de espera.')
+    : '';
+
+  // Card automacao
+  const autoCard = hasAuto
+    ? _resultCard('⚙️', 'T.O.P. Auto', _fmtUT(metrics.topAuto), 'caminho feliz com automações', 'T.O.P. projetado após confirmação das automações marcadas no cenário To-Be.', `Ganho potencial: ${(metrics.top > 0 ? ((metrics.top - metrics.topAuto) / metrics.top * 100) : 0).toFixed(1)}% de redução no T.O.P.`, 'rc-auto')
+    : '';
 
   box.className = 'kpi kpi-executive';
   box.innerHTML = `
-    <div class="sim-metrics">
-      <div class="mblock">
-        <div class="mblock-head"><span class="mblock-icon">📊</span><span class="mblock-title">Estimado</span><small class="mblock-sub">cenário base — processo com todo o atrito, sem automações</small></div>
-        <div class="mblock-cells">
-          ${_metricCell('TEP Ideal', metrics.tepIdeal, ' min', 'caminho feliz, sem punições')}
-          ${_metricCell('TEP Real', metrics.tepReal, ' min', 'com handoffs, gateways e loops')}
-          ${_phillipCell('Índice de Phillip', metrics.ipRealVsIdeal, 'ideal ÷ real × 100')}
-        </div>
-      </div>
-
-      ${hasAuto ? `<div class="mblock mblock-auto">
-        <div class="mblock-head"><span class="mblock-icon">⚙️</span><span class="mblock-title">Auto</span><small class="mblock-sub">cenário com automações confirmadas aplicadas</small></div>
-        <div class="mblock-cells">
-          ${_metricCell('TEP Ideal Auto', metrics.tepIdealAuto, ' min', 'caminho feliz, só automações')}
-          ${_metricCell('TEP Real Auto', metrics.tepRealAuto, ' min', 'com handoffs/gateways/loops restantes')}
-          ${_phillipCell('Índice de Phillip Auto', metrics.ipRealAutoVsIdealAuto, 'ideal auto ÷ real auto × 100')}
-        </div>
-      </div>` : ''}
-
-      ${hasInformed ? `<div class="mblock mblock-informed">
-        <div class="mblock-head"><span class="mblock-icon">💬</span><span class="mblock-title">Informado</span><small class="mblock-sub">visão do executor — lead time real declarado</small></div>
-        <div class="mblock-cells">
-          ${_metricCell('Lead Time Ideal', metrics.leadIdeal, ' min', 'proporcional ao caminho feliz')}
-          ${_metricCell('Lead Time Real', metrics.leadTimeInformed, ' min', 'tempo declarado pelo executor')}
-          ${_phillipCell('Índice de Phillip', metrics.ipLeadInformedVsIdeal, 'ideal ÷ informado × 100')}
-        </div>
-      </div>` : ''}
-
-      ${liveLine}
-    </div>`;
+    <div class="results-grid">
+      ${_resultCard('⚡', 'T.O.P. — Tempo Ótimo de Processamento', _fmtUT(metrics.top), 'caminho feliz, sem atritos', 'A régua de ouro da eficiência. Representa o tempo estritamente necessário para a execução das tarefas, removendo todas as burocracias, esperas e erros.', 'Se este processo fosse 100% fluido e sem interrupções, este seria o esforço real.')}
+      ${_resultCard('📊', 'T.E.R. — Tempo de Execução Realista', _fmtUT(metrics.ter), 'média das 100 partículas', 'O termômetro da realidade. É a média do tempo gasto pelas 100 partículas, contabilizando penalidades de handoffs, gateways e a probabilidade de retrabalho (loops).', 'Este é o custo atual do desenho do processo considerando o atrito administrativo.')}
+      ${tpCard}
+      ${_ipCard(metrics.ipRealVsIdeal)}
+      ${_resultCard('🔀', 'Complexidade', String(metrics.complexidade), 'caminhos possíveis no processo', 'Quantidade de trajetos distintos que uma partícula pode percorrer do início ao fim, considerando todos os gateways e eventos de fim.', 'Quanto maior, mais variável é o comportamento do processo em campo.')}
+      ${autoCard}
+    </div>
+    ${kLine}
+    ${gavetaLine}
+    ${liveLine}`;
 }
 
 function refreshLiveSimulationStatus(tokens) {
   const list = Array.isArray(tokens) ? tokens : [];
   const finished = list.filter((t) => t.ended).length;
+  const total = list.length || TOKEN_COUNT;
   const endedTimes = list
     .filter((t) => t.ended)
     .map((t) => Number(simRuns?.[t.id]?.time || 0))
@@ -1408,16 +1888,32 @@ function refreshLiveSimulationStatus(tokens) {
     ? endedTimes.reduce((a, b) => a + b, 0) / endedTimes.length
     : 0;
 
-  liveSimulationStatus = {
-    finished,
-    total: list.length || TOKEN_COUNT,
-    avgLeadTime: avgLead,
-  };
+  liveSimulationStatus = { finished, total, avgLeadTime: avgLead };
 
+  const terText = avgLead > 0 ? `${avgLead.toFixed(1)} UT` : '—';
+
+  // Update controls row counters
   const elFinished = $('liveTokensFinished');
   const elLead = $('liveLeadAvg');
-  if (elFinished) elFinished.textContent = `${finished}/${liveSimulationStatus.total}`;
-  if (elLead) elLead.textContent = `${avgLead.toFixed(2)} min`;
+  if (elFinished) elFinished.textContent = `${finished}/${total}`;
+  if (elLead) elLead.textContent = terText;
+
+  // Update live overlay on canvas
+  const panel = $('simLivePanel');
+  const elCounter = $('simLiveCounter');
+  const elTer = $('simLiveTer');
+  if (panel) panel.classList.remove('hidden');
+  if (elCounter) elCounter.textContent = `${finished}/${total}`;
+  if (elTer) elTer.textContent = terText;
+
+  // When all done, add "complete" style
+  if (panel) {
+    if (finished >= total) {
+      panel.classList.add('slp-done');
+    } else {
+      panel.classList.remove('slp-done');
+    }
+  }
 }
 
 function renderInsightKpis(metrics, base) {
@@ -1482,80 +1978,141 @@ function renderInsightKpis(metrics, base) {
     </div>`;
 }
 
+function renderFrictionChart(metrics) {
+  const box = $('frictionRanking');
+  if (!box) return;
+
+  const ranking = (metrics?.ranking || []).slice(0, 8);
+  if (!ranking.length) { box.innerHTML = '<p style="color:#8898aa;">Sem atritos relevantes detectados.</p>'; return; }
+
+  const friction = frictionTotalsByType(ranking);
+  const totalFr = Math.max(0.001, friction.handoff + friction.gateway + friction.loop);
+
+  // Bloco de resumo por tipo (grafico de barras agregado)
+  const typeColors = { handoff: '#c0392b', gateway: '#d1a321', loop: '#f39c12', timer: '#f1c40f' };
+  const typeLabels = { handoff: 'Esforço de Handoff', gateway: 'Custo de Decisão (Gateways)', loop: 'Custo de Retrabalho (Loops)', timer: 'Espera de Timer (Semáforo)' };
+  const typeIcons  = { handoff: '🔁', gateway: '⚖️', loop: '🔄', timer: '⏱' };
+
+  const summaryBars = ['handoff', 'gateway', 'loop', 'timer'].map((t) => {
+    const val = friction[t];
+    const pctW = ((val / totalFr) * 100).toFixed(1);
+    const color = typeColors[t];
+    return `<div class="fc-row">
+      <div class="fc-label">${typeIcons[t]} ${typeLabels[t]}</div>
+      <div class="fc-bar-wrap">
+        <div class="fc-bar" style="width:${pctW}%;background:${color};"></div>
+      </div>
+      <div class="fc-value">${val.toFixed(1)} UT <span class="fc-pct">(${pctW}%)</span></div>
+    </div>`;
+  }).join('');
+
+  // Detalhe dos top-8 itens individuais
+  const maxVal = ranking[0]?.total || 1;
+  const detailBars = ranking.map((item) => {
+    const pctW = ((item.total / maxVal) * 100).toFixed(1);
+    const color = typeColors[item.type] || '#8898aa';
+    const key = item.key.replace(/->/g, ' → ');
+    return `<div class="fc-row fc-row-sm">
+      <div class="fc-label fc-label-sm">${key}</div>
+      <div class="fc-bar-wrap">
+        <div class="fc-bar" style="width:${pctW}%;background:${color}88;"></div>
+      </div>
+      <div class="fc-value">${item.total.toFixed(1)} UT</div>
+    </div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div class="friction-chart">
+      <div class="fc-section-title">Decomposição do Atrito — Onde o tempo "foge"</div>
+      <div class="fc-summary">${summaryBars}</div>
+      <div class="fc-section-title" style="margin-top:12px;">Top ${ranking.length} Itens Individuais</div>
+      <div class="fc-details">${detailBars}</div>
+    </div>`;
+}
+
 function renderAutomaticInterpretation(metrics, base) {
   const box = $('insightInterpretation');
   if (!box) return;
 
   if (!metrics) {
-    box.innerHTML = [
-      '<strong>Leitura parcial:</strong> falta caminho feliz para interpretar os indices de Phillip informado e automacao.',
-      'Acao sugerida: informe o caminho feliz e o lead time do executor para liberar diagnostico completo.',
-      'Enquanto isso, use o ranking de atrito para identificar gargalos dominantes no processo atual.',
-    ].join('<br>');
+    box.innerHTML = `<div class="veredito-parcial">
+      <p><strong>Leitura parcial:</strong> informe o caminho feliz e o T.P. (Tempo de Percepção) do executor para liberar o diagnóstico completo.</p>
+      <p>Enquanto isso, use o gráfico de atrito abaixo para identificar os maiores gargalos do processo atual.</p>
+    </div>`;
     return;
   }
 
-  const i = computeInsightIndices(metrics, base);
-  const sStandard = semaphoreForPhillip('standard', metrics.ipRealVsIdeal);
-  const hasInformed = Number.isFinite(metrics.ipLeadInformedVsIdeal);
-  const sInformed = semaphoreForPhillip('informed', metrics.ipLeadInformedVsIdeal);
-  const sAuto = semaphoreForPhillip('automation', metrics.ipAutoVsIdeal);
+  const ip = Number(metrics.ipRealVsIdeal || 0);
+  const horasPerdidas = ((100 - ip) / 100 * 10).toFixed(1);
 
-  const lines = [];
-  lines.push(`<span class="semaforo ${sStandard.cls}">Phillip padrao: ${sStandard.label}</span> <span class="semaforo ${sInformed.cls}">Phillip informado: ${sInformed.label}</span> <span class="semaforo ${sAuto.cls}">Phillip automacao: ${sAuto.label}</span>`);
+  // Paragrafo 1: Diagnostico de Eficiencia de Ciclo
+  const p1 = `O processo apresenta um I.P. de <strong>${ip.toFixed(1)}%</strong>. Isso indica que, para cada 10 horas de trabalho, cerca de <strong>${horasPerdidas} horas</strong> são consumidas por atividades que não agregam valor direto, como recontextualização e trocas de setor.`;
 
-  if (sStandard.cls === 'sev-red') {
-    lines.push('Paralisia burocratica no cenario estimado: o processo consome tempo majoritariamente em atrito. Redesenho estrutural imediato e recomendado.');
-  } else if (sStandard.cls === 'sev-orange') {
-    lines.push('Gargalo institucional no cenario estimado: mais da metade do tempo tende a ficar em esperas, handoffs e retrabalho. Reengenharia To-Be deve ser prioritaria.');
-  } else if (sStandard.cls === 'sev-yellow') {
-    lines.push('Alerta de atrito no cenario estimado: o fluxo funciona, mas ha gordura sistemica relevante. Revise transicoes entre setores e pontos de decisao.');
+  // Paragrafo 2: Maior gargalo sistemico
+  const ranking = metrics.ranking || [];
+  const topFriction = ranking[0];
+  let p2 = '';
+  if (topFriction) {
+    const tipoLabel = topFriction.type === 'handoff' ? 'Handoff'
+      : topFriction.type === 'gateway' ? 'Gateway de Decisão' : 'Loop de Retrabalho';
+    const keyLabel = topFriction.key.replace(/->/g, ' → ');
+    const totalUT = topFriction.total.toFixed(1);
+    if (topFriction.type === 'handoff') {
+      p2 = `A maior perda de tempo detectada foi no <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> ao fluxo. Recomenda-se unificar estas etapas ou automatizar a transferência de dados para reduzir este impacto.`;
+    } else if (topFriction.type === 'gateway') {
+      p2 = `O maior ponto de atrito detectado é o <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> em decisões repetidas. Recomenda-se simplificar os critérios de aprovação ou antecipar as validações no fluxo.`;
+    } else {
+      p2 = `O maior consumo de atrito está no <strong>${tipoLabel} na tarefa ${keyLabel}</strong>, acumulando <strong>${totalUT} UT</strong>. Recomenda-se revisar os critérios de entrada e qualidade de dados antes do ponto de retorno.`;
+    }
   } else {
-    lines.push('Eficiencia de fluxo no cenario estimado: o processo esta proximo do estado da arte, com baixo desperdicio estrutural.');
+    p2 = 'Nenhum atrito dominante identificado no processo atual. O fluxo apresenta baixa concentração de gargalos.';
   }
 
-  if (!hasInformed) {
-    lines.push('Indice informado pelo executor nao foi calculado porque o lead time informado e opcional e nao foi preenchido.');
-  } else if (sInformed.cls === 'sev-red') {
-    lines.push('Na visao do executor ha paralisia burocratica: o tempo praticado esta muito distante do ideal. O desenho atual provavelmente nao reflete todas as filas e excecoes reais.');
-  } else if (sInformed.cls === 'sev-orange') {
-    lines.push('Na visao do executor ha gargalo institucional: o processo aparenta depender excessivamente de handoffs e retrabalho. Intervencao do escritorio de processos e recomendada.');
-  } else if (sInformed.cls === 'sev-yellow') {
-    lines.push('Na visao do executor ha alerta de atrito: o lead time praticado esta acima do ideal. Priorize reducao de esperas entre etapas e padronizacao de handoffs.');
+  // Paragrafo 3: Potencial de automacao
+  const nodes = graph?.nodes || [];
+  const manualTasks = nodes.filter((n) => n.type === 'task' && !n.automated);
+  const topManual = manualTasks[0];
+  let p3 = '';
+  if (topManual) {
+    const gainUT = (RULES.nextManual - RULES.automated).toFixed(1);
+    const gainPct = metrics.top > 0
+      ? ((gainUT / metrics.top) * 100).toFixed(1) : '0';
+    const gainMin = metrics.kFactor !== null
+      ? ` (economia de aprox. ${(gainUT * metrics.kFactor).toFixed(0)} min reais por execução)`
+      : '';
+    p3 = `Caso a atividade <strong>"${topManual.label}"</strong> seja automatizada (reduzindo de ${RULES.nextManual} para ${RULES.automated} UT), o T.O.P. cairia em aprox. <strong>${gainPct}%</strong>${gainMin}. Recomenda-se priorizar tarefas repetitivas e de alto volume para maximizar o retorno.`;
   } else {
-    lines.push('Na visao do executor ha eficiencia de fluxo: o lead time informado esta aderente ao ideal do caminho feliz.');
+    p3 = 'Todas as tarefas já estão automatizadas ou não há candidatos identificados para automação no cenário atual.';
   }
 
-  if (sAuto.cls === 'sev-red') {
-    lines.push('Na frente de automacao, a leitura e de paralisia burocratica: a configuracao atual nao reduz atrito de forma relevante. Redesenho e automacao de alto impacto sao urgentes.');
-  } else if (sAuto.cls === 'sev-orange') {
-    lines.push('Na frente de automacao ha gargalo institucional: os ganhos projetados ainda sao baixos para o nivel de atrito do fluxo. Repriorize tarefas com maior volume e recorrencia.');
-  } else if (sAuto.cls === 'sev-yellow') {
-    lines.push('Na frente de automacao ha alerta de atrito: ganho projetado moderado. Existe oportunidade de ampliar o escopo para tarefas repetitivas e pontos de fila.');
+  // Paragrafo 4: Analise de fila/gaveta (so se T.P. informado)
+  let p4 = '';
+  if (metrics.kFactor !== null && metrics.tempoGaveta !== null) {
+    const tp = Number(metrics.leadTimeInformed);
+    const gaveta = Number(metrics.tempoGaveta);
+    const gavetaPct = tp > 0 ? ((gaveta / tp) * 100).toFixed(1) : '0';
+    const gavetaFmt = _fmtMin(gaveta);
+    p4 = `A diferença entre o T.E.R. (Simulado) e o T.P. (Percebido) sugere que <strong>${gavetaPct}%</strong> do tempo de vida do processo (<strong>${gavetaFmt}</strong>) é gasto em espera passiva (fila/gaveta), e não em execução ativa. O foco da gestão deve ser a redução do tempo de gaveta.`;
   } else {
-    lines.push('Na frente de automacao ha eficiencia de fluxo: ganho consistente e aderente ao estado da arte. Bom candidato para business case executivo.');
+    p4 = 'Informe o T.P. (Tempo de Percepção) para calcular o tempo de gaveta e medir o impacto das filas no processo.';
   }
 
-  if (i.concentrationTop3Percent >= 60) {
-    lines.push(`Os 3 maiores atritos concentram ${i.concentrationTop3Percent.toFixed(1)}% do problema. Estrategia recomendada: foco em poucos pontos para obter maior retorno no curto prazo.`);
-  }
-
-  if (i.handoffExposurePercent >= 35) {
-    lines.push(`Exposicao de handoff em ${i.handoffExposurePercent.toFixed(1)}% das transicoes manuais. Avalie consolidacao de etapas por raia/setor para reduzir perda por transferencia.`);
-  }
-
-  if (i.loopPressurePercent >= 20) {
-    lines.push(`Pressao de retrabalho elevada (loops medios em ${i.loopPressurePercent.toFixed(1)}%). Recomendado revisar criterios de entrada e qualidade de dados antes dos gateways.`);
-  }
-
-  if (i.autoPotentialPercent >= 30 && i.autoConfirmedPercent < 50) {
-    lines.push(`Existe potencial de automacao (${i.autoPotentialPercent.toFixed(1)}%), mas baixa confirmacao (${i.autoConfirmedPercent.toFixed(1)}%). Alinhar com executores pode destravar ganhos adicionais.`);
-  }
-
-  box.innerHTML = `<div class="insight-list">${lines.map((l) => `<p>${l}</p>`).join('')}</div>`;
+  const sStandard = semaphoreForPhillip('standard', ip);
+  box.innerHTML = `
+    <div class="veredito-header">
+      <span class="semaforo ${sStandard.cls}">I.P.: ${sStandard.label}</span>
+    </div>
+    <div class="veredito-body">
+      <p class="veredito-p"><span class="veredito-num">1.</span> ${p1}</p>
+      <p class="veredito-p"><span class="veredito-num">2.</span> ${p2}</p>
+      <p class="veredito-p"><span class="veredito-num">3.</span> ${p3}</p>
+      <p class="veredito-p"><span class="veredito-num">4.</span> ${p4}</p>
+    </div>`;
 }
 
 function computeScenarioMetrics() {
+  applyWeightsFromUI();
+
   const base = calculateTEPAndIP(graph, 3500);
   const path = parseHappyPathRequired();
   const leadTimeInformed = parseLeadTimeInformedRequired();
@@ -1564,27 +2121,50 @@ function computeScenarioMetrics() {
   const autoGraph = buildAutoScenarioGraph();
   const autoBase = calculateTEPAndIP(autoGraph, 3500);
 
-  const tepReal = base.tepReal;
-  const tepIdeal = calculatePathTime(graph, path, true);
-  const tepIdealAuto = calculatePathTime(autoGraph, path, true);
-  const tepRealAuto = autoBase.tepReal;
-  const leadIdeal = calculatePathTime(graph, path, true);
+  // Usa o TER das 100 partículas animadas quando disponível,
+  // assim o dashboard e o contador ao vivo mostram o mesmo número.
+  const ter = (_animatedTer !== null && _animatedTer > 0) ? _animatedTer : base.tepReal;
+  const top = calculatePathTime(graph, path, true);      // T.O.P. = caminho feliz sem atrito
+  const topAuto = calculatePathTime(autoGraph, path, true);
+  const terAuto = autoBase.tepReal;
 
-  if (tepIdeal <= 0 || tepIdealAuto <= 0 || leadIdeal <= 0) {
+  if (top <= 0 || topAuto <= 0) {
     throw new Error('Nao foi possivel calcular os cenarios ideais a partir do caminho feliz.');
   }
 
+  // Conversao K: 1 UT = quantos minutos reais (usando T.P. como ancora)
+  // K = T.P. (min) / T.E.R. (UT)
+  const kFactor = (Number.isFinite(leadTimeInformed) && leadTimeInformed > 0 && ter > 0)
+    ? leadTimeInformed / ter
+    : null;
+
+  // Tempo de Gaveta = T.P. - (T.O.P. * K)  [tempo em fila/espera passiva]
+  const tempoGaveta = (kFactor !== null)
+    ? leadTimeInformed - (top * kFactor)
+    : null;
+
+  // Complexidade: numero de caminhos possiveis no processo
+  const complexidade = calculateComplexity(graph);
+
   return {
-    tepReal,
-    tepIdeal,
-    tepIdealAuto,
-    tepRealAuto,
+    ter,
+    top,
+    topAuto,
+    terAuto,
     leadTimeInformed,
-    leadIdeal,
-    ipRealVsIdeal:         phillipEfficiency(tepReal,        tepIdeal),
-    ipRealAutoVsIdealAuto: phillipEfficiency(tepRealAuto,    tepIdealAuto),
-    ipAutoVsIdeal:         phillipEfficiency(tepIdealAuto,   tepIdeal),
-    ipLeadInformedVsIdeal: Number.isFinite(leadTimeInformed) ? phillipEfficiency(leadTimeInformed, leadIdeal) : null,
+    kFactor,
+    tempoGaveta,
+    complexidade,
+    // Compatibilidade com codigo legado
+    tepReal:    ter,
+    tepIdeal:   top,
+    tepIdealAuto: topAuto,
+    tepRealAuto:  terAuto,
+    leadIdeal:  top,
+    ipRealVsIdeal:         phillipEfficiency(ter,     top),
+    ipRealAutoVsIdealAuto: phillipEfficiency(terAuto, topAuto),
+    ipAutoVsIdeal:         phillipEfficiency(topAuto, top),
+    ipLeadInformedVsIdeal: Number.isFinite(leadTimeInformed) ? phillipEfficiency(leadTimeInformed, top * (kFactor || 1)) : null,
     ipIdeal: 100,
     ipLeadIdeal: 100,
     ipIdealAuto: 100,
@@ -1649,13 +2229,13 @@ function renderHandoffSetup() {
         <label class="field" style="margin:0;"><span>Raia</span><input value="${lane}" disabled></label>
         <label class="field" style="margin:0;"><span>Equipe</span><input data-field="team" value="${profile.team || ''}" placeholder="Ex: Protocolo"></label>
         <label class="field" style="margin:0;"><span>Setor</span><input data-field="sector" value="${profile.sector || ''}" placeholder="Ex: Atendimento"></label>
-        <label class="field" style="margin:0;"><span>Orgao</span><input data-field="org" value="${profile.org || ''}" placeholder="Ex: SEFAZ"></label>
+        <label class="field" style="margin:0;"><span>Órgão</span><input data-field="org" value="${profile.org || ''}" placeholder="Ex: SEFAZ"></label>
       </div>`;
   }).join('');
 
   box.innerHTML = `
     <div style="font-size:12px;margin-bottom:8px;">
-      Regra usada: troca de raia => handoff. Mesmo setor +10, setores diferentes +15, orgaos diferentes +20.
+      Regra usada: troca de raia = handoff. Mesma equipe +10 UT, outra equipe (mesmo órgão) +20 UT, outro órgão +40 UT.
     </div>
     ${rows}
     <button id="btnSaveHandoffRows" type="button">Salvar Cadastro de Raias</button>
@@ -1672,7 +2252,7 @@ function renderHandoffSetup() {
 function ensureHandoffReady() {
   if (!graph) return false;
   if (!isHandoffReadyLocal()) {
-    $('validationBox').innerHTML = '<span class="badge error">handoff</span> Confirme na secao 2 do popup se cada handoff e de mesma equipe, outra equipe ou outro orgao.';
+    $('validationBox').innerHTML = '<span class="badge error">handoff</span> Confirme na seção 2 do popup se cada handoff é de mesma equipe, outra equipe ou outro órgão.';
     renderHandoffSetup();
     return false;
   }
@@ -1900,6 +2480,29 @@ function renderSetupPathPicker() {
   const vb = graphViewBox(graph);
   box.innerHTML = `<svg id="setupPathCanvas" viewBox="${vb.x} ${vb.y} ${vb.width} ${vb.height}" aria-label="Mapa para selecao do caminho feliz"></svg>`;
   drawSetupPathCanvas();
+
+  // Zoom com Ctrl+Scroll
+  const svg = $('setupPathCanvas');
+  if (svg && !svg._zoomBound) {
+    svg._zoomBound = true;
+    svg.addEventListener('wheel', (ev) => {
+      if (!ev.ctrlKey) return;
+      ev.preventDefault();
+      const vbParts = String(svg.getAttribute('viewBox') || '').trim().split(/\s+/).map(Number);
+      if (vbParts.length !== 4 || vbParts.some((n) => !Number.isFinite(n))) return;
+      let [x, y, w, h] = vbParts;
+      const factor = ev.deltaY < 0 ? 0.85 : 1 / 0.85; // zoom in / out
+      // Zoom centrado no ponto do cursor sobre o SVG
+      const rect = svg.getBoundingClientRect();
+      const mx = ((ev.clientX - rect.left) / rect.width)  * w + x;
+      const my = ((ev.clientY - rect.top)  / rect.height) * h + y;
+      const nw = Math.max(100, Math.min(8000, w * factor));
+      const nh = Math.max(60,  Math.min(6000, h * factor));
+      const nx = mx - (mx - x) * (nw / w);
+      const ny = my - (my - y) * (nh / h);
+      svg.setAttribute('viewBox', `${nx.toFixed(1)} ${ny.toFixed(1)} ${nw.toFixed(1)} ${nh.toFixed(1)}`);
+    }, { passive: false });
+  }
 }
 
 function onSetupPathNodeClick(nodeId) {
@@ -2196,6 +2799,41 @@ function drawGraph() {
         rect.setAttribute('stroke-width', '3');
       }
       g.appendChild(rect);
+    } else if (node.type === 'timer') {
+      // Evento Timer: circulo duplo amarelo/ambar com icone de relogio
+      const cOuter = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      cOuter.setAttribute('cx', String(node.x));
+      cOuter.setAttribute('cy', String(node.y));
+      cOuter.setAttribute('r', '26');
+      cOuter.setAttribute('fill', '#fef9e7');
+      cOuter.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
+      cOuter.setAttribute('stroke-width', isSelected ? '4' : '2.5');
+      g.appendChild(cOuter);
+      const cInner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      cInner.setAttribute('cx', String(node.x));
+      cInner.setAttribute('cy', String(node.y));
+      cInner.setAttribute('r', '20');
+      cInner.setAttribute('fill', 'none');
+      cInner.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
+      cInner.setAttribute('stroke-width', '1.5');
+      g.appendChild(cInner);
+      // Icone de relogio (linhas de ponteiro)
+      const clock = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      clock.textContent = '⏱';
+      clock.setAttribute('x', String(node.x));
+      clock.setAttribute('y', String(node.y - 8));
+      clock.setAttribute('font-size', '14');
+      clock.setAttribute('text-anchor', 'middle');
+      g.appendChild(clock);
+      // Exibir UT configurada abaixo do icone
+      const utLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      utLabel.textContent = node.timerUT > 0 ? `${node.timerUT} UT` : '? UT';
+      utLabel.setAttribute('x', String(node.x));
+      utLabel.setAttribute('y', String(node.y + 10));
+      utLabel.setAttribute('font-size', '9');
+      utLabel.setAttribute('text-anchor', 'middle');
+      utLabel.setAttribute('fill', '#b7950b');
+      g.appendChild(utLabel);
     } else if (node.type === 'gateway') {
       const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
       poly.setAttribute('points', `${node.x},${node.y - 30} ${node.x + 38},${node.y} ${node.x},${node.y + 30} ${node.x - 38},${node.y}`);
@@ -2254,58 +2892,16 @@ function drawGraph() {
 }
 
 function openGatewayEditor(gatewayId) {
-  const box = $('gatewayEditor');
-  const outs = outgoing(graph, gatewayId);
-  if (!outs.length) {
-    box.classList.remove('hidden');
-    box.textContent = 'Gateway sem saidas.';
-    return;
+  // Gateway clicked on canvas — highlight its section in the sidebar accordion
+  const acc = $('accordionGatewayProbs');
+  if (acc && !acc.open) acc.open = true;
+  // Scroll the gateway's section into view in the sidebar
+  const gwEl = document.querySelector(`.sgw-gateway[data-sgw-gw="${CSS.escape(gatewayId)}"]`);
+  if (gwEl) {
+    gwEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    gwEl.classList.add('sgw-gateway-highlight');
+    setTimeout(() => gwEl.classList.remove('sgw-gateway-highlight'), 1500);
   }
-
-  box.classList.remove('hidden');
-  box.innerHTML = `<h4>Probabilidades - ${gatewayId}</h4>`;
-
-  const defaultMap = defaultGatewayProbMap(outs);
-
-  const form = document.createElement('div');
-  for (const e of outs) {
-    const row = document.createElement('label');
-    row.className = 'field';
-    row.innerHTML = `<span>${e.id} (${e.from} -> ${e.to})</span><input type="number" min="0" max="100" step="1" data-edge="${e.id}" value="${Number(defaultMap[e.id] || 0)}">`;
-    form.appendChild(row);
-  }
-
-  const info = document.createElement('div');
-  info.className = 'box';
-  info.textContent = `Padrao automatico para ${outs.length} caminhos: ${splitPercentages(outs.length).join('% | ')}%.`;
-
-  const btnAuto = document.createElement('button');
-  btnAuto.type = 'button';
-  btnAuto.textContent = 'Auto distribuir';
-  btnAuto.onclick = () => {
-    const autoMap = defaultGatewayProbMap(outs.map((e) => ({ ...e, probability: 0 })));
-    form.querySelectorAll('input[data-edge]').forEach((i) => {
-      i.value = String(Number(autoMap[i.dataset.edge] || 0));
-    });
-  };
-
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.textContent = 'Aplicar';
-  btn.onclick = () => {
-    const probs = {};
-    form.querySelectorAll('input[data-edge]').forEach((i) => {
-      probs[i.dataset.edge] = Number(i.value || 0);
-    });
-    graph = applyGatewayProbabilities(graph, gatewayId, probs);
-    $('graphJson').value = JSON.stringify(graph, null, 2);
-    refreshAll();
-  };
-
-  box.appendChild(form);
-  box.appendChild(info);
-  box.appendChild(btnAuto);
-  box.appendChild(btn);
 }
 
 function updateDashboard() {
@@ -2344,12 +2940,7 @@ function updateDashboard() {
     `Automacoes confirmadas para cenario auto: ${metrics.autoCount}.`,
   ].join('\n');
 
-  $('frictionRanking').innerHTML = '';
-  for (const item of metrics.ranking.slice(0, 8)) {
-    const li = document.createElement('li');
-    li.textContent = `${item.type} - ${item.key}: ${item.total.toFixed(1)} min acumulados`;
-    $('frictionRanking').appendChild(li);
-  }
+  renderFrictionChart(metrics);
 
   renderInsightKpis(metrics, null);
   renderAutomaticInterpretation(metrics, null);
@@ -2445,18 +3036,20 @@ function edgeDurationMinutes(fromId, toId) {
     toAutomated = true;
   }
 
-  // Correlacao direta com o tipo da atividade destino: automatizada=1 min, manual=5 min.
-  if (to.type === 'task') mins += toAutomated ? 1 : 5;
-  if (!isIdealMode && to.type === 'gateway') mins += 5;
+  // Duracao proporcional as UTs do Word: automatizada=0.5 UT, manual=10 UT, gateway=2.5 UT.
+  if (to.type === 'timer') mins += Number(to.timerUT || 0); // Espera do timer (semaforo)
+  if (to.type === 'task') mins += toAutomated ? 0.5 : 10;
+  if (!isIdealMode && to.type === 'gateway') mins += 2.5;
   if (!isIdealMode && from.type === 'task' && to.type === 'task' && !from.automated && !toAutomated) {
     const a = laneMetaOf(from);
     const b = laneMetaOf(to);
     if (a.laneId !== b.laneId) {
-      if (a.org && b.org && a.org !== b.org) mins += 20;
-      else if (a.sector && b.sector && a.sector !== b.sector) mins += 15;
+      if (a.org && b.org && a.org !== b.org) mins += 40;
+      else if (a.sector && b.sector && a.sector !== b.sector) mins += 20;
       else mins += 10;
     }
   }
+  // Loop: duplica a duracao da aresta (tarefa reexecutada como se fosse a primeira vez).
   if (!isIdealMode && edge.isLoopReturn) mins *= 2;
   return Math.max(mins, 0.25);
 }
@@ -2530,18 +3123,39 @@ function animate(frameTimeMs = performance.now()) {
     );
     const isLoopRepeatPass = Boolean(edge?.isLoopReturn && toVisits >= 1);
 
+    // Detecta handoff critico: cruzamento entre orgaos diferentes.
+    const fromNode = nodeById(fromId);
+    const fromMeta = fromNode ? laneMetaOf(fromNode) : null;
+    const toMeta = to ? laneMetaOf(to) : null;
+    const isCriticalHandoff = Boolean(
+      !isLoopRepeatPass
+      && fromMeta?.org && toMeta?.org
+      && fromMeta.org !== toMeta.org
+    );
+
     if (edge?.isErrorPath || (to?.type === 'end' && to?.endKind === 'error')) {
-      t.color = '#c0392b';
+      t.color = '#c0392b'; // Vermelho: erro
+      t.speedFactor = 1;
+    } else if (isCriticalHandoff) {
+      t.color = '#c0392b'; // Vermelho: handoff critico entre orgaos
       t.speedFactor = 1;
     } else if (isLoopRepeatPass) {
-      t.color = '#f39c12';
+      t.color = '#f39c12'; // Laranja: loop/retrabalho
       t.speedFactor = 0.6;
+    } else if (to?.type === 'timer') {
+      t.color = '#f1c40f'; // Amarelo: semaoforo vermelho / evento timer (aguardando)
+      t.speedFactor = 0.3; // Bem lento — simula a espera do timer
     } else if (to?.type === 'task' && toAutomated) {
-      t.color = '#23b26d';
+      t.color = '#8e44ad'; // Roxo: automacao RPA
       t.speedFactor = 1;
     } else {
-      t.color = '#1f6fb2';
+      t.color = '#1f6fb2'; // Azul: execucao normal
       t.speedFactor = 1;
+    }
+
+    // Gargalo: se UT da aresta > 20, velocidade cai 50%.
+    if (dur > 20) {
+      t.speedFactor *= 0.5;
     }
 
     if (t.progress >= 1) {
@@ -2572,6 +3186,8 @@ function animate(frameTimeMs = performance.now()) {
     animationLastTickMs = 0;
     simulationClockMs = 0;
     refreshLiveSimulationStatus(window.__tokens);
+    // Armazena o TER real das 100 partículas para o dashboard usar
+    _animatedTer = liveSimulationStatus.avgLeadTime > 0 ? liveSimulationStatus.avgLeadTime : null;
     $('btnViewDashboard')?.classList.remove('hidden');
   }
 }
@@ -2589,6 +3205,7 @@ function playSimulation() {
   if (!ensureHandoffReady()) return;
   simulationMode = $('simMode')?.value || 'real';
   syncConfirmedAutoFromUi();
+  _animatedTer = null; // limpa TER anterior; será recalculado ao fim desta rodada
 
   if (simulationMode !== 'real') {
     try {
@@ -2601,6 +3218,8 @@ function playSimulation() {
 
   drawGraph();
   window.__tokens = buildTokenSchedule();
+  const panel = $('simLivePanel');
+  if (panel) { panel.classList.remove('hidden'); panel.classList.remove('slp-done'); }
   refreshLiveSimulationStatus(window.__tokens);
   running = true;
   animationLastTickMs = 0;
@@ -2611,6 +3230,7 @@ function playSimulation() {
 
 function stopSimulation() {
   running = false;
+  $('simLivePanel')?.classList.add('hidden');
   cancelAnimationFrame(animFrame);
   animationLastTickMs = 0;
   simulationClockMs = 0;
@@ -2759,6 +3379,7 @@ function generateReport() {
   let metrics;
   try {
     metrics = computeScenarioMetrics();
+    _lastSimMetrics = metrics;
   } catch (e) {
     $('reportBox').textContent = `Falha no relatorio: ${e.message}`;
     return;
@@ -2864,6 +3485,42 @@ async function runVisionExtract() {
   }
 }
 
+function renderTimerSetup() {
+  const box = $('timerSetup');
+  if (!box) return;
+  const timers = (graph?.nodes || []).filter((n) => n.type === 'timer');
+  if (!timers.length) {
+    box.innerHTML = '';
+    return;
+  }
+  box.innerHTML = `
+    <h3>⏱ Eventos Timer — Defina as UTs de Espera</h3>
+    <div class="box" style="font-size:12px;margin-bottom:8px;">
+      O fluxo contém <strong>${timers.length}</strong> evento(s) timer (semáforo vermelho).
+      Informe quantas <strong>UT</strong> cada timer deve aguardar antes de liberar o fluxo.
+      <br>Exemplo: aguardar aprovação externa = 40 UT, aguardar prazo regulatório = 80 UT.
+    </div>
+    ${timers.map((n) => `
+      <label class="field" style="display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center;">
+        <span>⏱ <strong>${n.label}</strong></span>
+        <input type="number" min="0" step="0.5" value="${n.timerUT || 0}"
+               data-timer-id="${n.id}" placeholder="UT" />
+      </label>`).join('')}
+    <button id="btnSaveTimers" type="button" style="margin-top:6px;">Salvar UTs dos Timers</button>
+    <div id="timerSaveMsg" style="font-size:12px;color:#23b26d;margin-top:4px;"></div>`;
+
+  $('btnSaveTimers').addEventListener('click', () => {
+    box.querySelectorAll('[data-timer-id]').forEach((input) => {
+      const nId = input.getAttribute('data-timer-id');
+      const node = (graph?.nodes || []).find((n) => n.id === nId);
+      if (node) node.timerUT = Math.max(0, Number(input.value) || 0);
+    });
+    $('graphJson').value = JSON.stringify(graph, null, 2);
+    $('timerSaveMsg').textContent = 'UTs salvas. O simulador usará esses valores.';
+    drawGraph();
+  });
+}
+
 function applyExtracted() {
   if (!extractedGraph) {
     $('cvOutput').textContent = 'Nenhuma topologia extraida para aplicar.';
@@ -2873,6 +3530,7 @@ function applyExtracted() {
   normalizeActorCodesInGraph();
   $('graphJson').value = JSON.stringify(graph, null, 2);
   refreshAll();
+  renderTimerSetup();
   renderHandoffWizard();
 }
 
@@ -2886,11 +3544,145 @@ function refreshAll() {
   renderSetupGatewayEditor();
   renderSetupAutomationEditor();
   renderSetupLoopEditor();
+  renderTimerSetup();
   renderAutomationConfirm();
   updateDashboard();
   renderSuggestions();
   renderSetupChecklist();
   renderHypothesisTargets();
+  renderSidebarGatewayEditor();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BPMN 2.0 EDITOR INTEGRADO
+// ═══════════════════════════════════════════════════════════════════
+
+let _bpmnModeler = null;
+
+const DEFAULT_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  id="Definitions_1"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1" name="Processo" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_1" name="Início"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="172" y="102" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="165" y="145" width="50" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+
+function initBpmnModeler() {
+  if (_bpmnModeler) return;
+  const BpmnJS = window.BpmnJS;
+  if (!BpmnJS) {
+    console.error('[SimBPMN] BpmnJS não encontrado. Verifique o CDN.');
+    return;
+  }
+  const container = $('bpmnContainer');
+  if (!container) { console.error('[SimBPMN] #bpmnContainer não encontrado.'); return; }
+  _bpmnModeler = new BpmnJS({ container, keyboard: { bindTo: window } });
+}
+
+async function loadDefaultBpmn() {
+  if (!_bpmnModeler) return;
+  try {
+    await _bpmnModeler.importXML(DEFAULT_BPMN);
+    _bpmnModeler.get('canvas').zoom('fit-viewport');
+  } catch (e) {
+    console.warn('[SimBPMN] Erro ao carregar diagrama padrão:', e.message);
+  }
+}
+
+// Mostra o overlay de escolha de entrada (chamado na inicialização)
+function showEntryChoice() {
+  const overlay = $('entryChoiceOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+}
+
+function hideEntryChoice() {
+  const overlay = $('entryChoiceOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+// Abre o painel do editor BPMN 2.0
+function showBpmnEditor() {
+  hideEntryChoice();
+  const panel = $('bpmnEditorPanel');
+  if (panel) panel.classList.remove('hidden');
+  initBpmnModeler();
+  loadDefaultBpmn();
+}
+
+// Fecha o editor BPMN e volta para o overlay de entrada
+function hideBpmnEditor() {
+  const panel = $('bpmnEditorPanel');
+  if (panel) panel.classList.add('hidden');
+}
+
+// Modo importação: fecha overlay e abre o setup modal na seção 1 (arquivo)
+function startImportMode() {
+  hideEntryChoice();
+  openSetupModal();
+  // Rola até a seção 1 para deixar o fileInput em evidência
+  setTimeout(() => {
+    const fileInput = $('fileInput');
+    if (fileInput) fileInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 200);
+}
+
+// Extrai a topologia do editor BPMN e aplica ao simulador
+async function applyFromBpmnEditor() {
+  const btn = $('btnBpmnApply');
+  if (!_bpmnModeler) {
+    alert('Editor BPMN não inicializado.');
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Processando…'; }
+  try {
+    const { xml } = await _bpmnModeler.saveXML({ format: true });
+    // Cria um File virtual para reusar o pipeline de extração de cv.js
+    const file = new File([xml], 'diagrama.bpmn', { type: 'application/xml' });
+    const extraction = await extractTopologyFromWorkflowFile(file);
+    const { graph: g } = extraction;
+    if (!g || !g.nodes || g.nodes.length === 0) {
+      alert('Nenhuma topologia extraída do diagrama.\nAdicione atividades ao processo antes de aplicar.');
+      return;
+    }
+    extractedGraph = normalizeGraph(g);
+    // Fecha o editor e abre o setup modal para preencher os detalhes (Seção 2 em diante)
+    hideBpmnEditor();
+    applyExtracted();
+    openSetupModal();
+    const out = $('cvOutput');
+    if (out) out.textContent = `Topologia extraída do Editor BPMN: ${g.nodes.length} nó(s), ${(g.edges || []).length} aresta(s).`;
+  } catch (e) {
+    console.error('[SimBPMN] applyFromBpmnEditor:', e);
+    alert('Erro ao extrair topologia: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '▶ Aplicar ao Simulador'; }
+  }
+}
+
+// Exporta o BPMN como arquivo .bpmn
+async function exportBpmnFile() {
+  if (!_bpmnModeler) return;
+  try {
+    const { xml } = await _bpmnModeler.saveXML({ format: true });
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'processo.bpmn';
+    a.click();
+  } catch (e) {
+    alert('Erro ao exportar: ' + e.message);
+  }
 }
 
 function wireEvents() {
@@ -2930,7 +3722,8 @@ function wireEvents() {
     updateDashboard();
   });
   $('happyPath')?.addEventListener('input', renderSetupChecklist);
-  $('leadTimeInformed')?.addEventListener('input', renderSetupChecklist);
+  // NOTA: leadTimeInformed usa 'change' (ao sair do campo), NÃO 'input',
+  // para evitar bloquear a digitação com cálculos síncronos pesados.
   $('setupHappyPath')?.addEventListener('input', () => {
     syncSetupInputsToMain();
     renderSetupChecklist();
@@ -2939,10 +3732,8 @@ function wireEvents() {
     syncSetupInputsToMain();
     renderSetupChecklist();
   });
-  $('handoffWizard')?.addEventListener('change', () => {
-    saveHandoffRulesFromWizard();
-    renderSetupChecklist();
-  });
+  // handoffWizard agora é apenas exibição — sem interação do usuário
+  // (handoffs são classificados automaticamente com base nos perfis das raias)
   $('setupGatewayEditor')?.addEventListener('click', (ev) => {
     const target = ev.target;
     if (!target || !target.id) return;
@@ -2960,21 +3751,46 @@ function wireEvents() {
     saveSetupAutomationSelection();
     refreshAll();
   });
-  $('setupTaskMatrix')?.addEventListener('change', () => {
-    document.querySelectorAll('input[data-task-automated]').forEach((autoEl) => {
-      const id = String(autoEl.getAttribute('data-task-automated') || '');
-      if (!id) return;
-      const potentialEl = document.querySelector(`input[data-task-potential="${CSS.escape(id)}"]`);
-      if (!potentialEl) return;
-      if (autoEl.checked) {
-        potentialEl.checked = false;
-        potentialEl.disabled = true;
-      } else {
-        potentialEl.disabled = false;
-      }
-    });
-    saveSetupAutomationSelection();
-    refreshAll();
+  $('setupTaskMatrix')?.addEventListener('change', (ev) => {
+    const t = ev.target;
+    // Checkbox de automação: trata interdependência e faz refresh completo
+    if (t.matches('input[data-task-automated], input[data-task-potential]')) {
+      document.querySelectorAll('input[data-task-automated]').forEach((autoEl) => {
+        const id = String(autoEl.getAttribute('data-task-automated') || '');
+        if (!id) return;
+        const potentialEl = document.querySelector(`input[data-task-potential="${CSS.escape(id)}"]`);
+        if (!potentialEl) return;
+        if (autoEl.checked) {
+          potentialEl.checked = false;
+          potentialEl.disabled = true;
+        } else {
+          potentialEl.disabled = false;
+        }
+      });
+      saveSetupAutomationSelection();
+      refreshAll();
+    }
+  });
+
+  // Ator/raia: salva e atualiza perfis + handoffs sem recriar o task matrix
+  $('setupTaskMatrix')?.addEventListener('blur', (ev) => {
+    const t = ev.target;
+    if (t.matches('input[data-task-actor]')) {
+      saveSetupTaskMatrixFromForm();
+      renderSetupLaneProfiles();
+      renderHandoffWizard();
+      renderSetupChecklist();
+    }
+  }, true); // capture=true para capturar blur
+
+  // Perfis de raia (equipe/órgão): auto-aplica handoffs em tempo real
+  $('setupTaskMatrix')?.addEventListener('input', (ev) => {
+    const t = ev.target;
+    if (t.matches('[data-lp-team], [data-lp-org]')) {
+      saveSetupTaskMatrixFromForm();
+      renderHandoffWizard();
+      renderSetupChecklist();
+    }
   });
   $('setupLoopEditor')?.addEventListener('click', (ev) => {
     const t = ev.target;
@@ -3013,7 +3829,12 @@ function wireEvents() {
   $('btnViewDashboard')?.addEventListener('click', revealDashboard);
   $('btnReadyToSimulate')?.addEventListener('click', completeSetup);
   $('btnApplyCalibration')?.addEventListener('click', applyCalibration);
+  $('btnResetRules')?.addEventListener('click', () => { resetRulesToDefaults(); applyCalibration(); });
   $('btnSimulateRoi')?.addEventListener('click', runRoi);
+
+  // ── T.P.: recalcular automaticamente ao alterar o valor ou unidade ──
+  $('leadTimeInformed')?.addEventListener('change', () => { if (graph) updateDashboard(); });
+  $('tpUnit')?.addEventListener('change',           () => { if (graph) updateDashboard(); });
   $('btnReport')?.addEventListener('click', generateReport);
   const btnExtract = $('btnExtractVision');
   if (btnExtract) {
@@ -3027,6 +3848,29 @@ function wireEvents() {
     btnApply.addEventListener('click', applyExtracted);
     btnApply.onclick = applyExtracted;
   }
+
+  // ── Entry Choice ─────────────────────────────────────────────────
+  $('btnChoiceDrawBpmn')?.addEventListener('click', showBpmnEditor);
+  $('btnChoiceImport')?.addEventListener('click', startImportMode);
+  $('btnChoiceSkip')?.addEventListener('click', () => {
+    hideEntryChoice();
+    // carrega o exemplo padrão e vai direto para o workspace
+    loadSample();
+  });
+
+  // ── BPMN Editor Toolbar ──────────────────────────────────────────
+  $('btnBpmnApply')?.addEventListener('click', applyFromBpmnEditor);
+  $('btnBpmnBack')?.addEventListener('click', () => { hideBpmnEditor(); showEntryChoice(); });
+  $('btnBpmnFit')?.addEventListener('click', () => {
+    try { _bpmnModeler?.get('canvas').zoom('fit-viewport'); } catch (e) {}
+  });
+  $('btnBpmnUndo')?.addEventListener('click', () => {
+    try { _bpmnModeler?.get('commandStack').undo(); } catch (e) {}
+  });
+  $('btnBpmnRedo')?.addEventListener('click', () => {
+    try { _bpmnModeler?.get('commandStack').redo(); } catch (e) {}
+  });
+  $('btnBpmnExport')?.addEventListener('click', exportBpmnFile);
 }
 
 function wireGlobalFallbackClicks() {
@@ -3054,8 +3898,35 @@ function saveToSIGA() {
   const btn = $('btnSaveToSiga');
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
   try {
+    // Tenta capturar métricas atuais; falha silenciosamente se não for possível
+    let simResults = _lastSimMetrics;
+    if (!simResults) {
+      try { simResults = computeScenarioMetrics(); _lastSimMetrics = simResults; } catch (_) {}
+    }
+    // Payload simplificado para serialização (remove estruturas grandes como ranking completo)
+    const simSummary = simResults ? {
+      ter:       simResults.ter,
+      top:       simResults.top,
+      topAuto:   simResults.topAuto,
+      terAuto:   simResults.terAuto,
+      ip:        simResults.ipRealVsIdeal,
+      ipAuto:    simResults.ipAutoVsIdeal,
+      kFactor:   simResults.kFactor,
+      tempoGaveta: simResults.tempoGaveta,
+      complexidade: simResults.complexidade,
+      savedAt:   new Date().toISOString(),
+    } : null;
+
     window.parent.postMessage(
-      { type: 'SIMULATOR_SAVE', payload: { graph: cloneLocal(graph), popKey: _sigaPopKey } },
+      {
+        type: 'SIMULATOR_SAVE',
+        payload: {
+          graph:         cloneLocal(graph),
+          popKey:        _sigaPopKey,
+          linkedProcess: _linkedProcess || null,
+          simResults:    simSummary,
+        },
+      },
       '*'
     );
     if (btn) {
@@ -3107,6 +3978,18 @@ window.addEventListener('message', (ev) => {
         );
       }
     }
+
+    // ── Parent envia lista de processos da Arquitetura ──────────
+    if (msg.type === 'SIGA_PROCESS_LIST') {
+      const { list } = msg.payload || {};
+      if (Array.isArray(list) && list.length) {
+        _sigaProcessList = list;
+        // Re-renderiza a Seção 0 se o modal estiver aberto
+        if (!$('setupModal')?.classList.contains('hidden')) {
+          renderSetupSection0();
+        }
+      }
+    }
   } catch (e) {
     console.warn('[Simulator] message handler error:', e);
   }
@@ -3119,8 +4002,8 @@ try {
   wireEvents();
   wireGlobalFallbackClicks();
   $('btnViewDashboard')?.classList.remove('hidden');
-  loadSample();
-  openSetupModal();
+  loadSample();          // carrega exemplo no background (JSON visível mas tela coberta)
+  showEntryChoice();     // primeiro passo: overlay de escolha de entrada
 } catch (e) {
   const out = $('cvOutput');
   if (out) out.textContent = `Falha ao inicializar interface: ${e.message}`;
