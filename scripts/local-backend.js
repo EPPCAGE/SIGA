@@ -6,6 +6,8 @@ const XLSX = require('xlsx');
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
 const MAX_BODY_BYTES = Number(process.env.SIGA_MAX_BODY_BYTES || 50 * 1024 * 1024);
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const DOC_MIME = 'application/msword';
 const DATA_FILE = process.env.SIGA_DATA_FILE
   ? path.resolve(process.env.SIGA_DATA_FILE)
   : path.resolve(__dirname, '..', 'backups', 'local-data.json');
@@ -394,18 +396,11 @@ async function callGithubModels(parsed) {
     throw err;
   }
 
-  const prompt = typeof parsed.prompt === 'string' ? parsed.prompt.slice(0, 24000) : '';
-  if (!prompt) {
-    const err = new Error('Campo obrigatório: prompt');
-    err.statusCode = 400;
-    throw err;
-  }
-
+  const input = await normalizeAiInput(parsed);
   const maxTokens = Math.min(Math.max(Number(parsed.maxTokens) || 1800, 256), 16384);
-  const userContent = [{ type: 'text', text: prompt }];
-  const img = parsed.image;
-  if (img && typeof img === 'object' && img.data && img.mimeType) {
-    userContent.push({ type: 'image_url', image_url: { url: `data:${img.mimeType};base64,${img.data}` } });
+  const userContent = [{ type: 'text', text: input.prompt }];
+  if (input.image) {
+    userContent.push({ type: 'image_url', image_url: { url: `data:${input.image.mimeType};base64,${input.image.data}` } });
   }
 
   const aiResp = await fetch(AI_API_URL, {
@@ -418,7 +413,7 @@ async function callGithubModels(parsed) {
       model: AI_MODEL,
       messages: [
         { role: 'system', content: 'Você é um assistente para análise de processos da CAGE-RS. Responda em português de forma objetiva e estruturada.' },
-        { role: 'user', content: userContent.length === 1 ? prompt : userContent }
+        { role: 'user', content: userContent.length === 1 ? input.prompt : userContent }
       ],
       max_tokens: maxTokens
     })
@@ -432,6 +427,81 @@ async function callGithubModels(parsed) {
   }
 
   return aiData?.choices?.[0]?.message?.content || '';
+}
+
+let _mammoth = null;
+
+function getMammoth() {
+  if (_mammoth) return _mammoth;
+  try {
+    _mammoth = require('mammoth');
+    return _mammoth;
+  } catch (_e) {
+    const err = new Error('Dependencia ausente para DOCX: instale "mammoth" (npm install mammoth).');
+    err.statusCode = 500;
+    throw err;
+  }
+}
+
+async function extractDocxTextFromBase64(base64Data) {
+  const buf = Buffer.from(String(base64Data || ''), 'base64');
+  if (!buf.length) {
+    const err = new Error('Arquivo DOCX vazio ou invalido.');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const mammoth = getMammoth();
+  let result;
+  try {
+    result = await mammoth.extractRawText({ buffer: buf });
+  } catch (mammothErr) {
+    const err = new Error('Arquivo DOCX inválido ou corrompido: ' + (mammothErr?.message || 'erro ao abrir o documento'));
+    err.statusCode = 400;
+    throw err;
+  }
+  const text = String(result?.value || '').replace(/\r/g, '').trim();
+  if (!text) {
+    const err = new Error('Nao foi possivel extrair texto do DOCX. Verifique se o arquivo contém texto legível (não apenas imagens).');
+    err.statusCode = 400;
+    throw err;
+  }
+  return text;
+}
+
+async function normalizeAiInput(parsed) {
+  const basePrompt = typeof parsed?.prompt === 'string' ? parsed.prompt.slice(0, 24000).trim() : '';
+  if (!basePrompt) {
+    const err = new Error('Campo obrigatório: prompt');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const img = parsed?.image;
+  if (!(img && typeof img === 'object' && img.data && img.mimeType)) {
+    return { prompt: basePrompt, image: null };
+  }
+
+  const mime = String(img.mimeType || '').toLowerCase();
+  if (mime === DOC_MIME) {
+    const err = new Error('Arquivo .doc nao suportado pela IA. Converta para .docx ou PDF.');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (mime === DOCX_MIME) {
+    const docxText = await extractDocxTextFromBase64(img.data);
+    const composedPrompt = `${basePrompt}\n\n---\nCONTEUDO DO DOCUMENTO (DOCX):\n${docxText}`.slice(0, 120000);
+    return { prompt: composedPrompt, image: null };
+  }
+
+  return {
+    prompt: basePrompt,
+    image: {
+      data: String(img.data),
+      mimeType: String(img.mimeType)
+    }
+  };
 }
 
 function buildGeminiApiUrl(model) {
@@ -474,17 +544,10 @@ async function callGeminiOnce(parsed, model) {
     throw err;
   }
 
-  const prompt = typeof parsed.prompt === 'string' ? parsed.prompt.slice(0, 24000) : '';
-  if (!prompt) {
-    const err = new Error('Campo obrigatório: prompt');
-    err.statusCode = 400;
-    throw err;
-  }
-
-  const parts = [{ text: prompt }];
-  const img = parsed.image;
-  if (img && typeof img === 'object' && img.data && img.mimeType) {
-    parts.push({ inline_data: { mime_type: String(img.mimeType), data: String(img.data) } });
+  const input = await normalizeAiInput(parsed);
+  const parts = [{ text: input.prompt }];
+  if (input.image) {
+    parts.push({ inline_data: { mime_type: input.image.mimeType, data: input.image.data } });
   }
 
   const aiResp = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(GEMINI_KEY)}`, {

@@ -2710,7 +2710,7 @@
               <div class="npop-upload-title">Clique ou arraste o POP Word aqui</div>
               <div class="npop-upload-hint">Apenas .doc e .docx</div>
             </div>
-            <input type="file" id="npop-file-input" accept=".doc,.docx" style="display:none">
+            <input type="file" id="npop-file-input" accept=".docx" style="display:none">
             <div class="npop-file-chosen" id="npop-file-chosen">
               <span style="font-size:20px;">📄</span>
               <span id="npop-file-name" style="font-size:13px;font-weight:600;color:var(--cage-blue);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
@@ -6911,7 +6911,7 @@ function _npopUpdateWorkflowStatusAfterFileChange() {
 
 function _npopIsAllowedWorkflowFile(file) {
   const name = String(file?.name || '').toLowerCase();
-  return name.endsWith('.doc') || name.endsWith('.docx');
+  return name.endsWith('.docx');
 }
 
 // File upload wiring
@@ -7118,8 +7118,8 @@ async function confirmNovoPop() {
 
   // Etapa 1: carregar POP Word e abrir formulário de revisão/edição.
   if(!_npopWorkflowReady) {
-    if(!_npopFile) { showToast('Selecione um POP em Word (.doc/.docx) antes de continuar.', 'warn'); return; }
-    if(!_npopIsAllowedWorkflowFile(_npopFile)) { showToast('Formato inválido. Use apenas .doc/.docx.', 'warn'); return; }
+    if(!_npopFile) { showToast('Selecione um POP em Word (.docx) antes de continuar.', 'warn'); return; }
+    if(!_npopIsAllowedWorkflowFile(_npopFile)) { showToast('Formato inválido. Use apenas arquivos .docx (Word moderno).', 'warn'); return; }
     try {
       showToast('🔄 Carregando e extraindo informações do arquivo...', 'info');
       const extracted = await _npopExtractWordParsed(_npopFile);
@@ -11699,17 +11699,18 @@ async function callGeminiProxy(prompt, image = null, options = {}) {
   const apiBase = String(API_URL || '').replace(/\/$/, '');
   const endpointCandidates = [
     `${apiBase}/ai`,
+    'http://127.0.0.1:3000/ai',
+    'http://localhost:3000/ai',
     `${apiBase}/api/ai`,
     '/api/ai',
-    'http://127.0.0.1:3000/ai',
     'http://127.0.0.1:3000/api/ai',
-    'http://localhost:3000/ai',
     'http://localhost:3000/api/ai',
   ];
 
   const uniqueEndpoints = [...new Set(endpointCandidates.filter(Boolean))];
   let lastErr = null;
   let saw503 = false;
+  let definitiveErr = null;
 
   for (const endpoint of uniqueEndpoints) {
     try {
@@ -11725,14 +11726,22 @@ async function callGeminiProxy(prompt, image = null, options = {}) {
         const msg = String(err.error || err.message || '').trim();
         lastErr = new Error(msg || `Erro na IA (${resp.status}) em ${endpoint}`);
 
-        // Mensagem de configuracao ausente deve aparecer para o usuario sem mascarar.
-        if (resp.status === 503 && /nao configurada|não configurada|api[_\s-]?key/i.test(msg)) {
-          throw lastErr;
+        // Endpoints inexistentes no host atual (frontend estático sem proxy): tenta próximo.
+        if (resp.status === 404 || resp.status === 405) {
+          continue;
         }
 
-        // 4xx (exceto 429) tende a ser erro definitivo de request/permissão.
+        // 503 por falta de configuração deve parar imediatamente.
+        if (resp.status === 503 && /nao configurada|não configurada|api[_\s-]?key/i.test(msg)) {
+          definitiveErr = lastErr;
+          break;
+        }
+
+        // 4xx definitivo (erro de payload/permissão): preservar mensagem e parar o loop.
+        // Não pode continuar pois os próximos endpoints retornariam 404/405 e sobrescreveriam a mensagem útil.
         if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) {
-          throw lastErr;
+          definitiveErr = lastErr;
+          break;
         }
         continue;
       }
@@ -11748,6 +11757,7 @@ async function callGeminiProxy(prompt, image = null, options = {}) {
     }
   }
 
+  if (definitiveErr) throw definitiveErr;
   if (saw503) {
     throw new Error('IA temporariamente indisponível (503). Verifique se o backend local de IA está ativo e tente novamente.');
   }
