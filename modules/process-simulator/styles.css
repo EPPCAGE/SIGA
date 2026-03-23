@@ -1,16 +1,22 @@
 :root {
-  --bg0: #0b1728;
-  --bg1: #13233a;
-  --ink: #f2f6fb;
-  --muted: #9fb0c5;
-  --line: rgba(201, 214, 231, 0.25);
+  /* ── Tema escuro — alinhado à paleta SIGA ──
+     Fundo: Verde Profundo (#1B3022) como base dark
+     CTAs:  Azul Royal (#003366)
+     Texto: Off-White (#F5F5F5 / #f2f6fb)
+     Apoio: Cinza Chumbo (#2F4F4F) adaptado para fundo escuro
+  */
+  --bg0: #0e1a10;        /* Verde Profundo escuríssimo */
+  --bg1: #1B3022;        /* Verde Profundo — painéis */
+  --ink: #f2f6fb;        /* Off-white — texto principal */
+  --muted: #9fb8b0;      /* Cinza Chumbo claro adaptado */
+  --line: rgba(180, 210, 190, 0.22);
   --card: #ffffff;
-  --primary: #1c3a63;
-  --primary-2: #2a4e7d;
-  --ok: #3f6f4a;
+  --primary:   #003366;  /* Azul Royal — CTAs */
+  --primary-2: #002855;  /* Azul Royal escuro — hover */
+  --ok:   #3f6f4a;
   --warn: #8a6d3b;
-  --err: #8f3d3a;
-  --shadow: 0 18px 42px rgba(2, 8, 23, 0.35);
+  --err:  #8f3d3a;
+  --shadow: 0 18px 42px rgba(10, 25, 12, 0.40);
 }
 
 * { box-sizing: border-box; }
@@ -20,8 +26,8 @@ body {
   font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(1200px 520px at 82% -120px, rgba(96, 165, 250, 0.2) 0%, transparent 60%),
-    radial-gradient(800px 420px at 10% 8%, rgba(148, 163, 184, 0.16) 0%, transparent 65%),
+    radial-gradient(1200px 520px at 82% -120px, rgba(0, 51, 102, 0.18) 0%, transparent 60%),
+    radial-gradient(800px 420px at 10% 8%, rgba(60, 120, 80, 0.14) 0%, transparent 65%),
     linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%);
 }
 
@@ -29,8 +35,8 @@ body {
   padding: 18px 24px;
   color: #eff4fb;
   background:
-    linear-gradient(120deg, rgba(19, 39, 63, 0.95) 0%, rgba(25, 50, 80, 0.92) 60%, rgba(17, 38, 66, 0.95) 100%);
-  border-bottom: 1px solid rgba(173, 191, 214, 0.25);
+    linear-gradient(120deg, rgba(27, 48, 34, 0.97) 0%, rgba(14, 42, 22, 0.95) 60%, rgba(27, 48, 34, 0.97) 100%);
+  border-bottom: 1px solid rgba(180, 210, 190, 0.22);
   box-shadow: var(--shadow);
   display: flex;
   flex-wrap: wrap;
@@ -1284,15 +1290,15 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(7, 16, 32, 0.88);
+  background: rgba(10, 20, 12, 0.90);
   backdrop-filter: blur(6px);
 }
 
 .entry-choice-overlay.hidden { display: none; }
 
 .entry-choice-dialog {
-  background: linear-gradient(145deg, #13233a 0%, #0f1d30 100%);
-  border: 1px solid rgba(173, 191, 214, 0.28);
+  background: linear-gradient(145deg, #1e3a26 0%, #1B3022 100%);
+  border: 1px solid rgba(100, 160, 120, 0.30);
   border-radius: 18px;
   padding: 40px 44px 32px;
   max-width: 560px;
@@ -1309,7 +1315,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 
 .entry-choice-dialog > p {
   margin: 0 0 28px;
-  color: #9fb0c5;
+  color: #9fb8b0;
   font-size: 14px;
 }
 
@@ -1329,8 +1335,8 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   align-items: center;
   gap: 8px;
   padding: 24px 16px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(173, 191, 214, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(100, 160, 120, 0.25);
   border-radius: 14px;
   cursor: pointer;
   transition: background 0.18s, border-color 0.18s, transform 0.15s;
@@ -1338,8 +1344,8 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 }
 
 .entry-card:hover {
-  background: rgba(44, 93, 152, 0.35);
-  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(0, 51, 102, 0.35);
+  border-color: rgba(0, 100, 200, 0.55);
   transform: translateY(-2px);
 }
 
@@ -1353,7 +1359,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 
 .entry-card-sub {
   font-size: 12px;
-  color: #9fb0c5;
+  color: #9fb8b0;
   line-height: 1.4;
 }
 
@@ -1380,7 +1386,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   z-index: 2500;
   display: flex;
   flex-direction: column;
-  background: #0b1728;
+  background: #0e1a10;
 }
 
 .bpmn-editor-panel.hidden { display: none; }
@@ -1390,7 +1396,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  background: linear-gradient(90deg, #13233a, #0f1d30);
+  background: linear-gradient(90deg, #1B3022, #162a1a);
   border-bottom: 1px solid rgba(173, 191, 214, 0.22);
   flex-shrink: 0;
   flex-wrap: wrap;
@@ -1427,14 +1433,14 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 }
 
 .bpmn-btn-primary {
-  background: #1c5fab !important;
-  border-color: #2a78c8 !important;
+  background: #003366 !important;  /* Azul Royal — CTA */
+  border-color: #003f80 !important;
   color: #fff !important;
   font-weight: 600;
 }
 
 .bpmn-btn-primary:hover {
-  background: #1a51a0 !important;
+  background: #002855 !important;
 }
 
 .bpmn-container {
@@ -1559,7 +1565,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 .sec0-table th {
   position: sticky;
   top: 0;
-  background: #13233a;
+  background: #1B3022;
   color: #9fb0c5;
   font-weight: 600;
   padding: 7px 10px;
