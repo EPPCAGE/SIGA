@@ -11,6 +11,7 @@ import {
   applyGatewayProbabilities,
   simulateRoi,
   RULES,
+  COMPLEXITY_UT,
 } from './engine.js';
 import { scanSuggestions, markAutomation, setLoopProbability } from './assistant.js';
 import { extractTopologyFromImage, extractTopologyFromSpreadsheetFile, extractTopologyFromWorkflowFile } from './cv.js';
@@ -761,6 +762,16 @@ function autoApplyHandoffRulesFromLanes() {
 }
 
 // Salva atores + perfis de raia da Seção 2 para o graph
+// Atribui complexidade padrão às tarefas que ainda não têm uma definida:
+// primeira tarefa manual → 'alta' (20 UT); demais → 'media' (10 UT).
+function autoAssignComplexityDefaults() {
+  if (!graph) return;
+  const tasks = (graph.nodes || []).filter((n) => n.type === 'task' && !n.automated);
+  tasks.forEach((t, idx) => {
+    if (!t.complexity) t.complexity = idx === 0 ? 'alta' : 'media';
+  });
+}
+
 function saveSetupTaskMatrixFromForm() {
   if (!graph) return;
   const nodeMap = new Map((graph.nodes || []).map((n) => [n.id, n]));
@@ -772,6 +783,14 @@ function saveSetupTaskMatrixFromForm() {
     if (!node || node.type !== 'task') return;
     node.executor = actor;
     node.lane = actor;
+  });
+  // Salva complexidade por tarefa (data-task-complexity)
+  document.querySelectorAll('select[data-task-complexity]').forEach((el) => {
+    const nodeId = el.getAttribute('data-task-complexity');
+    const comp = String(el.value || '').trim();
+    const node = nodeMap.get(nodeId);
+    if (!node || node.type !== 'task') return;
+    node.complexity = comp || null;
   });
   // Salva perfis de raia (data-lane-profile)
   graph.lanes = graph.lanes || {};
@@ -1081,6 +1100,16 @@ function renderSetupTaskMatrix() {
     return;
   }
 
+  // Garante defaults de complexidade antes de renderizar
+  autoAssignComplexityDefaults();
+
+  const COMP_LABELS = {
+    baixa:   { label: '⬇ Baixa',   ut: 5,  color: '#2e7d4f', bg: '#e8f5ee' },
+    media:   { label: '▶ Média',   ut: 10, color: '#8a6d3b', bg: '#fff8e8' },
+    alta:    { label: '⬆ Alta',    ut: 20, color: '#c06000', bg: '#fff3e0' },
+    extrema: { label: '🔴 Extrema', ut: 40, color: '#8f3d3a', bg: '#fde8e8' },
+  };
+
   const suggestedSet = new Set(suggestedAutomationNodeIds());
   const rows = tasks.map((t, idx) => {
     const actor = actorLaneIdOf(t);
@@ -1091,10 +1120,22 @@ function renderSetupTaskMatrix() {
       ? '<span class="badge auto">sugerida</span>'
       : '<span class="badge" style="background:#6b7c90;">manual</span>';
 
+    // Complexidade: desabilitada para tarefas automatizadas
+    const comp = t.complexity || (idx === 0 ? 'alta' : 'media');
+    const compInfo = COMP_LABELS[comp] || COMP_LABELS.media;
+    const compSelect = t.automated
+      ? `<span class="comp-badge" style="background:#e0e8e0;color:#4a7060;">⚙ Auto — ${RULES.automated} UT</span>`
+      : `<select class="comp-select comp-${comp}" data-task-complexity="${escapeHtml(t.id)}" title="Complexidade da atividade">
+          ${Object.entries(COMP_LABELS).map(([k, v]) =>
+            `<option value="${k}" ${comp === k ? 'selected' : ''}>${v.label} — ${v.ut} UT</option>`
+          ).join('')}
+        </select>`;
+
     return `
       <div class="task-matrix-row">
         <div class="task-col task-name"><strong>${idx + 1}. ${escapeHtml(t.label || t.id)}</strong><small>${escapeHtml(t.id)}</small></div>
         <div class="task-col"><input type="text" data-task-actor="${escapeHtml(t.id)}" value="${escapeHtml(actor)}" placeholder="Ator/raia" /></div>
+        <div class="task-col task-comp">${compSelect}</div>
         <label class="task-col task-check"><input type="checkbox" data-task-automated="${escapeHtml(t.id)}" ${autoChecked}> <span>Automatica</span></label>
         <label class="task-col task-check"><input type="checkbox" data-task-potential="${escapeHtml(t.id)}" ${potentialChecked} ${potentialDisabled}> <span>Automatizavel</span> ${suggestionBadge}</label>
       </div>`;
@@ -1104,11 +1145,16 @@ function renderSetupTaskMatrix() {
     <div class="task-matrix-head">
       <span>Atividade</span>
       <span>Ator/Raia</span>
+      <span>Complexidade (UT)</span>
       <span>Status atual</span>
-      <span>Cenario auto (TEP ideal auto)</span>
+      <span>Cenario auto</span>
     </div>
     <div class="task-matrix-body">${rows}</div>
-    <div class="box" style="margin-top:8px;">Use "Automatica" para o estado real do processo e "Automatizavel" para confirmar o potencial usado no indice de Phillip com TEP ideal auto.</div>
+    <div class="box" style="margin-top:8px;font-size:12px;">
+      <strong>Complexidade</strong> define o custo base de cada atividade manual:
+      Baixa 5 UT · Média 10 UT · Alta 20 UT · Extrema 40 UT.
+      Isso impacta diretamente o T.E.R. e a velocidade das partículas na simulação.
+    </div>
     <div class="lp-section">
       <div class="lp-title">Perfil das Raias — Equipe e Órgão</div>
       <div class="box lp-hint">Informe a equipe e o órgão de cada ator para que o sistema classifique os handoffs automaticamente. Raias com o mesmo órgão e equipe = sem atrito extra.</div>
@@ -2279,6 +2325,7 @@ function parseEditorGraph() {
     const raw = JSON.parse($('graphJson').value);
     graph = applyDefaultGatewayProbabilitiesLocal(normalizeGraph(raw));
     normalizeActorCodesInGraph();
+    autoAssignComplexityDefaults(); // garante defaults de complexidade
     return true;
   } catch (e) {
     $('validationBox').innerHTML = `<span class=\"badge error\">erro</span> JSON invalido: ${e.message}`;
@@ -3528,6 +3575,7 @@ function applyExtracted() {
   }
   graph = normalizeGraph(extractedGraph);
   normalizeActorCodesInGraph();
+  autoAssignComplexityDefaults();
   $('graphJson').value = JSON.stringify(graph, null, 2);
   refreshAll();
   renderTimerSetup();
@@ -3753,6 +3801,13 @@ function wireEvents() {
   });
   $('setupTaskMatrix')?.addEventListener('change', (ev) => {
     const t = ev.target;
+    // Select de complexidade: salva e atualiza dashboard
+    if (t.matches('select[data-task-complexity]')) {
+      saveSetupTaskMatrixFromForm();
+      renderSetupChecklist();
+      if (graph) updateDashboard();
+      return;
+    }
     // Checkbox de automação: trata interdependência e faz refresh completo
     if (t.matches('input[data-task-automated], input[data-task-potential]')) {
       document.querySelectorAll('input[data-task-automated]').forEach((autoEl) => {

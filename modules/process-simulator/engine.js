@@ -8,6 +8,23 @@ const RULES = {
   handoffDiffOrg: 40,
 };
 
+// Mapa de complexidade por atividade manual (UT base por tarefa).
+// Quando node.complexity estiver definido, este valor substitui
+// firstManual/nextManual para aquela tarefa específica.
+const COMPLEXITY_UT = { baixa: 5, media: 10, alta: 20, extrema: 40 };
+
+// Retorna o tempo base de uma tarefa manual respeitando sua complexidade.
+function manualTaskTime(node, state) {
+  if (node.complexity && COMPLEXITY_UT[node.complexity] !== undefined) {
+    state.manualCount += 1;
+    return COMPLEXITY_UT[node.complexity];
+  }
+  // Fallback ao padrão global
+  if (state.manualCount === 0) { state.manualCount += 1; return RULES.firstManual; }
+  state.manualCount += 1;
+  return RULES.nextManual;
+}
+
 const LOOP_EXIT_PROB_AFTER_FIRST_PASS = 90;
 
 function parseProbability(value) {
@@ -144,14 +161,8 @@ function nodeBaseTime(node, state, useIdeal) {
   if (node.type === 'timer') return useIdeal ? 0 : Number(node.timerUT || 0);
   if (node.type !== 'task') return 0;
   if (node.automated) return RULES.automated;
-
-  if (state.manualCount === 0) {
-    state.manualCount += 1;
-    return RULES.firstManual;
-  }
-
-  state.manualCount += 1;
-  return RULES.nextManual;
+  // Usa complexidade por nó quando definida; senão cai no padrão global.
+  return manualTaskTime(node, state);
 }
 
 function handoffPenalty(graph, prevNode, currentNode, useIdeal) {
@@ -303,7 +314,8 @@ function runSinglePath(graph, opts = {}) {
     // Loop rule: ao revisitar uma tarefa, a pontuacao e somada como se fosse a primeira vez (dobra na pratica).
     const revisiting = visitedCounts.has(next.id);
     if (!useIdeal && revisiting && next.type === 'task') {
-      const taskTime = next.automated ? RULES.automated : RULES.nextManual;
+      const loopState = { manualCount: 0 }; // estado fictício para respeitar complexity
+      const taskTime = next.automated ? RULES.automated : manualTaskTime(next, loopState);
       time += taskTime;
       friction.loops.set(next.id, (friction.loops.get(next.id) || 0) + taskTime);
     }
@@ -363,7 +375,8 @@ export function calculatePathTime(graph, pathNodeIds, useIdeal = false) {
 
     // Regra de loop para caminho especificado: revisita pontua como primeira vez (dobra na pratica).
     if (!useIdeal && edge.isLoopReturn && to?.type === 'task') {
-      total += to.automated ? RULES.automated : RULES.nextManual;
+      const loopState = { manualCount: 0 };
+      total += to.automated ? RULES.automated : manualTaskTime(to, loopState);
     }
   }
 
@@ -568,4 +581,4 @@ export function simulateRoi(graph, gatewayId, currentProb, targetProb) {
   };
 }
 
-export { RULES };
+export { RULES, COMPLEXITY_UT };
