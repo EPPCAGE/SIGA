@@ -46,9 +46,35 @@ steps:
       reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
     continueOnError: true
 
-  - script: npm audit --audit-level=high
+  - task: PowerShell@2
     displayName: "Security audit"
-    continueOnError: true
+    inputs:
+      targetType: "inline"
+      script: |
+        Write-Host "Running npm audit (informational)..."
+        npm audit --json > npm-audit-report.json
+        if ($LASTEXITCODE -ne 0) {
+          try {
+            $audit = Get-Content "npm-audit-report.json" -Raw | ConvertFrom-Json
+            $total = $audit.metadata.vulnerabilities.total
+            $high = $audit.metadata.vulnerabilities.high
+            $critical = $audit.metadata.vulnerabilities.critical
+            Write-Host "##vso[task.logissue type=warning]npm audit detected vulnerabilities. total=$total, high=$high, critical=$critical"
+          } catch {
+            Write-Host "##vso[task.logissue type=warning]npm audit returned non-zero exit code and report parsing failed."
+          }
+        } else {
+          Write-Host "npm audit completed without vulnerabilities at configured threshold."
+        }
+        exit 0
+
+  - task: PublishBuildArtifacts@1
+    displayName: "Publish npm audit report"
+    condition: always()
+    inputs:
+      pathToPublish: "$(System.DefaultWorkingDirectory)/npm-audit-report.json"
+      artifactName: "npm-audit"
+      publishLocation: "Container"
 
   # TODO DETIC/SEFAZ: habilitar integração real do SonarQube neste pipeline.
   - script: echo "SonarQube step pending DETIC project key and service connection"
