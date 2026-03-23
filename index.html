@@ -20292,13 +20292,48 @@ function repairJsonString(str) {
   return result;
 }
 
+// Fecha JSON truncado adicionando os fechamentos de string/array/objeto em aberto.
+function truncateRepairJson(str) {
+  // Primeiro aplica o repair de caracteres de controle
+  let s = repairJsonString(str);
+  // Remove trailing vírgulas antes de fechar
+  s = s.replace(/,\s*([}\]])/g, '$1');
+  // Conta a pilha de abertura de arrays/objetos para fechar o que ficou em aberto
+  const stack = [];
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (escaped) { escaped = false; continue; }
+    if (c === '\\' && inString) { escaped = true; continue; }
+    if (c === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (c === '{') stack.push('}');
+    else if (c === '[') stack.push(']');
+    else if (c === '}' || c === ']') stack.pop();
+  }
+  // Se acabou no meio de uma string aberta, fecha-a
+  if (inString) s += '"';
+  // Remove trailing vírgula/dois-pontos pendentes antes dos fechamentos
+  s = s.replace(/[,:]\s*$/, '');
+  // Fecha os containers em aberto (inverso da pilha)
+  while (stack.length) s += stack.pop();
+  return s;
+}
+
 function parseAiJson(text) {
   let clean = text.trim();
-  const m = clean.match(/\{[\s\S]*\}/);
+  // Remove markdown code fences
+  clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  // Extrai apenas o objeto JSON mais externo
+  const m = clean.match(/\{[\s\S]*/);
   if (m) clean = m[0];
-  else clean = clean.replace(/```json|```/g, '').trim();
-  try { return JSON.parse(clean); } catch(_e) {}
-  try { return JSON.parse(repairJsonString(clean)); } catch(e) { throw e; }
+  // 1) Tenta parse direto
+  try { return JSON.parse(clean); } catch (_e1) {}
+  // 2) Tenta com repair de caracteres de controle
+  try { return JSON.parse(repairJsonString(clean)); } catch (_e2) {}
+  // 3) Tenta fechar JSON truncado
+  try { return JSON.parse(truncateRepairJson(clean)); } catch (e3) { throw e3; }
 }
 
 // Fluxo legado de importacao por XPDL/XML removido.
@@ -20309,22 +20344,15 @@ async function _npopExtractWordParsed(file) {
   const mimeType = _npopGetPopFileMime(file);
 
   const prompt =
-`Extraia um mapeamento de processo a partir deste POP em Word e retorne APENAS JSON puro, sem markdown.
+`Extraia o mapeamento de processo deste POP Word. Retorne APENAS JSON válido e completo, sem markdown, sem texto extra.
+Nao invente dados ausentes. Use strings curtas e objetivas.
 
-Regras:
-1) Nao inventar dados ausentes.
-2) Ler o documento inteiro.
-3) Para actions, separar uma acao por item e preencher actor por acao quando possivel.
+Esquema obrigatório (mantenha TODOS os campos, mesmo que vazios):
+{"nome":"","macro":"","processo":"","subprocesso":"","unidade":"","elaborado":"","desc":"","input":"","output":"","fornecedores":"","clientes":"","atores":[""],"steps":[{"title":"","responsible":"","note":null,"actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":"","branches":[]}]}]}
 
-Campos esperados:
-nome, macro, processo, subprocesso, unidade, elaborado, desc, input, output, fornecedores, clientes,
-atores[],
-steps[] com { title, responsible, note, actions[] }.
+IMPORTANTE: o JSON deve ser sintaticamente completo e fechado. Não corte no meio.`;
 
-Formato:
-{"nome":"","macro":"","processo":"","subprocesso":"","unidade":"","elaborado":"","desc":"","input":"","output":"","fornecedores":"","clientes":"","atores":[""],"steps":[{"title":"","responsible":"","note":null,"actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":"","branches":[]}]}]}`;
-
-  const respText = await callGeminiProxy(prompt, { data: base64, mimeType }, { maxTokens: 5000 });
+  const respText = await callGeminiProxy(prompt, { data: base64, mimeType }, { maxTokens: 8192 });
   const extracted = parseAiJson(respText);
 
   if(!Array.isArray(extracted.steps)) extracted.steps = [];

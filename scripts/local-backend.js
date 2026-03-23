@@ -556,7 +556,7 @@ async function callGeminiOnce(parsed, model) {
     body: JSON.stringify({
       contents: [{ role: 'user', parts }],
       generationConfig: {
-        maxOutputTokens: Math.min(Math.max(Number(parsed.maxTokens) || 1800, 128), 8192),
+        maxOutputTokens: Math.min(Math.max(Number(parsed.maxTokens) || 1800, 128), 65536),
         temperature: 0.2
       }
     })
