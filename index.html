@@ -1439,6 +1439,7 @@
       <button data-mod="bi"          data-sortkey="bi"          class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:rgba(234,179,8,.12);color:#fde047;border-color:rgba(234,179,8,.25);">📊 Cadeia de Valor e Mapa Estratégico</button>
       <button data-mod="quadro"      data-sortkey="quadro"      class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.25);">🗒 Quadro de Esboço</button>
       <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
+      <button data-mod="simulator"   data-sortkey="simulator"   class="sidebar-pat-btn" onclick="closeSidebar();showSimulatorModule();" style="margin-top:4px;background:rgba(6,95,70,.12);color:#6ee7b7;border-color:rgba(6,95,70,.28);">🧪 Simulador de Processos</button>
       <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:rgba(232,160,32,.12);color:#fcd34d;border-color:rgba(232,160,32,.3);">📈 Indicadores CAGE</button>
       <button data-mod="organograma" data-sortkey="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:rgba(99,102,241,.12);color:#c7d2fe;border-color:rgba(99,102,241,.3);">🏛 Organograma CAGE</button>
       <button data-mod="cockpit"     data-sortkey="cockpit"     class="sidebar-pat-btn" onclick="closeSidebar();showCockpitModule();" style="margin-top:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">🎯 Cockpit de Gestão</button>
@@ -1567,6 +1568,12 @@
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
         <div class="home-card-footer">Canvas interativo</div>
+      </div>
+      <div class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;">
+        <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🧪</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simulador de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
+        <div class="home-card-footer">Motor estocástico e dashboard</div>
       </div>
       <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
         <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
@@ -2212,6 +2219,20 @@
   </iframe>
 </div>
 
+<!-- SIMULADOR DE PROCESSOS -->
+<div id="simulator-module" style="display:none;max-width:1250px;margin:0 auto;padding:24px 32px 80px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">🧪 Simulador de Processos</h2>
+      <div style="font-size:13px;color:var(--text-muted);">TEP, índice de Phillip e simulação estocástica de cenários</div>
+    </div>
+    <button class="btn btn-outline" onclick="showSimulatorModule(false)" style="font-size:13px;">✕ Fechar painel</button>
+  </div>
+  <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+    <iframe id="simulator-frame" data-src="modules/process-simulator/index.html" src="" title="Simulador de Processos" style="width:100%;height:calc(100vh - 230px);min-height:620px;border:none;display:block;"></iframe>
+  </div>
+</div>
+
 <!-- MODAL PLANO DE TRABALHO -->
 <div class="gmod-overlay" id="pat-modal">
   <div class="gmod-box" style="width:680px;">
@@ -2662,22 +2683,39 @@
 
     <div class="npop-header">
       <h2>➕ Novo Mapeamento</h2>
-      <p>Crie um novo mapeamento de processo do zero ou importe a partir de um documento existente.</p>
+      <p>Escolha entre preenchimento manual ou importação por POP Word.</p>
     </div>
 
     <!-- STEP 1: escolher método -->
     <div class="npop-body">
       <div class="npop-step active" id="npop-s1">
-        <div class="npop-methods">
+        <div class="npop-methods" style="display:block;">
           <div class="npop-method selected" id="npop-m-manual" onclick="selectNpopMethod('manual')">
             <div class="npop-method-icon">✍️</div>
             <div class="npop-method-name">Preenchimento Manual</div>
-            <div class="npop-method-desc">Preencha cada campo do POP diretamente no sistema, etapa por etapa</div>
+            <div class="npop-method-desc">Preencha os campos do mapeamento diretamente no sistema.</div>
           </div>
-          <div class="npop-method" id="npop-m-ia" onclick="selectNpopMethod('ia')">
-            <div class="npop-method-icon">🤖</div>
-            <div class="npop-method-name">Extrair com IA (Copilot)</div>
-            <div class="npop-method-desc">Envie o POP (PDF/Word) e opcionalmente o diagrama BPMN — a IA extrai metadados, etapas e fluxo automaticamente</div>
+          <div class="npop-method" id="npop-m-workflow" onclick="selectNpopMethod('workflow')" style="margin-top:8px;">
+            <div class="npop-method-icon">📝</div>
+            <div class="npop-method-name">Importar por POP Word</div>
+            <div class="npop-method-desc">Envie o POP em Word e clique em <strong>Criar mapeamento</strong> para abrir o formulário de revisão e edição.</div>
+          </div>
+          <div id="npop-workflow-block" style="margin-top:12px;display:none;">
+            <div class="npop-upload-zone" id="npop-drop-zone"
+              onclick="document.getElementById('npop-file-input').click()"
+              ondragover="event.preventDefault();this.classList.add('dragover')"
+              ondragleave="this.classList.remove('dragover')"
+              ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])">
+              <div class="npop-upload-icon">📄</div>
+              <div class="npop-upload-title">Clique ou arraste o POP Word aqui</div>
+              <div class="npop-upload-hint">Apenas .doc e .docx</div>
+            </div>
+            <input type="file" id="npop-file-input" accept=".doc,.docx" style="display:none">
+            <div class="npop-file-chosen" id="npop-file-chosen">
+              <span style="font-size:20px;">📄</span>
+              <span id="npop-file-name" style="font-size:13px;font-weight:600;color:var(--cage-blue);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+              <button onclick="resetNpopFile()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:0;line-height:1;">✕</button>
+            </div>
           </div>
         </div>
 
@@ -2845,81 +2883,12 @@
           </div>
         </div>
 
-        <!-- IA: uploads diretos POP + BPMN -->
+        <!-- IA desativada neste fluxo: placeholders ocultos para compatibilidade -->
         <div id="npop-ia-form" style="display:none;margin-top:16px;">
-          <div style="display:flex;flex-direction:column;gap:14px;">
-
-            <!-- POP Upload (opcional: apenas referência local) -->
-            <div>
-              <div style="font-size:12px;font-weight:700;color:var(--cage-blue);margin-bottom:6px;">
-                📄 Documento POP <span style="color:#94a3b8;font-weight:400;">(opcional)</span>
-                <span style="font-weight:400;color:var(--text-muted);font-size:11px;"> — não é necessário para gerar o prompt</span>
-              </div>
-              <div class="npop-upload-zone" id="npop-drop-zone"
-                onclick="document.getElementById('npop-file-input').click()"
-                ondragover="event.preventDefault();this.classList.add('dragover')"
-                ondragleave="this.classList.remove('dragover')"
-                ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])">
-                <div class="npop-upload-icon">📄</div>
-                <div class="npop-upload-title">Clique ou arraste o POP aqui</div>
-                <div class="npop-upload-hint">PDF ou Word (.pdf, .doc, .docx)</div>
-              </div>
-              <input type="file" id="npop-file-input" accept=".pdf,.doc,.docx" style="display:none">
-              <div class="npop-file-chosen" id="npop-file-chosen">
-                <span style="font-size:20px;">📄</span>
-                <span id="npop-file-name" style="font-size:13px;font-weight:600;color:var(--cage-blue);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-                <button onclick="resetNpopFile()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:0;line-height:1;">✕</button>
-              </div>
-            </div>
-
-            <!-- BPMN Upload (opcional: apenas referência local) -->
-            <div>
-              <div style="font-size:12px;font-weight:700;color:var(--cage-blue);margin-bottom:6px;">
-                🔀 Diagrama BPMN <span style="color:#94a3b8;font-weight:400;">(opcional)</span>
-                <span style="font-weight:400;color:var(--text-muted);font-size:11px;"> — imagem exportada do fluxo</span>
-              </div>
-              <div class="npop-upload-zone" id="npop-bpmn-drop-zone"
-                onclick="document.getElementById('npop-bpmn-file-input').click()"
-                ondragover="event.preventDefault();this.classList.add('dragover')"
-                ondragleave="this.classList.remove('dragover')"
-                ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopBpmnFile(event.dataTransfer.files[0])"
-                style="padding:20px;">
-                <div class="npop-upload-icon" style="font-size:28px;margin-bottom:6px;">🔀</div>
-                <div class="npop-upload-title" style="font-size:13px;">Clique ou arraste o diagrama BPMN aqui</div>
-                <div class="npop-upload-hint">JPG, PNG ou imagem exportada do Bizagi / Draw.io</div>
-              </div>
-              <input type="file" id="npop-bpmn-file-input" accept=".jpg,.jpeg,.png,.gif,.webp,.bmp" style="display:none">
-              <div class="npop-file-chosen" id="npop-bpmn-chosen">
-                <span style="font-size:20px;">🔀</span>
-                <span id="npop-bpmn-name" style="font-size:13px;font-weight:600;color:var(--cage-blue);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-                <button onclick="resetNpopBpmn()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:0;line-height:1;">✕</button>
-              </div>
-            </div>
-
-            <!-- Nota informativa -->
-            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:12px;color:#1e40af;line-height:1.5;">
-              <strong>Fluxo com IA externa:</strong> não precisa enviar arquivos no SIGA. Clique em <em>Gerar Prompt</em>, cole o prompt em uma IA externa e anexe lá o POP + BPMN; depois cole aqui o JSON retornado e clique em <em>Importar JSON</em>.
-            </div>
-
-            <button class="btn btn-outline" onclick="prepareNpopExternalPrompt()" style="width:100%;justify-content:center;font-size:13px;">
-              📋 Gerar Prompt para IA Externa
-            </button>
-            <button class="btn btn-outline" id="npop-copy-btn" onclick="copyNpopPrompt()" style="width:100%;justify-content:center;font-size:13px;display:none;">
-              📋 Copiar Prompt
-            </button>
-
-            <div id="npop-prompt-wrap" style="display:none;">
-              <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:6px;">Prompt para IA Externa</label>
-              <pre id="npop-prompt-text" style="white-space:pre-wrap;background:#0b1220;color:#e2e8f0;border-radius:8px;padding:10px 12px;max-height:210px;overflow:auto;font-size:11px;line-height:1.45;"></pre>
-            </div>
-
-            <div>
-              <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:6px;">JSON retornado pela IA</label>
-              <textarea id="npop-json-paste" class="modal-input modal-textarea" style="min-height:180px;font-family:'JetBrains Mono',monospace;font-size:12px;" placeholder="Cole aqui o JSON completo (sem markdown)" oninput="validateNpopJson(this.value)"></textarea>
-              <div id="npop-json-status" style="margin-top:6px;font-size:12px;"></div>
-            </div>
-
-          </div>
+          <textarea id="npop-json-paste" style="display:none;"></textarea>
+          <div id="npop-json-status" style="display:none;"></div>
+          <div id="npop-prompt-wrap" style="display:none;"><pre id="npop-prompt-text"></pre></div>
+          <button id="npop-copy-btn" style="display:none;"></button>
         </div>
       </div>
 
@@ -2944,7 +2913,7 @@
       <button class="btn btn-outline" onclick="closeNovoPop()">Cancelar</button>
       <div style="display:flex;gap:8px;">
         <span id="npop-method-badge" style="font-size:12px;color:var(--text-muted);align-self:center;"></span>
-        <button class="btn btn-success" id="npop-confirm-btn" onclick="confirmNovoPop()">Iniciar Mapeamento →</button>
+        <button class="btn btn-success" id="npop-confirm-btn" onclick="confirmNovoPop()">Criar Mapeamento →</button>
       </div>
     </div>
   </div>
@@ -6758,7 +6727,9 @@ function exportBpmnSvg() {
 // ═══ NOVO POP ═════════════════════════════════
 let _npopMethod = 'manual';
 let _npopFile   = null;
+let _npopPopFile = null;
 let _npopKey    = null; // key in DATA for the new pop
+let _npopWorkflowReady = false;
 
 function openNovoPop() {
   if(!isEditor) { showToast('🔒 Apenas editores podem criar mapeamentos.', 'warn'); return; }
@@ -6774,6 +6745,8 @@ function openNovoPop() {
 
   _npopMethod = 'manual';
   _npopFile   = null;
+  _npopPopFile = null;
+  _npopWorkflowReady = false;
   window._npopExtractedFull   = null;
   window._npopExtractedEtapas = null;
   selectNpopMethod('manual');
@@ -6823,16 +6796,23 @@ function openNovoPop() {
 
   _populateNpopPatSelect();
   resetNpopFile();
-  resetNpopBpmn();
-  document.getElementById('npop-json-paste').value = '';
-  document.getElementById('npop-json-status').innerHTML = '';
-  document.getElementById('npop-prompt-text').textContent = '';
-  document.getElementById('npop-prompt-wrap').style.display = 'none';
-  document.getElementById('npop-copy-btn').style.display = 'none';
+  resetNpopPopFile();
+  if(typeof resetNpopBpmn === 'function') resetNpopBpmn();
+  const jsonPaste = document.getElementById('npop-json-paste'); if(jsonPaste) jsonPaste.value = '';
+  const jsonStatus = document.getElementById('npop-json-status'); if(jsonStatus) jsonStatus.innerHTML = '';
+  const promptText = document.getElementById('npop-prompt-text'); if(promptText) promptText.textContent = '';
+  const promptWrap = document.getElementById('npop-prompt-wrap'); if(promptWrap) promptWrap.style.display = 'none';
+  const copyBtn = document.getElementById('npop-copy-btn'); if(copyBtn) copyBtn.style.display = 'none';
   const btn = document.getElementById('npop-confirm-btn');
   btn.textContent = 'Iniciar Mapeamento →';
   btn.style.display = '';
   btn.onclick = confirmNovoPop;
+  const badge = document.getElementById('npop-method-badge');
+  if(badge) badge.textContent = 'Modo manual';
+  const manualForm = document.getElementById('npop-manual-form');
+  if(manualForm) manualForm.style.display = 'block';
+  const workflowBlock = document.getElementById('npop-workflow-block');
+  if(workflowBlock) workflowBlock.style.display = 'none';
   document.querySelector('.npop-footer').style.display = '';
   document.getElementById('npop-overlay').classList.add('open');
 }
@@ -6856,18 +6836,82 @@ function _populateNpopPatSelect() {
 
 function selectNpopMethod(m) {
   _npopMethod = m;
-  document.getElementById('npop-m-manual').classList.toggle('selected', m === 'manual');
-  document.getElementById('npop-m-ia').classList.toggle('selected', m === 'ia');
-  document.getElementById('npop-manual-form').style.display = m === 'manual' ? 'block' : 'none';
-  document.getElementById('npop-ia-form').style.display    = m === 'ia'     ? 'block' : 'none';
+  const mManual = document.getElementById('npop-m-manual');
+  const mWorkflow = document.getElementById('npop-m-workflow');
+  if(mManual) mManual.classList.toggle('selected', m === 'manual');
+  if(mWorkflow) mWorkflow.classList.toggle('selected', m === 'workflow');
+  const manualForm = document.getElementById('npop-manual-form');
+  const workflowBlock = document.getElementById('npop-workflow-block');
+  if(manualForm) manualForm.style.display = m === 'manual' ? 'block' : 'none';
+  if(workflowBlock) workflowBlock.style.display = m === 'workflow' ? 'block' : 'none';
   const btn = document.getElementById('npop-confirm-btn');
-  if(m === 'ia') {
-    btn.style.display = '';
-    btn.textContent = '📥 Importar JSON →';
+  const badge = document.getElementById('npop-method-badge');
+  if(m === 'manual') {
+    _npopWorkflowReady = false;
+    window._npopExtractedFull = null;
+    if(btn) {
+      btn.style.display = '';
+      btn.textContent = 'Iniciar Mapeamento →';
+    }
+    if(badge) badge.textContent = 'Modo manual';
   } else {
-    btn.style.display = '';
-    btn.textContent = 'Iniciar Mapeamento →';
+    if(btn) {
+      btn.style.display = '';
+      btn.textContent = _npopWorkflowReady ? 'Finalizar Mapeamento →' : 'Criar Mapeamento →';
+    }
+    if(badge) badge.textContent = _npopWorkflowReady ? 'Etapa 2: revisar e editar dados extraídos' : 'Etapa 1: carregar POP Word';
   }
+}
+
+function _npopCreateManualMapping() {
+  const sub  = document.getElementById('nf-subprocesso').value.trim();
+  const proc = document.getElementById('nf-processo').value.trim();
+  const nome = sub || proc;
+  if(!nome) { showToast('Selecione ao menos um Processo ou Subprocesso.', 'warn'); return; }
+
+  const elaborado = currentUserName || localStorage.getItem('cage_nome_usuario') || '';
+  createBlankPop({
+    nome,
+    macro:             document.getElementById('nf-macro').value.trim(),
+    processo:          proc,
+    sub,
+    unidade:           document.getElementById('nf-unidade').value.trim(),
+    gerente:           document.getElementById('nf-gerente').value.trim(),
+    objEstrategicos:   _tryParseJson(document.getElementById('nf-obj-estrategico')?.value, []),
+    equipeResponsavel: document.getElementById('nf-equipe-resp')?.value || '',
+    tipo:              document.getElementById('nf-tipo').value,
+    dificuldade:       document.getElementById('nf-dificuldade').value,
+    statusMap:         document.getElementById('nf-status-map')?.value || 'planejado',
+    dataInicio:        document.getElementById('nf-data-inicio').value,
+    dataPrevista:      document.getElementById('nf-data-prevista').value,
+    solicitante:       document.getElementById('nf-solicitante').value.trim(),
+    patrocinador:      document.getElementById('nf-patrocinador').value.trim(),
+    elaborado,
+    revisado:          '',
+    equipe:            document.getElementById('nf-equipe').value.trim(),
+    atores:            (document.getElementById('nf-atores')?.value || '').split(',').map(s => s.trim()).filter(Boolean),
+    desc:              document.getElementById('nf-desc').value.trim(),
+    input:             document.getElementById('nf-input').value.trim(),
+    output:            document.getElementById('nf-output').value.trim(),
+    resultados:        document.getElementById('nf-resultados').value.trim(),
+    fornecedores:      document.getElementById('nf-fornecedores').value.trim(),
+    clientes:          document.getElementById('nf-clientes').value.trim(),
+    sistemas:          document.getElementById('nf-sistemas').value.trim(),
+    patVinc:           document.getElementById('nf-pat-vinc')?.value || '',
+  });
+}
+
+function _npopUpdateWorkflowStatusAfterFileChange() {
+  if(_npopMethod !== 'workflow') return;
+  const btn = document.getElementById('npop-confirm-btn');
+  const badge = document.getElementById('npop-method-badge');
+  if(btn) btn.textContent = _npopWorkflowReady ? 'Finalizar Mapeamento →' : 'Criar Mapeamento →';
+  if(badge) badge.textContent = _npopWorkflowReady ? 'Etapa 2: revisar e editar dados extraídos' : (_npopFile ? 'Etapa 1: arquivo carregado' : 'Etapa 1: carregar POP Word');
+}
+
+function _npopIsAllowedWorkflowFile(file) {
+  const name = String(file?.name || '').toLowerCase();
+  return name.endsWith('.doc') || name.endsWith('.docx');
 }
 
 // File upload wiring
@@ -6886,10 +6930,21 @@ function selectNpopMethod(m) {
         if(e.dataTransfer.files[0]) setNpopFile(e.dataTransfer.files[0]);
       });
     }
-    const fib = document.getElementById('npop-bpmn-file-input');
-    if(fib && !fib._wired) {
-      fib._wired = true;
-      fib.addEventListener('change', e => { if(e.target.files[0]) setNpopBpmnFile(e.target.files[0]); });
+
+    const popFi = document.getElementById('npop-pop-file-input');
+    const popDz = document.getElementById('npop-pop-drop-zone');
+    if(popFi && !popFi._wired) {
+      popFi._wired = true;
+      popFi.addEventListener('change', e => { if(e.target.files[0]) setNpopPopFile(e.target.files[0]); });
+    }
+    if(popDz && !popDz._wired) {
+      popDz._wired = true;
+      popDz.addEventListener('dragover', e => { e.preventDefault(); popDz.classList.add('dragover'); });
+      popDz.addEventListener('dragleave', () => popDz.classList.remove('dragover'));
+      popDz.addEventListener('drop', e => {
+        e.preventDefault(); popDz.classList.remove('dragover');
+        if(e.dataTransfer.files[0]) setNpopPopFile(e.dataTransfer.files[0]);
+      });
     }
   }
   document.addEventListener('DOMContentLoaded', wireNpopFile);
@@ -6897,23 +6952,121 @@ function selectNpopMethod(m) {
 })();
 
 function setNpopFile(file) {
+  if(!_npopIsAllowedWorkflowFile(file)) {
+    showToast('Use apenas POP em Word (.doc ou .docx) para criar o mapeamento.', 'warn');
+    resetNpopFile();
+    return;
+  }
   _npopFile = file;
+  _npopWorkflowReady = false;
   const fn = document.getElementById('npop-file-name');
   if(fn) fn.textContent = file.name;
   const fc = document.getElementById('npop-file-chosen');
   if(fc) fc.classList.add('show');
   const dz = document.getElementById('npop-drop-zone');
   if(dz) dz.style.display = 'none';
+  if(_npopMethod !== 'workflow') selectNpopMethod('workflow');
+  _npopUpdateWorkflowStatusAfterFileChange();
 }
 
 function resetNpopFile() {
   _npopFile = null;
+  _npopWorkflowReady = false;
   const fi = document.getElementById('npop-file-input');
   if(fi) fi.value = '';
   const fc = document.getElementById('npop-file-chosen');
   if(fc) fc.classList.remove('show');
   const dz = document.getElementById('npop-drop-zone');
   if(dz) dz.style.display = '';
+  _npopUpdateWorkflowStatusAfterFileChange();
+}
+
+function _npopIsAllowedPopComplementFile(file) {
+  const name = String(file?.name || '').toLowerCase();
+  return name.endsWith('.pdf') || name.endsWith('.doc') || name.endsWith('.docx');
+}
+
+function setNpopPopFile(file) {
+  if(!_npopIsAllowedPopComplementFile(file)) {
+    showToast('Use POP em PDF/Word (.pdf, .doc, .docx).', 'warn');
+    resetNpopPopFile();
+    return;
+  }
+  _npopPopFile = file;
+  const fn = document.getElementById('npop-pop-file-name');
+  if(fn) fn.textContent = file.name;
+  const fc = document.getElementById('npop-pop-file-chosen');
+  if(fc) fc.classList.add('show');
+  const dz = document.getElementById('npop-pop-drop-zone');
+  if(dz) dz.style.display = 'none';
+}
+
+function resetNpopPopFile() {
+  _npopPopFile = null;
+  const fi = document.getElementById('npop-pop-file-input');
+  if(fi) fi.value = '';
+  const fc = document.getElementById('npop-pop-file-chosen');
+  if(fc) fc.classList.remove('show');
+  const dz = document.getElementById('npop-pop-drop-zone');
+  if(dz) dz.style.display = '';
+}
+
+function _npopGetPopFileMime(file) {
+  const ext = String(file?.name || '').split('.').pop().toLowerCase();
+  if(ext === 'pdf') return 'application/pdf';
+  if(ext === 'docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if(ext === 'doc') return 'application/msword';
+  return file?.type || 'application/octet-stream';
+}
+
+async function _npopExtractBasicFromPopFile(popFile) {
+  if(!popFile) return {};
+
+  const base64 = await blobToBase64(popFile);
+  const mimeType = _npopGetPopFileMime(popFile);
+  const prompt =
+`Extraia APENAS metadados básicos do POP e retorne JSON puro (sem markdown), sem inventar dados.
+
+Campos desejados:
+- nome
+- macro
+- processo
+- subprocesso
+- unidade
+- elaborado
+- desc
+- input
+- output
+- fornecedores
+- clientes
+
+Formato de saída:
+{"nome":"","macro":"","processo":"","subprocesso":"","unidade":"","elaborado":"","desc":"","input":"","output":"","fornecedores":"","clientes":""}`;
+
+  const respText = await callGeminiProxy(prompt, { data: base64, mimeType }, { maxTokens: 1500 });
+  return parseAiJson(respText);
+}
+
+function _npopMergeBasicInfoFromPop(target, popBasic) {
+  if(!target || !popBasic || typeof popBasic !== 'object') return target;
+  const map = [
+    ['nome', 'nome'],
+    ['macro', 'macro'],
+    ['processo', 'processo'],
+    ['subprocesso', 'subprocesso'],
+    ['unidade', 'unidade'],
+    ['elaborado', 'elaborado'],
+    ['desc', 'desc'],
+    ['input', 'input'],
+    ['output', 'output'],
+    ['fornecedores', 'fornecedores'],
+    ['clientes', 'clientes'],
+  ];
+  map.forEach(([dest, src]) => {
+    const v = String(popBasic[src] || '').trim();
+    if(v) target[dest] = v;
+  });
+  return target;
 }
 
 window._npopBpmnFile = null;
@@ -6957,67 +7110,88 @@ function setImportTarget(target) {
   }
 }
 
-function confirmNovoPop() {
-  if(_npopMethod === 'ia') {
-    const raw = document.getElementById('npop-json-paste').value.trim();
-    if(!raw) { showToast('Cole o JSON gerado pelo assistente.', 'warn'); document.getElementById('npop-json-paste').focus(); return; }
+async function confirmNovoPop() {
+  if(_npopMethod === 'manual') {
+    _npopCreateManualMapping();
+    return;
+  }
+
+  // Etapa 1: carregar POP Word e abrir formulário de revisão/edição.
+  if(!_npopWorkflowReady) {
+    if(!_npopFile) { showToast('Selecione um POP em Word (.doc/.docx) antes de continuar.', 'warn'); return; }
+    if(!_npopIsAllowedWorkflowFile(_npopFile)) { showToast('Formato inválido. Use apenas .doc/.docx.', 'warn'); return; }
     try {
-      const parsed = parseAiJson(raw);
-      openNpopOrderModal(parsed, ordered => showImportTargetModal(ordered));
-    } catch(e) {
-      document.getElementById('npop-json-status').innerHTML = '<span style="color:#dc2626;">⚠️ JSON inválido — verifique e tente novamente.</span>';
+      showToast('🔄 Carregando e extraindo informações do arquivo...', 'info');
+      const extracted = await _npopExtractWordParsed(_npopFile);
+
+      if(_npopPopFile) {
+        try {
+          showToast('📎 Complementando metadados com POP...', 'info');
+          const popBasic = await _npopExtractBasicFromPopFile(_npopPopFile);
+          _npopMergeBasicInfoFromPop(extracted, popBasic);
+        } catch(popErr) {
+          console.warn('[SIGA] Falha ao complementar metadados via POP:', popErr);
+          showToast('⚠️ Não foi possível complementar via POP: ' + popErr.message, 'warn');
+        }
+      }
+
+      const setVal = (id, value) => {
+        const el = document.getElementById(id);
+        if(el) el.value = value || '';
+      };
+      setVal('nf-processo', extracted.nome || extracted.processo || '');
+      setVal('nf-macro', extracted.macro || '');
+      setVal('nf-subprocesso', extracted.subprocesso || '');
+      setVal('nf-unidade', extracted.unidade || '');
+      setVal('nf-desc', extracted.desc || '');
+      setVal('nf-input', extracted.input || '');
+      setVal('nf-output', extracted.output || '');
+      setVal('nf-equipe', extracted.elaborado || '');
+      setVal('nf-fornecedores', extracted.fornecedores || '');
+      setVal('nf-clientes', extracted.clientes || '');
+
+      const atores = Array.isArray(extracted.atores) ? extracted.atores : [];
+      npopRenderAtores(atores, true);
+
+      window._npopExtractedEtapas = extracted.steps || [];
+      window._npopExtractedFull = extracted;
+
+      _npopWorkflowReady = true;
+      const manualForm = document.getElementById('npop-manual-form');
+      if(manualForm) manualForm.style.display = 'block';
+
+      const btn = document.getElementById('npop-confirm-btn');
+      if(btn) btn.textContent = 'Finalizar Mapeamento →';
+      const badge = document.getElementById('npop-method-badge');
+      if(badge) badge.textContent = 'Etapa 2: revisar e editar dados extraídos';
+
+      showToast('✅ Dados extraídos do POP Word. Revise o formulário e clique em Finalizar Mapeamento.', 'success');
+    } catch (e) {
+      showToast('⚠️ Falha ao carregar POP Word: ' + e.message, 'warn');
     }
     return;
-  } else {
-    // When Gemini ran, _npopExtractedFull holds the full AI result; apply it (merging form edits)
-    if(window._npopExtractedFull) {
-      const extracted = window._npopExtractedFull;
-      window._npopExtractedFull = null;
-      const v = id => document.getElementById(id)?.value?.trim() || '';
-      if(v('nf-processo'))  extracted.nome      = v('nf-processo');
-      if(v('nf-macro'))     extracted.macro     = v('nf-macro');
-      if(v('nf-desc'))      extracted.desc      = v('nf-desc');
-      if(v('nf-input'))     extracted.input     = v('nf-input');
-      if(v('nf-output'))    extracted.output    = v('nf-output');
-      if(v('nf-equipe'))    extracted.elaborado = v('nf-equipe');
-      openNpopOrderModal(extracted, ordered => showImportTargetModal(ordered));
-      return;
-    }
-    const sub  = document.getElementById('nf-subprocesso').value.trim();
-    const proc = document.getElementById('nf-processo').value.trim();
-    const nome = sub || proc;
-    if(!nome) { showToast('Selecione ao menos um Processo ou Subprocesso.', 'warn'); return; }
-    const elaborado = currentUserName || localStorage.getItem('cage_nome_usuario') || '';
-    createBlankPop({
-      nome,
-      macro:            document.getElementById('nf-macro').value.trim(),
-      processo:         proc,
-      sub,
-      unidade:          document.getElementById('nf-unidade').value.trim(),
-      gerente:          document.getElementById('nf-gerente').value.trim(),
-      objEstrategicos:  _tryParseJson(document.getElementById('nf-obj-estrategico')?.value, []),
-      equipeResponsavel:document.getElementById('nf-equipe-resp')?.value || '',
-      tipo:             document.getElementById('nf-tipo').value,
-      dificuldade:      document.getElementById('nf-dificuldade').value,
-      statusMap:        document.getElementById('nf-status-map')?.value || 'planejado',
-      dataInicio:       document.getElementById('nf-data-inicio').value,
-      dataPrevista:     document.getElementById('nf-data-prevista').value,
-      solicitante:      document.getElementById('nf-solicitante').value.trim(),
-      patrocinador:     document.getElementById('nf-patrocinador').value.trim(),
-      elaborado,
-      revisado:         '',
-      equipe:           document.getElementById('nf-equipe').value.trim(),
-      atores:           (document.getElementById('nf-atores')?.value || '').split(',').map(s=>s.trim()).filter(Boolean),
-      desc:             document.getElementById('nf-desc').value.trim(),
-      input:            document.getElementById('nf-input').value.trim(),
-      output:           document.getElementById('nf-output').value.trim(),
-      resultados:       document.getElementById('nf-resultados').value.trim(),
-      fornecedores:     document.getElementById('nf-fornecedores').value.trim(),
-      clientes:         document.getElementById('nf-clientes').value.trim(),
-      sistemas:         document.getElementById('nf-sistemas').value.trim(),
-      patVinc:          document.getElementById('nf-pat-vinc')?.value || '',
-    });
   }
+
+  // Etapa 2: com dados já extraídos, aplicar formulário revisado e criar mapeamento.
+  if(window._npopExtractedFull) {
+    const extracted = window._npopExtractedFull;
+    window._npopExtractedFull = null;
+    const v = id => document.getElementById(id)?.value?.trim() || '';
+    if(v('nf-processo'))  extracted.nome      = v('nf-processo');
+    if(v('nf-macro'))     extracted.macro     = v('nf-macro');
+    if(v('nf-desc'))      extracted.desc      = v('nf-desc');
+    if(v('nf-input'))     extracted.input     = v('nf-input');
+    if(v('nf-output'))    extracted.output    = v('nf-output');
+    if(v('nf-equipe'))    extracted.elaborado = v('nf-equipe');
+    if(v('nf-subprocesso')) extracted.subprocesso = v('nf-subprocesso');
+    if(v('nf-unidade'))   extracted.unidade   = v('nf-unidade');
+    extracted.atores = (document.getElementById('nf-atores')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+    openNpopOrderModal(extracted, ordered => showImportTargetModal(ordered));
+    _npopWorkflowReady = false;
+    return;
+  }
+
+  showToast('Carregue o POP Word (.doc/.docx) para iniciar o mapeamento.', 'warn');
 }
 
 // Helper: parse JSON safely
@@ -8560,6 +8734,7 @@ const _MODULES_NAV = [
   { key:'bi',       label:'📊 Cadeia de Valor e Mapa Estratégico', color:'#eab308' },
   { key:'quadro',   label:'🗒 Quadro de Esboço',                   color:'#10b981' },
   { key:'arq',      label:'🏛 Arquitetura de Processos',           color:'#8b5cf6' },
+  { key:'simulator',  label:'🧪 Simulador de Processos',             color:'#065f46' },
   { key:'ind-cage',    label:'📈 Indicadores CAGE',                   color:'#e8a020' },
   { key:'organograma', label:'🏛 Organograma CAGE',                   color:'#6366f1' },
   { key:'cockpit',     label:'🎯 Cockpit de Gestão',                  color:'#0ea5e9' },
@@ -10576,7 +10751,7 @@ let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
 let workspaceId = localStorage.getItem('gestpop_wsid') || sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
-  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel','cockpit-module'].forEach(id => {
+  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','simulator-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel','cockpit-module'].forEach(id => {
     const el = document.getElementById(id);
     if(el) { el.style.display = 'none'; el.classList.remove('active'); }
   });
@@ -11101,7 +11276,15 @@ async function loadFromCloud() {
       if(chip) chip.textContent = 'Sem dados salvos';
       // Renderizar mesmo sem dados do cloud para evitar tela em branco
       ['d','r'].forEach(p => {
-        try { sanitizePop(p); renderStep(p, DATA[p].currentStep); renderRoles(p); renderIndicators(p); loadAcomp(p); } catch(e) {}
+        try {
+          sanitizePop(p);
+          if(Array.isArray(DATA[p]?.steps) && DATA[p].steps.length > 0) {
+            renderStep(p, DATA[p].currentStep);
+          }
+          renderRoles(p);
+          renderIndicators(p);
+          loadAcomp(p);
+        } catch(e) {}
       });
       const homePage = document.getElementById('home-page');
       if(homePage && homePage.style.display !== 'none') homeRefresh();
@@ -11481,7 +11664,15 @@ const _origOnAuthChange = null;
 // ═══ BACKEND LOCAL / AUTH ═════════════════════
 const SIGA_RUNTIME = window.__SIGA_RUNTIME__ || {};
 const SIGA_AUTH = SIGA_RUNTIME.auth || { mode: 'local', entra: { adminEmails: [], editorEmails: [] } };
-const API_URL = window.__SIGA_API_URL__ || SIGA_RUNTIME.apiUrl || (location.port === '5173' ? 'http://localhost:3000' : '/api');
+const _configuredApiUrl = window.__SIGA_API_URL__ || SIGA_RUNTIME.apiUrl || '';
+const _isLocalDevHttp = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  && location.protocol !== 'file:'
+  && location.port === '5173';
+const API_URL = _configuredApiUrl
+  ? ((_isLocalDevHttp && _configuredApiUrl === '/api') ? 'http://127.0.0.1:3000' : _configuredApiUrl)
+  : ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.protocol !== 'file:'
+      ? 'http://127.0.0.1:3000'
+      : '/api');
 // ── Arquitetura de Processos CAGE-RS (importado da planilha) ──
 const CAGE_PROCESSOS = [{"macroprocesso":"Auditoria","processo":"Realizar Tomada de Contas Especial","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe DAUD","area":"Divisão de Auditoria","objetivo":"Apurar a responsabilidade por ocorrências que resultem em dano ao erário (patrimônio público) e promover o ressarcimento desse prejuízo.","fornecedores":"Tribunal de Contas do Estado","entradas":"Ofício de solicitação de realização de tomada de contas especial","entregas":"Relatório de tomada de contas especial","clientes":"órgãos do estado, tribunal de contas do estado","objEstrategicos":["Promover a integridade pública e privada e fortalecer a prevenção à corrupção","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Auditoria","processo":"Realizar Inspeção","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Coordenadores setoriais; Coordenadores seccionais","area":"DCO e DAUD","objetivo":"Gerar valor para a gestão por meio de orientações, recomendações de melhorias processuais e identificação de pontos de controle e irregularidades.","fornecedores":"Denúncias - Canal Fala BR, E-mail, Telefone, Órgãos, Seccionais, Gabinetes","entradas":"Solicitações de Auditoria, Achados da atividade de controle, Denúncias recebidas.","entregas":"Documentos de auditoria - Relatórios, comunicados e notificações.","clientes":"Órgão auditado, TCE, MP, Governador.","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos","Otimizar a contribuição da auditoria para o aprimoramento dos processos da gestão pública estadual"]},{"macroprocesso":"Auditoria","processo":"Gerenciar Auditorias","subprocesso":"Executar Auditorias","natureza":"FINALÍSTICO","gerente":"Coordenadores setoriais; Chefe DAUD","area":"Divisão de Auditoria","objetivo":"Fornecer uma avaliação independente e objetiva sobre o escopo de Auditoria.","fornecedores":"\"Chefia da Divisão\nSeção de Planejamento\"","entradas":"Escopo de trabalho elaborado e aprovado pela chefia da divisão e pelo planejamento.\nPlano de trabalho elaborado pela equipe.","entregas":"Avaliação do escopo da auditoria","clientes":"Chefia da Divisão;\nGestão da entidade auditada;\nSeção de Planejamento;\nSeção de consultoria e revisão.","mapeado":true,"objEstrategicos":[]},{"macroprocesso":"Auditoria","processo":"Gerenciar Auditorias","subprocesso":"Emitir Relatório de Auditoria","natureza":"FINALÍSTICO","gerente":"Chefe seção de supervisão técnica (DAUD)","area":"Divisão de Auditoria","objetivo":"Comunicar de forma clara e concisa os resultados dos trabalhos de auditoria","fornecedores":"\"Equipes de auditoria\nEquipe de revisão\"","entradas":"Resultados dos testes e achados de auditoria.\nRevisão do documento e insumos e recomendações adequadas.","entregas":"Comunicados e Relatórios de auditoria e Pareceres de exercício.\nPublicação no Portal da Transparência daqueles documentos não protegidos por grau de sigilo.","clientes":"Gestores das entidades, Secretaria da pasta, MP, TCE Polícia Civil, Comissão Permanente de Responsabilização da Pessoa Jurídica (CRPJ) e a sociedade.","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos","Aprimorar os Processos de Auditoria, com Base nas Melhores Práticas Internacionais","Otimizar a contribuição da auditoria para o aprimoramento dos processos da gestão pública estadual"]},{"macroprocesso":"Auditoria","processo":"Gerenciar Auditorias","subprocesso":"Monitorar Recomendações de Auditorias","natureza":"FINALÍSTICO","gerente":"Coordenadores setoriais; Chefe DAUD","area":"Divisão de Auditoria","objetivo":"Verificar se houve atendimento das recomendações ou saneamento das impropriedades identificadas.\nVerificar se as medidas implementadas pelas Entidades auditadas estão de acordo com as recomendações emitidas ou com o plano de ação acordado e se as medidas adotadas foram suficientes para solucionar a situação apontada como inadequada frente aos critérios adotados.","fornecedores":"\"Equipes de auditoria\nEquipe de revisão\"","entradas":"Comunicados e Relatórios emitidos \nBoas práticas internacionais de Auditoria \nPlanilha Excel de acompanhamento dos apontamentos e recomendações (preenchida no trabalho anterior)","entregas":"Apontamento de follow-up nos Comunicados e Relatórios;\nPlanilha Excel de acompanhamento dos apontamentos e recomendações preenchida e atualizada.","clientes":"Chefia da Divisão \nGestão da entidade auditada \nSeção de Planejamento \nSeção de Consultoria e Revisão \nSetorial de Auditoria responsável pela entidade","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos","Aprimorar os Processos de Auditoria, com Base nas Melhores Práticas Internacionais","Otimizar a contribuição da auditoria para o aprimoramento dos processos da gestão pública estadual"]},{"macroprocesso":"Auditoria","processo":"Elaborar Plano Anual de Auditoria","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de planejamento e capacitação (DAUD)","area":"Divisão de Auditoria","objetivo":"Definir os trabalhos prioritários do próximo exercício","fornecedores":"\"DCI - Demanda Interna\nSeção de Planejamento, Chefia da Divisão - DCI, Gabinete da CAGE. \"","entradas":"\"Boas práticas de Auditoria;\nColeta das diretrizes da Gestão para elaboração do PAA.\"","entregas":"PAA aprovado","clientes":"Gabinete da CAGE e \nDCI","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Aprimorar os Processos de Auditoria, com Base nas Melhores Práticas Internacionais"]},{"macroprocesso":"Auditoria","processo":"Gerenciar Processo de Prestação de Contas Ordinárias","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de supervisão técnica (DAUD); Chefe seção de orientação e assessoramento (DCO)","area":"DCO e DAUD","objetivo":"Formalizar a opinião da CAGE em relação as contas do ordenador primário do exercício em referência","fornecedores":"Órgãos","entradas":"Documentos dos órgãos, dados acerca da execução orçamentária","entregas":"Relatório elaborado","clientes":"CAGE","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Promover a integridade pública e privada e fortalecer a prevenção à corrupção","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Auditoria","processo":"Gerenciar Auditorias","subprocesso":"Planejar Auditorias","natureza":"FINALÍSTICO","gerente":"Chefe seção de planejamento e capacitação (DAUD)","area":"Divisão de Auditoria","objetivo":"Definir os objetivos específicos e os procedimentos de auditoria que serão aplicados","fornecedores":"Seção de Planejamento","entradas":"PAA aprovado, elaborado e cadastrado no sistema","entregas":"Escopo de trabalho elaborado e aprovado pela chefia da divisão e pelo planejamento.","clientes":"Equipe de Auditoria\nChefia da Divisão\nSeção de Planejamento","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos","Aprimorar os Processos de Auditoria, com Base nas Melhores Práticas Internacionais","Otimizar a contribuição da auditoria para o aprimoramento dos processos da gestão pública estadual"]},{"macroprocesso":"Auditoria","processo":"Elaborar Relatório Anual de Auditoria","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de planejamento e capacitação (DAUD)","area":"Divisão de Auditoria","objetivo":"Apresentar e analisar os resultados dos trabalhos de auditoria do PAA","fornecedores":"Equipes de auditoria","entradas":"Relatórios de auditoria emitidos no ano","entregas":"Relatórios anual de auditoria","clientes":"Gabinete da CAGE e \nDCI","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Aprimorar os Processos de Auditoria, com Base nas Melhores Práticas Internacionais"]},{"macroprocesso":"Comunicação","processo":"Elaborar o Plano de Comunicação Anual","subprocesso":"","natureza":"GESTÃO","gerente":"Assessor de comunicação","area":"Gabinete da CAGE","objetivo":"Estruturar ações de comunicação com os  públicos externo e interno alinhado com a estratégia institucional","fornecedores":"","entradas":"","entregas":"Plano de comunicação","clientes":"CAGE","objEstrategicos":["Promover uma comunicação interna mais efetiva"]},{"macroprocesso":"Comunicação","processo":"Executar o Plano de Comunicação","subprocesso":"Elaborar Semanalmente Pautas de Comunicação","natureza":"GESTÃO","gerente":"Assessor de comunicação","area":"Gabinete da CAGE","objetivo":"Realizar o levantamento dos conteúdos mais relevantes para divulgação","fornecedores":"","entradas":"","entregas":"planejamento operacional de comunicação","clientes":"Assessoria de comunicação (ASCOM e SECOM)","objEstrategicos":["Promover uma comunicação interna mais efetiva"]},{"macroprocesso":"Comunicação","processo":"Executar o Plano de Comunicação","subprocesso":"Elaborar Materiais Institucionais e Peças de Comunicação","natureza":"GESTÃO","gerente":"Assessor de comunicação","area":"Gabinete da CAGE","objetivo":"Estabelecer uma comunicação efetiva, promovendo a aproximação e engajamento do público, e fortalecendo o relacionamento institucional da organização.","fornecedores":"Servidores e divisões da CAGE","entradas":"Solicitações dos servidores da CAGE. Publicações no DOE.","entregas":"Notícias, informes, materiais institucionais.","clientes":"CAGE, SEFAZ","mapeado":true,"objEstrategicos":["Promover uma comunicação interna mais efetiva"]},{"macroprocesso":"Comunicação","processo":"Executar o Plano de Comunicação","subprocesso":"Gerenciar Canais Virtuais de Comunicação","natureza":"GESTÃO","gerente":"Assessor de comunicação","area":"Gabinete da CAGE","objetivo":"Estabelecer uma comunicação efetiva, promovendo a aproximação e engajamento do público, e fortalecendo o relacionamento institucional da organização.","fornecedores":"","entradas":"","entregas":"Matérias e postagens no site,e redes sociais","clientes":"CAGE, imprensa e sociedade em geral","objEstrategicos":["Promover uma comunicação interna mais efetiva"]},{"macroprocesso":"Comunicação","processo":"Promover Eventos Institucionais","subprocesso":"Elaborar Plano Anual de Eventos","natureza":"GESTÃO","gerente":"Assessor de capacitação","area":"Gabinete da CAGE","objetivo":"Direcionar as ações de planejamento para execução dos eventos","fornecedores":"áreas da CAGE","entradas":"solicitações/necessidade de realização de eventos, calendário de eventos da sefaz","entregas":"cronograma para a realização de eventos","clientes":"CAGE","objEstrategicos":[]},{"macroprocesso":"Comunicação","processo":"Promover Eventos Institucionais","subprocesso":"Planejar e Executar os Eventos","natureza":"GESTÃO","gerente":"Assessor de capacitação","area":"Gabinete da CAGE","objetivo":"Realizar eventos previstos no Plano Anual de Eventos.","fornecedores":"GEPESC; Demandante do evento; Fornecedores externos de materiais/serviços.","entradas":"Previsão de evento no plano anual de eventos","entregas":"Evento realizado","clientes":"CAGE, orgão públicos, imprensa e sociedade em geral","mapeado":true,"objEstrategicos":["Fortalecer a credibilidade e a imagem da CAGE, desenvolvendo a comunicação e o relacionamento com o governo e a sociedade","Promover uma comunicação interna mais efetiva"]},{"macroprocesso":"Contabilidade","processo":"Gerenciar Estrutura Hierárquica de Centro de Custos","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de custos e controles gerenciais (DIE)","area":"Divisão de Informações Estratégicas","objetivo":"Gerenciar a manutenção dos centros de custos, apoiando os usuários na construção da estrutura de centro de custos","fornecedores":"","entradas":"","entregas":"Atendimento das demandas, aprovação da alteração da estrutura dos centros de custos","clientes":"Toda a administração direta e indireta","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Registros Orçamentários Contábeis e Patrimoniais","subprocesso":"Realizar Conciliação Contábil","natureza":"FINALÍSTICO","gerente":"Chefe seção de registro e controle contábil","area":"Divisão de Contabilidade","objetivo":"Verificação das contas bancárias pela confrontação do movimento bancário com o razão contábil.","fornecedores":"Bancos e órgãos","entradas":"\"Razão contábil FPE, extratos bancários enviados pelos órgãos ou extraídos do FPE.\nInformações sobre os lançamentos não conciliados realizados pelos órgãos.\"","entregas":"Informação contábil com qualidade, para a execução das políticas Públicas ou repasse a terceiros. Contas conciliadas.","clientes":"\"Usuários da informação contábil (TCE, SEFAZ, instituições financeiras etc) Administração Direta – na AD, quem realiza a conciliação bancária é a CAGE.\nObs.: Administração Indireta – em todos os entes do Estado, quem realiza a conciliação bancária são os contadores do próprio órgão.\"","mapeado":true,"objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Dar Suporte ao Cumprimento das Obrigações Fiscais E-social, DCTF WEB e EFD-REINF","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe da Seção de Obrigações Tributárias Acessórias","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Auxiliar no cumprimento das obrigações fiscais no que tange aos sistemas, E-SOCIAL, DCTF WEB E EFD-REINF dos órgãos do estado, inclusive relacionados a interpretação da legislação.","fornecedores":"Órgãos do estado, seccionais, contadores e entidades da administração indireta.","entradas":"Dados da execução da despesa","entregas":"Orientação aos usuários do sistema, geração da obrigação fiscal","clientes":"Núcleos operacionais do E-SOCIAL, DCTF WEB e EFD-REINF dos órgãos","mapeado":true,"objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar a Normatização Contábil","subprocesso":"Atualizar Ementários PCASP, Receita, Despesa e Fontes de Recurso","natureza":"FINALÍSTICO","gerente":"Chefe da seção de normatização contábil","area":"Divisão de Contabilidade","objetivo":"Manter o processo de acordo com as normas e padrões do plano da STN - 163/2001 e controlar as origens e aplicações dos recursos financeiros por fonte de recursos.","fornecedores":"","entradas":"Layouts das normas da STN","entregas":"Plano de contas e ementário atualizados","clientes":"Seção de informação legal e gerencial, SPGG, PROCERGS","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar a Normatização Contábil","subprocesso":"Criar Critérios Contábeis","natureza":"FINALÍSTICO","gerente":"Chefe da seção de normatização contábil","area":"Divisão de Contabilidade","objetivo":"Permitir a contabilização das transações executadas no FPE.","fornecedores":"","entradas":"Plano de Contas;\nNovas transações no FPE;\nTransações antigas que não foram contabilizadas ou foram contabilizadas incorretamente.","entregas":"Critérios atualizados e novos criados no FPE.","clientes":"Todos os usuários do FPE","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar a Normatização Contábil","subprocesso":"Elaborar Normas Contábeis","natureza":"FINALÍSTICO","gerente":"Chefe da seção de normatização contábil","area":"Divisão de Contabilidade","objetivo":"Padronização e normatização de políticas contábeis.","fornecedores":"","entradas":"Implantação de um novo procedimento contábil; \nExistencia de procedimento sendo executado pelos órgãos de forma despadronizada.","entregas":"Publicação das normas e treinamentos","clientes":"Todos os agentes públicos do estado que realizam transações que reflitam na contabilidade, especialmente no FPE.","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Elaborar Relatórios Contábeis","subprocesso":"Elaborar Relatórios Gerenciais","natureza":"FINALÍSTICO","gerente":"Chefe seção de informações legais e gerenciais (DCON)","area":"Divisão de Contabilidade","objetivo":"Gerar informação contábil/fiscal para a tomada de decisão.","fornecedores":"","entradas":"Fechamento mensal e anual (Processo - Realizar encerramento contábil anual).\nValidação dos cubos de informações do fechamento DTI.","entregas":"Publicação dos Relatórios gerenciais","clientes":"Gestores e em especial o Secretário(a) da Fazenda","objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva","Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Elaborar Relatórios Contábeis","subprocesso":"Elaborar Relatórios Legais (Contábeis, Fiscais)","natureza":"FINALÍSTICO","gerente":"Chefe seção de informações legais e gerenciais (DCON)","area":"Divisão de Contabilidade","objetivo":"Gerar informação contábil/fiscal para atendimento de dispositivos legais da lei de responsabilidade fiscal.","fornecedores":"","entradas":"Fechamento mensal e anual (Processo - Realizar encerramento contábil anual).","entregas":"Publicação dos relatórios legais.","clientes":"Gestores e em especial o Secretário(a) da Fazenda, Governo Federal, Tribunal de Contas do Estado e a sociedade em geral","objEstrategicos":["Aperfeiçoar a transparência pública e fomentar o controle social","Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva","Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Elaborar Relatórios Contábeis","subprocesso":"Elaborar Balanço Geral e Prestação de Contas","natureza":"FINALÍSTICO","gerente":"Chefe seção de informações legais e gerenciais (DCON)","area":"Divisão de Contabilidade","objetivo":"Dar transparência as finanças públicas do estado referentes aos exercício financeiro e cumprir a exigência legal.","fornecedores":"","entradas":"Transações contábeis realizadas no exercício.","entregas":"Publicação, entrega e divulgação","clientes":"TCE, Governador, Assembleia e Sociedade","objEstrategicos":["Aperfeiçoar a transparência pública e fomentar o controle social","Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Encerramento Contábil","subprocesso":"Realizar Encerramento Contábil Mensal","natureza":"FINALÍSTICO","gerente":"Chefe DTTI","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Garantir que o encerramento mensal no FPE seja realizado","fornecedores":"","entradas":"","entregas":"Encerramente contábil realizado com a disponibilização dos arquivos de dados mensais","clientes":"Contadores de todos os órgãos do estado","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Encerramento Contábil","subprocesso":"Realizar Encerramento Contábil Anual","natureza":"FINALÍSTICO","gerente":"Chefe DCON","area":"Divisão de Contabilidade","objetivo":"Garantir que todos os atos que alteram o patrimônio e o orçamento estejam registrados dentro de seu período de competência anual.","fornecedores":"","entradas":"Documentos suporte recebidos","entregas":"Disponibilizar dados contábeis registrados finais - Encerramento anual.","clientes":"Seção de informação legal e gerencial","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Registros Orçamentários Contábeis e Patrimoniais","subprocesso":"Realizar Registro de Execução de Despesa","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Registrar a execução da despesa (empenho, liquidação e retenção).","fornecedores":"Órgãos do Estado","entradas":"Solicitação feita via FPE associado a documentação via PROA / Email.","entregas":"Liquidação disponível no contas a pagar, registro da execução orçamentaria","clientes":"DPROF/ TE - Tesouro do Estado, todas as secretarias.","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados","Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Registros Orçamentários Contábeis e Patrimoniais","subprocesso":"Realizar Registro de Ingresso de Receita","natureza":"FINALÍSTICO","gerente":"Chefe seção de registro e controle contábil","area":"Divisão de Contabilidade","objetivo":"Registrar no FPE os valores recebidos pelo Estado, que serão utilizados nas políticas públicas (receitas orçamentárias) e repasses a terceiros (receitas extraorçamentárias).","fornecedores":"","entradas":"Razão contábil FPE, extratos bancários enviados pelos órgãos ou extraídos do FPE. \nInformações sobre os lançamentos não conciliados realizados pelos órgãos.","entregas":"Ingresso gera o orçamento para execução das políticas Públicas ou lastro para o repasse.","clientes":"Administração Direta – na AD, quem realiza os ingressos é a CAGE. \nObs.: Administração Indireta – em todos os entes do Estado, quem realiza os ingressos são os contadores do próprio órgão.","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Realizar Registros Orçamentários Contábeis e Patrimoniais","subprocesso":"Identificar e Validar Regras de Retenção de Tributos","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Registrar no FPE os valores da retenção de tributos em conformidade à legislação e ao contrato.","fornecedores":"Órgãos da administração direta","entradas":"PROA e solicitação de liquidação liberada no FPE com as previsões de retenção","entregas":"Retenções tributárias validadas","clientes":"Órgãos da administração direta","mapeado":true,"objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados","Qualificar Informação Contábil"]},{"macroprocesso":"Contabilidade","processo":"Cumprir Obrigação Fiscal DIRF","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe da Seção de Obrigações Tributárias Acessórias","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Cumprir a obrigação fiscal da DIRF  do poder executiva da administração direta","fornecedores":"","entradas":"Ambiente Nacional de Dados – Layout – webservice - TECHNE","entregas":"DIRF entregue","clientes":"Receita Federal, Administração direta do Poder Executivo, todos os credores do estado","objEstrategicos":["Qualificar Informação Contábil"]},{"macroprocesso":"Controle","processo":"Elaborar e Monitorar Plano de Trabalho Anual","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe da Seção de Monitoramento e Análise de Riscos (DCO)","area":"Divisão de Controle e Orientação","objetivo":"Organizar as atividades realizadas pelas seccionais da DCD e ao mesmo tempo definir o escopo do trabalho considerando a disponibilidade de recursos humanos e de tempo com o objetivo de priorizar os processos mais relevantes.","fornecedores":"","entradas":"Dados do Orçamento da Secretaria, CAGE Gerencial, diretrizes da DCD, histórico de trabalhos da Seccional","entregas":"Plano de trabalho anual elaborado","clientes":"Seccionais, Gabinete DCD e CAGE","objEstrategicos":["Otimizar a utilização dos recursos públicos","Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Controle","processo":"Realizar o Controle de Contratações Diretas","subprocesso":"Controlar Locações","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar para que a contratação ocorra de acordo com os princípios e legislação aplicáveis","fornecedores":"Órgãos","entradas":"PROA instruido com a  minuta contratual e demais documentos aplicáveis","entregas":"Resgistro do empenho, informação do auditor se aplicável","clientes":"òrgão contratante","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar o Controle de Contratações Diretas","subprocesso":"Controlar Demais Contratações Diretas","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar para que a contratação ocorra de acordo com os princípios e legislação aplicáveis","fornecedores":"Órgãos","entradas":"PROA instruido com a  minuta contratual e demais documentos aplicáveis","entregas":"Resgistro do empenho, informação do auditor se aplicável","clientes":"òrgão contratante","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar  Despesas Executadas por Adiantamento de Numerário","subprocesso":"Controlar Concessão de Adiantamento","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar para que a concessão de adiantamento ocorra de acordo com os principios e legislação aplicáveis","fornecedores":"","entradas":"PROA instruido com os documentos aplicáveis","entregas":"Resgistro do empenho e liquidação do adiantamento de numerário.","clientes":"órgão e tesouraria","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar  Despesas Executadas por Adiantamento de Numerário","subprocesso":"Controlar Prestação de Contas de Adiantamento","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Avaliar a qualidade dos controles exercidos pela primeira linha de defesa, exercida pelos órgãos controlados, no processo de adiantamento de numerário.","fornecedores":"DEMAIS ÓRGÃOS DO ESTADO","entradas":"SOLICITAÇÃO VIA PROA E FPE","entregas":"parecer mensal de prestação de contas  e registro de todas as baixas do período","clientes":"demais órgãos do estado","mapeado":true,"objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Transferências Voluntárias","subprocesso":"Controlar a Celebração de Instrumentos de Repasse","natureza":"FINALÍSTICO","gerente":"Coordenador da seccional de Transferências Vol.","area":"Divisão de Controle e Orientação","objetivo":"Assegurar que a celebração das transferências voluntárias do estado seja realizada com efetividade e eficiência, garantindo que os recursos sejam aplicados de forma transparente e em conformidade com os objetivos pactuados, maximizando o impacto dos investimentos e o cumprimento das metas estabelecidas","fornecedores":"Secretarias e Órgãos do Estado","entradas":"Processo administrativo utilizado pelo órgão repassador (PROA, SEI ou SIM)","entregas":"Registro do Empenho \nInformação – Auditor\nRegistro da aprovação do instrumento pela Seccional","clientes":"Órgão concedente","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Transferências Voluntárias","subprocesso":"Controlar a Liquidação de Repasses","natureza":"FINALÍSTICO","gerente":"Coordenador da seccional de Transferências Vol.","area":"Divisão de Controle e Orientação","objetivo":"Verificar se os requisitos necessários para a liquidação das despesas públicas foram atendidos e realizar o registro contábil.","fornecedores":"Órgãos e Poderes de Estado","entradas":"Processo administrativo utilizado pelo órgão repassador (PROA, SEI ou SIM)","entregas":"Registro da liquidação","clientes":"Órgão concedente","mapeado":true,"objEstrategicos":["Otimizar a utilização dos recursos públicos","Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados","Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Transferências Voluntárias","subprocesso":"Controlar Aditivos e Alterações de Instrumentos de Transferências Voluntárias","natureza":"FINALÍSTICO","gerente":"Coordenador da seccional de Transferências Vol.","area":"Divisão de Controle e Orientação","objetivo":"Assegurar que as alterações promovidas nos instrumentos de transferências voluntárias celebrados preservem a efetividade e eficiência, garantindo que os recursos sejam aplicados de forma transparente e em conformidade com os objetivos pactuados, maximizando o impacto dos investimentos e o cumprimento das metas estabelecidas","fornecedores":"","entradas":"Processo administrativo utilizado pelo órgão repassador (PROA, SEI ou SIM)","entregas":"Registro do Empenho \nInformação – Auditor\nRegistro da aprovação do instrumento pela Seccional","clientes":"Órgão concedente","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Transferências Voluntárias","subprocesso":"Controlar a Prestação de Contas de Repasses","natureza":"FINALÍSTICO","gerente":"Coordenador da seccional de Transferências Vol.","area":"Divisão de Controle e Orientação","objetivo":"Avaliar a execução e prestação de contas de transferências voluntárias, de modo a verificar se os processos foram conduzidos com observância dos princípios que regem a administração pública, se a conclusão do objeto está devidamente comprovada e se houve efetividade na implementação da política pública relacionada.","fornecedores":"Órgãos","entradas":"Base de dados do FPE","entregas":"Comunicado de Auditoria; Comunicado Orientativo","clientes":"Órgão concedente","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Indenizações e Ressarcimentos","subprocesso":"Controlar Outros Ressarcimentos","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Garantir os controles das indenizações e ressarcimentos concedidos pelos órgãos do estado.","fornecedores":"Órgãos do estado","entradas":"Solicitações de empenho e liquidação no PROA e FPE","entregas":"Registro do empenho e da liquidação","clientes":"Órgão contratante","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Indenizações e Ressarcimentos","subprocesso":"Controlar o Pagamento de Diárias","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Garantir os controles das indenizações e ressarcimentos concedidos pelos órgãos do estado.","fornecedores":"Secretarias e Órgãos do Estado","entradas":"Recebimento via PROA para Empenho da despesa.\nRecebimento via PROA para liquidação da despesa.","entregas":"Diárias registradas.","clientes":"Órgãos da administração direta concedentes de diárias.","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Indenizações e Ressarcimentos","subprocesso":"Controlar Pagamento de Auxílio Funeral","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Garantir os controles das indenizações de auxílio funeral concedidas pelo Estado.","fornecedores":"Órgãos do Estado","entradas":"","entregas":"Registro do empenho e da liquidação","clientes":"Órgão contratante","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Licitações","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Coordenador seccional CELIC","area":"Divisão de Controle e Orientação","objetivo":"Garantir que os processos licitatórios sejam lícitos e eficientes, cumpram o seu objeto e  atendam as demandas do Estado.","fornecedores":"Órgãos da Administração Direta, Autarquias e Fundações - Por intermédio  da CELIC","entradas":"Processo na fase interna antes da publicação;\nProcesso em fase externa antes da homologação.","entregas":"Documento - Informação - para a CELIC (Publicação ou homologação, \ndevolução para correção do demandante ou correção interna da CELIC)","clientes":"CELIC","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar a Execução de Contratos Administrativos","subprocesso":"Controlar a Execução das Atas de Registro de preço","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Analisar as despesas executadas por meio de ata de registro de preço, verificando sua adequação ao parâmetros pré-estabelecidos, e atender a solicitação de empenho/liquidação.","fornecedores":"Órgãos do Estado","entradas":"PROA","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável","clientes":"Órgão contratante, Tesouraria e DNC/DTI","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar a Execução de Contratos Administrativos","subprocesso":"Controlar os Contratos de Serviços  Sem Dedicação Exclusiva de Mão de Obra","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar pela devida execução contratual conforme as condições da contratação e legislação aplicável","fornecedores":"","entradas":"PROA de empenho e liquidação","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável","clientes":"Órgão contratante, Tesouraria e DNC/DTI","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar a Execução de Contratos Administrativos","subprocesso":"Controlar Demais Contratos","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar pela devida execução contratual conforme as condições da contratação e legislação aplicável","fornecedores":"","entradas":"PROA de liquidação e empenho","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável","clientes":"Órgão contratante, Tesouraria e DNC/DTI","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar a Execução de Contratos Administrativos","subprocesso":"Controlar Contratos de Serviços com Dedicação Exclusiva de Mão de Obra","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar pela devida execução contratual conforme as condições da contratação e legislação aplicável","fornecedores":"Secretarias e Órgãos do Estado","entradas":"Recebimento via PROA para Empenho da despesa.\nRecebimento via PROA para liquidação da despesa.","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável","clientes":"Órgão contratante, Tesouraria e DNC/DTI","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar a Execução de Contratos Administrativos","subprocesso":"Controlar Despesas IEF","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Zelar pela devida execução contratual conforme as condições da contratação e legislação aplicável","fornecedores":"","entradas":"análise dos painéis do CAGE gerencial","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável","clientes":"Órgão contratante, Tesouraria e DNC/DTI","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar Despesas de Obras e Serviços de Engenharia","subprocesso":"Controlar a contratação de obras e serviços de engenharia","natureza":"FINALÍSTICO","gerente":"Coordenador seccional de obras","area":"Divisão de Controle e Orientação","objetivo":"Garantir a adequada contratação e controle das obras públicas do estado.","fornecedores":"Secretarias e Órgãos do Estado","entradas":"Solicitação via PROA e FPE","entregas":"Nota de Empenho\nInformação - Auditor","clientes":"Órgãos ou secretarias","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar Despesas de Obras e Serviços de Engenharia","subprocesso":"Controlar a Fase de Liquidação de Faturas de Obras e Serviços de Engenharia","natureza":"FINALÍSTICO","gerente":"Coordenador seccional de obras","area":"Divisão de Controle e Orientação","objetivo":"Garantir que ocorram pagamentos de serviços efetivamente executados e atestados e assegurar que a empresa executora esteja regular com suas obrigações","fornecedores":"Secretarias e Órgãos do Estado","entradas":"Solicitação via PROA e FPE","entregas":"Nota de liquidação; notas financeiras (retenções); Informação - Auditor","clientes":"Órgãos, secretarias e tesourarias","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar Despesas de Obras e Serviços de Engenharia","subprocesso":"Controlar Aditivos e Alterações de Contratos de Obras ou Serviços de Engenharia","natureza":"FINALÍSTICO","gerente":"Coordenador seccional de obras","area":"Divisão de Controle e Orientação","objetivo":"Manter controle sobre as alterações contratuais relativos a obras ou serviços de engenharia.","fornecedores":"Órgãos públicos","entradas":"Minutas de aditivo, solicitação de empenho, apostilas.","entregas":"Informação dando de acordo ou não acerca do termo aditivo enviado pela secretaria. Empenho atendido quando é aditivo de valor.","clientes":"Órgãos públicos","mapeado":true,"objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Folha de Pagamento","subprocesso":"Controlar a Destinação dos Recursos por Nota Financeira","natureza":"FINALÍSTICO","gerente":"Coordenador seccional da folha","area":"Divisão de Controle e Orientação","objetivo":"Garantir a tempestiva destinação dos recursos dos descontos dos servidores","fornecedores":"","entradas":"","entregas":"Notas financeiras no contas a pagar","clientes":"Tesouraria ou pagadoria dos órgãos","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Folha de Pagamento","subprocesso":"Controlar o Atendimento de Solicitações de Patronais","natureza":"FINALÍSTICO","gerente":"Coordenador seccional da folha","area":"Divisão de Controle e Orientação","objetivo":"Garantir o repasse financeiro ao orgão de previdência e saúde","fornecedores":"","entradas":"","entregas":"Liquidação disponível no contas a pagar, registro da execução orçamentaria","clientes":"Tesouraria ou pagadoria dos órgãos e Administração financeira","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Realizar Controle de Folha de Pagamento","subprocesso":"Contabilizar e Realizar o Ajuste Orçamentário da Folha","natureza":"FINALÍSTICO","gerente":"Coordenador seccional da folha","area":"Divisão de Controle e Orientação","objetivo":"Garantir o adequado registro dos fatos da folha.","fornecedores":"","entradas":"","entregas":"Contabilização da folha\nAjustes de folha","clientes":"Administração financeira e \nRH do Órgão","objEstrategicos":["Otimizar a utilização dos recursos públicos","Qualificar Informação Contábil"]},{"macroprocesso":"Controle","processo":"Realizar Controle Patrimonial e Almoxarifado","subprocesso":"Realizar o Controle Contábil do Patrimônio do Estado","natureza":"FINALÍSTICO","gerente":"Chefe DCO","area":"Divisão de Controle e Orientação","objetivo":"Zelar pelo adequado registro patrimonial do estado","fornecedores":"","entradas":"","entregas":"controle da conciliação contábil baseado na realização dos inventários","clientes":"Órgão contratante, TCE e DNC/DTI","objEstrategicos":["Otimizar a utilização dos recursos públicos","Qualificar Informação Contábil"]},{"macroprocesso":"Controle","processo":"Realizar Controle Patrimonial e Almoxarifado","subprocesso":"Realizar o Controle Contábil de Almoxarifado","natureza":"FINALÍSTICO","gerente":"Chefe DCO","area":"Divisão de Controle e Orientação","objetivo":"Zelar pelo adequado registro patrimonial do estado","fornecedores":"","entradas":"","entregas":"controle da conciliação contábil baseado na realização dos inventários","clientes":"Órgão contratante, TCE e DNC/DTI","objEstrategicos":["Otimizar a utilização dos recursos públicos","Qualificar Informação Contábil"]},{"macroprocesso":"Controle","processo":"Controlar o Pagamento de Auxílios","subprocesso":"Realizar o Controle dos Pagamentos Continuados de Auxílios","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Assegurar que a transferência seja destinada ao público alvo de cada projeto em conformidade com os seus regramentos próprios.","fornecedores":"Órgãos do Estado","entradas":"Necessidade de operacionalizar o pagamento de auxílios","entregas":"Registro do empenho e da liquidação\nInformação do Auditor, caso aplicável\nResultado do cruzamento de dados via SEI ou Painel CAGE-gerencial","clientes":"Órgãos e entidades","objEstrategicos":["Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Controle","processo":"Controlar o Pagamento de Auxílios","subprocesso":"Realizar o Controle de Pagamentos Esporádicos de Auxílios","natureza":"FINALÍSTICO","gerente":"Chefe DCO; Coordenadores seccionais","area":"Divisão de Controle e Orientação","objetivo":"Assegurar que a transferência seja destinada  ao público alvo de cada projeto em conformidade com os seus regramentos próprios","fornecedores":"","entradas":"","entregas":"Registro do empenho e da liquidação\nInformação - Auditor, caso aplicável                                     Resultado do cruzamento de dados via PROA ou Painel CAGE-gerencial","clientes":"Órgãos ou secretarias","objEstrategicos":["Colaborar para a implementação de políticas públicas efetivas","Otimizar a utilização dos recursos públicos"]},{"macroprocesso":"Gestão Administrativa","processo":"Realizar Gestão Orçamentária e Financeira","subprocesso":"Elaborar a Proposta Orçamentária Anual","natureza":"APOIO","gerente":"Adjunto de gestão e tecnologia","area":"Gabinete da CAGE","objetivo":"Garantir os recursos necessários para a execução dos processos e projetos da CAGE contemplando todas as fontes de recursos como FUNSEFAZ, PROFISCO etc","fornecedores":"","entradas":"","entregas":"Proposta orçamentária elaborada","clientes":"CAGE","objEstrategicos":["Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão Administrativa","processo":"Realizar Gestão Orçamentária e Financeira","subprocesso":"Monitorar a Execução do Orçamento","natureza":"APOIO","gerente":"Adjunto de gestão e tecnologia","area":"Gabinete da CAGE","objetivo":"Garantir a execução do orçamento aprovado","fornecedores":"","entradas":"","entregas":"Relatório de execução do orçamento","clientes":"CAGE","objEstrategicos":["Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão Administrativa","processo":"Gerir Patrimônio Interno","subprocesso":"Realizar o Inventário","natureza":"APOIO","gerente":"Coordenador de gabinete","area":"Gabinete da CAGE","objetivo":"Verificar se o patrimônio está de acordo com os registro no sistema APE","fornecedores":"","entradas":"","entregas":"Relatório de bens que constam no ECC do gabinete","clientes":"DEPAD","objEstrategicos":["Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão Administrativa","processo":"Gerir Patrimônio Interno","subprocesso":"Realizar Sindicância Investigativa de Bens Não Encontrados no Inventário","natureza":"APOIO","gerente":"Presidente da comissão de sindicância","area":"Gabinete da CAGE","objetivo":"Investigar a falta de bens após mo inventário","fornecedores":"","entradas":"","entregas":"Relatório da comissão para o titular da CAGE","clientes":"SEFAZ","objEstrategicos":["Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão Administrativa","processo":"Gerir Patrimônio Interno","subprocesso":"Realizar  o Controle Permanente de Patrimônio","natureza":"APOIO","gerente":"Coordenador de gabinete","area":"Gabinete da CAGE","objetivo":"Registrar a entrada e a saída dos bens durante o ano para facilitar a realização do inventário","fornecedores":"","entradas":"","entregas":"Planilha de controle permanente","clientes":"Gabinete","objEstrategicos":["Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Gerir BI, Painéis Analíticos e Relatórios para Apoio à Gestão","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe da Seção de Inteligência de Dados","area":"Divisão de Informações Estratégicas","objetivo":"Desenvolver e implementar soluções tecnológicas de análise de dados para apoio a gestão.","fornecedores":"","entradas":"Insights da divisão e demandas recebidas dos órgãos - Reuniões, e-mail e contatos diretos.","entregas":"Desenvolvimento, manutenção e evolução de soluções tecnológicas","clientes":"Toda administração - Órgãos da administração Direta e indireta","objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Gerir BI, painéis Analíticos e Relatórios para Apoio à Auditoria e Controle","subprocesso":"Gerir a Arquitetura, integração e Armazenamento de Dados","natureza":"APOIO","gerente":"Chefe da Seção de Infraestrutura e Governança de Dados","area":"Divisão de Informações Estratégicas","objetivo":"","fornecedores":"","entradas":"","entregas":"Garantindo a disponibilidade dos dados para os painéis","clientes":"CAGE","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Gerir BI, painéis Analíticos e Relatórios para Apoio à Auditoria e Controle","subprocesso":"Gerir o Acesso aos Dados","natureza":"APOIO","gerente":"Chefe da Seção de Infraestrutura e Governança de Dados","area":"Divisão de Informações Estratégicas","objetivo":"Disponibilizar acesso aos paineis para os usurários credenciados","fornecedores":"","entradas":"","entregas":"Acesso aos painéis para os usuários credenciados","clientes":"CAGE","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Gerir BI, painéis Analíticos e Relatórios para Apoio à Auditoria e Controle","subprocesso":"Realizar Modelagem de Dados","natureza":"APOIO","gerente":"Chefe da Seção de Inteligência de Dados","area":"Divisão de Informações Estratégicas","objetivo":"Transformar os dados extraidos do sistema em informação para o usuário","fornecedores":"","entradas":"","entregas":"Entregar os dados em formato que possa ser utilizado nos painéis","clientes":"CAGE","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Gerir BI, painéis Analíticos e Relatórios para Apoio à Auditoria e Controle","subprocesso":"Realizar Teste de QA dos Painéis","natureza":"APOIO","gerente":"Chefe da Seção de Inteligência de Dados","area":"Divisão de Informações Estratégicas","objetivo":"Aferir a qualidade dos painéis disponibilizados","fornecedores":"","entradas":"","entregas":"Entregar a informação correta e tempestiva para os usuários","clientes":"CAGE","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Gestão de Dados e Informações","processo":"Realizar Cruzamento, Análise e Mineração de dados","subprocesso":"","natureza":"APOIO","gerente":"Chefe da Seção de Inteligência de Dados","area":"Divisão de Informações Estratégicas","objetivo":"","fornecedores":"","entradas":"","entregas":"Relação dos cruzamentos realizados","clientes":"CAGE","objEstrategicos":["Desenvolver modelo de controle baseado em riscos e orientado pela utilização de dados"]},{"macroprocesso":"Gestão de Pessoas","processo":"Gerenciar o Recrutamento e Alocação de Pessoas","subprocesso":"Realizar o Concurso Público para o Cargo de Auditor do Estado","natureza":"APOIO","gerente":"Presidente da comissão de ingresso","area":"Gabinete da CAGE","objetivo":"Realizar o concurso público para admissão de novos auditores do estado na carreira,de forma eficaz e eficiente, e de acordo com as normas vigentes.","fornecedores":"CAGE","entradas":"Nomeação da comissão de realização do concurso público","entregas":"Concurso público homologado","clientes":"CAGE, candidatos","objEstrategicos":[]},{"macroprocesso":"Gestão de Pessoas","processo":"Gerenciar o Recrutamento e Alocação de Pessoas","subprocesso":"Realizar o Ingresso e a Alocação de Servidores","natureza":"APOIO","gerente":"Coordenador de Gestão Estratégica","area":"Gabinete da CAGE","objetivo":"Receber novos servidores, ambientar à CAGE, disponibilizar infraestrutura física e tecnológica para o trabalho, além de alocar pessoas nas áreas, para atuação em projetos e processos, considerando as competências individuais e as necessidades institucionais.","fornecedores":"DEPAD (GEPESC, DRH, SEINFRA), DETIC","entradas":"Nomeação de novos servidores/aprovação do GAE para nomeação","entregas":"Servidores recebidos e alocados nas áreas da CAGE.","clientes":"CAGE, novos servidores","mapeado":true,"objEstrategicos":["Gerir as pessoas com foco na estratégia"]},{"macroprocesso":"Gestão de Pessoas","processo":"Gerenciar o Desenvolvimento de Pessoas","subprocesso":"Elaborar e Executar Plano de Capacitação","natureza":"APOIO","gerente":"Assessor de capacitação","area":"Gabinete da CAGE","objetivo":"Capacitar servidores com base nas competências a serem desenvolvidas","fornecedores":"","entradas":"","entregas":"Plano elaborado e servidores treinados","clientes":"CAGE","objEstrategicos":["Gerir as pessoas com foco na estratégia"]},{"macroprocesso":"Gestão de TIC","processo":"Realizar manutenção corretiva e suporte aos usuários de TIC","subprocesso":"","natureza":"APOIO","gerente":"Chefe seção de suporte técnico e orientação a usuários de sistemas","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Garantir a adequada utilização dos sistemas apoiando os usuários em suas atividades operacionais.","fornecedores":"órgãos, cidadãos, empresas, servidores estaduais","entradas":"Solicitações de orientação na execução das atividades no sistema.\nSolicitação de correções de demandas corretivas (Bug´s do sistema).","entregas":"Atendimento das demandas;\nEncaminhamento da resolução para as áreas responsáveis\nElaboração e aplicação de treinamentos","clientes":"Os usuários dos sistemas, servidores, e interessados externos.","mapeado":true,"objEstrategicos":["Assegurar serviços de TIC para suportar os processos e a estratégia"]},{"macroprocesso":"Gestão de TIC","processo":"Gerenciar Projetos e Demandas de Desenvolvimento de Software","subprocesso":"","natureza":"APOIO","gerente":"Chefe seção de projetos e gerenciamento de Sistemas","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Promover a melhoria contínua da experiência do usuário dos sistemas de competência da CAGE.","fornecedores":"Usuários dos sistemas","entradas":"Solicitações de otimizações de processos, integrações entre sistemas.\nProjetos com origem em alguma Legislação. Projetos estratégicos.","entregas":"Funcionalidade implantada.","clientes":"Internas - Divisões da CAGE\nTesouro e Receita Estadual.\nExternas - Secretarias e administração indireta.\nGabinete do Governador.\nObrigações legais","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação","Assegurar serviços de TIC para suportar os processos e a estratégia"]},{"macroprocesso":"Gestão de TIC","processo":"Realizar Gestão Administrativa de Sistemas","subprocesso":"","natureza":"APOIO","gerente":"Chefe seção de projetos e gerenciamento de Sistemas","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Elaborar e gestionar os contratos novos e vigentes e realizar os atestes das faturas e entregas mensais.","fornecedores":"","entradas":"Autorização de início do processo de contratação.\nGestão do PROFISCO.\nGestão dos contratos pela DETIC.","entregas":"Contratos de TI da divisão concretizados.","clientes":"Divisões com contratos de TI","objEstrategicos":["Assegurar serviços de TIC para suportar os processos e a estratégia"]},{"macroprocesso":"Gestão de TIC","processo":"Gerenciar Políticas de Segurança de TIC","subprocesso":"","natureza":"APOIO","gerente":"Chefe DTTI","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Padronizar os projetos, procedimentos operacionais e otimizar a utilização de recursos de TIC no âmbito da CAGE.","fornecedores":"","entradas":"","entregas":"","clientes":"","objEstrategicos":["Assegurar serviços de TIC para suportar os processos e a estratégia"]},{"macroprocesso":"Gestão de TIC","processo":"Priorizar Demandas de Desenvolvimento de TIC","subprocesso":"","natureza":"APOIO","gerente":"Chefe seção de projetos e gerenciamento de Sistemas","area":"DTTI, DIE","objetivo":"Garantir o alinhamento estratégico dos projetos de TI e a transparecncia das demandas, bem como ampliar a eficiencia dos recursos de TI.","fornecedores":"Usuários dos sistemas.","entradas":"Formulário (forms) preenchido pelo solicitante.","entregas":"Fila de projetos ranqueados.","clientes":"CAGE","mapeado":true,"objEstrategicos":["Assegurar serviços de TIC para suportar os processos e a estratégia"]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Processos","subprocesso":"Auditar processos internos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"O subprocesso Auditar Processos Internos, parte do processo Gerenciar Processos, tem como objetivo obter evidências de que a execução dos processos da CAGE esteja aderente ao que foi planejado no mapeamento, garantindo a mitigação de riscos operacionais e agregando valor à execução processual por meio de recomendações de melhoria.","fornecedores":"Escritório de Processos","entradas":"inclusão do processo mapeado no plano de trabalho anual","entregas":"processo auditado","clientes":"áreas da CAGE","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação"]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar a Estratégia","subprocesso":"Elaborar Planejamento Estratégico","natureza":"GESTÃO","gerente":"Coordenador de Gestão Estratégica","area":"Gabinete da CAGE","objetivo":"Elaborar o mapa estratégico, desdobrar em projetos, iniciativas e atividades e monitorar a estratégia.","fornecedores":"Gestão e Unidades da CAGE","entradas":"Prioridades estratégicas da gestão, contexto interno e externo da CAGE.","entregas":"Mapa estratégico, alinhamento dos projetos e processos da CAGE aos objetivos estratégicos.","clientes":"Gestão e Unidades da CAGE","mapeado":true,"objEstrategicos":[]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar a Estratégia","subprocesso":"Realizar o Desdobramento da Estratégia","natureza":"GESTÃO","gerente":"Coordenador de Gestão Estratégica","area":"Gabinete da CAGE","objetivo":"Desdobrar o mapa estratégico em projetos, iniciativas e atividades.","fornecedores":"Gestão e Unidades da CAGE","entradas":"Prioridades estratégicas da gestão, contexto interno e externo da CAGE.","entregas":"Mapa estratégico, alinhamento dos projetos e processos da CAGE aos objetivos estratégicos.","clientes":"Gestão e Unidades da CAGE","mapeado":true,"objEstrategicos":[]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar a Estratégia","subprocesso":"Monitorar a Estratégia","natureza":"GESTÃO","gerente":"Coordenador de Gestão Estratégica","area":"Gabinete da CAGE","objetivo":"Monitorar a estratégia.","fornecedores":"Gestão e Unidades da CAGE","entradas":"Prioridades estratégicas da gestão, contexto interno e externo da CAGE.","entregas":"Mapa estratégico, alinhamento dos projetos e processos da CAGE aos objetivos estratégicos.","clientes":"Gestão e Unidades da CAGE","mapeado":true,"objEstrategicos":[]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Projetos e Portfólio","subprocesso":"Gerenciar Projetos Estratégicos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"Garantir a execução adequada dos projetos dentro do prazo, escopo, custo, provendo boas práticas, técnicas e ferramentas, a segurando a geração de valor público e a entrega de beneficios alinhado a estratégia.","fornecedores":"Comitê gestor de projetos","entradas":"Demanda de projeto aprovada e priorizada","entregas":"Projetos concluídos de acordo com os critérios de sucesso","clientes":"CAGE","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação","Aperfeiçoar a governança organizacional e fortalecer a cultura de colaboração e inovação"]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Projetos e Portfólio","subprocesso":"Gerenciar portfólio de projetos estratégicos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"Gerar valor público contínuo, equilibrando recursos, riscos e benefícios, mantendo o portfólio sempre alinhado e adaptável à estratégia da CAGE","fornecedores":"Comitê gestor de projetos, PMO, áreas demandantes","entradas":"Demanda de projeto para aprovação (formulário do PSA), demanda do comitê gestor de projetos, portfólio anterior, mapa estratégico.","entregas":"Portfólio gerenciado.","clientes":"CAGE","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação"]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Processos","subprocesso":"Realizar a Governança de Processos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"Gerir a arquitetura de processos da organização e o escritório de processos, garantindo o alinhamento com a estratégia da organização e buscando a efetividade dos processos","fornecedores":"","entradas":"","entregas":"Arquitetura de processos revisada e atualizada, cadeia de valor revisada e atualizada. Governança de processos estabelecida na CAGE.","clientes":"CAGE","objEstrategicos":[]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Processos","subprocesso":"Mapear e Redesenhar Processos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"Garantir a compreensão clara e compartilhada de todos os processos da organização.","fornecedores":"Gerentes de processo e áreas da CAGE","entradas":"Pedido de melhoria ou padronização de um processo","entregas":"Processos documentados e modelados","clientes":"SERVIDORES E ÁREAS DA CAGE","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação"]},{"macroprocesso":"Gestão Estratégica","processo":"Gerenciar Processos","subprocesso":"Monitorar, Revisar e Acompanhar Processos","natureza":"GESTÃO","gerente":"Coordenador escritório de projetos e processos","area":"Gabinete da CAGE","objetivo":"O processo de Monitorar, Revisar e Acompanhar Processos tem como objetivos realizar o acompanhamento dos processos previamente mapeados, verificando a adequação de sua execução em relação ao convencionado, e também monitorar os indicadores e a efetividade dos processos críticos da CAGE. \n\n indicadores de processo e tomada de ação em casos de desvio","fornecedores":"Áreas CAGE e DIE (painéis)","entradas":"Indicadores de processos e processos mapeados","entregas":"plano de ação em conjunto com o responsável pelo processo em casos de desvio; processos mapeados revisados; indicadores monitorados","clientes":"CAGE","mapeado":true,"objEstrategicos":["Otimizar os processos de trabalho, com foco em melhoria da eficiência operacional e automação"]},{"macroprocesso":"Orientação e Suporte à Tomada de Decisão","processo":"Elaborar e Revisar Atos Normativos","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Coordenador de Orientação e Normatização","area":"Divisão de Integridade e Responsabilização","objetivo":"Disciplinar temas de Controle Interno","fornecedores":"","entradas":"PROA","entregas":"Minuta do Normativo revisada.","clientes":"Órgãos, secretarias e entidades da administração pública\nPúblico interno da CAGE.","objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva"]},{"macroprocesso":"Orientação e Suporte à Tomada de Decisão","processo":"Realizar Orientações","subprocesso":"Realizar Orientações Via Emissão de Informação DEO","natureza":"FINALÍSTICO","gerente":"Chefe seção de orientação e assessoramento (DCO)","area":"Divisão de Integridade e Responsabilização","objetivo":"Emitir uma orientação, mediante consulta, que reflita o posicionamento da CAGE nas questões pertinentes ao controle interno.","fornecedores":"","entradas":"PROA, e-mail, TEAMS, WhatsApp, Portal de demandas (em implantação)","entregas":"Informação CAGE/DEO\nInformação solicitada - respondida via e-mail ou Teams","clientes":"Órgãos, secretarias e entidades da administração pública. Público interno da CAGE","objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva"]},{"macroprocesso":"Orientação e Suporte à Tomada de Decisão","processo":"Realizar Orientações","subprocesso":"Realizar Orientações e Serviços Via Portal E-CAGE","natureza":"FINALÍSTICO","gerente":"Chefe seção de supervisão técnica (DAUD); Coordenador seção de consultoria","area":"Divisão de Controle e Orientação","objetivo":"Atender às demandas por orientações ou serviços, encaminhadas via portal e-Cage.","fornecedores":"órgãos, cidadãos, empresas, servidores estaduais, servidores da CAGE.","entradas":"Demanda via portal E-CAGE.","entregas":"Orientação ou serviço prestado","clientes":"Adm direta e indireta, Poderes, servidores CAGE","mapeado":true,"objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva"]},{"macroprocesso":"Orientação e Suporte à Tomada de Decisão","processo":"Realizar Orientações","subprocesso":"Realizar Orientações Via PROA","natureza":"FINALÍSTICO","gerente":"Chefe seção de orientação e assessoramento (DCO)","area":"Divisão de Controle e Orientação","objetivo":"Emitir uma orientação, mediante consulta, que reflita o posicionamento da CAGE nas questões pertinentes ao controle interno.","fornecedores":"","entradas":"","entregas":"Informação. Respostas às consultas - PROA","clientes":"Órgão e e secretarias da administração direta\nPúblico interno (seccionais).","objEstrategicos":["Aprimorar o assessoramento aos gestores públicos, provendo soluções de forma proativa e tempestiva"]},{"macroprocesso":"Promoção da Integridade e Prevenção à Corrupção","processo":"Avaliar Programas de Integridade","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de promoção da integridade","area":"Divisão de Integridade e Responsabilização","objetivo":"Avalia os programas de integridade das empresas contratadas pelo Estado para emitir certificado nos casos em que há indícios de efetividade mínima do programa.","fornecedores":"Empresas contratadas","entradas":"SCPI - Envio de documentos para avaliação de programas de integridade","entregas":"Decisão final de avaliação do programa de integridade, com a emissão ou indeferimento do certificado.","clientes":"Empresas contratadas\nÓrgãos e entidades contratantes","objEstrategicos":["Promover a integridade pública e privada e fortalecer a prevenção à corrupção"]},{"macroprocesso":"Promoção da Integridade e Prevenção à Corrupção","processo":"Participar em Procedimentos Preliminares de Investigação (PPI)","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de promoção da integridade","area":"Divisão de Integridade e Responsabilização","objetivo":"Conduz e emite relatório sobre uma investigação de atos de fraude ou corrupção, propondo instauração de par ou outras medidas pelo Ministério Público ou Polícia Civil","fornecedores":"","entradas":"","entregas":"Relatório final de PPI","clientes":"Estado e Sociedade Civil.","objEstrategicos":["Promover a cultura de integridade na Administração Pública"]},{"macroprocesso":"Promoção da Integridade e Prevenção à Corrupção","processo":"Participar em Processos Administrativos de Responsabilização","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de promoção da integridade","area":"Divisão de Integridade e Responsabilização","objetivo":"Conduz e emite relatório com proposta de decisão em  processos para apurar responsabilidade administrativa e aplicar penalidades a empresas por atos de corrupção e/ou fraude em licitações ou em contratos públicos.","fornecedores":"","entradas":"Denúncias enviadas à CRPJ, via PROA, FalaBR, e-mail, bem como notícias e detecção de situações por outros trabalhos da CAGE.","entregas":"Decisão publicada no Diário Oficial\nAplicação de multas e sanções","clientes":"Estado e Sociedade Civil.","objEstrategicos":["Promover a cultura de integridade na Administração Pública"]},{"macroprocesso":"Promoção da Integridade e Prevenção à Corrupção","processo":"Tratar Denúncias e Representações","subprocesso":"Tratar Denúncias","natureza":"FINALÍSTICO","gerente":"Chefe da seção de apuração e operações","area":"Divisão de Integridade e Responsabilização","objetivo":"Recebimento, tratamento, apuração e a comunicação de resultados de denúncias pela CAGE.","fornecedores":"Denunciantes e órgãos públicos em geral","entradas":"Denúncias, ofícios. (formas de recebimento: fala BR, e-mail, ofícios, teams, whatsapp ,telefone, pessoalmente)","entregas":"Comunicação de resultados (relatório de apuração, relatório de operações especiais, comunicado de auditoria, comunicado orientativo, nota de auditoria etc). Produtos referentes ao estado atual do processo.","clientes":"Órgãos de investigação e fiscalização (CRPJ, MP, PC etc), órgãos e entidades estaduais.","objEstrategicos":["Promover a integridade pública e privada e fortalecer a prevenção à corrupção"]},{"macroprocesso":"Promoção da Integridade e Prevenção à Corrupção","processo":"Tratar Denúncias e Representações","subprocesso":"Tratar representações","natureza":"FINALÍSTICO","gerente":"Chefe da seção de apuração e operações","area":"Divisão de Integridade e Responsabilização","objetivo":"Receber, apurar e tratar representações (ofícios) recebidos pela CAGE originários de outros órgãos de controle, tais como MP e Polícia Civil.","fornecedores":"Ministério Público, Polícia Civil e outros órgãos públicos","entradas":"Representação recebida.","entregas":"Relatório de apuração ou comunicado de auditoria","clientes":"LEI COMPLEMENTAR - 13451/2010 - Entidade Auditada, Secretaria, Tribunal de Contas, Assembleia Legislativa, Governo do Estado e MP.\nTermo de cooperação com a Polícia Civil - Polícia Civil.\nDe acordo com a Demanda CRPJ/CAGE","objEstrategicos":["Promover a integridade pública e privada e fortalecer a prevenção à corrupção"]},{"macroprocesso":"Transparência e Estímulo ao Controle Social","processo":"Gerenciar o Portal de Transparência de Estado","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Chefe seção de transparência","area":"Divisão de Transparência e Tecnologia da Informação","objetivo":"Disponibilizar para a sociedade informações relacionadas às receitas e despesas do Estado.","fornecedores":"","entradas":"Normas legais legislação;\nAnálise do ranking de atendimento das normas;\nLei de acesso a informação;\nBID - Maturidade da gestão fiscal.","entregas":"Adequações legais, funcionais, novos conteúdos, entrega de dados e informações de interesse da sociedade com foco no cidadão.","clientes":"Sociedade em geral e entidades estatais e privadas com interesses nos dados.","objEstrategicos":["Aperfeiçoar a transparência pública e fomentar o controle social","Reestruturar as ações de transparência, com foco no cidadão"]},{"macroprocesso":"Transparência e Estímulo ao Controle Social","processo":"Atender às Demandas da Lei de Acesso à Informação (LAI) e Ouvidoria","subprocesso":"","natureza":"FINALÍSTICO","gerente":"Gestor Local LAI","area":"Gabinete da CAGE","objetivo":"Responder no prazo legal os questionamentos encaminhados pelo cidadão por meio dos canais de atendimento da Ouvidoria Geral do Estado referentes aos assuntos inerentes à CAGE.","fornecedores":"GERENTE: GESTOR LOCAL DA LAI\n\nOuvidoria Geral do Estado e Cidadão","entradas":"Questionamentos encaminhados por meio da Central de Informação do estado - Central.rs.gov.br - Site do Governo do estado; \nCasa civil - analisa a  solicitação e distribui para as secretarias ou subsecretarias.","entregas":"Respostas aos questionamentos dos cidadãos.","clientes":"Cidadão solicitante e OGE.","mapeado":true,"objEstrategicos":["Aperfeiçoar a transparência pública e fomentar o controle social"]}];
 
@@ -11499,22 +11690,68 @@ async function _resolveFreshAccessToken() {
 }
 
 async function callGeminiProxy(prompt, image = null, options = {}) {
-  const resp = await fetch(API_URL + '/ai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      prompt:    String(prompt || '').slice(0, 24000),
-      image:     image  || undefined,
-      maxTokens: options.maxTokens || undefined
-    })
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error || 'Erro na IA (' + resp.status + ')');
+  const payload = {
+    prompt: String(prompt || '').slice(0, 24000),
+    image: image || undefined,
+    maxTokens: options.maxTokens || undefined,
+  };
+
+  const apiBase = String(API_URL || '').replace(/\/$/, '');
+  const endpointCandidates = [
+    `${apiBase}/ai`,
+    `${apiBase}/api/ai`,
+    '/api/ai',
+    'http://127.0.0.1:3000/ai',
+    'http://127.0.0.1:3000/api/ai',
+    'http://localhost:3000/ai',
+    'http://localhost:3000/api/ai',
+  ];
+
+  const uniqueEndpoints = [...new Set(endpointCandidates.filter(Boolean))];
+  let lastErr = null;
+  let saw503 = false;
+
+  for (const endpoint of uniqueEndpoints) {
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!resp.ok) {
+        if (resp.status === 503) saw503 = true;
+        const err = await resp.json().catch(() => ({}));
+        const msg = String(err.error || err.message || '').trim();
+        lastErr = new Error(msg || `Erro na IA (${resp.status}) em ${endpoint}`);
+
+        // Mensagem de configuracao ausente deve aparecer para o usuario sem mascarar.
+        if (resp.status === 503 && /nao configurada|não configurada|api[_\s-]?key/i.test(msg)) {
+          throw lastErr;
+        }
+
+        // 4xx (exceto 429) tende a ser erro definitivo de request/permissão.
+        if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) {
+          throw lastErr;
+        }
+        continue;
+      }
+
+      const data = await resp.json();
+      if (!data.text) {
+        lastErr = new Error('Resposta vazia da IA');
+        continue;
+      }
+      return data.text;
+    } catch (e) {
+      lastErr = e;
+    }
   }
-  const data = await resp.json();
-  if (!data.text) throw new Error('Resposta vazia da IA');
-  return data.text;
+
+  if (saw503) {
+    throw new Error('IA temporariamente indisponível (503). Verifique se o backend local de IA está ativo e tente novamente.');
+  }
+  throw new Error(lastErr?.message || 'Falha ao chamar a IA.');
 }
 
 async function callGemini(prompt) {
@@ -11733,6 +11970,64 @@ function showQuadroModule(show=true) {
   hideAllModules();
   document.getElementById('quadro-module').style.display = 'flex';
   _excalidrawInit();
+}
+
+function showSimulatorModule(show=true) {
+  if(!show) { showHome(); return; }
+  hideHome();
+  hideAllModules();
+  const mod = document.getElementById('simulator-module');
+  if(mod) mod.style.display = 'block';
+  const frame = document.getElementById('simulator-frame');
+  if(!frame) return;
+  _simulatorInit(frame);
+  const rawSrc = String(frame.getAttribute('src') || '').trim();
+  if(!rawSrc) {
+    frame.src = frame.dataset.src || 'modules/process-simulator/index.html';
+  } else {
+    // iframe already loaded — send data immediately
+    _simulatorSendCurrentPop(frame);
+  }
+}
+
+function _simulatorInit(frame) {
+  if(frame._simInited) return;
+  frame._simInited = true;
+
+  frame.addEventListener('load', () => {
+    _simulatorSendCurrentPop(frame);
+  });
+
+  window.addEventListener('message', (ev) => {
+    try {
+      const msg = ev.data;
+      if(!msg || typeof msg !== 'object') return;
+
+      if(msg.type === 'SIMULATOR_SAVE') {
+        const { graph, popKey } = msg.payload || {};
+        if(!graph || !popKey) return;
+        if(!DATA[popKey]) return;
+        DATA[popKey].simulatorGraph = graph;
+        saveToCloud();
+        showToast('💾 Grafo do simulador salvo!', 'success');
+      }
+    } catch(e) { console.warn('[SIGA] simulator message error:', e); }
+  });
+}
+
+function _simulatorSendCurrentPop(frame) {
+  if(!currentPop) return;
+  try {
+    const p = popPrefix(currentPop);
+    const pop = DATA[p] || {};
+    const popName = (pop.meta && pop.meta.name) ? pop.meta.name : (currentPop || '');
+    const savedGraph = pop.simulatorGraph || null;
+    if(!savedGraph) return; // no saved graph; simulator starts fresh
+    frame.contentWindow.postMessage(
+      { type: 'SIGA_LOAD_GRAPH', payload: { graph: savedGraph, popName, popKey: p } },
+      '*'
+    );
+  } catch(e) { console.warn('[SIGA] _simulatorSendCurrentPop error:', e); }
 }
 
 // ── Excalidraw integration ───────────────────────────────────
@@ -14334,7 +14629,7 @@ Valores possíveis para "treat": "Mitigar", "Aceitar", "Transferir", "Eliminar",
 // ═══ VERSIONAMENTO ════════════════════════════════════════════════
 
 // Campos do POP que são versionados (meta/revisions são compartilhados entre versões)
-const VERSIONABLE_FIELDS = ['steps','currentStep','roles','indicators','faqs','normas','risks','actions_plan','meetings','siglas','flowDiagram','ficha'];
+const VERSIONABLE_FIELDS = ['steps','currentStep','roles','indicators','faqs','normas','risks','actions_plan','meetings','siglas','flowDiagram','ficha','simulatorGraph'];
 
 // Mapeamento de seção → campos versionados
 const SECTION_VERSION_FIELDS = {
@@ -14407,7 +14702,7 @@ function _doCreateVersion() {
   d.steps = []; d.currentStep = 0;
   d.roles = []; d.indicators = []; d.faqs = []; d.normas = [];
   d.risks = []; d.actions_plan = []; d.meetings = []; d.siglas = [];
-  d.flowDiagram = null; d.ficha = {};
+  d.flowDiagram = null; d.ficha = {}; d.simulatorGraph = null;
 
   closeModal('new-version-modal');
   // Re-renderizar tudo
@@ -16799,8 +17094,13 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
       ? matComputeRisco(matMetrics, parseInt(matData?.indispensaveis)||0, parseInt(matData?.sistIndispensaveis)||0)
       : null;
     const matSnaps   = matData?.snapshots || [];
-    const matAnswers = Array.isArray(matData?.answers) ? matData.answers : new Array(10).fill(null);
-    const answered   = matAnswers.filter(a => a !== null).length;
+    const matQuestionnaires = (typeof matNormalizeQuestionnaires === 'function' && matData)
+      ? matNormalizeQuestionnaires(matData)
+      : Array.from({ length: 3 }, () => new Array(10).fill(null));
+    const totalAnswers = (typeof matTotalAnswersRequired === 'function') ? matTotalAnswersRequired() : 30;
+    const answered   = (typeof matAnsweredCount === 'function')
+      ? matAnsweredCount(matQuestionnaires)
+      : matQuestionnaires.flat().filter(a => a !== null).length;
     const ansLbl     = { sim:'Sim', talvez:'Talvez', nao:'Não' };
     const ansBg      = { sim:'#dcfce7', talvez:'#fef9c3', nao:'#fee2e2' };
     const ansColor   = { sim:'#166534', talvez:'#854d0e', nao:'#991b1b' };
@@ -16844,7 +17144,7 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
       </table>
       <p class="rel-p" style="font-size:11px;color:#94a3b8;">Fórmula: Score = Equipe×30% + Risco×20% + Lean×30% + Digitalização×10% + Automação×10% — todos normalizados 0–100 (100 = mais maduro)</p>`;
     } else {
-      h += `<p class="rel-empty">Questionário de maturidade não respondido completamente (${answered}/10 perguntas respondidas). Acesse a aba Maturidade para preencher o questionário.</p>`;
+      h += `<p class="rel-empty">Questionários de maturidade não respondidos completamente (${answered}/${totalAnswers} respostas preenchidas). Acesse a aba Maturidade para preencher os 3 questionários.</p>`;
     }
 
     // Métricas do processo
@@ -16868,17 +17168,19 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
 
     // Questionário
     if (typeof MAT_QUESTIONS !== 'undefined' && answered > 0) {
-      h += `<h3 class="rel-h2">11.3 Questionário de Percepção da Equipe (${answered}/10)</h3>
+      h += `<h3 class="rel-h2">11.3 Questionários de Percepção da Equipe (${answered}/${totalAnswers})</h3>
       <table class="rel-table">
-        <tr><th>#</th><th>Pergunta</th><th>Resposta</th></tr>
+        <tr><th>#</th><th>Pergunta</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Média</th></tr>
         ${MAT_QUESTIONS.map((q, i) => {
-          const ans = matAnswers[i];
+          const qAnswers = matQuestionnaires.map(set => (set && set[i]) || null);
+          const avg = (typeof matQuestionAverage === 'function') ? matQuestionAverage(matQuestionnaires, i) : null;
           return `<tr>
             <td style="text-align:center;font-weight:700;color:#94a3b8;">${i+1}</td>
             <td>${esc(q.text)}${q.inverted ? ' <em style="font-size:10px;color:#6366f1;">(invertida)</em>' : ''}</td>
-            <td style="text-align:center;">${ans
-              ? `<span class="rel-status" style="background:${ansBg[ans]};color:${ansColor[ans]};">${ansLbl[ans]}</span>`
-              : '<span style="color:#94a3b8;">—</span>'}</td>
+            ${qAnswers.map(ans => ans
+              ? `<td style="text-align:center;"><span class="rel-status" style="background:${ansBg[ans]};color:${ansColor[ans]};">${ansLbl[ans]}</span></td>`
+              : '<td style="text-align:center;"><span style="color:#94a3b8;">—</span></td>').join('')}
+            <td style="text-align:center;font-weight:700;color:#6366f1;">${avg !== null ? avg + '/100' : '—'}</td>
           </tr>`;
         }).join('')}
       </table>`;
@@ -19987,6 +20289,37 @@ function parseAiJson(text) {
   else clean = clean.replace(/```json|```/g, '').trim();
   try { return JSON.parse(clean); } catch(_e) {}
   try { return JSON.parse(repairJsonString(clean)); } catch(e) { throw e; }
+}
+
+// Fluxo legado de importacao por XPDL/XML removido.
+// O mapeamento passa a ser gerado exclusivamente por POP Word.
+
+async function _npopExtractWordParsed(file) {
+  const base64 = await blobToBase64(file);
+  const mimeType = _npopGetPopFileMime(file);
+
+  const prompt =
+`Extraia um mapeamento de processo a partir deste POP em Word e retorne APENAS JSON puro, sem markdown.
+
+Regras:
+1) Nao inventar dados ausentes.
+2) Ler o documento inteiro.
+3) Para actions, separar uma acao por item e preencher actor por acao quando possivel.
+
+Campos esperados:
+nome, macro, processo, subprocesso, unidade, elaborado, desc, input, output, fornecedores, clientes,
+atores[],
+steps[] com { title, responsible, note, actions[] }.
+
+Formato:
+{"nome":"","macro":"","processo":"","subprocesso":"","unidade":"","elaborado":"","desc":"","input":"","output":"","fornecedores":"","clientes":"","atores":[""],"steps":[{"title":"","responsible":"","note":null,"actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":"","branches":[]}]}]}`;
+
+  const respText = await callGeminiProxy(prompt, { data: base64, mimeType }, { maxTokens: 5000 });
+  const extracted = parseAiJson(respText);
+
+  if(!Array.isArray(extracted.steps)) extracted.steps = [];
+  if(!Array.isArray(extracted.atores)) extracted.atores = [];
+  return extracted;
 }
 
 function _npopFileBaseName(name) {
@@ -23181,11 +23514,82 @@ const MAT_QUESTIONS = [
   { text: 'Existem diferenças relevantes entre o processo desenhado e o que acontece na prática?', inverted: false },
 ];
 
+const MAT_QUESTIONNAIRE_COUNT = 3;
+
+function matCreateEmptyAnswers() {
+  return new Array(MAT_QUESTIONS.length).fill(null);
+}
+
+function matNormalizeAnswersArray(arr) {
+  const base = matCreateEmptyAnswers();
+  if(!Array.isArray(arr)) return base;
+  return base.map((_, idx) => {
+    const v = arr[idx];
+    return (v === 'sim' || v === 'talvez' || v === 'nao') ? v : null;
+  });
+}
+
+function matNormalizeQuestionnaires(mat) {
+  if(!mat || typeof mat !== 'object') {
+    return Array.from({ length: MAT_QUESTIONNAIRE_COUNT }, () => matCreateEmptyAnswers());
+  }
+
+  let questionnaires = null;
+  if(Array.isArray(mat.questionnaires) && mat.questionnaires.length === MAT_QUESTIONNAIRE_COUNT) {
+    questionnaires = mat.questionnaires.map(q => matNormalizeAnswersArray(q));
+  } else {
+    questionnaires = Array.from({ length: MAT_QUESTIONNAIRE_COUNT }, () => matCreateEmptyAnswers());
+    if(Array.isArray(mat.answers)) {
+      // Migração legado: preserva o questionário único como Questionário 1.
+      questionnaires[0] = matNormalizeAnswersArray(mat.answers);
+    }
+  }
+
+  mat.questionnaires = questionnaires;
+  // Compatibilidade com estruturas antigas que ainda leem mat.answers.
+  mat.answers = questionnaires[0].slice();
+  return questionnaires;
+}
+
+function matAnsweredCount(questionnaires) {
+  return (questionnaires || []).reduce((acc, q) => {
+    if(!Array.isArray(q)) return acc;
+    return acc + q.filter(a => a !== null).length;
+  }, 0);
+}
+
+function matTotalAnswersRequired() {
+  return MAT_QUESTIONNAIRE_COUNT * MAT_QUESTIONS.length;
+}
+
 function matGetData(p) {
-  if(!DATA[p]) return { answers: new Array(10).fill(null), indispensaveis: 0, sistIndispensaveis: 0, version: 'asis', geminiAnalysis: '', lastAnalysis: '' };
-  if(!DATA[p].maturity) DATA[p].maturity = { answers: new Array(10).fill(null), indispensaveis: 0, sistIndispensaveis: 0, version: 'asis', geminiAnalysis: '', lastAnalysis: '' };
+  if(!DATA[p]) {
+    const fallback = {
+      questionnaires: Array.from({ length: MAT_QUESTIONNAIRE_COUNT }, () => matCreateEmptyAnswers()),
+      answers: matCreateEmptyAnswers(),
+      indispensaveis: 0,
+      sistIndispensaveis: 0,
+      version: 'asis',
+      geminiAnalysis: '',
+      lastAnalysis: ''
+    };
+    matNormalizeQuestionnaires(fallback);
+    return fallback;
+  }
+  if(!DATA[p].maturity) {
+    DATA[p].maturity = {
+      questionnaires: Array.from({ length: MAT_QUESTIONNAIRE_COUNT }, () => matCreateEmptyAnswers()),
+      answers: matCreateEmptyAnswers(),
+      indispensaveis: 0,
+      sistIndispensaveis: 0,
+      version: 'asis',
+      geminiAnalysis: '',
+      lastAnalysis: ''
+    };
+  }
   if(DATA[p].maturity.sistIndispensaveis === undefined) DATA[p].maturity.sistIndispensaveis = 0;
   if(!DATA[p].maturity.version) DATA[p].maturity.version = 'asis';
+  matNormalizeQuestionnaires(DATA[p].maturity);
   return DATA[p].maturity;
 }
 
@@ -23566,6 +23970,7 @@ function matComputeRisco(metrics, indispensaveis, sistIndispensaveis) {
 }
 
 function matScoreEquipe(answers) {
+  const totalQuestions = MAT_QUESTIONS.length;
   let total = 0, count = 0;
   (answers || []).forEach((ans, i) => {
     if(ans === null || ans === undefined) return;
@@ -23575,17 +23980,53 @@ function matScoreEquipe(answers) {
     else           pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
     total += pts; count++;
   });
-  return count > 0 ? total / count : null;
+  return count >= totalQuestions ? total / totalQuestions : null;
+}
+
+function matScoreEquipeMedia(questionnaires) {
+  if(!Array.isArray(questionnaires) || questionnaires.length !== MAT_QUESTIONNAIRE_COUNT) return null;
+
+  let total = 0;
+  for(let i = 0; i < MAT_QUESTIONS.length; i++) {
+    let qTotal = 0;
+    for(let qx = 0; qx < MAT_QUESTIONNAIRE_COUNT; qx++) {
+      const ans = questionnaires[qx] && questionnaires[qx][i];
+      if(ans === null || ans === undefined) return null;
+      const q = MAT_QUESTIONS[i];
+      let pts;
+      if(q.inverted) pts = ans === 'sim' ? 100 : ans === 'talvez' ? 50 : 0;
+      else           pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
+      qTotal += pts;
+    }
+    total += qTotal / MAT_QUESTIONNAIRE_COUNT;
+  }
+  return total / MAT_QUESTIONS.length;
+}
+
+function matQuestionAverage(questionnaires, questionIndex) {
+  if(!Array.isArray(questionnaires) || questionIndex < 0 || questionIndex >= MAT_QUESTIONS.length) return null;
+  let total = 0, count = 0;
+  questionnaires.forEach((answers) => {
+    const ans = answers && answers[questionIndex];
+    if(ans === null || ans === undefined) return;
+    const q   = MAT_QUESTIONS[questionIndex];
+    let pts;
+    if(q.inverted) pts = ans === 'sim' ? 100 : ans === 'talvez' ? 50 : 0;
+    else           pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
+    total += pts; count++;
+  });
+  return count > 0 ? Math.round(total / count) : null;
 }
 
 function matComputeFinal(p) {
   const mat     = matGetData(p);
+  const questionnaires = matNormalizeQuestionnaires(mat);
   const version = mat.version || 'asis';
   const metrics = matComputeMetrics(p, version);
   const ind     = parseInt(mat.indispensaveis) || 0;
   const sist    = parseInt(mat.sistIndispensaveis) || 0;
   const { score: riscoRaw, label: riscoLabel } = matComputeRisco(metrics, ind, sist);
-  const equipe  = matScoreEquipe(mat.answers);
+  const equipe  = matScoreEquipeMedia(questionnaires);
   if(equipe === null) return null;
 
   // Normalise all to 0–100 where 100 = most mature
@@ -23618,10 +24059,15 @@ function matComputeFinal(p) {
            riscoRaw, riscoLabel };
 }
 
-function matSetAnswer(p, idx, val) {
+function matSetAnswer(p, idx, val, qx = 0) {
   const mat = matGetData(p);
-  if(!Array.isArray(mat.answers)) mat.answers = new Array(10).fill(null);
-  mat.answers[idx] = val;
+  const questionnaires = matNormalizeQuestionnaires(mat);
+  if(!Array.isArray(questionnaires[qx])) {
+    mat.questionnaires = Array.from({ length: MAT_QUESTIONNAIRE_COUNT }, () => matCreateEmptyAnswers());
+  }
+  if(!mat.questionnaires[qx]) mat.questionnaires[qx] = matCreateEmptyAnswers();
+  mat.questionnaires[qx][idx] = val;
+  mat.answers = mat.questionnaires[0].slice();
   markChanged(true, true);
   matRender(p);
 }
@@ -23640,6 +24086,26 @@ function matSetSistIndispensaveis(p, val) {
   matRender(p);
 }
 
+function matSetQuestionnaireView(p, idx) {
+  const mat = matGetData(p);
+  const max = MAT_QUESTIONNAIRE_COUNT - 1;
+  const next = Math.max(0, Math.min(max, parseInt(idx, 10) || 0));
+  mat.currentQuestionnaire = next;
+  matRender(p);
+}
+
+function matPrevQuestionnaire(p) {
+  const mat = matGetData(p);
+  const cur = parseInt(mat.currentQuestionnaire, 10) || 0;
+  matSetQuestionnaireView(p, cur - 1);
+}
+
+function matNextQuestionnaire(p) {
+  const mat = matGetData(p);
+  const cur = parseInt(mat.currentQuestionnaire, 10) || 0;
+  matSetQuestionnaireView(p, cur + 1);
+}
+
 function matRender(p) {
   const container = document.getElementById(p + '-maturidade-body');
   if(!container) { console.warn('[matRender] container not found for p=', p); return; }
@@ -23654,8 +24120,11 @@ function matRender(p) {
   const sist        = parseInt(mat.sistIndispensaveis) || 0;
   const risco       = matComputeRisco(metrics, ind, sist);
   const final       = matComputeFinal(p);
-  const answers     = Array.isArray(mat.answers) ? mat.answers : new Array(10).fill(null);
-  const answered    = answers.filter(a => a !== null).length;
+  const questionnaires = matNormalizeQuestionnaires(mat);
+  const answered    = matAnsweredCount(questionnaires);
+  const totalAnswers = matTotalAnswersRequired();
+  const activeQIndex = Math.max(0, Math.min(MAT_QUESTIONNAIRE_COUNT - 1, parseInt(mat.currentQuestionnaire, 10) || 0));
+  mat.currentQuestionnaire = activeQIndex;
   const procName    = p === 'd' ? 'Denúncias' : 'Representações';
 
   // ── helpers ─────────────────────────────────────────────────────
@@ -23675,10 +24144,10 @@ function matRender(p) {
       <div style="font-size:11px;color:#94a3b8;margin-top:8px;">${detail}</div>
     </div>`;
 
-  const ansBtn = (pi, idx, val, lbl, cur) => {
+  const ansBtn = (pi, idx, qx, val, lbl, cur) => {
     const sel  = cur === val;
     const cols = { sim:'#22c55e', talvez:'#eab308', nao:'#ef4444' };
-    return `<button onclick="matSetAnswer('${pi}',${idx},'${val}')"
+    return `<button onclick="matSetAnswer('${pi}',${idx},'${val}',${qx})"
       style="padding:6px 14px;border-radius:20px;border:1.5px solid ${sel ? cols[val] : '#e2e8f0'};
              background:${sel ? cols[val] : '#f8fafc'};color:${sel ? '#fff' : '#64748b'};
              font-size:12px;font-weight:${sel ? '700' : '400'};cursor:pointer;">${lbl}</button>`;
@@ -23771,19 +24240,50 @@ function matRender(p) {
       </div>
     </div>`;
 
-  const qHtml = MAT_QUESTIONS.map((q, i) => {
-    const cur = answers[i];
-    return `
-      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${cur !== null ? '#f0fdf4' : '#f8fafc'};border-radius:8px;margin-bottom:8px;border:1px solid ${cur !== null ? '#bbf7d0' : '#f1f5f9'};flex-wrap:wrap;">
-        <div style="min-width:22px;font-size:12px;font-weight:800;color:#94a3b8;">${i+1}</div>
-        <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}${q.inverted ? ' <span style="font-size:10px;color:#6366f1;font-weight:600;">(invertida)</span>' : ''}</div>
-        <div style="display:flex;gap:6px;flex-shrink:0;">
-          ${ansBtn(p, i, 'sim',    'Sim',    cur)}
-          ${ansBtn(p, i, 'talvez', 'Talvez', cur)}
-          ${ansBtn(p, i, 'nao',    'Não',    cur)}
-        </div>
-      </div>`;
+  const activeAnswers = questionnaires[activeQIndex] || matCreateEmptyAnswers();
+  const activeAnswered = activeAnswers.filter(a => a !== null).length;
+  const qIndicators = questionnaires.map((answers, qx) => {
+    const qAnswered = answers.filter(a => a !== null).length;
+    const isActive = qx === activeQIndex;
+    return `<button onclick="matSetQuestionnaireView('${p}',${qx})"
+      style="padding:4px 10px;border-radius:999px;border:1px solid ${isActive ? '#6366f1' : '#e2e8f0'};
+             background:${isActive ? '#eef2ff' : '#fff'};color:${isActive ? '#4338ca' : '#64748b'};
+             font-size:11px;font-weight:700;cursor:pointer;">
+      Q${qx+1} · ${qAnswered}/${MAT_QUESTIONS.length}
+    </button>`;
   }).join('');
+
+  const qHtml = `
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;background:#ffffff;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <button onclick="matPrevQuestionnaire('${p}')" ${activeQIndex === 0 ? 'disabled' : ''}
+          style="padding:7px 12px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-weight:800;cursor:${activeQIndex === 0 ? 'not-allowed' : 'pointer'};opacity:${activeQIndex === 0 ? '.45' : '1'};">
+          ←
+        </button>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;">
+          <div style="font-size:13px;font-weight:800;color:#0a2540;">Questionário ${activeQIndex + 1}</div>
+          <div style="font-size:11px;color:#94a3b8;">${activeAnswered}/${MAT_QUESTIONS.length} respondidas</div>
+        </div>
+        <button onclick="matNextQuestionnaire('${p}')" ${activeQIndex === MAT_QUESTIONNAIRE_COUNT - 1 ? 'disabled' : ''}
+          style="padding:7px 12px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-weight:800;cursor:${activeQIndex === MAT_QUESTIONNAIRE_COUNT - 1 ? 'not-allowed' : 'pointer'};opacity:${activeQIndex === MAT_QUESTIONNAIRE_COUNT - 1 ? '.45' : '1'};">
+          →
+        </button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">${qIndicators}</div>
+      ${MAT_QUESTIONS.map((q, i) => {
+        const cur = activeAnswers[i];
+        return `
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${cur !== null ? '#f0fdf4' : '#f8fafc'};border-radius:8px;margin-bottom:8px;border:1px solid ${cur !== null ? '#bbf7d0' : '#f1f5f9'};flex-wrap:wrap;">
+            <div style="min-width:22px;font-size:12px;font-weight:800;color:#94a3b8;">${i+1}</div>
+            <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}${q.inverted ? ' <span style="font-size:10px;color:#6366f1;font-weight:600;">(invertida)</span>' : ''}</div>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              ${ansBtn(p, i, activeQIndex, 'sim',    'Sim',    cur)}
+              ${ansBtn(p, i, activeQIndex, 'talvez', 'Talvez', cur)}
+              ${ansBtn(p, i, activeQIndex, 'nao',    'Não',    cur)}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
 
   // issue #3: legenda dos níveis de maturidade
   const levelsLegend = `
@@ -23809,13 +24309,13 @@ function matRender(p) {
     </div>`;
 
   let resultHtml = '';
-  if(answered < 10 || !final) {
+  if(answered < totalAnswers || !final) {
     resultHtml = `
       ${levelsLegend}
       <div style="text-align:center;padding:28px;background:#f8fafc;border-radius:10px;border:1.5px dashed #e2e8f0;">
         <div style="font-size:36px;">📋</div>
-        <div style="font-size:14px;color:#64748b;margin-top:8px;">Responda todas as <strong>10 perguntas</strong> para ver o score final.</div>
-        <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${answered}/10 respondidas</div>
+        <div style="font-size:14px;color:#64748b;margin-top:8px;">Responda os <strong>3 questionários completos</strong> para ver o score final.</div>
+        <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${answered}/${totalAnswers} respostas preenchidas</div>
       </div>`;
   } else {
     // issue #4: mostrar valores BRUTOS (↓ menor = melhor) para burocracia, complexidade e risco
@@ -23840,7 +24340,7 @@ function matRender(p) {
       ${levelsLegend}
       <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;">Componentes do score (normalizado 0–100):</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
-        ${scoreCard('Percepção da Equipe', final.equipe+'/100', 'questionário ↑', '30%', '#6366f1', '↑ maior = melhor')}
+        ${scoreCard('Percepção da Equipe', final.equipe+'/100', 'média de 3 questionários ↑', '30%', '#6366f1', '↑ maior = melhor')}
         ${(()=>{ const rc = final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444'; return scoreCard('Risco Operacional', final.normRisco+'/100', 'maior = melhor', '20%', rc, ''); })()}
         ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '30%', '#22c55e', '↑ mais lean = melhor')}
         ${scoreCard('Digitalização', final.normAutom+'/100', '% atividades com sistema ↑', '10%', '#0891b2', '↑ maior = melhor')}
@@ -23885,7 +24385,7 @@ function matRender(p) {
           <div style="font-size:12px;color:#94a3b8;">${mat.lastAnalysis ? 'Última análise: ' + mat.lastAnalysis : 'Nenhuma análise realizada ainda.'}</div>
         </div>
         <button onclick="matGeminiAnalyze('${p}')" id="mat-gemini-btn-${p}" class="btn btn-primary"
-          style="font-size:13px;" ${answered < 10 ? 'disabled title="Responda o questionário primeiro"' : ''}>
+          style="font-size:13px;" ${answered < totalAnswers ? 'disabled title="Responda os 3 questionários primeiro"' : ''}>
           ✨ Analisar com IA
         </button>
       </div>
@@ -23911,7 +24411,7 @@ function matRender(p) {
     ${manualHtml}
     <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:10px;">
       📋 Questionário de Percepção da Equipe
-      <span style="color:#94a3b8;font-size:12px;font-weight:400;margin-left:6px;">${answered}/10 respondidas</span>
+      <span style="color:#94a3b8;font-size:12px;font-weight:400;margin-left:6px;">${answered}/${totalAnswers} respostas</span>
     </div>
     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:24px;">${qHtml}</div>
     <div style="font-size:14px;font-weight:700;color:#0a2540;margin-bottom:12px;">🏆 Score de Maturidade</div>
@@ -23924,7 +24424,7 @@ function matRender(p) {
 // ── Maturidade: Histórico de snapshots ──────────────────────────────────
 function matSaveSnapshot(p) {
   const final = matComputeFinal(p);
-  if(!final) { showToast('Responda todas as 10 perguntas antes de salvar.', 'warn'); return; }
+  if(!final) { showToast('Responda os 3 questionários (30 respostas) antes de salvar.', 'warn'); return; }
   const mat = matGetData(p);
   if(!Array.isArray(mat.snapshots)) mat.snapshots = [];
   const today = new Date().toISOString().slice(0,10);
@@ -24024,7 +24524,9 @@ function matExportPdf(p) {
   const sist     = parseInt(mat.sistIndispensaveis) || 0;
   const risco    = matComputeRisco(metrics, ind, sist);
   const final    = matComputeFinal(p);
-  const answers  = Array.isArray(mat.answers) ? mat.answers : new Array(10).fill(null);
+  const questionnaires = matNormalizeQuestionnaires(mat);
+  const totalAnswers = matTotalAnswersRequired();
+  const answered = matAnsweredCount(questionnaires);
   const snapshots = mat.snapshots || [];
   const popName  = DATA[p]?.meta?.name || (p === 'd' ? 'Denúncias' : 'Representações');
   const today    = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
@@ -24051,7 +24553,7 @@ function matExportPdf(p) {
         <table class="comp-table">
           <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Sentido</th><th>Barra</th></tr>
           ${[
-            ['👥 Percepção da Equipe',  '30%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média ponderada das respostas do questionário de percepção (Sim/Talvez/Não). Perguntas invertidas têm lógica oposta.'],
+            ['👥 Percepção da Equipe',  '30%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média das respostas de 3 questionários de percepção (Sim/Talvez/Não), com consolidação por pergunta. Perguntas invertidas têm lógica oposta.'],
             ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas críticos×3 + eventos início×1,5 + eventos fim×1. Score bruto alto → nota baixa.'],
             ['🌿 Lean Operacional',     '30%', final.normLean,      '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma atividade opinada existe.'],
             ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades com sistema registrado ou marcadas como automáticas (⚙️), incluindo atividades dentro de decisões.'],
@@ -24074,7 +24576,7 @@ function matExportPdf(p) {
           <strong>Lean</strong> = execução ÷ (execução + aprovações + controle). <strong>Automação</strong> = % de atividades marcadas com ⚙️ no fluxo.
         </p>
       </div>
-    </div>` : `<div class="empty-block">⚠️ Score não disponível — questionário não respondido completamente.</div>`;
+    </div>` : `<div class="empty-block">⚠️ Score não disponível — 3 questionários não respondidos completamente.</div>`;
 
   // ── Métricas ───────────────────────────────────────────────────────────
   const metricsBlock = `
@@ -24140,19 +24642,22 @@ function matExportPdf(p) {
     </table>`;
 
   // ── Questionário ───────────────────────────────────────────────────────
-  const answered = answers.filter(a => a !== null).length;
   const questBlock = `
-    <h2 class="section-title">📋 Questionário de Percepção da Equipe <span class="note">(${answered}/10 respondidas)</span></h2>
+    <h2 class="section-title">📋 Questionários de Percepção da Equipe <span class="note">(${answered}/${totalAnswers} respostas)</span></h2>
     <table class="data-table">
-      <tr><th>#</th><th>Pergunta</th><th>Resposta</th></tr>
+      <tr><th>#</th><th>Pergunta</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Média</th></tr>
       ${MAT_QUESTIONS.map((q, i) => {
-        const ans = answers[i];
-        const lbl = ans ? ansLabel[ans] : '—';
-        const col = ans ? ansColor[ans] : '#94a3b8';
+        const qAnswers = questionnaires.map(qset => (qset && qset[i]) || null);
+        const avg = matQuestionAverage(questionnaires, i);
         return `<tr>
           <td style="text-align:center;font-weight:700;color:#94a3b8;">${i+1}</td>
           <td>${esc(q.text)}${q.inverted ? ' <em style="color:#6366f1;font-size:10px;">(invertida)</em>' : ''}</td>
-          <td style="text-align:center;"><span class="badge" style="background:${col}20;color:${col};font-weight:700;">${lbl}</span></td>
+          ${qAnswers.map(ans => {
+            const lbl = ans ? ansLabel[ans] : '—';
+            const col = ans ? ansColor[ans] : '#94a3b8';
+            return `<td style="text-align:center;"><span class="badge" style="background:${col}20;color:${col};font-weight:700;">${lbl}</span></td>`;
+          }).join('')}
+          <td style="text-align:center;font-weight:700;color:#6366f1;">${avg !== null ? avg + '/100' : '—'}</td>
         </tr>`;
       }).join('')}
     </table>`;
@@ -24299,20 +24804,25 @@ async function matGeminiAnalyze(p) {
 
   try {
     const mat     = matGetData(p);
+    const questionnaires = matNormalizeQuestionnaires(mat);
     const version = mat.version || 'asis';
     const metrics = matComputeMetrics(p, version);
     const ind     = parseInt(mat.indispensaveis) || 0;
     const sist    = parseInt(mat.sistIndispensaveis) || 0;
     const risco   = matComputeRisco(metrics, ind, sist);
-    const equipe  = matScoreEquipe(mat.answers);
+    const equipe  = matScoreEquipeMedia(questionnaires);
     const final   = matComputeFinal(p);
     const popMeta = (DATA[p] && DATA[p].meta) ? DATA[p].meta : {};
     const procName = p === 'd' ? 'Denúncias' : 'Representações';
 
     const answersText = MAT_QUESTIONS.map((q, i) => {
-      const a = mat.answers[i];
-      const label = a === 'sim' ? 'Sim' : a === 'nao' ? 'Não' : 'Talvez';
-      return `${i+1}. [${label}] ${q.text}${q.inverted ? ' (pergunta invertida)' : ''}`;
+      const labels = questionnaires.map((set, idx) => {
+        const a = set && set[i];
+        const label = a === 'sim' ? 'Sim' : a === 'nao' ? 'Não' : a === 'talvez' ? 'Talvez' : '—';
+        return `Q${idx + 1}: ${label}`;
+      }).join(' | ');
+      const avg = matQuestionAverage(questionnaires, i);
+      return `${i+1}. [${labels}] [Média: ${avg !== null ? avg + '/100' : '—'}] ${q.text}${q.inverted ? ' (pergunta invertida)' : ''}`;
     }).join('\n');
 
     const prompt = `Você é um especialista em gestão por processos e maturidade organizacional. Analise os dados abaixo do processo "${procName}" e gere insights práticos e acionáveis em português brasileiro.
@@ -24339,7 +24849,7 @@ Descrição: ${popMeta.desc || 'Não informado'}
 - Risco Operacional: ${risco.score} → ${risco.label} (escala: 0–15 baixo, 16–35 médio, 36+ alto)
 - Digitalização: ${(metrics.automRate*100).toFixed(0)}% das atividades possuem sistema registrado ou são automáticas (escala: <30% baixa, 30–60% média, >60% alta)
 
-## QUESTIONÁRIO DA EQUIPE (Sim=maduro nessa pergunta / Talvez=incerto / Não=imaduro)
+## QUESTIONÁRIOS DA EQUIPE (3 respondentes; Sim=maduro nessa pergunta / Talvez=incerto / Não=imaduro)
 ${answersText}
 
 ## SCORES FINAIS (0–100, quanto maior melhor — normalização exponencial para complexidade e risco)
@@ -24347,7 +24857,6 @@ ${answersText}
 - Risco normalizado: ${final ? final.normRisco : '—'}/100 (peso 20%)
 - Lean Operacional normalizado: ${final ? final.normLean : '—'}/100 (peso 30%)
 - Automação (⚙️): ${final ? final.normAutomacao : '—'}/100 (peso 10%)
-- Digitalização: ${final ? final.normAutom : '—'}/100 (peso 10%)
 - Digitalização: ${final ? final.normAutom : '—'}/100 (peso 10%)
 - **SCORE GERAL DE MATURIDADE: ${final ? final.final : '—'}/100**
 - **NÍVEL: ${final ? final.level : '—'}** (Inicial→Gerenciado→Definido→Previsível→Otimizado)

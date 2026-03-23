@@ -1,0 +1,24 @@
+{
+  "nodes": [
+    { "id": "start", "type": "start", "label": "Inicio", "x": 70, "y": 300, "executor": "Sistema", "sector": "CAGE", "org": "SEFAZ" },
+    { "id": "a1", "type": "task", "label": "Receber solicitacao", "x": 210, "y": 300, "executor": "Protocolo", "sector": "Atendimento", "org": "SEFAZ", "automated": false },
+    { "id": "a2", "type": "task", "label": "Validar dados", "x": 390, "y": 300, "executor": "Analista", "sector": "Atendimento", "org": "SEFAZ", "automated": false },
+    { "id": "g1", "type": "gateway", "label": "Dados completos?", "x": 560, "y": 300, "executor": "Analista", "sector": "Atendimento", "org": "SEFAZ" },
+    { "id": "a3", "type": "task", "label": "Emitir parecer", "x": 750, "y": 230, "executor": "Auditor", "sector": "Controle", "org": "SEFAZ", "automated": false },
+    { "id": "a4", "type": "task", "label": "Revisar dossie", "x": 740, "y": 380, "executor": "Auditor", "sector": "Controle", "org": "SEFAZ", "automated": false },
+    { "id": "a5", "type": "task", "label": "Consultar base externa", "x": 930, "y": 230, "executor": "Sistema", "sector": "TI", "org": "SEFAZ", "automated": true },
+    { "id": "end_ok", "type": "end", "label": "Fim sucesso", "x": 1090, "y": 230, "executor": "Sistema", "sector": "TI", "org": "SEFAZ", "endKind": "success" },
+    { "id": "end_err", "type": "end", "label": "Fim erro", "x": 1090, "y": 430, "executor": "Sistema", "sector": "TI", "org": "SEFAZ", "endKind": "error" }
+  ],
+  "edges": [
+    { "id": "e1", "from": "start", "to": "a1" },
+    { "id": "e2", "from": "a1", "to": "a2" },
+    { "id": "e3", "from": "a2", "to": "g1" },
+    { "id": "e4", "from": "g1", "to": "a3", "probability": 70 },
+    { "id": "e5", "from": "g1", "to": "a4", "probability": 30 },
+    { "id": "e6", "from": "a4", "to": "a2", "isLoopReturn": true, "probability": 50 },
+    { "id": "e7", "from": "a4", "to": "end_err", "probability": 50, "isErrorPath": true },
+    { "id": "e8", "from": "a3", "to": "a5" },
+    { "id": "e9", "from": "a5", "to": "end_ok" }
+  ]
+}

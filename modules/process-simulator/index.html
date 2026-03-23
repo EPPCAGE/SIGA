@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulador de Processos - TEP & Indice de Phillip</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Simulador de Processos</h1>
+    <p>Motor TEP + Indice de Phillip + Simulacao Estocastica (100 tokens)</p>
+    <button id="btnSaveToSiga" type="button" style="display:none;margin-left:auto;padding:6px 14px;background:#065f46;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;gap:6px;align-items:center;">💾 Salvar no SIGA</button>
+  </header>
+
+  <main class="workspace">
+    <aside class="panel editor-rail">
+      <h2>Modelo do Processo</h2>
+      <div class="row">
+        <button id="btnLoadSample" type="button">Carregar Exemplo</button>
+        <button id="btnValidate" type="button">Validar Grafo</button>
+      </div>
+      <label class="field">
+        <span>JSON de Topologia</span>
+        <textarea id="graphJson" rows="16" spellcheck="false"></textarea>
+      </label>
+      <div id="validationBox" class="box"></div>
+
+      <h2>Cadastro de Handoff</h2>
+      <div class="box">
+        Antes da simulacao, informe para cada <strong>raia</strong> a equipe/setor/orgao.
+        O atrito e calculado apenas quando houver troca de raia.
+      </div>
+      <div class="row">
+        <button id="btnSetupHandoff" type="button">Configurar Raias</button>
+      </div>
+      <div id="handoffSetup" class="box"></div>
+
+      <h2>Assistente Consultivo</h2>
+      <div class="row">
+        <button id="btnScanSuggestions" type="button">Analisar Verbos</button>
+      </div>
+      <div id="suggestions" class="list"></div>
+
+      <h2>Ajustes do Cenario</h2>
+      <div class="row">
+        <button id="btnEditSetup" type="button">Editar Formulario Inicial</button>
+      </div>
+      <div class="box">Clique no gateway no mapa para ajustar probabilidades dos caminhos. Se nao houver definicao, o sistema distribui automaticamente por padrao.</div>
+      <label class="field">
+        <span>Cenario</span>
+        <select id="simMode">
+          <option value="real">Real (atual)</option>
+          <option value="ideal">Ideal (sem punicoes)</option>
+          <option value="ideal_auto">Ideal Auto (sem punicoes + automacoes confirmadas)</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Caminho feliz (selecionado por cliques)</span>
+        <input id="happyPath" type="text" readonly placeholder="Use cliques no mapa para montar o caminho" />
+      </label>
+      <div class="row">
+        <button id="btnMarkHappyPath" type="button">Marcar no Mapa</button>
+        <button id="btnSuggestHappyPath" type="button">Sugerir Caminho Feliz</button>
+        <button id="btnClearHappyPath" type="button">Limpar Marcacao</button>
+      </div>
+      <div id="happyPathHint" class="box">Dica: ative "Marcar no Mapa" e clique nos nos em sequencia para montar o caminho feliz.</div>
+      <h2>Confirmacao de Automacao</h2>
+      <div id="autoConfirmBox"></div>
+      <label class="field">
+        <span>Lead time informado pelo executor (min) - opcional</span>
+        <input id="leadTimeInformed" type="number" min="0" step="0.1" placeholder="Opcional" />
+      </label>
+      <button id="btnApplyCalibration" type="button">Recalcular Cenarios</button>
+      <div id="calibrationResult" class="box"></div>
+    </aside>
+
+    <section class="panel stage">
+      <h2>Simulacao</h2>
+      <svg id="simCanvas" viewBox="0 0 1200 700" aria-label="Canvas de simulacao"></svg>
+      <div class="row controls">
+        <button id="btnPlay" type="button">Play 100 Bolinhas</button>
+        <button id="btnStop" type="button">Parar</button>
+        <label>Velocidade
+          <input id="speed" type="range" min="0.2" max="30" value="1" step="0.1" />
+        </label>
+        <button id="btnViewDashboard" type="button">Ver Dashboard</button>
+      </div>
+      <div id="gatewayEditor" class="box hidden"></div>
+    </section>
+  </main>
+
+  <section id="dashboardSection" class="panel dashboard hidden">
+    <h2>Dashboard</h2>
+    <div id="kpi" class="kpi"></div>
+    <h3>Indices de Insights (Problemas e Oportunidades)</h3>
+    <div id="insightKpi" class="kpi"></div>
+    <h3>Interpretacao Automatica dos Resultados</h3>
+    <div id="insightInterpretation" class="box"></div>
+
+    <h3>Ranking de Atrito</h3>
+    <ol id="frictionRanking" class="rank"></ol>
+
+    <h3>ROI de Loop</h3>
+    <label class="field">
+      <span>Gateway alvo</span>
+      <select id="roiGateway"></select>
+    </label>
+    <label class="field">
+      <span>Prob. atual de loop (%)</span>
+      <input id="roiCurrent" type="number" min="0" max="100" value="30" />
+    </label>
+    <label class="field">
+      <span>Nova prob. de loop (%)</span>
+      <input id="roiTarget" type="number" min="0" max="100" value="10" />
+    </label>
+    <button id="btnSimulateRoi" type="button">Simular ROI</button>
+    <div id="roiResult" class="box"></div>
+
+    <h3>Simulacao de Hipotese</h3>
+    <div class="box">Teste ganhos removendo um ponto de atrito: aprovacao (gateway), loop ou handoff.</div>
+    <label class="field">
+      <span>Tipo de remocao</span>
+      <select id="hypothesisType">
+        <option value="gateway">Remover aprovacao (gateway)</option>
+        <option value="loop">Remover loop/retrabalho</option>
+        <option value="handoff">Remover handoff</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Alvo</span>
+      <select id="hypothesisTarget"></select>
+    </label>
+    <div id="hypothesisHelp" class="box"></div>
+    <button id="btnRunHypothesis" type="button">Simular Ganho</button>
+    <div id="hypothesisResult" class="box"></div>
+
+    <h3>Relatorio</h3>
+    <button id="btnReport" type="button">Gerar Relatorio</button>
+    <pre id="reportBox" class="codebox"></pre>
+  </section>
+
+  <div id="setupModal" class="setup-modal">
+    <div class="setup-dialog">
+      <h2>Preparar Simulacao</h2>
+      <p>Anexe o BPMN e preencha as informacoes minimas para iniciar com seguranca.</p>
+      <div class="setup-step">
+        <h3>Secao 1 - Leitura do BPMN/XPDL</h3>
+        <label class="field">
+          <span>Arquivo (PNG/JPG/PDF/XPDL/XML/BPMN/XLSX)</span>
+          <input id="fileInput" type="file" accept=".png,.jpg,.jpeg,.pdf,.xpdl,.xml,.bpmn,.xlsx,.xls" />
+        </label>
+        <div class="row">
+          <button id="btnExtractVision" type="button">Extrair/Importar Topologia</button>
+          <button id="btnApplyExtracted" type="button">Aplicar Topologia Extraida</button>
+        </div>
+        <pre id="cvOutput" class="codebox"></pre>
+      </div>
+
+      <div class="setup-step">
+        <h3>Secao 2 - Matriz Unica de Atividades</h3>
+        <div class="box">Edite cada atividade uma unica vez: ator/raia, se ja e automatica e se e potencialmente automatizavel para o cenario de TEP ideal auto.</div>
+        <div id="setupTaskMatrix" class="box"></div>
+      </div>
+
+      <div class="setup-step">
+        <h3>Secao 3 - Handoffs entre Atores</h3>
+        <div class="box">Com base nos atores da matriz, confirme cada transicao entre raias: mesma equipe, outra equipe ou outro orgao.</div>
+        <div id="handoffWizard" class="box"></div>
+      </div>
+
+      <div class="setup-step">
+        <h3>Secao 4 - Parametros Minimos</h3>
+        <div class="field">
+          <span>Caminho feliz no desenho (inicio -> ... -> fim)</span>
+          <div class="box">Clique diretamente no mapa abaixo, seguindo um caminho continuo do no de inicio ate o no de fim.</div>
+          <div id="setupPathPicker" class="path-picker"></div>
+          <div class="row">
+            <button id="btnSuggestSetupPath" type="button">Sugerir Automaticamente</button>
+            <button id="btnUndoSetupPath" type="button">Desfazer Ultimo No</button>
+            <button id="btnClearSetupPath" type="button">Limpar Caminho</button>
+          </div>
+          <input id="setupHappyPath" type="text" readonly placeholder="Caminho selecionado por cliques" />
+        </div>
+        <label class="field">
+          <span>Lead time informado pelo executor (min) - opcional</span>
+          <input id="setupLeadTime" type="number" min="0" step="0.1" placeholder="Opcional" />
+        </label>
+      </div>
+
+      <div class="setup-step">
+        <h3>Secao 5 - Probabilidades dos Gateways</h3>
+        <div class="box">Ajuste aqui as probabilidades dos caminhos de decisao para garantir soma de 100% em cada gateway.</div>
+        <div id="setupGatewayEditor" class="box"></div>
+      </div>
+
+      <div class="setup-step">
+        <h3>Secao 6 - Automacoes (Consolidado)</h3>
+        <div class="box">As marcacoes de atividades automaticas e automatizaveis foram consolidadas na matriz da Secao 2 para evitar repeticao.</div>
+        <div id="setupAutomationEditor" class="box"></div>
+      </div>
+
+      <div class="setup-step">
+        <h3>Secao 7 - Loops de Retrabalho</h3>
+        <div class="box">Informe quais acoes geram retorno (loop). As arestas de loop ficam laranja e as bolinhas repetem o percurso quando o loop for acionado. A partir da segunda passagem no mesmo ponto, o simulador aplica 90% de chance de seguir em frente (sair do loop).</div>
+        <div id="setupLoopEditor" class="box"></div>
+      </div>
+
+      <div id="setupChecklist" class="box"></div>
+      <div class="row setup-actions">
+        <button id="btnReadyToSimulate" type="button">Concluir Preparacao</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
