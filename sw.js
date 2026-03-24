@@ -14,7 +14,6 @@ self.addEventListener('activate', event => {
     caches.keys()
       .then(keys => Promise.all(
         keys.filter(k => k !== CACHE_VERSION).map(k => {
-          console.log('[SW] Removendo cache antigo:', k);
           return caches.delete(k);
         })
       ))

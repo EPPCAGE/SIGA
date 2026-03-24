@@ -2656,7 +2656,7 @@
 
     <!-- Dados Quantitativos (opcional) -->
     <div class="rel-quant-box">
-      <button class="rel-quant-toggle" onclick="(function(b){var d=document.getElementById('rel-quant-body'),open=d.style.display!=='grid';d.style.display=open?'grid':'none';b.querySelector('.rq-arrow').textContent=open?'▲':'▼';})(this)">
+      <button class="rel-quant-toggle" onclick="(function(b){const d=document.getElementById('rel-quant-body'),open=d.style.display!=='grid';d.style.display=open?'grid':'none';b.querySelector('.rq-arrow').textContent=open?'▲':'▼';})(this)">
         📊 Dados Quantitativos <span style="font-weight:400;color:#64748b;">— volumetria e tempo (opcional, enriquece o relatório)</span>
         <span class="rq-arrow" style="margin-left:auto;font-size:11px;">▼</span>
       </button>
@@ -4704,7 +4704,7 @@ function switchPop(pop, tabEl) {
       delete prevD._viewingVersion;
       renderVersionBadge(prevPrefix);
     }
-  } catch(e) {}
+  } catch(e) { /* intentional */ }
   const key    = popKey(pop);
   const domId  = popDomId(pop);
   const prefix = popPrefix(pop);
@@ -4738,7 +4738,7 @@ function switchPop(pop, tabEl) {
   }
 
   if(editMode) enableEditables(true);
-  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) {}
+  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { /* intentional */ }
   if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { /* error log removed */ }
   _syncNovaVersaoBtn();
   try { renderFicha(prefix); }       catch(e) { /* silent error */ }
@@ -4768,10 +4768,10 @@ function showSection(id, tab, silent) {
     tab.classList.add('active');
   }
   if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
-  if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) {}
+  if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) { /* intentional */ }
   if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) { const errorEl = document.createElement('p'); errorEl.style.color = 'red'; errorEl.style.padding = '20px'; errorEl.textContent = 'Erro ao renderizar: ' + e.message; c.innerHTML = ''; c.appendChild(errorEl); } } }
   if(!silent && editMode) enableEditables(true);
-  try { _updateVersionBars(); } catch(e) {}
+  try { _updateVersionBars(); } catch(e) { /* intentional */ }
 }
 
 // ═══ EDIT MODE ════════════════════════════════
@@ -4796,15 +4796,15 @@ function toggleEditMode(forceState) {
   // Atualizar visibilidade dos grids de métricas ao alternar modo
   const _skipMetrics = new Set(['pat','audits','config','patrocinadores','indicadoresCage','_arqOverrides','_repoDocs','_drops','_logoUrl']);
   Object.keys(DATA).filter(k => !k.startsWith('_') && !_skipMetrics.has(k)).forEach(k => {
-    try { renderMetrics(k); } catch(e) {}
+    try { renderMetrics(k); } catch(e) { /* intentional */ }
   });
   // Snapshot ao entrar no modo edição — inicializa pilha de undo
   if(editMode) { _takeEditSnapshot(); }
   else { _undoStack = []; _undoShadow = null; _updateUndoBtn(); }
-  try { _updateVersionBars(); } catch(e) {}
+  try { _updateVersionBars(); } catch(e) { /* intentional */ }
   // Persistir estado do modo edição entre recarregamentos
-  try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) {}
-  try { _dndInit(editMode); } catch(e) {}
+  try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) { /* intentional */ }
+  try { _dndInit(editMode); } catch(e) { /* intentional */ }
   if(forceState === undefined) {
     if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar','warn');
     else showToast('Modo visualização ativo');
@@ -4858,7 +4858,7 @@ function _dndApplyOrder() {
 function _dndReinitStats() {
   if(typeof Sortable === 'undefined') return;
   _dndSortables = _dndSortables.filter(s => {
-    if(s.el === document.getElementById('home-stats')) { try { s.destroy(); } catch(e) {} return false; }
+    if(s.el === document.getElementById('home-stats')) { try { s.destroy(); } catch(e) { /* intentional */ } return false; }
     return true;
   });
   const el = document.getElementById('home-stats');
@@ -4871,7 +4871,7 @@ function _dndReinitStats() {
 
 // Inicializa (ou destrói) todos os Sortables ao entrar/sair do modo edição
 function _dndInit(enabled) {
-  _dndSortables.forEach(s => { try { s.destroy(); } catch(e) {} });
+  _dndSortables.forEach(s => { try { s.destroy(); } catch(e) { /* intentional */ } });
   _dndSortables = [];
   if(!enabled || typeof Sortable === 'undefined') return;
 
@@ -4964,7 +4964,7 @@ function markChanged(quick=false, explicit=false) {
     if(_undoStack.length > _UNDO_MAX) _undoStack.shift();
   }
   // Update shadow to current (already-modified) state — will be "before" the NEXT change
-  try { _undoShadow = _snapshotData(); } catch(e) {}
+  try { _undoShadow = _snapshotData(); } catch(e) { /* intentional */ }
   _updateUndoBtn();
 
   document.getElementById('unsaved-dot').style.display = 'inline-block';
@@ -4989,15 +4989,15 @@ function undoLastChange() {
   Object.keys(DATA).forEach(k => { if(!prevKeys.has(k)) delete DATA[k]; });
   Object.assign(DATA, prev);
   // Update shadow to current restored state
-  try { _undoShadow = _snapshotData(); } catch(e) {}
+  try { _undoShadow = _snapshotData(); } catch(e) { /* intentional */ }
   _updateUndoBtn();
   // Re-render current POP if open
   if(currentPop) {
     const p = popPrefix(currentPop);
     if(DATA[p]) {
-      try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) {}
-      try { renderTracker(p); } catch(e) {}
-      try { renderMetrics(p); } catch(e) {}
+      try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) { /* intentional */ }
+      try { renderTracker(p); } catch(e) { /* intentional */ }
+      try { renderMetrics(p); } catch(e) { /* intentional */ }
     }
   }
   const n = _undoStack.length;
@@ -5015,7 +5015,7 @@ function renderTracker(p) {
   DATA[p].steps.forEach((s,i) => {
     const dot = document.createElement('div');
     dot.className = 'step-dot'+(i===cur?' active':i<cur?' done':'');
-    dot.innerHTML = `<div class="step-dot-circle">${i<cur?'✓':i+1}</div><div class="step-dot-label">${resolveStep(s, flowMode).title}</div>`;
+    dot.innerHTML = `<div class="step-dot-circle">${i<cur?'✓':i+1}</div><div class="step-dot-label">${escapeHtml(resolveStep(s, flowMode).title)}</div>`;
     dot.onclick = () => { DATA[p].currentStep=i; renderStep(p,i); };
     el.appendChild(dot);
     if(i<DATA[p].steps.length-1){
@@ -5057,6 +5057,26 @@ function actionObj(a) {
 }
 
 // ── Garante estrutura mínima de um POP antes de renderizar ──
+function _sanitizeStep(s) {
+  return {
+    title:          s?.title          || 'Etapa',
+    subtitle:       s?.subtitle       || '',
+    responsible:    s?.responsible    || '',
+    respClass:      s?.respClass      || 'resp-green',
+    actions:        Array.isArray(s?.actions) ? s.actions : [],
+    decision:       s?.decision       || null,
+    note:           s?.note           || '',
+    duracao:        s?.duracao        || '',
+    sistemas:       s?.sistemas       || '',
+    documentos:     s?.documentos     || '',
+    pontosMelhoria: s?.pontosMelhoria || '',
+    observacoes:    s?.observacoes    || '',
+    tobe:           (s?.tobe && typeof s.tobe === 'object')
+      ? { ...s.tobe, actions: Array.isArray(s.tobe?.actions) ? s.tobe.actions : [] }
+      : { actions: [] }
+  };
+}
+
 function sanitizePop(p) {
   const d = DATA[p];
   if(!d) return;
@@ -5088,24 +5108,7 @@ function sanitizePop(p) {
   if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
   if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
   // Sanitizar steps
-  d.steps = d.steps.map(s => ({
-    title:          s?.title          || 'Etapa',
-    subtitle:       s?.subtitle       || '',
-    responsible:    s?.responsible    || '',
-    respClass:      s?.respClass      || 'resp-green',
-    actions:        Array.isArray(s?.actions) ? s.actions : [],
-    decision:       s?.decision       || null,
-    note:           s?.note           || '',
-    duracao:        s?.duracao        || '',
-    sistemas:       s?.sistemas       || '',
-    documentos:     s?.documentos     || '',
-    pontosMelhoria: s?.pontosMelhoria || '',
-    observacoes:    s?.observacoes    || '',
-    tobe:           (s?.tobe && typeof s.tobe === 'object') ? {
-      ...s.tobe,
-      actions: Array.isArray(s.tobe?.actions) ? s.tobe.actions : []
-    } : { actions: [] }
-  }));
+  d.steps = d.steps.map(s => _sanitizeStep(s));
   // Sanitizar roles
   d.roles = d.roles.map(r => ({
     ...r,
@@ -5116,58 +5119,250 @@ function sanitizePop(p) {
   if(d.steps.length > 0 && d.currentStep >= d.steps.length) d.currentStep = 0;
 }
 
+// ── Helpers de renderização de ações (S3776 — reduz complexidade cognitiva) ──
+
+function _actionBadges(obj) {
+  const _natMap = getNatMap();
+  const _natCfg = obj.natureza ? _natMap[obj.natureza] : null;
+  const natBadge = (obj.type === 'atividade' && _natCfg)
+    ? `<span class="natureza-badge" style="background:${_natCfg.bg};color:${_natCfg.color};">${_natCfg.icon ? _natCfg.icon+' ' : ''}${_natCfg.label}</span>`
+    : '';
+  const _etipoMap = { inicio:{label:'Início',color:'#16a34a',bg:'#dcfce7'}, intermediario:{label:'Intermediário',color:'#b45309',bg:'#fef3c7'}, encerramento:{label:'Encerramento',color:'#dc2626',bg:'#fee2e2'} };
+  const _etipoCfg = (obj.type === 'evento' && obj.eventoTipo) ? _etipoMap[obj.eventoTipo] : null;
+  const etipoBadge = _etipoCfg ? `<span class="natureza-badge" style="background:${_etipoCfg.bg};color:${_etipoCfg.color};">${_etipoCfg.label}</span>` : '';
+  const loopHint = (obj.type === 'atividade' && _hintDetectLoop(obj))
+    ? `<span title="Possível loop/retrabalho detectado — clique em 🔄 para confirmar" style="font-size:11px;color:#b45309;background:#fef3c7;border:1px solid #b4530933;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">🔄?</span>`
+    : '';
+  const automHint = (obj.type === 'atividade' && _hintDetectAutom(obj))
+    ? `<span title="Possível automação detectada — clique em ⚙️ para confirmar" style="font-size:11px;color:#0891b2;background:#e0f2fe;border:1px solid #0891b233;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">⚙️?</span>`
+    : '';
+  return { natBadge, etipoBadge, loopHint, automHint };
+}
+
+function _activityToggleBtns(obj, em, loopOnClick, autoOnClick) {
+  if(obj.type !== 'atividade') return { loopBtn:'', autoBtn:'' };
+  const loopBtn = em
+    ? `<button class="edit-rm-btn loop-toggle-btn${obj.loop?' loop-on':''}" onclick="${loopOnClick}" title="${obj.loop?'Loop/retrabalho — clique para desmarcar':'Marcar como loop/retrabalho'}" style="margin-left:4px;background:${obj.loop?'#fef3c7':'transparent'};color:${obj.loop?'#b45309':'#94a3b8'};border:1px solid ${obj.loop?'#b4530944':'#e2e8f0'};font-size:13px;">🔄</button>`
+    : '';
+  const autoBtn = em
+    ? `<button class="edit-rm-btn auto-toggle-btn${obj.automatico?' auto-on':''}" onclick="${autoOnClick}" title="${obj.automatico?'Automático — clique para desmarcar':'Marcar como automático'}" style="margin-left:4px;background:${obj.automatico?'#dcfce7':'transparent'};color:${obj.automatico?'#16a34a':'#94a3b8'};border:1px solid ${obj.automatico?'#16a34a44':'#e2e8f0'};font-size:13px;">⚙️</button>`
+    : '';
+  return { loopBtn, autoBtn };
+}
+
+function _buildStepActionHTML(p, si, ai, a, isTobe, em) {
+  const obj = actionObj(a);
+  const t = ACTION_TYPES[obj.type] || ACTION_TYPES.atividade;
+  const actorHTML = obj.actor ? `<span class="action-actor">👤 ${obj.actor}</span>` : '';
+  const { natBadge, etipoBadge, loopHint, automHint } = _actionBadges(obj);
+  const ce = em ? 'contenteditable="true"' : '';
+  const editBtn = em ? `<button class="edit-rm-btn" style="margin-left:4px;" onclick="openActionModal('${p}',${si},${ai})" title="Editar ação">✏️</button>` : '';
+  const rmBtn   = em ? `<button class="edit-rm-btn" onclick="rmStepAction('${p}',${si},${ai})">✕</button>` : '';
+  const dragHandle = em ? `<span class="drag-handle" title="Arrastar para reordenar">⋮⋮</span>` : '';
+  const branchesHTML = obj.type === 'decisao' ? buildBranchesHTML(p, si, ai, obj.branches||[], isTobe, em) : '';
+  const { loopBtn, autoBtn } = _activityToggleBtns(obj, em,
+    `toggleLoop('${p}',${si},${ai})`, `toggleAutomatico('${p}',${si},${ai})`);
+  return `
+    <li class="step-action-item" data-type="${obj.type}" data-ai="${ai}" ${em?'draggable="true"':''}>
+      <div class="action-main-row">
+        ${dragHandle}
+        <span class="action-icon" style="color:${t.color}">${t.icon}</span>
+        <div class="action-body">
+          <span class="action-text" ${ce} data-sp="${p}" data-si="${si}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}${etipoBadge}${loopHint}${automHint}
+          ${actorHTML}
+        </div>
+        ${loopBtn}${autoBtn}${editBtn}${rmBtn}
+      </div>
+      ${branchesHTML}
+    </li>`;
+}
+
+function _buildBranchActionHTML(p, si, ai, bi, bai, ba, em) {
+  const bo = actionObj(ba);
+  const bt = ACTION_TYPES[bo.type] || ACTION_TYPES.atividade;
+  const baActor = bo.actor ? `<span class="branch-action-actor">👤 ${bo.actor}</span>` : '';
+  const { natBadge: baNatBadge, loopHint: baLoopHint, automHint: baAutomHint } = _actionBadges(bo);
+  const baEdit = em ? `<button class="edit-rm-btn" style="margin-left:auto;" onclick="openBranchActionModal('${p}',${si},${ai},${bi},${bai})" title="Editar">✏️</button>` : '';
+  const baRm   = em ? `<button class="edit-rm-btn" onclick="rmBranchAction('${p}',${si},${ai},${bi},${bai})">✕</button>` : '';
+  const { loopBtn: baLoopBtn, autoBtn: baAutoBtn } = _activityToggleBtns(bo, em,
+    `toggleLoopBranch('${p}',${si},${ai},${bi},${bai})`,
+    `toggleAutomaticoBranch('${p}',${si},${ai},${bi},${bai})`);
+  if(bo.type === 'decisao') {
+    const nestedHTML = buildNestedBranchesHTML(p, si, ai, bi, bai, bo.branches||[], em);
+    const addNestedBtn = em ? `<button class="add-branch-btn" onclick="addNestedDecisionBranch('${p}',${si},${ai},${bi},${bai})">+ Caminho</button>` : '';
+    return `<li class="branch-action-item" data-type="decisao" style="flex-direction:column;padding:0;">
+        <div class="nested-decision-wrapper" style="width:100%;box-sizing:border-box;">
+          <div class="nested-decision-header">
+            <span class="action-icon" style="color:${bt.color};font-size:12px;flex-shrink:0;">${bt.icon}</span>
+            <span class="nested-decision-text">${bo.text}</span>
+            ${baEdit}${baRm}
+          </div>
+          ${nestedHTML}${addNestedBtn}
+        </div>
+      </li>`;
+  }
+  return `<li class="branch-action-item" data-type="${bo.type}">
+      <span class="action-icon" style="color:${bt.color};font-size:12px;margin-top:1px;flex-shrink:0;">${bt.icon}</span>
+      <div class="branch-action-body">
+        <span class="branch-action-text">${bo.text}</span>${baNatBadge}${baLoopHint}${baAutomHint}
+        ${baActor}
+      </div>
+      ${baLoopBtn}${baAutoBtn}${baEdit}${baRm}
+    </li>`;
+}
+
+function _buildNestedBranchActionHTML(p, si, ai, bi, bai, nbi, nbai, nba, em) {
+  const nbo = actionObj(nba);
+  const nbt = ACTION_TYPES[nbo.type] || ACTION_TYPES.atividade;
+  const nbaActor = nbo.actor ? `<span class="branch-action-actor">👤 ${nbo.actor}</span>` : '';
+  const { natBadge: nbaNatBadge, loopHint: nbaLoopHint, automHint: nbaAutomHint } = _actionBadges(nbo);
+  const nbaEdit = em ? `<button class="edit-rm-btn" style="margin-left:auto;" onclick="openNestedBranchActionModal('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})" title="Editar">✏️</button>` : '';
+  const nbaRm   = em ? `<button class="edit-rm-btn" onclick="rmNestedBranchAction('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})">✕</button>` : '';
+  const { loopBtn: nbaLoopBtn, autoBtn: nbaAutoBtn } = _activityToggleBtns(nbo, em,
+    `toggleLoopNestedBranch('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})`,
+    `toggleAutomaticoNestedBranch('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})`);
+  return `<li class="branch-action-item" data-type="${nbo.type}">
+      <span class="action-icon" style="color:${nbt.color};font-size:12px;margin-top:1px;flex-shrink:0;">${nbt.icon}</span>
+      <div class="branch-action-body">
+        <span class="branch-action-text">${nbo.text}</span>${nbaNatBadge}${nbaLoopHint}${nbaAutomHint}
+        ${nbaActor}
+      </div>
+      ${nbaLoopBtn}${nbaAutoBtn}${nbaEdit}${nbaRm}
+    </li>`;
+}
+
+function _wireStepDnD(p, i, container) {
+  const ul = container.querySelector('.step-actions');
+  let _dragIdx = null;
+  ul.querySelectorAll('.step-action-item').forEach(li => {
+    li.addEventListener('dragstart', e => {
+      _dragIdx = parseInt(li.dataset.ai);
+      li.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    li.addEventListener('dragend', () => {
+      li.classList.remove('dragging');
+      ul.querySelectorAll('.step-action-item').forEach(l => l.classList.remove('drag-over'));
+    });
+    li.addEventListener('dragover', e => {
+      e.preventDefault();
+      ul.querySelectorAll('.step-action-item').forEach(l => l.classList.remove('drag-over'));
+      li.classList.add('drag-over');
+    });
+    li.addEventListener('drop', e => {
+      e.preventDefault();
+      const toIdx = parseInt(li.dataset.ai);
+      if(_dragIdx === null || _dragIdx === toIdx) return;
+      const _s = DATA[p].steps[i];
+      const actions = flowMode === 'tobe' ? (_s.tobe.actions||[]) : _s.actions;
+      const moved = actions.splice(_dragIdx, 1)[0];
+      actions.splice(toIdx, 0, moved);
+      _dragIdx = null;
+      renderStep(p, i);
+      markChanged(true, true);
+    });
+  });
+}
+
+function _applyStepField(step, sf, val, pp) {
+  if(sf==='title')               { step.title=val; renderTracker(pp); }
+  else if(sf==='subtitle')       step.subtitle=val;
+  else if(sf==='responsible')    { step.responsible=val; renderRoles(pp); }
+  else if(sf==='note')           step.note=val;
+  else if(sf==='dlabel')         { if(step.decision) step.decision.label=val; }
+  else if(sf==='dtext')          { if(step.decision) step.decision.text=val;  }
+  else if(sf==='duracao')        step.duracao=val;
+  else if(sf==='sistemas')       step.sistemas=val;
+  else if(sf==='documentos')     step.documentos=val;
+  else if(sf==='pontosMelhoria') step.pontosMelhoria=val;
+  else if(sf==='observacoes')    step.observacoes=val;
+}
+
+function _wireStepFieldBlur(p, i, container) {
+  container.querySelectorAll('[data-sf]').forEach(el => {
+    el.addEventListener('blur', function() {
+      const pp=this.dataset.sp, si=parseInt(this.dataset.si), sf=this.dataset.sf;
+      const val = this.innerText.replace(/^👤\s*/,'').trim();
+      const step = DATA[pp].steps[si];
+      if(!step) return;
+      if(sf.startsWith('tobe_')) {
+        if(!step.tobe) step.tobe = {};
+        const tobeField = sf.slice(5);
+        step.tobe[tobeField] = val;
+        if(tobeField === 'title') renderTracker(pp);
+      } else {
+        _applyStepField(step, sf, val, pp);
+      }
+      markChanged(true);
+    });
+  });
+}
+
+function _wireStepActionBlur(p, i, container) {
+  container.querySelectorAll('[data-ai]:not([data-field])').forEach(el => {
+    el.addEventListener('blur', function() {
+      const pp=this.dataset.sp, si=parseInt(this.dataset.si), ai=parseInt(this.dataset.ai);
+      const step = DATA[pp].steps[si];
+      if(!step) return;
+      if(this.dataset.tobe === 'true') {
+        if(!step.tobe) step.tobe = {};
+        if(!Array.isArray(step.tobe.actions) || !step.tobe.actions[ai]) return;
+        const cur = actionObj(step.tobe.actions[ai]);
+        cur.text = this.innerText.trim();
+        step.tobe.actions[ai] = cur;
+      } else {
+        if(!step.actions || !step.actions[ai]) return;
+        const cur = actionObj(step.actions[ai]);
+        cur.text = this.innerText.trim();
+        step.actions[ai] = cur;
+      }
+      markChanged(true);
+    });
+  });
+}
+
+function _wireStepBranchBlurs(p, i, container) {
+  container.querySelectorAll('[data-field="branchlabel"]').forEach(el => {
+    el.addEventListener('blur', function() {
+      const pp=this.dataset.sp, si=parseInt(this.dataset.si), ai=parseInt(this.dataset.ai), bi=parseInt(this.dataset.bi);
+      const step = DATA[pp].steps[si];
+      if(!step) return;
+      const actions = flowMode==='tobe' ? (step.tobe?.actions||[]) : step.actions;
+      const action = actionObj(actions[ai]);
+      if(Array.isArray(action.branches) && action.branches[bi]) {
+        action.branches[bi].label = this.innerText.trim() || `Caminho ${bi+1}`;
+        actions[ai] = action;
+      }
+      markChanged(true);
+    });
+  });
+  container.querySelectorAll('[data-field="nestedbranchlabel"]').forEach(el => {
+    el.addEventListener('blur', function() {
+      const pp=this.dataset.sp, si=parseInt(this.dataset.si), ai=parseInt(this.dataset.ai);
+      const bi=parseInt(this.dataset.bi), bai=parseInt(this.dataset.bai), nbi=parseInt(this.dataset.nbi);
+      const step = DATA[pp].steps[si];
+      if(!step) return;
+      const actions = flowMode==='tobe' ? (step.tobe?.actions||[]) : step.actions;
+      const parent = actionObj(actions[ai]);
+      const subDec = actionObj((parent.branches[bi]?.actions||[])[bai]||{});
+      if(Array.isArray(subDec.branches) && subDec.branches[nbi]) {
+        subDec.branches[nbi].label = this.innerText.trim() || `Caminho ${nbi+1}`;
+        parent.branches[bi].actions[bai] = subDec;
+        actions[ai] = parent;
+      }
+      markChanged(true);
+    });
+  });
+}
+
 function buildBranchesHTML(p, si, ai, branches, isTobe, em) {
   const hasItems = branches && branches.length > 0;
   if(!em && !hasItems) return '';
   const ce = em ? 'contenteditable="true"' : '';
   const branchItems = (branches || []).map((branch, bi) => {
-    const actionsHtml = (branch.actions || []).map((ba, bai) => {
-      const bo = actionObj(ba);
-      const bt = ACTION_TYPES[bo.type] || ACTION_TYPES.atividade;
-      const baActor = bo.actor ? `<span class="branch-action-actor">👤 ${bo.actor}</span>` : '';
-      const _nm = getNatMap();
-      const _nc = bo.natureza ? _nm[bo.natureza] : null;
-      const baNatBadge = (bo.type === 'atividade' && _nc)
-        ? `<span class="natureza-badge" style="background:${_nc.bg};color:${_nc.color};">${_nc.icon ? _nc.icon+' ':''} ${_nc.label}</span>` : '';
-      const baEdit = em ? `<button class="edit-rm-btn" style="margin-left:auto;" onclick="openBranchActionModal('${p}',${si},${ai},${bi},${bai})" title="Editar">✏️</button>` : '';
-      const baRm   = em ? `<button class="edit-rm-btn" onclick="rmBranchAction('${p}',${si},${ai},${bi},${bai})">✕</button>` : '';
-      const baLoopBtn = (bo.type === 'atividade' && em)
-        ? `<button class="edit-rm-btn loop-toggle-btn${bo.loop ? ' loop-on' : ''}" onclick="toggleLoopBranch('${p}',${si},${ai},${bi},${bai})" title="${bo.loop ? 'Loop/retrabalho — clique para desmarcar' : 'Marcar como loop/retrabalho'}" style="margin-left:4px;background:${bo.loop ? '#fef3c7' : 'transparent'};color:${bo.loop ? '#b45309' : '#94a3b8'};border:1px solid ${bo.loop ? '#b4530944' : '#e2e8f0'};font-size:13px;">🔄</button>`
-        : '';
-      const baAutoBtn = (bo.type === 'atividade' && em)
-        ? `<button class="edit-rm-btn auto-toggle-btn${bo.automatico ? ' auto-on' : ''}" onclick="toggleAutomaticoBranch('${p}',${si},${ai},${bi},${bai})" title="${bo.automatico ? 'Automático — clique para desmarcar' : 'Marcar como automático'}" style="margin-left:4px;background:${bo.automatico ? '#dcfce7' : 'transparent'};color:${bo.automatico ? '#16a34a' : '#94a3b8'};border:1px solid ${bo.automatico ? '#16a34a44' : '#e2e8f0'};font-size:13px;">⚙️</button>`
-        : '';
-      const baLoopHint = (bo.type === 'atividade' && _hintDetectLoop(bo))
-        ? `<span title="Possível loop/retrabalho detectado — clique em 🔄 para confirmar" style="font-size:11px;color:#b45309;background:#fef3c7;border:1px solid #b4530933;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">🔄?</span>`
-        : '';
-      const baAutomHint = (bo.type === 'atividade' && _hintDetectAutom(bo))
-        ? `<span title="Possível automação detectada — clique em ⚙️ para confirmar" style="font-size:11px;color:#0891b2;background:#e0f2fe;border:1px solid #0891b233;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">⚙️?</span>`
-        : '';
-      // Decisão aninhada: renderizar wrapper com sub-ramos indentados
-      if(bo.type === 'decisao') {
-        const nestedBranchesHTML = buildNestedBranchesHTML(p, si, ai, bi, bai, bo.branches || [], em);
-        const addNestedCamBtn = em ? `<button class="add-branch-btn" onclick="addNestedDecisionBranch('${p}',${si},${ai},${bi},${bai})">+ Caminho</button>` : '';
-        return `<li class="branch-action-item" data-type="decisao" style="flex-direction:column;padding:0;">
-          <div class="nested-decision-wrapper" style="width:100%;box-sizing:border-box;">
-            <div class="nested-decision-header">
-              <span class="action-icon" style="color:${bt.color};font-size:12px;flex-shrink:0;">${bt.icon}</span>
-              <span class="nested-decision-text">${bo.text}</span>
-              ${baEdit}${baRm}
-            </div>
-            ${nestedBranchesHTML}
-            ${addNestedCamBtn}
-          </div>
-        </li>`;
-      }
-      return `<li class="branch-action-item" data-type="${bo.type}">
-        <span class="action-icon" style="color:${bt.color};font-size:12px;margin-top:1px;flex-shrink:0;">${bt.icon}</span>
-        <div class="branch-action-body">
-          <span class="branch-action-text">${bo.text}</span>${baNatBadge}${baLoopHint}${baAutomHint}
-          ${baActor}
-        </div>
-        ${baLoopBtn}${baAutoBtn}${baEdit}${baRm}
-      </li>`;
-    }).join('');
+    const actionsHtml = (branch.actions || []).map((ba, bai) =>
+      _buildBranchActionHTML(p, si, ai, bi, bai, ba, em)
+    ).join('');
     const addActBtn = em ? `<button class="add-branch-action-btn" onclick="addBranchAction('${p}',${si},${ai},${bi})">+ Ação</button>` : '';
     const rmBranchBtn = em ? `<button class="rm-branch-btn" onclick="rmDecisionBranch('${p}',${si},${ai},${bi})" title="Remover caminho">✕</button>` : '';
     return `<div class="decision-branch" data-bi="${bi}">
@@ -5191,37 +5386,9 @@ function buildNestedBranchesHTML(p, si, ai, bi, bai, branches, em) {
   if(!em && !hasItems) return '';
   const ce = em ? 'contenteditable="true"' : '';
   const branchItems = (branches || []).map((branch, nbi) => {
-    const actionsHtml = (branch.actions || []).map((nba, nbai) => {
-      const nbo = actionObj(nba);
-      const nbt = ACTION_TYPES[nbo.type] || ACTION_TYPES.atividade;
-      const nbaActor = nbo.actor ? `<span class="branch-action-actor">👤 ${nbo.actor}</span>` : '';
-      const _nm = getNatMap();
-      const _nc = nbo.natureza ? _nm[nbo.natureza] : null;
-      const nbaNatBadge = (nbo.type === 'atividade' && _nc)
-        ? `<span class="natureza-badge" style="background:${_nc.bg};color:${_nc.color};">${_nc.icon ? _nc.icon+' ':''} ${_nc.label}</span>` : '';
-      const nbaEdit = em ? `<button class="edit-rm-btn" style="margin-left:auto;" onclick="openNestedBranchActionModal('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})" title="Editar">✏️</button>` : '';
-      const nbaRm   = em ? `<button class="edit-rm-btn" onclick="rmNestedBranchAction('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})">✕</button>` : '';
-      const nbaLoopBtn = (nbo.type === 'atividade' && em)
-        ? `<button class="edit-rm-btn loop-toggle-btn${nbo.loop ? ' loop-on' : ''}" onclick="toggleLoopNestedBranch('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})" title="${nbo.loop ? 'Loop/retrabalho — clique para desmarcar' : 'Marcar como loop/retrabalho'}" style="margin-left:4px;background:${nbo.loop ? '#fef3c7' : 'transparent'};color:${nbo.loop ? '#b45309' : '#94a3b8'};border:1px solid ${nbo.loop ? '#b4530944' : '#e2e8f0'};font-size:13px;">🔄</button>`
-        : '';
-      const nbaAutoBtn = (nbo.type === 'atividade' && em)
-        ? `<button class="edit-rm-btn auto-toggle-btn${nbo.automatico ? ' auto-on' : ''}" onclick="toggleAutomaticoNestedBranch('${p}',${si},${ai},${bi},${bai},${nbi},${nbai})" title="${nbo.automatico ? 'Automático — clique para desmarcar' : 'Marcar como automático'}" style="margin-left:4px;background:${nbo.automatico ? '#dcfce7' : 'transparent'};color:${nbo.automatico ? '#16a34a' : '#94a3b8'};border:1px solid ${nbo.automatico ? '#16a34a44' : '#e2e8f0'};font-size:13px;">⚙️</button>`
-        : '';
-      const nbaLoopHint = (nbo.type === 'atividade' && _hintDetectLoop(nbo))
-        ? `<span title="Possível loop/retrabalho detectado — clique em 🔄 para confirmar" style="font-size:11px;color:#b45309;background:#fef3c7;border:1px solid #b4530933;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">🔄?</span>`
-        : '';
-      const nbaAutomHint = (nbo.type === 'atividade' && _hintDetectAutom(nbo))
-        ? `<span title="Possível automação detectada — clique em ⚙️ para confirmar" style="font-size:11px;color:#0891b2;background:#e0f2fe;border:1px solid #0891b233;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">⚙️?</span>`
-        : '';
-      return `<li class="branch-action-item" data-type="${nbo.type}">
-        <span class="action-icon" style="color:${nbt.color};font-size:12px;margin-top:1px;flex-shrink:0;">${nbt.icon}</span>
-        <div class="branch-action-body">
-          <span class="branch-action-text">${nbo.text}</span>${nbaNatBadge}${nbaLoopHint}${nbaAutomHint}
-          ${nbaActor}
-        </div>
-        ${nbaLoopBtn}${nbaAutoBtn}${nbaEdit}${nbaRm}
-      </li>`;
-    }).join('');
+    const actionsHtml = (branch.actions || []).map((nba, nbai) =>
+      _buildNestedBranchActionHTML(p, si, ai, bi, bai, nbi, nbai, nba, em)
+    ).join('');
     const addNbaBtn = em ? `<button class="add-branch-action-btn" onclick="addNestedBranchAction('${p}',${si},${ai},${bi},${bai},${nbi})">+ Ação</button>` : '';
     const rmNbrBtn  = em ? `<button class="rm-branch-btn" onclick="rmNestedDecisionBranch('${p}',${si},${ai},${bi},${bai},${nbi})" title="Remover caminho">✕</button>` : '';
     return `<div class="decision-branch" data-nbi="${nbi}">
@@ -5262,47 +5429,7 @@ function renderStep(p, i) {
 
   // AS IS and TO BE have independent action lists
   const currentActions = isTobe ? (tb.actions || []) : (s.actions || []);
-  const actHTML = currentActions.map((a,ai)=>{
-    const obj = actionObj(a);
-    const t = ACTION_TYPES[obj.type] || ACTION_TYPES.atividade;
-    const actorHTML = obj.actor ? `<span class="action-actor">👤 ${obj.actor}</span>` : '';
-    const _natMap = getNatMap();
-    const _natCfg = obj.natureza ? _natMap[obj.natureza] : null;
-    const natBadge = (obj.type === 'atividade' && _natCfg)
-      ? `<span class="natureza-badge" style="background:${_natCfg.bg};color:${_natCfg.color};">${_natCfg.icon ? _natCfg.icon+' ' : ''}${_natCfg.label}</span>`
-      : '';
-    const _etipoMap = { inicio: { label:'Início', color:'#16a34a', bg:'#dcfce7' }, intermediario: { label:'Intermediário', color:'#b45309', bg:'#fef3c7' }, encerramento: { label:'Encerramento', color:'#dc2626', bg:'#fee2e2' } };
-    const _etipoCfg = (obj.type === 'evento' && obj.eventoTipo) ? _etipoMap[obj.eventoTipo] : null;
-    const etipoBadge = _etipoCfg ? `<span class="natureza-badge" style="background:${_etipoCfg.bg};color:${_etipoCfg.color};">${_etipoCfg.label}</span>` : '';
-    const editBtn = em ? `<button class="edit-rm-btn" style="margin-left:4px;" onclick="openActionModal('${p}',${i},${ai})" title="Editar ação">✏️</button>` : '';
-    const rmBtn = em ? `<button class="edit-rm-btn" onclick="rmStepAction('${p}',${i},${ai})">✕</button>` : '';
-    const dragHandle = em ? `<span class="drag-handle" title="Arrastar para reordenar">⋮⋮</span>` : '';
-    const branchesHTML = obj.type === 'decisao' ? buildBranchesHTML(p, i, ai, obj.branches||[], isTobe, em) : '';
-    const loopHint  = (obj.type === 'atividade' && _hintDetectLoop(obj))
-      ? `<span title="Possível loop/retrabalho detectado — clique em 🔄 para confirmar" style="font-size:11px;color:#b45309;background:#fef3c7;border:1px solid #b4530933;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">🔄?</span>`
-      : '';
-    const automHint = (obj.type === 'atividade' && _hintDetectAutom(obj))
-      ? `<span title="Possível automação detectada — clique em ⚙️ para confirmar" style="font-size:11px;color:#0891b2;background:#e0f2fe;border:1px solid #0891b233;border-radius:4px;padding:1px 5px;margin-left:4px;cursor:default;">⚙️?</span>`
-      : '';
-    const autoBtn = obj.type === 'atividade'
-      ? `<button class="edit-rm-btn auto-toggle-btn${obj.automatico ? ' auto-on' : ''}" onclick="toggleAutomatico('${p}',${i},${ai})" title="${obj.automatico ? 'Automático — clique para desmarcar' : 'Marcar como automático'}" style="margin-left:4px;background:${obj.automatico ? '#dcfce7' : 'transparent'};color:${obj.automatico ? '#16a34a' : '#94a3b8'};border:1px solid ${obj.automatico ? '#16a34a44' : '#e2e8f0'};font-size:13px;">⚙️</button>`
-      : '';
-    const loopBtn = obj.type === 'atividade'
-      ? `<button class="edit-rm-btn loop-toggle-btn${obj.loop ? ' loop-on' : ''}" onclick="toggleLoop('${p}',${i},${ai})" title="${obj.loop ? 'Loop/retrabalho — clique para desmarcar' : 'Marcar como loop/retrabalho'}" style="margin-left:4px;background:${obj.loop ? '#fef3c7' : 'transparent'};color:${obj.loop ? '#b45309' : '#94a3b8'};border:1px solid ${obj.loop ? '#b4530944' : '#e2e8f0'};font-size:13px;">🔄</button>`
-      : '';
-    return `
-    <li class="step-action-item" data-type="${obj.type}" data-ai="${ai}" ${em ? 'draggable="true"' : ''}>
-      <div class="action-main-row">
-        ${dragHandle}
-        <span class="action-icon" style="color:${t.color}">${t.icon}</span>
-        <div class="action-body">
-          <span class="action-text" ${ce} data-sp="${p}" data-si="${i}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}${etipoBadge}${loopHint}${automHint}
-          ${actorHTML}
-        </div>
-        ${loopBtn}${autoBtn}${editBtn}${rmBtn}
-      </div>
-      ${branchesHTML}
-    </li>`;}).join('');
+  const actHTML = currentActions.map((a, ai) => _buildStepActionHTML(p, i, ai, a, isTobe, em)).join('');
   const decHTML = s.decision ? `
     <div class="decision-box"><span class="dicon">⚡</span><div class="dtext">
       <strong ${ce} data-sp="${p}" data-si="${i}" data-sf="dlabel">${s.decision.label}:</strong><br>
@@ -5349,122 +5476,11 @@ function renderStep(p, i) {
         ${decHTML}${noteHTML}
       </div>
     </div>`;
-  // ── Wire drag-and-drop for actions ─────────
-  if(editMode) {
-    const ul = container.querySelector('.step-actions');
-    let _dragIdx = null;
-    ul.querySelectorAll('.step-action-item').forEach(li => {
-      li.addEventListener('dragstart', e => {
-        _dragIdx = parseInt(li.dataset.ai);
-        li.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-      });
-      li.addEventListener('dragend', () => {
-        li.classList.remove('dragging');
-        ul.querySelectorAll('.step-action-item').forEach(l => l.classList.remove('drag-over'));
-      });
-      li.addEventListener('dragover', e => {
-        e.preventDefault();
-        ul.querySelectorAll('.step-action-item').forEach(l => l.classList.remove('drag-over'));
-        li.classList.add('drag-over');
-      });
-      li.addEventListener('drop', e => {
-        e.preventDefault();
-        const toIdx = parseInt(li.dataset.ai);
-        if(_dragIdx === null || _dragIdx === toIdx) return;
-        const _s = DATA[p].steps[i];
-        const actions = flowMode === 'tobe' ? (_s.tobe.actions || []) : _s.actions;
-        const moved = actions.splice(_dragIdx, 1)[0];
-        actions.splice(toIdx, 0, moved);
-        _dragIdx = null;
-        renderStep(p, i);
-        markChanged(true, true);
-      });
-    });
-  }
-
-  container.querySelectorAll('[data-sf]').forEach(el => {
-    el.addEventListener('blur', function() {
-      const pp=this.dataset.sp, si=parseInt(this.dataset.si), sf=this.dataset.sf;
-      const val = this.innerText.replace(/^👤\s*/,'').trim();
-      const step = DATA[pp].steps[si];
-      if(!step) return;
-      if(sf.startsWith('tobe_')) {
-        if(!step.tobe) step.tobe = {};
-        const tobeField = sf.slice(5); // remove 'tobe_' prefix
-        step.tobe[tobeField] = val;
-        if(tobeField === 'title') renderTracker(pp);
-      } else {
-        if(sf==='title'){step.title=val;renderTracker(pp);}
-        else if(sf==='subtitle')     step.subtitle=val;
-        else if(sf==='responsible')  { step.responsible=val; renderRoles(pp); }
-        else if(sf==='note')         step.note=val;
-        else if(sf==='dlabel')       { if(step.decision) step.decision.label=val; }
-        else if(sf==='dtext')        { if(step.decision) step.decision.text=val;  }
-        else if(sf==='duracao')      step.duracao=val;
-        else if(sf==='sistemas')     step.sistemas=val;
-        else if(sf==='documentos')   step.documentos=val;
-        else if(sf==='pontosMelhoria') step.pontosMelhoria=val;
-        else if(sf==='observacoes')  step.observacoes=val;
-      }
-      markChanged(true); // quick=true: salvar em 800ms após blur
-    });
-  });
-  container.querySelectorAll('[data-ai]:not([data-field])').forEach(el => {
-    el.addEventListener('blur', function() {
-      const pp=this.dataset.sp, si=parseInt(this.dataset.si), ai=parseInt(this.dataset.ai);
-      const step = DATA[pp].steps[si];
-      if(!step) return;
-      if(this.dataset.tobe === 'true') {
-        if(!step.tobe) step.tobe = {};
-        if(!Array.isArray(step.tobe.actions) || !step.tobe.actions[ai]) return;
-        const cur = actionObj(step.tobe.actions[ai]);
-        cur.text = this.innerText.trim();
-        step.tobe.actions[ai] = cur;
-      } else {
-        if(!step.actions || !step.actions[ai]) return;
-        const cur = actionObj(step.actions[ai]);
-        cur.text = this.innerText.trim();
-        step.actions[ai] = cur;
-      }
-      markChanged(true); // quick=true: salvar em 800ms após blur
-    });
-  });
-  // Branch label inline editing
-  container.querySelectorAll('[data-field="branchlabel"]').forEach(el => {
-    el.addEventListener('blur', function() {
-      const pp=this.dataset.sp, si=parseInt(this.dataset.si), ai=parseInt(this.dataset.ai), bi=parseInt(this.dataset.bi);
-      const isTobe_ = flowMode === 'tobe';
-      const step = DATA[pp].steps[si];
-      if(!step) return;
-      const actions = isTobe_ ? (step.tobe?.actions || []) : step.actions;
-      const action = actionObj(actions[ai]);
-      if(Array.isArray(action.branches) && action.branches[bi]) {
-        action.branches[bi].label = this.innerText.trim() || `Caminho ${bi+1}`;
-        actions[ai] = action;
-      }
-      markChanged(true);
-    });
-  });
-  // Nested branch label inline editing
-  container.querySelectorAll('[data-field="nestedbranchlabel"]').forEach(el => {
-    el.addEventListener('blur', function() {
-      const pp=this.dataset.sp, si=parseInt(this.dataset.si), ai=parseInt(this.dataset.ai);
-      const bi=parseInt(this.dataset.bi), bai=parseInt(this.dataset.bai), nbi=parseInt(this.dataset.nbi);
-      const isTobe_ = flowMode === 'tobe';
-      const step = DATA[pp].steps[si];
-      if(!step) return;
-      const actions = isTobe_ ? (step.tobe?.actions || []) : step.actions;
-      const parent = actionObj(actions[ai]);
-      const subDec = actionObj((parent.branches[bi]?.actions || [])[bai] || {});
-      if(Array.isArray(subDec.branches) && subDec.branches[nbi]) {
-        subDec.branches[nbi].label = this.innerText.trim() || `Caminho ${nbi+1}`;
-        parent.branches[bi].actions[bai] = subDec;
-        actions[ai] = parent;
-      }
-      markChanged(true);
-    });
-  });
+  // ── Wire interactions ─────────────────────────
+  if(editMode) { _wireStepDnD(p, i, container); }
+  _wireStepFieldBlur(p, i, container);
+  _wireStepActionBlur(p, i, container);
+  _wireStepBranchBlurs(p, i, container);
   renderTracker(p);
   const _stepPos  = document.getElementById(p+'-step-pos');
   const _btnPrev  = document.getElementById(p+'-btn-prev');
@@ -5719,7 +5735,7 @@ function setFlowMode(mode) {
   if(DATA[p] && Array.isArray(DATA[p].steps) && DATA[p].steps.length > 0) {
     renderStep(p, DATA[p].currentStep || 0);
   }
-  try { renderRoles(p); } catch(e) {}
+  try { renderRoles(p); } catch(e) { /* intentional */ }
 }
 
 // ── Step details expand/collapse ───────────────
@@ -5783,24 +5799,40 @@ function _buildStepDetailsHTML(p, i, s, em) {
 }
 
 // ═══ ROLES ════════════════════════════════════
+function _collectFlowActions(actions, out) {
+  (actions || []).forEach(a => {
+    if(!a) return;
+    const obj = actionObj(a);
+    if(obj.type !== 'observacao') out.push(obj);
+    (obj.branches || []).forEach(b => _collectFlowActions(b?.actions || [], out));
+  });
+}
+
+function _groupsForActor(steps, name) {
+  const key = name.trim().toLowerCase();
+  const result = [];
+  steps.forEach(s => {
+    const rs = resolveStep(s, flowMode);
+    const isResp = (rs.responsible || '').trim().toLowerCase() === key;
+    const flatActions = [];
+    _collectFlowActions(rs.actions || [], flatActions);
+    const matched = flatActions.filter(a =>
+      (a.actor || '').trim().toLowerCase() === key && a.type !== 'observacao'
+    );
+    if(isResp || matched.length) result.push({ stepTitle: rs.title || '', actions: matched, isResp });
+  });
+  return result;
+}
+
 function renderRoles(p) {
   const el = document.getElementById(p + '-role-grid');
   if(!el) return;
   const steps  = DATA[p].steps || [];
   const colors = ['role-green','role-blue','role-gold','role-red','role-purple'];
 
-  function collectFlowActions(actions, out) {
-    (actions || []).forEach(a => {
-      if(!a) return;
-      const obj = actionObj(a);
-      if(obj.type !== 'observacao') out.push(obj);
-      (obj.branches || []).forEach(b => collectFlowActions(b?.actions || [], out));
-    });
-  }
-
   // === 1. Coletar todos os atores únicos do fluxo (na ordem de aparecimento) ===
   const seen = new Set();
-  const flowActors = []; // lista ordenada de nomes (display)
+  const flowActors = [];
   const _addActor = name => {
     if(!name) return;
     const norm = name.trim();
@@ -5812,7 +5844,7 @@ function renderRoles(p) {
     const rs = resolveStep(s, flowMode);
     _addActor(rs.responsible);
     const flatActions = [];
-    collectFlowActions(rs.actions || [], flatActions);
+    _collectFlowActions(rs.actions || [], flatActions);
     flatActions.forEach(a => _addActor(a.actor));
   });
 
@@ -5832,27 +5864,10 @@ function renderRoles(p) {
     return;
   }
 
-  // === 4. Para cada ator, coletar ações agrupadas por etapa ===
-  function groupsForActor(name) {
-    const key = name.trim().toLowerCase();
-    const result = [];
-    steps.forEach(s => {
-      const rs = resolveStep(s, flowMode);
-      const isResp = (rs.responsible || '').trim().toLowerCase() === key;
-      const flatActions = [];
-      collectFlowActions(rs.actions || [], flatActions);
-      const matched = flatActions.filter(a =>
-        (a.actor || '').trim().toLowerCase() === key && a.type !== 'observacao'
-      );
-      if(isResp || matched.length) result.push({ stepTitle: rs.title || '', actions: matched, isResp });
-    });
-    return result;
-  }
-
-  // === 5. Renderizar cards ===
+  // === 4. Renderizar cards ===
   el.innerHTML = DATA[p].roles.map((r, ri) => {
     const cls    = r.cls || colors[ri % colors.length];
-    const groups = groupsForActor(r.name);
+    const groups = _groupsForActor(steps, r.name);
     const total  = groups.reduce((sum, g) => sum + g.actions.length, 0);
     const badge  = total ? `<span style="display:inline-block;background:rgba(0,0,0,.12);color:inherit;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;">${total} atividade${total!==1?'s':''}</span>` : '';
 
@@ -5906,12 +5921,31 @@ function _fmtNumSimple(v) {
   return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:2});
 }
 
+function _pctColorClass(pct) {
+  if(pct === null || pct === undefined) return '';
+  return pct >= 100 ? 'pct-verde' : pct >= 80 ? 'pct-amarelo' : 'pct-vermelho';
+}
+
+function _pctStyle(pct) {
+  if(pct === null || pct === undefined) return '';
+  return pct >= 100 ? 'color:#16a34a;' : pct >= 80 ? 'color:#ca8a04;' : 'color:#dc2626;';
+}
+
+function _buildSisplanTableRow(r) {
+  const rp = r.pctRealizado;
+  return `<tr>
+    <td>${_periodoLabelSimple(r.periodo)}</td>
+    <td>${_fmtNumSimple(r.realizado)}</td>
+    <td>${_fmtNumSimple(r.meta)}</td>
+    <td style="${_pctStyle(rp)}font-weight:600;">${rp !== null && rp !== undefined ? _fmtNumSimple(rp)+'%' : '—'}</td>
+  </tr>`;
+}
+
 function _buildIndSisplanSection(ind, p, i) {
   if(!ind.sisplanId) return '';
   const cageInd = (DATA.indicadoresCage?.indicadores || []).find(ci => ci.id === ind.sisplanId);
-  if(!cageInd) return '';
+  if(!cageInd?.codigo) return '';
   const codigo = cageInd.codigo;
-  if(!codigo) return '';
   const resultados = (DATA.indicadoresCage?.resultados || [])
     .filter(r => r.codigo === codigo)
     .sort((a,b) => (b.periodo||'').localeCompare(a.periodo||''));
@@ -5927,11 +5961,9 @@ function _buildIndSisplanSection(ind, p, i) {
 
   const latest = resultados[0];
   const pct = latest.pctRealizado;
-  const pctColor = pct === null || pct === undefined ? '' : pct >= 100 ? 'pct-verde' : pct >= 80 ? 'pct-amarelo' : 'pct-vermelho';
-
   const kpisHtml = `<div class="ind-mini-kpi-row">
     <div class="ind-mini-kpi">
-      <div class="ind-mini-kpi-val ${pctColor}">${pct !== null && pct !== undefined ? _fmtNumSimple(pct)+'%' : '—'}</div>
+      <div class="ind-mini-kpi-val ${_pctColorClass(pct)}">${pct !== null && pct !== undefined ? _fmtNumSimple(pct)+'%' : '—'}</div>
       <div class="ind-mini-kpi-label">% Realizado</div>
     </div>
     <div class="ind-mini-kpi">
@@ -5944,18 +5976,7 @@ function _buildIndSisplanSection(ind, p, i) {
     </div>
   </div>`;
 
-  const last6 = resultados.slice(0, 6);
-  const tableRows = last6.map(r => {
-    const rp = r.pctRealizado;
-    const rStyle = rp === null || rp === undefined ? '' : rp >= 100 ? 'color:#16a34a;' : rp >= 80 ? 'color:#ca8a04;' : 'color:#dc2626;';
-    return `<tr>
-      <td>${_periodoLabelSimple(r.periodo)}</td>
-      <td>${_fmtNumSimple(r.realizado)}</td>
-      <td>${_fmtNumSimple(r.meta)}</td>
-      <td style="${rStyle}font-weight:600;">${rp !== null && rp !== undefined ? _fmtNumSimple(rp)+'%' : '—'}</td>
-    </tr>`;
-  }).join('');
-
+  const tableRows = resultados.slice(0, 6).map(r => _buildSisplanTableRow(r)).join('');
   return `<div class="ind-sisplan-results">
     ${headerHtml}
     ${kpisHtml}
@@ -5968,11 +5989,43 @@ function _buildIndSisplanSection(ind, p, i) {
 }
 
 const _indMiniCharts = {};
+
+function _buildMiniChartConfig(resultados, hasPercentage) {
+  const last12 = resultados.slice(-12);
+  const labels = last12.map(r => _periodoLabelSimple(r.periodo));
+  const data = hasPercentage ? last12.map(r => r.pctRealizado ?? null) : last12.map(r => r.realizado ?? null);
+  const bgColors = hasPercentage
+    ? data.map(v => v === null ? '#cbd5e1' : v >= 100 ? 'rgba(22,163,74,.75)' : v >= 80 ? 'rgba(234,179,8,.75)' : 'rgba(220,38,38,.75)')
+    : data.map(v => v === null ? '#cbd5e1' : 'rgba(27,48,34,.65)');
+  const metaLine = hasPercentage ? last12.map(() => 100) : last12.map(r => r.meta ?? null);
+  return {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { data, backgroundColor: bgColors, borderRadius: 3, order: 2 },
+        { data: metaLine, type: 'line', borderColor: '#1B3022', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: .3, order: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx2 => ctx2.raw !== null ? (hasPercentage ? _fmtNumSimple(ctx2.raw)+'%' : _fmtNumSimple(ctx2.raw)) : '—' } }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { font:{size:8}, callback: v => hasPercentage ? v+'%' : _fmtNumSimple(v) }, grid: { color:'rgba(0,0,0,.05)' } },
+        x: { ticks: { font:{size:8}, maxRotation: 45 } }
+      }
+    }
+  };
+}
+
 function _initIndMiniCharts(p) {
   (DATA[p]?.indicators || []).forEach((ind, i) => {
     if(!ind.sisplanId) return;
     const chartId = `ind-mini-chart-${p}-${i}`;
-    if(_indMiniCharts[chartId]) { try { _indMiniCharts[chartId].destroy(); } catch(e) {} delete _indMiniCharts[chartId]; }
+    if(_indMiniCharts[chartId]) { try { _indMiniCharts[chartId].destroy(); } catch(e) { /* intentional */ } delete _indMiniCharts[chartId]; }
     const ctx = document.getElementById(chartId);
     if(!ctx) return;
     const cageInd = (DATA.indicadoresCage?.indicadores || []).find(ci => ci.id === ind.sisplanId);
@@ -5982,83 +6035,59 @@ function _initIndMiniCharts(p) {
       .sort((a,b) => (a.periodo||'').localeCompare(b.periodo||''));
     if(!resultados.length) return;
     const hasPercentage = resultados.some(r => r.pctRealizado !== null && r.pctRealizado !== undefined && r.pctRealizado !== 0);
-    const last12 = resultados.slice(-12);
-    const labels = last12.map(r => _periodoLabelSimple(r.periodo));
-    const data = hasPercentage ? last12.map(r => r.pctRealizado ?? null) : last12.map(r => r.realizado ?? null);
-    const bgColors = hasPercentage
-      ? data.map(v => v === null ? '#cbd5e1' : v >= 100 ? 'rgba(22,163,74,.75)' : v >= 80 ? 'rgba(234,179,8,.75)' : 'rgba(220,38,38,.75)')
-      : data.map(v => v === null ? '#cbd5e1' : 'rgba(27,48,34,.65)');
-    const metaLine = hasPercentage ? last12.map(() => 100) : last12.map(r => r.meta ?? null);
-    try {
-      _indMiniCharts[chartId] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            { data, backgroundColor: bgColors, borderRadius: 3, order: 2 },
-            { data: metaLine, type: 'line', borderColor: '#1B3022', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: .3, order: 1 }
-          ]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: ctx2 => ctx2.raw !== null ? (hasPercentage ? _fmtNumSimple(ctx2.raw)+'%' : _fmtNumSimple(ctx2.raw)) : '—' } }
-          },
-          scales: {
-            y: { beginAtZero: true, ticks: { font:{size:8}, callback: v => hasPercentage ? v+'%' : _fmtNumSimple(v) }, grid: { color:'rgba(0,0,0,.05)' } },
-            x: { ticks: { font:{size:8}, maxRotation: 45 } }
-          }
-        }
-      });
-    } catch(e) { /* chart error suppressed */ }
+    try { _indMiniCharts[chartId] = new Chart(ctx, _buildMiniChartConfig(resultados, hasPercentage)); } catch(e) { /* chart error suppressed */ }
   });
+}
+
+function _buildIndicatorCardHtml(ind, p, i) {
+  const tagClass = ind.tag==='time' ? 'ind-tag-time' : 'ind-tag-perc';
+  const tagLabel = ind.tag==='time' ? '⏱ Tempo' : '% Percentual';
+  const meta = ind.meta
+    ? `<span class="ind-meta-pill">🎯 Meta: <strong>${ind.meta}</strong></span>`
+    : `<span class="ind-meta-pill" style="color:#fbbf24;">🎯 Meta não definida</span>`;
+  return `
+  <div class="indicator-card">
+    <div class="ind-card-top">
+      <div class="ind-icon">${ind.icon}</div>
+      <span class="ind-title">${ind.title}</span>
+      <span class="ind-desc">${ind.desc}</span>
+      <span class="ind-tag ${tagClass}">${tagLabel}</span>
+    </div>
+    <div class="ind-card-details">
+      <div class="ind-detail-row">
+        <span class="ind-detail-label">📐 Fórmula de Cálculo</span>
+        <div class="ind-formula-box">${ind.formula||'<em style="color:var(--text-muted)">Não definida</em>'}</div>
+      </div>
+      <div class="ind-detail-row">
+        <span class="ind-detail-label">🗂 Fonte dos Dados</span>
+        <span class="ind-detail-value">${ind.fonte||'—'}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="ind-detail-row">
+          <span class="ind-detail-label">🔁 Periodicidade</span>
+          <span class="ind-detail-value">${ind.periodicidade||'—'}</span>
+        </div>
+        <div class="ind-detail-row">
+          <span class="ind-detail-label">👤 Responsável</span>
+          <span class="ind-detail-value">${ind.responsavel||'—'}</span>
+        </div>
+      </div>
+    </div>
+    <div class="ind-card-footer">
+      ${meta}
+      <div style="display:flex;gap:6px;">
+        <button class="ind-edit-btn" data-pop="${p}" data-idx="${i}">✏️ Editar</button>
+        <button class="ind-rm-btn" data-pop="${p}" data-idx="${i}">✕ Remover</button>
+      </div>
+    </div>
+    ${_buildIndSisplanSection(ind, p, i)}
+  </div>`;
 }
 
 function renderIndicators(p) {
   const _indGrid = document.getElementById(p+'-indicator-grid');
   if(!_indGrid) return;
-  _indGrid.innerHTML = DATA[p].indicators.map((ind,i)=> {
-    const tagClass = ind.tag==='time' ? 'ind-tag-time' : 'ind-tag-perc';
-    const tagLabel = ind.tag==='time' ? '⏱ Tempo' : '% Percentual';
-    const meta = ind.meta ? `<span class="ind-meta-pill">🎯 Meta: <strong>${ind.meta}</strong></span>` : `<span class="ind-meta-pill" style="color:#fbbf24;">🎯 Meta não definida</span>`;
-    return `
-    <div class="indicator-card">
-      <div class="ind-card-top">
-        <div class="ind-icon">${ind.icon}</div>
-        <span class="ind-title">${ind.title}</span>
-        <span class="ind-desc">${ind.desc}</span>
-        <span class="ind-tag ${tagClass}">${tagLabel}</span>
-      </div>
-      <div class="ind-card-details">
-        <div class="ind-detail-row">
-          <span class="ind-detail-label">📐 Fórmula de Cálculo</span>
-          <div class="ind-formula-box">${ind.formula||'<em style="color:var(--text-muted)">Não definida</em>'}</div>
-        </div>
-        <div class="ind-detail-row">
-          <span class="ind-detail-label">🗂 Fonte dos Dados</span>
-          <span class="ind-detail-value">${ind.fonte||'—'}</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="ind-detail-row">
-            <span class="ind-detail-label">🔁 Periodicidade</span>
-            <span class="ind-detail-value">${ind.periodicidade||'—'}</span>
-          </div>
-          <div class="ind-detail-row">
-            <span class="ind-detail-label">👤 Responsável</span>
-            <span class="ind-detail-value">${ind.responsavel||'—'}</span>
-          </div>
-        </div>
-      </div>
-      <div class="ind-card-footer">
-        ${meta}
-        <div style="display:flex;gap:6px;">
-          <button class="ind-edit-btn" data-pop="${p}" data-idx="${i}">✏️ Editar</button>
-          <button class="ind-rm-btn" data-pop="${p}" data-idx="${i}">✕ Remover</button>
-        </div>
-      </div>
-      ${_buildIndSisplanSection(ind, p, i)}
-    </div>`; }).join('');
+  _indGrid.innerHTML = DATA[p].indicators.map((ind, i) => _buildIndicatorCardHtml(ind, p, i)).join('');
   if(editMode) enableEditables(true);
   attachIndListeners(p);
   _initIndMiniCharts(p);
@@ -7938,7 +7967,7 @@ function openNestedBranchActionModal(p, si, ai, bi, bai, nbi, nbai) {
   const actorList = document.getElementById('act-actor-list');
   if(actorList) {
     const atores = getConfig('atores');
-    actorList.innerHTML = atores.map(a => `<option value="${a.replace(/"/g,'&quot;')}">`).join('');
+    actorList.innerHTML = atores.map(a => `<option value="${escapeHtml(a)}">`).join('');
   }
   document.getElementById('act-text').value        = obj.text;
   document.getElementById('act-actor').value       = obj.actor || step.responsible || '';
@@ -8200,7 +8229,7 @@ function openActionModal(p, si, ai) {
   const actorList = document.getElementById('act-actor-list');
   if(actorList) {
     const atores = getConfig('atores');
-    actorList.innerHTML = atores.map(a => `<option value="${a.replace(/"/g,'&quot;')}">`).join('');
+    actorList.innerHTML = atores.map(a => `<option value="${escapeHtml(a)}">`).join('');
   }
 
   // Set text, actor and complementary fields
@@ -8291,7 +8320,7 @@ function openBranchActionModal(p, si, ai, bi, bai) {
   const actorList = document.getElementById('act-actor-list');
   if(actorList) {
     const atores = getConfig('atores');
-    actorList.innerHTML = atores.map(a => `<option value="${a.replace(/"/g,'&quot;')}">`).join('');
+    actorList.innerHTML = atores.map(a => `<option value="${escapeHtml(a)}">`).join('');
   }
   document.getElementById('act-text').value        = obj.text;
   document.getElementById('act-actor').value       = obj.actor || step.responsible || '';
@@ -8723,18 +8752,18 @@ function applyConfigToDropdowns() {
   ['pat-tipo','nf-tipo'].forEach(id => populateConfigSelect(id,'tipoAtividadePat'));
   populateConfigSelect('status-modal-tipo','tipoTrabalho');
   // Refresh equipe-resp datalist
-  (function(){ const dl = document.getElementById('status-modal-equipe-resp-list'); if(dl) dl.innerHTML = getConfig('equipes').map(e => `<option value="${e.replace(/"/g,'&quot;')}">`).join(''); })();
-  try { applyGlobalParams(); } catch(e) {}
+  (function(){ const dl = document.getElementById('status-modal-equipe-resp-list'); if(dl) dl.innerHTML = getConfig('equipes').map(e => `<option value="${escapeHtml(e)}">`).join(''); })();
+  try { applyGlobalParams(); } catch(e) { /* intentional */ }
 }
 
 // ── Parâmetros Globais ──────────────────────────────────────────────────────
 const _PARAMS_COLORS = [
-  { key:'corPrimaria',   css:'--cage-blue',   label:'Cor Primária',          def:'#1B3022' },
-  { key:'corSecundaria', css:'--cage-mid',    label:'Cor Secundária',        def:'#003366' },
-  { key:'corAcento',     css:'--cage-accent', label:'Cor de Acento (CTA)',   def:'#003366' },
-  { key:'corDestaque',   css:'--cage-gold',   label:'Cor de Destaque',       def:'#c07800' },
-  { key:'corFundo',      css:'--cage-light',  label:'Cor de Fundo',          def:'#F5F5F5' },
-  { key:'corBorda',      css:'--cage-border', label:'Cor de Borda',          def:'#c0cccc' },
+  { key:'corPrimaria',   css:'--cage-blue',   label:'Cor Primária',          def:'#1F3D3B' },
+  { key:'corSecundaria', css:'--cage-mid',    label:'Cor Secundária',        def:'#3C6E71' },
+  { key:'corAcento',     css:'--cage-accent', label:'Cor de Acento (CTA)',   def:'#D97706' },
+  { key:'corDestaque',   css:'--cage-gold',   label:'Cor de Destaque',       def:'#3C6E71' },
+  { key:'corFundo',      css:'--cage-light',  label:'Cor de Fundo',          def:'#F5F5F4' },
+  { key:'corBorda',      css:'--cage-border', label:'Cor de Borda',          def:'#E5E7EB' },
 ];
 
 const _MODULES_NAV = [
@@ -8810,12 +8839,22 @@ function applyGlobalParams() {
     const el = document.querySelector('.cage-banner-sub');
     if(el) el.textContent = gp.subtitulo;
   }
-  // Cores
+  // Cores — sempre aplica a paleta do design system, sobrescrevendo valores antigos
+  // Valores legados que devem ser migrados para o novo design system
+  const _LEGACY_DEFAULTS = { corPrimaria:'#1B3022', corSecundaria:'#003366', corAcento:'#003366', corDestaque:'#c07800', corFundo:'#F5F5F5', corBorda:'#c0cccc' };
   _PARAMS_COLORS.forEach(c => {
-    if(gp[c.key]) document.documentElement.style.setProperty(c.css, gp[c.key]);
+    // Se o valor salvo for um default legado (não customizado pelo usuário), usa o novo default
+    const saved = gp[c.key];
+    const isLegacy = !saved || saved === _LEGACY_DEFAULTS[c.key];
+    const val = isLegacy ? c.def : saved;
+    document.documentElement.style.setProperty(c.css, val);
+    // Persiste o novo valor para evitar regressão
+    gp[c.key] = val;
   });
+  // Garante persistência dos novos valores no config
+  setConfig('parametrosGlobais', gp);
   // Logo
-  if(gp.logoUrl && DATA) { DATA._logoUrl = gp.logoUrl; try { eppLogoRefresh(); } catch(e) {} }
+  if(gp.logoUrl && DATA) { DATA._logoUrl = gp.logoUrl; try { eppLogoRefresh(); } catch(e) { /* intentional */ } }
   // Sidebar nav order/visibility
   applySidebarNav();
   // Sidebar button colors
@@ -8873,13 +8912,13 @@ function applyHeaderBtnColors() {
   if(logoDiv) {
     if(gp.logoHeaderUrl) {
       logoDiv.style.cssText = 'width:auto;max-width:140px;height:48px;background:transparent;border-radius:0;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);overflow:hidden;flex-shrink:0;padding:0;';
-      logoDiv.innerHTML = `<img src="${gp.logoHeaderUrl}" style="height:48px;width:auto;max-width:140px;object-fit:contain;display:block;" onerror="this.style.display='none'">`;
+      logoDiv.innerHTML = `<img src="${escapeHtml(gp.logoHeaderUrl)}" style="height:48px;width:auto;max-width:140px;object-fit:contain;display:block;" onerror="this.style.display='none'">`;
     } else {
       logoDiv.style.cssText = '';
       const bg    = gp.logoHeaderBg    || '#1B3022';
       const color = gp.logoHeaderColor || '#00a86b';
       const text  = gp.logoHeaderText  || 'EPP';
-      logoDiv.innerHTML = `<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="34" height="34" rx="5" fill="${bg}" stroke="${color}" stroke-width="2"/><text x="18" y="24" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="${color}" text-anchor="middle">${text}</text></svg>`;
+      logoDiv.innerHTML = `<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="34" height="34" rx="5" fill="${escapeHtml(bg)}" stroke="${escapeHtml(color)}" stroke-width="2"/><text x="18" y="24" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="${escapeHtml(color)}" text-anchor="middle">${escapeHtml(text)}</text></svg>`;
     }
   }
 }
@@ -8888,7 +8927,7 @@ function _gpLogoBarraPreview(url) {
   const el = document.getElementById('gp-logo-barra-preview');
   if(!el) return;
   if(url) {
-    el.innerHTML = `<img src="${url}" style="height:44px;width:auto;max-width:116px;object-fit:contain;display:block;" onerror="this.innerHTML='❌'">`;
+    el.innerHTML = `<img src="${escapeHtml(url)}" style="height:44px;width:auto;max-width:116px;object-fit:contain;display:block;" onerror="this.innerHTML='❌'">`;
   } else {
     el.innerHTML = '🖼';
   }
@@ -8921,7 +8960,7 @@ function gpUpdateLogoPreview() {
   const preview = document.getElementById('gp-logo-preview');
   if(!preview) return;
   if(url) {
-    preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentElement.innerHTML='❌'">`;
+    preview.innerHTML = `<img src="${escapeHtml(url)}" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentElement.innerHTML='❌'">`;
   } else {
     preview.innerHTML = '🖼';
   }
@@ -9758,7 +9797,7 @@ function configEditItem(key, idx) {
   const span = document.getElementById(`cfg-itm-${key}-${idx}`);
   if(!span) return;
   const cur = span.textContent;
-  span.innerHTML = `<input id="cfg-edit-${key}-${idx}" style="border:1px solid #cbd5e1;border-radius:5px;padding:2px 6px;font-size:13px;width:95%;" value="${cur.replace(/"/g,'&quot;')}">`;
+  span.innerHTML = `<input id="cfg-edit-${key}-${idx}" style="border:1px solid #cbd5e1;border-radius:5px;padding:2px 6px;font-size:13px;width:95%;" value="${escapeHtml(cur)}">`;
   const inp = document.getElementById(`cfg-edit-${key}-${idx}`);
   inp.focus(); inp.select();
   inp.onblur  = () => configSaveEdit(key, idx);
@@ -9810,7 +9849,7 @@ function configEditStatusLabel(key, idx) {
   const span = document.getElementById(`cfg-lbl-${key}-${idx}`);
   if(!span) return;
   const cur = span.textContent;
-  span.innerHTML = `<input id="cfg-edit-lbl-${key}-${idx}" style="border:1px solid #cbd5e1;border-radius:5px;padding:2px 6px;font-size:13px;width:95%;" value="${cur.replace(/"/g,'&quot;')}">`;
+  span.innerHTML = `<input id="cfg-edit-lbl-${key}-${idx}" style="border:1px solid #cbd5e1;border-radius:5px;padding:2px 6px;font-size:13px;width:95%;" value="${escapeHtml(cur)}">`;
   const inp = document.getElementById(`cfg-edit-lbl-${key}-${idx}`);
   inp.focus(); inp.select();
   inp.onblur    = () => configSaveStatusLabel(key, idx);
@@ -9903,9 +9942,10 @@ function getAlertSubscribers(tipoAlerta) {
 }
 
 async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
-  if(!toEmail) return false;
-  // Email disabled in local mode
-  return true;
+  if(!toEmail || !subject || !htmlBody) return false;
+  // Email sending not yet implemented — stub for future backend integration
+  void toNome;
+  return false;
 }
 
 function _buildAlertHtml(tipo, popName, popKey, extra) {
@@ -9980,7 +10020,7 @@ async function checkMapeamentoMilestones() {
       changed = true;
     }
   }
-  if(changed) { try { saveToCloud(); } catch(e) {} }
+  if(changed) { try { saveToCloud(); } catch(e) { /* intentional */ } }
 }
 
 // ── Plano de ação email alerts ───────────────────────────────────────────────
@@ -10047,7 +10087,7 @@ async function checkActionsDeadlinesEmail() {
       }
     }
   }
-  if(changed) { try { saveToCloud(); } catch(e) {} }
+  if(changed) { try { saveToCloud(); } catch(e) { /* intentional */ } }
 }
 
 function renderSidebar() {
@@ -10479,7 +10519,7 @@ function populatePatPopSelect() {
   const pops = [
     ...Object.keys(DATA).filter(k=>k!=='d'&&k!=='r'&&k!=='pat').map(k=>({ key:k, label: DATA[k]?.meta?.name||'Novo POP' }))
   ];
-  sel.innerHTML = '<option value="">Nenhum</option>' + pops.map(p=>`<option value="${p.key}">${p.label}</option>`).join('');
+  sel.innerHTML = '<option value="">Nenhum</option>' + pops.map(p=>`<option value="${escapeHtml(p.key)}">${escapeHtml(p.label)}</option>`).join('');
 }
 
 function filterPat(filter, btn) {
@@ -11035,7 +11075,7 @@ window.addEventListener('beforeunload', (e) => {
   e.returnValue = '';
 
   // Colher estado atual do DOM antes do unload
-  try { harvestEditables(); } catch(e) {}
+  try { harvestEditables(); } catch(e) { /* intentional */ }
   clearTimeout(_autoSaveTimer);
 
   // Montar payload — limite keepalive do Chrome é 64KB (65536 bytes)
@@ -11173,9 +11213,9 @@ async function saveToCloud(attempt=1) {
           if (!key?.startsWith('pop_') || !pd || typeof pd !== 'object') return;
           if (_dirtyPops.has(key)) return;
           DATA[key] = pd;
-          try { sanitizePop(key); } catch(e) {}
+          try { sanitizePop(key); } catch(e) { /* intentional */ }
           if (!document.getElementById('pop-' + key)) {
-            try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) {}
+            try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) { /* intentional */ }
           }
         });
       }
@@ -11277,14 +11317,14 @@ async function loadFromCloud() {
           renderRoles(p);
           renderIndicators(p);
           loadAcomp(p);
-        } catch(e) {}
+        } catch(e) { /* intentional */ }
       });
       const homePage = document.getElementById('home-page');
       if(homePage && homePage.style.display !== 'none') homeRefresh();
       return;
     }
 
-    workspaceId = data.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {};
+    workspaceId = data.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) { /* intentional */ };
     const payload = data.data;
     /* payload received */
 
@@ -11306,7 +11346,7 @@ async function loadFromCloud() {
     }
     if(Array.isArray(payload.patrocinadores)) DATA.patrocinadores = payload.patrocinadores;
     if(payload.config && typeof payload.config === 'object') DATA.config = payload.config;
-    try { applyConfigToDropdowns(); } catch(e) {}
+    try { applyConfigToDropdowns(); } catch(e) { /* intentional */ }
     // Catálogo de apontamentos (não conformidades) — persiste itens customizados
     if(Array.isArray(payload.aptCatalog) && payload.aptCatalog.length > 0) DATA.aptCatalog = payload.aptCatalog;
     // Quadro de esboço (Excalidraw)
@@ -11336,7 +11376,7 @@ async function loadFromCloud() {
           mountNewPopTab(key, pd.meta?.name || 'POP', true);
         }
         try { loadAcomp(key); } catch(e) { console.warn('loadAcomp', key, e); }
-        try { renderVersionBadge(key); } catch(e) {}
+        try { renderVersionBadge(key); } catch(e) { /* intentional */ }
         try { renderFicha(key); }       catch(e) { console.warn('renderFicha', key, e); }
         try { renderSipoc(key); }       catch(e) { console.warn('renderSipoc', key, e); }
         try { renderFlowPreview(key); } catch(e) { console.warn('renderFlowPreview', key, e); }
@@ -11359,7 +11399,7 @@ async function loadFromCloud() {
         try { renderSipoc(p); }     catch(e) { console.warn('renderSipoc',p,e); }
         try { renderFlowPreview(p); } catch(e) { console.warn('renderFlowPreview',p,e); }
         try { loadAcomp(p); }       catch(e) { console.warn('loadAcomp',p,e); }
-        try { renderVersionBadge(p); } catch(e) {}
+        try { renderVersionBadge(p); } catch(e) { /* intentional */ }
       } catch(e) { console.warn('Render error for', p, e); }
     });
 
@@ -11389,7 +11429,6 @@ async function loadFromCloud() {
     } else {
       showToast('☁️ Conteúdo carregado!', 'success');
     }
-    console.log('loadFromCloud: OK');
     // Refresh BPMN image if the module is currently visible
     try {
       const bpmnMod = document.getElementById('bpmn-module');
@@ -11698,7 +11737,6 @@ async function callGeminiVision() {
 // ── MODO LOCAL: login automático ──────────────
 async function initSupabase() {
   const authMode = SIGA_AUTH.mode || 'local';
-  console.log('[initSupabase] Modo ' + authMode + ' — backend: ' + API_URL);
   window._appInitialized = false;
 
   if (authMode === 'entra') {
@@ -11725,12 +11763,11 @@ async function initSupabase() {
     window._appInitialized = true;
     try {
       if (isEditor && _normalizeUnidades()) {
-        console.log('[normalizaUnidades] Nomes normalizados — salvando...');
         saveToCloud();
       }
     } catch(e) { console.warn('[normalizaUnidades]', e); }
-    try { logAccessEvent('login'); } catch(e) {}
-    try { _startPresenceHeartbeat(); } catch(e) {}
+    try { logAccessEvent('login'); } catch(e) { /* intentional */ }
+    try { _startPresenceHeartbeat(); } catch(e) { /* intentional */ }
   } catch(e) {
     console.error('[initSupabase] Erro ao inicializar modo local:', e);
     showToast('⚠️ Erro ao conectar ao backend local: ' + e.message, 'warn');
@@ -11805,8 +11842,8 @@ async function signInMicrosoft() {
     await loadFromCloud();
     window._appInitialized = true;
 
-    try { logAccessEvent('login'); } catch(e) {}
-    try { _startPresenceHeartbeat(); } catch(e) {}
+    try { logAccessEvent('login'); } catch(e) { /* intentional */ }
+    try { _startPresenceHeartbeat(); } catch(e) { /* intentional */ }
     showToast('✅ Login Microsoft realizado.', 'success');
   } catch (e) {
     console.error('Login Microsoft falhou:', e);
@@ -11825,9 +11862,9 @@ async function signOut() {
     return;
   }
   window._signoutPending = false;
-  try { _stopPresenceHeartbeat(); } catch(e) {}
-  try { await _clearPresence(); } catch(e) {}
-  try { await logAccessEvent('logout'); } catch(e) {}
+  try { _stopPresenceHeartbeat(); } catch(e) { /* intentional */ }
+  try { await _clearPresence(); } catch(e) { /* intentional */ }
+  try { await logAccessEvent('logout'); } catch(e) { /* intentional */ }
 
   if ((SIGA_AUTH.mode || 'local') === 'entra' && _msalClient) {
     try {
@@ -11853,7 +11890,7 @@ function showUserUI(user) {
   const img = user.user_metadata?.avatar_url;
   if(img) {
     const av = document.getElementById('user-avatar');
-    av.innerHTML = `<img src="${img}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">`;
+    av.innerHTML = `<img src="${escapeHtml(img)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">`;
   }
 }
 
@@ -12095,7 +12132,7 @@ function previewBackupFile(input) {
     } catch(err) {
       _backupFileData = null;
       const preview = document.getElementById('backup-preview');
-      preview.innerHTML = `<span style="color:var(--cage-red);">❌ ${err.message}</span>`;
+      preview.innerHTML = `<span style="color:var(--cage-red);">❌ ${escapeHtml(err.message)}</span>`;
       preview.classList.add('visible');
       document.getElementById('backup-import-btn').style.display = 'none';
     }
@@ -13164,7 +13201,7 @@ async function _buildEppStatusReport(opts = {}) {
       const resp = await fetch(DATA._logoUrl);
       const blob = await resp.blob();
       eppLogoB64 = await new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
-    } catch(e) {}
+    } catch(e) { /* intentional */ }
   }
 
   // ── Cores ──────────────────────────────────────────────
@@ -14032,8 +14069,8 @@ function renderSipoc(p) {
     <div class="sipoc-col" style="border-top:3px solid ${c.color};">
       <div class="sipoc-col-head" style="background:${c.bg};color:${c.color};">${c.icon} ${c.label}</div>
       <div class="sipoc-col-body">${c.key === 'processo'
-        ? `<div class="sipoc-processo">${sipoc.processo || DATA[p]?.meta?.name || ''}</div>`
-        : (getItems(c.key).map(item=>`<div class="sipoc-item">${item}</div>`).join('') || '<div style="color:#94a3b8;font-size:11px;font-style:italic;">Não informado</div>')
+        ? `<div class="sipoc-processo">${escapeHtml(sipoc.processo || DATA[p]?.meta?.name || '')}</div>`
+        : (getItems(c.key).map(item=>`<div class="sipoc-item">${escapeHtml(item)}</div>`).join('') || '<div style="color:#94a3b8;font-size:11px;font-style:italic;">Não informado</div>')
       }</div>
     </div>`).join('')}</div>`;
 }
@@ -14653,16 +14690,16 @@ function _doCreateVersion() {
   closeModal('new-version-modal');
   // Re-renderizar tudo
   sanitizePop(p);
-  try { renderStep(p, 0); }       catch(e) {}
-  try { renderRoles(p); }         catch(e) {}
-  try { renderIndicators(p); }    catch(e) {}
-  try { renderFaq(p); }           catch(e) {}
-  try { renderNormas(p); }        catch(e) {}
-  try { renderSiglas(p); }        catch(e) {}
-  try { renderRisks(p); }         catch(e) {}
-  try { renderPa(p); }            catch(e) {}
-  try { renderMetrics(p); }       catch(e) {}
-  try { renderFicha(p); }         catch(e) {}
+  try { renderStep(p, 0); }       catch(e) { /* intentional */ }
+  try { renderRoles(p); }         catch(e) { /* intentional */ }
+  try { renderIndicators(p); }    catch(e) { /* intentional */ }
+  try { renderFaq(p); }           catch(e) { /* intentional */ }
+  try { renderNormas(p); }        catch(e) { /* intentional */ }
+  try { renderSiglas(p); }        catch(e) { /* intentional */ }
+  try { renderRisks(p); }         catch(e) { /* intentional */ }
+  try { renderPa(p); }            catch(e) { /* intentional */ }
+  try { renderMetrics(p); }       catch(e) { /* intentional */ }
+  try { renderFicha(p); }         catch(e) { /* intentional */ }
   renderVersionBadge(p);
   _updateVersionBars();
   markChanged(true, true);
@@ -14792,18 +14829,18 @@ function _repeatCurrentSection() {
 // Re-renderiza todas as seções do POP
 function _reRenderPop(p) {
   sanitizePop(p);
-  try { renderStep(p, DATA[p].currentStep || 0); } catch(e) {}
-  try { renderRoles(p); }         catch(e) {}
-  try { renderIndicators(p); }    catch(e) {}
-  try { renderFaq(p); }           catch(e) {}
-  try { renderNormas(p); }        catch(e) {}
-  try { renderRevisions(p); }     catch(e) {}
-  try { renderSiglas(p); }        catch(e) {}
-  try { renderRisks(p); }         catch(e) {}
-  try { renderPa(p); }            catch(e) {}
-  try { renderMetrics(p); }       catch(e) {}
-  try { renderFicha(p); }         catch(e) {}
-  try { loadAcomp(p); }           catch(e) {}
+  try { renderStep(p, DATA[p].currentStep || 0); } catch(e) { /* intentional */ }
+  try { renderRoles(p); }         catch(e) { /* intentional */ }
+  try { renderIndicators(p); }    catch(e) { /* intentional */ }
+  try { renderFaq(p); }           catch(e) { /* intentional */ }
+  try { renderNormas(p); }        catch(e) { /* intentional */ }
+  try { renderRevisions(p); }     catch(e) { /* intentional */ }
+  try { renderSiglas(p); }        catch(e) { /* intentional */ }
+  try { renderRisks(p); }         catch(e) { /* intentional */ }
+  try { renderPa(p); }            catch(e) { /* intentional */ }
+  try { renderMetrics(p); }       catch(e) { /* intentional */ }
+  try { renderFicha(p); }         catch(e) { /* intentional */ }
+  try { loadAcomp(p); }           catch(e) { /* intentional */ }
 }
 
 // Atualiza as barras de readonly e herança conforme contexto atual
@@ -15274,17 +15311,17 @@ function arqInit() {
   // Populate area filter
   const areas = [...new Set(data.map(r => r.area).filter(Boolean))].sort();
   const filterArea = document.getElementById('arq-filter-area');
-  if(filterArea) filterArea.innerHTML = '<option value="">Todas</option>' + areas.map(a => `<option value="${a}">${a}</option>`).join('');
+  if(filterArea) filterArea.innerHTML = '<option value="">Todas</option>' + areas.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
 
   // Populate gerente filter
   const gerentes = [...new Set(data.map(r => r.gerente).filter(Boolean))].sort();
   const filterGerente = document.getElementById('arq-filter-gerente');
-  if(filterGerente) filterGerente.innerHTML = '<option value="">Todos</option>' + gerentes.map(g => `<option value="${g}">${g}</option>`).join('');
+  if(filterGerente) filterGerente.innerHTML = '<option value="">Todos</option>' + gerentes.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
 
   // Populate objetivos estratégicos filter
   const allObjs = [...new Set(data.flatMap(r => r.objEstrategicos || []).filter(Boolean))].sort();
   const filterObj = document.getElementById('arq-filter-obj');
-  if(filterObj) filterObj.innerHTML = '<option value="">Todos</option>' + allObjs.map(o => `<option value="${o}">${o}</option>`).join('');
+  if(filterObj) filterObj.innerHTML = '<option value="">Todos</option>' + allObjs.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('');
 
   arqApplyFilter();
 }
@@ -15900,7 +15937,7 @@ function arqShowProcessDetail(idx) {
           <div style="font-size:20px;margin-bottom:6px;">🎨</div>
           Diagrama Excalidraw salvo — abra o <strong>Fluxo</strong> para visualizar e editar.</div>`;
       } else if(popData.flowDiagram.mermaid && window.mermaid) {
-        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{}); } catch(e) {}
+        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{}); } catch(e) { /* intentional */ }
       }
     }
   }
@@ -16356,8 +16393,8 @@ function homeRefresh() {
   });
 
   // Aplicar ordenação salva nos elementos estáticos e reiniciar sortable dos stat cards
-  try { _dndApplyOrder(); } catch(e) {}
-  try { if(typeof editMode !== 'undefined' && editMode) _dndReinitStats(); } catch(e) {}
+  try { _dndApplyOrder(); } catch(e) { /* intentional */ }
+  try { if(typeof editMode !== 'undefined' && editMode) _dndReinitStats(); } catch(e) { /* intentional */ }
 
 }
 
@@ -16623,7 +16660,7 @@ ${fluxoTexto}`;
               if(el) el.innerHTML = svg;
             }).catch(err => {
               const el = document.getElementById(mermaidId);
-              if(el) el.innerHTML = `<div style="color:#dc2626;font-size:12px;">Erro ao renderizar diagrama: ${err.message}</div>`;
+              if(el) el.innerHTML = `<div style="color:#dc2626;font-size:12px;">Erro ao renderizar diagrama: ${escapeHtml(err.message)}</div>`;
             });
           } catch(e) {
             const el = document.getElementById(mermaidId);
@@ -17284,7 +17321,7 @@ function npopUpdateProcessoList() {
   const procs = [...new Set(
     data.filter(r => !macro || r.macroprocesso === macro).map(r => r.processo)
   )].sort();
-  procList.innerHTML = procs.map(p => `<option value="${p}">`).join('');
+  procList.innerHTML = procs.map(p => `<option value="${escapeHtml(p)}">`).join('');
 
   // Also pre-fill from arq data when processo selected
   if(procInput) {
@@ -17306,7 +17343,7 @@ function npopUpdateSubprocessoList() {
       .filter(r => (!macro || r.macroprocesso === macro) && (!proc || r.processo === proc) && r.subprocesso)
       .map(r => r.subprocesso)
   )].sort();
-  subList.innerHTML = subs.map(s => `<option value="${s}">`).join('');
+  subList.innerHTML = subs.map(s => `<option value="${escapeHtml(s)}">`).join('');
 
   // After updating subprocesso list, run autofill
   npopAutoFill();
@@ -17826,9 +17863,9 @@ async function repoSaveDoc() {
       // Extrai texto do PDF para pesquisa interna e gera miniatura da capa
       if(fileType === 'pdf') {
         msg.textContent = 'Indexando texto do PDF…';
-        var _extractedText = await repoExtractPdfText(repoPendingFile);
+        const _extractedText = await repoExtractPdfText(repoPendingFile);
         msg.textContent = 'Gerando miniatura da capa…';
-        var _thumbnail = await repoGenerateThumbnail(repoPendingFile);
+        const _thumbnail = await repoGenerateThumbnail(repoPendingFile);
       }
     } catch(err) {
       prog.style.display = 'none';
@@ -18089,7 +18126,7 @@ function eppTab(tab, el) {
 
   if(tab === 'pat') {
     if(pat)  { pat.style.display='block'; pat.classList.add('active'); }
-    try { renderPat(); populatePatPopSelect(); } catch(e) {}
+    try { renderPat(); populatePatPopSelect(); } catch(e) { /* intentional */ }
   } else if(tab === 'config') {
     if(cfg) cfg.style.display='block';
     try { renderConfigPanel(); } catch(e) { console.error('renderConfigPanel', e); }
@@ -18165,11 +18202,11 @@ function _silentlyMergeNewPops(serverData) {
     // Só adicionar POPs que não existem localmente — nunca sobrescrever trabalho local
     if (!key || !key.startsWith('pop_') || DATA[key] || !pd || typeof pd !== 'object') return;
     DATA[key] = pd;
-    try { sanitizePop(key); } catch(e) {}
-    try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) {}
+    try { sanitizePop(key); } catch(e) { /* intentional */ }
+    try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) { /* intentional */ }
     merged++;
   });
-  if (merged > 0) console.log('[mergeNewPops] ' + merged + ' POP(s) mesclado(s) silenciosamente do servidor');
+  // merged POPs silently loaded from server
 }
 
 function _subscribeWorkspaceChanges(wsId) {
@@ -20622,7 +20659,7 @@ function openStatusModal(p) {
   const tipoSel = document.getElementById('status-modal-tipo');
   if(tipoSel) {
     const tipos = getConfig('tipoTrabalho');
-    tipoSel.innerHTML = '<option value="">Selecione...</option>' + tipos.map(t => `<option value="${t}">${t}</option>`).join('');
+    tipoSel.innerHTML = '<option value="">Selecione...</option>' + tipos.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
     tipoSel.value = m.tipo || '';
   }
   document.getElementById('status-modal-dificuldade').value = m.dificuldade || '';
@@ -20752,7 +20789,7 @@ function statusModalUpdateProcessoList() {
   const procs = [...new Set(
     data.filter(r => !macro || r.macroprocesso === macro).map(r => r.processo).filter(Boolean)
   )].sort();
-  procList.innerHTML = procs.map(p2 => `<option value="${p2}">`).join('');
+  procList.innerHTML = procs.map(p2 => `<option value="${escapeHtml(p2)}">`).join('');
   // Reset subprocesso list too
   statusModalUpdateSubList();
 }
@@ -20769,7 +20806,7 @@ function statusModalUpdateSubList() {
       (!proc  || r.processo === proc)
     ).map(r => r.subprocesso).filter(Boolean)
   )].sort();
-  subList.innerHTML = subs.map(s => `<option value="${s}">`).join('');
+  subList.innerHTML = subs.map(s => `<option value="${escapeHtml(s)}">`).join('');
   statusModalAutoFill();
 }
 
@@ -21319,7 +21356,7 @@ function statusModalAutoFill() {
             </div>`;
         }).join('');
 
-        flowEl.innerHTML = `<div style="display:flex;align-items:flex-start;gap:0;min-width:max-content;padding:4px 2px;">${cards}</div>`;
+        flowEl.innerHTML = `<div style="display:flex;align-items:flex-start;gap:0;min-width:max-content;padding:4px 2px;">${cards}</div>`; // NOSONAR — cards é HTML interno, não dados do usuário
       }
     }
 
@@ -21421,7 +21458,7 @@ function statusModalAutoFill() {
     document.getElementById('fd-module').style.display = 'block';
     // Initialize mermaid once
     if (window.mermaid) {
-      try { mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' }); } catch(e) {}
+      try { mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' }); } catch(e) { /* intentional */ }
     }
     fdSetMode('mermaid');
     _fdLoad();
@@ -21458,7 +21495,7 @@ function statusModalAutoFill() {
       if (svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto'; }
       fdApplyZoom();
     } catch(e) {
-      output.innerHTML = `<div style="color:#ef4444;font-size:13px;padding:20px;font-family:'JetBrains Mono',monospace;">Erro no código Mermaid:<br><br>${e.message}</div>`;
+      output.innerHTML = `<div style="color:#ef4444;font-size:13px;padding:20px;font-family:'JetBrains Mono',monospace;">Erro no código Mermaid:<br><br>${escapeHtml(e.message)}</div>`;
     }
   };
 
@@ -21554,7 +21591,7 @@ Regras obrigatórias:
     markChanged(true, true);
     saveToCloud();
     showToast('Fluxo salvo!', 'success');
-    try { renderFlowPreview(p); } catch(e) {}
+    try { renderFlowPreview(p); } catch(e) { /* intentional */ }
   };
 
   // ── Export SVG ────────────────────────────────────────────────
@@ -21704,15 +21741,15 @@ Regras obrigatórias:
 
   // ── Fit viewport ───────────────────────────────────────────────
   window.fdFitView = function() {
-    try { _modeler?.get('canvas').zoom('fit-viewport'); } catch(e) {}
+    try { _modeler?.get('canvas').zoom('fit-viewport'); } catch(e) { /* intentional */ }
   };
 
   // ── Undo / Redo ────────────────────────────────────────────────
   window.fdUndo = function() {
-    try { _modeler?.get('commandStack').undo(); } catch(e) {}
+    try { _modeler?.get('commandStack').undo(); } catch(e) { /* intentional */ }
   };
   window.fdRedo = function() {
-    try { _modeler?.get('commandStack').redo(); } catch(e) {}
+    try { _modeler?.get('commandStack').redo(); } catch(e) { /* intentional */ }
   };
 
   // ── Export BPMN SVG ───────────────────────────────────────────
@@ -22443,7 +22480,7 @@ Regras obrigatórias:
   function _repopSelect(sel, values, allLabel, labelFn) {
     if(!sel) return;
     const cur = sel.value;
-    sel.innerHTML = `<option value="">${allLabel}</option>`
+    sel.innerHTML = `<option value="">${escapeHtml(allLabel)}</option>`
       + values.map(v => {
           const lbl = labelFn ? labelFn(v) : v;
           return `<option value="${v}" ${v===cur?'selected':''}>${lbl}</option>`;
@@ -24857,14 +24894,14 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
     markChanged(true, true);
 
     resultDiv.innerHTML = `<div style="white-space:pre-wrap;font-size:13px;line-height:1.8;color:#1e293b;">${
-      text
+      escapeHtml(text)
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/^### (.*$)/gm, '<div style="font-size:14px;font-weight:800;color:#1B3022;margin:14px 0 4px;border-left:3px solid #6366f1;padding-left:8px;">$1</div>')
         .replace(/^## (.*$)/gm, '<div style="font-size:15px;font-weight:800;color:#1B3022;margin:16px 0 6px;">$1</div>')
         .replace(/\n/g, '<br>')
     }</div>`;
   } catch(e) {
-    resultDiv.innerHTML = `<span style="color:#ef4444;">Erro: ${e.message}</span>`;
+    resultDiv.innerHTML = `<span style="color:#ef4444;">Erro: ${escapeHtml(e.message)}</span>`;
   } finally {
     btn.disabled    = false;
     btn.textContent = '✨ Analisar com IA';
@@ -25481,7 +25518,6 @@ const SW_VERSION = '4';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js?v=' + SW_VERSION).then(reg => {
-    console.log('[SW] Registrado v' + SW_VERSION + ':', reg.scope);
     // Sem onupdatefound/reload: o SW já é network-first para HTML,
     // então o conteúdo mais recente é sempre servido da rede.
     // O reload forçado causava interrupção do loadFromCloud/saveToCloud a cada F5.
