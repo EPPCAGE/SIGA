@@ -13,7 +13,7 @@ pr:
       - feature/*
 
 pool:
-  name: "sefaz-self-hosted"
+  vmImage: "ubuntu-latest"
 
 variables:
   NODE_VERSION: '20.x'
