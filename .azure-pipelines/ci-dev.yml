@@ -115,7 +115,7 @@ stages:
             displayName: "☁️ SonarCloud — Preparar análise"
             inputs:
               SonarCloud: "sonarcloud-gesproc"
-              organization: "eppcage"
+              organization: "sefaz-rs"
               scannerMode: "CLI"
               configMode: "file"
               configFile: "sonar-project.properties"

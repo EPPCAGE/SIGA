@@ -41,13 +41,13 @@ steps:
     displayName: "☁️ SonarCloud — Preparar análise"
     inputs:
       SonarCloud: "sonarcloud-gesproc"
-      organization: "eppcage"
+      organization: "sefaz-rs"
       scannerMode: "CLI"
       configMode: "file"
       configFile: "sonar-project.properties"
       extraProperties: |
-        sonar.projectKey=eppcage_gesproc
-        sonar.organization=eppcage
+        sonar.projectKey=sefaz-rs_gesproc
+        sonar.organization=sefaz-rs
         sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
 
   - script: npm run test
