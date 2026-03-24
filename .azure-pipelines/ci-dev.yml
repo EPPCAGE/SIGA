@@ -19,19 +19,23 @@ pr:
   drafts: false
 
 pool:
-  name: "sefaz-self-hosted"
+  vmImage: "ubuntu-latest"
 
 variables:
-  - group: siga-dev-vars
+  - group: siga-dev-vars          # Grupo de variáveis no Azure DevOps Library
   - name: NODE_VERSION
     value: "20.x"
   - name: BUILD_ENV
     value: "dev"
 
+# ── Opções globais ──────────────────────────────────────────────
 options:
-  timeout: 30
+  timeout: 30                     # minutos máximos por job
 
 stages:
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 1 — Build & Testes Unitários              ║
+  # ╚══════════════════════════════════════════════════╝
   - stage: Build_Test
     displayName: "🧪 Build & Testes"
     jobs:
@@ -40,7 +44,7 @@ stages:
         steps:
           - checkout: self
             clean: true
-            fetchDepth: 0
+            fetchDepth: 0         # histórico completo (necessário para SonarCloud blame)
 
           - task: NodeTool@0
             displayName: "📦 Instalar Node.js $(NODE_VERSION)"
@@ -52,12 +56,7 @@ stages:
             env:
               NODE_AUTH_TOKEN: $(NPM_TOKEN)
 
-          - task: AdvancedSecurity-Codeql-Init@1
-            displayName: "🔍 ADAS — Inicializar CodeQL"
-            inputs:
-              languages: "javascript"
-              querysuite: "security-extended"
-
+          # ── Testes ──
           - script: npm run test
             displayName: "✅ Executar testes unitários"
             continueOnError: false
@@ -65,10 +64,6 @@ stages:
           - script: npm run test:coverage
             displayName: "📊 Executar testes com cobertura"
             continueOnError: false
-
-          - task: AdvancedSecurity-Codeql-Analyze@1
-            displayName: "🔍 ADAS — Analisar código (CodeQL SAST)"
-            condition: succeededOrFailed()
 
           - task: PublishTestResults@2
             displayName: "📋 Publicar resultados de testes"
@@ -88,6 +83,9 @@ stages:
               reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
               failIfCoverageEmpty: false
 
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 2 — Análise de Qualidade (SonarCloud)     ║
+  # ╚══════════════════════════════════════════════════╝
   - stage: Quality
     displayName: "🔍 Qualidade (SonarCloud)"
     dependsOn: Build_Test
@@ -101,6 +99,7 @@ stages:
             fetchDepth: 0
 
           - task: NodeTool@0
+            displayName: "📦 Instalar Node.js $(NODE_VERSION)"
             inputs:
               versionSpec: "$(NODE_VERSION)"
 
@@ -111,11 +110,14 @@ stages:
             displayName: "📊 Gerar relatório de cobertura para Sonar"
             continueOnError: false
 
+          # ── Preparar análise SonarCloud ──
+          # PRÉ-REQUISITO: criar service connection do tipo "SonarCloud"
+          #   com o nome "SonarCloud" no portal Azure DevOps (Project Settings).
           - task: SonarCloudPrepare@2
             displayName: "☁️ SonarCloud — Preparar análise"
             inputs:
-              SonarCloud: "sonarcloud-gesproc"
-              organization: "sefaz-rs"
+              SonarCloud: "sonarcloud-gesproc"  # Nome da service connection
+              organization: "sefaz-rs"         # Slug da organização no SonarCloud
               scannerMode: "CLI"
               configMode: "file"
               configFile: "sonar-project.properties"
@@ -130,7 +132,11 @@ stages:
             displayName: "☁️ SonarCloud — Publicar resultados"
             inputs:
               pollingTimeoutSec: "300"
+            # Em DEV, análise é informacional — não bloqueia o pipeline
 
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 3 — Segurança (npm audit)                 ║
+  # ╚══════════════════════════════════════════════════╝
   - stage: Security
     displayName: "🔒 Segurança"
     dependsOn: Build_Test
@@ -156,17 +162,36 @@ stages:
               script: |
                 Write-Host "=== npm audit (ambiente DEV) ==="
                 npm audit --json | Out-File -Encoding utf8 npm-audit-report.json
+                $exitCode = $LASTEXITCODE
+
                 $audit = $null
                 try { $audit = Get-Content "npm-audit-report.json" -Raw | ConvertFrom-Json } catch {}
+
                 if ($audit -and $audit.metadata) {
+                  $total    = $audit.metadata.vulnerabilities.total
                   $critical = $audit.metadata.vulnerabilities.critical
                   $high     = $audit.metadata.vulnerabilities.high
                   $moderate = $audit.metadata.vulnerabilities.moderate
                   $low      = $audit.metadata.vulnerabilities.low
-                  Write-Host "Vulnerabilidades: critical=$critical | high=$high | moderate=$moderate | low=$low"
-                  if ($critical -gt 0) { Write-Host "##vso[task.logissue type=warning]⚠️ $critical CRÍTICA(s)!" }
-                  if ($high -gt 0)     { Write-Host "##vso[task.logissue type=warning]⚠️ $high ALTA(s)!" }
+
+                  Write-Host "Vulnerabilidades encontradas:"
+                  Write-Host "  Críticas : $critical"
+                  Write-Host "  Altas    : $high"
+                  Write-Host "  Médias   : $moderate"
+                  Write-Host "  Baixas   : $low"
+                  Write-Host "  Total    : $total"
+
+                  # Em DEV: apenas aviso para critical/high (não bloqueia)
+                  if ($critical -gt 0) {
+                    Write-Host "##vso[task.logissue type=warning]⚠️  CRÍTICAS: $critical vulnerabilidade(s) crítica(s) detectada(s)!"
+                  }
+                  if ($high -gt 0) {
+                    Write-Host "##vso[task.logissue type=warning]⚠️  ALTAS: $high vulnerabilidade(s) alta(s) detectada(s)!"
+                  }
+                } else {
+                  Write-Host "npm audit concluído — sem vulnerabilidades ou falha ao parsear relatório."
                 }
+                # DEV não bloqueia por segurança (apenas avisa)
                 exit 0
 
           - task: PublishBuildArtifacts@1

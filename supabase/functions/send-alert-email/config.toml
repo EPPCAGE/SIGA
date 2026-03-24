@@ -1,2 +1,0 @@
-[functions.send-alert-email]
-verify_jwt = true

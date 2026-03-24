@@ -1,0 +1,116 @@
+# ================================================================
+# GitHub Advanced Security — Dependency Review
+# Analisa mudanças de dependências em Pull Requests.
+# Bloqueia merge se introduzir vulnerabilidades HIGH/CRITICAL.
+# ================================================================
+
+name: "📦 Dependency Review"
+
+on:
+  pull_request:
+    branches:
+      - main
+      - hml
+      - dev
+    paths:
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  dependency-review:
+    name: "Revisão de Dependências"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: "📥 Checkout"
+        uses: actions/checkout@v4
+
+      - name: "🔍 Dependency Review"
+        uses: actions/dependency-review-action@v4
+        with:
+          # Bloqueia PRs que introduzam vulnerabilidades HIGH ou CRITICAL
+          fail-on-severity: high
+
+          # Licenças proibidas (GPL pode gerar problemas em software proprietário)
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-3.0
+
+          # Comentar resumo no PR automaticamente
+          comment-summary-in-pr: always
+
+          # Não bloquear por pacotes vulneráveis já existentes (apenas novos)
+          base-ref: ${{ github.event.pull_request.base.sha }}
+          head-ref: ${{ github.event.pull_request.head.sha }}
+
+          # Avisa sobre dependências desatualizadas mais de 2 versões major atrás
+          warn-only: false
+
+      - name: "📋 Resumo da revisão"
+        if: always()
+        run: |
+          echo "## 📦 Dependency Review" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Revisão de mudanças em \`package.json\` / \`package-lock.json\`." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Política:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Vulnerabilidades HIGH/CRITICAL → ❌ bloqueiam o merge" >> $GITHUB_STEP_SUMMARY
+          echo "- Licenças GPL-2.0/3.0/AGPL-3.0 → ❌ bloqueiam o merge" >> $GITHUB_STEP_SUMMARY
+          echo "- Vulnerabilidades MODERATE/LOW → ⚠️ aviso, não bloqueia" >> $GITHUB_STEP_SUMMARY
+
+  # ── npm audit adicional ──────────────────────────────────────────
+  npm-audit:
+    name: "npm audit — PR Check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: |
+      contains(github.event.pull_request.changed_files_url, 'package') ||
+      github.event_name == 'pull_request'
+
+    steps:
+      - name: "📥 Checkout"
+        uses: actions/checkout@v4
+
+      - name: "📦 Setup Node.js 20"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: "📥 npm ci"
+        run: npm ci
+
+      - name: "🔍 npm audit"
+        run: |
+          echo "=== npm audit no PR ===" >> $GITHUB_STEP_SUMMARY
+          npm audit --json > npm-audit-pr.json || true
+
+          # Parse e resumo
+          CRITICAL=$(cat npm-audit-pr.json | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            console.log(d.metadata?.vulnerabilities?.critical || 0);
+          " 2>/dev/null || echo "0")
+
+          HIGH=$(cat npm-audit-pr.json | node -e "
+            const d = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            console.log(d.metadata?.vulnerabilities?.high || 0);
+          " 2>/dev/null || echo "0")
+
+          echo "Críticas: $CRITICAL | Altas: $HIGH" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$CRITICAL" -gt "0" ] || [ "$HIGH" -gt "0" ]; then
+            echo "::error::npm audit: $CRITICAL crítica(s), $HIGH alta(s). Corrija antes do merge."
+            exit 1
+          fi
+
+      - name: "📦 Upload relatório de auditoria"
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "npm-audit-pr-${{ github.run_id }}"
+          path: npm-audit-pr.json
+          retention-days: 30

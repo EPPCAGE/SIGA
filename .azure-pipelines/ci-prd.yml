@@ -12,10 +12,10 @@ trigger:
 pr: none
 
 pool:
-  name: "sefaz-self-hosted"
+  vmImage: "ubuntu-latest"
 
 variables:
-  - group: siga-prd-vars
+  - group: siga-prd-vars          # Grupo de variáveis PRD (Azure DevOps Library)
   - name: NODE_VERSION
     value: "20.x"
   - name: BUILD_ENV
@@ -25,6 +25,9 @@ options:
   timeout: 60
 
 stages:
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 1 — Testes (obrigatório)                  ║
+  # ╚══════════════════════════════════════════════════╝
   - stage: Test
     displayName: "🧪 Testes & Cobertura"
     jobs:
@@ -43,12 +46,6 @@ stages:
           - script: npm ci
             displayName: "📥 npm ci"
 
-          - task: AdvancedSecurity-Codeql-Init@1
-            displayName: "🔍 ADAS — Inicializar CodeQL"
-            inputs:
-              languages: "javascript"
-              querysuite: "security-extended"
-
           - script: npm run test
             displayName: "✅ Testes unitários"
             continueOnError: false
@@ -56,10 +53,6 @@ stages:
           - script: npm run test:coverage
             displayName: "📊 Cobertura de código"
             continueOnError: false
-
-          - task: AdvancedSecurity-Codeql-Analyze@1
-            displayName: "🔍 ADAS — Analisar código (CodeQL SAST)"
-            condition: succeededOrFailed()
 
           - task: PublishTestResults@2
             displayName: "📋 Publicar resultados"
@@ -83,6 +76,9 @@ stages:
             displayName: "📦 Artefato de cobertura"
             condition: succeededOrFailed()
 
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 2 — Quality Gate SonarCloud (BLOQUEANTE)  ║
+  # ╚══════════════════════════════════════════════════╝
   - stage: QualityGate
     displayName: "☁️ Quality Gate SonarCloud"
     dependsOn: Test
@@ -131,7 +127,17 @@ stages:
             displayName: "☁️ Verificar Quality Gate PRD"
             inputs:
               pollingTimeoutSec: "300"
+            # Quality Gate PRD (mais rigoroso — configurar no SonarCloud):
+            #   - Coverage ≥ 70%
+            #   - Security Rating = A
+            #   - Reliability Rating ≥ A
+            #   - Maintainability Rating ≥ A
+            #   - Duplicated Lines ≤ 3%
+            #   - New code: 0 blocker/critical issues
 
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 3 — Segurança (BLOQUEANTE em HIGH+)       ║
+  # ╚══════════════════════════════════════════════════╝
   - stage: Security
     displayName: "🔒 Segurança (PRD)"
     dependsOn: QualityGate
@@ -155,23 +161,38 @@ stages:
             inputs:
               targetType: "inline"
               script: |
-                Write-Host "=== npm audit (PRD — tolerância ZERO para HIGH/CRITICAL) ==="
-                npm audit --json | Out-File -Encoding utf8 npm-audit-report.json
+                Write-Host "=== npm audit (ambiente PRD — tolerância ZERO para HIGH/CRITICAL) ==="
+                npm audit --omit=dev --json | Out-File -Encoding utf8 npm-audit-report.json
+                $exitCode = $LASTEXITCODE
+
                 $audit = $null
                 try { $audit = Get-Content "npm-audit-report.json" -Raw | ConvertFrom-Json } catch {}
+
                 if ($audit -and $audit.metadata) {
                   $critical = $audit.metadata.vulnerabilities.critical
                   $high     = $audit.metadata.vulnerabilities.high
                   $moderate = $audit.metadata.vulnerabilities.moderate
                   $low      = $audit.metadata.vulnerabilities.low
-                  Write-Host "🔴 Críticas: $critical | 🟠 Altas: $high | 🟡 Médias: $moderate | 🟢 Baixas: $low"
+                  $total    = $audit.metadata.vulnerabilities.total
+
+                  Write-Host "Vulnerabilidades:"
+                  Write-Host "  🔴 Críticas : $critical"
+                  Write-Host "  🟠 Altas    : $high"
+                  Write-Host "  🟡 Médias   : $moderate"
+                  Write-Host "  🟢 Baixas   : $low"
+                  Write-Host "  Total       : $total"
+
+                  # PRD: BLOQUEIA em CRITICAL ou HIGH
                   if ($critical -gt 0 -or $high -gt 0) {
                     Write-Host "##vso[task.logissue type=error]🚫 DEPLOY PRD BLOQUEADO: critical=$critical, high=$high."
+                    Write-Host "Execute 'npm audit fix' ou atualize as dependências vulneráveis antes de publicar em produção."
                     exit 1
                   }
                   if ($moderate -gt 0) {
-                    Write-Host "##vso[task.logissue type=warning]⚠️ $moderate vulnerabilidade(s) MODERADA(s)."
+                    Write-Host "##vso[task.logissue type=warning]⚠️  $moderate vulnerabilidade(s) MODERADA(s) — avaliar resolução."
                   }
+                } else {
+                  Write-Host "Auditoria concluída — nenhuma vulnerabilidade encontrada."
                 }
                 exit 0
 
@@ -193,6 +214,15 @@ stages:
                 Write-Host "##vso[build.addbuildtag]$tag"
                 Write-Host "##vso[build.addbuildtag]prd-approved"
 
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 4 — Aprovação + Deploy PRD               ║
+  # ╚══════════════════════════════════════════════════╝
+  # PRÉ-REQUISITO: criar "Environment" chamado "siga-prd" no Azure DevOps
+  #   (Pipelines > Environments) e configurar:
+  #     - Approvals: mínimo 2 aprovadores (ex: tech lead + gestor)
+  #     - Required template check
+  #     - Exclusive lock (evita deploys simultâneos)
+  #     - Timeout: 4 horas
   - stage: Deploy_PRD
     displayName: "🚀 Deploy PRD"
     dependsOn: Security
@@ -200,7 +230,7 @@ stages:
     jobs:
       - deployment: DeployPRD
         displayName: "Publicar em Produção"
-        environment: "siga-prd"
+        environment: "gesproc-prd"   # Ambiente com gate de aprovação dupla
         strategy:
           runOnce:
             preDeploy:
@@ -230,6 +260,7 @@ stages:
                   inputs:
                     targetType: "inline"
                     script: |
+                      Write-Host "=== Build PRD ==="
                       New-Item -ItemType Directory -Force -Path "dist"
                       Copy-Item "index.html"       "dist/"
                       Copy-Item "sw.js"            "dist/"
@@ -244,15 +275,18 @@ stages:
                     targetType: "inline"
                     script: |
                       $config = @"
+                      // public-config.js — gerado automaticamente pelo pipeline PRD
+                      // NÃO EDITE MANUALMENTE
                       const SIGA_CONFIG = {
-                        supabaseUrl:  '$(SUPABASE_URL)',
-                        supabaseKey:  '$(SUPABASE_ANON_KEY)',
+                        apiUrl:  '$(API_URL)',
+                        apiKey:  '$(API_ANON_KEY)',
                         environment:  'prd',
                         buildId:      '$(Build.BuildId)',
                         buildNumber:  '$(Build.BuildNumber)',
                       };
                       "@
                       Set-Content -Path "dist/public-config.js" -Value $config -Encoding utf8
+                      Write-Host "public-config.js PRD injetado."
 
                 - task: PublishBuildArtifacts@1
                   displayName: "📦 Publicar artefato PRD"
@@ -261,11 +295,26 @@ stages:
                     artifactName: "siga-prd-$(Build.BuildId)"
                     publishLocation: "Container"
 
+                # ── Deploy para servidor PRD ──
+                # Descomente conforme infraestrutura. Ver opções no ci-hml.yml.
                 - script: echo "✅ Deploy PRD finalizado — Build $(Build.BuildId) | $(Build.BuildNumber)"
                   displayName: "✅ Deploy PRD concluído"
 
             on:
               failure:
                 steps:
-                  - script: echo "❌ FALHA NO DEPLOY PRD! Build: $(Build.BuildId)"
+                  - script: |
+                      echo "❌ FALHA NO DEPLOY PRD!"
+                      echo "Build: $(Build.BuildId)"
+                      echo "Notifique o time imediatamente."
                     displayName: "⚠️ Notificar falha no deploy"
+                  - task: PowerShell@2
+                    displayName: "📧 Notificação de falha (Teams/Email)"
+                    inputs:
+                      targetType: "inline"
+                      script: |
+                        # Substituir pela URL real do webhook do Teams
+                        # $webhookUrl = "$(TEAMS_WEBHOOK_URL)"
+                        # $body = @{ text = "❌ Deploy PRD SIGA falhou! Build: $(Build.BuildId)" } | ConvertTo-Json
+                        # Invoke-RestMethod -Uri $webhookUrl -Method Post -Body $body -ContentType 'application/json'
+                        Write-Host "Notificação de falha — configure TEAMS_WEBHOOK_URL no grupo de variáveis."

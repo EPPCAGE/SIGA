@@ -1,3 +1,8 @@
+# ================================================================
+# Pipeline CI — Validação de PRs (gesproc-CI)
+# Dispara em commits/PRs para main, dev e feature/*
+# ================================================================
+
 trigger:
   branches:
     include:
@@ -20,8 +25,8 @@ variables:
 
 steps:
   - checkout: self
-    fetchDepth: 0
     clean: true
+    fetchDepth: 0
 
   - task: NodeTool@0
     displayName: "📦 Node.js $(NODE_VERSION)"
@@ -30,25 +35,6 @@ steps:
 
   - script: npm ci
     displayName: "📥 npm ci"
-
-  - task: AdvancedSecurity-Codeql-Init@1
-    displayName: "🔍 ADAS — Inicializar CodeQL (JavaScript)"
-    inputs:
-      languages: "javascript"
-      querysuite: "security-extended"
-
-  - task: SonarCloudPrepare@2
-    displayName: "☁️ SonarCloud — Preparar análise"
-    inputs:
-      SonarCloud: "sonarcloud-gesproc"
-      organization: "sefaz-rs"
-      scannerMode: "CLI"
-      configMode: "file"
-      configFile: "sonar-project.properties"
-      extraProperties: |
-        sonar.projectKey=sefaz-rs_gesproc
-        sonar.organization=sefaz-rs
-        sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
 
   - script: npm run test
     displayName: "✅ Testes unitários"
@@ -59,64 +45,18 @@ steps:
     continueOnError: false
 
   - task: PublishTestResults@2
-    displayName: "📋 Publicar resultados de testes"
+    displayName: "📋 Publicar resultados"
     condition: succeededOrFailed()
     inputs:
       testResultsFormat: JUnit
       testResultsFiles: "**/junit.xml"
-      testRunTitle: "Testes — $(Build.SourceBranchName)"
+      testRunTitle: "CI — $(Build.SourceBranchName)"
       failTaskOnFailedTests: true
 
   - task: PublishCodeCoverageResults@2
-    displayName: "📈 Publicar cobertura de código"
+    displayName: "📈 Publicar cobertura"
     condition: succeededOrFailed()
     inputs:
       codeCoverageTool: Cobertura
       summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
       reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
-
-  - task: SonarCloudAnalyze@2
-    displayName: "☁️ SonarCloud — Executar scanner"
-
-  - task: SonarCloudPublish@2
-    displayName: "☁️ SonarCloud — Publicar resultados"
-    inputs:
-      pollingTimeoutSec: "300"
-
-  - task: AdvancedSecurity-Codeql-Analyze@1
-    displayName: "🔍 ADAS — Analisar código (CodeQL SAST)"
-    condition: succeededOrFailed()
-
-  - task: PowerShell@2
-    displayName: "🔍 npm audit — segurança"
-    condition: always()
-    inputs:
-      targetType: "inline"
-      workingDirectory: "$(System.DefaultWorkingDirectory)"
-      script: |
-        $ErrorActionPreference = 'Continue'
-        $reportPath = "$(System.DefaultWorkingDirectory)\npm-audit-report.json"
-        Set-Content -Path $reportPath -Value "{}" -Encoding UTF8
-        Write-Host "=== npm audit ==="
-        $auditJson = (npm audit --json 2>&1) | Out-String
-        Set-Content -Path $reportPath -Value $auditJson -Encoding UTF8
-        $audit = $null
-        try { $audit = $auditJson | ConvertFrom-Json } catch {}
-        if ($audit -and $audit.metadata) {
-          $critical = $audit.metadata.vulnerabilities.critical
-          $high     = $audit.metadata.vulnerabilities.high
-          $moderate = $audit.metadata.vulnerabilities.moderate
-          $low      = $audit.metadata.vulnerabilities.low
-          Write-Host "Vulnerabilidades: critical=$critical | high=$high | moderate=$moderate | low=$low"
-          if ($critical -gt 0) { Write-Host "##vso[task.logissue type=warning]⚠️ $critical CRÍTICA(s)!" }
-          if ($high -gt 0)     { Write-Host "##vso[task.logissue type=warning]⚠️ $high ALTA(s)!" }
-        }
-        exit 0
-
-  - task: PublishBuildArtifacts@1
-    displayName: "📦 Publicar relatório de auditoria"
-    condition: always()
-    inputs:
-      pathToPublish: "$(System.DefaultWorkingDirectory)/npm-audit-report.json"
-      artifactName: "npm-audit-$(Build.BuildId)"
-      publishLocation: "Container"

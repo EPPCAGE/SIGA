@@ -1,0 +1,149 @@
+# ================================================================
+# GitHub Advanced Security — CodeQL Analysis
+# Executa análise de segurança de código (SAST) em:
+#   - Push para main, dev, hml
+#   - Pull Requests para main, dev, hml
+#   - Schedule semanal (toda segunda-feira, 7h UTC)
+# ================================================================
+
+name: "🔐 CodeQL — Análise de Segurança"
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - hml
+    paths-ignore:
+      - "**/*.md"
+      - ".claude/**"
+      - "docs/**"
+      - "coverage/**"
+
+  pull_request:
+    branches:
+      - main
+      - dev
+      - hml
+    paths-ignore:
+      - "**/*.md"
+      - ".claude/**"
+      - "docs/**"
+
+  schedule:
+    # Toda segunda-feira às 07:00 UTC (04:00 BRT)
+    - cron: "0 7 * * 1"
+
+  workflow_dispatch:            # Permite execução manual
+
+permissions:
+  contents: read
+  security-events: write        # Necessário para publicar resultados no Security tab
+  actions: read
+  pull-requests: read
+
+jobs:
+  # ── Análise CodeQL ──────────────────────────────────────────────
+  analyze:
+    name: "CodeQL (${{ matrix.language }})"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: "javascript-typescript"
+            build-mode: "none"
+            # javascript-typescript cobre: .js, .ts, .jsx, .tsx, .html (scripts inline)
+
+    steps:
+      - name: "📥 Checkout"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2          # Para análise de diff em PRs
+
+      # Inicializar CodeQL com query suite estendida de segurança
+      - name: "🔐 Inicializar CodeQL"
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # security-extended: inclui queries adicionais de segurança
+          # security-and-quality: inclui qualidade além da segurança
+          queries: security-extended
+          config: |
+            paths-ignore:
+              - node_modules
+              - coverage
+              - .claude
+              - dist
+              - "**/*.min.js"
+              - obfuscate.js
+
+      # Para javascript "none" build mode, não precisa de build steps
+      # Se precisar executar build:
+      # - name: Build
+      #   run: npm ci && npm run build
+
+      - name: "⚙️ Executar análise CodeQL"
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: always
+          # Falha o workflow se encontrar problemas críticos de segurança
+          # (configurável via sarif-file e filtros de severidade)
+
+      - name: "📋 Resumo da análise"
+        if: always()
+        run: |
+          echo "## CodeQL — Análise Concluída" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Campo | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Linguagem | ${{ matrix.language }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Resultados disponíveis em: **Security > Code scanning alerts**" >> $GITHUB_STEP_SUMMARY
+
+  # ── Verificação de resultado em PRs ─────────────────────────────
+  check-results:
+    name: "Verificar alertas críticos"
+    needs: analyze
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      security-events: read
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: "📥 Checkout"
+        uses: actions/checkout@v4
+
+      - name: "🔎 Checar alertas de segurança críticos"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Busca alertas CRÍTICOS ou ALTOS abertos (via gh CLI)
+          echo "Verificando alertas CodeQL ativos..."
+          ALERTS=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/code-scanning/alerts \
+            --jq '[.[] | select(.state == "open" and (.rule.severity == "critical" or .rule.severity == "high"))] | length' \
+            2>/dev/null || echo "0")
+
+          echo "Alertas críticos/altos abertos: $ALERTS"
+
+          if [ "$ALERTS" -gt "0" ]; then
+            echo "## ⚠️ Alertas de Segurança CodeQL" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**$ALERTS alerta(s) de severidade CRÍTICA/ALTA** encontrado(s)." >> $GITHUB_STEP_SUMMARY
+            echo "Acesse **Security > Code scanning alerts** para ver os detalhes." >> $GITHUB_STEP_SUMMARY
+            echo "::warning::$ALERTS alerta(s) crítico(s)/alto(s) de segurança no CodeQL. Verifique antes de fazer merge."
+          else
+            echo "✅ Nenhum alerta crítico de segurança CodeQL." >> $GITHUB_STEP_SUMMARY
+          fi

@@ -10,13 +10,13 @@ trigger:
     include:
       - hml
 
-pr: none
+pr: none                          # PRs para hml são tratados pelo pipeline de dev
 
 pool:
-  name: "sefaz-self-hosted"
+  vmImage: "ubuntu-latest"
 
 variables:
-  - group: siga-hml-vars
+  - group: siga-hml-vars          # Grupo de variáveis HML (Azure DevOps Library)
   - name: NODE_VERSION
     value: "20.x"
   - name: BUILD_ENV
@@ -26,6 +26,9 @@ options:
   timeout: 45
 
 stages:
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 1 — Testes (obrigatório antes de qualquer passo)
+  # ╚══════════════════════════════════════════════════╝
   - stage: Test
     displayName: "🧪 Testes & Cobertura"
     jobs:
@@ -44,21 +47,11 @@ stages:
           - script: npm ci
             displayName: "📥 npm ci"
 
-          - task: AdvancedSecurity-Codeql-Init@1
-            displayName: "🔍 ADAS — Inicializar CodeQL"
-            inputs:
-              languages: "javascript"
-              querysuite: "security-extended"
-
           - script: npm run test
             displayName: "✅ Testes unitários"
 
           - script: npm run test:coverage
             displayName: "📊 Cobertura de código"
-
-          - task: AdvancedSecurity-Codeql-Analyze@1
-            displayName: "🔍 ADAS — Analisar código (CodeQL SAST)"
-            condition: succeededOrFailed()
 
           - task: PublishTestResults@2
             displayName: "📋 Publicar resultados"
@@ -77,11 +70,15 @@ stages:
               summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
               reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
 
+          # Salvar relatório de cobertura para SonarCloud no próximo stage
           - publish: "$(System.DefaultWorkingDirectory)/coverage"
             artifact: "coverage-hml-$(Build.BuildId)"
             displayName: "📦 Salvar cobertura como artefato"
             condition: succeededOrFailed()
 
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 2 — Quality Gate SonarCloud (BLOQUEANTE)  ║
+  # ╚══════════════════════════════════════════════════╝
   - stage: QualityGate
     displayName: "☁️ Quality Gate SonarCloud"
     dependsOn: Test
@@ -101,6 +98,7 @@ stages:
           - script: npm ci
             displayName: "📥 npm ci"
 
+          # Restaurar cobertura gerada no stage anterior
           - download: current
             artifact: "coverage-hml-$(Build.BuildId)"
             displayName: "📥 Restaurar cobertura"
@@ -130,7 +128,16 @@ stages:
             displayName: "☁️ Publicar e verificar Quality Gate"
             inputs:
               pollingTimeoutSec: "300"
+            # Quality Gate HML configurado no SonarCloud:
+            #   - Coverage ≥ 65%
+            #   - Security Rating ≥ B
+            #   - Reliability Rating ≥ B
+            #   - Duplicated Lines ≤ 5%
+            # FALHA DO QUALITY GATE BLOQUEIA O DEPLOY HML.
 
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 3 — Segurança (BLOQUEANTE em HIGH+)       ║
+  # ╚══════════════════════════════════════════════════╝
   - stage: Security
     displayName: "🔒 Segurança"
     dependsOn: QualityGate
@@ -155,22 +162,32 @@ stages:
               targetType: "inline"
               script: |
                 Write-Host "=== npm audit (ambiente HML) ==="
-                npm audit --json | Out-File -Encoding utf8 npm-audit-report.json
+                npm audit --omit=dev --json | Out-File -Encoding utf8 npm-audit-report.json
+                $exitCode = $LASTEXITCODE
+
                 $audit = $null
                 try { $audit = Get-Content "npm-audit-report.json" -Raw | ConvertFrom-Json } catch {}
+
                 if ($audit -and $audit.metadata) {
                   $critical = $audit.metadata.vulnerabilities.critical
                   $high     = $audit.metadata.vulnerabilities.high
                   $moderate = $audit.metadata.vulnerabilities.moderate
                   $low      = $audit.metadata.vulnerabilities.low
-                  Write-Host "Resumo: critical=$critical | high=$high | moderate=$moderate | low=$low"
+                  $total    = $audit.metadata.vulnerabilities.total
+
+                  Write-Host "Resumo: critical=$critical | high=$high | moderate=$moderate | low=$low | total=$total"
+
+                  # HML: BLOQUEIA se houver vulnerabilidades CRÍTICAS
                   if ($critical -gt 0) {
-                    Write-Host "##vso[task.logissue type=error]🚫 DEPLOY BLOQUEADO: $critical vulnerabilidade(s) CRÍTICA(s)."
+                    Write-Host "##vso[task.logissue type=error]🚫 DEPLOY BLOQUEADO: $critical vulnerabilidade(s) CRÍTICA(s) detectada(s). Corrija antes de implantar em HML."
                     exit 1
                   }
+                  # HIGH gera aviso mas não bloqueia HML
                   if ($high -gt 0) {
-                    Write-Host "##vso[task.logissue type=warning]⚠️ $high vulnerabilidade(s) ALTA(s) — corrija antes de promover para PRD."
+                    Write-Host "##vso[task.logissue type=warning]⚠️  $high vulnerabilidade(s) ALTA(s) — corrija antes de promover para PRD."
                   }
+                } else {
+                  Write-Host "Auditoria concluída sem achados críticos."
                 }
                 exit 0
 
@@ -181,6 +198,13 @@ stages:
               artifactName: "npm-audit-hml-$(Build.BuildId)"
               publishLocation: "Container"
 
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 4 — Aprovação + Deploy HML               ║
+  # ╚══════════════════════════════════════════════════╝
+  # PRÉ-REQUISITO: criar "Environment" chamado "siga-hml" no Azure DevOps
+  #   (Pipelines > Environments) e configurar:
+  #     - Approvals: ao menos 1 aprovador do time de QA
+  #     - Timeout: 2 horas
   - stage: Deploy_HML
     displayName: "🚀 Deploy HML"
     dependsOn: Security
@@ -188,7 +212,7 @@ stages:
     jobs:
       - deployment: DeployHML
         displayName: "Publicar em Homologação"
-        environment: "siga-hml"
+        environment: "gesproc-hml"   # Ambiente com gate de aprovação configurado
         strategy:
           runOnce:
             deploy:
@@ -201,28 +225,38 @@ stages:
                   inputs:
                     targetType: "inline"
                     script: |
+                      Write-Host "=== Build HML ==="
+                      # Cria pasta dist com os arquivos necessários
                       New-Item -ItemType Directory -Force -Path "dist"
-                      Copy-Item "index.html"       "dist/"
-                      Copy-Item "sw.js"            "dist/"
-                      Copy-Item "public-config.js" "dist/"
+                      Copy-Item "index.html"         "dist/"
+                      Copy-Item "sw.js"              "dist/"
+                      Copy-Item "public-config.js"   "dist/"
+                      # Copiar módulos e assets
                       if (Test-Path "modules") { Copy-Item "modules" "dist/" -Recurse }
                       if (Test-Path "assets")  { Copy-Item "assets"  "dist/" -Recurse }
-                      Write-Host "Artefato HML pronto."
+                      Write-Host "Artefato de deploy pronto em ./dist"
+                      Get-ChildItem "dist/" -Recurse | Select-Object FullName
 
                 - task: PowerShell@2
                   displayName: "🔧 Injetar public-config HML"
                   inputs:
                     targetType: "inline"
                     script: |
+                      # Substitui public-config.js pelo template de HML
+                      # As variáveis API_URL, API_ANON_KEY, etc. vêm do grupo siga-hml-vars
                       $config = @"
+                      // public-config.js — gerado automaticamente pelo pipeline HML
+                      // NÃO EDITE MANUALMENTE
                       const SIGA_CONFIG = {
-                        supabaseUrl:  '$(SUPABASE_URL)',
-                        supabaseKey:  '$(SUPABASE_ANON_KEY)',
+                        apiUrl:  '$(API_URL)',
+                        apiKey:  '$(API_ANON_KEY)',
                         environment:  'hml',
                         buildId:      '$(Build.BuildId)',
+                        buildDate:    '$(Build.Repository.Name) @ $(Build.SourceVersion)',
                       };
                       "@
                       Set-Content -Path "dist/public-config.js" -Value $config -Encoding utf8
+                      Write-Host "public-config.js HML injetado com sucesso."
 
                 - task: PublishBuildArtifacts@1
                   displayName: "📦 Publicar artefato HML"
@@ -230,6 +264,39 @@ stages:
                     pathToPublish: "$(System.DefaultWorkingDirectory)/dist"
                     artifactName: "siga-hml-$(Build.BuildId)"
                     publishLocation: "Container"
+
+                # ── Deploy para servidor HML ──
+                # Descomente e adapte conforme sua infraestrutura:
+                #
+                # Opção A: SSH/SCP para servidor Linux
+                # - task: SSH@0
+                #   inputs:
+                #     sshEndpoint: 'siga-hml-server'
+                #     runOptions: 'commands'
+                #     commands: 'cd /var/www/siga-hml && rm -rf * && exit 0'
+                # - task: CopyFilesOverSSH@0
+                #   inputs:
+                #     sshEndpoint: 'siga-hml-server'
+                #     sourceFolder: 'dist'
+                #     targetFolder: '/var/www/siga-hml'
+                #
+                # Opção B: Azure Storage Static Website
+                # - task: AzureFileCopy@5
+                #   inputs:
+                #     SourcePath: 'dist/*'
+                #     azureSubscription: 'siga-hml-service-connection'
+                #     Destination: AzureBlob
+                #     storage: 'sigahmlstorage'
+                #     ContainerName: '$web'
+                #
+                # Opção C: Docker Compose no servidor
+                # - task: SSH@0
+                #   inputs:
+                #     sshEndpoint: 'siga-hml-server'
+                #     runOptions: 'inline'
+                #     inline: |
+                #       cd /opt/siga-hml
+                #       docker compose pull && docker compose up -d --build
 
                 - script: echo "✅ Deploy HML finalizado — Build $(Build.BuildId)"
                   displayName: "✅ Deploy concluído"

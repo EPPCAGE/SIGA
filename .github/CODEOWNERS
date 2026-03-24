@@ -1,0 +1,38 @@
+# ================================================================
+# CODEOWNERS — SIGA
+# Define revisores obrigatórios por área de código.
+# PRs para main/hml só podem ser mergeados após aprovação dos owners.
+# ================================================================
+# Referência: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ── Responsável global (fallback) ────────────────────────────────
+# Substitua pelo(s) usuário(s) GitHub real(is) do time
+*                               @EPPCAGE/siga-team
+
+# ── Módulo Simulador de Processos ────────────────────────────────
+/modules/process-simulator/     @EPPCAGE/siga-team
+
+# ── Arquivos de configuração sensíveis ───────────────────────────
+/public-config.js               @EPPCAGE/siga-tech-lead
+/public-config.entra.example.js @EPPCAGE/siga-tech-lead
+/docker-compose.yml             @EPPCAGE/siga-tech-lead
+
+# ── CI/CD e DevOps ───────────────────────────────────────────────
+/.azure-pipelines/              @EPPCAGE/siga-tech-lead
+/.github/                       @EPPCAGE/siga-tech-lead
+/sonar-project.properties       @EPPCAGE/siga-tech-lead
+
+# ── Testes ───────────────────────────────────────────────────────
+/tests/                         @EPPCAGE/siga-team
+/jest.config.js                 @EPPCAGE/siga-team
+
+# ── Dependências ─────────────────────────────────────────────────
+/package.json                   @EPPCAGE/siga-tech-lead
+/package-lock.json              @EPPCAGE/siga-tech-lead
+
+# ── Scripts de migração/dados (alto risco) ───────────────────────
+/scripts/                       @EPPCAGE/siga-tech-lead
+
+# ── Documentação ─────────────────────────────────────────────────
+/docs/                          @EPPCAGE/siga-team
+*.md                            @EPPCAGE/siga-team
