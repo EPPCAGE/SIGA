@@ -1,0 +1,235 @@
+# ================================================================
+# Pipeline CI/CD — Ambiente HML (Homologação)
+# Dispara em commits para a branch hml.
+# Gate de qualidade SonarCloud OBRIGATÓRIO antes do deploy.
+# Deploy requer aprovação manual de ao menos 1 revisor.
+# ================================================================
+
+trigger:
+  branches:
+    include:
+      - hml
+
+pr: none
+
+pool:
+  name: "sefaz-self-hosted"
+
+variables:
+  - group: siga-hml-vars
+  - name: NODE_VERSION
+    value: "20.x"
+  - name: BUILD_ENV
+    value: "hml"
+
+options:
+  timeout: 45
+
+stages:
+  - stage: Test
+    displayName: "🧪 Testes & Cobertura"
+    jobs:
+      - job: UnitTests
+        displayName: "Testes Unitários"
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            displayName: "📦 Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 npm ci"
+
+          - task: AdvancedSecurity-Codeql-Init@1
+            displayName: "🔍 ADAS — Inicializar CodeQL"
+            inputs:
+              languages: "javascript"
+              querysuite: "security-extended"
+
+          - script: npm run test
+            displayName: "✅ Testes unitários"
+
+          - script: npm run test:coverage
+            displayName: "📊 Cobertura de código"
+
+          - task: AdvancedSecurity-Codeql-Analyze@1
+            displayName: "🔍 ADAS — Analisar código (CodeQL SAST)"
+            condition: succeededOrFailed()
+
+          - task: PublishTestResults@2
+            displayName: "📋 Publicar resultados"
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: "**/junit.xml"
+              testRunTitle: "Testes — HML ($(Build.SourceBranchName))"
+              failTaskOnFailedTests: true
+
+          - task: PublishCodeCoverageResults@2
+            displayName: "📈 Publicar cobertura"
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: Cobertura
+              summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
+              reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
+
+          - publish: "$(System.DefaultWorkingDirectory)/coverage"
+            artifact: "coverage-hml-$(Build.BuildId)"
+            displayName: "📦 Salvar cobertura como artefato"
+            condition: succeededOrFailed()
+
+  - stage: QualityGate
+    displayName: "☁️ Quality Gate SonarCloud"
+    dependsOn: Test
+    condition: succeeded()
+    jobs:
+      - job: SonarQualityGate
+        displayName: "Análise SonarCloud + Quality Gate"
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 npm ci"
+
+          - download: current
+            artifact: "coverage-hml-$(Build.BuildId)"
+            displayName: "📥 Restaurar cobertura"
+
+          - task: CopyFiles@2
+            displayName: "📂 Posicionar cobertura"
+            inputs:
+              sourceFolder: "$(Pipeline.Workspace)/coverage-hml-$(Build.BuildId)"
+              targetFolder: "$(System.DefaultWorkingDirectory)/coverage"
+
+          - task: SonarCloudPrepare@2
+            displayName: "☁️ Preparar análise"
+            inputs:
+              SonarCloud: "sonarcloud-gesproc"
+              organization: "eppcage"
+              scannerMode: "CLI"
+              configMode: "file"
+              configFile: "sonar-project.properties"
+              extraProperties: |
+                sonar.branch.name=$(Build.SourceBranchName)
+                sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+
+          - task: SonarCloudAnalyze@2
+            displayName: "☁️ Executar scanner"
+
+          - task: SonarCloudPublish@2
+            displayName: "☁️ Publicar e verificar Quality Gate"
+            inputs:
+              pollingTimeoutSec: "300"
+
+  - stage: Security
+    displayName: "🔒 Segurança"
+    dependsOn: QualityGate
+    condition: succeeded()
+    jobs:
+      - job: SecurityAudit
+        displayName: "npm audit — HML"
+        steps:
+          - checkout: self
+            clean: true
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 npm ci"
+
+          - task: PowerShell@2
+            displayName: "🔍 npm audit — HML (bloqueia em CRITICAL)"
+            inputs:
+              targetType: "inline"
+              script: |
+                Write-Host "=== npm audit (ambiente HML) ==="
+                npm audit --json | Out-File -Encoding utf8 npm-audit-report.json
+                $audit = $null
+                try { $audit = Get-Content "npm-audit-report.json" -Raw | ConvertFrom-Json } catch {}
+                if ($audit -and $audit.metadata) {
+                  $critical = $audit.metadata.vulnerabilities.critical
+                  $high     = $audit.metadata.vulnerabilities.high
+                  $moderate = $audit.metadata.vulnerabilities.moderate
+                  $low      = $audit.metadata.vulnerabilities.low
+                  Write-Host "Resumo: critical=$critical | high=$high | moderate=$moderate | low=$low"
+                  if ($critical -gt 0) {
+                    Write-Host "##vso[task.logissue type=error]🚫 DEPLOY BLOQUEADO: $critical vulnerabilidade(s) CRÍTICA(s)."
+                    exit 1
+                  }
+                  if ($high -gt 0) {
+                    Write-Host "##vso[task.logissue type=warning]⚠️ $high vulnerabilidade(s) ALTA(s) — corrija antes de promover para PRD."
+                  }
+                }
+                exit 0
+
+          - task: PublishBuildArtifacts@1
+            condition: always()
+            inputs:
+              pathToPublish: "$(System.DefaultWorkingDirectory)/npm-audit-report.json"
+              artifactName: "npm-audit-hml-$(Build.BuildId)"
+              publishLocation: "Container"
+
+  - stage: Deploy_HML
+    displayName: "🚀 Deploy HML"
+    dependsOn: Security
+    condition: succeeded()
+    jobs:
+      - deployment: DeployHML
+        displayName: "Publicar em Homologação"
+        environment: "siga-hml"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  clean: true
+
+                - task: PowerShell@2
+                  displayName: "🏗️ Build — gerar artefato de deploy"
+                  inputs:
+                    targetType: "inline"
+                    script: |
+                      New-Item -ItemType Directory -Force -Path "dist"
+                      Copy-Item "index.html"       "dist/"
+                      Copy-Item "sw.js"            "dist/"
+                      Copy-Item "public-config.js" "dist/"
+                      if (Test-Path "modules") { Copy-Item "modules" "dist/" -Recurse }
+                      if (Test-Path "assets")  { Copy-Item "assets"  "dist/" -Recurse }
+                      Write-Host "Artefato HML pronto."
+
+                - task: PowerShell@2
+                  displayName: "🔧 Injetar public-config HML"
+                  inputs:
+                    targetType: "inline"
+                    script: |
+                      $config = @"
+                      const SIGA_CONFIG = {
+                        supabaseUrl:  '$(SUPABASE_URL)',
+                        supabaseKey:  '$(SUPABASE_ANON_KEY)',
+                        environment:  'hml',
+                        buildId:      '$(Build.BuildId)',
+                      };
+                      "@
+                      Set-Content -Path "dist/public-config.js" -Value $config -Encoding utf8
+
+                - task: PublishBuildArtifacts@1
+                  displayName: "📦 Publicar artefato HML"
+                  inputs:
+                    pathToPublish: "$(System.DefaultWorkingDirectory)/dist"
+                    artifactName: "siga-hml-$(Build.BuildId)"
+                    publishLocation: "Container"
+
+                - script: echo "✅ Deploy HML finalizado — Build $(Build.BuildId)"
+                  displayName: "✅ Deploy concluído"

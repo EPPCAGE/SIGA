@@ -1,0 +1,178 @@
+# ================================================================
+# Pipeline CI — Ambiente DEV
+# Dispara em cada commit/PR nas branches de desenvolvimento.
+# Responsabilidade: garantir que nenhum código quebrado entre em dev.
+# ================================================================
+
+trigger:
+  branches:
+    include:
+      - dev
+      - feature/*
+      - bugfix/*
+      - hotfix/*
+
+pr:
+  branches:
+    include:
+      - dev
+  drafts: false
+
+pool:
+  name: "sefaz-self-hosted"
+
+variables:
+  - group: siga-dev-vars
+  - name: NODE_VERSION
+    value: "20.x"
+  - name: BUILD_ENV
+    value: "dev"
+
+options:
+  timeout: 30
+
+stages:
+  - stage: Build_Test
+    displayName: "🧪 Build & Testes"
+    jobs:
+      - job: UnitTests
+        displayName: "Testes Unitários + Cobertura"
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            displayName: "📦 Instalar Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 Instalar dependências (npm ci)"
+            env:
+              NODE_AUTH_TOKEN: $(NPM_TOKEN)
+
+          - task: AdvancedSecurity-Codeql-Init@1
+            displayName: "🔍 ADAS — Inicializar CodeQL"
+            inputs:
+              languages: "javascript"
+              querysuite: "security-extended"
+
+          - script: npm run test
+            displayName: "✅ Executar testes unitários"
+            continueOnError: false
+
+          - script: npm run test:coverage
+            displayName: "📊 Executar testes com cobertura"
+            continueOnError: false
+
+          - task: AdvancedSecurity-Codeql-Analyze@1
+            displayName: "🔍 ADAS — Analisar código (CodeQL SAST)"
+            condition: succeededOrFailed()
+
+          - task: PublishTestResults@2
+            displayName: "📋 Publicar resultados de testes"
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: "**/junit.xml"
+              testRunTitle: "Testes Unitários — DEV ($(Build.SourceBranchName))"
+              failTaskOnFailedTests: true
+
+          - task: PublishCodeCoverageResults@2
+            displayName: "📈 Publicar cobertura de código"
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: Cobertura
+              summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
+              reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
+              failIfCoverageEmpty: false
+
+  - stage: Quality
+    displayName: "🔍 Qualidade (SonarCloud)"
+    dependsOn: Build_Test
+    condition: succeeded()
+    jobs:
+      - job: SonarAnalysis
+        displayName: "Análise Estática SonarCloud"
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 Instalar dependências"
+
+          - script: npm run test:coverage
+            displayName: "📊 Gerar relatório de cobertura para Sonar"
+            continueOnError: false
+
+          - task: SonarCloudPrepare@2
+            displayName: "☁️ SonarCloud — Preparar análise"
+            inputs:
+              SonarCloud: "sonarcloud-gesproc"
+              organization: "eppcage"
+              scannerMode: "CLI"
+              configMode: "file"
+              configFile: "sonar-project.properties"
+              extraProperties: |
+                sonar.branch.name=$(Build.SourceBranchName)
+                sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+
+          - task: SonarCloudAnalyze@2
+            displayName: "☁️ SonarCloud — Executar scanner"
+
+          - task: SonarCloudPublish@2
+            displayName: "☁️ SonarCloud — Publicar resultados"
+            inputs:
+              pollingTimeoutSec: "300"
+
+  - stage: Security
+    displayName: "🔒 Segurança"
+    dependsOn: Build_Test
+    condition: succeeded()
+    jobs:
+      - job: SecurityAudit
+        displayName: "Auditoria npm + Relatório"
+        steps:
+          - checkout: self
+            clean: true
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 Instalar dependências"
+
+          - task: PowerShell@2
+            displayName: "🔍 npm audit — DEV (alerta em HIGH)"
+            inputs:
+              targetType: "inline"
+              script: |
+                Write-Host "=== npm audit (ambiente DEV) ==="
+                npm audit --json | Out-File -Encoding utf8 npm-audit-report.json
+                $audit = $null
+                try { $audit = Get-Content "npm-audit-report.json" -Raw | ConvertFrom-Json } catch {}
+                if ($audit -and $audit.metadata) {
+                  $critical = $audit.metadata.vulnerabilities.critical
+                  $high     = $audit.metadata.vulnerabilities.high
+                  $moderate = $audit.metadata.vulnerabilities.moderate
+                  $low      = $audit.metadata.vulnerabilities.low
+                  Write-Host "Vulnerabilidades: critical=$critical | high=$high | moderate=$moderate | low=$low"
+                  if ($critical -gt 0) { Write-Host "##vso[task.logissue type=warning]⚠️ $critical CRÍTICA(s)!" }
+                  if ($high -gt 0)     { Write-Host "##vso[task.logissue type=warning]⚠️ $high ALTA(s)!" }
+                }
+                exit 0
+
+          - task: PublishBuildArtifacts@1
+            displayName: "📦 Publicar relatório de auditoria"
+            condition: always()
+            inputs:
+              pathToPublish: "$(System.DefaultWorkingDirectory)/npm-audit-report.json"
+              artifactName: "npm-audit-dev-$(Build.BuildId)"
+              publishLocation: "Container"

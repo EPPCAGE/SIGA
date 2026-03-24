@@ -1,0 +1,271 @@
+# ================================================================
+# Pipeline CI/CD — Ambiente PRD (Produção)
+# Dispara APENAS em commits para a branch main.
+# Requer: Quality Gate SonarCloud + npm audit limpo + 2 aprovações.
+# ================================================================
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr: none
+
+pool:
+  name: "sefaz-self-hosted"
+
+variables:
+  - group: siga-prd-vars
+  - name: NODE_VERSION
+    value: "20.x"
+  - name: BUILD_ENV
+    value: "prd"
+
+options:
+  timeout: 60
+
+stages:
+  - stage: Test
+    displayName: "🧪 Testes & Cobertura"
+    jobs:
+      - job: UnitTests
+        displayName: "Testes Unitários PRD"
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            displayName: "📦 Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 npm ci"
+
+          - task: AdvancedSecurity-Codeql-Init@1
+            displayName: "🔍 ADAS — Inicializar CodeQL"
+            inputs:
+              languages: "javascript"
+              querysuite: "security-extended"
+
+          - script: npm run test
+            displayName: "✅ Testes unitários"
+            continueOnError: false
+
+          - script: npm run test:coverage
+            displayName: "📊 Cobertura de código"
+            continueOnError: false
+
+          - task: AdvancedSecurity-Codeql-Analyze@1
+            displayName: "🔍 ADAS — Analisar código (CodeQL SAST)"
+            condition: succeededOrFailed()
+
+          - task: PublishTestResults@2
+            displayName: "📋 Publicar resultados"
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: "**/junit.xml"
+              testRunTitle: "Testes — PRD ($(Build.SourceBranchName))"
+              failTaskOnFailedTests: true
+
+          - task: PublishCodeCoverageResults@2
+            displayName: "📈 Publicar cobertura"
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: Cobertura
+              summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
+              reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
+
+          - publish: "$(System.DefaultWorkingDirectory)/coverage"
+            artifact: "coverage-prd-$(Build.BuildId)"
+            displayName: "📦 Artefato de cobertura"
+            condition: succeededOrFailed()
+
+  - stage: QualityGate
+    displayName: "☁️ Quality Gate SonarCloud"
+    dependsOn: Test
+    condition: succeeded()
+    jobs:
+      - job: SonarQualityGate
+        displayName: "Análise Sonar — PRD"
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 npm ci"
+
+          - download: current
+            artifact: "coverage-prd-$(Build.BuildId)"
+            displayName: "📥 Restaurar cobertura"
+
+          - task: CopyFiles@2
+            displayName: "📂 Posicionar cobertura"
+            inputs:
+              sourceFolder: "$(Pipeline.Workspace)/coverage-prd-$(Build.BuildId)"
+              targetFolder: "$(System.DefaultWorkingDirectory)/coverage"
+
+          - task: SonarCloudPrepare@2
+            displayName: "☁️ Preparar análise PRD"
+            inputs:
+              SonarCloud: "sonarcloud-gesproc"
+              organization: "eppcage"
+              scannerMode: "CLI"
+              configMode: "file"
+              configFile: "sonar-project.properties"
+              extraProperties: |
+                sonar.branch.name=$(Build.SourceBranchName)
+                sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+
+          - task: SonarCloudAnalyze@2
+            displayName: "☁️ Executar scanner PRD"
+
+          - task: SonarCloudPublish@2
+            displayName: "☁️ Verificar Quality Gate PRD"
+            inputs:
+              pollingTimeoutSec: "300"
+
+  - stage: Security
+    displayName: "🔒 Segurança (PRD)"
+    dependsOn: QualityGate
+    condition: succeeded()
+    jobs:
+      - job: SecurityAudit
+        displayName: "npm audit — PRD (high/critical bloqueiam)"
+        steps:
+          - checkout: self
+            clean: true
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 npm ci"
+
+          - task: PowerShell@2
+            displayName: "🔍 npm audit — PRD (bloqueia em HIGH+)"
+            inputs:
+              targetType: "inline"
+              script: |
+                Write-Host "=== npm audit (PRD — tolerância ZERO para HIGH/CRITICAL) ==="
+                npm audit --json | Out-File -Encoding utf8 npm-audit-report.json
+                $audit = $null
+                try { $audit = Get-Content "npm-audit-report.json" -Raw | ConvertFrom-Json } catch {}
+                if ($audit -and $audit.metadata) {
+                  $critical = $audit.metadata.vulnerabilities.critical
+                  $high     = $audit.metadata.vulnerabilities.high
+                  $moderate = $audit.metadata.vulnerabilities.moderate
+                  $low      = $audit.metadata.vulnerabilities.low
+                  Write-Host "🔴 Críticas: $critical | 🟠 Altas: $high | 🟡 Médias: $moderate | 🟢 Baixas: $low"
+                  if ($critical -gt 0 -or $high -gt 0) {
+                    Write-Host "##vso[task.logissue type=error]🚫 DEPLOY PRD BLOQUEADO: critical=$critical, high=$high."
+                    exit 1
+                  }
+                  if ($moderate -gt 0) {
+                    Write-Host "##vso[task.logissue type=warning]⚠️ $moderate vulnerabilidade(s) MODERADA(s)."
+                  }
+                }
+                exit 0
+
+          - task: PublishBuildArtifacts@1
+            condition: always()
+            inputs:
+              pathToPublish: "$(System.DefaultWorkingDirectory)/npm-audit-report.json"
+              artifactName: "npm-audit-prd-$(Build.BuildId)"
+              publishLocation: "Container"
+
+          - task: PowerShell@2
+            displayName: "🏷️ Gerar tag de release"
+            condition: succeeded()
+            inputs:
+              targetType: "inline"
+              script: |
+                $tag = "release/$(Build.BuildNumber)"
+                Write-Host "Tag de release: $tag"
+                Write-Host "##vso[build.addbuildtag]$tag"
+                Write-Host "##vso[build.addbuildtag]prd-approved"
+
+  - stage: Deploy_PRD
+    displayName: "🚀 Deploy PRD"
+    dependsOn: Security
+    condition: succeeded()
+    jobs:
+      - deployment: DeployPRD
+        displayName: "Publicar em Produção"
+        environment: "siga-prd"
+        strategy:
+          runOnce:
+            preDeploy:
+              steps:
+                - script: |
+                    echo "=== PRÉ-DEPLOY PRD ==="
+                    echo "Build: $(Build.BuildId)"
+                    echo "Branch: $(Build.SourceBranchName)"
+                    echo "Commit: $(Build.SourceVersion)"
+                    echo "Solicitante: $(Build.RequestedFor)"
+                  displayName: "📋 Log de deploy PRD"
+
+            deploy:
+              steps:
+                - checkout: self
+                  clean: true
+
+                - task: NodeTool@0
+                  inputs:
+                    versionSpec: "$(NODE_VERSION)"
+
+                - script: npm ci
+                  displayName: "📥 npm ci"
+
+                - task: PowerShell@2
+                  displayName: "🏗️ Build — artefato PRD"
+                  inputs:
+                    targetType: "inline"
+                    script: |
+                      New-Item -ItemType Directory -Force -Path "dist"
+                      Copy-Item "index.html"       "dist/"
+                      Copy-Item "sw.js"            "dist/"
+                      Copy-Item "public-config.js" "dist/"
+                      if (Test-Path "modules") { Copy-Item "modules" "dist/" -Recurse }
+                      if (Test-Path "assets")  { Copy-Item "assets"  "dist/" -Recurse }
+                      Write-Host "Artefato PRD criado."
+
+                - task: PowerShell@2
+                  displayName: "🔧 Injetar public-config PRD"
+                  inputs:
+                    targetType: "inline"
+                    script: |
+                      $config = @"
+                      const SIGA_CONFIG = {
+                        supabaseUrl:  '$(SUPABASE_URL)',
+                        supabaseKey:  '$(SUPABASE_ANON_KEY)',
+                        environment:  'prd',
+                        buildId:      '$(Build.BuildId)',
+                        buildNumber:  '$(Build.BuildNumber)',
+                      };
+                      "@
+                      Set-Content -Path "dist/public-config.js" -Value $config -Encoding utf8
+
+                - task: PublishBuildArtifacts@1
+                  displayName: "📦 Publicar artefato PRD"
+                  inputs:
+                    pathToPublish: "$(System.DefaultWorkingDirectory)/dist"
+                    artifactName: "siga-prd-$(Build.BuildId)"
+                    publishLocation: "Container"
+
+                - script: echo "✅ Deploy PRD finalizado — Build $(Build.BuildId) | $(Build.BuildNumber)"
+                  displayName: "✅ Deploy PRD concluído"
+
+            on:
+              failure:
+                steps:
+                  - script: echo "❌ FALHA NO DEPLOY PRD! Build: $(Build.BuildId)"
+                    displayName: "⚠️ Notificar falha no deploy"

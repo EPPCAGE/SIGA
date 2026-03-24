@@ -1,4 +1,9 @@
-trigger: none
+trigger:
+  branches:
+    include:
+      - main
+      - dev
+      - feature/*
 
 pr:
   branches:
@@ -14,68 +19,104 @@ variables:
   NODE_VERSION: '20.x'
 
 steps:
+  - checkout: self
+    fetchDepth: 0
+    clean: true
+
   - task: NodeTool@0
-    displayName: "Use Node.js $(NODE_VERSION)"
+    displayName: "📦 Node.js $(NODE_VERSION)"
     inputs:
       versionSpec: "$(NODE_VERSION)"
 
   - script: npm ci
-    displayName: "Install dependencies"
+    displayName: "📥 npm ci"
+
+  - task: AdvancedSecurity-Codeql-Init@1
+    displayName: "🔍 ADAS — Inicializar CodeQL (JavaScript)"
+    inputs:
+      languages: "javascript"
+      querysuite: "security-extended"
+
+  - task: SonarCloudPrepare@2
+    displayName: "☁️ SonarCloud — Preparar análise"
+    inputs:
+      SonarCloud: "sonarcloud-gesproc"
+      organization: "eppcage"
+      scannerMode: "CLI"
+      configMode: "file"
+      configFile: "sonar-project.properties"
+      extraProperties: |
+        sonar.projectKey=eppcage_gesproc
+        sonar.organization=eppcage
+        sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
 
   - script: npm run test
-    displayName: "Run unit tests"
+    displayName: "✅ Testes unitários"
+    continueOnError: false
 
   - script: npm run test:coverage
-    displayName: "Run coverage"
+    displayName: "📊 Cobertura de código"
+    continueOnError: false
 
   - task: PublishTestResults@2
-    displayName: "Publish test results"
+    displayName: "📋 Publicar resultados de testes"
     condition: succeededOrFailed()
     inputs:
       testResultsFormat: JUnit
       testResultsFiles: "**/junit.xml"
+      testRunTitle: "Testes — $(Build.SourceBranchName)"
       failTaskOnFailedTests: true
-    continueOnError: true
 
   - task: PublishCodeCoverageResults@2
-    displayName: "Publish code coverage"
+    displayName: "📈 Publicar cobertura de código"
     condition: succeededOrFailed()
     inputs:
       codeCoverageTool: Cobertura
       summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
       reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
-    continueOnError: true
+
+  - task: SonarCloudAnalyze@2
+    displayName: "☁️ SonarCloud — Executar scanner"
+
+  - task: SonarCloudPublish@2
+    displayName: "☁️ SonarCloud — Publicar resultados"
+    inputs:
+      pollingTimeoutSec: "300"
+
+  - task: AdvancedSecurity-Codeql-Analyze@1
+    displayName: "🔍 ADAS — Analisar código (CodeQL SAST)"
+    condition: succeededOrFailed()
 
   - task: PowerShell@2
-    displayName: "Security audit"
+    displayName: "🔍 npm audit — segurança"
+    condition: always()
     inputs:
       targetType: "inline"
+      workingDirectory: "$(System.DefaultWorkingDirectory)"
       script: |
-        Write-Host "Running npm audit (informational)..."
-        npm audit --json > npm-audit-report.json
-        if ($LASTEXITCODE -ne 0) {
-          try {
-            $audit = Get-Content "npm-audit-report.json" -Raw | ConvertFrom-Json
-            $total = $audit.metadata.vulnerabilities.total
-            $high = $audit.metadata.vulnerabilities.high
-            $critical = $audit.metadata.vulnerabilities.critical
-            Write-Host "##vso[task.logissue type=warning]npm audit detected vulnerabilities. total=$total, high=$high, critical=$critical"
-          } catch {
-            Write-Host "##vso[task.logissue type=warning]npm audit returned non-zero exit code and report parsing failed."
-          }
-        } else {
-          Write-Host "npm audit completed without vulnerabilities at configured threshold."
+        $ErrorActionPreference = 'Continue'
+        $reportPath = "$(System.DefaultWorkingDirectory)\npm-audit-report.json"
+        Set-Content -Path $reportPath -Value "{}" -Encoding UTF8
+        Write-Host "=== npm audit ==="
+        $auditJson = (npm audit --json 2>&1) | Out-String
+        Set-Content -Path $reportPath -Value $auditJson -Encoding UTF8
+        $audit = $null
+        try { $audit = $auditJson | ConvertFrom-Json } catch {}
+        if ($audit -and $audit.metadata) {
+          $critical = $audit.metadata.vulnerabilities.critical
+          $high     = $audit.metadata.vulnerabilities.high
+          $moderate = $audit.metadata.vulnerabilities.moderate
+          $low      = $audit.metadata.vulnerabilities.low
+          Write-Host "Vulnerabilidades: critical=$critical | high=$high | moderate=$moderate | low=$low"
+          if ($critical -gt 0) { Write-Host "##vso[task.logissue type=warning]⚠️ $critical CRÍTICA(s)!" }
+          if ($high -gt 0)     { Write-Host "##vso[task.logissue type=warning]⚠️ $high ALTA(s)!" }
         }
         exit 0
 
   - task: PublishBuildArtifacts@1
-    displayName: "Publish npm audit report"
+    displayName: "📦 Publicar relatório de auditoria"
     condition: always()
     inputs:
       pathToPublish: "$(System.DefaultWorkingDirectory)/npm-audit-report.json"
-      artifactName: "npm-audit"
+      artifactName: "npm-audit-$(Build.BuildId)"
       publishLocation: "Container"
-
-  # TODO DETIC/SEFAZ: habilitar integração real do SonarQube neste pipeline.
-  - script: echo "SonarQube step pending DETIC project key and service connection"
-    displayName: "Static analysis placeholder"
