@@ -42,7 +42,7 @@ Pronto do Dia 3:
 4. Validar telas/modulos criticos contra Azure SQL.
 
 Pronto do Dia 4:
-- Sistema operando com dados no Azure SQL sem dependencias da Supabase.
+- Sistema operando com dados no Azure SQL.
 
 ## Dia 5 - Go-live
 1. Rodar checklist final de seguranca.
@@ -66,5 +66,5 @@ Pronto do Dia 5:
 ## Criterios de aceite final
 1. Login Entra ID obrigatorio para todos os usuarios.
 2. Todas as operacoes de leitura/escrita no Azure SQL.
-3. Sem chamadas para Supabase em producao.
+
 4. Alertas de erro e disponibilidade ativos.

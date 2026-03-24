@@ -1,7 +1,7 @@
 # Migracao SIGA para Azure + SQL Server
 
 ## Objetivo
-Migrar o SIGA de Supabase para arquitetura Azure com:
+Migrar o SIGA para arquitetura Azure com:
 - Autenticacao: Microsoft Entra ID
 - Banco: Azure SQL Database (SQL Server)
 - API/Backend: Azure Functions
@@ -51,8 +51,7 @@ Criterio de pronto:
 - Login Entra funcionando em homologacao e token valido nas APIs.
 
 ## Fase 3 - Modelagem e migracao para SQL Server
-1. Inventariar tabelas atuais Supabase (gestpop_*).
-2. Mapear tipos PostgreSQL para SQL Server.
+1. Mapear tipos de dados para SQL Server.
 3. Criar script de schema SQL Server (DDL).
 4. Criar pipeline ETL de migracao de dados.
 5. Migrar lotes e validar contagem/consistencia.
@@ -79,12 +78,12 @@ Criterio de pronto:
 4. Validar upload/download/preview.
 
 Criterio de pronto:
-- Todo fluxo de arquivo operando sem Supabase Storage.
+- Todo fluxo de arquivo operando via Azure Blob Storage.
 
 ## Fase 6 - Ajuste do frontend
 1. Trocar chamadas de Auth para Entra ID.
 2. Trocar chamadas de API para endpoints Azure.
-3. Remover dependencia de Supabase no cliente.
+
 4. Validar modulos criticos (auditoria, relatorios, IA, alertas).
 
 Criterio de pronto:
@@ -98,7 +97,7 @@ Criterio de pronto:
 5. Monitorar 24h/48h pos-go-live.
 
 Criterio de pronto:
-- Operacao estavel e sem dependencia de Supabase em producao.
+- Operacao estavel em producao.
 
 ## Checklist tecnico minimo
 1. Segredos no Key Vault (nunca no frontend).
