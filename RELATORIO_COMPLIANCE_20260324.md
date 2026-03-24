@@ -23,7 +23,7 @@
 | `docker-compose.yml` | ✅ OK | Compose v3.8, volumes e networks OK |
 | `.azure-pipelines/` | ✅ 4 pipelines | ci-dev.yml, ci-hml.yml, ci-prd.yml, build.yml |
 | `jest.config.js` | ✅ OK | Testes configurados (coverage, junit reporter) |
-| `sonar-project.properties` | ✅ OK | SonarCloud pronto (organization: EPPCAGE) |
+| `sonar-project.properties` | ✅ OK | SonarCloud pronto (organization: sefaz-rs, connectionName: sonarcloud-gesproc) |
 | `.env.example` | ✅ NOVO | Template com todas as variáveis de ambiente |
 
 ### 3. Segurança e Conformidade SEFAZ-RS
