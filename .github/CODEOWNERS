@@ -7,32 +7,32 @@
 
 # ── Responsável global (fallback) ────────────────────────────────
 # Substitua pelo(s) usuário(s) GitHub real(is) do time
-*                               @EPPCAGE/siga-team
+*                               @sefaz-rs/siga-team
 
 # ── Módulo Simulador de Processos ────────────────────────────────
-/modules/process-simulator/     @EPPCAGE/siga-team
+/modules/process-simulator/     @sefaz-rs/siga-team
 
 # ── Arquivos de configuração sensíveis ───────────────────────────
-/public-config.js               @EPPCAGE/siga-tech-lead
-/public-config.entra.example.js @EPPCAGE/siga-tech-lead
-/docker-compose.yml             @EPPCAGE/siga-tech-lead
+/public-config.js               @sefaz-rs/siga-tech-lead
+/public-config.entra.example.js @sefaz-rs/siga-tech-lead
+/docker-compose.yml             @sefaz-rs/siga-tech-lead
 
 # ── CI/CD e DevOps ───────────────────────────────────────────────
-/.azure-pipelines/              @EPPCAGE/siga-tech-lead
-/.github/                       @EPPCAGE/siga-tech-lead
-/sonar-project.properties       @EPPCAGE/siga-tech-lead
+/.azure-pipelines/              @sefaz-rs/siga-tech-lead
+/.github/                       @sefaz-rs/siga-tech-lead
+/sonar-project.properties       @sefaz-rs/siga-tech-lead
 
 # ── Testes ───────────────────────────────────────────────────────
-/tests/                         @EPPCAGE/siga-team
-/jest.config.js                 @EPPCAGE/siga-team
+/tests/                         @sefaz-rs/siga-team
+/jest.config.js                 @sefaz-rs/siga-team
 
 # ── Dependências ─────────────────────────────────────────────────
-/package.json                   @EPPCAGE/siga-tech-lead
-/package-lock.json              @EPPCAGE/siga-tech-lead
+/package.json                   @sefaz-rs/siga-tech-lead
+/package-lock.json              @sefaz-rs/siga-tech-lead
 
 # ── Scripts de migração/dados (alto risco) ───────────────────────
-/scripts/                       @EPPCAGE/siga-tech-lead
+/scripts/                       @sefaz-rs/siga-tech-lead
 
 # ── Documentação ─────────────────────────────────────────────────
-/docs/                          @EPPCAGE/siga-team
-*.md                            @EPPCAGE/siga-team
+/docs/                          @sefaz-rs/siga-team
+*.md                            @sefaz-rs/siga-team
