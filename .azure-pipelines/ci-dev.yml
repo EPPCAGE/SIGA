@@ -117,7 +117,7 @@ stages:
             displayName: "☁️ SonarCloud — Preparar análise"
             inputs:
               SonarCloud: "sonarcloud-gesproc"  # Nome da service connection
-              organization: "eppcage"         # Slug da organização no SonarCloud
+              organization: "sefaz-rs"         # Slug da organização no SonarCloud
               scannerMode: "CLI"
               configMode: "file"
               configFile: "sonar-project.properties"
