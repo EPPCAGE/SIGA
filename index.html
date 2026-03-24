@@ -4680,7 +4680,7 @@ function switchPop(pop, tabEl) {
 
   document.querySelectorAll('.pop-content').forEach(el => el.classList.remove('active'));
   const popEl = document.getElementById('pop-' + domId);
-  if(!popEl) { console.warn('switchPop: no DOM element for pop-' + domId); return; }
+  if(!popEl) { return; }
   popEl.classList.add('active');
 
   document.querySelectorAll('.pop-tab').forEach(t => t.classList.remove('active'));
@@ -4707,11 +4707,11 @@ function switchPop(pop, tabEl) {
 
   if(editMode) enableEditables(true);
   try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) {}
-  if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { console.error('[matRender switchPop]', e); }
+  if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { /* error log removed */ }
   _syncNovaVersaoBtn();
-  try { renderFicha(prefix); }       catch(e) { console.warn('renderFicha switchPop', e); }
-  try { renderSipoc(prefix); }       catch(e) { console.warn('renderSipoc switchPop', e); }
-  try { renderFlowPreview(prefix); } catch(e) { console.warn('renderFlowPreview switchPop', e); }
+  try { renderFicha(prefix); }       catch(e) { /* silent error */ }
+  try { renderSipoc(prefix); }       catch(e) { /* silent error */ }
+  try { renderFlowPreview(prefix); } catch(e) { /* silent error */ }
 }
 
 // ═══ NAV ══════════════════════════════════════
@@ -4737,7 +4737,7 @@ function showSection(id, tab, silent) {
   }
   if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
   if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) {}
-  if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { console.error('[matRender]', e); const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) c.innerHTML = '<p style="color:red;padding:20px;">Erro ao renderizar: ' + e.message + '</p>'; } }
+  if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) { const errorEl = document.createElement('p'); errorEl.style.color = 'red'; errorEl.style.padding = '20px'; errorEl.textContent = 'Erro ao renderizar: ' + e.message; c.innerHTML = ''; c.appendChild(errorEl); } } }
   if(!silent && editMode) enableEditables(true);
   try { _updateVersionBars(); } catch(e) {}
 }
@@ -4912,7 +4912,7 @@ function _takeEditSnapshot() {
     _undoShadow = _snapshotData();
     _undoStack  = [];
     _updateUndoBtn();
-  } catch(e) { console.warn('_takeEditSnapshot failed:', e); }
+  } catch(e) { /* snapshot error suppressed */ }
 }
 
 function _updateUndoBtn() {
@@ -5207,7 +5207,6 @@ function buildNestedBranchesHTML(p, si, ai, bi, bai, branches, em) {
 
 function renderStep(p, i) {
   if(!DATA[p] || !Array.isArray(DATA[p].steps) || !DATA[p].steps[i]) {
-    console.warn('renderStep: estado inválido para pop=' + p + ' step=' + i);
     return;
   }
   const s = DATA[p].steps[i];
@@ -5290,7 +5289,7 @@ function renderStep(p, i) {
 
 
   const container = document.getElementById(p+'-step-panel');
-  if(!container) { console.warn('renderStep: no DOM element for', p+'-step-panel'); return; }
+  if(!container) { return; }
   container.innerHTML = `
     <div class="step-panel${isTobe ? ' tobe-mode' : ''}">
       <div class="step-panel-head">
@@ -5980,7 +5979,7 @@ function _initIndMiniCharts(p) {
           }
         }
       });
-    } catch(e) { console.warn('ind mini chart error', chartId, e); }
+    } catch(e) { /* chart error suppressed */ }
   });
 }
 
@@ -7111,7 +7110,7 @@ async function confirmNovoPop() {
           const popBasic = await _npopExtractBasicFromPopFile(_npopPopFile);
           _npopMergeBasicInfoFromPop(extracted, popBasic);
         } catch(popErr) {
-          console.warn('[SIGA] Falha ao complementar metadados via POP:', popErr);
+          /* metadata error suppressed */
           showToast('⚠️ Não foi possível complementar via POP: ' + popErr.message, 'warn');
         }
       }
@@ -7713,15 +7712,15 @@ function mountNewPopTab(key, label, silent=false) {
   if(DATA[key].steps.length === 0) {
     DATA[key].steps = [{ title:'Etapa 1', subtitle:'', responsible:'Responsável', respClass:'resp-green', actions:[{type:'atividade',text:'Nova ação',actor:''}] }];
   }
-  try { renderStep(key, DATA[key].currentStep || 0); } catch(e) { console.warn('renderStep',key,e); }
-  try { renderRoles(key); }      catch(e) { console.warn('renderRoles',key,e); }
-  try { renderIndicators(key); } catch(e) { console.warn('renderIndicators',key,e); }
-  try { renderFaq(key); }        catch(e) { console.warn('renderFaq',key,e); }
-  try { renderNormas(key); }     catch(e) { console.warn('renderNormas',key,e); }
-  try { renderRevisions(key); }  catch(e) { console.warn('renderRevisions',key,e); }
-  try { renderSiglas(key); }     catch(e) { console.warn('renderSiglas',key,e); }
-  try { renderMetrics(key); }    catch(e) { console.warn('renderMetrics',key,e); }
-  try { renderFicha(key); }      catch(e) { console.warn('renderFicha',key,e); }
+  try { renderStep(key, DATA[key].currentStep || 0); } catch(e) { /* silent */ }
+  try { renderRoles(key); }      catch(e) { /* silent */ }
+  try { renderIndicators(key); } catch(e) { /* silent */ }
+  try { renderFaq(key); }        catch(e) { /* silent */ }
+  try { renderNormas(key); }     catch(e) { /* silent */ }
+  try { renderRevisions(key); }  catch(e) { /* silent */ }
+  try { renderSiglas(key); }     catch(e) { /* silent */ }
+  try { renderMetrics(key); }    catch(e) { /* silent */ }
+  try { renderFicha(key); }      catch(e) { /* silent */ }
 
   // 12. Switch and enable edit mode (skip when restoring from cloud)
   if(!silent) {
@@ -9873,7 +9872,7 @@ function getAlertSubscribers(tipoAlerta) {
 
 async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
   if(!toEmail) return false;
-  console.warn('[sendAlertEmail] desabilitado em modo local:', { toEmail, toNome, subject, htmlBody });
+  // Email disabled in local mode
   return true;
 }
 
@@ -9976,7 +9975,7 @@ async function checkActionsDeadlinesEmail() {
         const alKey = `plano_acao_vencido_${pk}_${act.prazo}`;
         if(!sent[alKey]) {
           const subs = getAlertSubscribers('plano_acao_vencido');
-          console.log(`[checkActionsDeadlinesEmail] vencido key=${alKey} subs=`, subs);
+          /* log suppressed */
           let enviado = false;
           for(const {nome, email} of subs) {
             const ok = await sendAlertEmail(
@@ -9990,14 +9989,14 @@ async function checkActionsDeadlinesEmail() {
             if(ok) enviado = true;
           }
           if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
-          else if(!subs.length) console.warn('[checkActionsDeadlinesEmail] nenhum assinante configurado para plano_acao_vencido');
+    /* alert log suppressed */
         }
       } else if(d <= in7) {
         const dias   = Math.round((d - today) / 86400000);
         const alKey  = `plano_acao_7d_${pk}_${act.prazo}`;
         if(!sent[alKey]) {
           const subs = getAlertSubscribers('plano_acao_7d');
-          console.log(`[checkActionsDeadlinesEmail] 7d key=${alKey} subs=`, subs);
+          /* log suppressed */
           let enviado = false;
           for(const {nome, email} of subs) {
             const ok = await sendAlertEmail(
@@ -10011,7 +10010,7 @@ async function checkActionsDeadlinesEmail() {
             if(ok) enviado = true;
           }
           if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
-          else if(!subs.length) console.warn('[checkActionsDeadlinesEmail] nenhum assinante configurado para plano_acao_7d');
+    /* alert log suppressed */
         }
       }
     }
@@ -10966,12 +10965,12 @@ document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible' && currentUser && window._appInitialized && !editMode) {
     if(sessionStorage.getItem('_pendingFullSave')) {
       sessionStorage.removeItem('_pendingFullSave');
-      console.log('[visibilitychange] Executando save completo pendente (repoDocs/drops truncados no beforeunload)');
+      /* log suppressed */
       saveToCloud();
     }
     const elapsed = Date.now() - _lastLoadedAt;
     if(elapsed > 60000) { // só recarregar se faz mais de 60s
-      console.log('[visibilitychange] Tab voltou ao foco — recarregando dados do servidor');
+      /* log suppressed */
       loadFromCloud();
     }
   }
@@ -10981,21 +10980,21 @@ document.addEventListener('visibilitychange', () => {
 // (único mecanismo que garante a requisição mesmo após o unload da página)
 window.addEventListener('beforeunload', (e) => {
   // DEBUG: sempre logar para diagnóstico
-  console.log('[beforeunload] user='+!!currentUser+' editor='+isEditor+' init='+window._appInitialized+' token='+!!currentAccessToken);
+  /* log suppressed */
   if(!currentUser || !isEditor || !currentAccessToken) {
-    console.warn('[beforeunload] SKIP — condição não atendida');
+    /* skip log suppressed */
     return;
   }
   // Nunca salvar se o app não terminou de carregar — evita sobrescrever dados reais
   // com os dados padrão embutidos no HTML (causa perda de dados)
   if(!window._appInitialized) {
-    console.warn('[beforeunload] SKIP — app não inicializado (loadFromCloud pendente)');
+    /* skip log suppressed */
     return;
   }
   const unsavedDot = document.getElementById('unsaved-dot');
   // Checar estilo inline explícito — style.display==='' (não setado) NÃO é visível
   const dotVisible = unsavedDot && unsavedDot.style.display === 'inline-block';
-  console.log('[beforeunload] unsaved-dot visível:', dotVisible);
+  /* unsaved dot log suppressed */
   if(!dotVisible) return;
 
   // Exibir diálogo de confirmação padrão do browser — garante que o usuário pode cancelar
@@ -11052,12 +11051,12 @@ window.addEventListener('beforeunload', (e) => {
     if(fullBody.length <= KEEPALIVE_LIMIT) {
       reqBody = fullBody;
     } else {
-      console.warn('[beforeunload] repoDocs/drops excluídos para caber no limite keepalive (' + fullBody.length + ' bytes > ' + KEEPALIVE_LIMIT + ')');
+      /* truncation log suppressed */
       sessionStorage.setItem('_pendingFullSave', '1');
     }
   }
 
-  console.log('[beforeunload] payload final: ' + reqBody.length + ' bytes (limite: ' + KEEPALIVE_LIMIT + ')');
+  /* payload log suppressed */
 
   try {
     fetch(API_URL + '/data', {
@@ -11066,8 +11065,8 @@ window.addEventListener('beforeunload', (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: reqBody
     });
-    console.log('[beforeunload] fetch keepalive enviado OK');
-  } catch(e) { console.warn('[beforeunload] save failed:', e); }
+    /* keepalive log suppressed */
+  } catch(e) { /* beforeunload save error suppressed */ }
 });
 // Mapa de aliases a normalizar em todos os campos de texto dos POPs e PAT
 const _UNIDADE_ALIASES = {
@@ -11112,8 +11111,8 @@ function _normalizeUnidades() {
 }
 
 async function saveToCloud(attempt=1) {
-  console.log('[saveToCloud] attempt='+attempt+' editor='+isEditor);
-  if(!isEditor) { console.warn('[saveToCloud] BLOQUEADO: isEditor=false'); showToast('Sem permissão para salvar.','warn'); return; }
+  /* saveToCloud attempt log suppressed */
+  if(!isEditor) { /* saveToCloud blocked */ showToast('Sem permissão para salvar.','warn'); return; }
 
   // Se já está salvando, enfileirar apenas 1 chamada extra
   if(_saveInProgress && attempt === 1) {
@@ -11150,10 +11149,10 @@ async function saveToCloud(attempt=1) {
       }
     }
   } catch(e) {
-    console.warn('[saveToCloud] fetch-merge falhou (continuando com dados locais):', e);
+    /* fetch-merge error suppressed */
   }
 
-  try { harvestEditables(); } catch(e) { console.warn('harvestEditables:', e); }
+  try { harvestEditables(); } catch(e) { /* harvestEditables error suppressed */ }
 
   const _popsIncludedInThisSave = new Set(_dirtyPops);
 
@@ -11208,7 +11207,7 @@ async function saveToCloud(attempt=1) {
 
   } catch(e) {
     _saveInProgress = false;
-    console.error('saveToCloud exception:', e);
+    /* saveToCloud exception suppressed */
     if(attempt < 3) {
       await new Promise(r => setTimeout(r, attempt * 1500));
       return saveToCloud(attempt + 1);
@@ -11219,9 +11218,9 @@ async function saveToCloud(attempt=1) {
 }
 
 async function loadFromCloud() {
-  if(!currentUser) { console.warn('[loadFromCloud] BLOQUEADO: currentUser é null'); return; }
+  if(!currentUser) { /* loadFromCloud blocked */ return; }
   setSyncStatus('syncing');
-  console.log('📥 loadFromCloud iniciando...');
+  /* loadFromCloud initiated */
 
   try {
     const controller = new AbortController();
@@ -11232,7 +11231,7 @@ async function loadFromCloud() {
     const data = await res.json();
 
     if(!data || !data.data || Object.keys(data.data).length === 0) {
-      console.log('loadFromCloud: workspace vazio ou inexistente — usando dados padrão');
+      /* empty workspace */
       setSyncStatus('synced');
       const chip = document.getElementById('last-save-chip');
       if(chip) chip.textContent = 'Sem dados salvos';
@@ -11255,7 +11254,7 @@ async function loadFromCloud() {
 
     workspaceId = data.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) {};
     const payload = data.data;
-    console.log('loadFromCloud: payload recebido, tamanho', JSON.stringify(payload).length, 'bytes');
+    /* payload received */
 
     if(payload.d && typeof payload.d === 'object') Object.assign(DATA.d, payload.d);
     if(payload.r && typeof payload.r === 'object') Object.assign(DATA.r, payload.r);

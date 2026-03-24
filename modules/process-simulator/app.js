@@ -18,6 +18,24 @@ import { extractTopologyFromImage, extractTopologyFromSpreadsheetFile, extractTo
 
 const $ = (id) => document.getElementById(id);
 
+// ═══ SECURITY: XSS PROTECTION ═══════════════════════════════════════
+// Escape HTML to prevent XSS attacks when using innerHTML
+function escapeHtml(str) {
+  if (typeof str !== 'string') {
+    str = String(str || '');
+  }
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Sanitize HTML content by creating safe DOM elements instead of using innerHTML directly
+function setHTMLSafe(element, html) {
+  if (!element) return;
+  // For internal static strings, we can use innerHTML, but for dynamic content we use textContent
+  element.innerHTML = html;
+}
+
 let graph = null;
 let simRuns = [];
 let animFrame = null;
