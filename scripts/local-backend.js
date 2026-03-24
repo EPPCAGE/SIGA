@@ -504,8 +504,8 @@ async function normalizeAiInput(parsed) {
   };
 }
 
-function buildGeminiApiUrl(model) {
-  const rawUrl = String(process.env.SIGA_GEMINI_API_URL || '').trim();
+function buildAiApiUrl(model) {
+  const rawUrl = String(process.env.SIGA_AI_API_URL || '').trim();
   if (!rawUrl) {
     return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   }
@@ -521,9 +521,9 @@ function buildGeminiApiUrl(model) {
   return rawUrl;
 }
 
-function geminiModelCandidates() {
-  const primary = String(process.env.SIGA_GEMINI_MODEL || 'gemini-2.5-flash').trim();
-  const fallbacksRaw = String(process.env.SIGA_GEMINI_FALLBACK_MODELS || 'gemini-2.5-pro');
+function aiModelCandidates() {
+  const primary = String(process.env.SIGA_AI_MODEL || '').trim();
+  const fallbacksRaw = String(process.env.SIGA_AI_FALLBACK_MODELS || '');
   const fallbacks = fallbacksRaw
     .split(',')
     .map((s) => s.trim())
@@ -532,14 +532,14 @@ function geminiModelCandidates() {
   return [...new Set([primary, ...fallbacks])];
 }
 
-async function callGeminiOnce(parsed, model) {
-  const GEMINI_KEY = process.env.SIGA_GEMINI_API_KEY || '';
-  const GEMINI_API_URL = buildGeminiApiUrl(model);
+async function callAiOnce(parsed, model) {
+  const AI_KEY = process.env.SIGA_AI_API_KEY || '';
+  const AI_API_URL = buildAiApiUrl(model);
 
-  if (!GEMINI_KEY) {
-    const err = new Error('IA Gemini nao configurada — defina SIGA_GEMINI_API_KEY no ambiente');
+  if (!AI_KEY) {
+    const err = new Error('IA nao configurada — defina SIGA_AI_API_KEY no ambiente');
     err.statusCode = 503;
-    err.provider = 'gemini';
+    err.provider = 'ai';
     err.model = model;
     throw err;
   }
@@ -550,7 +550,7 @@ async function callGeminiOnce(parsed, model) {
     parts.push({ inline_data: { mime_type: input.image.mimeType, data: input.image.data } });
   }
 
-  const aiResp = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(GEMINI_KEY)}`, {
+  const aiResp = await fetch(`${AI_API_URL}?key=${encodeURIComponent(AI_KEY)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -564,9 +564,9 @@ async function callGeminiOnce(parsed, model) {
 
   const aiData = await aiResp.json().catch(() => ({}));
   if (!aiResp.ok) {
-    const err = new Error(aiData?.error?.message || 'Erro na API Gemini');
+    const err = new Error(aiData?.error?.message || 'Erro na API de IA');
     err.statusCode = aiResp.status;
-    err.provider = 'gemini';
+    err.provider = 'ai';
     err.model = model;
     err.retryAfter = Number(aiResp.headers.get('retry-after') || 0) || null;
     throw err;
@@ -581,15 +581,15 @@ async function callGeminiOnce(parsed, model) {
   return { text, modelUsed: model };
 }
 
-async function callGemini(parsed) {
-  const models = geminiModelCandidates();
-  const primaryModel = models[0] || 'gemini-2.5-flash';
+async function callAi(parsed) {
+  const models = aiModelCandidates();
+  const primaryModel = models[0] || '';
   let lastError = null;
 
   for (let i = 0; i < models.length; i += 1) {
     const model = models[i];
     try {
-      const result = await callGeminiOnce(parsed, model);
+      const result = await callAiOnce(parsed, model);
       if (i === 0) return result;
       return {
         ...result,
@@ -605,7 +605,7 @@ async function callGemini(parsed) {
     }
   }
 
-  throw lastError || new Error('Erro na API Gemini');
+  throw lastError || new Error('Erro na API de IA');
 }
 
 function hasGithubProviderConfigured() {
@@ -623,7 +623,7 @@ function isQuotaOrRateLimitError(error) {
 }
 
 async function callAiWithFallback(parsed, preferredProvider) {
-  const provider = String(preferredProvider || 'gemini').toLowerCase();
+  const provider = String(preferredProvider || 'ai').toLowerCase();
 
   if (provider === 'github' || provider === 'github-models') {
     const text = await callGithubModels(parsed);
@@ -631,13 +631,13 @@ async function callAiWithFallback(parsed, preferredProvider) {
   }
 
   try {
-    const geminiResult = await callGemini(parsed);
+    const aiResult = await callAi(parsed);
     return {
-      text: geminiResult.text,
-      providerUsed: 'gemini',
-      modelUsed: geminiResult.modelUsed,
-      fallbackFromModel: geminiResult.fallbackFromModel || null,
-      fallbackReason: geminiResult.fallbackReason || null
+      text: aiResult.text,
+      providerUsed: 'ai',
+      modelUsed: aiResult.modelUsed,
+      fallbackFromModel: aiResult.fallbackFromModel || null,
+      fallbackReason: aiResult.fallbackReason || null
     };
   } catch (error) {
     if (isQuotaOrRateLimitError(error) && hasGithubProviderConfigured()) {
@@ -645,7 +645,7 @@ async function callAiWithFallback(parsed, preferredProvider) {
       return {
         text,
         providerUsed: 'github-models',
-        fallbackFrom: 'gemini',
+        fallbackFrom: 'ai',
         fallbackReason: 'quota_or_rate_limit'
       };
     }
@@ -668,7 +668,7 @@ const server = http.createServer(async (req, res) => {
         ok: true,
         service: 'siga-local-backend',
         dataFile: DATA_FILE,
-        aiProvider: process.env.SIGA_AI_PROVIDER || 'gemini'
+        aiProvider: process.env.SIGA_AI_PROVIDER || 'ai'
       });
       return;
     }
@@ -709,7 +709,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/ai') {
       const body   = await collectRequestBody(req);
       const parsed = body ? JSON.parse(body) : {};
-      const provider = String(process.env.SIGA_AI_PROVIDER || 'gemini').toLowerCase();
+      const provider = String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase();
 
       const result = await callAiWithFallback(parsed, provider);
 

@@ -1,0 +1,203 @@
+# ================================================================
+# Pipeline CI — Ambiente DEV
+# Dispara em cada commit/PR nas branches de desenvolvimento.
+# Responsabilidade: garantir que nenhum código quebrado entre em dev.
+# ================================================================
+
+trigger:
+  branches:
+    include:
+      - dev
+      - feature/*
+      - bugfix/*
+      - hotfix/*
+
+pr:
+  branches:
+    include:
+      - dev
+  drafts: false
+
+pool:
+  name: "sefaz-self-hosted"
+
+variables:
+  - group: siga-dev-vars          # Grupo de variáveis no Azure DevOps Library
+  - name: NODE_VERSION
+    value: "20.x"
+  - name: BUILD_ENV
+    value: "dev"
+
+# ── Opções globais ──────────────────────────────────────────────
+options:
+  timeout: 30                     # minutos máximos por job
+
+stages:
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 1 — Build & Testes Unitários              ║
+  # ╚══════════════════════════════════════════════════╝
+  - stage: Build_Test
+    displayName: "🧪 Build & Testes"
+    jobs:
+      - job: UnitTests
+        displayName: "Testes Unitários + Cobertura"
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 0         # histórico completo (necessário para SonarCloud blame)
+
+          - task: NodeTool@0
+            displayName: "📦 Instalar Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 Instalar dependências (npm ci)"
+            env:
+              NODE_AUTH_TOKEN: $(NPM_TOKEN)
+
+          # ── Testes ──
+          - script: npm run test
+            displayName: "✅ Executar testes unitários"
+            continueOnError: false
+
+          - script: npm run test:coverage
+            displayName: "📊 Executar testes com cobertura"
+            continueOnError: false
+
+          - task: PublishTestResults@2
+            displayName: "📋 Publicar resultados de testes"
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: "**/junit.xml"
+              testRunTitle: "Testes Unitários — DEV ($(Build.SourceBranchName))"
+              failTaskOnFailedTests: true
+
+          - task: PublishCodeCoverageResults@2
+            displayName: "📈 Publicar cobertura de código"
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: Cobertura
+              summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
+              reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
+              failIfCoverageEmpty: false
+
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 2 — Análise de Qualidade (SonarCloud)     ║
+  # ╚══════════════════════════════════════════════════╝
+  - stage: Quality
+    displayName: "🔍 Qualidade (SonarCloud)"
+    dependsOn: Build_Test
+    condition: succeeded()
+    jobs:
+      - job: SonarAnalysis
+        displayName: "Análise Estática SonarCloud"
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 0
+
+          - task: NodeTool@0
+            displayName: "📦 Instalar Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 Instalar dependências"
+
+          - script: npm run test:coverage
+            displayName: "📊 Gerar relatório de cobertura para Sonar"
+            continueOnError: false
+
+          # ── Preparar análise SonarCloud ──
+          # PRÉ-REQUISITO: criar service connection do tipo "SonarCloud"
+          #   com o nome "SonarCloud" no portal Azure DevOps (Project Settings).
+          - task: SonarCloudPrepare@2
+            displayName: "☁️ SonarCloud — Preparar análise"
+            inputs:
+              SonarCloud: "sonarcloud-gesproc"  # Nome da service connection
+              organization: "eppcage"         # Slug da organização no SonarCloud
+              scannerMode: "CLI"
+              configMode: "file"
+              configFile: "sonar-project.properties"
+              extraProperties: |
+                sonar.branch.name=$(Build.SourceBranchName)
+                sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+
+          - task: SonarCloudAnalyze@2
+            displayName: "☁️ SonarCloud — Executar scanner"
+
+          - task: SonarCloudPublish@2
+            displayName: "☁️ SonarCloud — Publicar resultados"
+            inputs:
+              pollingTimeoutSec: "300"
+            # Em DEV, análise é informacional — não bloqueia o pipeline
+
+  # ╔══════════════════════════════════════════════════╗
+  # ║  STAGE 3 — Segurança (npm audit)                 ║
+  # ╚══════════════════════════════════════════════════╝
+  - stage: Security
+    displayName: "🔒 Segurança"
+    dependsOn: Build_Test
+    condition: succeeded()
+    jobs:
+      - job: SecurityAudit
+        displayName: "Auditoria npm + Relatório"
+        steps:
+          - checkout: self
+            clean: true
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(NODE_VERSION)"
+
+          - script: npm ci
+            displayName: "📥 Instalar dependências"
+
+          - task: PowerShell@2
+            displayName: "🔍 npm audit — DEV (alerta em HIGH)"
+            inputs:
+              targetType: "inline"
+              script: |
+                Write-Host "=== npm audit (ambiente DEV) ==="
+                npm audit --json | Out-File -Encoding utf8 npm-audit-report.json
+                $exitCode = $LASTEXITCODE
+
+                $audit = $null
+                try { $audit = Get-Content "npm-audit-report.json" -Raw | ConvertFrom-Json } catch {}
+
+                if ($audit -and $audit.metadata) {
+                  $total    = $audit.metadata.vulnerabilities.total
+                  $critical = $audit.metadata.vulnerabilities.critical
+                  $high     = $audit.metadata.vulnerabilities.high
+                  $moderate = $audit.metadata.vulnerabilities.moderate
+                  $low      = $audit.metadata.vulnerabilities.low
+
+                  Write-Host "Vulnerabilidades encontradas:"
+                  Write-Host "  Críticas : $critical"
+                  Write-Host "  Altas    : $high"
+                  Write-Host "  Médias   : $moderate"
+                  Write-Host "  Baixas   : $low"
+                  Write-Host "  Total    : $total"
+
+                  # Em DEV: apenas aviso para critical/high (não bloqueia)
+                  if ($critical -gt 0) {
+                    Write-Host "##vso[task.logissue type=warning]⚠️  CRÍTICAS: $critical vulnerabilidade(s) crítica(s) detectada(s)!"
+                  }
+                  if ($high -gt 0) {
+                    Write-Host "##vso[task.logissue type=warning]⚠️  ALTAS: $high vulnerabilidade(s) alta(s) detectada(s)!"
+                  }
+                } else {
+                  Write-Host "npm audit concluído — sem vulnerabilidades ou falha ao parsear relatório."
+                }
+                # DEV não bloqueia por segurança (apenas avisa)
+                exit 0
+
+          - task: PublishBuildArtifacts@1
+            displayName: "📦 Publicar relatório de auditoria"
+            condition: always()
+            inputs:
+              pathToPublish: "$(System.DefaultWorkingDirectory)/npm-audit-report.json"
+              artifactName: "npm-audit-dev-$(Build.BuildId)"
+              publishLocation: "Container"
