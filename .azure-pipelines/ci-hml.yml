@@ -13,7 +13,7 @@ trigger:
 pr: none                          # PRs para hml são tratados pelo pipeline de dev
 
 pool:
-  name: "sefaz-self-hosted"
+  vmImage: "ubuntu-latest"
 
 variables:
   - group: siga-hml-vars          # Grupo de variáveis HML (Azure DevOps Library)

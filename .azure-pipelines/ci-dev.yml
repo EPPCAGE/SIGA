@@ -19,7 +19,7 @@ pr:
   drafts: false
 
 pool:
-  name: "sefaz-self-hosted"
+  vmImage: "ubuntu-latest"
 
 variables:
   - group: siga-dev-vars          # Grupo de variáveis no Azure DevOps Library
