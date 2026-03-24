@@ -12,7 +12,7 @@ trigger:
 pr: none
 
 pool:
-  name: "sefaz-self-hosted"
+  vmImage: "ubuntu-latest"
 
 variables:
   - group: siga-prd-vars          # Grupo de variáveis PRD (Azure DevOps Library)
