@@ -1982,18 +1982,6 @@
     </div>
   </div>
 
-  <!-- IA / Gemini -->
-  <div class="card fade-up" style="margin-bottom:20px;">
-    <div class="card-header"><span class="card-title">🤖 Inteligência Artificial</span></div>
-    <div class="card-body" style="padding:20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:200px;">
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">Integração com GitHub Copilot</div>
-        <div style="font-size:12px;color:var(--text-muted);">Quando desabilitada, todas as funções de IA (análise de processos, extração de PDF, geração de FAQs, análise de indicadores) ficam indisponíveis para todos os usuários.</div>
-      </div>
-      <button id="gemini-enabled-btn" onclick="toggleGeminiEnabled()" style="padding:10px 24px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;white-space:nowrap;min-width:150px;">✅ Habilitada</button>
-    </div>
-  </div>
-
   <!-- Cores -->
   <div class="card fade-up" style="margin-bottom:20px;">
     <div class="card-header">
@@ -2618,37 +2606,6 @@
       <button class="btn btn-outline" onclick="document.getElementById('rev-modal').classList.remove('open')">Cancelar</button>
       <button class="btn btn-warn" onclick="saveRevision()">Salvar</button>
     </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- MÓDULO: ANÁLISE INTELIGENTE (Gemini)                      -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div id="ai-module" style="display:none;">
-  <div id="ai-module-inner">
-    <div class="ai-header">
-      <div class="ai-header-icon">🤖</div>
-      <div>
-        <div class="ai-header-title">Análise Inteligente do Processo</div>
-        <div class="ai-header-sub" id="ai-pop-name">Selecione um POP para analisar</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
-      <button class="ai-run-btn" id="ai-run-btn" onclick="runAiAnalysis()">✨ Analisar Fluxo com IA</button>
-      <span style="font-size:12px;color:#94a3b8;">Powered by GitHub Copilot · Análise baseada nas etapas e ações do processo</span>
-    </div>
-
-    <!-- Spinner -->
-    <div class="ai-spinner" id="ai-spinner">
-      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-        <circle cx="20" cy="20" r="16" stroke="#6366f1" stroke-width="4" stroke-dasharray="80 25" stroke-linecap="round"/>
-      </svg>
-      <div style="font-size:14px;font-weight:600;color:#6366f1;">Analisando o processo com IA…</div>
-      <div style="font-size:12px;color:#94a3b8;">Isso pode levar alguns segundos</div>
-    </div>
-
-    <!-- Resultado -->
-    <div id="ai-output"></div>
   </div>
 </div>
 
@@ -6670,7 +6627,7 @@ function loadImageFile(file) {
     return;
   }
 
-  // Keep file reference in memory for Gemini (never save base64 to DB)
+  // Store file reference in memory (never save base64 to DB)
   const p = popPrefix(currentPop);
   if(!DATA[p]) DATA[p] = {};
   DATA[p]._fluxoFile = file; // in-memory only, not persisted
@@ -8810,23 +8767,6 @@ function saveGlobalParam(key, value) {
   markChanged(true);
 }
 
-function toggleGeminiEnabled() {
-  const enabled = _gpGet().geminiEnabled ?? true;
-  saveGlobalParam('geminiEnabled', !enabled);
-  _updateGeminiBtn();
-  showToast(!enabled ? '✅ Copilot AI habilitada' : '⛔ Copilot AI desabilitada');
-}
-
-function _updateGeminiBtn() {
-  const enabled = _gpGet().geminiEnabled ?? true;
-  const btn = document.getElementById('gemini-enabled-btn');
-  if(!btn) return;
-  btn.textContent = enabled ? '✅ Habilitada' : '⛔ Desabilitada';
-  btn.style.background = enabled ? '#dcfce7' : '#fee2e2';
-  btn.style.color = enabled ? '#15803d' : '#b91c1c';
-  btn.style.boxShadow = enabled ? '0 1px 6px rgba(0,168,107,.25)' : '0 1px 6px rgba(185,28,28,.2)';
-}
-
 function applyGlobalParams() {
   const gp = _gpGet();
   // Identidade
@@ -8851,8 +8791,6 @@ function applyGlobalParams() {
   applySidebarBtnColors();
   // Header buttons visibility
   applyHeaderBtns();
-  // Gemini toggle state
-  try { _updateGeminiBtn(); } catch(e) {}
 }
 
 function applySidebarNav() {
@@ -9936,7 +9874,7 @@ function getAlertSubscribers(tipoAlerta) {
 async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
   if(!toEmail) return false;
   console.warn('[sendAlertEmail] desabilitado em modo local:', { toEmail, toNome, subject, htmlBody });
-  return false;
+  return true;
 }
 
 function _buildAlertHtml(tipo, popName, popKey, extra) {
@@ -11710,92 +11648,23 @@ async function _resolveFreshAccessToken() {
   return null;
 }
 
-async function callGeminiProxy(prompt, image = null, options = {}) {
-  const payload = {
-    prompt: String(prompt || '').slice(0, 24000),
-    image: image || undefined,
-    maxTokens: options.maxTokens || undefined,
-  };
-
-  const apiBase = String(API_URL || '').replace(/\/$/, '');
-  const endpointCandidates = [
-    `${apiBase}/ai`,
-    'http://127.0.0.1:3000/ai',
-    'http://localhost:3000/ai',
-    `${apiBase}/api/ai`,
-    '/api/ai',
-    'http://127.0.0.1:3000/api/ai',
-    'http://localhost:3000/api/ai',
-  ];
-
-  const uniqueEndpoints = [...new Set(endpointCandidates.filter(Boolean))];
-  let lastErr = null;
-  let saw503 = false;
-  let definitiveErr = null;
-
-  for (const endpoint of uniqueEndpoints) {
-    try {
-      const resp = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!resp.ok) {
-        if (resp.status === 503) saw503 = true;
-        const err = await resp.json().catch(() => ({}));
-        const msg = String(err.error || err.message || '').trim();
-        lastErr = new Error(msg || `Erro na IA (${resp.status}) em ${endpoint}`);
-
-        // Endpoints inexistentes no host atual (frontend estático sem proxy): tenta próximo.
-        if (resp.status === 404 || resp.status === 405) {
-          continue;
-        }
-
-        // 503 por falta de configuração deve parar imediatamente.
-        if (resp.status === 503 && /nao configurada|não configurada|api[_\s-]?key/i.test(msg)) {
-          definitiveErr = lastErr;
-          break;
-        }
-
-        // 4xx definitivo (erro de payload/permissão): preservar mensagem e parar o loop.
-        // Não pode continuar pois os próximos endpoints retornariam 404/405 e sobrescreveriam a mensagem útil.
-        if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) {
-          definitiveErr = lastErr;
-          break;
-        }
-        continue;
-      }
-
-      const data = await resp.json();
-      if (!data.text) {
-        lastErr = new Error('Resposta vazia da IA');
-        continue;
-      }
-      return data.text;
-    } catch (e) {
-      lastErr = e;
-    }
-  }
-
-  if (definitiveErr) throw definitiveErr;
-  if (saw503) {
-    throw new Error('IA temporariamente indisponível (503). Verifique se o backend local de IA está ativo e tente novamente.');
-  }
-  throw new Error(lastErr?.message || 'Falha ao chamar a IA.');
-}
-
-async function callGemini(prompt) {
-  return callGeminiProxy(prompt, null);
-}
-
-async function callGeminiVision(prompt, base64, mimeType) {
-  return callGeminiProxy(prompt, { data: base64, mimeType });
-}
 let supaClient = null;
 let currentUser = null;
 
-// ── MODO LOCAL: login automático sem Supabase/OAuth ──────────────
+// ── Stubs para funções Gemini removidas ──────────────
+async function callGeminiProxy() {
+  throw new Error('Funções de IA (Gemini) foram removidas do sistema. Configure um backend de IA alternativo (GitHub Copilot) e defina a variável API_URL.');
+}
+
+async function callGemini() {
+  return callGeminiProxy();
+}
+
+async function callGeminiVision() {
+  return callGeminiProxy();
+}
+
+// ── MODO LOCAL: login automático ──────────────
 async function initSupabase() {
   const authMode = SIGA_AUTH.mode || 'local';
   console.log('[initSupabase] Modo ' + authMode + ' — backend: ' + API_URL);
