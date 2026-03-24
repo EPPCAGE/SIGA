@@ -1,0 +1,62 @@
+# ================================================================
+# Pipeline CI — Validação de PRs (gesproc-CI)
+# Dispara em commits/PRs para main, dev e feature/*
+# ================================================================
+
+trigger:
+  branches:
+    include:
+      - main
+      - dev
+      - feature/*
+
+pr:
+  branches:
+    include:
+      - main
+      - dev
+      - feature/*
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  NODE_VERSION: '20.x'
+
+steps:
+  - checkout: self
+    clean: true
+    fetchDepth: 0
+
+  - task: NodeTool@0
+    displayName: "📦 Node.js $(NODE_VERSION)"
+    inputs:
+      versionSpec: "$(NODE_VERSION)"
+
+  - script: npm ci
+    displayName: "📥 npm ci"
+
+  - script: npm run test
+    displayName: "✅ Testes unitários"
+    continueOnError: false
+
+  - script: npm run test:coverage
+    displayName: "📊 Cobertura de código"
+    continueOnError: false
+
+  - task: PublishTestResults@2
+    displayName: "📋 Publicar resultados"
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: "**/junit.xml"
+      testRunTitle: "CI — $(Build.SourceBranchName)"
+      failTaskOnFailedTests: true
+
+  - task: PublishCodeCoverageResults@2
+    displayName: "📈 Publicar cobertura"
+    condition: succeededOrFailed()
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
+      reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
