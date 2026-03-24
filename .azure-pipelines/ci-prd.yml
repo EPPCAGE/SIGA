@@ -162,7 +162,7 @@ stages:
               targetType: "inline"
               script: |
                 Write-Host "=== npm audit (ambiente PRD — tolerância ZERO para HIGH/CRITICAL) ==="
-                npm audit --json | Out-File -Encoding utf8 npm-audit-report.json
+                npm audit --omit=dev --json | Out-File -Encoding utf8 npm-audit-report.json
                 $exitCode = $LASTEXITCODE
 
                 $audit = $null
