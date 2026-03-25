@@ -1436,7 +1436,7 @@
         </div>
       </div>
       <div class="header-divider-line"></div>
-      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início"><strong>SIGA</strong></div>
+      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><strong>SIGA</strong></div>
     </div>
     <div class="header-meta">
       <button onclick="showHome()" title="Voltar à página inicial" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.45);background:none;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.1);transition:color .2s,border-color .2s;white-space:nowrap;" onmouseover="this.style.color='rgba(255,255,255,.85)';this.style.borderColor='rgba(255,255,255,.25)'" onmouseout="this.style.color='rgba(255,255,255,.45)';this.style.borderColor='rgba(255,255,255,.1)'">
@@ -1481,7 +1481,7 @@
 
 <!-- SIDEBAR -->
 <!-- Backdrop escuro ao abrir sidebar no mobile — clique fecha -->
-<div id="sidebar-backdrop" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:89;"></div>
+<div id="sidebar-backdrop" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:89;" role="presentation"></div>
 
 <div class="sidebar" id="sidebar">
   <div class="sidebar-head">
@@ -1516,22 +1516,22 @@
 <!-- NAV TABS -->
 <nav class="nav-tabs">
   <div class="nav-tabs-inner" id="nav-tabs-inner">
-    <div class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)">🏠 Visão Geral</div>
-    <div class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)">⚙️ Fluxo</div>
-    <div class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)">👥 Responsabilidades</div>
-    <div class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)">📊 Indicadores</div>
-    <div class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)">❓ FAQ</div>
-    <div class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)">📜 Normas &amp; Revisões</div>
-    <div class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)">⚠️ Riscos</div>
-    <div class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)">✅ Plano de Ação</div>
-    <div class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)">🤝 Reuniões</div>
-    <div class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)">📋 Acompanhamento</div>
-    <div class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)">☑️ Checklists</div>
-    <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
-    <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
-    <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)">📊 Maturidade</div>
-    <div class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
-    <div class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
+    <div class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🏠 Visão Geral</div>
+    <div class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⚙️ Fluxo</div>
+    <div class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">👥 Responsabilidades</div>
+    <div class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📊 Indicadores</div>
+    <div class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">❓ FAQ</div>
+    <div class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📜 Normas &amp; Revisões</div>
+    <div class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⚠️ Riscos</div>
+    <div class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">✅ Plano de Ação</div>
+    <div class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🤝 Reuniões</div>
+    <div class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📋 Acompanhamento</div>
+    <div class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">☑️ Checklists</div>
+    <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🖼 Imagem BPMN</div>
+    <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🎨 Desenhar Fluxo</div>
+    <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📊 Maturidade</div>
+    <div class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🤖 Análise Inteligente</div>
+    <div class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📄 Relatório IA</div>
   </div>
 </nav>
 
@@ -1560,7 +1560,7 @@
     </div>
     <!-- Logos -->
     <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
-      <div id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()">
+      <div id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <img id="epp-logo-img" src="" alt="Logo EPP" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
         <div id="epp-logo-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
           <span style="font-size:22px;">🖼</span>
@@ -1568,13 +1568,13 @@
         </div>
         <div id="epp-logo-editor-hint" style="display:none;position:absolute;top:4px;right:6px;font-size:10px;color:#94a3b8;">✎</div>
       </div>
-      <div id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()">
+      <div id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <img id="logo2-img" src="" alt="Segundo Logo" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
         <div id="logo2-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
           <span style="font-size:22px;">📤</span>
           <span>Segundo logo<br><span style="font-size:10px;">(clique para upload)</span></span>
         </div>
-        <div id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#94a3b8;background:#f1f5f9;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo">✕</div>
+        <div id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#94a3b8;background:#f1f5f9;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">✕</div>
         <input type="file" id="logo2-file-input" accept="image/*" style="display:none;" onchange="logo2FileSelected(this.files[0])">
       </div>
     </div>
@@ -1583,82 +1583,82 @@
   <!-- ══ MÓDULOS ══ -->
   <div id="home-block-processos" style="display:block;margin-bottom:40px;">
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
-      <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
+      <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Procedimentos Operacionais</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Procedimentos Operacionais</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
         <div class="home-card-footer" id="home-pops-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
+      <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#f5f3ff;color:#8b5cf6;">🏛</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Arquitetura de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Arquitetura de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
         <div class="home-card-footer" id="home-arq-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
+      <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#fffbeb;color:#f59e0b;">📊</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Cadeia de Valor e Mapa Estratégico</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Cadeia de Valor e Mapa Estratégico</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
         <div class="home-card-footer">Imagens configuráveis</div>
       </div>
-      <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
+      <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#fff1f2;color:#dc2626;">🔍</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Auditoria de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Auditoria de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
         <div class="home-card-footer" id="home-audit-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
+      <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#fffbeb;color:#e8a020;">📈</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Indicadores CAGE</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Indicadores CAGE</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
+      <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#eef2ff;color:#6366f1;">🏗️</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Modelador BPMN 2.0</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Modelador BPMN 2.0</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
         <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
       </div>
-      <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
+      <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#ecfdf5;color:#10b981;">🗒</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Quadro de Esboço</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
         <div class="home-card-footer">Canvas interativo</div>
       </div>
-      <div class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;">
+      <div class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🧪</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simulador de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Simulador de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
         <div class="home-card-footer">Motor estocástico e dashboard</div>
       </div>
-      <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
+      <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gestão EPP</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Gestão EPP</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </div>
-      <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
+      <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#f8fafc;color:#64748b;">🔍</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Busca Global</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Busca Global</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
         <div class="home-card-footer">Busca em tempo real</div>
       </div>
-      <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
+      <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#fff1f2;color:#e11d48;">📚</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Documentos e Manuais</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Documentos e Manuais</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
         <div class="home-card-footer" id="home-repo-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
+      <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#f0f9ff;color:#0ea5e9;">💧</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Drops de Conhecimento</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Drops de Conhecimento</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
         <div class="home-card-footer" id="home-drops-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
+      <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#fdf2f8;color:#ec4899;">💡</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Caixinha de Ideias</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Caixinha de Ideias</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
         <div class="home-card-footer">Formulário Microsoft Forms</div>
       </div>
     </div>
@@ -2497,7 +2497,7 @@
         <button onclick="fdExportPNG()" title="Exportar PNG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">⬇ PNG</button>
         <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
         <button onclick="fdZoom(-0.15)" title="Diminuir zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">−</button>
-        <span id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;">100%</span>
+        <span id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">100%</span>
         <button onclick="fdZoom(+0.15)" title="Aumentar zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">+</button>
         <button onclick="fdSave()" title="Salvar (Ctrl+S)" style="padding:4px 9px;background:rgba(0,168,107,.3);color:#4ade80;border:1px solid rgba(0,168,107,.5);border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;">☁️ Salvar</button>
       </div>
@@ -2735,12 +2735,12 @@
     <div class="npop-body">
       <div class="npop-step active" id="npop-s1">
         <div class="npop-methods" style="display:block;">
-          <div class="npop-method selected" id="npop-m-manual" onclick="selectNpopMethod('manual')">
+          <div class="npop-method selected" id="npop-m-manual" onclick="selectNpopMethod('manual')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="npop-method-icon">✍️</div>
             <div class="npop-method-name">Preenchimento Manual</div>
             <div class="npop-method-desc">Preencha os campos do mapeamento diretamente no sistema.</div>
           </div>
-          <div class="npop-method" id="npop-m-workflow" onclick="selectNpopMethod('workflow')" style="margin-top:8px;">
+          <div class="npop-method" id="npop-m-workflow" onclick="selectNpopMethod('workflow')" style="margin-top:8px;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="npop-method-icon">📝</div>
             <div class="npop-method-name">Importar por POP Word</div>
             <div class="npop-method-desc">Envie o POP em Word e clique em <strong>Criar mapeamento</strong> para abrir o formulário de revisão e edição.</div>
@@ -2750,7 +2750,7 @@
               onclick="document.getElementById('npop-file-input').click()"
               ondragover="event.preventDefault();this.classList.add('dragover')"
               ondragleave="this.classList.remove('dragover')"
-              ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])">
+              ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
               <div class="npop-upload-icon">📄</div>
               <div class="npop-upload-title">Clique ou arraste o POP Word aqui</div>
               <div class="npop-upload-hint">Apenas .doc e .docx</div>
@@ -3072,7 +3072,7 @@
           onmouseover="this.style.borderColor='#e11d48';this.style.background='#fff1f2'"
           onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'"
           ondragover="event.preventDefault();this.style.borderColor='#e11d48'"
-          ondrop="repoHandleDrop(event)">
+          ondrop="repoHandleDrop(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
           <div style="font-size:32px;margin-bottom:8px;">📁</div>
           <div style="font-size:14px;font-weight:600;color:#1B3022;margin-bottom:4px;">Arraste o arquivo ou clique para selecionar</div>
           <div style="font-size:12px;color:#94a3b8;">PDF, Word, PowerPoint, BPMN, JPG, PNG</div>
@@ -3184,7 +3184,7 @@
 </div>
 
 <!-- DROPS: lightbox para imagem de capa -->
-<div id="drops-lightbox" onclick="dropsCloseLightbox()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;">
+<div id="drops-lightbox" onclick="dropsCloseLightbox()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;" role="presentation">
   <img id="drops-lightbox-img" src="" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
 </div>
 
@@ -4189,7 +4189,7 @@
 
     <!-- Painel de configurações do indicador (override manual) -->
     <div id="indcage-cfg-panel" class="indcage-cfg-panel" style="display:none;">
-      <div class="indcage-cfg-header" onclick="indcageCfgToggle()">
+      <div class="indcage-cfg-header" onclick="indcageCfgToggle()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <span class="indcage-cfg-title">⚙️ Configurações do Indicador</span>
         <span id="indcage-cfg-chevron" style="font-size:12px;color:#1e3a7a;transition:transform .2s;">▼</span>
       </div>
@@ -6236,7 +6236,7 @@ function renderSisplanPickerList() {
     return;
   }
   list.innerHTML = filtered.map(ind => `
-    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')">
+    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
         <div style="flex:1;">
           <div style="font-size:11px;font-weight:700;color:#607070;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">${ind.codigo||'—'} · ${ind.divisao||''}</div>
@@ -6284,7 +6284,7 @@ function renderFaq(p) {
         <div style="display:flex;align-items:center;gap:6px;">
           <button class="edit-rm-btn" onclick="openFaqModal('${p}',${i})" title="Editar">✏️</button>
           <button class="edit-rm-btn" onclick="rmFaq('${p}',${i})">✕</button>
-          <span class="faq-chevron" onclick="toggleFaq('${p}',${i})">⌄</span>
+          <span class="faq-chevron" onclick="toggleFaq('${p}',${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⌄</span>
         </div>
       </div>
       <div class="faq-a">
@@ -7545,7 +7545,7 @@ function mountNewPopTab(key, label, silent=false) {
         <div class="pop-banner-meta">
           <span class="rev-badge" id="${key}-rev-badge">Rev. 0 · ${today}</span>
           <div class="version-badge-wrap" style="margin-top:4px;">
-            <span class="ver-badge" id="${key}-ver-badge" onclick="openVersionSelector('${key}',this)">v1</span>
+            <span class="ver-badge" id="${key}-ver-badge" onclick="openVersionSelector('${key}',this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">v1</span>
           </div>
         </div>
       </div>
@@ -9413,7 +9413,7 @@ function _renderCfgCardEquipeCompetencias(title, desc) {
       const active = selected.includes(sk);
       const eq = equipe.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const s  = sk.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      return `<span onclick="toggleEquipeSkill('${eq}','${s}','${tipo}')" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#1B3022;color:white;border:1px solid #1B3022;' : 'background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;'}">${sk}</span>`;
+      return `<span onclick="toggleEquipeSkill('${eq}','${s}','${tipo}')" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#1B3022;color:white;border:1px solid #1B3022;' : 'background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;'}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${sk}</span>`;
     }).join('');
   }
 
@@ -9482,12 +9482,12 @@ function _renderCfgCardAptCatalog(title, desc) {
 
     return `<div style="border:1px solid #e2e8f0;border-radius:9px;margin-bottom:8px;overflow:hidden;">
       <div style="display:grid;grid-template-columns:70px 120px 70px 1fr auto;gap:8px;align-items:center;padding:8px 12px;background:#f8fafc;cursor:pointer;"
-           onclick="cfgAptToggle(${i})">
+           onclick="cfgAptToggle(${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <span style="font-size:11px;font-family:monospace;color:#64748b;font-weight:600;">${a.id}</span>
         <span style="font-size:12px;color:#475569;">${a.categoria||'—'}</span>
         <span style="font-size:11px;font-weight:700;color:${critColor};">${a.criticidade||'—'}</span>
         <span style="font-size:13px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(a.apontamento||'').replace(/"/g,'&quot;')}">${a.apontamento||'—'}</span>
-        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
+        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
           <button onclick="cfgAptToggle(${i})" style="background:none;border:none;cursor:pointer;color:#1B3022;font-size:14px;padding:2px 6px;" title="Editar">✏️</button>
           <button onclick="cfgAptDel(${i})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px;padding:2px 6px;" title="Excluir">🗑</button>
         </div>
@@ -10233,7 +10233,7 @@ function renderOrganograma() {
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;min-width:130px;">
       <div id="org-unit-${area}" data-org-unit="${area}" onclick="orgClickUnit('${area}')"
         style="background:#e8a020;color:#1B3022;border-radius:10px;padding:11px 20px;text-align:center;width:100%;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(232,160,32,.3);box-sizing:border-box;cursor:pointer;transition:all .15s;user-select:none;"
-        title="Clique para ver os processos desta unidade">${area}</div>
+        title="Clique para ver os processos desta unidade" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${area}</div>
       ${teams.length ? `<div style="width:2px;height:14px;background:#cbd5e1;"></div><div style="display:flex;flex-direction:column;gap:5px;align-items:stretch;width:100%;">${teamsHtml}</div>` : ''}
     </div>`;
   }).join('');
@@ -10335,7 +10335,7 @@ function orgRenderUnitPanel(area) {
       return `
         <div onclick="arqShowProcessDetail(${idx})"
           style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;margin-bottom:4px;border:1px solid #e2e8f0;cursor:pointer;background:white;transition:background .12s;"
-          onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='white'">
+          onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='white'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
           <span style="background:${nat.bg};color:${nat.color};font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;flex-shrink:0;white-space:nowrap;">${r.natureza||''}</span>
           <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:600;color:#1B3022;">${r.processo}</div>
@@ -10722,7 +10722,7 @@ function renderPatCards() {
     const linkedPlan = item.tipo === 'Auditoria'
       ? (DATA.audits?.plans||[]).find(p => p.patId === item.id) : null;
     const auditVinc = linkedPlan
-      ? `<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;" onclick="event.stopPropagation();showAuditModule();setTimeout(()=>auditOpenPlan('${linkedPlan.id}'),200)" title="Abrir pasta do plano de auditoria">📋 Auditoria: ${linkedPlan.processoNome||linkedPlan.objetivo||'Ver plano'} · <span style="background:#${AUDIT_STATUS_BG[linkedPlan.status]||'F3F4F6'};color:${AUDIT_STATUS_COL[linkedPlan.status]||'#6B7280'};border-radius:6px;padding:1px 6px;">${AUDIT_STATUS_LABEL[linkedPlan.status]||linkedPlan.status}</span></span>`
+      ? `<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;" onclick="event.stopPropagation();showAuditModule();setTimeout(()= role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">auditOpenPlan('${linkedPlan.id}'),200)" title="Abrir pasta do plano de auditoria">📋 Auditoria: ${linkedPlan.processoNome||linkedPlan.objetivo||'Ver plano'} · <span style="background:#${AUDIT_STATUS_BG[linkedPlan.status]||'F3F4F6'};color:${AUDIT_STATUS_COL[linkedPlan.status]||'#6B7280'};border-radius:6px;padding:1px 6px;">${AUDIT_STATUS_LABEL[linkedPlan.status]||linkedPlan.status}</span></span>`
       : '';
     return `
     <div class="pat-card">
@@ -12475,20 +12475,20 @@ function runSearch(raw) {
     return `<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:10px 16px 4px;">${label}</div>` +
       items.map(r => {
         if(r.type === 'faq') return `
-          <div class="search-result-item" onclick="goToFaq('${r.key}', ${r.idx})">
+          <div class="search-result-item" onclick="goToFaq('${r.key}', ${r.idx})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="search-result-pop">📋 ${r.popName} · FAQ</div>
             <div class="search-result-q">${highlight(r.faq.q, q)}</div>
             ${r.faq.a ? `<div class="search-result-a">${highlight(r.faq.a.substring(0,200)+(r.faq.a.length>200?'…':''), q)}</div>` : ''}
           </div>`;
         if(r.type === 'norma') return `
-          <div class="search-result-item" onclick="goToNorma('${r.key}', ${r.idx})">
+          <div class="search-result-item" onclick="goToNorma('${r.key}', ${r.idx})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="search-result-pop">📜 ${r.popName} · Normas & Revisões</div>
             <div class="search-result-q">${highlight(r.norma.code||'', q)}</div>
             ${r.norma.name ? `<div class="search-result-a">${highlight(r.norma.name, q)}</div>` : ''}
             ${r.norma.url ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:4px;">🔗 ${r.norma.url}</div>` : ''}
           </div>`;
         if(r.type === 'repo_faq') return `
-          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-faq="true" onclick="openRepoDocViewer(this.dataset.docId,true)">
+          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-faq="true" onclick="openRepoDocViewer(this.dataset.docId,true)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="search-result-pop">📚 ${r.doc.title} · FAQ do Manual</div>
             <div class="search-result-q">${highlight(r.faq.q, q)}</div>
             ${r.faq.a ? `<div class="search-result-a">${highlight(r.faq.a.substring(0,240)+(r.faq.a.length>240?'…':''), q)}</div>` : ''}
@@ -12498,7 +12498,7 @@ function runSearch(raw) {
           const inDesc  = (r.doc.desc||'').toLowerCase().includes(lower);
           const inContent = !inTitle && !inDesc && (r.doc.textContent||'').toLowerCase().includes(lower);
           return `
-          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-in-content="${inContent ? 'true' : 'false'}" onclick="this.dataset.inContent==='true' ? openRepoDocViewer(this.dataset.docId) : goToRepoDoc(this.dataset.docId)">
+          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-in-content="${inContent ? 'true' : 'false'}" onclick="this.dataset.inContent==='true' ? openRepoDocViewer(this.dataset.docId) : goToRepoDoc(this.dataset.docId)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="search-result-pop">📚 Documentos & Manuais · ${r.doc.cat||'Documento'}</div>
             <div class="search-result-q">${highlight(r.doc.title||'', q)}</div>
             ${r.doc.desc ? `<div class="search-result-a">${highlight(r.doc.desc.substring(0,180)+(r.doc.desc.length>180?'…':''), q)}</div>` : ''}
@@ -14339,7 +14339,7 @@ function renderFicha(p) {
       matBadgeHtml = `
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);">
           <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;">Maturidade</div>
-          <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
+          <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div style="text-align:center;flex-shrink:0;">
               <div style="font-size:30px;font-weight:900;color:${matFinal.levelColor};line-height:1;">${matFinal.final}</div>
               <div style="font-size:9px;color:#94a3b8;line-height:1.2;">/ 100</div>
@@ -14530,7 +14530,7 @@ function _renderFichaProgressHtml(p) {
     const sep = i < etapas.length - 1 ? 'border-bottom:1px solid var(--cage-border);' : '';
 
     return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;${sep}">
-      <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}">${checkSvg}</div>
+      <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${checkSvg}</div>
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;flex-wrap:wrap;">
           <span style="${labelStyle}">${e.label}</span>${naBtn}
@@ -14893,7 +14893,7 @@ function openVersionSelector(p, badgeEl) {
 
   panel.innerHTML = allVersions.map(item => {
     const isActive = item.v === viewing;
-    return `<div class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();">
+    return `<div class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
       <div>
         <div>${item.isCurrent ? '✏️' : '📄'} <strong>v${item.v}</strong>${item.isCurrent ? ' <span style="font-size:10px;color:#059669;">(atual)</span>' : ''}</div>
         <div class="vs-meta">${item.date}${item.note ? ' · ' + item.note : ''}</div>
@@ -14901,7 +14901,7 @@ function openVersionSelector(p, badgeEl) {
     </div>`;
   }).join('') +
   (editMode && !d._viewingVersion || d._viewingVersion === cur ?
-    `<div class="vs-item vs-new" onclick="openNewVersionModal();this.closest('.version-selector-panel').remove();">＋ Nova Versão</div>` : '');
+    `<div class="vs-item vs-new" onclick="openNewVersionModal();this.closest('.version-selector-panel').remove();" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">＋ Nova Versão</div>` : '');
 
   badgeEl.closest('.version-badge-wrap').appendChild(panel);
   // Fechar ao clicar fora
@@ -15969,7 +15969,7 @@ function arqShowProcessDetail(idx) {
     let fluxoSection = '';
     if(fluxoUrl) {
       fluxoSection = `<div style="margin-top:4px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;max-height:180px;text-align:center;background:#f8fafc;cursor:zoom-in;position:relative;"
-          onclick="arqOpenFluxoLightbox('${fluxoUrl}')" title="Clique para ampliar">
+          onclick="arqOpenFluxoLightbox('${fluxoUrl}')" title="Clique para ampliar" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <img src="${fluxoUrl}" style="max-width:100%;max-height:180px;object-fit:contain;" alt="Fluxograma">
         <div style="position:absolute;bottom:4px;right:6px;font-size:10px;background:rgba(0,0,0,.45);color:white;border-radius:4px;padding:2px 6px;">🔍 ampliar</div>
       </div>`;
@@ -16376,7 +16376,7 @@ function showPopGallery() {
           ${canDelete ? `<button onclick="event.stopPropagation();popDeleteWork('${k}')"
             style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 5px;border-radius:4px;"
             onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
-          <div onclick="switchPop('${k}')">
+          <div onclick="switchPop('${k}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div style="font-size:28px;margin-bottom:10px;">📄</div>
             <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:6px;">${name}</div>
             ${macro ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macro}</div>` : ''}
@@ -16465,10 +16465,10 @@ function renderPopsGrid() {
               style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 4px;border-radius:4px;z-index:1;"
               onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-right:${canDelete?'20px':'0'};">
-              <div style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;" onclick="hideHome();switchPop('${p.key}')">${meta.name || p.label}</div>
+              <div style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;" onclick="hideHome();switchPop('${p.key}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${meta.name || p.label}</div>
               ${sc ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};white-space:nowrap;flex-shrink:0;">${stLabel}</span>` : ''}
             </div>
-            <div onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;">
+            <div onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             ${macroMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macroMeta}</div>` : ''}
             ${processoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Processo:</span> ${processoMeta}</div>` : ''}
             ${subprocessoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Subprocesso:</span> ${subprocessoMeta}</div>` : ''}
@@ -17594,7 +17594,7 @@ function npopRenderAtores(selectedArr, isCreateForm) {
   const selected = new Set(selectedArr || []);
   wrap.innerHTML = atores.map(a => {
     const on = selected.has(a);
-    return `<span data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${escapeHtml(a)}</span>`;
+    return `<span data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${escapeHtml(a)}</span>`;
   }).join('');
   if(hidden) hidden.value = [...selected].join(',');
 }
@@ -18108,7 +18108,7 @@ function dropsRender() {
     const pub = new Date(d.publishedAt);
     const dateLabel = pub.toLocaleDateString('pt-BR', {month:'long', year:'numeric', timeZone:'UTC'});
     const coverHtml = d.coverUrl
-      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)"><img src="${escapeHtml(d.coverUrl)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
+      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><img src="${escapeHtml(d.coverUrl)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
       : `<div style="height:80px;background:linear-gradient(135deg,#1B3022,#003366);display:flex;align-items:center;justify-content:center;font-size:36px;">💧</div>`;
     return `
     <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
@@ -18890,7 +18890,7 @@ function _ncFilterCatalog() {
   const critColor = {Alta:'#dc2626', Média:'#d97706', Media:'#d97706', Baixa:'#16a34a'};
   list.innerHTML = filtered.map(a => {
     const sel = _ncSelectedAptIds.includes(a.id);
-    return '<div onclick="_ncToggleApt(\''+a.id+'\')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;background:'+(sel?'#fee2e2':'#fff')+';border:1px solid '+(sel?'#fca5a5':'#e2e8f0')+';">'+
+    return '<div onclick="_ncToggleApt(\''+a.id+'\')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;background:'+(sel?'#fee2e2':'#fff')+';border:1px solid '+(sel?'#fca5a5':'#e2e8f0')+';" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">'+
       '<input type="checkbox" '+(sel?'checked':'')+' onclick="event.stopPropagation();_ncToggleApt(\''+a.id+'\')" style="cursor:pointer;accent-color:#991b1b;width:15px;height:15px;flex-shrink:0;">'+
       '<div style="flex:1;min-width:0;">'+
         '<div style="font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+a.apontamento+'</div>'+
@@ -19112,7 +19112,7 @@ function auditRenderPlans() {
     const patBadge  = patItem
       ? '<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap;">📅 PTA: '+patItem.titulo+'</span>'
       : '';
-    return '<div class="audit-card" onclick="auditOpenPlan(\''+p.id+'\')" style="cursor:pointer;" title="Abrir pasta do plano">'+
+    return '<div class="audit-card" onclick="auditOpenPlan(\''+p.id+'\')" style="cursor:pointer;" title="Abrir pasta do plano" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
         '<div class="audit-card-title">📁 '+(p.processoNome||p.processo||'(sem processo)')+'</div>'+
         _auditBadge(p.status||'planejada')+
@@ -19295,7 +19295,7 @@ function auditRenderExec() {
     const total = (e.checklist||[]).length;
     const conf  = (e.checklist||[]).filter(c=>c.conformidade==='conforme').length;
     const nc    = (e.checklist||[]).filter(c=>c.conformidade==='nao_conforme').length;
-    return '<div class="audit-card" style="border-left-color:#003366;" onclick="auditOpenExecModal(\''+e.id+'\')">'+
+    return '<div class="audit-card" style="border-left-color:#003366;" onclick="auditOpenExecModal(\''+e.id+'\')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
         '<div class="audit-card-title">▶ '+(plan?.processoNome||plan?.objetivo||'Execução')+'</div>'+
         _auditBadge(e.status||'em_andamento')+
@@ -19541,7 +19541,7 @@ function auditRenderNc() {
       return a ? '<span style="background:#fee2e2;color:#991b1b;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;">'+a.id+'</span>' : '';
     }).join(' ');
     const recCount = (nc.recomendacoes||[]).length;
-    return '<div class="audit-card audit-nc-'+(nc.gravidade||'leve')+'" onclick="auditOpenNcModal(\''+nc.id+'\')">'+
+    return '<div class="audit-card audit-nc-'+(nc.gravidade||'leve')+'" onclick="auditOpenNcModal(\''+nc.id+'\')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'+
         '<div class="audit-card-title">⚠️ '+(nc.processo||'Processo não informado')+(nc.etapa?' — '+nc.etapa:'')+' </div>'+
         '<div style="display:flex;gap:6px;">'+_auditGravBadge(nc.gravidade||'leve')+' '+_auditBadge(nc.status||'aberta')+'</div>'+
@@ -19650,7 +19650,7 @@ function auditRenderActions() {
   list.innerHTML = acts.map(a => {
     const nc = DATA.audits.nonconformities.find(n=>n.id===a.ncId);
     const overdue = a.prazo && a.status!=='concluida' && a.status!=='cancelada' && new Date(a.prazo+'T23:59:59') < new Date();
-    return '<div class="audit-card" style="border-left-color:'+(overdue?'#dc2626':'#065f46')+'" onclick="auditOpenActionModal(\''+a.id+'\')">'+
+    return '<div class="audit-card" style="border-left-color:'+(overdue?'#dc2626':'#065f46')+'" onclick="auditOpenActionModal(\''+a.id+'\')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'+
         '<div class="audit-card-title">✅ '+(a.acao||'(sem descrição)')+'</div>'+
         _auditBadge(a.status||'pendente')+
@@ -25232,7 +25232,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
 
 
 <!-- BUSCA GLOBAL -->
-<div class="search-modal-overlay" id="search-overlay" onclick="closeSearchIfOutside(event)">
+<div class="search-modal-overlay" id="search-overlay" onclick="closeSearchIfOutside(event)" role="presentation">
   <div class="search-modal">
     <div class="search-modal-head">
       <span>🔍</span>
@@ -25272,7 +25272,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5;">
           Restaura os dados a partir de um arquivo de backup gerado anteriormente. <strong>Atenção: substituirá todos os dados atuais.</strong>
         </div>
-        <div class="backup-zone" onclick="document.getElementById('backup-file-input').click()">
+        <div class="backup-zone" onclick="document.getElementById('backup-file-input').click()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
           <input type="file" id="backup-file-input" accept=".json" onchange="previewBackupFile(this)">
           <div class="backup-zone-icon">📂</div>
           <div class="backup-zone-label">Clique para selecionar o arquivo .json</div>
