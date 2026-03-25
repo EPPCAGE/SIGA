@@ -514,7 +514,7 @@ function renderAutomationConfirm() {
     const n = graph.nodes.find((x) => x.id === id);
     if (n?.automated) return '';
     const checked = confirmedAutoNodes.has(id) ? 'checked' : '';
-    return `<label class="check-row"><input type="checkbox" data-auto-node="${id}" ${checked}> ${n?.label || id}</label>`;
+    return `<label class="check-row"><input type="checkbox" data-auto-node="${escapeHtml(id)}" ${checked}> ${escapeHtml(n?.label || id)}</label>`;
   }).filter(Boolean).join('');
 
   box.innerHTML = `<div class="box" style="margin-bottom:6px;">Sugestoes de automacao detectadas. Confirme as que entram no cenario "TEP ideal auto".</div>${rows}`;
@@ -3054,7 +3054,7 @@ function updateDashboard() {
   if (!graph) return;
   const sel = $('roiGateway');
   const gateways = gatewayNodes(graph);
-  sel.innerHTML = gateways.map((g) => `<option value="${g.id}">${g.label || g.id}</option>`).join('');
+  sel.innerHTML = gateways.map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.label || g.id)}</option>`).join('');
 
   let metrics;
   try {
@@ -3455,7 +3455,7 @@ function renderHypothesisTargets() {
     return;
   }
 
-  sel.innerHTML = items.map((it) => `<option value="${it.value}">${it.label}</option>`).join('');
+  sel.innerHTML = items.map((it) => `<option value="${escapeHtml(it.value)}">${escapeHtml(it.label)}</option>`).join('');
 
   if (type === 'gateway') help.textContent = 'Hipotese: retirar etapa de aprovacao (gateway).';
   else if (type === 'loop') help.textContent = 'Hipotese: remover retorno de retrabalho (loop).';

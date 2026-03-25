@@ -1,7 +1,7 @@
 // ─── Service Worker — SIGA ───────────────────────────────────────────
 // Para forçar atualização em todos os usuários: incremente CACHE_VERSION abaixo.
 // Exemplo: 'siga-v1' → 'siga-v2'
-const CACHE_VERSION = 'siga-v3';
+const CACHE_VERSION = 'siga-v4';
 
 // ── Install: ativa imediatamente sem esperar abas antigas fecharem ────────────
 self.addEventListener('install', () => {
