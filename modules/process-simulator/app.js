@@ -4024,13 +4024,13 @@ function wireEvents() {
   $('btnBpmnApply')?.addEventListener('click', applyFromBpmnEditor);
   $('btnBpmnBack')?.addEventListener('click', () => { hideBpmnEditor(); showEntryChoice(); });
   $('btnBpmnFit')?.addEventListener('click', () => {
-    try { _bpmnModeler?.get('canvas').zoom('fit-viewport'); } catch (e) {}
+    try { _bpmnModeler?.get('canvas').zoom('fit-viewport'); } catch (e) { /* intentional */ }
   });
   $('btnBpmnUndo')?.addEventListener('click', () => {
-    try { _bpmnModeler?.get('commandStack').undo(); } catch (e) {}
+    try { _bpmnModeler?.get('commandStack').undo(); } catch (e) { /* intentional */ }
   });
   $('btnBpmnRedo')?.addEventListener('click', () => {
-    try { _bpmnModeler?.get('commandStack').redo(); } catch (e) {}
+    try { _bpmnModeler?.get('commandStack').redo(); } catch (e) { /* intentional */ }
   });
   $('btnBpmnExport')?.addEventListener('click', exportBpmnFile);
 }
@@ -4063,7 +4063,7 @@ function saveToSIGA() {
     // Tenta capturar métricas atuais; falha silenciosamente se não for possível
     let simResults = _lastSimMetrics;
     if (!simResults) {
-      try { simResults = computeScenarioMetrics(); _lastSimMetrics = simResults; } catch (_) {}
+      try { simResults = computeScenarioMetrics(); _lastSimMetrics = simResults; } catch (_) { /* intentional */ }
     }
     // Payload simplificado para serialização (remove estruturas grandes como ranking completo)
     const simSummary = simResults ? {

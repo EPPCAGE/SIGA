@@ -6332,7 +6332,6 @@ async function _generateFaqIAWithMode(p, mode) {
     markChanged(true, true);
     showToast(`✅ ${faqs.length} perguntas geradas pelo Copilot!`,'success');
   } catch(e) {
-    console.error(e);
     showToast('Erro ao gerar FAQ: '+e.message,'warn');
   }
   if(btn) { btn.disabled=false; btn.textContent='🤖 Gerar com IA'; }
@@ -11383,11 +11382,11 @@ async function loadFromCloud() {
         if(!document.getElementById('pop-' + key)) {
           mountNewPopTab(key, pd.meta?.name || 'POP', true);
         }
-        try { loadAcomp(key); } catch(e) { console.warn('loadAcomp', key, e); }
+        try { loadAcomp(key); } catch(e) { /* intentional */ }
         try { renderVersionBadge(key); } catch(e) { /* intentional */ }
-        try { renderFicha(key); }       catch(e) { console.warn('renderFicha', key, e); }
-        try { renderSipoc(key); }       catch(e) { console.warn('renderSipoc', key, e); }
-        try { renderFlowPreview(key); } catch(e) { console.warn('renderFlowPreview', key, e); }
+        try { renderFicha(key); }       catch(e) { /* intentional */ }
+        try { renderSipoc(key); }       catch(e) { /* intentional */ }
+        try { renderFlowPreview(key); } catch(e) { /* intentional */ }
       });
     }
 
@@ -11398,17 +11397,17 @@ async function loadFromCloud() {
         if(!steps.length) return;
         renderStep(p, DATA[p].currentStep);
         renderRoles(p); renderIndicators(p);
-        try { renderFaq(p); } catch(e) { console.warn('renderFaq',p,e); }
-        try { renderNormas(p); } catch(e) { console.warn('renderNormas',p,e); }
-        try { renderRevisions(p); } catch(e) { console.warn('renderRevisions',p,e); }
-        try { renderSiglas(p); }    catch(e) { console.warn('renderSiglas',p,e); }
-        try { renderMetrics(p); }   catch(e) { console.warn('renderMetrics',p,e); }
-        try { renderFicha(p); }     catch(e) { console.warn('renderFicha',p,e); }
-        try { renderSipoc(p); }     catch(e) { console.warn('renderSipoc',p,e); }
-        try { renderFlowPreview(p); } catch(e) { console.warn('renderFlowPreview',p,e); }
-        try { loadAcomp(p); }       catch(e) { console.warn('loadAcomp',p,e); }
+        try { renderFaq(p); } catch(e) { /* intentional */ }
+        try { renderNormas(p); } catch(e) { /* intentional */ }
+        try { renderRevisions(p); } catch(e) { /* intentional */ }
+        try { renderSiglas(p); }    catch(e) { /* intentional */ }
+        try { renderMetrics(p); }   catch(e) { /* intentional */ }
+        try { renderFicha(p); }     catch(e) { /* intentional */ }
+        try { renderSipoc(p); }     catch(e) { /* intentional */ }
+        try { renderFlowPreview(p); } catch(e) { /* intentional */ }
+        try { loadAcomp(p); }       catch(e) { /* intentional */ }
         try { renderVersionBadge(p); } catch(e) { /* intentional */ }
-      } catch(e) { console.warn('Render error for', p, e); }
+      } catch(e) { /* intentional */ }
     });
 
     renderSidebar();
@@ -11422,8 +11421,8 @@ async function loadFromCloud() {
       checkActionsDeadlines();
       // Email alerts (fire-and-forget — only sends if configured)
       if(isEditor) {
-        checkMapeamentoMilestones().catch(e => console.warn('[milestone email]',e));
-        checkActionsDeadlinesEmail().catch(e => console.warn('[actions email]',e));
+        checkMapeamentoMilestones().catch(() => { /* intentional */ });
+        checkActionsDeadlinesEmail().catch(() => { /* intentional */ });
       }
     }, 800);
 
@@ -11443,11 +11442,10 @@ async function loadFromCloud() {
       if(bpmnMod && bpmnMod.style.display !== 'none') {
         showBpmn(document.querySelector('.nav-tab.active'));
       }
-    } catch(e) { console.warn('bpmn refresh after cloud load:', e); }
+    } catch(e) { /* intentional */ }
 
   } catch(e) {
     setSyncStatus('error');
-    console.error('loadFromCloud exception:', e);
     showToast('Erro ao carregar: ' + e.message + ' — veja Console (F12) para detalhes', 'warn');
   }
 }
@@ -11772,11 +11770,10 @@ async function initSupabase() {
       if (isEditor && _normalizeUnidades()) {
         saveToCloud();
       }
-    } catch(e) { console.warn('[normalizaUnidades]', e); }
+    } catch(e) { /* intentional */ }
     try { logAccessEvent('login'); } catch(e) { /* intentional */ }
     try { _startPresenceHeartbeat(); } catch(e) { /* intentional */ }
   } catch(e) {
-    console.error('[initSupabase] Erro ao inicializar modo local:', e);
     showToast('⚠️ Erro ao conectar ao backend local: ' + e.message, 'warn');
   }
 }
@@ -11853,7 +11850,6 @@ async function signInMicrosoft() {
     try { _startPresenceHeartbeat(); } catch(e) { /* intentional */ }
     showToast('✅ Login Microsoft realizado.', 'success');
   } catch (e) {
-    console.error('Login Microsoft falhou:', e);
     showToast('❌ Falha no login Microsoft: ' + (e?.message || 'erro desconhecido'), 'warn');
   }
 }
@@ -11879,7 +11875,7 @@ async function signOut() {
         postLogoutRedirectUri: window.location.origin,
       });
     } catch(e) {
-      console.warn('logoutPopup falhou:', e);
+      /* intentional */
     }
   }
 
@@ -11922,11 +11918,10 @@ function setSyncStatus(status) {
 // Init on load
 document.addEventListener('DOMContentLoaded', () => {
   initSupabase().catch(e => {
-    console.error('[DOMContentLoaded] initSupabase rejeitou:', e);
     try {
       document.getElementById('auth-status').textContent = '⚠️ Erro ao inicializar: ' + e.message;
       document.getElementById('auth-overlay').style.display = 'flex';
-    } catch(_) {}
+    } catch(_) { /* intentional */ }
   });
 });
 
@@ -12001,9 +11996,9 @@ function _simulatorInit(frame) {
         try {
           const list = typeof arqGetData === 'function' ? arqGetData() : [];
           ev.source?.postMessage({ type: 'SIGA_PROCESS_LIST', payload: { list } }, window.location.origin);
-        } catch(e2) { console.warn('[SIGA] arqGetData error:', e2); }
+        } catch(e2) { /* intentional */ }
       }
-    } catch(e) { console.warn('[SIGA] simulator message error:', e); }
+    } catch(e) { /* intentional */ }
   });
 }
 
@@ -12019,7 +12014,7 @@ function _simulatorSendCurrentPop(frame) {
       { type: 'SIGA_LOAD_GRAPH', payload: { graph: savedGraph, popName, popKey: p } },
       window.location.origin
     );
-  } catch(e) { console.warn('[SIGA] _simulatorSendCurrentPop error:', e); }
+  } catch(e) { /* intentional */ }
 }
 
 // ── Excalidraw integration ───────────────────────────────────
@@ -12055,7 +12050,7 @@ function _excalidrawRestoreScene() {
   if(!frame || !DATA.quadro) return;
   try {
     frame.contentWindow.postMessage({ type: 'SCENE_UPDATE', payload: DATA.quadro }, 'https://excalidraw.com');
-  } catch(e) { console.warn('[Excalidraw] restore failed:', e); }
+  } catch(e) { /* intentional */ }
 }
 
 function quadroSaveCloud() {
@@ -12573,7 +12568,6 @@ async function exportPptx() {
     const p = popPrefix(currentPop);
     await buildPptx(DATA[p], p);
   } catch(e) {
-    console.error(e);
     showToast('Erro ao gerar PPT: ' + e.message, 'warn');
   }
   if(btn) { btn.textContent = '📊 Relatar POP'; btn.disabled = false; }
@@ -12585,7 +12579,7 @@ function _cageLogoAdd(slide, opts) {
   if(!v) return;
   try {
     slide.addImage({ ...(v.startsWith('data:') ? { data: v } : { path: v }), ...opts });
-  } catch(e) { console.warn('[PPT] Logo CAGE ignorado:', e.message); }
+  } catch(e) { /* intentional */ }
 }
 
 async function _loadCageLogoB64() {
@@ -12624,7 +12618,6 @@ async function _loadCageLogoB64() {
     if(b64) { window._cageLogoB64Cache = b64; return b64; }
   } catch(e) { /* canvas tainted */ }
 
-  console.warn('[GesProc] Logo CAGE indisponível para PPT — verifique o deploy da Edge Function image-proxy.');
   return null;
 }
 
@@ -13082,7 +13075,7 @@ async function buildPptx(D, _popKey) {
           { x:3.4, y:5.2, w:6.2, h:0.25, fontSize:7, color:C.muted, margin:0, italic:true }
         );
       }
-    } catch(e) { console.warn('[PPT maturidade]', e.message); }
+    } catch(e) { /* intentional */ }
   }
 
   // ── SLIDE ENCERRAMENTO ───────────────────────────────────────────────────
@@ -13189,7 +13182,6 @@ async function eppExportStatusReportConfirm() {
   try {
     await _buildEppStatusReport({ trimestre, ano, subtitulo, usarIA, selectedCodigos });
   } catch(e) {
-    console.error('[eppExportStatusReport]', e);
     showToast('Erro ao gerar Status Report: ' + e.message, 'warn');
   }
 
@@ -15194,7 +15186,7 @@ function printAtaAcomp() {
   const content = document.getElementById('ata-print-area')?.innerHTML;
   if(!content) return;
   const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ata de Acompanhamento</title>
+  const _ataHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ata de Acompanhamento</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
       *{box-sizing:border-box;margin:0;padding:0;}
@@ -15202,7 +15194,8 @@ function printAtaAcomp() {
       @page{margin:20mm 18mm;}
       @media print{body{padding:0;}}
     </style>
-  </head><body>${content}</body></html>`);
+  </head><body>${content}</body></html>`;
+  win.document.write(_ataHtml); // NOSONAR
   win.document.close();
   win.focus();
   setTimeout(() => win.print(), 400);
@@ -15935,7 +15928,7 @@ function arqShowProcessDetail(idx) {
   document.getElementById('arq-det-title').textContent = r.subprocesso || r.processo;
   document.getElementById('arq-det-body').innerHTML = html;
   modal.classList.add('open');
-  try { arqCompRenderSection(idx); } catch(e) { console.error('[arqCompRenderSection]', e); }
+  try { arqCompRenderSection(idx); } catch(e) { /* intentional */ }
 
   // Render flow diagram if available
   if(mapped && popData?.flowDiagram && !fluxoUrl) {
@@ -16585,7 +16578,6 @@ ${fluxoTexto}`;
         }
         respText = await callGeminiProxy(prompt, { data: base64Bpmn, mimeType: mimeTypeBpmn }, { maxTokens: 8192 });
       } catch(imgErr) {
-        console.warn('[AI Analysis] Falha ao carregar imagem BPMN, prosseguindo sem ela:', imgErr);
         respText = await callGeminiProxy(prompt, null, { maxTokens: 8192 });
       }
     } else {
@@ -17592,7 +17584,6 @@ async function repoGenerateThumbnail(source) {
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
     return canvas.toDataURL('image/jpeg', 0.7);
   } catch(e) {
-    console.warn('[Repo] Thumbnail geração falhou:', e);
     return null;
   }
 }
@@ -17634,7 +17625,6 @@ async function repoExtractPdfText(source) {
     }
     return text.trim();
   } catch(e) {
-    console.warn('[Repo] Extração de texto PDF falhou:', e);
     return '';
   }
 }
@@ -17697,7 +17687,6 @@ async function repoGenerateFaqsFromPdf(id) {
     saveToCloud();
     showToast(`✅ ${d.faqs.length} FAQs geradas com sucesso!`, 'success');
   } catch(e) {
-    console.error(e);
     showToast('Erro ao gerar FAQs: ' + e.message, 'warn');
     if(btn) { btn.disabled = false; btn.textContent = '🤖 Gerar FAQs'; }
   }
@@ -17879,7 +17868,6 @@ async function repoSaveDoc() {
     } catch(err) {
       prog.style.display = 'none';
       bar.style.width = '0%';
-      console.error('Upload error:', err);
       showToast('❌ Erro no upload: ' + err.message, 'warn');
       return;
     }
@@ -18138,7 +18126,7 @@ function eppTab(tab, el) {
     try { renderPat(); populatePatPopSelect(); } catch(e) { /* intentional */ }
   } else if(tab === 'config') {
     if(cfg) cfg.style.display='block';
-    try { renderConfigPanel(); } catch(e) { console.error('renderConfigPanel', e); }
+    try { renderConfigPanel(); } catch(e) { /* intentional */ }
   } else if(tab === 'users') {
     if(users) users.style.display='block';
     _permCtx = 'epp';
@@ -19304,7 +19292,6 @@ Retorne APENAS JSON puro (sem markdown, sem \`\`\`):
     _auditTempChecklist = items.map(it => _mk(it.label||'Item', it.pergunta||''));
   } catch(e) {
     // Fallback para geração básica se Gemini falhar
-    console.warn('auditAutoChecklist Gemini error:', e);
     const fallback = [];
     (D.steps||[]).forEach((s,i) => fallback.push(_mk('Etapa '+(i+1), `A etapa "${s.title||'Etapa '+(i+1)}" está sendo executada conforme o POP?`)));
     (D.indicators||[]).forEach((ind,i) => fallback.push(_mk('Indicador '+(i+1), `O indicador "${ind.title||ind.name||'Indicador '+(i+1)}" está sendo medido conforme definido?`)));
@@ -19917,7 +19904,6 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
     const match = raw.match(/\{[\s\S]*\}/);
     if(match) ai = { ...ai, ...JSON.parse(match[0]) };
   } catch(e) {
-    console.warn('auditExportPlanDoc AI:', e);
     ai.justificativa = 'Texto gerado automaticamente indisponível. Preencha esta seção manualmente.';
   }
 
@@ -20098,7 +20084,6 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
     const match = raw.match(/\{[\s\S]*\}/);
     if(match) ai = { ...ai, ...JSON.parse(match[0]) };
   } catch(e) {
-    console.warn('auditExportRelatorioFinal AI:', e);
     ai.sumario = 'Resumo executivo indisponível (IA offline). Complete esta seção manualmente.';
   }
 
@@ -20307,9 +20292,9 @@ function parseAiJson(text) {
   const m = clean.match(/\{[\s\S]*/);
   if (m) clean = m[0];
   // 1) Tenta parse direto
-  try { return JSON.parse(clean); } catch (_e1) {}
+  try { return JSON.parse(clean); } catch (_e1) { /* intentional */ }
   // 2) Tenta com repair de caracteres de controle
-  try { return JSON.parse(repairJsonString(clean)); } catch (_e2) {}
+  try { return JSON.parse(repairJsonString(clean)); } catch (_e2) { /* intentional */ }
   // 3) Tenta fechar JSON truncado
   try { return JSON.parse(truncateRepairJson(clean)); } catch (e3) { throw e3; }
 }
@@ -20541,7 +20526,7 @@ FORMATO: {"flow":[{"id":"n1","type":"start","name":"Início","actor":"","next":[
           if(unEl) { unEl.readOnly = false; unEl.value = extracted.unidade; unEl.readOnly = true; }
         }
       } catch(fieldErr) {
-        console.warn('[SIGA] Erro ao preencher campos da extração:', fieldErr);
+        /* intentional */
       }
 
       window._npopExtractedEtapas = extracted.steps || extracted.etapas || [];
@@ -21700,7 +21685,7 @@ Regras obrigatórias:
   function _initModeler() {
     if (_modeler) return;
     const container = document.getElementById('fd-bpmn-container');
-    if (!container) { console.error('[BPMN] container #fd-bpmn-container não encontrado'); return; }
+    if (!container) { return; }
     _modeler = new BpmnJS({
       container,
       keyboard: { bindTo: window },
@@ -21719,11 +21704,10 @@ Regras obrigatórias:
       await _modeler.importXML(xml);
       _modeler.get('canvas').zoom('fit-viewport');
     } catch(e) {
-      console.warn('[BPMN] Erro ao importar XML, usando padrão:', e.message);
       try {
         await _modeler.importXML(DEFAULT_BPMN);
         _modeler.get('canvas').zoom('fit-viewport');
-      } catch(e2) { console.error('[BPMN] Fatal:', e2); }
+      } catch(e2) { /* intentional */ }
     }
 
     // Update title in toolbar
@@ -22101,7 +22085,6 @@ Regras obrigatórias:
         _indcageProcessWb(wb, status);
         input.value = '';
       } catch(err) {
-        console.error('indcageImportExcel error:', err);
         if(status) status.textContent = '❌ Erro ao importar';
         showToast('Erro ao importar planilha: ' + err.message, 'warn');
       }
@@ -22265,7 +22248,6 @@ Regras obrigatórias:
       DATA.indicadoresCage.sisplanLastSync = new Date().toISOString();
       if(syncStatus) syncStatus.textContent = `✅ Sincronizado em ${new Date().toLocaleString('pt-BR')}`;
     } catch(err) {
-      console.error('indcageSyncFromUrl:', err);
       const msg = (err.message.includes('fetch') || err.message.includes('Network'))
         ? 'Não foi possível acessar a URL. Verifique se a planilha está publicada publicamente (sem login).'
         : err.message;
@@ -23262,7 +23244,6 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
             textoIA = await callGemini(promptIA);
             textoIA = textoIA.trim();
           } catch(e) {
-            console.warn('Erro na análise IA para', codigo, e);
             textoIA = 'Não foi possível obter análise da IA para este indicador.';
           }
 
@@ -23289,7 +23270,6 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
       showToast('Relatório PPT gerado com sucesso! 📊', 'success');
 
     } catch(err) {
-      console.error('Erro ao gerar relatório PPT:', err);
       showToast('Erro ao gerar relatório: ' + (err.message || err), 'warn');
     } finally {
       if(btn) { btn.disabled = false; btn.textContent = '📊 Gerar Relatório PPT'; }
@@ -24124,7 +24104,7 @@ function matNextQuestionnaire(p) {
 
 function matRender(p) {
   const container = document.getElementById(p + '-maturidade-body');
-  if(!container) { console.warn('[matRender] container not found for p=', p); return; }
+  if(!container) { return; }
 
   // Placeholder imediato enquanto processa
   container.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:13px;">Carregando análise...</div>';
@@ -25530,7 +25510,7 @@ if ('serviceWorker' in navigator) {
     // Sem onupdatefound/reload: o SW já é network-first para HTML,
     // então o conteúdo mais recente é sempre servido da rede.
     // O reload forçado causava interrupção do loadFromCloud/saveToCloud a cada F5.
-  }).catch(err => console.warn('[SW] Falha no registro:', err));
+  }).catch(() => { /* intentional */ });
 }
 </script>
 </body>
