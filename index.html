@@ -12361,7 +12361,7 @@ function runSearch(raw) {
             ${r.norma.url ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:4px;">🔗 ${r.norma.url}</div>` : ''}
           </div>`;
         if(r.type === 'repo_faq') return `
-          <div class="search-result-item" onclick="openRepoDocViewer('${r.doc.id}', true)">
+          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-faq="true" onclick="openRepoDocViewer(this.dataset.docId,true)">
             <div class="search-result-pop">📚 ${r.doc.title} · FAQ do Manual</div>
             <div class="search-result-q">${highlight(r.faq.q, q)}</div>
             ${r.faq.a ? `<div class="search-result-a">${highlight(r.faq.a.substring(0,240)+(r.faq.a.length>240?'…':''), q)}</div>` : ''}
@@ -12370,11 +12370,8 @@ function runSearch(raw) {
           const inTitle = (r.doc.title||'').toLowerCase().includes(lower);
           const inDesc  = (r.doc.desc||'').toLowerCase().includes(lower);
           const inContent = !inTitle && !inDesc && (r.doc.textContent||'').toLowerCase().includes(lower);
-          const clickAction = inContent
-            ? `openRepoDocViewer('${r.doc.id}')`
-            : `goToRepoDoc('${r.doc.id}')`;
           return `
-          <div class="search-result-item" onclick="${clickAction}">
+          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-in-content="${inContent ? 'true' : 'false'}" onclick="this.dataset.inContent==='true' ? openRepoDocViewer(this.dataset.docId) : goToRepoDoc(this.dataset.docId)">
             <div class="search-result-pop">📚 Documentos & Manuais · ${r.doc.cat||'Documento'}</div>
             <div class="search-result-q">${highlight(r.doc.title||'', q)}</div>
             ${r.doc.desc ? `<div class="search-result-a">${highlight(r.doc.desc.substring(0,180)+(r.doc.desc.length>180?'…':''), q)}</div>` : ''}
