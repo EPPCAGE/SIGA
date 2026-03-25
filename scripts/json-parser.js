@@ -42,7 +42,7 @@ function repairJsonString(str) {
 
 function truncateRepairJson(str) {
   let s = repairJsonString(str);
-  s = s.replace(/,\s*([}\]])/g, '$1');
+  s = s.replaceAll(/,\s*([}\]])/g, '$1');
 
   const stack = [];
   let inString = false;

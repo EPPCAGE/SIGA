@@ -11,7 +11,6 @@ import {
   applyGatewayProbabilities,
   simulateRoi,
   RULES,
-  COMPLEXITY_UT,
 } from './engine.js';
 import { scanSuggestions, markAutomation, setLoopProbability } from './assistant.js';
 import { extractTopologyFromImage, extractTopologyFromSpreadsheetFile, extractTopologyFromWorkflowFile } from './cv.js';
@@ -110,7 +109,7 @@ function resetRulesToDefaults() {
 }
 
 function cloneLocal(obj) {
-  return JSON.parse(JSON.stringify(obj));
+  return structuredClone(obj);
 }
 
 function normalizeTextKey(value) {
@@ -118,7 +117,7 @@ function normalizeTextKey(value) {
     .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replaceAll(/[\u0300-\u036f]/g, '');
 }
 
 function looksLikeActorName(value) {
@@ -221,7 +220,7 @@ function fillMissingActorsFromCatalog(targetGraph, actors) {
 function isTechnicalActorCode(value) {
   const s = String(value || '').trim();
   if (!s) return false;
-  const normalized = s.replace(/[{}]/g, '');
+  const normalized = s.replaceAll(/[{}]/g, '');
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
     || /^[0-9a-f]{24,}$/i.test(s)
     || /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalized);
@@ -430,7 +429,7 @@ function rebalanceOutgoingFromNode(fromId, focusEdgeId, targetProb) {
   const sumOthers = others.reduce((acc, e) => acc + Number(e.probability || 0), 0);
   const drift = Number((100 - (sumOthers + p)).toFixed(2));
   if (Math.abs(drift) > 0 && others.length) {
-    others[others.length - 1].probability = Number((Number(others[others.length - 1].probability || 0) + drift).toFixed(2));
+    others.at(-1).probability = Number((Number(others.at(-1).probability || 0) + drift).toFixed(2));
   }
 }
 
@@ -520,7 +519,7 @@ function syncConfirmedAutoFromUi() {
   const next = new Set();
   boxes.forEach((el) => {
     if (!el.checked) return;
-    const id = String(el.getAttribute('data-auto-node') || '').trim();
+    const id = String(el.dataset.autoNode || '').trim();
     if (id) next.add(id);
   });
 
@@ -722,7 +721,7 @@ function syncActorAssignmentsFromWizard() {
   if (!graph) return;
   const nodeMap = new Map((graph.nodes || []).map((n) => [n.id, n]));
   document.querySelectorAll('input[data-actor-node]').forEach((el) => {
-    const nodeId = el.getAttribute('data-actor-node');
+    const nodeId = el.dataset.actorNode;
     const actor = String(el.value || '').trim();
     const node = nodeMap.get(nodeId);
     if (!node || node.type !== 'task') return;
@@ -737,13 +736,13 @@ function saveHandoffRulesFromWizard() {
   graph.handoffRules = graph.handoffRules || {};
   graph.handoffActionRules = graph.handoffActionRules || {};
   document.querySelectorAll('select[data-handoff-key]').forEach((el) => {
-    const key = el.getAttribute('data-handoff-key');
+    const key = el.dataset.handoffKey;
     const val = String(el.value || '');
     if (val) graph.handoffRules[key] = val;
     else delete graph.handoffRules[key];
   });
   document.querySelectorAll('select[data-handoff-action-key]').forEach((el) => {
-    const key = el.getAttribute('data-handoff-action-key');
+    const key = el.dataset.handoffActionKey;
     const val = String(el.value || '');
     if (val) graph.handoffActionRules[key] = val;
     else delete graph.handoffActionRules[key];
@@ -791,7 +790,7 @@ function saveSetupTaskMatrixFromForm() {
   const nodeMap = new Map((graph.nodes || []).map((n) => [n.id, n]));
   // Salva atores (data-task-actor)
   document.querySelectorAll('input[data-task-actor]').forEach((el) => {
-    const nodeId = el.getAttribute('data-task-actor');
+    const nodeId = el.dataset.taskActor;
     const actor = String(el.value || '').trim();
     const node = nodeMap.get(nodeId);
     if (!node || node.type !== 'task') return;
@@ -800,7 +799,7 @@ function saveSetupTaskMatrixFromForm() {
   });
   // Salva complexidade por tarefa (data-task-complexity)
   document.querySelectorAll('select[data-task-complexity]').forEach((el) => {
-    const nodeId = el.getAttribute('data-task-complexity');
+    const nodeId = el.dataset.taskComplexity;
     const comp = String(el.value || '').trim();
     const node = nodeMap.get(nodeId);
     if (!node || node.type !== 'task') return;
@@ -809,7 +808,7 @@ function saveSetupTaskMatrixFromForm() {
   // Salva perfis de raia (data-lane-profile)
   graph.lanes = graph.lanes || {};
   document.querySelectorAll('[data-lane-profile]').forEach((row) => {
-    const lane = row.getAttribute('data-lane-profile');
+    const lane = row.dataset.laneProfile;
     const team = String(row.querySelector('[data-lp-team]')?.value || '').trim();
     const org  = String(row.querySelector('[data-lp-org]')?.value  || '').trim();
     graph.lanes[lane] = { ...(graph.lanes[lane] || {}), team, org };
@@ -828,9 +827,9 @@ function renderSetupLaneProfiles() {
     return;
   }
   const focused = document.activeElement;
-  const focusedLane = focused?.closest('[data-lane-profile]')?.getAttribute('data-lane-profile');
-  const focusedField = focused?.getAttribute('data-lp-team') !== null ? 'team'
-    : focused?.getAttribute('data-lp-org') !== null ? 'org' : null;
+  const focusedLane = focused?.closest('[data-lane-profile]')?.dataset.laneProfile;
+  const focusedField = focused?.dataset.lpTeam !== undefined ? 'team'
+    : focused?.dataset.lpOrg !== undefined ? 'org' : null;
 
   const rows = lanes.map((lane) => {
     const profile = graph.lanes?.[lane] || {};
@@ -935,7 +934,7 @@ function collectSetupStatus() {
 
 function requestProcessListFromSiga() {
   try {
-    window.parent.postMessage({ type: 'SIMULATOR_REQUEST_PROCESS_LIST' }, '*');
+    globalThis.parent.postMessage({ type: 'SIMULATOR_REQUEST_PROCESS_LIST' }, globalThis.location.origin);
   } catch (e) { console.warn('[simulator] postMessage para parent (standalone)', e); }
 }
 
@@ -1056,7 +1055,7 @@ function renderSetupSection0() {
     $('sec0Tbody')?.addEventListener('click', (ev) => {
       const tr = ev.target.closest('tr[data-sec0-idx]');
       if (!tr) return;
-      const idx = Number(tr.getAttribute('data-sec0-idx'));
+      const idx = Number(tr.dataset.sec0Idx);
       if (!Number.isFinite(idx) || !_sec0Filtered[idx]) return;
       _linkedProcess = { ..._sec0Filtered[idx] };
       _sec0UpdateTable();   // atualiza highlight sem recriar o input
@@ -1142,7 +1141,6 @@ function renderSetupTaskMatrix() {
 
     // Complexidade: desabilitada para tarefas automatizadas
     const comp = t.complexity || (idx === 0 ? 'alta' : 'media');
-    const compInfo = COMP_LABELS[comp] || COMP_LABELS.media;
     const compSelect = t.automated
       ? `<span class="comp-badge" style="background:#e0e8e0;color:#4a7060;">⚙ Auto — ${RULES.automated} UT</span>`
       : `<select class="comp-select comp-${comp}" data-task-complexity="${escapeHtml(t.id)}" title="Complexidade da atividade">
@@ -1240,8 +1238,8 @@ function applySetupGatewayEdits() {
   if (!graph) return;
   const byGateway = new Map();
   document.querySelectorAll('input[data-setup-gw][data-setup-edge]').forEach((input) => {
-    const gw = String(input.getAttribute('data-setup-gw') || '');
-    const edgeId = String(input.getAttribute('data-setup-edge') || '');
+    const gw = String(input.dataset.setupGw || '');
+    const edgeId = String(input.dataset.setupEdge || '');
     const val = Math.max(0, Number(input.value || 0));
     if (!byGateway.has(gw)) byGateway.set(gw, {});
     byGateway.get(gw)[edgeId] = val;
@@ -1328,12 +1326,12 @@ function _refreshSidebarGwValues() {
   const focused = document.activeElement;
   document.querySelectorAll('input[data-sgw-id][data-sgw-edge]').forEach((inp) => {
     if (inp === focused) return;
-    const edgeId = inp.getAttribute('data-sgw-edge');
+    const edgeId = inp.dataset.sgwEdge;
     const edge = (graph.edges || []).find((e) => e.id === edgeId);
     if (edge) inp.value = String(Number(edge.probability || 0));
   });
   document.querySelectorAll('[data-sgw-sum]').forEach((el) => {
-    const gwId = el.getAttribute('data-sgw-sum');
+    const gwId = el.dataset.sgwSum;
     const outs = outgoing(graph, gwId);
     const sum = outs.reduce((a, e) => a + Number(e.probability || 0), 0);
     const sumColor = Math.abs(sum - 100) < 0.5 ? '#2e7d4f' : sum > 100 ? '#c0392b' : '#8a6d3b';
@@ -1346,7 +1344,7 @@ function _onSidebarGwInput(ev) {
   const inp = ev.target.closest('input[data-sgw-id]');
   if (!inp || !graph) return;
 
-  const gwId = inp.getAttribute('data-sgw-id');
+  const gwId = inp.dataset.sgwId;
 
   // Cap: prevent sum > 100%
   const allInputs = Array.from(document.querySelectorAll(`input[data-sgw-id="${CSS.escape(gwId)}"]`));
@@ -1358,7 +1356,7 @@ function _onSidebarGwInput(ev) {
 
   // Apply to graph silently (no refreshAll — avoids losing focus)
   const probs = {};
-  allInputs.forEach((i) => { probs[i.getAttribute('data-sgw-edge')] = Math.max(0, Number(i.value || 0)); });
+  allInputs.forEach((i) => { probs[i.dataset.sgwEdge] = Math.max(0, Number(i.value || 0)); });
   graph = applyGatewayProbabilities(graph, gwId, probs);
   if ($('graphJson')) $('graphJson').value = JSON.stringify(graph, null, 2);
 
@@ -1375,14 +1373,14 @@ function _onSidebarGwInput(ev) {
 function _onSidebarGwClick(ev) {
   const btn = ev.target.closest('button[data-sgw-auto]');
   if (!btn || !graph) return;
-  const gwId = btn.getAttribute('data-sgw-auto');
+  const gwId = btn.dataset.sgwAuto;
   const outs = outgoing(graph, gwId);
   if (!outs.length) return;
   const autoMap = defaultGatewayProbMap(outs.map((e) => ({ ...e, probability: 0 })));
   const inputs = document.querySelectorAll(`input[data-sgw-id="${CSS.escape(gwId)}"]`);
   const probs = {};
   inputs.forEach((i) => {
-    const edgeId = i.getAttribute('data-sgw-edge');
+    const edgeId = i.dataset.sgwEdge;
     const v = Number(autoMap[edgeId] || 0);
     i.value = String(v);
     probs[edgeId] = v;
@@ -1516,7 +1514,7 @@ function removeLoopEdge(edgeId) {
 function applyLoopProbInputs() {
   if (!graph) return;
   document.querySelectorAll('input[data-loop-prob-edge]').forEach((input) => {
-    const edgeId = String(input.getAttribute('data-loop-prob-edge') || '');
+    const edgeId = String(input.dataset.loopProbEdge || '');
     const val = clamp(Number(input.value || 30), 1, 99);
     const edge = (graph.edges || []).find((e) => e.id === edgeId);
     if (!edge) return;
@@ -1534,7 +1532,7 @@ function saveSetupAutomationSelection() {
     const taskMap = new Map((graph.nodes || []).filter((n) => n.type === 'task').map((n) => [String(n.id), n]));
 
     matrixActorInputs.forEach((i) => {
-      const id = String(i.getAttribute('data-task-actor') || '');
+      const id = String(i.dataset.taskActor || '');
       const n = taskMap.get(id);
       if (!n) return;
       const actor = String(i.value || '').trim();
@@ -1545,7 +1543,7 @@ function saveSetupAutomationSelection() {
     const selectedAuto = new Set(
       Array.from(matrixAutoInputs)
         .filter((i) => i.checked)
-        .map((i) => String(i.getAttribute('data-task-automated') || ''))
+        .map((i) => String(i.dataset.taskAutomated || ''))
         .filter(Boolean)
     );
     for (const n of graph.nodes || []) {
@@ -1556,7 +1554,7 @@ function saveSetupAutomationSelection() {
     const selectedPotential = new Set(
       Array.from(matrixPotentialInputs)
         .filter((i) => i.checked)
-        .map((i) => String(i.getAttribute('data-task-potential') || ''))
+        .map((i) => String(i.dataset.taskPotential || ''))
         .filter(Boolean)
     );
 
@@ -1571,7 +1569,7 @@ function saveSetupAutomationSelection() {
 
   const selected = new Set(
     Array.from(document.querySelectorAll('input[data-setup-auto-node]:checked'))
-      .map((i) => String(i.getAttribute('data-setup-auto-node') || ''))
+      .map((i) => String(i.dataset.setupAutoNode || ''))
       .filter(Boolean)
   );
 
@@ -1764,7 +1762,7 @@ function frictionTotalsByType(ranking) {
   const out = { handoff: 0, gateway: 0, loop: 0, timer: 0 };
   for (const item of ranking || []) {
     const type = String(item?.type || '').toLowerCase();
-    if (!Object.prototype.hasOwnProperty.call(out, type)) continue;
+    if (!Object.hasOwn(out, type)) continue;
     out[type] += Number(item?.total || 0);
   }
   return out;
@@ -1962,6 +1960,10 @@ function renderExecutiveKpis(metrics, base) {
       )
     : '';
 
+  // Exibe "—" quando top = 0 (caminho feliz sem tarefas ou inválido)
+  const topDisp = metrics.top > 0 ? fmtK(metrics.top) : '—';
+  const topAutoDisp = metrics.topAuto > 0 ? fmtK(metrics.topAuto) : '—';
+
   // Card automacao (valor convertido quando kFactor disponível)
   const autoCard = hasAuto
     ? _resultCard('⚙️', 'T.O.P. Auto', topAutoDisp, 'caminho feliz com automações' + subSuffix, 'T.O.P. projetado após confirmação das automações marcadas no cenário To-Be.', `Ganho potencial: ${(metrics.top > 0 ? ((metrics.top - metrics.topAuto) / metrics.top * 100) : 0).toFixed(1)}% de redução no T.O.P.`, 'rc-auto')
@@ -1976,10 +1978,6 @@ function renderExecutiveKpis(metrics, base) {
     Bolinhas finalizadas: <strong id="liveTokensFinished">${liveSimulationStatus.finished}/${liveSimulationStatus.total}</strong> &nbsp;|
     T.E.R. médio ao vivo: <strong id="liveLeadAvg">${liveTerDisp}</strong>
   </div>`;
-
-  // Exibe "—" quando top = 0 (caminho feliz sem tarefas ou inválido)
-  const topDisp = metrics.top > 0 ? fmtK(metrics.top) : '—';
-  const topAutoDisp = metrics.topAuto > 0 ? fmtK(metrics.topAuto) : '—';
 
   box.className = 'kpi kpi-executive';
   box.innerHTML = `
@@ -2132,7 +2130,7 @@ function renderFrictionChart(metrics) {
   const detailBars = ranking.map((item) => {
     const pctW = ((item.total / maxVal) * 100).toFixed(1);
     const color = typeColors[item.type] || '#8898aa';
-    const key = item.key.replace(/->/g, ' → ');
+    const key = item.key.replaceAll('->', ' → ');
     return `<div class="fc-row fc-row-sm">
       <div class="fc-label fc-label-sm">${key}</div>
       <div class="fc-bar-wrap">
@@ -2176,7 +2174,7 @@ function renderAutomaticInterpretation(metrics, base) {
   if (topFriction) {
     const tipoLabel = topFriction.type === 'handoff' ? 'Handoff'
       : topFriction.type === 'gateway' ? 'Gateway de Decisão' : 'Loop de Retrabalho';
-    const keyLabel = topFriction.key.replace(/->/g, ' → ');
+    const keyLabel = topFriction.key.replaceAll('->', ' → ');
     const totalUT = topFriction.total.toFixed(1);
     if (topFriction.type === 'handoff') {
       p2 = `A maior perda de tempo detectada foi no <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> ao fluxo. Recomenda-se unificar estas etapas ou automatizar a transferência de dados para reduzir este impacto.`;
@@ -2342,7 +2340,7 @@ function saveLaneProfilesFromForm() {
   if (!graph) return;
   graph.lanes = graph.lanes || {};
   document.querySelectorAll('[data-lane-row]').forEach((row) => {
-    const lane = row.getAttribute('data-lane-row');
+    const lane = row.dataset.laneRow;
     const team = row.querySelector('[data-field="team"]').value.trim();
     const sector = row.querySelector('[data-field="sector"]').value.trim();
     const org = row.querySelector('[data-field="org"]').value.trim();
@@ -2423,7 +2421,7 @@ function parseEditorGraph() {
     return true;
   } catch (e) {
     /* exibe mensagem de erro na interface */
-    $('validationBox').innerHTML = `<span class=\"badge error\">erro</span> JSON invalido: ${e.message}`;
+    $('validationBox').innerHTML = `<span class="badge error">erro</span> JSON invalido: ${e.message}`;
     return false;
   }
 }
@@ -2452,7 +2450,7 @@ function parseHappyPath(pathText) {
 
   const nodeMap = new Map((graph?.nodes || []).map((n) => [n.id, n]));
   const first = nodeMap.get(ids[0]);
-  const last = nodeMap.get(ids[ids.length - 1]);
+  const last = nodeMap.get(ids.at(-1));
 
   const hasStart = (graph?.nodes || []).some((n) => n.type === 'start');
   const hasEnd = (graph?.nodes || []).some((n) => n.type === 'end');
@@ -2597,7 +2595,7 @@ function allowedNextNodeIds() {
   const selected = happyPathMarking.nodes;
   if (!selected.length) return new Set(startCandidateIds());
 
-  const last = selected[selected.length - 1];
+  const last = selected.at(-1);
   return new Set((graph.edges || []).filter((e) => e.from === last).map((e) => e.to));
 }
 
@@ -2649,7 +2647,7 @@ function renderSetupPathPicker() {
 
 function onSetupPathNodeClick(nodeId) {
   const selected = happyPathMarking.nodes;
-  const last = selected[selected.length - 1];
+  const last = selected.at(-1);
   const allowed = allowedNextNodeIds();
 
   if (!allowed.has(nodeId)) {
@@ -2728,7 +2726,7 @@ function drawSetupPathCanvas() {
 
   for (const node of graph.nodes || []) {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('data-setup-node', node.id);
+    g.dataset.setupNode = node.id;
 
     const selectedIndex = happyPathMarking.nodes.indexOf(node.id);
     const isSelected = selectedIndex >= 0;
@@ -2824,7 +2822,7 @@ function onNodeClickedForHappyPath(nodeId) {
   if (!happyPathMarking.active) return;
 
   const selected = happyPathMarking.nodes;
-  const last = selected[selected.length - 1];
+  const last = selected.at(-1);
   const allowed = allowedNextNodeIds();
 
   if (!allowed.has(nodeId)) {
@@ -2919,7 +2917,7 @@ function drawGraph() {
 
   for (const node of graph.nodes) {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('data-node', node.id);
+    g.dataset.node = node.id;
     const selectedIndex = happyPathMarking.nodes.indexOf(node.id);
     const isSelected = selectedIndex >= 0;
     const canPick = !happyPathMarking.active || allowed.has(node.id) || isSelected;
@@ -3236,7 +3234,7 @@ function animate(frameTimeMs = performance.now()) {
   simulationClockMs += deltaMs * speedGlobal;
   const dt = (deltaMs / 1000) * 0.9 * speedGlobal;
 
-  for (const t of window.__tokens) {
+  for (const t of globalThis.__tokens) {
     if (t.ended) continue;
 
     if (!t.launched) {
@@ -3320,16 +3318,16 @@ function animate(frameTimeMs = performance.now()) {
     }
   }
 
-  drawTokens(window.__tokens);
-  refreshLiveSimulationStatus(window.__tokens);
+  drawTokens(globalThis.__tokens);
+  refreshLiveSimulationStatus(globalThis.__tokens);
 
-  if (window.__tokens.some((t) => !t.ended)) {
+  if (globalThis.__tokens.some((t) => !t.ended)) {
     animFrame = requestAnimationFrame(animate);
   } else {
     running = false;
     animationLastTickMs = 0;
     simulationClockMs = 0;
-    refreshLiveSimulationStatus(window.__tokens);
+    refreshLiveSimulationStatus(globalThis.__tokens);
     // Armazena o TER real das 100 partículas para o dashboard usar
     _animatedTer = liveSimulationStatus.avgLeadTime > 0 ? liveSimulationStatus.avgLeadTime : null;
     // Re-renderiza o dashboard com o TER real (igual ao contador ao vivo)
@@ -3364,10 +3362,10 @@ function playSimulation() {
   }
 
   drawGraph();
-  window.__tokens = buildTokenSchedule();
+  globalThis.__tokens = buildTokenSchedule();
   const panel = $('simLivePanel');
-  if (panel) { panel.classList.remove('hidden'); panel.classList.remove('slp-done'); }
-  refreshLiveSimulationStatus(window.__tokens);
+  if (panel) { panel.classList.remove('hidden', 'slp-done'); }
+  refreshLiveSimulationStatus(globalThis.__tokens);
   running = true;
   animationLastTickMs = 0;
   simulationClockMs = 0;
@@ -3381,7 +3379,7 @@ function stopSimulation() {
   cancelAnimationFrame(animFrame);
   animationLastTickMs = 0;
   simulationClockMs = 0;
-  refreshLiveSimulationStatus(window.__tokens || []);
+  refreshLiveSimulationStatus(globalThis.__tokens || []);
 }
 
 function renderSuggestions() {
@@ -3660,7 +3658,7 @@ function renderTimerSetup() {
 
   $('btnSaveTimers').addEventListener('click', () => {
     box.querySelectorAll('[data-timer-id]').forEach((input) => {
-      const nId = input.getAttribute('data-timer-id');
+      const nId = input.dataset.timerId;
       const node = (graph?.nodes || []).find((n) => n.id === nId);
       if (node) node.timerUT = Math.max(0, Number(input.value) || 0);
     });
@@ -3730,14 +3728,14 @@ const DEFAULT_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
 
 function initBpmnModeler() {
   if (_bpmnModeler) return;
-  const BpmnJS = window.BpmnJS;
+  const BpmnJS = globalThis.BpmnJS;
   if (!BpmnJS) {
     console.error('[SimBPMN] BpmnJS não encontrado. Verifique o CDN.');
     return;
   }
   const container = $('bpmnContainer');
   if (!container) { console.error('[SimBPMN] #bpmnContainer não encontrado.'); return; }
-  _bpmnModeler = new BpmnJS({ container, keyboard: { bindTo: window } });
+  _bpmnModeler = new BpmnJS({ container, keyboard: { bindTo: globalThis } });
 }
 
 async function loadDefaultBpmn() {
@@ -3916,7 +3914,7 @@ function wireEvents() {
     // Checkbox de automação: trata interdependência e faz refresh completo
     if (t.matches('input[data-task-automated], input[data-task-potential]')) {
       document.querySelectorAll('input[data-task-automated]').forEach((autoEl) => {
-        const id = String(autoEl.getAttribute('data-task-automated') || '');
+        const id = String(autoEl.dataset.taskAutomated || '');
         if (!id) return;
         const potentialEl = document.querySelector(`input[data-task-potential="${CSS.escape(id)}"]`);
         if (!potentialEl) return;
@@ -4084,7 +4082,7 @@ function saveToSIGA() {
       savedAt:   new Date().toISOString(),
     } : null;
 
-    window.parent.postMessage(
+    globalThis.parent.postMessage(
       {
         type: 'SIMULATOR_SAVE',
         payload: {
@@ -4094,7 +4092,7 @@ function saveToSIGA() {
           simResults:    simSummary,
         },
       },
-      window.location.origin
+      globalThis.location.origin
     );
     if (btn) {
       btn.textContent = '✅ Salvo no SIGA';
@@ -4107,8 +4105,8 @@ function saveToSIGA() {
   }
 }
 
-window.addEventListener('message', (ev) => {
-  if(ev.origin !== window.location.origin) return; // reject cross-origin messages
+globalThis.addEventListener('message', (ev) => {
+  if(ev.origin !== globalThis.location.origin) return; // reject cross-origin messages
   try {
     const msg = ev.data;
     if (!msg || typeof msg !== 'object') return;
@@ -4134,7 +4132,7 @@ window.addEventListener('message', (ev) => {
         revealDashboard();
       }
       // Acknowledge readiness
-      ev.source?.postMessage({ type: 'SIMULATOR_READY', popKey }, window.location.origin);
+      ev.source?.postMessage({ type: 'SIMULATOR_READY', popKey }, globalThis.location.origin);
       return;
     }
 
@@ -4143,7 +4141,7 @@ window.addEventListener('message', (ev) => {
       if (graph) {
         ev.source?.postMessage(
           { type: 'SIMULATOR_SAVE', payload: { graph: cloneLocal(graph), popKey: _sigaPopKey } },
-          window.location.origin
+          globalThis.location.origin
         );
       }
     }

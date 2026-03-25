@@ -182,7 +182,7 @@ async function extractDocxTextFromBase64(base64Data) {
     err.statusCode = 400;
     throw err;
   }
-  const text = String(result?.value || '').replace(/\r/g, '').trim();
+  const text = String(result?.value || '').replaceAll('\r', '').trim();
   if (!text) {
     const err = new Error('Nao foi possivel extrair texto do DOCX. Verifique se o arquivo contém texto legível (não apenas imagens).');
     err.statusCode = 400;
