@@ -24040,19 +24040,27 @@ function matScoreEquipe(answers) {
 function matScoreEquipeMedia(questionnaires) {
   if(!Array.isArray(questionnaires) || questionnaires.length !== MAT_QUESTIONNAIRE_COUNT) return null;
 
+  // Considera apenas questionários completamente preenchidos (sem nenhum null).
+  // Questionários vazios ou parciais são ignorados — o score é a média dos válidos.
+  const valid = questionnaires.filter(q =>
+    Array.isArray(q) &&
+    q.length === MAT_QUESTIONS.length &&
+    q.every(a => a === 'sim' || a === 'talvez' || a === 'nao')
+  );
+  if(!valid.length) return null;
+
   let total = 0;
   for(let i = 0; i < MAT_QUESTIONS.length; i++) {
     let qTotal = 0;
-    for(let qx = 0; qx < MAT_QUESTIONNAIRE_COUNT; qx++) {
-      const ans = questionnaires[qx] && questionnaires[qx][i];
-      if(ans === null || ans === undefined) return null;
-      const q = MAT_QUESTIONS[i];
+    for(const q of valid) {
+      const ans = q[i];
+      const question = MAT_QUESTIONS[i];
       let pts;
-      if(q.inverted) pts = ans === 'sim' ? 100 : ans === 'talvez' ? 50 : 0;
-      else           pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
+      if(question.inverted) pts = ans === 'sim' ? 100 : ans === 'talvez' ? 50 : 0;
+      else                   pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
       qTotal += pts;
     }
-    total += qTotal / MAT_QUESTIONNAIRE_COUNT;
+    total += qTotal / valid.length;
   }
   return total / MAT_QUESTIONS.length;
 }
