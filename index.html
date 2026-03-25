@@ -2688,6 +2688,38 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MÓDULO: ANÁLISE INTELIGENTE (Copilot)                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="ai-module" style="display:none;">
+  <div id="ai-module-inner">
+    <div class="ai-header">
+      <div class="ai-header-icon">🤖</div>
+      <div>
+        <div class="ai-header-title">Análise Inteligente do Processo</div>
+        <div class="ai-header-sub" id="ai-pop-name">Selecione um POP para analisar</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="ai-run-btn" id="ai-run-btn" onclick="runAiAnalysis()">✨ Analisar Fluxo com IA</button>
+      <span style="font-size:12px;color:#94a3b8;">Powered by GitHub Copilot · Análise baseada nas etapas e ações do processo</span>
+    </div>
+
+    <!-- Spinner -->
+    <div class="ai-spinner" id="ai-spinner">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="16" stroke="#6366f1" stroke-width="4" stroke-dasharray="80 25" stroke-linecap="round"/>
+      </svg>
+      <div style="font-size:14px;font-weight:600;color:#6366f1;">Analisando o processo com IA…</div>
+      <div style="font-size:12px;color:#94a3b8;">Isso pode levar alguns segundos</div>
+    </div>
+
+    <!-- Resultado -->
+    <div id="ai-output"></div>
+  </div>
+</div>
+
+
 <!-- ═══════════════════════════════════════════ -->
 <!-- NOVO POP WIZARD MODAL                       -->
 <!-- ═══════════════════════════════════════════ -->
