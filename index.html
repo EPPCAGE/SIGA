@@ -24056,8 +24056,15 @@ function matScoreEquipeMedia(questionnaires) {
       const ans = q[i];
       const question = MAT_QUESTIONS[i];
       let pts;
-      if(question.inverted) pts = ans === 'sim' ? 100 : ans === 'talvez' ? 50 : 0;
-      else                   pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
+      if(question.inverted) {
+        if(ans === 'sim')    pts = 100;
+        else if(ans === 'talvez') pts = 50;
+        else                 pts = 0;
+      } else {
+        if(ans === 'nao')    pts = 100;
+        else if(ans === 'talvez') pts = 50;
+        else                 pts = 0;
+      }
       qTotal += pts;
     }
     total += qTotal / valid.length;
