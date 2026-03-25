@@ -8841,11 +8841,19 @@ function applyGlobalParams() {
   }
   // Cores — sempre aplica a paleta do design system, sobrescrevendo valores antigos
   // Valores legados que devem ser migrados para o novo design system
-  const _LEGACY_DEFAULTS = { corPrimaria:'#1B3022', corSecundaria:'#003366', corAcento:'#003366', corDestaque:'#c07800', corFundo:'#F5F5F5', corBorda:'#c0cccc' };
+  const _LEGACY_DEFAULTS = {
+    corPrimaria:  ['#1B3022','#060832','#003366','#2C3E50','#1a237e'],
+    corSecundaria:['#003366','#5699f0','#1565c0','#0d47a1'],
+    corAcento:    ['#003366','#1a1273','#c07800'],
+    corDestaque:  ['#c07800','#681d28','#b71c1c'],
+    corFundo:     ['#F5F5F5','#f4f7fb','#eaf0fb'],
+    corBorda:     ['#c0cccc','#d5d5dd','#cfd8dc'],
+  };
   _PARAMS_COLORS.forEach(c => {
     // Se o valor salvo for um default legado (não customizado pelo usuário), usa o novo default
     const saved = gp[c.key];
-    const isLegacy = !saved || saved === _LEGACY_DEFAULTS[c.key];
+    const legacyList = _LEGACY_DEFAULTS[c.key] || [];
+    const isLegacy = !saved || legacyList.includes(saved);
     const val = isLegacy ? c.def : saved;
     document.documentElement.style.setProperty(c.css, val);
     // Persiste o novo valor para evitar regressão
