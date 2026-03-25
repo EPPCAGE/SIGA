@@ -246,64 +246,40 @@ function _resolveNodeType(ln, mappedType, el) {
   return mappedType;
 }
 
-function parseBpmnXml(doc) {
-  const elements = allElements(doc);
+const _BPMN_TYPE_MAP = {
+  startEvent: 'start', endEvent: 'end',
+  exclusiveGateway: 'gateway', inclusiveGateway: 'gateway',
+  parallelGateway: 'gateway', eventBasedGateway: 'gateway', complexGateway: 'gateway',
+  intermediateCatchEvent: 'timer_candidate', intermediateThrowEvent: 'timer_candidate',
+  boundaryEvent: 'timer_candidate',
+};
+const _BPMN_TASK_TAGS = new Set(['task','userTask','manualTask','serviceTask','scriptTask',
+  'businessRuleTask','callActivity','subProcess','receiveTask','sendTask']);
+const _BPMN_AUTO_TAGS = new Set(['serviceTask','scriptTask','businessRuleTask']);
+
+function _parseBpmnNodes(elements) {
   const nodes = [];
   const nodeById = new Map();
-  const laneAliasById = new Map();
-
-  const typeMap = {
-    startEvent: 'start',
-    endEvent: 'end',
-    exclusiveGateway: 'gateway',
-    inclusiveGateway: 'gateway',
-    parallelGateway: 'gateway',
-    eventBasedGateway: 'gateway',
-    complexGateway: 'gateway',
-    intermediateCatchEvent: 'timer_candidate',
-    intermediateThrowEvent: 'timer_candidate',
-    boundaryEvent: 'timer_candidate',
-  };
-
   for (const el of elements) {
     const ln = localNameOf(el);
     const id = attrOf(el, ['id', 'Id', 'ID']);
     if (!id) continue;
-
-    const isTaskLike = ln === 'task'
-      || ln === 'userTask'
-      || ln === 'manualTask'
-      || ln === 'serviceTask'
-      || ln === 'scriptTask'
-      || ln === 'businessRuleTask'
-      || ln === 'callActivity'
-      || ln === 'subProcess'
-      || ln === 'receiveTask'
-      || ln === 'sendTask';
-
-    let mappedType = typeMap[ln] || (isTaskLike ? 'task' : '');
+    let mappedType = _BPMN_TYPE_MAP[ln] || (_BPMN_TASK_TAGS.has(ln) ? 'task' : '');
     if (!mappedType) continue;
-
     mappedType = _resolveNodeType(ln, mappedType, el);
-
-    const label = attrOf(el, ['name', 'Name']) || id;
-    const automated = ln === 'serviceTask' || ln === 'scriptTask' || ln === 'businessRuleTask';
     const node = {
-      id,
-      type: mappedType,
-      label,
-      x: null,
-      y: null,
-      lane: '',
-      executor: '',
-      sector: '',
-      org: '',
-      automated,
+      id, type: mappedType,
+      label: attrOf(el, ['name', 'Name']) || id,
+      x: null, y: null, lane: '', executor: '', sector: '', org: '',
+      automated: _BPMN_AUTO_TAGS.has(ln),
     };
     nodes.push(node);
     nodeById.set(id, node);
   }
+  return { nodes, nodeById };
+}
 
+function _parseBpmnEdges(elements) {
   const edges = [];
   for (const el of elements) {
     if (localNameOf(el) !== 'sequenceFlow') continue;
@@ -313,21 +289,22 @@ function parseBpmnXml(doc) {
     if (!from || !to) continue;
     edges.push({ id, from, to, probability: 100, isLoopReturn: false, isErrorPath: false });
   }
+  return edges;
+}
 
-  const laneEls = elements.filter((e) => localNameOf(e) === 'lane');
+function _buildBpmnLaneAlias(laneEls) {
+  const laneAliasById = new Map();
   let laneCounter = 0;
   for (const laneEl of laneEls) {
     const laneId = attrOf(laneEl, ['id', 'Id']);
-    const laneNameRaw = attrOf(laneEl, ['name', 'Name']) || laneId || '';
-    let laneName = laneNameRaw;
-    if (!laneName || isTechnicalId(laneName)) {
-      laneCounter += 1;
-      laneName = `Raia ${laneCounter}`;
-    }
+    let laneName = attrOf(laneEl, ['name', 'Name']) || laneId || '';
+    if (!laneName || isTechnicalId(laneName)) { laneCounter += 1; laneName = `Raia ${laneCounter}`; }
     if (laneId) laneAliasById.set(laneId, laneName);
   }
+  return laneAliasById;
+}
 
-  // Lane -> flow node refs mapping.
+function _applyBpmnLaneRefs(laneEls, nodeById, laneAliasById) {
   for (const laneEl of laneEls) {
     const laneId = attrOf(laneEl, ['id', 'Id']);
     const laneNameRaw = attrOf(laneEl, ['name', 'Name']) || laneId || '';
@@ -338,31 +315,36 @@ function parseBpmnXml(doc) {
       .filter(Boolean);
     for (const ref of refs) {
       const n = nodeById.get(ref);
-      if (!n) continue;
-      n.lane = laneName;
-      n.executor = laneName;
+      if (n) { n.lane = laneName; n.executor = laneName; }
     }
   }
+}
 
-  // BPMN DI coordinates.
+function _applyBpmnShapeCoords(nodeById, elements) {
   for (const shapeEl of elements.filter((e) => localNameOf(e) === 'BPMNShape')) {
-    const ref = attrOf(shapeEl, ['bpmnElement', 'BPMNElement']);
-    const node = nodeById.get(ref);
+    const node = nodeById.get(attrOf(shapeEl, ['bpmnElement', 'BPMNElement']));
     if (!node) continue;
-
     const bounds = Array.from(shapeEl.querySelectorAll('*')).find((e) => localNameOf(e) === 'Bounds');
     if (!bounds) continue;
-
     const x = Number(attrOf(bounds, ['x', 'X']));
     const y = Number(attrOf(bounds, ['y', 'Y']));
-    const w = Number(attrOf(bounds, ['width', 'Width'])) || 0;
-    const h = Number(attrOf(bounds, ['height', 'Height'])) || 0;
     if (Number.isFinite(x) && Number.isFinite(y)) {
-      node.x = x + (Number.isFinite(w) ? (w / 2) : 0);
-      node.y = y + (Number.isFinite(h) ? (h / 2) : 0);
+      const w = Number(attrOf(bounds, ['width', 'Width'])) || 0;
+      const h = Number(attrOf(bounds, ['height', 'Height'])) || 0;
+      node.x = x + w / 2;
+      node.y = y + h / 2;
     }
   }
+}
 
+function parseBpmnXml(doc) {
+  const elements = allElements(doc);
+  const { nodes, nodeById } = _parseBpmnNodes(elements);
+  const edges = _parseBpmnEdges(elements);
+  const laneEls = elements.filter((e) => localNameOf(e) === 'lane');
+  const laneAliasById = _buildBpmnLaneAlias(laneEls);
+  _applyBpmnLaneRefs(laneEls, nodeById, laneAliasById);
+  _applyBpmnShapeCoords(nodeById, elements);
   const graph = { nodes, edges };
   normalizeTechnicalActorLabels(nodes, 'Raia');
   inferStartEndByTopology(graph);
@@ -383,96 +365,90 @@ function _isXpdlTimerEvent(allChildren) {
   });
 }
 
-function parseXpdlXml(doc) {
-  const elements = allElements(doc);
+function _buildXpdlParticipants(elements, parentPoolActors) {
   const participants = new Map();
-  const parentPoolActors = extractXpdlParentPoolActors(elements);
-
   for (const a of parentPoolActors) {
-    if (a.id) {
-      participants.set(a.id, a.name);
-      participants.set(normalizeLookupKey(a.id), a.name);
-    }
+    if (a.id) { participants.set(a.id, a.name); participants.set(normalizeLookupKey(a.id), a.name); }
   }
-
   for (const el of elements.filter((e) => localNameOf(e) === 'Participant')) {
     const id = attrOf(el, ['Id', 'id', 'ID']);
     const name = participantDisplayName(el, id);
-    if (id) {
-      participants.set(id, name);
-      participants.set(normalizeLookupKey(id), name);
-    }
+    if (id) { participants.set(id, name); participants.set(normalizeLookupKey(id), name); }
   }
+  return participants;
+}
 
+function _resolveXpdlNodeType(allChildren) {
+  if (allChildren.some((c) => localNameOf(c) === 'Route')) return 'gateway';
+  if (allChildren.some((c) => localNameOf(c) === 'StartEvent')) return 'start';
+  if (allChildren.some((c) => localNameOf(c) === 'EndEvent')) return 'end';
+  if (_isXpdlTimerEvent(allChildren)) return 'timer';
+  return 'task';
+}
+
+function _resolveXpdlPerformer(el, participants) {
+  const performerId = textOfFirstChildByLocalName(el, 'Performer');
+  const laneRef = attrOf(el, ['Lane', 'LaneId', 'lane', 'laneId', 'Participant', 'participant']);
+  return participants.get(performerId)
+    || participants.get(normalizeLookupKey(performerId))
+    || participants.get(laneRef)
+    || participants.get(normalizeLookupKey(laneRef))
+    || '';
+}
+
+function _resolveXpdlCoords(el) {
+  const ngi = Array.from(el.querySelectorAll('*')).find((c) => localNameOf(c) === 'NodeGraphicsInfo');
+  if (!ngi) return null;
+  const coords = Array.from(ngi.querySelectorAll('*')).find((c) => localNameOf(c) === 'Coordinates');
+  if (!coords) return null;
+  const x = Number(attrOf(coords, ['XCoordinate', 'x', 'X']));
+  const y = Number(attrOf(coords, ['YCoordinate', 'y', 'Y']));
+  return (Number.isFinite(x) && Number.isFinite(y)) ? { x, y } : null;
+}
+
+function _parseXpdlActivities(elements, participants, parentPoolActors) {
   const nodes = [];
   const nodeById = new Map();
   for (const el of elements.filter((e) => localNameOf(e) === 'Activity')) {
     const id = attrOf(el, ['Id', 'id', 'ID']);
     if (!id) continue;
-    const label = attrOf(el, ['Name', 'name']) || id;
-
-    let type = 'task';
     const allChildren = Array.from(el.querySelectorAll('*'));
-    if (allChildren.some((c) => localNameOf(c) === 'Route')) type = 'gateway';
-    if (allChildren.some((c) => localNameOf(c) === 'StartEvent')) type = 'start';
-    if (allChildren.some((c) => localNameOf(c) === 'EndEvent')) type = 'end';
-
-    if (_isXpdlTimerEvent(allChildren)) type = 'timer';
-
-    const performerId = textOfFirstChildByLocalName(el, 'Performer');
-    const laneRef = attrOf(el, ['Lane', 'LaneId', 'lane', 'laneId', 'Participant', 'participant']);
-    const performerName = participants.get(performerId)
-      || participants.get(normalizeLookupKey(performerId))
-      || participants.get(laneRef)
-      || participants.get(normalizeLookupKey(laneRef))
-      || '';
-
+    const performerName = _resolveXpdlPerformer(el, participants);
+    const coords = _resolveXpdlCoords(el);
     const node = {
-      id,
-      type,
-      label,
-      x: null,
-      y: null,
-      lane: performerName,
-      executor: performerName,
-      sector: '',
-      org: '',
-      automated: false,
+      id, type: _resolveXpdlNodeType(allChildren),
+      label: attrOf(el, ['Name', 'name']) || id,
+      x: coords ? coords.x : null, y: coords ? coords.y : null,
+      lane: performerName, executor: performerName, sector: '', org: '', automated: false,
     };
-
-    const ngi = Array.from(el.querySelectorAll('*')).find((c) => localNameOf(c) === 'NodeGraphicsInfo');
-    const coords = ngi ? Array.from(ngi.querySelectorAll('*')).find((c) => localNameOf(c) === 'Coordinates') : null;
-    if (coords) {
-      const x = Number(attrOf(coords, ['XCoordinate', 'x', 'X']));
-      const y = Number(attrOf(coords, ['YCoordinate', 'y', 'Y']));
-      if (Number.isFinite(x) && Number.isFinite(y)) {
-        node.x = x;
-        node.y = y;
-      }
-    }
-
     if (!node.lane && !node.executor) {
       const inferredActor = resolveActorByLaneGeometry(node, parentPoolActors);
-      if (inferredActor) {
-        node.lane = inferredActor;
-        node.executor = inferredActor;
-      }
+      if (inferredActor) { node.lane = inferredActor; node.executor = inferredActor; }
     }
-
     nodes.push(node);
     nodeById.set(id, node);
   }
+  return { nodes, nodeById };
+}
 
+function _parseXpdlEdges(elements, nodeById) {
   const edges = [];
   for (const el of elements.filter((e) => localNameOf(e) === 'Transition')) {
     const id = attrOf(el, ['Id', 'id', 'ID']) || `e${edges.length + 1}`;
     const from = attrOf(el, ['From', 'from', 'Source', 'source']);
     const to = attrOf(el, ['To', 'to', 'Target', 'target']);
-    if (!from || !to) continue;
-    if (!nodeById.has(from) || !nodeById.has(to)) continue;
+    if (!from || !to || !nodeById.has(from) || !nodeById.has(to)) continue;
     edges.push({ id, from, to, probability: 100, isLoopReturn: false, isErrorPath: false });
   }
+  return edges;
+}
 
+function parseXpdlXml(doc) {
+  const elements = allElements(doc);
+  const parentPoolActors = extractXpdlParentPoolActors(elements);
+  const participants = _buildXpdlParticipants(elements, parentPoolActors);
+  const { nodes, nodeById } = _parseXpdlActivities(elements, participants, parentPoolActors);
+  const edges = _parseXpdlEdges(elements, nodeById);
   const graph = { nodes, edges };
   normalizeXpdlActorLabels(nodes, participants);
   normalizeTechnicalActorLabels(nodes, 'Ator');
@@ -545,6 +521,13 @@ function extractJson(text) {
   throw new Error('Resposta da IA nao veio em JSON valido para topologia BPMN.');
 }
 
+function _advanceStringState(ch, escaping) {
+  if (escaping) return { escaping: false, inString: true };
+  if (ch === '\\') return { escaping: true, inString: true };
+  if (ch === '"') return { escaping: false, inString: false };
+  return { escaping: false, inString: true };
+}
+
 function extractFirstObject(text) {
   const s = String(text || '');
   const start = s.indexOf('{');
@@ -557,27 +540,14 @@ function extractFirstObject(text) {
   for (let i = start; i < s.length; i += 1) {
     const ch = s[i];
     if (inString) {
-      if (escaping) {
-        escaping = false;
-      } else if (ch === '\\') {
-        escaping = true;
-      } else if (ch === '"') {
-        inString = false;
-      }
+      ({ escaping, inString } = _advanceStringState(ch, escaping));
       continue;
     }
-
-    if (ch === '"') {
-      inString = true;
-      continue;
-    }
-
-    if (ch === '{') depth += 1;
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{') { depth += 1; continue; }
     if (ch === '}') {
       depth -= 1;
-      if (depth === 0) {
-        return s.slice(start, i + 1);
-      }
+      if (depth === 0) return s.slice(start, i + 1);
     }
   }
 

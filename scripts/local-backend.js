@@ -453,72 +453,40 @@ function _buildDataRecord(parsed, current) {
   };
 }
 
+async function _handleRequest(req, res, url) {
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeadersFor(req)); res.end(); return;
+  }
+  if (req.method === 'GET' && url.pathname === '/health') {
+    sendJson(req, res, 200, { ok: true, service: 'siga-local-backend', dataFile: DATA_FILE, aiProvider: process.env.SIGA_AI_PROVIDER || 'ai' });
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/data') {
+    sendJson(req, res, 200, readRecord()); return;
+  }
+  if (req.method === 'POST' && url.pathname === '/data') {
+    const body = await collectRequestBody(req);
+    const next = _buildDataRecord(body ? JSON.parse(body) : {}, readRecord());
+    writeRecord(next);
+    sendJson(req, res, 200, { ok: true, row: next }); return;
+  }
+  if (req.method === 'POST' && url.pathname === '/ai') {
+    const body = await collectRequestBody(req);
+    const parsed = body ? JSON.parse(body) : {};
+    const result = await callAiWithFallback(parsed, String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase());
+    sendJson(req, res, 200, { ok: true, text: result.text, providerUsed: result.providerUsed, modelUsed: result.modelUsed || null, fallbackFrom: result.fallbackFrom || null, fallbackFromModel: result.fallbackFromModel || null, fallbackReason: result.fallbackReason || null });
+    return;
+  }
+  sendJson(req, res, 404, { ok: false, error: 'Not found' });
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || `${HOST}:${PORT}`}`);
-
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204, corsHeadersFor(req));
-      res.end();
-      return;
-    }
-
-    if (req.method === 'GET' && url.pathname === '/health') {
-      sendJson(req, res, 200, {
-        ok: true,
-        service: 'siga-local-backend',
-        dataFile: DATA_FILE,
-        aiProvider: process.env.SIGA_AI_PROVIDER || 'ai'
-      });
-      return;
-    }
-
-    if (req.method === 'GET' && url.pathname === '/data') {
-      const record = readRecord();
-      sendJson(req, res, 200, record);
-      return;
-    }
-
-    if (req.method === 'POST' && url.pathname === '/data') {
-      const body = await collectRequestBody(req);
-      const parsed = body ? JSON.parse(body) : {};
-      const current = readRecord();
-
-      const next = _buildDataRecord(parsed, current);
-
-      writeRecord(next);
-      sendJson(req, res, 200, { ok: true, row: next });
-      return;
-    }
-
-    if (req.method === 'POST' && url.pathname === '/ai') {
-      const body   = await collectRequestBody(req);
-      const parsed = body ? JSON.parse(body) : {};
-      const provider = String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase();
-
-      const result = await callAiWithFallback(parsed, provider);
-
-      sendJson(req, res, 200, {
-        ok: true,
-        text: result.text,
-        providerUsed: result.providerUsed,
-        modelUsed: result.modelUsed || null,
-        fallbackFrom: result.fallbackFrom || null,
-        fallbackFromModel: result.fallbackFromModel || null,
-        fallbackReason: result.fallbackReason || null
-      });
-      return;
-    }
-
-    sendJson(req, res, 404, { ok: false, error: 'Not found' });
+    await _handleRequest(req, res, url);
   } catch (error) {
     const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
-    sendJson(req, res, statusCode, {
-      ok: false,
-      error: error?.message || 'Internal server error',
-      provider: error?.provider || null,
-      retryAfter: error?.retryAfter || null
-    });
+    sendJson(req, res, statusCode, { ok: false, error: error?.message || 'Internal server error', provider: error?.provider || null, retryAfter: error?.retryAfter || null });
   }
 });
 
