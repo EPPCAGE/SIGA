@@ -10320,6 +10320,7 @@ if(!DATA.pat) DATA.pat = [];
 
 let _patFilter = 'todos';
 let _patQuarterFilter = 'todos';
+let _deadlineAlertsShown = false; // garante exibição única por sessão
 let _patTipoFilter = '';
 let _patEditIdx = null;
 
@@ -11425,15 +11426,18 @@ async function loadFromCloud() {
     if(homePage && homePage.style.display !== 'none') homeRefresh();
     // Atualizar status automaticamente baseado nas datas
     checkAllAutoStatus();
-    setTimeout(() => {
-      patCheckDeadlines();
-      checkActionsDeadlines();
-      // Email alerts (fire-and-forget — only sends if configured)
-      if(isEditor) {
-        checkMapeamentoMilestones().catch(() => { /* intentional */ });
-        checkActionsDeadlinesEmail().catch(() => { /* intentional */ });
-      }
-    }, 800);
+    if(!_deadlineAlertsShown) {
+      _deadlineAlertsShown = true;
+      setTimeout(() => {
+        patCheckDeadlines();
+        checkActionsDeadlines();
+        // Email alerts (fire-and-forget — only sends if configured)
+        if(isEditor) {
+          checkMapeamentoMilestones().catch(() => { /* intentional */ });
+          checkActionsDeadlinesEmail().catch(() => { /* intentional */ });
+        }
+      }, 800);
+    }
 
     setSyncStatus('synced');
     _lastLoadedAt = Date.now(); // registrar momento do carregamento para controle de re-sync
