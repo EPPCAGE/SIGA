@@ -13294,7 +13294,7 @@ function _srCarregarIndicadores() {
       ind.periodicidade ? `🔁 ${ind.periodicidade}` : '',
     ].filter(Boolean).join('  ');
     return `
-    <label for="${ind.id || " class="indrel-item">
+    <label for="${ind.id || ''}" class="indrel-item">
       <input type="checkbox" class="sr-ind-check indrel-checkbox" value="${ind.codigo || ''}" data-id="${ind.id || ''}">
       <div class="indrel-item-info">
         ${ind.codigo ? `<div class="indrel-item-codigo">${ind.codigo}</div>` : ''}
@@ -23076,7 +23076,7 @@ Regras obrigatórias:
         ind.responsavel ? `👤 ${ind.responsavel}` : '',
       ].filter(Boolean).join('  ');
       return `
-      <label for="${ind.id || " class="indrel-item" id="indrel-item-${ind.codigo || ind.id}">
+      <label for="${ind.id || ''}" class="indrel-item" id="indrel-item-${ind.codigo || ind.id}">
         <input type="checkbox" class="rel-ind-check indrel-checkbox" value="${ind.codigo || ''}" data-id="${ind.id || ''}" onchange="indcageRelUpdateCount()">
         <div class="indrel-item-info">
           ${ind.codigo ? `<div class="indrel-item-codigo">${ind.codigo}</div>` : ''}
