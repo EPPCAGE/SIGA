@@ -936,7 +936,7 @@ function collectSetupStatus() {
 function requestProcessListFromSiga() {
   try {
     window.parent.postMessage({ type: 'SIMULATOR_REQUEST_PROCESS_LIST' }, '*');
-  } catch (e) { /* standalone, sem pai */ }
+  } catch (e) { console.warn('[simulator] postMessage para parent (standalone)', e); }
 }
 
 // Cache das linhas filtradas para o handler de clique (evita closure stale)
@@ -2259,7 +2259,7 @@ function computeScenarioMetrics() {
   try {
     const t = calculatePathTime(graph, path, true);
     if (t > 0) top = t;
-  } catch (_) { /* path inválido — top fica 0, card mostrará "—" */ }
+  } catch (_) { console.warn('[simulator] path inválido, TOP = 0', _); }
 
   // T.O.P. Auto = cenário com automações.
   // Fallback para top quando não calculável.
@@ -2267,7 +2267,7 @@ function computeScenarioMetrics() {
   try {
     const ta = calculatePathTime(autoGraph, path, true);
     if (ta > 0) topAuto = ta;
-  } catch (_) { /* sem automações ou path inválido — usa top */ }
+  } catch (_) { console.warn('[simulator] automação path inválido', _); }
 
   // Conversao K: 1 UT = quantos minutos reais (usando T.P. como ancora)
   // K = T.P. (min) / T.E.R. (UT)
@@ -4028,13 +4028,13 @@ function wireEvents() {
   $('btnBpmnApply')?.addEventListener('click', applyFromBpmnEditor);
   $('btnBpmnBack')?.addEventListener('click', () => { hideBpmnEditor(); showEntryChoice(); });
   $('btnBpmnFit')?.addEventListener('click', () => {
-    try { _bpmnModeler?.get('canvas').zoom('fit-viewport'); } catch (e) { /* intentional */ }
+    try { _bpmnModeler?.get('canvas').zoom('fit-viewport'); } catch (e) { console.warn('[simulator]', e); }
   });
   $('btnBpmnUndo')?.addEventListener('click', () => {
-    try { _bpmnModeler?.get('commandStack').undo(); } catch (e) { /* intentional */ }
+    try { _bpmnModeler?.get('commandStack').undo(); } catch (e) { console.warn('[simulator]', e); }
   });
   $('btnBpmnRedo')?.addEventListener('click', () => {
-    try { _bpmnModeler?.get('commandStack').redo(); } catch (e) { /* intentional */ }
+    try { _bpmnModeler?.get('commandStack').redo(); } catch (e) { console.warn('[simulator]', e); }
   /* tratamento de erro */
   });
   $('btnBpmnExport')?.addEventListener('click', exportBpmnFile);
@@ -4068,7 +4068,7 @@ function saveToSIGA() {
     // Tenta capturar métricas atuais; falha silenciosamente se não for possível
     let simResults = _lastSimMetrics;
     if (!simResults) {
-      try { simResults = computeScenarioMetrics(); _lastSimMetrics = simResults; } catch (_) { /* intentional */ }
+      try { simResults = computeScenarioMetrics(); _lastSimMetrics = simResults; } catch (_) { console.warn('[simulator]', _); }
     }
     // Payload simplificado para serialização (remove estruturas grandes como ranking completo)
     const simSummary = simResults ? {
