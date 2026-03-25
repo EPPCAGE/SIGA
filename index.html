@@ -5133,8 +5133,9 @@ function sanitizePop(p) {
 function _actionBadges(obj) {
   const _natMap = getNatMap();
   const _natCfg = obj.natureza ? _natMap[obj.natureza] : null;
+  const natIconPrefix = (_natCfg && _natCfg.icon) ? _natCfg.icon + ' ' : '';
   const natBadge = (obj.type === 'atividade' && _natCfg)
-    ? `<span class="natureza-badge" style="background:${_natCfg.bg};color:${_natCfg.color};">${_natCfg.icon ? _natCfg.icon+' ' : ''}${_natCfg.label}</span>`
+    ? `<span class="natureza-badge" style="background:${_natCfg.bg};color:${_natCfg.color};">${natIconPrefix}${_natCfg.label}</span>`
     : '';
   const _etipoMap = { inicio:{label:'Início',color:'#16a34a',bg:'#dcfce7'}, intermediario:{label:'Intermediário',color:'#b45309',bg:'#fef3c7'}, encerramento:{label:'Encerramento',color:'#dc2626',bg:'#fee2e2'} };
   const _etipoCfg = (obj.type === 'evento' && obj.eventoTipo) ? _etipoMap[obj.eventoTipo] : null;
@@ -5150,12 +5151,24 @@ function _actionBadges(obj) {
 
 function _activityToggleBtns(obj, em, loopOnClick, autoOnClick) {
   if(obj.type !== 'atividade') return { loopBtn:'', autoBtn:'' };
-  const loopBtn = em
-    ? `<button class="edit-rm-btn loop-toggle-btn${obj.loop?' loop-on':''}" onclick="${loopOnClick}" title="${obj.loop?'Loop/retrabalho — clique para desmarcar':'Marcar como loop/retrabalho'}" style="margin-left:4px;background:${obj.loop?'#fef3c7':'transparent'};color:${obj.loop?'#b45309':'#94a3b8'};border:1px solid ${obj.loop?'#b4530944':'#e2e8f0'};font-size:13px;">🔄</button>`
-    : '';
-  const autoBtn = em
-    ? `<button class="edit-rm-btn auto-toggle-btn${obj.automatico?' auto-on':''}" onclick="${autoOnClick}" title="${obj.automatico?'Automático — clique para desmarcar':'Marcar como automático'}" style="margin-left:4px;background:${obj.automatico?'#dcfce7':'transparent'};color:${obj.automatico?'#16a34a':'#94a3b8'};border:1px solid ${obj.automatico?'#16a34a44':'#e2e8f0'};font-size:13px;">⚙️</button>`
-    : '';
+  if(!em) return { loopBtn:'', autoBtn:'' };
+
+  const loopOn     = !!obj.loop;
+  const loopClass  = loopOn ? ' loop-on' : '';
+  const loopTitle  = loopOn ? 'Loop/retrabalho — clique para desmarcar' : 'Marcar como loop/retrabalho';
+  const loopBg     = loopOn ? '#fef3c7' : 'transparent';
+  const loopColor  = loopOn ? '#b45309' : '#94a3b8';
+  const loopBorder = loopOn ? '#b4530944' : '#e2e8f0';
+  const loopBtn = `<button class="edit-rm-btn loop-toggle-btn${loopClass}" onclick="${loopOnClick}" title="${loopTitle}" style="margin-left:4px;background:${loopBg};color:${loopColor};border:1px solid ${loopBorder};font-size:13px;">🔄</button>`;
+
+  const autoOn     = !!obj.automatico;
+  const autoClass  = autoOn ? ' auto-on' : '';
+  const autoTitle  = autoOn ? 'Automático — clique para desmarcar' : 'Marcar como automático';
+  const autoBg     = autoOn ? '#dcfce7' : 'transparent';
+  const autoColor  = autoOn ? '#16a34a' : '#94a3b8';
+  const autoBorder = autoOn ? '#16a34a44' : '#e2e8f0';
+  const autoBtn = `<button class="edit-rm-btn auto-toggle-btn${autoClass}" onclick="${autoOnClick}" title="${autoTitle}" style="margin-left:4px;background:${autoBg};color:${autoColor};border:1px solid ${autoBorder};font-size:13px;">⚙️</button>`;
+
   return { loopBtn, autoBtn };
 }
 
@@ -5220,7 +5233,8 @@ function _buildBranchActionHTML(p, si, ai, bi, bai, ba, em) {
     </li>`;
 }
 
-function _buildNestedBranchActionHTML(p, si, ai, bi, bai, nbi, nbai, nba, em) {
+function _buildNestedBranchActionHTML(ctx, nbi, nbai, nba, em) {
+  const { p, si, ai, bi, bai } = ctx;
   const nbo = actionObj(nba);
   const nbt = ACTION_TYPES[nbo.type] || ACTION_TYPES.atividade;
   const nbaActor = nbo.actor ? `<span class="branch-action-actor">👤 ${nbo.actor}</span>` : '';
@@ -5396,7 +5410,7 @@ function buildNestedBranchesHTML(p, si, ai, bi, bai, branches, em) {
   const ce = em ? 'contenteditable="true"' : '';
   const branchItems = (branches || []).map((branch, nbi) => {
     const actionsHtml = (branch.actions || []).map((nba, nbai) =>
-      _buildNestedBranchActionHTML(p, si, ai, bi, bai, nbi, nbai, nba, em)
+      _buildNestedBranchActionHTML({p, si, ai, bi, bai}, nbi, nbai, nba, em)
     ).join('');
     const addNbaBtn = em ? `<button class="add-branch-action-btn" onclick="addNestedBranchAction('${p}',${si},${ai},${bi},${bai},${nbi})">+ Ação</button>` : '';
     const rmNbrBtn  = em ? `<button class="rm-branch-btn" onclick="rmNestedDecisionBranch('${p}',${si},${ai},${bi},${bai},${nbi})" title="Remover caminho">✕</button>` : '';
