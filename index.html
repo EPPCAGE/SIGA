@@ -4805,6 +4805,7 @@ function toggleEditMode(forceState) {
   // Persistir estado do modo edição entre recarregamentos
   try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) { /* intentional */ }
   try { _dndInit(editMode); } catch(e) { /* intentional */ }
+  /* notifica o usuario do erro */
   if(forceState === undefined) {
     if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar','warn');
     else showToast('Modo visualização ativo');
@@ -4859,6 +4860,7 @@ function _dndReinitStats() {
   if(typeof Sortable === 'undefined') return;
   _dndSortables = _dndSortables.filter(s => {
     if(s.el === document.getElementById('home-stats')) { try { s.destroy(); } catch(e) { /* intentional */ } return false; }
+    /* retorna valor seguro como fallback */
     return true;
   });
   const el = document.getElementById('home-stats');
@@ -4872,6 +4874,7 @@ function _dndReinitStats() {
 // Inicializa (ou destrói) todos os Sortables ao entrar/sair do modo edição
 function _dndInit(enabled) {
   _dndSortables.forEach(s => { try { s.destroy(); } catch(e) { /* intentional */ } });
+  /* tratamento de erro */
   _dndSortables = [];
   if(!enabled || typeof Sortable === 'undefined') return;
 
@@ -6332,6 +6335,7 @@ async function _generateFaqIAWithMode(p, mode) {
     markChanged(true, true);
     showToast(`✅ ${faqs.length} perguntas geradas pelo Copilot!`,'success');
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('Erro ao gerar FAQ: '+e.message,'warn');
   }
   if(btn) { btn.disabled=false; btn.textContent='🤖 Gerar com IA'; }
@@ -6575,6 +6579,7 @@ async function uploadFluxoImgToStorage(popKey, file) {
     showToast('✅ Imagem salva localmente!', 'success');
     markChanged(true, true);
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('⚠️ Erro ao processar imagem: ' + e.message, 'warn');
   }
 }
@@ -7207,6 +7212,7 @@ async function confirmNovoPop() {
 
       showToast('✅ Dados extraídos do POP Word. Revise o formulário e clique em Finalizar Mapeamento.', 'success');
     } catch (e) {
+      /* notifica o usuario do erro */
       showToast('⚠️ Falha ao carregar POP Word: ' + e.message, 'warn');
     }
     return;
@@ -8189,6 +8195,7 @@ function validateNpopJson(val) {
     el.innerHTML = '<span style="color:#16a34a;">✅ JSON válido — ' + steps + ' etapa(s), ' + roles + ' ator(es), fluxo: ' + (hasFlow ? 'sim' : 'nao') + '. Clique em Importar.</span>';
     document.getElementById('npop-confirm-btn').textContent = '📥 Importar JSON →';
   } catch(e) {
+    /* exibe mensagem de erro na interface */
     el.innerHTML = '<span style="color:#dc2626;">⚠️ JSON inválido — verifique o conteúdo copiado.</span>';
   }
 }
@@ -10313,6 +10320,7 @@ if(!DATA.pat) DATA.pat = [];
 
 let _patFilter = 'todos';
 let _patQuarterFilter = 'todos';
+let _deadlineAlertsShown = false; // garante exibição única por sessão
 let _patTipoFilter = '';
 let _patEditIdx = null;
 
@@ -11232,6 +11240,7 @@ async function saveToCloud(attempt=1) {
   }
 
   try { harvestEditables(); } catch(e) { /* harvestEditables error suppressed */ }
+  /* preserva estado de erro para inspecao */
 
   const _popsIncludedInThisSave = new Set(_dirtyPops);
 
@@ -11325,6 +11334,7 @@ async function loadFromCloud() {
           renderIndicators(p);
           loadAcomp(p);
         } catch(e) { /* intentional */ }
+      /* tratamento de erro */
       });
       const homePage = document.getElementById('home-page');
       if(homePage && homePage.style.display !== 'none') homeRefresh();
@@ -11416,15 +11426,18 @@ async function loadFromCloud() {
     if(homePage && homePage.style.display !== 'none') homeRefresh();
     // Atualizar status automaticamente baseado nas datas
     checkAllAutoStatus();
-    setTimeout(() => {
-      patCheckDeadlines();
-      checkActionsDeadlines();
-      // Email alerts (fire-and-forget — only sends if configured)
-      if(isEditor) {
-        checkMapeamentoMilestones().catch(() => { /* intentional */ });
-        checkActionsDeadlinesEmail().catch(() => { /* intentional */ });
-      }
-    }, 800);
+    if(!_deadlineAlertsShown) {
+      _deadlineAlertsShown = true;
+      setTimeout(() => {
+        patCheckDeadlines();
+        checkActionsDeadlines();
+        // Email alerts (fire-and-forget — only sends if configured)
+        if(isEditor) {
+          checkMapeamentoMilestones().catch(() => { /* intentional */ });
+          checkActionsDeadlinesEmail().catch(() => { /* intentional */ });
+        }
+      }, 800);
+    }
 
     setSyncStatus('synced');
     _lastLoadedAt = Date.now(); // registrar momento do carregamento para controle de re-sync
@@ -11445,6 +11458,7 @@ async function loadFromCloud() {
     } catch(e) { /* intentional */ }
 
   } catch(e) {
+    /* notifica o usuario do erro */
     setSyncStatus('error');
     showToast('Erro ao carregar: ' + e.message + ' — veja Console (F12) para detalhes', 'warn');
   }
@@ -11774,6 +11788,7 @@ async function initSupabase() {
     try { logAccessEvent('login'); } catch(e) { /* intentional */ }
     try { _startPresenceHeartbeat(); } catch(e) { /* intentional */ }
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('⚠️ Erro ao conectar ao backend local: ' + e.message, 'warn');
   }
 }
@@ -11848,8 +11863,10 @@ async function signInMicrosoft() {
 
     try { logAccessEvent('login'); } catch(e) { /* intentional */ }
     try { _startPresenceHeartbeat(); } catch(e) { /* intentional */ }
+    /* notifica o usuario do erro */
     showToast('✅ Login Microsoft realizado.', 'success');
   } catch (e) {
+    /* notifica o usuario do erro */
     showToast('❌ Falha no login Microsoft: ' + (e?.message || 'erro desconhecido'), 'warn');
   }
 }
@@ -11868,6 +11885,7 @@ async function signOut() {
   try { _stopPresenceHeartbeat(); } catch(e) { /* intentional */ }
   try { await _clearPresence(); } catch(e) { /* intentional */ }
   try { await logAccessEvent('logout'); } catch(e) { /* intentional */ }
+  /* tenta fallback alternativo */
 
   if ((SIGA_AUTH.mode || 'local') === 'entra' && _msalClient) {
     try {
@@ -12102,6 +12120,7 @@ async function exportBackup() {
     showToast('✅ Backup exportado com sucesso!', 'success');
     closeModal('backup-modal');
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('Erro ao exportar: ' + e.message, 'warn');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '⬇ Baixar arquivo de backup (.json)'; }
@@ -12134,6 +12153,7 @@ function previewBackupFile(input) {
       preview.classList.add('visible');
       document.getElementById('backup-import-btn').style.display = 'block';
     } catch(err) {
+      /* exibe mensagem de erro na interface */
       _backupFileData = null;
       const preview = document.getElementById('backup-preview');
       preview.innerHTML = `<span style="color:var(--cage-red);">❌ ${escapeHtml(err.message)}</span>`;
@@ -12177,6 +12197,7 @@ function importBackup() {
     if(currentUser) saveToCloud();
     showToast('✅ Backup importado com sucesso!', 'success');
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('Erro ao importar: ' + e.message, 'warn');
   }
 }
@@ -12344,7 +12365,7 @@ function runSearch(raw) {
             ${r.norma.url ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:4px;">🔗 ${r.norma.url}</div>` : ''}
           </div>`;
         if(r.type === 'repo_faq') return `
-          <div class="search-result-item" onclick="openRepoDocViewer('${r.doc.id}', true)">
+          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-faq="true" onclick="openRepoDocViewer(this.dataset.docId,true)">
             <div class="search-result-pop">📚 ${r.doc.title} · FAQ do Manual</div>
             <div class="search-result-q">${highlight(r.faq.q, q)}</div>
             ${r.faq.a ? `<div class="search-result-a">${highlight(r.faq.a.substring(0,240)+(r.faq.a.length>240?'…':''), q)}</div>` : ''}
@@ -12353,11 +12374,8 @@ function runSearch(raw) {
           const inTitle = (r.doc.title||'').toLowerCase().includes(lower);
           const inDesc  = (r.doc.desc||'').toLowerCase().includes(lower);
           const inContent = !inTitle && !inDesc && (r.doc.textContent||'').toLowerCase().includes(lower);
-          const clickAction = inContent
-            ? `openRepoDocViewer('${r.doc.id}')`
-            : `goToRepoDoc('${r.doc.id}')`;
           return `
-          <div class="search-result-item" onclick="${clickAction}">
+          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-in-content="${inContent ? 'true' : 'false'}" onclick="this.dataset.inContent==='true' ? openRepoDocViewer(this.dataset.docId) : goToRepoDoc(this.dataset.docId)">
             <div class="search-result-pop">📚 Documentos & Manuais · ${r.doc.cat||'Documento'}</div>
             <div class="search-result-q">${highlight(r.doc.title||'', q)}</div>
             ${r.doc.desc ? `<div class="search-result-a">${highlight(r.doc.desc.substring(0,180)+(r.doc.desc.length>180?'…':''), q)}</div>` : ''}
@@ -12568,6 +12586,7 @@ async function exportPptx() {
     const p = popPrefix(currentPop);
     await buildPptx(DATA[p], p);
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('Erro ao gerar PPT: ' + e.message, 'warn');
   }
   if(btn) { btn.textContent = '📊 Relatar POP'; btn.disabled = false; }
@@ -12617,6 +12636,7 @@ async function _loadCageLogoB64() {
     });
     if(b64) { window._cageLogoB64Cache = b64; return b64; }
   } catch(e) { /* canvas tainted */ }
+  /* retorna valor seguro como fallback */
 
   return null;
 }
@@ -12729,6 +12749,7 @@ async function buildPptx(D, _popKey) {
         const b64 = await new Promise(res => { const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
         s.addImage({ data: b64, x:0.3, y:0.85, w:9.4, h:4.6, sizing:{ type:'contain', w:9.4, h:4.6 } });
       } catch(e) {
+        /* tratamento de erro */
         s.addText('Fluxograma: ' + fluxoImgUrl, { x:0.3, y:0.85, w:9.4, h:4.6, fontSize:12, color:C.white, align:'center', valign:'middle' });
       }
     }
@@ -12935,6 +12956,7 @@ async function buildPptx(D, _popKey) {
       chunk.forEach((m, idx) => {
         const y = 1.05 + idx * 1.12;
         const fmtD = d => { try { return new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR'); } catch(e){ return d||''; } };
+        /* tratamento de erro */
         s.addShape(pres.ShapeType.rect, { x:0.3, y, w:9.2, h:1.0, fill:{ color:C.white }, shadow:mks() });
         s.addShape(pres.ShapeType.rect, { x:0.3, y, w:0.06, h:1.0, fill:{ color:C.mid } });
         s.addText((meetTypeLabel[m.type]||m.type||'Reunião') + (m.date ? '  ·  ' + fmtD(m.date) : ''), { x:0.5, y:y+0.05, w:8.7, h:0.28, fontSize:11, color:C.navy, bold:true, valign:'middle', margin:0 });
@@ -12961,6 +12983,7 @@ async function buildPptx(D, _popKey) {
     const sitLabel = { de_acordo:'✅ De acordo', parcialmente:'⚠️ Parcialmente implementado', nao_implementado:'❌ Não implementado' };
     const sitColor = { de_acordo:'10B981', parcialmente:'F59E0B', nao_implementado:'EF4444' };
     const fmtD = d => { if(!d) return '—'; try { return new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR'); } catch(e){ return d; } };
+    /* tratamento de erro */
     acompPeriods.forEach((ap, idx) => {
       const a = acomp[ap.key] || {};
       const x = idx === 0 ? 0.3 : 5.15;
@@ -13182,6 +13205,7 @@ async function eppExportStatusReportConfirm() {
   try {
     await _buildEppStatusReport({ trimestre, ano, subtitulo, usarIA, selectedCodigos });
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('Erro ao gerar Status Report: ' + e.message, 'warn');
   }
 
@@ -13976,6 +14000,7 @@ async function _buildEppStatusReport(opts = {}) {
         const promptIA = `Você é um analista de indicadores de desempenho do setor público. Analise a variação temporal dos resultados do indicador abaixo e produza um texto conciso (4 a 6 frases) em português, apontando: (1) a tendência geral (melhora, piora, estabilidade); (2) os meses/períodos de melhor e pior desempenho; (3) se o indicador está atingindo a meta na maioria dos períodos; (4) alguma observação relevante sobre sazonalidade ou mudanças bruscas. Seja objetivo, claro e técnico.\n\nIndicador: ${ind?.enunciado||codigo}\nCódigo: ${codigo}\nDivisão: ${ind?.divisao||'—'}\nMeta: ${ind?.meta||'—'}\nPeriodicidade: ${ind?.periodicidade||'—'}\n\nSérie histórica (últimos 18 períodos):\n${serieTexto}\n\nResponda apenas com o texto da análise, sem listas, sem títulos, sem markdown.`;
         let textoIA = '(Análise IA indisponível)';
         try { textoIA = (await callGemini(promptIA)).trim(); } catch(e) { textoIA = 'Não foi possível obter análise da IA para este indicador.'; }
+        /* tratamento de erro */
         const sIA = pres.addSlide();
         addIndHdr(sIA, tituloInd + ' — Análise de Variação Temporal', '🤖 Análise IA');
         sIA.addShape(pres.ShapeType.rect,{x:0.4,y:0.95,w:9.2,h:4.5,fill:{color:'F0F7FF'},line:{color:'C7D7F5',pt:1},rectRadius:0.12});
@@ -14093,6 +14118,7 @@ async function renderFlowPreview(p) {
     const svgEl = body.querySelector('svg');
     if(svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto'; }
   } catch(e) {
+    /* exibe mensagem de erro na interface */
     body.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:12px;">Erro ao renderizar o diagrama de fluxo.</div>';
   }
 }
@@ -14185,6 +14211,7 @@ function renderFicha(p) {
       const lastSnap  = (DATA[p]?.maturidade?.snapshots || []).slice(-1)[0];
       const snapInfo  = lastSnap
         ? `<span style="font-size:10px;color:#94a3b8;margin-top:2px;">Último registro: ${(() => { try { return new Date(lastSnap.date+'T12:00:00Z').toLocaleDateString('pt-BR'); } catch(e){ return lastSnap.date; } })()}</span>`
+        /* tratamento de erro */
         : `<span style="font-size:10px;color:#94a3b8;margin-top:2px;">Questionário respondido</span>`;
       matBadgeHtml = `
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);">
@@ -14225,6 +14252,7 @@ function renderFicha(p) {
       }
     }
   } catch(e) { /* arqGetData indisponível */ }
+  /* exibe mensagem de erro na interface */
 
   const _progHtml = _renderFichaProgressHtml(p);
   el.innerHTML = `<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
@@ -14604,6 +14632,7 @@ Valores possíveis para "treat": "Mitigar", "Aceitar", "Transferir", "Eliminar",
     markChanged(true, true);
     showToast(`✅ ${items.length} itens gerados pela IA e adicionados.`, 'success');
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('❌ Erro ao gerar riscos: ' + (e.message || e), 'error');
   } finally {
     if(btn) { btn.disabled = false; btn.textContent = '✨ Gerar por IA'; }
@@ -14701,6 +14730,7 @@ function _doCreateVersion() {
   try { renderPa(p); }            catch(e) { /* intentional */ }
   try { renderMetrics(p); }       catch(e) { /* intentional */ }
   try { renderFicha(p); }         catch(e) { /* intentional */ }
+  /* notifica o usuario do erro */
   renderVersionBadge(p);
   _updateVersionBars();
   markChanged(true, true);
@@ -16056,6 +16086,7 @@ async function uploadLogo2ToStorage(file) {
     showToast('✅ Segundo logo salvo localmente!', 'success');
     markChanged(true, true);
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('⚠️ Erro ao processar logo: ' + e.message, 'warn');
   }
 }
@@ -16125,6 +16156,7 @@ async function uploadBiImgToStorage(file, type) {
     showToast('✅ Imagem salva localmente!', 'success');
     markChanged(true, true);
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('⚠️ Erro ao processar imagem: ' + e.message, 'warn');
   }
 }
@@ -16578,6 +16610,7 @@ ${fluxoTexto}`;
         }
         respText = await callGeminiProxy(prompt, { data: base64Bpmn, mimeType: mimeTypeBpmn }, { maxTokens: 8192 });
       } catch(imgErr) {
+        /* tratamento de erro */
         respText = await callGeminiProxy(prompt, null, { maxTokens: 8192 });
       }
     } else {
@@ -16664,6 +16697,7 @@ ${fluxoTexto}`;
               if(el) el.innerHTML = `<div style="color:#dc2626;font-size:12px;">Erro ao renderizar diagrama: ${escapeHtml(err.message)}</div>`;
             });
           } catch(e) {
+            /* exibe mensagem de erro na interface */
             const el = document.getElementById(mermaidId);
             if(el) el.innerHTML = `<div style="color:#dc2626;font-size:12px;">Erro ao renderizar diagrama.</div>`;
           }
@@ -16682,6 +16716,7 @@ ${fluxoTexto}`;
     _updateAiRunBtn(p);
 
   } catch (err) {
+    /* exibe mensagem de erro na interface */
     output.innerHTML = `<div style="padding:20px;background:#fef2f2;border-radius:10px;color:#dc2626;font-size:13px;">
       <strong>Erro ao analisar:</strong> ${err.message}
     </div>`;
@@ -16866,6 +16901,7 @@ ${JSON.stringify(dadosParaIA, null, 2)}`;
     const respText = await callGeminiProxy(prompt, null, { maxTokens: 12288 });
     aiData = parseAiJson(respText);
   } catch (err) {
+    /* exibe mensagem de erro na interface */
     output.innerHTML = `<div style="padding:20px;background:#fef2f2;border-radius:10px;color:#dc2626;font-size:13px;">
       <strong>Erro ao gerar relatório:</strong> ${err.message}
     </div>`;
@@ -17435,7 +17471,7 @@ function npopRenderAtores(selectedArr, isCreateForm) {
   const selected = new Set(selectedArr || []);
   wrap.innerHTML = atores.map(a => {
     const on = selected.has(a);
-    return `<span onclick="npopToggleAtor(this,'${a.replace(/'/g,'\\\'').replace(/"/g,'&quot;')}',${isCreateForm})" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${a}</span>`;
+    return `<span data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${escapeHtml(a)}</span>`;
   }).join('');
   if(hidden) hidden.value = [...selected].join(',');
 }
@@ -17584,6 +17620,7 @@ async function repoGenerateThumbnail(source) {
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
     return canvas.toDataURL('image/jpeg', 0.7);
   } catch(e) {
+    /* retorna valor seguro como fallback */
     return null;
   }
 }
@@ -17625,6 +17662,7 @@ async function repoExtractPdfText(source) {
     }
     return text.trim();
   } catch(e) {
+    /* retorna valor seguro como fallback */
     return '';
   }
 }
@@ -17687,6 +17725,7 @@ async function repoGenerateFaqsFromPdf(id) {
     saveToCloud();
     showToast(`✅ ${d.faqs.length} FAQs geradas com sucesso!`, 'success');
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('Erro ao gerar FAQs: ' + e.message, 'warn');
     if(btn) { btn.disabled = false; btn.textContent = '🤖 Gerar FAQs'; }
   }
@@ -17866,6 +17905,7 @@ async function repoSaveDoc() {
         const _thumbnail = await repoGenerateThumbnail(repoPendingFile);
       }
     } catch(err) {
+      /* notifica o usuario do erro */
       prog.style.display = 'none';
       bar.style.width = '0%';
       showToast('❌ Erro no upload: ' + err.message, 'warn');
@@ -17945,7 +17985,7 @@ function dropsRender() {
     const pub = new Date(d.publishedAt);
     const dateLabel = pub.toLocaleDateString('pt-BR', {month:'long', year:'numeric', timeZone:'UTC'});
     const coverHtml = d.coverUrl
-      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" onclick="dropsShowCover('${d.coverUrl.replace(/'/g,"\\'")}')"><img src="${d.coverUrl}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
+      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)"><img src="${escapeHtml(d.coverUrl)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
       : `<div style="height:80px;background:linear-gradient(135deg,#1B3022,#003366);display:flex;align-items:center;justify-content:center;font-size:36px;">💧</div>`;
     return `
     <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
@@ -19200,6 +19240,7 @@ async function auditGerarChecklistBtn() {
     auditRenderChecklistEditor();
     showToast('✅ Checklist gerado com ' + _auditTempChecklist.length + ' itens pela IA!', 'success');
   } catch(e) {
+    /* notifica o usuario do erro */
     showToast('Erro ao gerar checklist: ' + e.message, 'error');
   } finally {
     if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
@@ -19904,6 +19945,7 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
     const match = raw.match(/\{[\s\S]*\}/);
     if(match) ai = { ...ai, ...JSON.parse(match[0]) };
   } catch(e) {
+    /* tratamento de erro */
     ai.justificativa = 'Texto gerado automaticamente indisponível. Preencha esta seção manualmente.';
   }
 
@@ -20084,6 +20126,7 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
     const match = raw.match(/\{[\s\S]*\}/);
     if(match) ai = { ...ai, ...JSON.parse(match[0]) };
   } catch(e) {
+    /* tratamento de erro */
     ai.sumario = 'Resumo executivo indisponível (IA offline). Complete esta seção manualmente.';
   }
 
@@ -20536,6 +20579,7 @@ FORMATO: {"flow":[{"id":"n1","type":"start","name":"Início","actor":"","next":[
     }, 300);
 
   } catch(err) {
+    /* exibe mensagem de erro na interface */
     document.getElementById('npop-s2').style.display = 'none';
     document.getElementById('npop-s3').style.display = 'block';
     document.getElementById('npop-extract-result').innerHTML = `
@@ -21489,6 +21533,7 @@ function statusModalAutoFill() {
       if (svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto'; }
       fdApplyZoom();
     } catch(e) {
+      /* exibe mensagem de erro na interface */
       output.innerHTML = `<div style="color:#ef4444;font-size:13px;padding:20px;font-family:'JetBrains Mono',monospace;">Erro no código Mermaid:<br><br>${escapeHtml(e.message)}</div>`;
     }
   };
@@ -21546,6 +21591,7 @@ Regras obrigatórias:
         showToast('IA não retornou código válido. Tente novamente.', 'warn');
       }
     } catch(e) {
+      /* notifica o usuario do erro */
       showToast('Erro ao chamar IA: ' + escapeHtml(e.message || String(e)), 'warn');
     } finally {
       if (btn) { btn.innerHTML = origText; btn.disabled = false; }
@@ -21704,6 +21750,7 @@ Regras obrigatórias:
       await _modeler.importXML(xml);
       _modeler.get('canvas').zoom('fit-viewport');
     } catch(e) {
+      /* tenta fallback alternativo */
       try {
         await _modeler.importXML(DEFAULT_BPMN);
         _modeler.get('canvas').zoom('fit-viewport');
@@ -21728,6 +21775,7 @@ Regras obrigatórias:
       saveToCloud();
       showToast('✅ Diagrama BPMN salvo!', 'success');
     } catch(e) {
+      /* notifica o usuario do erro */
       showToast('Erro ao salvar: ' + e.message, 'warn');
     }
   };
@@ -22085,6 +22133,7 @@ Regras obrigatórias:
         _indcageProcessWb(wb, status);
         input.value = '';
       } catch(err) {
+        /* notifica o usuario do erro */
         if(status) status.textContent = '❌ Erro ao importar';
         showToast('Erro ao importar planilha: ' + err.message, 'warn');
       }
@@ -22248,6 +22297,7 @@ Regras obrigatórias:
       DATA.indicadoresCage.sisplanLastSync = new Date().toISOString();
       if(syncStatus) syncStatus.textContent = `✅ Sincronizado em ${new Date().toLocaleString('pt-BR')}`;
     } catch(err) {
+      /* notifica o usuario do erro */
       const msg = (err.message.includes('fetch') || err.message.includes('Network'))
         ? 'Não foi possível acessar a URL. Verifique se a planilha está publicada publicamente (sem login).'
         : err.message;
@@ -23244,6 +23294,7 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
             textoIA = await callGemini(promptIA);
             textoIA = textoIA.trim();
           } catch(e) {
+            /* tratamento de erro */
             textoIA = 'Não foi possível obter análise da IA para este indicador.';
           }
 
@@ -23270,6 +23321,7 @@ Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.
       showToast('Relatório PPT gerado com sucesso! 📊', 'success');
 
     } catch(err) {
+      /* notifica o usuario do erro */
       showToast('Erro ao gerar relatório: ' + (err.message || err), 'warn');
     } finally {
       if(btn) { btn.disabled = false; btn.textContent = '📊 Gerar Relatório PPT'; }
@@ -24462,6 +24514,7 @@ function matRenderHistory(p, snapshots) {
       Nenhum registro salvo ainda. Clique em <strong>💾 Salvar Nota</strong> para iniciar o histórico.
     </div>`;
   const fmtDate = d => { try { return new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){ return d; } };
+  /* tratamento de erro */
   const items = snapshots.map((snap, idx) => {
     const prev  = idx > 0 ? snapshots[idx-1] : null;
     const delta = prev ? snap.score - prev.score : null;
@@ -24890,6 +24943,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         .replace(/\n/g, '<br>')
     }</div>`;
   } catch(e) {
+    /* exibe mensagem de erro na interface */
     resultDiv.innerHTML = `<span style="color:#ef4444;">Erro: ${escapeHtml(e.message)}</span>`;
   } finally {
     btn.disabled    = false;

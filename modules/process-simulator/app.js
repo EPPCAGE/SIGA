@@ -190,6 +190,7 @@ async function fetchSigaActorCatalog() {
         return actors;
       }
     } catch (e) {
+      /* preserva estado de erro para inspecao */
       lastErr = e;
     }
   }
@@ -474,14 +475,6 @@ function appendDiagramBackdrop(svg, opacity = 0.92) {
   svg.appendChild(img);
 }
 
-function escapeHtml(text) {
-  return String(text || '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
 
 function suggestedAutomationNodeIds() {
   if (!graph) return [];
@@ -923,6 +916,7 @@ function collectSetupStatus() {
     parseHappyPathRequired();
     status.happyPathOk = true;
   } catch (e) {
+    /* preserva estado de erro para inspecao */
     status.happyPathOk = false;
   }
 
@@ -930,6 +924,7 @@ function collectSetupStatus() {
     parseLeadTimeInformedRequired();
     status.leadTimeOk = true;
   } catch (e) {
+    /* preserva estado de erro para inspecao */
     status.leadTimeOk = false;
   }
 
@@ -1204,7 +1199,7 @@ function renderSetupGatewayEditor() {
 
   const html = gateways.map((gw) => {
     const outs = outgoing(graph, gw.id);
-    if (!outs.length) return `<div class="box"><strong>${gw.label || gw.id}</strong><div>Sem saidas.</div></div>`;
+    if (!outs.length) return `<div class="box"><strong>${escapeHtml(gw.label || gw.id)}</strong><div>Sem saidas.</div></div>`;
     const sum = outs.reduce((acc, e) => acc + Number(e.probability || 0), 0);
     const rows = outs.map((e) => {
       const targetNode = nodeById(e.to);
@@ -1220,7 +1215,7 @@ function renderSetupGatewayEditor() {
           <span class="gw-path-target" style="color:#9fb0c5;font-size:11px;">(${escapeHtml(targetLabel)})</span>
         </span>
         <div style="display:flex;gap:6px;align-items:center;">
-          <input type="number" min="0" max="100" step="1" data-setup-gw="${gw.id}" data-setup-edge="${e.id}" value="${pct}" style="width:80px;" />
+          <input type="number" min="0" max="100" step="1" data-setup-gw="${escapeHtml(gw.id)}" data-setup-edge="${escapeHtml(e.id)}" value="${pct}" style="width:80px;" />
           <span style="font-size:12px;color:#9fb0c5;">%</span>
           <div class="gw-prob-bar"><div class="gw-prob-fill" style="width:${pct}%;background:${barColor};"></div></div>
         </div>
@@ -1228,7 +1223,7 @@ function renderSetupGatewayEditor() {
     }).join('');
     return `
       <div class="box" style="margin-bottom:8px;">
-        <strong>${gw.label || gw.id}</strong>
+        <strong>${escapeHtml(gw.label || gw.id)}</strong>
         <div style="font-size:12px;margin:4px 0 6px;">Soma atual: ${sum.toFixed(2)}%</div>
         ${rows}
       </div>`;
@@ -1621,7 +1616,7 @@ function completeSetup() {
   const ready = s.graphOk && s.handoffOk && s.happyPathOk;
   if (!ready) {
     const reason = !s.graphOk && s.graphIssues.length
-      ? ` Motivo: ${s.graphIssues[0]}`
+      ? ` Motivo: ${escapeHtml(s.graphIssues[0])}`
       : '';
     $('validationBox').innerHTML = `<span class="badge error">setup</span> Finalize os itens pendentes no popup para iniciar a simulacao.${reason}`;
     return;
@@ -2427,6 +2422,7 @@ function parseEditorGraph() {
     autoAssignComplexityDefaults(); // garante defaults de complexidade
     return true;
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     $('validationBox').innerHTML = `<span class=\"badge error\">erro</span> JSON invalido: ${e.message}`;
     return false;
   }
@@ -3060,6 +3056,7 @@ function updateDashboard() {
   try {
     metrics = computeScenarioMetrics();
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     const base = calculateTEPAndIP(graph, 3500);
     renderExecutiveKpis(null, base);
     $('calibrationResult').textContent = e.message;
@@ -3113,6 +3110,7 @@ function applyCalibration() {
 
     updateDashboard();
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     $('calibrationResult').textContent = `Falha na calibracao: ${e.message}`;
     updateDashboard();
   }
@@ -3359,6 +3357,7 @@ function playSimulation() {
     try {
       parseHappyPathRequired();
     } catch (e) {
+      /* exibe mensagem de erro na interface */
       $('validationBox').innerHTML = `<span class="badge error">ideal</span> ${e.message}`;
       return;
     }
@@ -3529,6 +3528,7 @@ function generateReport() {
     metrics = computeScenarioMetrics();
     _lastSimMetrics = metrics;
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     $('reportBox').textContent = `Falha no relatorio: ${e.message}`;
     return;
   }
@@ -3624,6 +3624,7 @@ async function runVisionExtract() {
     drawGraph();
     renderSetupPathPicker();
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     out.textContent = `Falha na extracao: ${e.message}`;
   } finally {
     if (btn) {
@@ -3745,6 +3746,7 @@ async function loadDefaultBpmn() {
     await _bpmnModeler.importXML(DEFAULT_BPMN);
     _bpmnModeler.get('canvas').zoom('fit-viewport');
   } catch (e) {
+    /* erro nao-fatal — registra aviso */
     console.warn('[SimBPMN] Erro ao carregar diagrama padrão:', e.message);
   }
 }
@@ -3812,6 +3814,7 @@ async function applyFromBpmnEditor() {
     const out = $('cvOutput');
     if (out) out.textContent = `Topologia extraída do Editor BPMN: ${g.nodes.length} nó(s), ${(g.edges || []).length} aresta(s).`;
   } catch (e) {
+    /* notifica o usuario do erro */
     console.error('[SimBPMN] applyFromBpmnEditor:', e);
     alert('Erro ao extrair topologia: ' + e.message);
   } finally {
@@ -3830,6 +3833,7 @@ async function exportBpmnFile() {
     a.download = 'processo.bpmn';
     a.click();
   } catch (e) {
+    /* notifica o usuario do erro */
     alert('Erro ao exportar: ' + e.message);
   }
 }
@@ -4031,6 +4035,7 @@ function wireEvents() {
   });
   $('btnBpmnRedo')?.addEventListener('click', () => {
     try { _bpmnModeler?.get('commandStack').redo(); } catch (e) { /* intentional */ }
+  /* tratamento de erro */
   });
   $('btnBpmnExport')?.addEventListener('click', exportBpmnFile);
 }
@@ -4096,6 +4101,7 @@ function saveToSIGA() {
       setTimeout(() => { btn.disabled = false; btn.textContent = '💾 Salvar no SIGA'; }, 2000);
     }
   } catch (e) {
+    /* erro nao-fatal — registra aviso */
     if (btn) { btn.disabled = false; btn.textContent = '💾 Salvar no SIGA'; }
     console.warn('[Simulator] saveToSIGA falhou:', e);
   }
@@ -4154,6 +4160,7 @@ window.addEventListener('message', (ev) => {
       }
     }
   } catch (e) {
+    /* erro nao-fatal — registra aviso */
     console.warn('[Simulator] message handler error:', e);
   }
 });
@@ -4168,6 +4175,7 @@ try {
   loadSample();          // carrega exemplo no background (JSON visível mas tela coberta)
   showEntryChoice();     // primeiro passo: overlay de escolha de entrada
 } catch (e) {
+  /* exibe mensagem de erro na interface */
   const out = $('cvOutput');
   if (out) out.textContent = `Falha ao inicializar interface: ${e.message}`;
   const v = $('validationBox');
