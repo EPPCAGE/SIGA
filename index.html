@@ -1509,7 +1509,7 @@
 <div class="pop-switcher" id="pop-switcher-bar">
   <div class="pop-switcher-inner">
     <span class="pop-switcher-label">Processo:</span>
-    <span id="current-pop-label" style="font-size:13px;font-weight:600;color:white;opacity:.9;">Tratar Denúncias</span>
+    <span id="current-pop-label" style="font-size:13px;font-weight:600;color:white;opacity:.9;"></span>
   </div>
 </div>
 
@@ -4709,6 +4709,12 @@ function switchPop(pop, tabEl) {
   const domId  = popDomId(pop);
   const prefix = popPrefix(pop);
   currentPop = key;
+
+  // Garantir que nav-tabs e barra de processo fiquem visíveis ao entrar num POP
+  const _navTabs = document.querySelector('.nav-tabs');
+  const _swBar   = document.getElementById('pop-switcher-bar');
+  if(_navTabs) _navTabs.style.display = '';
+  if(_swBar)   _swBar.style.display   = '';
 
   document.querySelectorAll('.pop-content').forEach(el => el.classList.remove('active'));
   const popEl = document.getElementById('pop-' + domId);
@@ -16200,12 +16206,12 @@ function hideHome() {
 
 function showHomePops() {
   hideHome();
-  // Mostrar galeria de POPs (pop-switcher-bar) e o primeiro POP ativo
-  // Garantir que nav-tabs e pop-switcher estejam visíveis
+  // Na galeria não há POP ativo: ocultar barra de processo e nav-tabs.
+  // Elas serão exibidas apenas quando o usuário abrir um POP específico (switchPop).
   const switcher = document.getElementById('pop-switcher-bar');
   const navTabs  = document.querySelector('.nav-tabs');
-  if(switcher) switcher.style.display = '';
-  if(navTabs)  navTabs.style.display  = '';
+  if(switcher) switcher.style.display = 'none';
+  if(navTabs)  navTabs.style.display  = 'none';
 
   // Mostrar tela de galeria de POPs em vez de abrir direto
   showPopGallery();
