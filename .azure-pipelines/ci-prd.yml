@@ -108,7 +108,7 @@ stages:
               sourceFolder: "$(Pipeline.Workspace)/coverage-prd-$(Build.BuildId)"
               targetFolder: "$(System.DefaultWorkingDirectory)/coverage"
 
-          - task: SonarCloudPrepare@2
+          - task: SonarCloudPrepare@3
             displayName: "☁️ Preparar análise PRD"
             inputs:
               SonarCloud: "sonarcloud-gesproc"
@@ -120,10 +120,10 @@ stages:
                 sonar.branch.name=$(Build.SourceBranchName)
                 sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
 
-          - task: SonarCloudAnalyze@2
+          - task: SonarCloudAnalyze@3
             displayName: "☁️ Executar scanner PRD"
 
-          - task: SonarCloudPublish@2
+          - task: SonarCloudPublish@3
             displayName: "☁️ Verificar Quality Gate PRD"
             inputs:
               pollingTimeoutSec: "300"

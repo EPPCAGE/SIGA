@@ -66,7 +66,7 @@ steps:
   # ── SonarCloud — PR Gate (bloqueia SOMENTE em BLOCKER/CRITICAL) ───────────
   # Pré-requisito: SONAR_TOKEN configurado como variável secreta no pipeline.
   #   Pipelines > Edit > Variables > + Add > Name: SONAR_TOKEN | Secret: ✔
-  - task: SonarCloudPrepare@2
+  - task: SonarCloudPrepare@3
     displayName: "☁️ Sonar — preparar análise"
     inputs:
       SonarCloud: "sonarcloud-gesproc"
@@ -77,70 +77,85 @@ steps:
       extraProperties: |
         sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
 
-  - task: SonarCloudAnalyze@2
+  - task: SonarCloudAnalyze@3
     displayName: "☁️ Sonar — executar scanner"
 
-  - task: SonarCloudPublish@2
-    displayName: "☁️ Sonar — aguardar Quality Gate"
-    continueOnError: true   # Não bloqueia aqui — severidade verificada abaixo
-    inputs:
-      pollingTimeoutSec: "300"
-
+  # Aguarda análise e bloqueia SOMENTE em BLOCKER/CRITICAL
+  # Substitui SonarCloudPublish para evitar "Succeeded with Issues" no job
   - task: PowerShell@2
-    displayName: "🔍 Sonar — bloquear apenas em BLOCKER/CRITICAL"
-    condition: always()
+    displayName: "🔍 Sonar — aguardar análise e bloquear em BLOCKER/CRITICAL"
+    condition: succeeded()
+    env:
+      SONAR_TOKEN_ENV: $(SONAR_TOKEN)   # secret vars exigem mapeamento via env:
     inputs:
       targetType: "inline"
       script: |
-        $token   = "$(SONAR_TOKEN)"
+        $token   = $env:SONAR_TOKEN_ENV
         $project = "sefaz-rs_gesproc"
-        $prId    = "$(System.PullRequest.PullRequestId)"
-        $branch  = "$(Build.SourceBranchName)"
         $baseUrl = "https://sonarcloud.io"
 
-        # Se o token não foi configurado, emite aviso e segue sem bloquear
-        if (-not $token -or $token -eq '$(SONAR_TOKEN)') {
-          Write-Host "##vso[task.logissue type=warning]⚠️  SONAR_TOKEN não configurado — verificação de severidade ignorada."
+        if (-not $token) {
+          Write-Host "##vso[task.logissue type=warning]⚠️  SONAR_TOKEN não configurado — verificação ignorada."
           exit 0
         }
 
         $headers = @{ Authorization = "Bearer $token" }
 
-        # Em contexto de PR usa pullRequest=<id>; fora de PR usa branch=<nome>
-        $isPr = $prId -and $prId -ne '$(System.PullRequest.PullRequestId)'
-        if ($isPr) {
-          $scope = "&pullRequest=$prId"
-          $link  = "$baseUrl/project/issues?id=$project&pullRequest=$prId&severities=BLOCKER%2CCRITICAL"
-        } else {
-          $scope = "&branch=$([uri]::EscapeDataString($branch))"
-          $link  = "$baseUrl/project/issues?id=$project&branch=$([uri]::EscapeDataString($branch))&severities=BLOCKER%2CCRITICAL&sinceLeakPeriod=true"
+        # Lê o ceTaskId gerado pelo scanner após SonarCloudAnalyze
+        $reportFile = ".scannerwork/report-task.txt"
+        if (-not (Test-Path $reportFile)) {
+          Write-Host "##vso[task.logissue type=warning]⚠️  report-task.txt não encontrado."
+          exit 0
         }
-
-        # Busca novas issues BLOCKER ou CRITICAL no código novo
-        $uri = "$baseUrl/api/issues/search" +
-               "?projectKeys=$project" +
-               $scope +
-               "&severities=BLOCKER,CRITICAL" +
-               "&resolved=false" +
-               "&sinceLeakPeriod=true" +
-               "&ps=1"
-
-        try {
-          $resp  = Invoke-RestMethod -Uri $uri -Headers $headers -Method Get
-          $total = [int]$resp.total
-        } catch {
-          Write-Host "##vso[task.logissue type=warning]⚠️  Não foi possível consultar a API do SonarCloud: $($_.Exception.Message)"
+        $ceTaskId = (Get-Content $reportFile | Where-Object { $_ -match "^ceTaskId=" }) -replace "ceTaskId=",""
+        if (-not $ceTaskId) {
+          Write-Host "##vso[task.logissue type=warning]⚠️  ceTaskId não encontrado em report-task.txt."
           exit 0
         }
 
-        Write-Host "SonarCloud — novas issues BLOCKER/CRITICAL no código novo: $total"
+        Write-Host "Aguardando análise SonarCloud (task: $ceTaskId)..."
+
+        # Polling até a análise completar — timeout 5 min
+        $deadline   = (Get-Date).AddSeconds(300)
+        $analysisId = $null
+        while ((Get-Date) -lt $deadline) {
+          $task   = Invoke-RestMethod -Uri "$baseUrl/api/ce/task?id=$ceTaskId" -Headers $headers
+          $status = $task.task.status
+          Write-Host "  status: $status"
+          if ($status -eq "SUCCESS")                    { $analysisId = $task.task.analysisId; break }
+          if ($status -in @("FAILED","CANCELLED"))      { Write-Host "##vso[task.logissue type=warning]Análise SonarCloud $status."; exit 0 }
+          Start-Sleep -Seconds 10
+        }
+
+        if (-not $analysisId) {
+          Write-Host "##vso[task.logissue type=warning]⚠️  Timeout aguardando análise SonarCloud."
+          exit 0
+        }
+        Write-Host "Análise concluída: $analysisId"
+
+        # Contexto de PR ou branch
+        $prId = "$(System.PullRequest.PullRequestId)"
+        if ($prId -and $prId -notmatch '^\$\(') {
+          $scope = "&pullRequest=$prId"
+          $link  = "$baseUrl/project/issues?id=$project&pullRequest=$prId&severities=BLOCKER%2CCRITICAL"
+        } else {
+          $branch = [uri]::EscapeDataString("$(Build.SourceBranchName)")
+          $scope  = "&branch=$branch"
+          $link   = "$baseUrl/project/issues?id=$project&branch=$branch&severities=BLOCKER%2CCRITICAL&sinceLeakPeriod=true"
+        }
+
+        # Busca novas issues BLOCKER ou CRITICAL no código novo (leak period)
+        $uri  = "$baseUrl/api/issues/search?projectKeys=$project$scope&severities=BLOCKER,CRITICAL&resolved=false&sinceLeakPeriod=true&ps=1"
+        $resp = Invoke-RestMethod -Uri $uri -Headers $headers
+        $total = [int]$resp.total
+
+        Write-Host "Novas issues BLOCKER/CRITICAL: $total"
 
         if ($total -gt 0) {
-          Write-Host "##vso[task.logissue type=error]🚫 PR BLOQUEADO: $total nova(s) issue(s) BLOCKER/CRITICAL encontrada(s)."
-          Write-Host "Acesse e corrija antes de mergear:"
-          Write-Host $link
+          Write-Host "##vso[task.logissue type=error]🚫 PR BLOQUEADO: $total nova(s) issue(s) BLOCKER/CRITICAL."
+          Write-Host "Corrija antes de mergear: $link"
           exit 1
         }
 
-        Write-Host "✅ Nenhuma issue BLOCKER/CRITICAL no código novo — PR aprovado pelo SonarCloud."
+        Write-Host "✅ Nenhuma issue BLOCKER/CRITICAL — PR aprovado pelo SonarCloud."
         exit 0
