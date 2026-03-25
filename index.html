@@ -17470,7 +17470,7 @@ function npopRenderAtores(selectedArr, isCreateForm) {
   const selected = new Set(selectedArr || []);
   wrap.innerHTML = atores.map(a => {
     const on = selected.has(a);
-    return `<span onclick="npopToggleAtor(this,'${a.replace(/'/g,'\\\'').replace(/"/g,'&quot;')}',${isCreateForm})" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${a}</span>`;
+    return `<span data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${escapeHtml(a)}</span>`;
   }).join('');
   if(hidden) hidden.value = [...selected].join(',');
 }
@@ -17984,7 +17984,7 @@ function dropsRender() {
     const pub = new Date(d.publishedAt);
     const dateLabel = pub.toLocaleDateString('pt-BR', {month:'long', year:'numeric', timeZone:'UTC'});
     const coverHtml = d.coverUrl
-      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" onclick="dropsShowCover('${d.coverUrl.replace(/'/g,"\\'")}')"><img src="${d.coverUrl}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
+      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)"><img src="${escapeHtml(d.coverUrl)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
       : `<div style="height:80px;background:linear-gradient(135deg,#1B3022,#003366);display:flex;align-items:center;justify-content:center;font-size:36px;">💧</div>`;
     return `
     <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
