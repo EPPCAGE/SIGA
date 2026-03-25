@@ -804,8 +804,8 @@
 
   /* ── PERMISSIONS / HISTORY ───────────────────────── */
   .perm-panel{position:fixed;bottom:24px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
-  .perm-fab{width:46px;height:46px;border-radius:50%;background:var(--cage-blue);color:white;border:none;font-size:18px;cursor:pointer;box-shadow:0 4px 16px rgba(27,48,34,.25);display:flex;align-items:center;justify-content:center;transition:all .2s;}
-  .perm-fab:hover{background:var(--cage-mid);transform:scale(1.08);}
+  .perm-fab{width:46px;height:46px;border-radius:50%;background:var(--cage-accent);color:white;border:none;font-size:18px;cursor:pointer;box-shadow:0 4px 16px rgba(27,48,34,.25);display:flex;align-items:center;justify-content:center;transition:all .2s;}
+  .perm-fab:hover{background:var(--design-accent-hover);transform:scale(1.08);}
   .history-chip{background:var(--cage-blue);color:rgba(255,255,255,.7);font-size:11px;padding:4px 10px;border-radius:10px;white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
   .readonly-banner{background:#fef3c7;border-bottom:2px solid #f59e0b;padding:8px 32px;font-size:13px;color:#92400e;text-align:center;display:none;}
   .readonly-banner.show{display:block;}
@@ -24040,19 +24040,27 @@ function matScoreEquipe(answers) {
 function matScoreEquipeMedia(questionnaires) {
   if(!Array.isArray(questionnaires) || questionnaires.length !== MAT_QUESTIONNAIRE_COUNT) return null;
 
+  // Considera apenas questionários completamente preenchidos (sem nenhum null).
+  // Questionários vazios ou parciais são ignorados — o score é a média dos válidos.
+  const valid = questionnaires.filter(q =>
+    Array.isArray(q) &&
+    q.length === MAT_QUESTIONS.length &&
+    q.every(a => a === 'sim' || a === 'talvez' || a === 'nao')
+  );
+  if(!valid.length) return null;
+
   let total = 0;
   for(let i = 0; i < MAT_QUESTIONS.length; i++) {
     let qTotal = 0;
-    for(let qx = 0; qx < MAT_QUESTIONNAIRE_COUNT; qx++) {
-      const ans = questionnaires[qx] && questionnaires[qx][i];
-      if(ans === null || ans === undefined) return null;
-      const q = MAT_QUESTIONS[i];
+    for(const q of valid) {
+      const ans = q[i];
+      const question = MAT_QUESTIONS[i];
       let pts;
-      if(q.inverted) pts = ans === 'sim' ? 100 : ans === 'talvez' ? 50 : 0;
-      else           pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
+      if(question.inverted) pts = ans === 'sim' ? 100 : ans === 'talvez' ? 50 : 0;
+      else                   pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
       qTotal += pts;
     }
-    total += qTotal / MAT_QUESTIONNAIRE_COUNT;
+    total += qTotal / valid.length;
   }
   return total / MAT_QUESTIONS.length;
 }
@@ -24967,7 +24975,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
 <!-- FAB BOTTOM RIGHT -->
 <div class="perm-panel" id="perm-panel" style="display:none;">
   <div class="history-chip" id="last-save-chip">Carregando...</div>
-  <button class="perm-fab" id="viewer-preview-btn" onclick="eppToggleViewerPreview()" title="Simular perfil de visualizador" style="display:none;background:#8b5cf6;font-size:13px;padding:0 14px;border-radius:20px;height:40px;width:auto;">👁 Simular</button>
+  <button class="perm-fab" id="viewer-preview-btn" onclick="eppToggleViewerPreview()" title="Simular perfil de visualizador" style="display:none;background:var(--cage-accent);font-size:13px;padding:0 14px;border-radius:20px;height:40px;width:auto;">👁 Simular</button>
   <button class="perm-fab" onclick="openPermModal()" title="Gerenciar acesso e histórico">👥</button>
 </div>
 <!-- Banner de preview de visualizador -->
