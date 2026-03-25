@@ -475,14 +475,6 @@ function appendDiagramBackdrop(svg, opacity = 0.92) {
   svg.appendChild(img);
 }
 
-function escapeHtml(text) {
-  return String(text || '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
 
 function suggestedAutomationNodeIds() {
   if (!graph) return [];
