@@ -696,7 +696,7 @@
 
 
   /* ── SUPABASE AUTH ──────────────────────── */
-  .auth-overlay{position:fixed;inset:0;z-index:9000;background:var(--cage-blue);display:flex;align-items:center;justify-content:center;}
+  .auth-overlay{position:fixed;inset:0;z-index:9000;background:var(--cage-blue);display:none;align-items:center;justify-content:center;}
   .auth-box{background:white;border-radius:20px;padding:40px 44px;width:420px;max-width:92vw;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.35);}
   .auth-logo-siga{width:100%;margin:0 auto 20px;}
   .auth-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px;line-height:1.5;}
@@ -11738,7 +11738,8 @@ const SIGA_AUTH = SIGA_RUNTIME.auth || { mode: 'local', entra: { adminEmails: []
 const _configuredApiUrl = window.__SIGA_API_URL__ || SIGA_RUNTIME.apiUrl || '';
 const _isLocalDevHttp = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
   && location.protocol !== 'file:';
-const API_URL = (_isLocalDevHttp && location.port === '5173')
+const _isLocalFrontendDev = location.protocol !== 'file:' && location.port === '5173';
+const API_URL = (_isLocalFrontendDev)
   ? 'http://127.0.0.1:3000'
   : (_configuredApiUrl || '/api');
 // ── Arquitetura de Processos CAGE-RS (importado da planilha) ──
@@ -11760,17 +11761,83 @@ async function _resolveFreshAccessToken() {
 let supaClient = null;
 let currentUser = null;
 
-// ── Stubs para funções Gemini removidas ──────────────
-async function callGeminiProxy() {
-  throw new Error('Funções de IA (Gemini) foram removidas do sistema. Configure um backend de IA alternativo (GitHub Copilot) e defina a variável API_URL.');
+async function callGeminiProxy(prompt, image = null, options = {}) {
+  const payload = {
+    prompt: String(prompt || '').slice(0, 24000),
+    image: image || undefined,
+    maxTokens: options.maxTokens || undefined,
+  };
+
+  const apiBase = String(API_URL || '').replace(/\/$/, '');
+  const endpointCandidates = [
+    `${apiBase}/ai`,
+    'http://127.0.0.1:3000/ai',
+    'http://localhost:3000/ai',
+    `${apiBase}/api/ai`,
+    '/api/ai',
+    'http://127.0.0.1:3000/api/ai',
+    'http://localhost:3000/api/ai',
+  ];
+
+  const uniqueEndpoints = [...new Set(endpointCandidates.filter(Boolean))];
+  let lastErr = null;
+  let saw503 = false;
+  let definitiveErr = null;
+
+  for (const endpoint of uniqueEndpoints) {
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!resp.ok) {
+        if (resp.status === 503) saw503 = true;
+        const err = await resp.json().catch(() => ({}));
+        const msg = String(err.error || err.message || '').trim();
+        lastErr = new Error(msg || `Erro na IA (${resp.status}) em ${endpoint}`);
+
+        if (resp.status === 404 || resp.status === 405) {
+          continue;
+        }
+
+        if (resp.status === 503 && /nao configurada|não configurada|api[_\s-]?key/i.test(msg)) {
+          definitiveErr = lastErr;
+          break;
+        }
+
+        if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) {
+          definitiveErr = lastErr;
+          break;
+        }
+        continue;
+      }
+
+      const data = await resp.json();
+      if (!data.text) {
+        lastErr = new Error('Resposta vazia da IA');
+        continue;
+      }
+      return data.text;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  if (definitiveErr) throw definitiveErr;
+  if (saw503) {
+    throw new Error('IA temporariamente indisponível (503). Verifique se o backend local de IA está ativo e tente novamente.');
+  }
+  throw new Error(lastErr?.message || 'Falha ao chamar a IA.');
 }
 
-async function callGemini() {
-  return callGeminiProxy();
+async function callGemini(prompt) {
+  return callGeminiProxy(prompt, null);
 }
 
-async function callGeminiVision() {
-  return callGeminiProxy();
+async function callGeminiVision(prompt, base64, mimeType) {
+  return callGeminiProxy(prompt, { data: base64, mimeType });
 }
 
 // ── MODO LOCAL: login automático ──────────────
@@ -11810,6 +11877,10 @@ async function initSupabase() {
   } catch(e) {
     /* notifica o usuario do erro */
     showToast('⚠️ Erro ao conectar ao backend local: ' + e.message, 'warn');
+  }
+
+  if (!window._appInitialized) {
+    window._appInitialized = true;
   }
 }
 
@@ -11958,7 +12029,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSupabase().catch(e => {
     try {
       document.getElementById('auth-status').textContent = '⚠️ Erro ao inicializar: ' + e.message;
-      document.getElementById('auth-overlay').style.display = 'flex';
+      if ((SIGA_AUTH.mode || 'local') === 'entra') document.getElementById('auth-overlay').style.display = 'flex';
     } catch(_) { console.warn('[siga]', _); }
   });
 });
@@ -20355,9 +20426,9 @@ function parseAiJson(text) {
   const m = clean.match(/\{[\s\S]*/);
   if (m) clean = m[0];
   // 1) Tenta parse direto
-  try { return JSON.parse(clean); } catch (_e1) { /* intentional */ // NOSONAR }
+  try { return JSON.parse(clean); } catch (_e1) { /* intentional */ }
   // 2) Tenta com repair de caracteres de controle
-  try { return JSON.parse(repairJsonString(clean)); } catch (_e2) { /* intentional */ // NOSONAR }
+  try { return JSON.parse(repairJsonString(clean)); } catch (_e2) { /* intentional */ }
   // 3) Tenta fechar JSON truncado
   try { return JSON.parse(truncateRepairJson(clean)); } catch (e3) { throw e3; }
 }
@@ -25595,11 +25666,17 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
 const SW_VERSION = '4';
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js?v=' + SW_VERSION).then(reg => {
+  if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+    navigator.serviceWorker.getRegistrations()
+      .then(regs => Promise.all(regs.map(reg => reg.unregister())))
+      .catch(e => { console.warn('[siga] service worker unregister', e); });
+  } else {
+    navigator.serviceWorker.register('/sw.js?v=' + SW_VERSION).then(reg => {
     // Sem onupdatefound/reload: o SW já é network-first para HTML,
     // então o conteúdo mais recente é sempre servido da rede.
     // O reload forçado causava interrupção do loadFromCloud/saveToCloud a cada F5.
-  }).catch(e => { console.warn('[siga] service worker registration', e); });
+    }).catch(e => { console.warn('[siga] service worker registration', e); });
+  }
 }
 </script>
 </body>
