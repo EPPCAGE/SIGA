@@ -4704,7 +4704,7 @@ function switchPop(pop, tabEl) {
       delete prevD._viewingVersion;
       renderVersionBadge(prevPrefix);
     }
-  } catch(e) { /* intentional */ }
+  } catch(e) { console.warn('[siga]', e); }
   const key    = popKey(pop);
   const domId  = popDomId(pop);
   const prefix = popPrefix(pop);
@@ -4744,12 +4744,12 @@ function switchPop(pop, tabEl) {
   }
 
   if(editMode) enableEditables(true);
-  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { /* intentional */ }
-  if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { /* error log removed */ }
+  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
+  if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { console.warn('[siga]', e); }
   _syncNovaVersaoBtn();
-  try { renderFicha(prefix); }       catch(e) { /* silent error */ }
-  try { renderSipoc(prefix); }       catch(e) { /* silent error */ }
-  try { renderFlowPreview(prefix); } catch(e) { /* silent error */ }
+  try { renderFicha(prefix); }       catch(e) { console.warn('[siga]', e); }
+  try { renderSipoc(prefix); }       catch(e) { console.warn('[siga]', e); }
+  try { renderFlowPreview(prefix); } catch(e) { console.warn('[siga]', e); }
 }
 
 // ═══ NAV ══════════════════════════════════════
@@ -4774,10 +4774,10 @@ function showSection(id, tab, silent) {
     tab.classList.add('active');
   }
   if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
-  if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) { /* intentional */ }
+  if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) { console.warn('[siga]', e); }
   if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) { const errorEl = document.createElement('p'); errorEl.style.color = 'red'; errorEl.style.padding = '20px'; errorEl.textContent = 'Erro ao renderizar: ' + e.message; c.innerHTML = ''; c.appendChild(errorEl); } } }
   if(!silent && editMode) enableEditables(true);
-  try { _updateVersionBars(); } catch(e) { /* intentional */ }
+  try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
 }
 
 // ═══ EDIT MODE ════════════════════════════════
@@ -4802,15 +4802,15 @@ function toggleEditMode(forceState) {
   // Atualizar visibilidade dos grids de métricas ao alternar modo
   const _skipMetrics = new Set(['pat','audits','config','patrocinadores','indicadoresCage','_arqOverrides','_repoDocs','_drops','_logoUrl']);
   Object.keys(DATA).filter(k => !k.startsWith('_') && !_skipMetrics.has(k)).forEach(k => {
-    try { renderMetrics(k); } catch(e) { /* intentional */ }
+    try { renderMetrics(k); } catch(e) { console.warn('[siga]', e); }
   });
   // Snapshot ao entrar no modo edição — inicializa pilha de undo
   if(editMode) { _takeEditSnapshot(); }
   else { _undoStack = []; _undoShadow = null; _updateUndoBtn(); }
-  try { _updateVersionBars(); } catch(e) { /* intentional */ }
+  try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
   // Persistir estado do modo edição entre recarregamentos
-  try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) { /* intentional */ }
-  try { _dndInit(editMode); } catch(e) { /* intentional */ }
+  try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) { console.warn('[siga]', e); }
+  try { _dndInit(editMode); } catch(e) { console.warn('[siga]', e); }
   /* notifica o usuario do erro */
   if(forceState === undefined) {
     if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar','warn');
@@ -4865,7 +4865,7 @@ function _dndApplyOrder() {
 function _dndReinitStats() {
   if(typeof Sortable === 'undefined') return;
   _dndSortables = _dndSortables.filter(s => {
-    if(s.el === document.getElementById('home-stats')) { try { s.destroy(); } catch(e) { /* intentional */ } return false; }
+    if(s.el === document.getElementById('home-stats')) { try { s.destroy(); } catch(e) { console.warn('[siga]', e); } return false; }
     /* retorna valor seguro como fallback */
     return true;
   });
@@ -4879,7 +4879,7 @@ function _dndReinitStats() {
 
 // Inicializa (ou destrói) todos os Sortables ao entrar/sair do modo edição
 function _dndInit(enabled) {
-  _dndSortables.forEach(s => { try { s.destroy(); } catch(e) { /* intentional */ } });
+  _dndSortables.forEach(s => { try { s.destroy(); } catch(e) { console.warn('[siga]', e); } });
   /* tratamento de erro */
   _dndSortables = [];
   if(!enabled || typeof Sortable === 'undefined') return;
@@ -4953,7 +4953,7 @@ function _takeEditSnapshot() {
     _undoShadow = _snapshotData();
     _undoStack  = [];
     _updateUndoBtn();
-  } catch(e) { /* snapshot error suppressed */ }
+  } catch(e) { console.warn('[siga] snapshot', e); }
 }
 
 function _updateUndoBtn() {
@@ -4973,7 +4973,7 @@ function markChanged(quick=false, explicit=false) {
     if(_undoStack.length > _UNDO_MAX) _undoStack.shift();
   }
   // Update shadow to current (already-modified) state — will be "before" the NEXT change
-  try { _undoShadow = _snapshotData(); } catch(e) { /* intentional */ }
+  try { _undoShadow = _snapshotData(); } catch(e) { console.warn('[siga]', e); }
   _updateUndoBtn();
 
   document.getElementById('unsaved-dot').style.display = 'inline-block';
@@ -4998,15 +4998,15 @@ function undoLastChange() {
   Object.keys(DATA).forEach(k => { if(!prevKeys.has(k)) delete DATA[k]; });
   Object.assign(DATA, prev);
   // Update shadow to current restored state
-  try { _undoShadow = _snapshotData(); } catch(e) { /* intentional */ }
+  try { _undoShadow = _snapshotData(); } catch(e) { console.warn('[siga]', e); }
   _updateUndoBtn();
   // Re-render current POP if open
   if(currentPop) {
     const p = popPrefix(currentPop);
     if(DATA[p]) {
-      try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) { /* intentional */ }
-      try { renderTracker(p); } catch(e) { /* intentional */ }
-      try { renderMetrics(p); } catch(e) { /* intentional */ }
+      try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) { console.warn('[siga]', e); }
+      try { renderTracker(p); } catch(e) { console.warn('[siga]', e); }
+      try { renderMetrics(p); } catch(e) { console.warn('[siga]', e); }
     }
   }
   const n = _undoStack.length;
@@ -5133,8 +5133,9 @@ function sanitizePop(p) {
 function _actionBadges(obj) {
   const _natMap = getNatMap();
   const _natCfg = obj.natureza ? _natMap[obj.natureza] : null;
+  const natIconPrefix = (_natCfg && _natCfg.icon) ? _natCfg.icon + ' ' : '';
   const natBadge = (obj.type === 'atividade' && _natCfg)
-    ? `<span class="natureza-badge" style="background:${_natCfg.bg};color:${_natCfg.color};">${_natCfg.icon ? _natCfg.icon+' ' : ''}${_natCfg.label}</span>`
+    ? `<span class="natureza-badge" style="background:${_natCfg.bg};color:${_natCfg.color};">${natIconPrefix}${_natCfg.label}</span>`
     : '';
   const _etipoMap = { inicio:{label:'Início',color:'#16a34a',bg:'#dcfce7'}, intermediario:{label:'Intermediário',color:'#b45309',bg:'#fef3c7'}, encerramento:{label:'Encerramento',color:'#dc2626',bg:'#fee2e2'} };
   const _etipoCfg = (obj.type === 'evento' && obj.eventoTipo) ? _etipoMap[obj.eventoTipo] : null;
@@ -5150,12 +5151,24 @@ function _actionBadges(obj) {
 
 function _activityToggleBtns(obj, em, loopOnClick, autoOnClick) {
   if(obj.type !== 'atividade') return { loopBtn:'', autoBtn:'' };
-  const loopBtn = em
-    ? `<button class="edit-rm-btn loop-toggle-btn${obj.loop?' loop-on':''}" onclick="${loopOnClick}" title="${obj.loop?'Loop/retrabalho — clique para desmarcar':'Marcar como loop/retrabalho'}" style="margin-left:4px;background:${obj.loop?'#fef3c7':'transparent'};color:${obj.loop?'#b45309':'#94a3b8'};border:1px solid ${obj.loop?'#b4530944':'#e2e8f0'};font-size:13px;">🔄</button>`
-    : '';
-  const autoBtn = em
-    ? `<button class="edit-rm-btn auto-toggle-btn${obj.automatico?' auto-on':''}" onclick="${autoOnClick}" title="${obj.automatico?'Automático — clique para desmarcar':'Marcar como automático'}" style="margin-left:4px;background:${obj.automatico?'#dcfce7':'transparent'};color:${obj.automatico?'#16a34a':'#94a3b8'};border:1px solid ${obj.automatico?'#16a34a44':'#e2e8f0'};font-size:13px;">⚙️</button>`
-    : '';
+  if(!em) return { loopBtn:'', autoBtn:'' };
+
+  const loopOn     = !!obj.loop;
+  const loopClass  = loopOn ? ' loop-on' : '';
+  const loopTitle  = loopOn ? 'Loop/retrabalho — clique para desmarcar' : 'Marcar como loop/retrabalho';
+  const loopBg     = loopOn ? '#fef3c7' : 'transparent';
+  const loopColor  = loopOn ? '#b45309' : '#94a3b8';
+  const loopBorder = loopOn ? '#b4530944' : '#e2e8f0';
+  const loopBtn = `<button class="edit-rm-btn loop-toggle-btn${loopClass}" onclick="${loopOnClick}" title="${loopTitle}" style="margin-left:4px;background:${loopBg};color:${loopColor};border:1px solid ${loopBorder};font-size:13px;">🔄</button>`;
+
+  const autoOn     = !!obj.automatico;
+  const autoClass  = autoOn ? ' auto-on' : '';
+  const autoTitle  = autoOn ? 'Automático — clique para desmarcar' : 'Marcar como automático';
+  const autoBg     = autoOn ? '#dcfce7' : 'transparent';
+  const autoColor  = autoOn ? '#16a34a' : '#94a3b8';
+  const autoBorder = autoOn ? '#16a34a44' : '#e2e8f0';
+  const autoBtn = `<button class="edit-rm-btn auto-toggle-btn${autoClass}" onclick="${autoOnClick}" title="${autoTitle}" style="margin-left:4px;background:${autoBg};color:${autoColor};border:1px solid ${autoBorder};font-size:13px;">⚙️</button>`;
+
   return { loopBtn, autoBtn };
 }
 
@@ -5220,7 +5233,8 @@ function _buildBranchActionHTML(p, si, ai, bi, bai, ba, em) {
     </li>`;
 }
 
-function _buildNestedBranchActionHTML(p, si, ai, bi, bai, nbi, nbai, nba, em) {
+function _buildNestedBranchActionHTML(ctx, nbi, nbai, nba, em) {
+  const { p, si, ai, bi, bai } = ctx;
   const nbo = actionObj(nba);
   const nbt = ACTION_TYPES[nbo.type] || ACTION_TYPES.atividade;
   const nbaActor = nbo.actor ? `<span class="branch-action-actor">👤 ${nbo.actor}</span>` : '';
@@ -5396,7 +5410,7 @@ function buildNestedBranchesHTML(p, si, ai, bi, bai, branches, em) {
   const ce = em ? 'contenteditable="true"' : '';
   const branchItems = (branches || []).map((branch, nbi) => {
     const actionsHtml = (branch.actions || []).map((nba, nbai) =>
-      _buildNestedBranchActionHTML(p, si, ai, bi, bai, nbi, nbai, nba, em)
+      _buildNestedBranchActionHTML({p, si, ai, bi, bai}, nbi, nbai, nba, em)
     ).join('');
     const addNbaBtn = em ? `<button class="add-branch-action-btn" onclick="addNestedBranchAction('${p}',${si},${ai},${bi},${bai},${nbi})">+ Ação</button>` : '';
     const rmNbrBtn  = em ? `<button class="rm-branch-btn" onclick="rmNestedDecisionBranch('${p}',${si},${ai},${bi},${bai},${nbi})" title="Remover caminho">✕</button>` : '';
@@ -5744,7 +5758,7 @@ function setFlowMode(mode) {
   if(DATA[p] && Array.isArray(DATA[p].steps) && DATA[p].steps.length > 0) {
     renderStep(p, DATA[p].currentStep || 0);
   }
-  try { renderRoles(p); } catch(e) { /* intentional */ }
+  try { renderRoles(p); } catch(e) { console.warn('[siga]', e); }
 }
 
 // ── Step details expand/collapse ───────────────
@@ -6034,7 +6048,7 @@ function _initIndMiniCharts(p) {
   (DATA[p]?.indicators || []).forEach((ind, i) => {
     if(!ind.sisplanId) return;
     const chartId = `ind-mini-chart-${p}-${i}`;
-    if(_indMiniCharts[chartId]) { try { _indMiniCharts[chartId].destroy(); } catch(e) { /* intentional */ } delete _indMiniCharts[chartId]; }
+    if(_indMiniCharts[chartId]) { try { _indMiniCharts[chartId].destroy(); } catch(e) { console.warn('[siga]', e); } delete _indMiniCharts[chartId]; }
     const ctx = document.getElementById(chartId);
     if(!ctx) return;
     const cageInd = (DATA.indicadoresCage?.indicadores || []).find(ci => ci.id === ind.sisplanId);
@@ -6044,7 +6058,7 @@ function _initIndMiniCharts(p) {
       .sort((a,b) => (a.periodo||'').localeCompare(b.periodo||''));
     if(!resultados.length) return;
     const hasPercentage = resultados.some(r => r.pctRealizado !== null && r.pctRealizado !== undefined && r.pctRealizado !== 0);
-    try { _indMiniCharts[chartId] = new Chart(ctx, _buildMiniChartConfig(resultados, hasPercentage)); } catch(e) { /* chart error suppressed */ }
+    try { _indMiniCharts[chartId] = new Chart(ctx, _buildMiniChartConfig(resultados, hasPercentage)); } catch(e) { console.warn('[siga] chart', e); }
   });
 }
 
@@ -7784,15 +7798,15 @@ function mountNewPopTab(key, label, silent=false) {
   if(DATA[key].steps.length === 0) {
     DATA[key].steps = [{ title:'Etapa 1', subtitle:'', responsible:'Responsável', respClass:'resp-green', actions:[{type:'atividade',text:'Nova ação',actor:''}] }];
   }
-  try { renderStep(key, DATA[key].currentStep || 0); } catch(e) { /* silent */ }
-  try { renderRoles(key); }      catch(e) { /* silent */ }
-  try { renderIndicators(key); } catch(e) { /* silent */ }
-  try { renderFaq(key); }        catch(e) { /* silent */ }
-  try { renderNormas(key); }     catch(e) { /* silent */ }
-  try { renderRevisions(key); }  catch(e) { /* silent */ }
-  try { renderSiglas(key); }     catch(e) { /* silent */ }
-  try { renderMetrics(key); }    catch(e) { /* silent */ }
-  try { renderFicha(key); }      catch(e) { /* silent */ }
+  try { renderStep(key, DATA[key].currentStep || 0); } catch(e) { console.warn('[siga]', e); }
+  try { renderRoles(key); }      catch(e) { console.warn('[siga]', e); }
+  try { renderIndicators(key); } catch(e) { console.warn('[siga]', e); }
+  try { renderFaq(key); }        catch(e) { console.warn('[siga]', e); }
+  try { renderNormas(key); }     catch(e) { console.warn('[siga]', e); }
+  try { renderRevisions(key); }  catch(e) { console.warn('[siga]', e); }
+  try { renderSiglas(key); }     catch(e) { console.warn('[siga]', e); }
+  try { renderMetrics(key); }    catch(e) { console.warn('[siga]', e); }
+  try { renderFicha(key); }      catch(e) { console.warn('[siga]', e); }
 
   // 12. Switch and enable edit mode (skip when restoring from cloud)
   if(!silent) {
@@ -8765,7 +8779,7 @@ function applyConfigToDropdowns() {
   populateConfigSelect('status-modal-tipo','tipoTrabalho');
   // Refresh equipe-resp datalist
   (function(){ const dl = document.getElementById('status-modal-equipe-resp-list'); if(dl) dl.innerHTML = getConfig('equipes').map(e => `<option value="${escapeHtml(e)}">`).join(''); })();
-  try { applyGlobalParams(); } catch(e) { /* intentional */ }
+  try { applyGlobalParams(); } catch(e) { console.warn('[siga]', e); }
 }
 
 // ── Parâmetros Globais ──────────────────────────────────────────────────────
@@ -8874,7 +8888,7 @@ function applyGlobalParams() {
   // Garante persistência dos novos valores no config
   setConfig('parametrosGlobais', gp);
   // Logo
-  if(gp.logoUrl && DATA) { DATA._logoUrl = gp.logoUrl; try { eppLogoRefresh(); } catch(e) { /* intentional */ } }
+  if(gp.logoUrl && DATA) { DATA._logoUrl = gp.logoUrl; try { eppLogoRefresh(); } catch(e) { console.warn('[siga]', e); } }
   // Sidebar nav order/visibility
   applySidebarNav();
   // Sidebar button colors
@@ -10040,7 +10054,7 @@ async function checkMapeamentoMilestones() {
       changed = true;
     }
   }
-  if(changed) { try { saveToCloud(); } catch(e) { /* intentional */ } }
+  if(changed) { try { saveToCloud(); } catch(e) { console.warn('[siga]', e); } }
 }
 
 // ── Plano de ação email alerts ───────────────────────────────────────────────
@@ -10107,7 +10121,7 @@ async function checkActionsDeadlinesEmail() {
       }
     }
   }
-  if(changed) { try { saveToCloud(); } catch(e) { /* intentional */ } }
+  if(changed) { try { saveToCloud(); } catch(e) { console.warn('[siga]', e); } }
 }
 
 function renderSidebar() {
@@ -11096,7 +11110,7 @@ window.addEventListener('beforeunload', (e) => {
   e.returnValue = '';
 
   // Colher estado atual do DOM antes do unload
-  try { harvestEditables(); } catch(e) { /* intentional */ }
+  try { harvestEditables(); } catch(e) { console.warn('[siga]', e); }
   clearTimeout(_autoSaveTimer);
 
   // Montar payload — limite keepalive do Chrome é 64KB (65536 bytes)
@@ -11159,7 +11173,7 @@ window.addEventListener('beforeunload', (e) => {
       body: reqBody
     });
     /* keepalive log suppressed */
-  } catch(e) { /* beforeunload save error suppressed */ }
+  } catch(e) { console.warn('[siga] beforeunload save', e); }
 });
 // Mapa de aliases a normalizar em todos os campos de texto dos POPs e PAT
 const _UNIDADE_ALIASES = {
@@ -11234,9 +11248,9 @@ async function saveToCloud(attempt=1) {
           if (!key?.startsWith('pop_') || !pd || typeof pd !== 'object') return;
           if (_dirtyPops.has(key)) return;
           DATA[key] = pd;
-          try { sanitizePop(key); } catch(e) { /* intentional */ }
+          try { sanitizePop(key); } catch(e) { console.warn('[siga]', e); }
           if (!document.getElementById('pop-' + key)) {
-            try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) { /* intentional */ }
+            try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) { console.warn('[siga]', e); }
           }
         });
       }
@@ -11245,7 +11259,7 @@ async function saveToCloud(attempt=1) {
     /* fetch-merge error suppressed */
   }
 
-  try { harvestEditables(); } catch(e) { /* harvestEditables error suppressed */ }
+  try { harvestEditables(); } catch(e) { console.warn('[siga] harvestEditables', e); }
   /* preserva estado de erro para inspecao */
 
   const _popsIncludedInThisSave = new Set(_dirtyPops);
@@ -11339,7 +11353,7 @@ async function loadFromCloud() {
           renderRoles(p);
           renderIndicators(p);
           loadAcomp(p);
-        } catch(e) { /* intentional */ }
+        } catch(e) { console.warn('[siga]', e); }
       /* tratamento de erro */
       });
       const homePage = document.getElementById('home-page');
@@ -11347,7 +11361,7 @@ async function loadFromCloud() {
       return;
     }
 
-    workspaceId = data.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) { /* intentional */ };
+    workspaceId = data.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) { console.warn('[siga]', e); };
     const payload = data.data;
     /* payload received */
 
@@ -11369,7 +11383,7 @@ async function loadFromCloud() {
     }
     if(Array.isArray(payload.patrocinadores)) DATA.patrocinadores = payload.patrocinadores;
     if(payload.config && typeof payload.config === 'object') DATA.config = payload.config;
-    try { applyConfigToDropdowns(); } catch(e) { /* intentional */ }
+    try { applyConfigToDropdowns(); } catch(e) { console.warn('[siga]', e); }
     // Catálogo de apontamentos (não conformidades) — persiste itens customizados
     if(Array.isArray(payload.aptCatalog) && payload.aptCatalog.length > 0) DATA.aptCatalog = payload.aptCatalog;
     // Quadro de esboço (Excalidraw)
@@ -11398,11 +11412,11 @@ async function loadFromCloud() {
         if(!document.getElementById('pop-' + key)) {
           mountNewPopTab(key, pd.meta?.name || 'POP', true);
         }
-        try { loadAcomp(key); } catch(e) { /* intentional */ }
-        try { renderVersionBadge(key); } catch(e) { /* intentional */ }
-        try { renderFicha(key); }       catch(e) { /* intentional */ }
-        try { renderSipoc(key); }       catch(e) { /* intentional */ }
-        try { renderFlowPreview(key); } catch(e) { /* intentional */ }
+        try { loadAcomp(key); } catch(e) { console.warn('[siga]', e); }
+        try { renderVersionBadge(key); } catch(e) { console.warn('[siga]', e); }
+        try { renderFicha(key); }       catch(e) { console.warn('[siga]', e); }
+        try { renderSipoc(key); }       catch(e) { console.warn('[siga]', e); }
+        try { renderFlowPreview(key); } catch(e) { console.warn('[siga]', e); }
       });
     }
 
@@ -11413,17 +11427,17 @@ async function loadFromCloud() {
         if(!steps.length) return;
         renderStep(p, DATA[p].currentStep);
         renderRoles(p); renderIndicators(p);
-        try { renderFaq(p); } catch(e) { /* intentional */ }
-        try { renderNormas(p); } catch(e) { /* intentional */ }
-        try { renderRevisions(p); } catch(e) { /* intentional */ }
-        try { renderSiglas(p); }    catch(e) { /* intentional */ }
-        try { renderMetrics(p); }   catch(e) { /* intentional */ }
-        try { renderFicha(p); }     catch(e) { /* intentional */ }
-        try { renderSipoc(p); }     catch(e) { /* intentional */ }
-        try { renderFlowPreview(p); } catch(e) { /* intentional */ }
-        try { loadAcomp(p); }       catch(e) { /* intentional */ }
-        try { renderVersionBadge(p); } catch(e) { /* intentional */ }
-      } catch(e) { /* intentional */ }
+        try { renderFaq(p); } catch(e) { console.warn('[siga]', e); }
+        try { renderNormas(p); } catch(e) { console.warn('[siga]', e); }
+        try { renderRevisions(p); } catch(e) { console.warn('[siga]', e); }
+        try { renderSiglas(p); }    catch(e) { console.warn('[siga]', e); }
+        try { renderMetrics(p); }   catch(e) { console.warn('[siga]', e); }
+        try { renderFicha(p); }     catch(e) { console.warn('[siga]', e); }
+        try { renderSipoc(p); }     catch(e) { console.warn('[siga]', e); }
+        try { renderFlowPreview(p); } catch(e) { console.warn('[siga]', e); }
+        try { loadAcomp(p); }       catch(e) { console.warn('[siga]', e); }
+        try { renderVersionBadge(p); } catch(e) { console.warn('[siga]', e); }
+      } catch(e) { console.warn('[siga]', e); }
     });
 
     renderSidebar();
@@ -11439,8 +11453,8 @@ async function loadFromCloud() {
         checkActionsDeadlines();
         // Email alerts (fire-and-forget — only sends if configured)
         if(isEditor) {
-          checkMapeamentoMilestones().catch(() => { /* intentional */ });
-          checkActionsDeadlinesEmail().catch(() => { /* intentional */ });
+          checkMapeamentoMilestones().catch(e => { console.warn('[siga] checkMapeamentoMilestones', e); });
+          checkActionsDeadlinesEmail().catch(e => { console.warn('[siga] checkActionsDeadlinesEmail', e); });
         }
       }, 800);
     }
@@ -11461,7 +11475,7 @@ async function loadFromCloud() {
       if(bpmnMod && bpmnMod.style.display !== 'none') {
         showBpmn(document.querySelector('.nav-tab.active'));
       }
-    } catch(e) { /* intentional */ }
+    } catch(e) { console.warn('[siga]', e); }
 
   } catch(e) {
     /* notifica o usuario do erro */
@@ -11790,9 +11804,9 @@ async function initSupabase() {
       if (isEditor && _normalizeUnidades()) {
         saveToCloud();
       }
-    } catch(e) { /* intentional */ }
-    try { logAccessEvent('login'); } catch(e) { /* intentional */ }
-    try { _startPresenceHeartbeat(); } catch(e) { /* intentional */ }
+    } catch(e) { console.warn('[siga]', e); }
+    try { logAccessEvent('login'); } catch(e) { console.warn('[siga]', e); }
+    try { _startPresenceHeartbeat(); } catch(e) { console.warn('[siga]', e); }
   } catch(e) {
     /* notifica o usuario do erro */
     showToast('⚠️ Erro ao conectar ao backend local: ' + e.message, 'warn');
@@ -11867,8 +11881,8 @@ async function signInMicrosoft() {
     await loadFromCloud();
     window._appInitialized = true;
 
-    try { logAccessEvent('login'); } catch(e) { /* intentional */ }
-    try { _startPresenceHeartbeat(); } catch(e) { /* intentional */ }
+    try { logAccessEvent('login'); } catch(e) { console.warn('[siga]', e); }
+    try { _startPresenceHeartbeat(); } catch(e) { console.warn('[siga]', e); }
     /* notifica o usuario do erro */
     showToast('✅ Login Microsoft realizado.', 'success');
   } catch (e) {
@@ -11888,9 +11902,9 @@ async function signOut() {
     return;
   }
   window._signoutPending = false;
-  try { _stopPresenceHeartbeat(); } catch(e) { /* intentional */ }
-  try { await _clearPresence(); } catch(e) { /* intentional */ }
-  try { await logAccessEvent('logout'); } catch(e) { /* intentional */ }
+  try { _stopPresenceHeartbeat(); } catch(e) { console.warn('[siga]', e); }
+  try { await _clearPresence(); } catch(e) { console.warn('[siga]', e); }
+  try { await logAccessEvent('logout'); } catch(e) { console.warn('[siga]', e); }
   /* tenta fallback alternativo */
 
   if ((SIGA_AUTH.mode || 'local') === 'entra' && _msalClient) {
@@ -11945,7 +11959,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       document.getElementById('auth-status').textContent = '⚠️ Erro ao inicializar: ' + e.message;
       document.getElementById('auth-overlay').style.display = 'flex';
-    } catch(_) { /* intentional */ }
+    } catch(_) { console.warn('[siga]', _); }
   });
 });
 
@@ -12020,9 +12034,9 @@ function _simulatorInit(frame) {
         try {
           const list = typeof arqGetData === 'function' ? arqGetData() : [];
           ev.source?.postMessage({ type: 'SIGA_PROCESS_LIST', payload: { list } }, window.location.origin);
-        } catch(e2) { /* intentional */ }
+        } catch(e2) { console.warn('[siga]', e2); }
       }
-    } catch(e) { /* intentional */ }
+    } catch(e) { console.warn('[siga]', e); }
   });
 }
 
@@ -12038,7 +12052,7 @@ function _simulatorSendCurrentPop(frame) {
       { type: 'SIGA_LOAD_GRAPH', payload: { graph: savedGraph, popName, popKey: p } },
       window.location.origin
     );
-  } catch(e) { /* intentional */ }
+  } catch(e) { console.warn('[siga]', e); }
 }
 
 // ── Excalidraw integration ───────────────────────────────────
@@ -12060,7 +12074,7 @@ function _excalidrawInit() {
       if(msg.type === 'READY' || msg.type === 'ready') {
         _excalidrawRestoreScene();
       }
-    } catch(e) { /* ignore cross-origin errors */ }
+    } catch(e) { console.warn('[siga] cross-origin bloqueado (esperado)', e); }
   });
 
   frame.addEventListener('load', () => {
@@ -12074,7 +12088,7 @@ function _excalidrawRestoreScene() {
   if(!frame || !DATA.quadro) return;
   try {
     frame.contentWindow.postMessage({ type: 'SCENE_UPDATE', payload: DATA.quadro }, 'https://excalidraw.com');
-  } catch(e) { /* intentional */ }
+  } catch(e) { console.warn('[siga]', e); }
 }
 
 function quadroSaveCloud() {
@@ -12604,7 +12618,7 @@ function _cageLogoAdd(slide, opts) {
   if(!v) return;
   try {
     slide.addImage({ ...(v.startsWith('data:') ? { data: v } : { path: v }), ...opts });
-  } catch(e) { /* intentional */ }
+  } catch(e) { console.warn('[siga]', e); }
 }
 
 async function _loadCageLogoB64() {
@@ -12622,7 +12636,7 @@ async function _loadCageLogoB64() {
         return b64;
       }
     }
-  } catch(e) { /* CORS bloqueado */ }
+  } catch(e) { console.warn('[siga] CORS bloqueado (esperado)', e); }
 
   // Tentativa 2: Image + canvas com crossOrigin (funciona se servidor enviar CORS headers)
   try {
@@ -12641,7 +12655,7 @@ async function _loadCageLogoB64() {
       img.src = imgUrl + '?_nc=' + Date.now();
     });
     if(b64) { window._cageLogoB64Cache = b64; return b64; }
-  } catch(e) { /* canvas tainted */ }
+  } catch(e) { console.warn('[siga] canvas tainted (esperado)', e); }
   /* retorna valor seguro como fallback */
 
   return null;
@@ -13104,7 +13118,7 @@ async function buildPptx(D, _popKey) {
           { x:3.4, y:5.2, w:6.2, h:0.25, fontSize:7, color:C.muted, margin:0, italic:true }
         );
       }
-    } catch(e) { /* intentional */ }
+    } catch(e) { console.warn('[siga]', e); }
   }
 
   // ── SLIDE ENCERRAMENTO ───────────────────────────────────────────────────
@@ -13232,7 +13246,7 @@ async function _buildEppStatusReport(opts = {}) {
       const resp = await fetch(DATA._logoUrl);
       const blob = await resp.blob();
       eppLogoB64 = await new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
-    } catch(e) { /* intentional */ }
+    } catch(e) { console.warn('[siga]', e); }
   }
 
   // ── Cores ──────────────────────────────────────────────
@@ -14238,7 +14252,7 @@ function renderFicha(p) {
           </div>
         </div>`;
     }
-  } catch(e) { /* matComputeFinal indisponível ou incompleto */ }
+  } catch(e) { console.warn('[siga] matComputeFinal', e); }
 
   // ── Gestor e Objetivos Estratégicos (da Arquitetura) ──────────────
   let arqInfoHtml = '';
@@ -14257,7 +14271,7 @@ function renderFicha(p) {
         arqInfoHtml = `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--cage-border);">Arquitetura</div>${gerenteHtml}${objsHtml}</div>`;
       }
     }
-  } catch(e) { /* arqGetData indisponível */ }
+  } catch(e) { console.warn('[siga] arqGetData', e); }
   /* exibe mensagem de erro na interface */
 
   const _progHtml = _renderFichaProgressHtml(p);
@@ -14726,16 +14740,16 @@ function _doCreateVersion() {
   closeModal('new-version-modal');
   // Re-renderizar tudo
   sanitizePop(p);
-  try { renderStep(p, 0); }       catch(e) { /* intentional */ }
-  try { renderRoles(p); }         catch(e) { /* intentional */ }
-  try { renderIndicators(p); }    catch(e) { /* intentional */ }
-  try { renderFaq(p); }           catch(e) { /* intentional */ }
-  try { renderNormas(p); }        catch(e) { /* intentional */ }
-  try { renderSiglas(p); }        catch(e) { /* intentional */ }
-  try { renderRisks(p); }         catch(e) { /* intentional */ }
-  try { renderPa(p); }            catch(e) { /* intentional */ }
-  try { renderMetrics(p); }       catch(e) { /* intentional */ }
-  try { renderFicha(p); }         catch(e) { /* intentional */ }
+  try { renderStep(p, 0); }       catch(e) { console.warn('[siga]', e); }
+  try { renderRoles(p); }         catch(e) { console.warn('[siga]', e); }
+  try { renderIndicators(p); }    catch(e) { console.warn('[siga]', e); }
+  try { renderFaq(p); }           catch(e) { console.warn('[siga]', e); }
+  try { renderNormas(p); }        catch(e) { console.warn('[siga]', e); }
+  try { renderSiglas(p); }        catch(e) { console.warn('[siga]', e); }
+  try { renderRisks(p); }         catch(e) { console.warn('[siga]', e); }
+  try { renderPa(p); }            catch(e) { console.warn('[siga]', e); }
+  try { renderMetrics(p); }       catch(e) { console.warn('[siga]', e); }
+  try { renderFicha(p); }         catch(e) { console.warn('[siga]', e); }
   /* notifica o usuario do erro */
   renderVersionBadge(p);
   _updateVersionBars();
@@ -14866,18 +14880,18 @@ function _repeatCurrentSection() {
 // Re-renderiza todas as seções do POP
 function _reRenderPop(p) {
   sanitizePop(p);
-  try { renderStep(p, DATA[p].currentStep || 0); } catch(e) { /* intentional */ }
-  try { renderRoles(p); }         catch(e) { /* intentional */ }
-  try { renderIndicators(p); }    catch(e) { /* intentional */ }
-  try { renderFaq(p); }           catch(e) { /* intentional */ }
-  try { renderNormas(p); }        catch(e) { /* intentional */ }
-  try { renderRevisions(p); }     catch(e) { /* intentional */ }
-  try { renderSiglas(p); }        catch(e) { /* intentional */ }
-  try { renderRisks(p); }         catch(e) { /* intentional */ }
-  try { renderPa(p); }            catch(e) { /* intentional */ }
-  try { renderMetrics(p); }       catch(e) { /* intentional */ }
-  try { renderFicha(p); }         catch(e) { /* intentional */ }
-  try { loadAcomp(p); }           catch(e) { /* intentional */ }
+  try { renderStep(p, DATA[p].currentStep || 0); } catch(e) { console.warn('[siga]', e); }
+  try { renderRoles(p); }         catch(e) { console.warn('[siga]', e); }
+  try { renderIndicators(p); }    catch(e) { console.warn('[siga]', e); }
+  try { renderFaq(p); }           catch(e) { console.warn('[siga]', e); }
+  try { renderNormas(p); }        catch(e) { console.warn('[siga]', e); }
+  try { renderRevisions(p); }     catch(e) { console.warn('[siga]', e); }
+  try { renderSiglas(p); }        catch(e) { console.warn('[siga]', e); }
+  try { renderRisks(p); }         catch(e) { console.warn('[siga]', e); }
+  try { renderPa(p); }            catch(e) { console.warn('[siga]', e); }
+  try { renderMetrics(p); }       catch(e) { console.warn('[siga]', e); }
+  try { renderFicha(p); }         catch(e) { console.warn('[siga]', e); }
+  try { loadAcomp(p); }           catch(e) { console.warn('[siga]', e); }
 }
 
 // Atualiza as barras de readonly e herança conforme contexto atual
@@ -15964,7 +15978,7 @@ function arqShowProcessDetail(idx) {
   document.getElementById('arq-det-title').textContent = r.subprocesso || r.processo;
   document.getElementById('arq-det-body').innerHTML = html;
   modal.classList.add('open');
-  try { arqCompRenderSection(idx); } catch(e) { /* intentional */ }
+  try { arqCompRenderSection(idx); } catch(e) { console.warn('[siga]', e); }
 
   // Render flow diagram if available
   if(mapped && popData?.flowDiagram && !fluxoUrl) {
@@ -15975,7 +15989,7 @@ function arqShowProcessDetail(idx) {
           <div style="font-size:20px;margin-bottom:6px;">🎨</div>
           Diagrama Excalidraw salvo — abra o <strong>Fluxo</strong> para visualizar e editar.</div>`;
       } else if(popData.flowDiagram.mermaid && window.mermaid) {
-        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{}); } catch(e) { /* intentional */ }
+        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{}); } catch(e) { console.warn('[siga]', e); }
       }
     }
   }
@@ -16433,8 +16447,8 @@ function homeRefresh() {
   });
 
   // Aplicar ordenação salva nos elementos estáticos e reiniciar sortable dos stat cards
-  try { _dndApplyOrder(); } catch(e) { /* intentional */ }
-  try { if(typeof editMode !== 'undefined' && editMode) _dndReinitStats(); } catch(e) { /* intentional */ }
+  try { _dndApplyOrder(); } catch(e) { console.warn('[siga]', e); }
+  try { if(typeof editMode !== 'undefined' && editMode) _dndReinitStats(); } catch(e) { console.warn('[siga]', e); }
 
 }
 
@@ -18169,10 +18183,10 @@ function eppTab(tab, el) {
 
   if(tab === 'pat') {
     if(pat)  { pat.style.display='block'; pat.classList.add('active'); }
-    try { renderPat(); populatePatPopSelect(); } catch(e) { /* intentional */ }
+    try { renderPat(); populatePatPopSelect(); } catch(e) { console.warn('[siga]', e); }
   } else if(tab === 'config') {
     if(cfg) cfg.style.display='block';
-    try { renderConfigPanel(); } catch(e) { /* intentional */ }
+    try { renderConfigPanel(); } catch(e) { console.warn('[siga]', e); }
   } else if(tab === 'users') {
     if(users) users.style.display='block';
     _permCtx = 'epp';
@@ -18245,8 +18259,8 @@ function _silentlyMergeNewPops(serverData) {
     // Só adicionar POPs que não existem localmente — nunca sobrescrever trabalho local
     if (!key || !key.startsWith('pop_') || DATA[key] || !pd || typeof pd !== 'object') return;
     DATA[key] = pd;
-    try { sanitizePop(key); } catch(e) { /* intentional */ }
-    try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) { /* intentional */ }
+    try { sanitizePop(key); } catch(e) { console.warn('[siga]', e); }
+    try { if (typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) { console.warn('[siga]', e); }
     merged++;
   });
   // merged POPs silently loaded from server
@@ -20341,9 +20355,9 @@ function parseAiJson(text) {
   const m = clean.match(/\{[\s\S]*/);
   if (m) clean = m[0];
   // 1) Tenta parse direto
-  try { return JSON.parse(clean); } catch (_e1) { /* intentional */ }
+  try { return JSON.parse(clean); } catch (_e1) { /* intentional */ // NOSONAR }
   // 2) Tenta com repair de caracteres de controle
-  try { return JSON.parse(repairJsonString(clean)); } catch (_e2) { /* intentional */ }
+  try { return JSON.parse(repairJsonString(clean)); } catch (_e2) { /* intentional */ // NOSONAR }
   // 3) Tenta fechar JSON truncado
   try { return JSON.parse(truncateRepairJson(clean)); } catch (e3) { throw e3; }
 }
@@ -21502,7 +21516,7 @@ function statusModalAutoFill() {
     document.getElementById('fd-module').style.display = 'block';
     // Initialize mermaid once
     if (window.mermaid) {
-      try { mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' }); } catch(e) { /* intentional */ }
+      try { mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' }); } catch(e) { console.warn('[siga]', e); }
     }
     fdSetMode('mermaid');
     _fdLoad();
@@ -21637,7 +21651,7 @@ Regras obrigatórias:
     markChanged(true, true);
     saveToCloud();
     showToast('Fluxo salvo!', 'success');
-    try { renderFlowPreview(p); } catch(e) { /* intentional */ }
+    try { renderFlowPreview(p); } catch(e) { console.warn('[siga]', e); }
   };
 
   // ── Export SVG ────────────────────────────────────────────────
@@ -21760,7 +21774,7 @@ Regras obrigatórias:
       try {
         await _modeler.importXML(DEFAULT_BPMN);
         _modeler.get('canvas').zoom('fit-viewport');
-      } catch(e2) { /* intentional */ }
+      } catch(e2) { console.warn('[siga]', e2); }
     }
 
     // Update title in toolbar
@@ -21788,15 +21802,15 @@ Regras obrigatórias:
 
   // ── Fit viewport ───────────────────────────────────────────────
   window.fdFitView = function() {
-    try { _modeler?.get('canvas').zoom('fit-viewport'); } catch(e) { /* intentional */ }
+    try { _modeler?.get('canvas').zoom('fit-viewport'); } catch(e) { console.warn('[siga]', e); }
   };
 
   // ── Undo / Redo ────────────────────────────────────────────────
   window.fdUndo = function() {
-    try { _modeler?.get('commandStack').undo(); } catch(e) { /* intentional */ }
+    try { _modeler?.get('commandStack').undo(); } catch(e) { console.warn('[siga]', e); }
   };
   window.fdRedo = function() {
-    try { _modeler?.get('commandStack').redo(); } catch(e) { /* intentional */ }
+    try { _modeler?.get('commandStack').redo(); } catch(e) { console.warn('[siga]', e); }
   };
 
   // ── Export BPMN SVG ───────────────────────────────────────────
@@ -25585,7 +25599,7 @@ if ('serviceWorker' in navigator) {
     // Sem onupdatefound/reload: o SW já é network-first para HTML,
     // então o conteúdo mais recente é sempre servido da rede.
     // O reload forçado causava interrupção do loadFromCloud/saveToCloud a cada F5.
-  }).catch(() => { /* intentional */ });
+  }).catch(e => { console.warn('[siga] service worker registration', e); });
 }
 </script>
 </body>
