@@ -75,7 +75,6 @@ steps:
       configMode: "file"
       configFile: "sonar-project.properties"
       extraProperties: |
-        sonar.branch.name=$(Build.SourceBranchName)
         sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
 
   - task: SonarCloudAnalyze@2
@@ -95,6 +94,7 @@ steps:
       script: |
         $token   = "$(SONAR_TOKEN)"
         $project = "sefaz-rs_gesproc"
+        $prId    = "$(System.PullRequest.PullRequestId)"
         $branch  = "$(Build.SourceBranchName)"
         $baseUrl = "https://sonarcloud.io"
 
@@ -106,10 +106,20 @@ steps:
 
         $headers = @{ Authorization = "Bearer $token" }
 
-        # Busca novas issues BLOCKER ou CRITICAL introduzidas neste branch (leak period)
+        # Em contexto de PR usa pullRequest=<id>; fora de PR usa branch=<nome>
+        $isPr = $prId -and $prId -ne '$(System.PullRequest.PullRequestId)'
+        if ($isPr) {
+          $scope = "&pullRequest=$prId"
+          $link  = "$baseUrl/project/issues?id=$project&pullRequest=$prId&severities=BLOCKER%2CCRITICAL"
+        } else {
+          $scope = "&branch=$([uri]::EscapeDataString($branch))"
+          $link  = "$baseUrl/project/issues?id=$project&branch=$([uri]::EscapeDataString($branch))&severities=BLOCKER%2CCRITICAL&sinceLeakPeriod=true"
+        }
+
+        # Busca novas issues BLOCKER ou CRITICAL no código novo
         $uri = "$baseUrl/api/issues/search" +
                "?projectKeys=$project" +
-               "&branch=$branch" +
+               $scope +
                "&severities=BLOCKER,CRITICAL" +
                "&resolved=false" +
                "&sinceLeakPeriod=true" +
@@ -128,7 +138,7 @@ steps:
         if ($total -gt 0) {
           Write-Host "##vso[task.logissue type=error]🚫 PR BLOQUEADO: $total nova(s) issue(s) BLOCKER/CRITICAL encontrada(s)."
           Write-Host "Acesse e corrija antes de mergear:"
-          Write-Host "$baseUrl/project/issues?id=$project&branch=$([uri]::EscapeDataString($branch))&severities=BLOCKER%2CCRITICAL&sinceLeakPeriod=true"
+          Write-Host $link
           exit 1
         }
 
