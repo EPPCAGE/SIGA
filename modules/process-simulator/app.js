@@ -359,20 +359,22 @@ function applyDefaultGatewayProbabilitiesLocal(g) {
 }
 
 function normalizedGatewayProbMap(edges) {
+  const isValidKey = (k) => typeof k === 'string' && k.length > 0 && k !== '__proto__' && k !== 'constructor' && k !== 'prototype';
   const vals = edges.map((e) => Math.max(0, Number(e?.probability || 0)));
   const sum = vals.reduce((a, b) => a + b, 0);
 
   if (!Number.isFinite(sum) || sum <= 0) {
     const fallback = splitPercentages(edges.length);
-    const out = {};
-    for (let i = 0; i < edges.length; i += 1) out[edges[i].id] = fallback[i];
+    const out = Object.create(null);
+    for (let i = 0; i < edges.length; i += 1) { if(isValidKey(edges[i].id)) out[edges[i].id] = fallback[i]; }
     return out;
   }
 
-  const out = {};
+  const out = Object.create(null);
   let acc = 0;
   for (let i = 0; i < edges.length; i += 1) {
     const id = edges[i].id;
+    if (!isValidKey(id)) continue;
     if (i === edges.length - 1) {
       out[id] = Number((100 - acc).toFixed(2));
     } else {
@@ -2204,7 +2206,7 @@ function renderAutomaticInterpretation(metrics, base) {
     const gainMin = metrics.kFactor !== null
       ? ` (economia de aprox. ${(gainUT * metrics.kFactor).toFixed(0)} min reais por execução)`
       : '';
-    p3 = `Caso a atividade <strong>"${topManual.label}"</strong> seja automatizada (reduzindo de ${RULES.nextManual} para ${RULES.automated} UT), o T.O.P. cairia em aprox. <strong>${gainPct}%</strong>${gainMin}. Recomenda-se priorizar tarefas repetitivas e de alto volume para maximizar o retorno.`;
+    p3 = `Caso a atividade <strong>"${escapeHtml(topManual.label)}"</strong> seja automatizada (reduzindo de ${RULES.nextManual} para ${RULES.automated} UT), o T.O.P. cairia em aprox. <strong>${gainPct}%</strong>${gainMin}. Recomenda-se priorizar tarefas repetitivas e de alto volume para maximizar o retorno.`;
   } else {
     p3 = 'Todas as tarefas já estão automatizadas ou não há candidatos identificados para automação no cenário atual.';
   }
@@ -2368,11 +2370,11 @@ function renderHandoffSetup() {
   const rows = lanes.map((lane) => {
     const profile = graph.lanes?.[lane] || {};
     return `
-      <div data-lane-row="${lane}" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px;align-items:end;">
-        <label class="field" style="margin:0;"><span>Raia</span><input value="${lane}" disabled></label>
-        <label class="field" style="margin:0;"><span>Equipe</span><input data-field="team" value="${profile.team || ''}" placeholder="Ex: Protocolo"></label>
-        <label class="field" style="margin:0;"><span>Setor</span><input data-field="sector" value="${profile.sector || ''}" placeholder="Ex: Atendimento"></label>
-        <label class="field" style="margin:0;"><span>Órgão</span><input data-field="org" value="${profile.org || ''}" placeholder="Ex: SEFAZ"></label>
+      <div data-lane-row="${escapeHtml(lane)}" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px;align-items:end;">
+        <label class="field" style="margin:0;"><span>Raia</span><input value="${escapeHtml(lane)}" disabled></label>
+        <label class="field" style="margin:0;"><span>Equipe</span><input data-field="team" value="${escapeHtml(profile.team || '')}" placeholder="Ex: Protocolo"></label>
+        <label class="field" style="margin:0;"><span>Setor</span><input data-field="sector" value="${escapeHtml(profile.sector || '')}" placeholder="Ex: Atendimento"></label>
+        <label class="field" style="margin:0;"><span>Órgão</span><input data-field="org" value="${escapeHtml(profile.org || '')}" placeholder="Ex: SEFAZ"></label>
       </div>`;
   }).join('');
 
