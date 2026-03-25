@@ -17313,7 +17313,7 @@ function npopInitSelects() {
   const macroSel = document.getElementById('nf-macro');
   if(!macroSel) return;
   macroSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>'
-    + getMacroprocessos().map(m => `<option value="${m}">${m}</option>`).join('');
+    + getMacroprocessos().map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
   populatePatrocinadoresSelect('nf-patrocinador');
   // Esconder painel da arquitetura ao abrir o modal
   const arqPanel = document.getElementById('nf-arq-info');

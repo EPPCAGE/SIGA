@@ -50,15 +50,18 @@ function ensureDataFile() {
   const dir = path.dirname(DATA_FILE);
   fs.mkdirSync(dir, { recursive: true });
 
-  if (!fs.existsSync(DATA_FILE)) {
-    const initial = {
-      id: 1,
-      data: {},
-      updated_at: null,
-      updated_by: 'local@admin',
-      updated_by_name: 'Administrador Local'
-    };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2), 'utf8');
+  const initial = {
+    id: 1,
+    data: {},
+    updated_at: null,
+    updated_by: 'local@admin',
+    updated_by_name: 'Administrador Local'
+  };
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2), { encoding: 'utf8', flag: 'wx' });
+  } catch (e) {
+    if (e.code !== 'EEXIST') throw e;
+    // File already exists — that's fine
   }
 }
 
