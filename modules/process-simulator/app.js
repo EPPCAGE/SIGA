@@ -190,6 +190,7 @@ async function fetchSigaActorCatalog() {
         return actors;
       }
     } catch (e) {
+      /* preserva estado de erro para inspecao */
       lastErr = e;
     }
   }
@@ -923,6 +924,7 @@ function collectSetupStatus() {
     parseHappyPathRequired();
     status.happyPathOk = true;
   } catch (e) {
+    /* preserva estado de erro para inspecao */
     status.happyPathOk = false;
   }
 
@@ -930,6 +932,7 @@ function collectSetupStatus() {
     parseLeadTimeInformedRequired();
     status.leadTimeOk = true;
   } catch (e) {
+    /* preserva estado de erro para inspecao */
     status.leadTimeOk = false;
   }
 
@@ -2427,6 +2430,7 @@ function parseEditorGraph() {
     autoAssignComplexityDefaults(); // garante defaults de complexidade
     return true;
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     $('validationBox').innerHTML = `<span class=\"badge error\">erro</span> JSON invalido: ${e.message}`;
     return false;
   }
@@ -3060,6 +3064,7 @@ function updateDashboard() {
   try {
     metrics = computeScenarioMetrics();
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     const base = calculateTEPAndIP(graph, 3500);
     renderExecutiveKpis(null, base);
     $('calibrationResult').textContent = e.message;
@@ -3113,6 +3118,7 @@ function applyCalibration() {
 
     updateDashboard();
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     $('calibrationResult').textContent = `Falha na calibracao: ${e.message}`;
     updateDashboard();
   }
@@ -3359,6 +3365,7 @@ function playSimulation() {
     try {
       parseHappyPathRequired();
     } catch (e) {
+      /* exibe mensagem de erro na interface */
       $('validationBox').innerHTML = `<span class="badge error">ideal</span> ${e.message}`;
       return;
     }
@@ -3529,6 +3536,7 @@ function generateReport() {
     metrics = computeScenarioMetrics();
     _lastSimMetrics = metrics;
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     $('reportBox').textContent = `Falha no relatorio: ${e.message}`;
     return;
   }
@@ -3624,6 +3632,7 @@ async function runVisionExtract() {
     drawGraph();
     renderSetupPathPicker();
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     out.textContent = `Falha na extracao: ${e.message}`;
   } finally {
     if (btn) {
@@ -3745,6 +3754,7 @@ async function loadDefaultBpmn() {
     await _bpmnModeler.importXML(DEFAULT_BPMN);
     _bpmnModeler.get('canvas').zoom('fit-viewport');
   } catch (e) {
+    /* erro nao-fatal — registra aviso */
     console.warn('[SimBPMN] Erro ao carregar diagrama padrão:', e.message);
   }
 }
@@ -3812,6 +3822,7 @@ async function applyFromBpmnEditor() {
     const out = $('cvOutput');
     if (out) out.textContent = `Topologia extraída do Editor BPMN: ${g.nodes.length} nó(s), ${(g.edges || []).length} aresta(s).`;
   } catch (e) {
+    /* notifica o usuario do erro */
     console.error('[SimBPMN] applyFromBpmnEditor:', e);
     alert('Erro ao extrair topologia: ' + e.message);
   } finally {
@@ -3830,6 +3841,7 @@ async function exportBpmnFile() {
     a.download = 'processo.bpmn';
     a.click();
   } catch (e) {
+    /* notifica o usuario do erro */
     alert('Erro ao exportar: ' + e.message);
   }
 }
@@ -4031,6 +4043,7 @@ function wireEvents() {
   });
   $('btnBpmnRedo')?.addEventListener('click', () => {
     try { _bpmnModeler?.get('commandStack').redo(); } catch (e) { /* intentional */ }
+  /* tratamento de erro */
   });
   $('btnBpmnExport')?.addEventListener('click', exportBpmnFile);
 }
@@ -4096,6 +4109,7 @@ function saveToSIGA() {
       setTimeout(() => { btn.disabled = false; btn.textContent = '💾 Salvar no SIGA'; }, 2000);
     }
   } catch (e) {
+    /* erro nao-fatal — registra aviso */
     if (btn) { btn.disabled = false; btn.textContent = '💾 Salvar no SIGA'; }
     console.warn('[Simulator] saveToSIGA falhou:', e);
   }
@@ -4154,6 +4168,7 @@ window.addEventListener('message', (ev) => {
       }
     }
   } catch (e) {
+    /* erro nao-fatal — registra aviso */
     console.warn('[Simulator] message handler error:', e);
   }
 });
@@ -4168,6 +4183,7 @@ try {
   loadSample();          // carrega exemplo no background (JSON visível mas tela coberta)
   showEntryChoice();     // primeiro passo: overlay de escolha de entrada
 } catch (e) {
+  /* exibe mensagem de erro na interface */
   const out = $('cvOutput');
   if (out) out.textContent = `Falha ao inicializar interface: ${e.message}`;
   const v = $('validationBox');
