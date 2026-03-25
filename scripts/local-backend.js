@@ -1,3 +1,4 @@
+try { require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') }); } catch (_) { /* dotenv ausente em producao — vars vem do ambiente */ }
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -330,8 +331,59 @@ async function callAi(parsed) {
   throw lastError || new Error('Erro na API de IA');
 }
 
+async function callAzureOpenAI(parsed) {
+  const AZURE_API_KEY    = process.env.SIGA_AZURE_API_KEY || '';
+  const AZURE_ENDPOINT   = (process.env.SIGA_AZURE_ENDPOINT || 'https://projeto-gesproc-cage.cognitiveservices.azure.com').replace(/\/$/, '');
+  const AZURE_DEPLOYMENT = process.env.SIGA_AZURE_DEPLOYMENT || 'gpt-5.1-chat';
+  const AZURE_API_VER    = process.env.SIGA_AZURE_API_VERSION || '2024-12-01-preview';
+
+  if (!AZURE_API_KEY) {
+    const err = new Error('Azure OpenAI nao configurada — defina SIGA_AZURE_API_KEY no ambiente');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  const input = await normalizeAiInput(parsed);
+  const maxTokens = Math.min(Math.max(Number(parsed.maxTokens) || 1800, 256), 16384);
+  const userContent = [{ type: 'text', text: input.prompt }];
+  if (input.image) {
+    userContent.push({ type: 'image_url', image_url: { url: `data:${input.image.mimeType};base64,${input.image.data}` } });
+  }
+
+  const url = `${AZURE_ENDPOINT}/openai/deployments/${encodeURIComponent(AZURE_DEPLOYMENT)}/chat/completions?api-version=${encodeURIComponent(AZURE_API_VER)}`;
+
+  const aiResp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': AZURE_API_KEY
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: 'system', content: 'Você é um assistente para análise de processos da CAGE-RS. Responda em português de forma objetiva e estruturada.' },
+        { role: 'user', content: userContent.length === 1 ? input.prompt : userContent }
+      ],
+      max_completion_tokens: maxTokens
+    })
+  });
+
+  const aiData = await aiResp.json().catch(() => ({}));
+  if (!aiResp.ok) {
+    const err = new Error(aiData?.error?.message || 'Erro na API Azure OpenAI');
+    err.statusCode = aiResp.status;
+    err.retryAfter = Number(aiResp.headers.get('retry-after') || 0) || null;
+    throw err;
+  }
+
+  return aiData?.choices?.[0]?.message?.content || '';
+}
+
 function hasGithubProviderConfigured() {
   return Boolean(process.env.SIGA_AI_TOKEN);
+}
+
+function hasAzureProviderConfigured() {
+  return Boolean(process.env.SIGA_AZURE_API_KEY);
 }
 
 function isQuotaOrRateLimitError(error) {
@@ -346,6 +398,11 @@ function isQuotaOrRateLimitError(error) {
 
 async function callAiWithFallback(parsed, preferredProvider) {
   const provider = String(preferredProvider || 'ai').toLowerCase();
+
+  if (provider === 'azure' || provider === 'azure-openai') {
+    const text = await callAzureOpenAI(parsed);
+    return { text, providerUsed: 'azure-openai' };
+  }
 
   if (provider === 'github' || provider === 'github-models') {
     const text = await callGithubModels(parsed);
@@ -362,6 +419,15 @@ async function callAiWithFallback(parsed, preferredProvider) {
       fallbackReason: aiResult.fallbackReason || null
     };
   } catch (error) {
+    if (isQuotaOrRateLimitError(error) && hasAzureProviderConfigured()) {
+      const text = await callAzureOpenAI(parsed);
+      return {
+        text,
+        providerUsed: 'azure-openai',
+        fallbackFrom: 'ai',
+        fallbackReason: 'quota_or_rate_limit'
+      };
+    }
     if (isQuotaOrRateLimitError(error) && hasGithubProviderConfigured()) {
       const text = await callGithubModels(parsed);
       return {
