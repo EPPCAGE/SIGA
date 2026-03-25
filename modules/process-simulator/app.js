@@ -1199,7 +1199,7 @@ function renderSetupGatewayEditor() {
 
   const html = gateways.map((gw) => {
     const outs = outgoing(graph, gw.id);
-    if (!outs.length) return `<div class="box"><strong>${gw.label || gw.id}</strong><div>Sem saidas.</div></div>`;
+    if (!outs.length) return `<div class="box"><strong>${escapeHtml(gw.label || gw.id)}</strong><div>Sem saidas.</div></div>`;
     const sum = outs.reduce((acc, e) => acc + Number(e.probability || 0), 0);
     const rows = outs.map((e) => {
       const targetNode = nodeById(e.to);
@@ -1215,7 +1215,7 @@ function renderSetupGatewayEditor() {
           <span class="gw-path-target" style="color:#9fb0c5;font-size:11px;">(${escapeHtml(targetLabel)})</span>
         </span>
         <div style="display:flex;gap:6px;align-items:center;">
-          <input type="number" min="0" max="100" step="1" data-setup-gw="${gw.id}" data-setup-edge="${e.id}" value="${pct}" style="width:80px;" />
+          <input type="number" min="0" max="100" step="1" data-setup-gw="${escapeHtml(gw.id)}" data-setup-edge="${escapeHtml(e.id)}" value="${pct}" style="width:80px;" />
           <span style="font-size:12px;color:#9fb0c5;">%</span>
           <div class="gw-prob-bar"><div class="gw-prob-fill" style="width:${pct}%;background:${barColor};"></div></div>
         </div>
@@ -1223,7 +1223,7 @@ function renderSetupGatewayEditor() {
     }).join('');
     return `
       <div class="box" style="margin-bottom:8px;">
-        <strong>${gw.label || gw.id}</strong>
+        <strong>${escapeHtml(gw.label || gw.id)}</strong>
         <div style="font-size:12px;margin:4px 0 6px;">Soma atual: ${sum.toFixed(2)}%</div>
         ${rows}
       </div>`;
@@ -1616,7 +1616,7 @@ function completeSetup() {
   const ready = s.graphOk && s.handoffOk && s.happyPathOk;
   if (!ready) {
     const reason = !s.graphOk && s.graphIssues.length
-      ? ` Motivo: ${s.graphIssues[0]}`
+      ? ` Motivo: ${escapeHtml(s.graphIssues[0])}`
       : '';
     $('validationBox').innerHTML = `<span class="badge error">setup</span> Finalize os itens pendentes no popup para iniciar a simulacao.${reason}`;
     return;
