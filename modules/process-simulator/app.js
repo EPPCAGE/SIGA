@@ -326,18 +326,19 @@ function splitPercentages(count) {
 }
 
 function defaultGatewayProbMap(edges) {
+  const isValidKey = (k) => typeof k === 'string' && k.length > 0 && k !== '__proto__' && k !== 'constructor' && k !== 'prototype';
   const probs = edges.map((e) => Number(e?.probability || 0));
   const hasAnyPositive = probs.some((p) => Number.isFinite(p) && p > 0);
   if (hasAnyPositive) {
-    const map = {};
-    for (const e of edges) map[e.id] = Number(e.probability || 0);
+    const map = Object.create(null);
+    for (const e of edges) { if(isValidKey(e.id)) map[e.id] = Number(e.probability || 0); }
     return map;
   }
 
   const parts = splitPercentages(edges.length);
-  const map = {};
+  const map = Object.create(null);
   for (let i = 0; i < edges.length; i += 1) {
-    map[edges[i].id] = parts[i];
+    if(isValidKey(edges[i].id)) map[edges[i].id] = parts[i];
   }
   return map;
 }
@@ -4086,7 +4087,7 @@ function saveToSIGA() {
           simResults:    simSummary,
         },
       },
-      '*'
+      window.location.origin
     );
     if (btn) {
       btn.textContent = '✅ Salvo no SIGA';
@@ -4099,6 +4100,7 @@ function saveToSIGA() {
 }
 
 window.addEventListener('message', (ev) => {
+  if(ev.origin !== window.location.origin) return; // reject cross-origin messages
   try {
     const msg = ev.data;
     if (!msg || typeof msg !== 'object') return;
@@ -4124,7 +4126,7 @@ window.addEventListener('message', (ev) => {
         revealDashboard();
       }
       // Acknowledge readiness
-      ev.source?.postMessage({ type: 'SIMULATOR_READY', popKey }, '*');
+      ev.source?.postMessage({ type: 'SIMULATOR_READY', popKey }, window.location.origin);
       return;
     }
 
@@ -4133,7 +4135,7 @@ window.addEventListener('message', (ev) => {
       if (graph) {
         ev.source?.postMessage(
           { type: 'SIMULATOR_SAVE', payload: { graph: cloneLocal(graph), popKey: _sigaPopKey } },
-          '*'
+          window.location.origin
         );
       }
     }
