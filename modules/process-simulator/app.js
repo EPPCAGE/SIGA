@@ -557,6 +557,35 @@ function actorLaneIdOf(node) {
   return String(node?.lane || node?.executor || node?.sector || '').trim();
 }
 
+function _bfsReachableTasks(startId, outgoingMap, nodeMap) {
+  const queue = (outgoingMap.get(startId) || []).map((id) => ({ id, depth: 1 }));
+  const visited = new Set();
+  const reachedTasks = new Set();
+
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current || current.depth > 20) continue;
+
+    const visitKey = `${current.id}`;
+    if (visited.has(visitKey)) continue;
+    visited.add(visitKey);
+
+    const node = nodeMap.get(current.id);
+    if (!node) continue;
+
+    if (node.type === 'task' && node.id !== startId) {
+      reachedTasks.add(node.id);
+      continue;
+    }
+
+    for (const nextId of outgoingMap.get(current.id) || []) {
+      queue.push({ id: nextId, depth: current.depth + 1 });
+    }
+  }
+
+  return reachedTasks;
+}
+
 function deriveTaskTransitions() {
   if (!graph) return [];
   const nodes = graph.nodes || [];
@@ -573,30 +602,7 @@ function deriveTaskTransitions() {
   const tasks = nodes.filter((n) => n.type === 'task');
 
   for (const start of tasks) {
-    const queue = (outgoingMap.get(start.id) || []).map((id) => ({ id, depth: 1 }));
-    const visited = new Set();
-    const reachedTasks = new Set();
-
-    while (queue.length) {
-      const current = queue.shift();
-      if (!current || current.depth > 20) continue;
-
-      const visitKey = `${current.id}`;
-      if (visited.has(visitKey)) continue;
-      visited.add(visitKey);
-
-      const node = nodeMap.get(current.id);
-      if (!node) continue;
-
-      if (node.type === 'task' && node.id !== start.id) {
-        reachedTasks.add(node.id);
-        continue;
-      }
-
-      for (const nextId of outgoingMap.get(current.id) || []) {
-        queue.push({ id: nextId, depth: current.depth + 1 });
-      }
-    }
+    const reachedTasks = _bfsReachableTasks(start.id, outgoingMap, nodeMap);
 
     for (const toId of reachedTasks) {
       const key = `${start.id}->${toId}`;
@@ -1894,6 +1900,30 @@ function _ipCard(ip) {
   </div>`;
 }
 
+function _buildGavetaCard(metrics) {
+  const hasInformed = Number.isFinite(metrics.leadTimeInformed);
+  const gavetaPct = metrics.tempoGaveta !== null && hasInformed && metrics.leadTimeInformed > 0
+    ? ((metrics.tempoGaveta / metrics.leadTimeInformed) * 100).toFixed(1)
+    : null;
+  return _resultCard(
+    '🕰️',
+    'T.Gaveta — Tempo de Fila / Espera Passiva',
+    _fmtMin(metrics.tempoGaveta),
+    `${gavetaPct !== null ? gavetaPct + '% do T.P.' : ''} · T.P. − T.P.E.`,
+    'Tempo em que o processo fica parado na fila, gaveta ou aguardando decisão — sem nenhuma execução ativa.',
+    metrics.tempoGaveta > 0
+      ? 'Foco de gestão: reduzir o tempo de gaveta é o maior alavancador de eficiência operacional.'
+      : 'Processo sem tempo de gaveta identificado.',
+    metrics.tempoGaveta > 0 ? 'rc-gaveta-warn' : ''
+  );
+}
+
+function _buildAutoCard(metrics, hasAuto, topAutoDisp, subSuffix) {
+  if (!hasAuto) return '';
+  const gainPct = (metrics.top > 0 ? ((metrics.top - metrics.topAuto) / metrics.top * 100) : 0).toFixed(1);
+  return _resultCard('⚙️', 'T.O.P. Auto', topAutoDisp, 'caminho feliz com automações' + subSuffix, 'T.O.P. projetado após confirmação das automações marcadas no cenário To-Be.', `Ganho potencial: ${gainPct}% de redução no T.O.P.`, 'rc-auto');
+}
+
 function renderExecutiveKpis(metrics, base) {
   const box = $('kpi');
   if (!box) return;
@@ -1920,56 +1950,30 @@ function renderExecutiveKpis(metrics, base) {
   const hasAuto = Number.isFinite(metrics.topAuto);
   const hasInformed = Number.isFinite(metrics.leadTimeInformed);
 
-  // Quando T.P. está preenchido, converte todos os tempos para minutos reais via kFactor
   const hasK = metrics.kFactor !== null;
   const fmtK  = (ut) => hasK ? _fmtMin(ut * metrics.kFactor) : _fmtUT(ut);
   const subSuffix = hasK ? ' · tempo real' : '';
 
-  // Linha de conversão K
   const kLine = hasK
     ? `<div class="rc-kfactor">Conversão: 1 UT = ${metrics.kFactor.toFixed(2)} min reais — T.O.P., T.E.R. e T.O.P.Auto exibidos em tempo real</div>`
     : '';
 
-  // Card T.P. só aparece se informado
   const tpCard = hasInformed
     ? _resultCard('💬', 'T.P. — Tempo de Percepção', _fmtMin(metrics.leadTimeInformed), 'lead time total · declarado pelo executor', 'O tempo de calendário (Lead Time). É o que o cidadão sente na ponta — do insumo ao produto final, incluindo filas e gavetas.', 'Informe também o T.P.E. para calcular o Tempo de Gaveta.')
     : '';
 
-  // Card T.P.E. só aparece se informado
   const hasTPE = Number.isFinite(metrics.processingTimeInformed) && metrics.processingTimeInformed > 0;
   const tpeCard = hasTPE
     ? _resultCard('⚙', 'T.P.E. — Tempo de Processamento Estimado', _fmtMin(metrics.processingTimeInformed), 'sem filas/gaveta · declarado pelo executor', 'Tempo estimado para executar o processo sem tempos de fila ou espera passiva. Base para o cálculo do Tempo de Gaveta.', 'T.P.E. < T.P. — a diferença é o tempo desperdiçado em fila.')
     : '';
 
-  // Card Tempo de Gaveta = T.P. - T.P.E.
-  const hasGaveta = metrics.tempoGaveta !== null;
-  const gavetaPct = hasGaveta && hasInformed && metrics.leadTimeInformed > 0
-    ? ((metrics.tempoGaveta / metrics.leadTimeInformed) * 100).toFixed(1)
-    : null;
-  const gavetaCard = hasGaveta
-    ? _resultCard(
-        '🕰️',
-        'T.Gaveta — Tempo de Fila / Espera Passiva',
-        _fmtMin(metrics.tempoGaveta),
-        `${gavetaPct !== null ? gavetaPct + '% do T.P.' : ''} · T.P. − T.P.E.`,
-        'Tempo em que o processo fica parado na fila, gaveta ou aguardando decisão — sem nenhuma execução ativa.',
-        metrics.tempoGaveta > 0
-          ? 'Foco de gestão: reduzir o tempo de gaveta é o maior alavancador de eficiência operacional.'
-          : 'Processo sem tempo de gaveta identificado.',
-        metrics.tempoGaveta > 0 ? 'rc-gaveta-warn' : ''
-      )
-    : '';
+  const gavetaCard = metrics.tempoGaveta !== null ? _buildGavetaCard(metrics) : '';
 
-  // Exibe "—" quando top = 0 (caminho feliz sem tarefas ou inválido)
   const topDisp = metrics.top > 0 ? fmtK(metrics.top) : '—';
   const topAutoDisp = metrics.topAuto > 0 ? fmtK(metrics.topAuto) : '—';
 
-  // Card automacao (valor convertido quando kFactor disponível)
-  const autoCard = hasAuto
-    ? _resultCard('⚙️', 'T.O.P. Auto', topAutoDisp, 'caminho feliz com automações' + subSuffix, 'T.O.P. projetado após confirmação das automações marcadas no cenário To-Be.', `Ganho potencial: ${(metrics.top > 0 ? ((metrics.top - metrics.topAuto) / metrics.top * 100) : 0).toFixed(1)}% de redução no T.O.P.`, 'rc-auto')
-    : '';
+  const autoCard = _buildAutoCard(metrics, hasAuto, topAutoDisp, subSuffix);
 
-  // Linha ao vivo — converte se kFactor disponível
   const liveUT = Number(liveSimulationStatus.avgLeadTime || 0);
   const liveTerDisp = liveUT > 0
     ? (hasK ? _fmtMin(liveUT * metrics.kFactor) : `${liveUT.toFixed(1)} UT`)
@@ -2149,6 +2153,52 @@ function renderFrictionChart(metrics) {
     </div>`;
 }
 
+function _buildP2Friction(topFriction) {
+  if (!topFriction) {
+    return 'Nenhum atrito dominante identificado no processo atual. O fluxo apresenta baixa concentração de gargalos.';
+  }
+  const tipoLabel = topFriction.type === 'handoff' ? 'Handoff'
+    : topFriction.type === 'gateway' ? 'Gateway de Decisão' : 'Loop de Retrabalho';
+  const keyLabel = topFriction.key.replaceAll('->', ' → ');
+  const totalUT = topFriction.total.toFixed(1);
+  if (topFriction.type === 'handoff') {
+    return `A maior perda de tempo detectada foi no <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> ao fluxo. Recomenda-se unificar estas etapas ou automatizar a transferência de dados para reduzir este impacto.`;
+  }
+  if (topFriction.type === 'gateway') {
+    return `O maior ponto de atrito detectado é o <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> em decisões repetidas. Recomenda-se simplificar os critérios de aprovação ou antecipar as validações no fluxo.`;
+  }
+  return `O maior consumo de atrito está no <strong>${tipoLabel} na tarefa ${keyLabel}</strong>, acumulando <strong>${totalUT} UT</strong>. Recomenda-se revisar os critérios de entrada e qualidade de dados antes do ponto de retorno.`;
+}
+
+function _buildP3Automation(nodes, metrics) {
+  const manualTasks = (nodes || []).filter((n) => n.type === 'task' && !n.automated);
+  const topManual = manualTasks[0];
+  if (!topManual) {
+    return 'Todas as tarefas já estão automatizadas ou não há candidatos identificados para automação no cenário atual.';
+  }
+  const gainUT = (RULES.nextManual - RULES.automated).toFixed(1);
+  const gainPct = metrics.top > 0 ? ((gainUT / metrics.top) * 100).toFixed(1) : '0';
+  const gainMin = metrics.kFactor !== null
+    ? ` (economia de aprox. ${(gainUT * metrics.kFactor).toFixed(0)} min reais por execução)`
+    : '';
+  return `Caso a atividade <strong>"${escapeHtml(topManual.label)}"</strong> seja automatizada (reduzindo de ${RULES.nextManual} para ${RULES.automated} UT), o T.O.P. cairia em aprox. <strong>${gainPct}%</strong>${gainMin}. Recomenda-se priorizar tarefas repetitivas e de alto volume para maximizar o retorno.`;
+}
+
+function _buildP4Gaveta(metrics) {
+  if (metrics.tempoGaveta !== null) {
+    const tp     = Number(metrics.leadTimeInformed);
+    const tpe    = Number(metrics.processingTimeInformed);
+    const gaveta = Number(metrics.tempoGaveta);
+    const gavetaPct = tp > 0 ? ((gaveta / tp) * 100).toFixed(1) : '0';
+    const gavetaFmt = _fmtMin(gaveta);
+    return `O executor informou T.P. de <strong>${_fmtMin(tp)}</strong> e T.P.E. de <strong>${_fmtMin(tpe)}</strong>. Isso revela que <strong>${gavetaPct}%</strong> do tempo total (<strong>${gavetaFmt}</strong>) é gasto em espera passiva — filas, gavetas e aguardo de decisão — sem execução ativa. O foco da gestão deve ser a redução do Tempo de Gaveta.`;
+  }
+  if (Number.isFinite(metrics.leadTimeInformed)) {
+    return 'T.P. informado. Informe também o <strong>T.P.E. (Tempo de Processamento Estimado)</strong> para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
+  }
+  return 'Informe o <strong>T.P.</strong> (Tempo de Percepção) e o <strong>T.P.E.</strong> (Tempo de Processamento Estimado) para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
+}
+
 function renderAutomaticInterpretation(metrics, base) {
   const box = $('insightInterpretation');
   if (!box) return;
@@ -2164,60 +2214,10 @@ function renderAutomaticInterpretation(metrics, base) {
   const ip = Number(metrics.ipRealVsIdeal || 0);
   const horasPerdidas = ((100 - ip) / 100 * 10).toFixed(1);
 
-  // Paragrafo 1: Diagnostico de Eficiencia de Ciclo
   const p1 = `O processo apresenta um I.P. de <strong>${ip.toFixed(1)}%</strong>. Isso indica que, para cada 10 horas de trabalho, cerca de <strong>${horasPerdidas} horas</strong> são consumidas por atividades que não agregam valor direto, como recontextualização e trocas de setor.`;
-
-  // Paragrafo 2: Maior gargalo sistemico
-  const ranking = metrics.ranking || [];
-  const topFriction = ranking[0];
-  let p2 = '';
-  if (topFriction) {
-    const tipoLabel = topFriction.type === 'handoff' ? 'Handoff'
-      : topFriction.type === 'gateway' ? 'Gateway de Decisão' : 'Loop de Retrabalho';
-    const keyLabel = topFriction.key.replaceAll('->', ' → ');
-    const totalUT = topFriction.total.toFixed(1);
-    if (topFriction.type === 'handoff') {
-      p2 = `A maior perda de tempo detectada foi no <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> ao fluxo. Recomenda-se unificar estas etapas ou automatizar a transferência de dados para reduzir este impacto.`;
-    } else if (topFriction.type === 'gateway') {
-      p2 = `O maior ponto de atrito detectado é o <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> em decisões repetidas. Recomenda-se simplificar os critérios de aprovação ou antecipar as validações no fluxo.`;
-    } else {
-      p2 = `O maior consumo de atrito está no <strong>${tipoLabel} na tarefa ${keyLabel}</strong>, acumulando <strong>${totalUT} UT</strong>. Recomenda-se revisar os critérios de entrada e qualidade de dados antes do ponto de retorno.`;
-    }
-  } else {
-    p2 = 'Nenhum atrito dominante identificado no processo atual. O fluxo apresenta baixa concentração de gargalos.';
-  }
-
-  // Paragrafo 3: Potencial de automacao
-  const nodes = graph?.nodes || [];
-  const manualTasks = nodes.filter((n) => n.type === 'task' && !n.automated);
-  const topManual = manualTasks[0];
-  let p3 = '';
-  if (topManual) {
-    const gainUT = (RULES.nextManual - RULES.automated).toFixed(1);
-    const gainPct = metrics.top > 0
-      ? ((gainUT / metrics.top) * 100).toFixed(1) : '0';
-    const gainMin = metrics.kFactor !== null
-      ? ` (economia de aprox. ${(gainUT * metrics.kFactor).toFixed(0)} min reais por execução)`
-      : '';
-    p3 = `Caso a atividade <strong>"${escapeHtml(topManual.label)}"</strong> seja automatizada (reduzindo de ${RULES.nextManual} para ${RULES.automated} UT), o T.O.P. cairia em aprox. <strong>${gainPct}%</strong>${gainMin}. Recomenda-se priorizar tarefas repetitivas e de alto volume para maximizar o retorno.`;
-  } else {
-    p3 = 'Todas as tarefas já estão automatizadas ou não há candidatos identificados para automação no cenário atual.';
-  }
-
-  // Paragrafo 4: Analise de fila/gaveta (só se T.P. e T.P.E. informados)
-  let p4 = '';
-  if (metrics.tempoGaveta !== null) {
-    const tp     = Number(metrics.leadTimeInformed);
-    const tpe    = Number(metrics.processingTimeInformed);
-    const gaveta = Number(metrics.tempoGaveta);
-    const gavetaPct = tp > 0 ? ((gaveta / tp) * 100).toFixed(1) : '0';
-    const gavetaFmt = _fmtMin(gaveta);
-    p4 = `O executor informou T.P. de <strong>${_fmtMin(tp)}</strong> e T.P.E. de <strong>${_fmtMin(tpe)}</strong>. Isso revela que <strong>${gavetaPct}%</strong> do tempo total (<strong>${gavetaFmt}</strong>) é gasto em espera passiva — filas, gavetas e aguardo de decisão — sem execução ativa. O foco da gestão deve ser a redução do Tempo de Gaveta.`;
-  } else if (Number.isFinite(metrics.leadTimeInformed)) {
-    p4 = 'T.P. informado. Informe também o <strong>T.P.E. (Tempo de Processamento Estimado)</strong> para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
-  } else {
-    p4 = 'Informe o <strong>T.P.</strong> (Tempo de Percepção) e o <strong>T.P.E.</strong> (Tempo de Processamento Estimado) para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
-  }
+  const p2 = _buildP2Friction((metrics.ranking || [])[0]);
+  const p3 = _buildP3Automation(graph?.nodes, metrics);
+  const p4 = _buildP4Gaveta(metrics);
 
   const sStandard = semaphoreForPhillip('standard', ip);
   box.innerHTML = `
@@ -2516,13 +2516,7 @@ function edgeHappyPathCost(edge) {
   return cost;
 }
 
-function suggestHappyPathIds() {
-  if (!graph || !(graph.nodes || []).length) return [];
-
-  const starts = startCandidateIds();
-  const ends = new Set(endCandidateIds());
-  if (!starts.length || !ends.size) return [];
-
+function _dijkstraScores(starts, graphRef) {
   const bestByNode = new Map();
   const prevByNode = new Map();
   const queue = [];
@@ -2538,7 +2532,7 @@ function suggestHappyPathIds() {
     if (!current) break;
     if (current.score > Number(bestByNode.get(current.id) || Infinity)) continue;
 
-    const out = (graph.edges || []).filter((e) => e.from === current.id);
+    const out = (graphRef.edges || []).filter((e) => e.from === current.id);
     for (const edge of out) {
       const nextId = edge.to;
       const nextScore = current.score + edgeHappyPathCost(edge);
@@ -2548,6 +2542,30 @@ function suggestHappyPathIds() {
       queue.push({ id: nextId, score: nextScore });
     }
   }
+
+  return { bestByNode, prevByNode };
+}
+
+function _reconstructPath(bestEndId, prevByNode) {
+  const path = [];
+  let cursor = bestEndId;
+  const guard = new Set();
+  while (cursor && !guard.has(cursor)) {
+    guard.add(cursor);
+    path.push(cursor);
+    cursor = prevByNode.get(cursor);
+  }
+  return path.reverse();
+}
+
+function suggestHappyPathIds() {
+  if (!graph || !(graph.nodes || []).length) return [];
+
+  const starts = startCandidateIds();
+  const ends = new Set(endCandidateIds());
+  if (!starts.length || !ends.size) return [];
+
+  const { bestByNode, prevByNode } = _dijkstraScores(starts, graph);
 
   let bestEndId = null;
   let bestEndScore = Infinity;
@@ -2561,16 +2579,7 @@ function suggestHappyPathIds() {
   }
   if (!bestEndId) return [];
 
-  const path = [];
-  let cursor = bestEndId;
-  const guard = new Set();
-  while (cursor && !guard.has(cursor)) {
-    guard.add(cursor);
-    path.push(cursor);
-    cursor = prevByNode.get(cursor);
-  }
-
-  return path.reverse();
+  return _reconstructPath(bestEndId, prevByNode);
 }
 
 function applySuggestedHappyPath() {
@@ -2686,6 +2695,57 @@ function onSetupPathNodeClick(nodeId) {
   renderSetupChecklist();
 }
 
+function _drawSetupEdge(svg, edge, from, to, happyPathNodes) {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', String(from.x));
+  line.setAttribute('y1', String(from.y));
+  line.setAttribute('x2', String(to.x));
+  line.setAttribute('y2', String(to.y));
+  line.setAttribute('stroke', '#6b7280');
+  line.setAttribute('stroke-width', '2');
+  for (let i = 0; i < happyPathNodes.length - 1; i += 1) {
+    if (happyPathNodes[i] === edge.from && happyPathNodes[i + 1] === edge.to) {
+      line.setAttribute('stroke', '#0b84f3');
+      line.setAttribute('stroke-width', '4');
+      break;
+    }
+  }
+  line.setAttribute('marker-end', 'url(#setupArrow)');
+  svg.appendChild(line);
+}
+
+function _drawSetupNodeShape(g, node, selectedIndex, isAllowed) {
+  const isSelected = selectedIndex >= 0;
+  if (node.type === 'task') {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', String(node.x - 52));
+    rect.setAttribute('y', String(node.y - 22));
+    rect.setAttribute('width', '104');
+    rect.setAttribute('height', '44');
+    rect.setAttribute('rx', '10');
+    rect.setAttribute('fill', '#edf3fb');
+    rect.setAttribute('stroke', isSelected ? '#0b84f3' : '#2a4d69');
+    rect.setAttribute('stroke-width', isSelected ? '3' : '2');
+    g.appendChild(rect);
+  } else if (node.type === 'gateway') {
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', `${node.x},${node.y - 28} ${node.x + 34},${node.y} ${node.x},${node.y + 28} ${node.x - 34},${node.y}`);
+    poly.setAttribute('fill', '#fff7e8');
+    poly.setAttribute('stroke', isSelected ? '#0b84f3' : '#b9770e');
+    poly.setAttribute('stroke-width', isSelected ? '3' : '2');
+    g.appendChild(poly);
+  } else {
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', String(node.x));
+    c.setAttribute('cy', String(node.y));
+    c.setAttribute('r', '22');
+    c.setAttribute('fill', node.type === 'start' ? '#e8f7ef' : '#fdecec');
+    c.setAttribute('stroke', isSelected ? '#0b84f3' : (node.type === 'start' ? '#1b8a5a' : '#c0392b'));
+    c.setAttribute('stroke-width', isSelected ? '4' : (node.type === 'end' ? '3' : '2'));
+    g.appendChild(c);
+  }
+}
+
 function drawSetupPathCanvas() {
   const svg = $('setupPathCanvas');
   if (!svg || !graph) return;
@@ -2705,23 +2765,7 @@ function drawSetupPathCanvas() {
     const from = nodeById(edge.from);
     const to = nodeById(edge.to);
     if (!from || !to) continue;
-
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', String(from.x));
-    line.setAttribute('y1', String(from.y));
-    line.setAttribute('x2', String(to.x));
-    line.setAttribute('y2', String(to.y));
-    line.setAttribute('stroke', '#6b7280');
-    line.setAttribute('stroke-width', '2');
-    for (let i = 0; i < happyPathMarking.nodes.length - 1; i += 1) {
-      if (happyPathMarking.nodes[i] === edge.from && happyPathMarking.nodes[i + 1] === edge.to) {
-        line.setAttribute('stroke', '#0b84f3');
-        line.setAttribute('stroke-width', '4');
-        break;
-      }
-    }
-    line.setAttribute('marker-end', 'url(#setupArrow)');
-    svg.appendChild(line);
+    _drawSetupEdge(svg, edge, from, to, happyPathMarking.nodes);
   }
 
   for (const node of graph.nodes || []) {
@@ -2735,34 +2779,7 @@ function drawSetupPathCanvas() {
     g.style.opacity = isAllowed || isSelected ? '1' : '0.36';
     g.addEventListener('click', () => onSetupPathNodeClick(node.id));
 
-    if (node.type === 'task') {
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', String(node.x - 52));
-      rect.setAttribute('y', String(node.y - 22));
-      rect.setAttribute('width', '104');
-      rect.setAttribute('height', '44');
-      rect.setAttribute('rx', '10');
-      rect.setAttribute('fill', '#edf3fb');
-      rect.setAttribute('stroke', isSelected ? '#0b84f3' : '#2a4d69');
-      rect.setAttribute('stroke-width', isSelected ? '3' : '2');
-      g.appendChild(rect);
-    } else if (node.type === 'gateway') {
-      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      poly.setAttribute('points', `${node.x},${node.y - 28} ${node.x + 34},${node.y} ${node.x},${node.y + 28} ${node.x - 34},${node.y}`);
-      poly.setAttribute('fill', '#fff7e8');
-      poly.setAttribute('stroke', isSelected ? '#0b84f3' : '#b9770e');
-      poly.setAttribute('stroke-width', isSelected ? '3' : '2');
-      g.appendChild(poly);
-    } else {
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', String(node.x));
-      c.setAttribute('cy', String(node.y));
-      c.setAttribute('r', '22');
-      c.setAttribute('fill', node.type === 'start' ? '#e8f7ef' : '#fdecec');
-      c.setAttribute('stroke', isSelected ? '#0b84f3' : (node.type === 'start' ? '#1b8a5a' : '#c0392b'));
-      c.setAttribute('stroke-width', isSelected ? '4' : (node.type === 'end' ? '3' : '2'));
-      g.appendChild(c);
-    }
+    _drawSetupNodeShape(g, node, selectedIndex, isAllowed);
 
     const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     txt.textContent = isSelected ? `${node.label} (${selectedIndex + 1})` : node.label;
@@ -2863,6 +2880,140 @@ function nodeById(id) {
   return graph.nodes.find((n) => n.id === id);
 }
 
+function _drawEdgeWithLabel(svg, edge, from, to) {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', String(from.x));
+  line.setAttribute('y1', String(from.y));
+  line.setAttribute('x2', String(to.x));
+  line.setAttribute('y2', String(to.y));
+  line.setAttribute('stroke', edge.isLoopReturn ? '#f39c12' : edge.isErrorPath ? '#c0392b' : '#5d6d7e');
+  line.setAttribute('stroke-width', '2.2');
+  if (happyPathMarking.active) {
+    for (let i = 0; i < happyPathMarking.nodes.length - 1; i += 1) {
+      if (happyPathMarking.nodes[i] === edge.from && happyPathMarking.nodes[i + 1] === edge.to) {
+        line.setAttribute('stroke', '#0b84f3');
+        line.setAttribute('stroke-width', '4');
+        break;
+      }
+    }
+  }
+  line.setAttribute('marker-end', 'url(#arrow)');
+  svg.appendChild(line);
+
+  if (edge.probability !== undefined) {
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    t.textContent = `${edge.probability}%`;
+    t.setAttribute('x', String((from.x + to.x) / 2));
+    t.setAttribute('y', String((from.y + to.y) / 2 - 6));
+    t.setAttribute('fill', '#223');
+    t.setAttribute('font-size', '12');
+    svg.appendChild(t);
+  }
+}
+
+function _drawNodeShape(g, node, isSelected) {
+  if (node.type === 'task') {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', String(node.x - 55));
+    rect.setAttribute('y', String(node.y - 24));
+    rect.setAttribute('width', '110');
+    rect.setAttribute('height', '48');
+    rect.setAttribute('rx', '10');
+    rect.setAttribute('fill', node.automated ? '#e8f7ef' : '#edf3fb');
+    rect.setAttribute('stroke', node.automated ? '#1b8a5a' : '#2a4d69');
+    if (isSelected) {
+      rect.setAttribute('stroke', '#0b84f3');
+      rect.setAttribute('stroke-width', '3');
+    }
+    g.appendChild(rect);
+  } else if (node.type === 'timer') {
+    const cOuter = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    cOuter.setAttribute('cx', String(node.x));
+    cOuter.setAttribute('cy', String(node.y));
+    cOuter.setAttribute('r', '26');
+    cOuter.setAttribute('fill', '#fef9e7');
+    cOuter.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
+    cOuter.setAttribute('stroke-width', isSelected ? '4' : '2.5');
+    g.appendChild(cOuter);
+    const cInner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    cInner.setAttribute('cx', String(node.x));
+    cInner.setAttribute('cy', String(node.y));
+    cInner.setAttribute('r', '20');
+    cInner.setAttribute('fill', 'none');
+    cInner.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
+    cInner.setAttribute('stroke-width', '1.5');
+    g.appendChild(cInner);
+    const clock = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    clock.textContent = '⏱';
+    clock.setAttribute('x', String(node.x));
+    clock.setAttribute('y', String(node.y - 8));
+    clock.setAttribute('font-size', '14');
+    clock.setAttribute('text-anchor', 'middle');
+    g.appendChild(clock);
+    const utLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    utLabel.textContent = node.timerUT > 0 ? `${node.timerUT} UT` : '? UT';
+    utLabel.setAttribute('x', String(node.x));
+    utLabel.setAttribute('y', String(node.y + 10));
+    utLabel.setAttribute('font-size', '9');
+    utLabel.setAttribute('text-anchor', 'middle');
+    utLabel.setAttribute('fill', '#b7950b');
+    g.appendChild(utLabel);
+  } else if (node.type === 'gateway') {
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', `${node.x},${node.y - 30} ${node.x + 38},${node.y} ${node.x},${node.y + 30} ${node.x - 38},${node.y}`);
+    poly.setAttribute('fill', '#fff7e8');
+    poly.setAttribute('stroke', '#b9770e');
+    poly.style.cursor = 'pointer';
+    poly.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (!happyPathMarking.active) openGatewayEditor(node.id);
+    });
+    if (isSelected) {
+      poly.setAttribute('stroke', '#0b84f3');
+      poly.setAttribute('stroke-width', '3');
+    }
+    g.appendChild(poly);
+  } else {
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', String(node.x));
+    c.setAttribute('cy', String(node.y));
+    c.setAttribute('r', '24');
+    c.setAttribute('fill', node.type === 'start' ? '#e8f7ef' : '#fdecec');
+    c.setAttribute('stroke', node.type === 'start' ? '#1b8a5a' : '#c0392b');
+    c.setAttribute('stroke-width', node.type === 'end' ? '3' : '2');
+    if (isSelected) {
+      c.setAttribute('stroke', '#0b84f3');
+      c.setAttribute('stroke-width', '4');
+    }
+    g.appendChild(c);
+  }
+}
+
+function _drawNodeText(g, node, isSelected, selectedIndex) {
+  const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  txt.textContent = node.label;
+  txt.setAttribute('x', String(node.x));
+  txt.setAttribute('y', String(node.y + 4));
+  txt.setAttribute('font-size', '11');
+  txt.setAttribute('text-anchor', 'middle');
+  txt.setAttribute('fill', '#102a43');
+  if (isSelected) {
+    txt.textContent = `${node.label} (${selectedIndex + 1})`;
+    txt.setAttribute('font-weight', '700');
+  }
+  g.appendChild(txt);
+
+  const lc = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  lc.setAttribute('id', `loopCount-${node.id}`);
+  lc.setAttribute('x', String(node.x));
+  lc.setAttribute('y', String(node.y - 34));
+  lc.setAttribute('text-anchor', 'middle');
+  lc.setAttribute('font-size', '10');
+  lc.setAttribute('fill', '#b9770e');
+  lc.textContent = '';
+  g.appendChild(lc);
+}
+
 function drawGraph() {
   const svg = $('simCanvas');
   svg.innerHTML = '';
@@ -2884,35 +3035,7 @@ function drawGraph() {
     const from = nodeById(edge.from);
     const to = nodeById(edge.to);
     if (!from || !to) continue;
-
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', String(from.x));
-    line.setAttribute('y1', String(from.y));
-    line.setAttribute('x2', String(to.x));
-    line.setAttribute('y2', String(to.y));
-    line.setAttribute('stroke', edge.isLoopReturn ? '#f39c12' : edge.isErrorPath ? '#c0392b' : '#5d6d7e');
-    line.setAttribute('stroke-width', '2.2');
-    if (happyPathMarking.active) {
-      for (let i = 0; i < happyPathMarking.nodes.length - 1; i += 1) {
-        if (happyPathMarking.nodes[i] === edge.from && happyPathMarking.nodes[i + 1] === edge.to) {
-          line.setAttribute('stroke', '#0b84f3');
-          line.setAttribute('stroke-width', '4');
-          break;
-        }
-      }
-    }
-    line.setAttribute('marker-end', 'url(#arrow)');
-    svg.appendChild(line);
-
-    if (edge.probability !== undefined) {
-      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      t.textContent = `${edge.probability}%`;
-      t.setAttribute('x', String((from.x + to.x) / 2));
-      t.setAttribute('y', String((from.y + to.y) / 2 - 6));
-      t.setAttribute('fill', '#223');
-      t.setAttribute('font-size', '12');
-      svg.appendChild(t);
-    }
+    _drawEdgeWithLabel(svg, edge, from, to);
   }
 
   for (const node of graph.nodes) {
@@ -2925,107 +3048,8 @@ function drawGraph() {
     g.style.opacity = canPick ? '1' : '0.42';
     g.addEventListener('click', () => onNodeClickedForHappyPath(node.id));
 
-    if (node.type === 'task') {
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', String(node.x - 55));
-      rect.setAttribute('y', String(node.y - 24));
-      rect.setAttribute('width', '110');
-      rect.setAttribute('height', '48');
-      rect.setAttribute('rx', '10');
-      rect.setAttribute('fill', node.automated ? '#e8f7ef' : '#edf3fb');
-      rect.setAttribute('stroke', node.automated ? '#1b8a5a' : '#2a4d69');
-      if (isSelected) {
-        rect.setAttribute('stroke', '#0b84f3');
-        rect.setAttribute('stroke-width', '3');
-      }
-      g.appendChild(rect);
-    } else if (node.type === 'timer') {
-      // Evento Timer: circulo duplo amarelo/ambar com icone de relogio
-      const cOuter = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      cOuter.setAttribute('cx', String(node.x));
-      cOuter.setAttribute('cy', String(node.y));
-      cOuter.setAttribute('r', '26');
-      cOuter.setAttribute('fill', '#fef9e7');
-      cOuter.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
-      cOuter.setAttribute('stroke-width', isSelected ? '4' : '2.5');
-      g.appendChild(cOuter);
-      const cInner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      cInner.setAttribute('cx', String(node.x));
-      cInner.setAttribute('cy', String(node.y));
-      cInner.setAttribute('r', '20');
-      cInner.setAttribute('fill', 'none');
-      cInner.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
-      cInner.setAttribute('stroke-width', '1.5');
-      g.appendChild(cInner);
-      // Icone de relogio (linhas de ponteiro)
-      const clock = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      clock.textContent = '⏱';
-      clock.setAttribute('x', String(node.x));
-      clock.setAttribute('y', String(node.y - 8));
-      clock.setAttribute('font-size', '14');
-      clock.setAttribute('text-anchor', 'middle');
-      g.appendChild(clock);
-      // Exibir UT configurada abaixo do icone
-      const utLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      utLabel.textContent = node.timerUT > 0 ? `${node.timerUT} UT` : '? UT';
-      utLabel.setAttribute('x', String(node.x));
-      utLabel.setAttribute('y', String(node.y + 10));
-      utLabel.setAttribute('font-size', '9');
-      utLabel.setAttribute('text-anchor', 'middle');
-      utLabel.setAttribute('fill', '#b7950b');
-      g.appendChild(utLabel);
-    } else if (node.type === 'gateway') {
-      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      poly.setAttribute('points', `${node.x},${node.y - 30} ${node.x + 38},${node.y} ${node.x},${node.y + 30} ${node.x - 38},${node.y}`);
-      poly.setAttribute('fill', '#fff7e8');
-      poly.setAttribute('stroke', '#b9770e');
-      poly.style.cursor = 'pointer';
-      poly.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        if (!happyPathMarking.active) openGatewayEditor(node.id);
-      });
-      if (isSelected) {
-        poly.setAttribute('stroke', '#0b84f3');
-        poly.setAttribute('stroke-width', '3');
-      }
-      g.appendChild(poly);
-    } else {
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', String(node.x));
-      c.setAttribute('cy', String(node.y));
-      c.setAttribute('r', '24');
-      c.setAttribute('fill', node.type === 'start' ? '#e8f7ef' : '#fdecec');
-      c.setAttribute('stroke', node.type === 'start' ? '#1b8a5a' : '#c0392b');
-      c.setAttribute('stroke-width', node.type === 'end' ? '3' : '2');
-      if (isSelected) {
-        c.setAttribute('stroke', '#0b84f3');
-        c.setAttribute('stroke-width', '4');
-      }
-      g.appendChild(c);
-    }
-
-    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    txt.textContent = node.label;
-    txt.setAttribute('x', String(node.x));
-    txt.setAttribute('y', String(node.y + 4));
-    txt.setAttribute('font-size', '11');
-    txt.setAttribute('text-anchor', 'middle');
-    txt.setAttribute('fill', '#102a43');
-    if (isSelected) {
-      txt.textContent = `${node.label} (${selectedIndex + 1})`;
-      txt.setAttribute('font-weight', '700');
-    }
-    g.appendChild(txt);
-
-    const lc = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    lc.setAttribute('id', `loopCount-${node.id}`);
-    lc.setAttribute('x', String(node.x));
-    lc.setAttribute('y', String(node.y - 34));
-    lc.setAttribute('text-anchor', 'middle');
-    lc.setAttribute('font-size', '10');
-    lc.setAttribute('fill', '#b9770e');
-    lc.textContent = '';
-    g.appendChild(lc);
+    _drawNodeShape(g, node, isSelected);
+    _drawNodeText(g, node, isSelected, selectedIndex);
 
     svg.appendChild(g);
   }
@@ -3164,6 +3188,15 @@ function edgeBetween(a, b) {
   return graph.edges.find((e) => e.from === a && e.to === b);
 }
 
+function _calcCrossLanePenalty(from, to) {
+  const a = laneMetaOf(from);
+  const b = laneMetaOf(to);
+  if (a.laneId === b.laneId) return 0;
+  if (a.org && b.org && a.org !== b.org) return 40;
+  if (a.sector && b.sector && a.sector !== b.sector) return 20;
+  return 10;
+}
+
 function edgeDurationMinutes(fromId, toId) {
   const from = nodeById(fromId);
   const to = nodeById(toId);
@@ -3178,20 +3211,12 @@ function edgeDurationMinutes(fromId, toId) {
     toAutomated = true;
   }
 
-  // Duracao proporcional as UTs do Word: automatizada=0.5 UT, manual=10 UT, gateway=2.5 UT.
-  if (to.type === 'timer') mins += Number(to.timerUT || 0); // Espera do timer (semaforo)
+  if (to.type === 'timer') mins += Number(to.timerUT || 0);
   if (to.type === 'task') mins += toAutomated ? 0.5 : 10;
   if (!isIdealMode && to.type === 'gateway') mins += 2.5;
   if (!isIdealMode && from.type === 'task' && to.type === 'task' && !from.automated && !toAutomated) {
-    const a = laneMetaOf(from);
-    const b = laneMetaOf(to);
-    if (a.laneId !== b.laneId) {
-      if (a.org && b.org && a.org !== b.org) mins += 40;
-      else if (a.sector && b.sector && a.sector !== b.sector) mins += 20;
-      else mins += 10;
-    }
+    mins += _calcCrossLanePenalty(from, to);
   }
-  // Loop: duplica a duracao da aresta (tarefa reexecutada como se fosse a primeira vez).
   if (!isIdealMode && edge.isLoopReturn) mins *= 2;
   return Math.max(mins, 0.25);
 }
@@ -3221,6 +3246,59 @@ function drawTokens(tokens) {
     c.setAttribute('class', 'token');
     svg.appendChild(c);
   }
+}
+
+function _classifyToken(t, edge, to, fromNode) {
+  const toId = to?.id;
+  const toVisits = Number(t.nodeVisits?.[toId] || 0);
+  const toAutomated = Boolean(
+    to?.automated
+    || (simulationMode === 'ideal_auto' && confirmedAutoNodes.has(toId))
+  );
+  const isLoopRepeatPass = Boolean(edge?.isLoopReturn && toVisits >= 1);
+  const fromMeta = fromNode ? laneMetaOf(fromNode) : null;
+  const toMeta = to ? laneMetaOf(to) : null;
+  const isCriticalHandoff = Boolean(
+    !isLoopRepeatPass
+    && fromMeta?.org && toMeta?.org
+    && fromMeta.org !== toMeta.org
+  );
+
+  if (edge?.isErrorPath || (to?.type === 'end' && to?.endKind === 'error')) {
+    return { color: '#c0392b', speedFactor: 1 };
+  }
+  if (isCriticalHandoff) {
+    return { color: '#c0392b', speedFactor: 1 };
+  }
+  if (isLoopRepeatPass) {
+    return { color: '#f39c12', speedFactor: 3.0 };
+  }
+  if (to?.type === 'timer') {
+    return { color: '#f1c40f', speedFactor: 0.3 };
+  }
+  if (to?.type === 'task' && toAutomated) {
+    return { color: '#8e44ad', speedFactor: 1 };
+  }
+  return { color: '#1f6fb2', speedFactor: 1 };
+}
+
+function _finalizeTokenStep(t, edge, toId, loopCounters) {
+  if (t.progress < 1) return false;
+  t.step += 1;
+  t.progress = 0;
+
+  t.nodeVisits = t.nodeVisits || {};
+  t.nodeVisits[toId] = Number(t.nodeVisits[toId] || 0) + 1;
+
+  if (edge?.isLoopReturn) {
+    const current = loopCounters.get(toId) || 0;
+    loopCounters.set(toId, current + 1);
+    const el = document.getElementById(`loopCount-${toId}`);
+    if (el) el.textContent = `Execucoes acumuladas: ${current + 1}`;
+  }
+
+  if (!t.path[t.step + 1]) t.ended = true;
+  return true;
 }
 
 function animate(frameTimeMs = performance.now()) {
@@ -3255,67 +3333,19 @@ function animate(frameTimeMs = performance.now()) {
     const edge = edgeBetween(fromId, toId);
     const to = nodeById(toId);
     const dur = edgeDurationMinutes(fromId, toId);
-    const toVisits = Number(t.nodeVisits?.[toId] || 0);
 
     t.progress += (1 / Math.max(dur, 0.1)) * dt * t.speedFactor;
 
-    const toAutomated = Boolean(
-      to?.automated
-      || (simulationMode === 'ideal_auto' && confirmedAutoNodes.has(toId))
-    );
-    const isLoopRepeatPass = Boolean(edge?.isLoopReturn && toVisits >= 1);
-
-    // Detecta handoff critico: cruzamento entre orgaos diferentes.
     const fromNode = nodeById(fromId);
-    const fromMeta = fromNode ? laneMetaOf(fromNode) : null;
-    const toMeta = to ? laneMetaOf(to) : null;
-    const isCriticalHandoff = Boolean(
-      !isLoopRepeatPass
-      && fromMeta?.org && toMeta?.org
-      && fromMeta.org !== toMeta.org
-    );
+    const { color, speedFactor } = _classifyToken(t, edge, to, fromNode);
+    t.color = color;
+    t.speedFactor = speedFactor;
 
-    if (edge?.isErrorPath || (to?.type === 'end' && to?.endKind === 'error')) {
-      t.color = '#c0392b'; // Vermelho: erro
-      t.speedFactor = 1;
-    } else if (isCriticalHandoff) {
-      t.color = '#c0392b'; // Vermelho: handoff critico entre orgaos
-      t.speedFactor = 1;
-    } else if (isLoopRepeatPass) {
-      t.color = '#f39c12'; // Laranja: loop/retrabalho
-      t.speedFactor = 3.0; // Rápido: loop não deve atrasar o fim da simulação
-    } else if (to?.type === 'timer') {
-      t.color = '#f1c40f'; // Amarelo: semaoforo vermelho / evento timer (aguardando)
-      t.speedFactor = 0.3; // Bem lento — simula a espera do timer
-    } else if (to?.type === 'task' && toAutomated) {
-      t.color = '#8e44ad'; // Roxo: automacao RPA
-      t.speedFactor = 1;
-    } else {
-      t.color = '#1f6fb2'; // Azul: execucao normal
-      t.speedFactor = 1;
-    }
-
-    // Gargalo: se UT da aresta > 20, velocidade cai 50%.
     if (dur > 20) {
       t.speedFactor *= 0.5;
     }
 
-    if (t.progress >= 1) {
-      t.step += 1;
-      t.progress = 0;
-
-      t.nodeVisits = t.nodeVisits || {};
-      t.nodeVisits[toId] = Number(t.nodeVisits[toId] || 0) + 1;
-
-      if (edge?.isLoopReturn) {
-        const current = loopCounters.get(toId) || 0;
-        loopCounters.set(toId, current + 1);
-        const el = document.getElementById(`loopCount-${toId}`);
-        if (el) el.textContent = `Execucoes acumuladas: ${current + 1}`;
-      }
-
-      if (!t.path[t.step + 1]) t.ended = true;
-    }
+    _finalizeTokenStep(t, edge, toId, loopCounters);
   }
 
   drawTokens(globalThis.__tokens);
@@ -3328,9 +3358,7 @@ function animate(frameTimeMs = performance.now()) {
     animationLastTickMs = 0;
     simulationClockMs = 0;
     refreshLiveSimulationStatus(globalThis.__tokens);
-    // Armazena o TER real das 100 partículas para o dashboard usar
     _animatedTer = liveSimulationStatus.avgLeadTime > 0 ? liveSimulationStatus.avgLeadTime : null;
-    // Re-renderiza o dashboard com o TER real (igual ao contador ao vivo)
     updateDashboard();
     $('btnViewDashboard')?.classList.remove('hidden');
   }
@@ -3459,6 +3487,35 @@ function renderHypothesisTargets() {
   else help.textContent = 'Hipotese: reduzir atrito de handoff para mesma equipe.';
 }
 
+function _applyGatewayHypothesis(projectedGraph, target) {
+  const node = (projectedGraph.nodes || []).find((n) => n.id === target);
+  if (node) {
+    node.type = 'task';
+    node.automated = true;
+    node.label = `${node.label || node.id} (removido)`;
+  }
+}
+
+function _applyLoopHypothesis(projectedGraph, target) {
+  const edge = (projectedGraph.edges || []).find((e) => e.id === target);
+  if (edge) {
+    const fromId = edge.from;
+    edge.isLoopReturn = false;
+    const siblings = (projectedGraph.edges || []).filter((e) => e.from === fromId && e.id !== edge.id);
+    const removedProb = Number(edge.probability || 0);
+    edge.probability = 0;
+    if (siblings.length && removedProb > 0) {
+      const add = removedProb / siblings.length;
+      for (const s of siblings) s.probability = Number(s.probability || 0) + add;
+    }
+  }
+}
+
+function _applyHandoffHypothesis(projectedGraph, target) {
+  projectedGraph.handoffRules = projectedGraph.handoffRules || {};
+  projectedGraph.handoffRules[target] = 'same_team';
+}
+
 function runHypothesisSimulation() {
   if (!validateAndShow()) return;
   const type = $('hypothesisType')?.value || 'gateway';
@@ -3474,28 +3531,11 @@ function runHypothesisSimulation() {
   const projectedGraph = cloneLocal(graph);
 
   if (type === 'gateway') {
-    const node = (projectedGraph.nodes || []).find((n) => n.id === target);
-    if (node) {
-      node.type = 'task';
-      node.automated = true;
-      node.label = `${node.label || node.id} (removido)`;
-    }
+    _applyGatewayHypothesis(projectedGraph, target);
   } else if (type === 'loop') {
-    const edge = (projectedGraph.edges || []).find((e) => e.id === target);
-    if (edge) {
-      const fromId = edge.from;
-      edge.isLoopReturn = false;
-      const siblings = (projectedGraph.edges || []).filter((e) => e.from === fromId && e.id !== edge.id);
-      const removedProb = Number(edge.probability || 0);
-      edge.probability = 0;
-      if (siblings.length && removedProb > 0) {
-        const add = removedProb / siblings.length;
-        for (const s of siblings) s.probability = Number(s.probability || 0) + add;
-      }
-    }
+    _applyLoopHypothesis(projectedGraph, target);
   } else if (type === 'handoff') {
-    projectedGraph.handoffRules = projectedGraph.handoffRules || {};
-    projectedGraph.handoffRules[target] = 'same_team';
+    _applyHandoffHypothesis(projectedGraph, target);
   }
 
   const projected = calculateTEPAndIP(projectedGraph, 2500);
@@ -3519,6 +3559,37 @@ function runRoi() {
   $('roiResult').textContent = `${roi.note}\nIP atual: ${roi.base.ip.toFixed(2)}%\nIP projetado: ${roi.projected.ip.toFixed(2)}%\nDelta: ${roi.delta.toFixed(2)} p.p.`;
 }
 
+function _formatLeadTimeInformedLine(metrics) {
+  if (Number.isFinite(metrics.leadTimeInformed)) {
+    return `Lead time informado: ${metrics.leadTimeInformed.toFixed(2)} min | Proporcao: ${metrics.ipLeadInformedVsIdeal.toFixed(2)}%`;
+  }
+  return 'Lead time informado: nao informado (opcional)';
+}
+
+function _buildReportText(metrics) {
+  const top = metrics.ranking.slice(0, 5).map((r, i) => `${i + 1}. ${r.type} - ${r.key} (${r.total.toFixed(1)} min)`).join('\n');
+  return [
+    'RELATORIO AUTOMATICO - SIMULADOR DE PROCESSOS',
+    'BLOCO ESTIMADO',
+    `TEP ideal: ${metrics.tepIdeal.toFixed(2)} min | Base: ${metrics.ipIdeal.toFixed(2)}%`,
+    `TEP real: ${metrics.tepReal.toFixed(2)} min | Proporcao: ${metrics.ipRealVsIdeal.toFixed(2)}%`,
+    '',
+    'BLOCO INFORMADO PELO EXECUTOR',
+    `Lead time ideal (caminho feliz sem punicoes): ${metrics.leadIdeal.toFixed(2)} min | Base: ${metrics.ipLeadIdeal.toFixed(2)}%`,
+    _formatLeadTimeInformedLine(metrics),
+    '',
+    'BLOCO IDEAL AUTO',
+    `TEP ideal auto: ${metrics.tepIdealAuto.toFixed(2)} min | Indice(auto): ${metrics.ipIdealAuto.toFixed(2)}%`,
+    `Comparativo ideal auto vs ideal: ${metrics.ipAutoVsIdeal.toFixed(2)}%`,
+    `Automacoes confirmadas: ${metrics.autoCount}`,
+    '',
+    'Ranking de Atrito:',
+    top || 'Sem atritos relevantes.',
+    '',
+    'Observacao: Validar loops e handoffs para ganho de eficiencia.',
+  ].join('\n');
+}
+
 function generateReport() {
   if (!validateAndShow()) return;
   let metrics;
@@ -3531,30 +3602,7 @@ function generateReport() {
     return;
   }
 
-  const top = metrics.ranking.slice(0, 5).map((r, i) => `${i + 1}. ${r.type} - ${r.key} (${r.total.toFixed(1)} min)`).join('\n');
-
-  const text = [
-    'RELATORIO AUTOMATICO - SIMULADOR DE PROCESSOS',
-    'BLOCO ESTIMADO',
-    `TEP ideal: ${metrics.tepIdeal.toFixed(2)} min | Base: ${metrics.ipIdeal.toFixed(2)}%`,
-    `TEP real: ${metrics.tepReal.toFixed(2)} min | Proporcao: ${metrics.ipRealVsIdeal.toFixed(2)}%`,
-    '',
-    'BLOCO INFORMADO PELO EXECUTOR',
-    `Lead time ideal (caminho feliz sem punicoes): ${metrics.leadIdeal.toFixed(2)} min | Base: ${metrics.ipLeadIdeal.toFixed(2)}%`,
-    `Lead time informado: ${Number.isFinite(metrics.leadTimeInformed) ? `${metrics.leadTimeInformed.toFixed(2)} min | Proporcao: ${metrics.ipLeadInformedVsIdeal.toFixed(2)}%` : 'nao informado (opcional)'}`,
-    '',
-    'BLOCO IDEAL AUTO',
-    `TEP ideal auto: ${metrics.tepIdealAuto.toFixed(2)} min | Indice(auto): ${metrics.ipIdealAuto.toFixed(2)}%`,
-    `Comparativo ideal auto vs ideal: ${metrics.ipAutoVsIdeal.toFixed(2)}%`,
-    `Automacoes confirmadas: ${metrics.autoCount}`,
-    '',
-    'Ranking de Atrito:',
-    top || 'Sem atritos relevantes.',
-    '',
-    'Observacao: Validar loops e handoffs para ganho de eficiencia.',
-  ].join('\n');
-
-  $('reportBox').textContent = text;
+  $('reportBox').textContent = _buildReportText(metrics);
 }
 
 function formatExtractionSource(endpointUsed, file) {

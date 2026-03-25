@@ -234,6 +234,18 @@ function applyMissingLayout(graph) {
   });
 }
 
+function _resolveNodeType(ln, mappedType, el) {
+  if (mappedType === 'timer_candidate') {
+    const childNames = Array.from(el.querySelectorAll('*')).map((c) => localNameOf(c));
+    return childNames.includes('timerEventDefinition') ? 'timer' : 'task';
+  }
+  if (mappedType === 'start') {
+    const childNames = Array.from(el.querySelectorAll('*')).map((c) => localNameOf(c));
+    if (childNames.includes('timerEventDefinition')) return 'timer';
+  }
+  return mappedType;
+}
+
 function parseBpmnXml(doc) {
   const elements = allElements(doc);
   const nodes = [];
@@ -272,17 +284,7 @@ function parseBpmnXml(doc) {
     let mappedType = typeMap[ln] || (isTaskLike ? 'task' : '');
     if (!mappedType) continue;
 
-    // Resolver timer_candidate: e timer se tiver filho timerEventDefinition
-    if (mappedType === 'timer_candidate') {
-      const childNames = Array.from(el.querySelectorAll('*')).map((c) => localNameOf(c));
-      mappedType = childNames.includes('timerEventDefinition') ? 'timer' : 'task';
-    }
-
-    // startEvent com timerEventDefinition = timer de inicio (mantemos como start mas marcamos timer)
-    if (mappedType === 'start') {
-      const childNames = Array.from(el.querySelectorAll('*')).map((c) => localNameOf(c));
-      if (childNames.includes('timerEventDefinition')) mappedType = 'timer';
-    }
+    mappedType = _resolveNodeType(ln, mappedType, el);
 
     const label = attrOf(el, ['name', 'Name']) || id;
     const automated = ln === 'serviceTask' || ln === 'scriptTask' || ln === 'businessRuleTask';
@@ -368,6 +370,19 @@ function parseBpmnXml(doc) {
   return graph;
 }
 
+function _isXpdlTimerEvent(allChildren) {
+  return allChildren.some((c) => {
+    const ln = localNameOf(c);
+    if (ln === 'TimerEventDetail' || ln === 'TriggerTimer') return true;
+    if (ln === 'IntermediateEvent') {
+      const code = attrOf(c, ['EventTypeCode', 'eventTypeCode', 'Trigger', 'trigger', 'Type', 'type']) || '';
+      if (/timer/i.test(code)) return true;
+      if (Array.from(c.querySelectorAll('*')).some((gc) => localNameOf(gc) === 'TimerEventDetail')) return true;
+    }
+    return false;
+  });
+}
+
 function parseXpdlXml(doc) {
   const elements = allElements(doc);
   const participants = new Map();
@@ -402,19 +417,7 @@ function parseXpdlXml(doc) {
     if (allChildren.some((c) => localNameOf(c) === 'StartEvent')) type = 'start';
     if (allChildren.some((c) => localNameOf(c) === 'EndEvent')) type = 'end';
 
-    // Detectar Evento Timer: IntermediateEvent com EventTypeCode/Trigger="Timer", ou filho TimerEventDetail
-    const isTimerEvent = allChildren.some((c) => {
-      const ln = localNameOf(c);
-      if (ln === 'TimerEventDetail' || ln === 'TriggerTimer') return true;
-      if (ln === 'IntermediateEvent') {
-        const code = attrOf(c, ['EventTypeCode', 'eventTypeCode', 'Trigger', 'trigger', 'Type', 'type']) || '';
-        if (/timer/i.test(code)) return true;
-        // filho TimerEventDetail dentro do IntermediateEvent
-        if (Array.from(c.querySelectorAll('*')).some((gc) => localNameOf(gc) === 'TimerEventDetail')) return true;
-      }
-      return false;
-    });
-    if (isTimerEvent) type = 'timer';
+    if (_isXpdlTimerEvent(allChildren)) type = 'timer';
 
     const performerId = textOfFirstChildByLocalName(el, 'Performer');
     const laneRef = attrOf(el, ['Lane', 'LaneId', 'lane', 'laneId', 'Participant', 'participant']);
@@ -835,6 +838,42 @@ async function enrichActorsViaAi(endpoint, baseGraph, image) {
   return extractJson(text);
 }
 
+async function _attemptExtraction(endpoint, payload, base64, mimeType, retriedForQuota) {
+  const resp = await postWithTimeout(endpoint, payload, 45000);
+  const { raw, json } = await readResponseBodySafe(resp);
+  if (!resp.ok) {
+    const msg = resolveErrorMessage(resp.status, raw, json, 'Falha na extracao');
+    const retrySecs = parseRetryAfterSeconds(msg, raw, json);
+    if (!retriedForQuota && isQuotaOrRateLimitMessage(msg) && retrySecs > 0 && retrySecs <= 90) {
+      return { done: false, result: null, error: null, retryAfterMs: Math.ceil(retrySecs + 1) * 1000 };
+    }
+    throw new Error(msg);
+  }
+
+  const text = resolveAiText(raw, json);
+
+  let parsedText;
+  try {
+    parsedText = text;
+    extractJson(text);
+  } catch (parseErr) {
+    parsedText = await repairJsonViaAi(endpoint, text);
+  }
+
+  let graph = normalizeExtractedGraph(extractJson(parsedText));
+
+  if (needsActorEnrichment(graph)) {
+    try {
+      const actorPayload = await enrichActorsViaAi(endpoint, graph, { data: base64, mimeType });
+      graph = mergeActorData(graph, actorPayload);
+    } catch (e) {
+      // Optional enrichment should not block extraction flow.
+    }
+  }
+
+  return { done: true, result: { graph, rawText: parsedText, endpointUsed: endpoint }, error: null };
+}
+
 async function postWithTimeout(url, payload, timeoutMs = 30000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -874,51 +913,14 @@ export async function extractTopologyFromImage(file, aiEndpoint = '/api/ai') {
     let retriedForQuota = false;
     try {
       while (true) {
-        const resp = await postWithTimeout(endpoint, payload, 45000);
-        const { raw, json } = await readResponseBodySafe(resp);
-        if (!resp.ok) {
-          const msg = resolveErrorMessage(resp.status, raw, json, 'Falha na extracao');
-          const retrySecs = parseRetryAfterSeconds(msg, raw, json);
-
-          if (!retriedForQuota && isQuotaOrRateLimitMessage(msg) && retrySecs > 0 && retrySecs <= 90) {
-            retriedForQuota = true;
-            await sleep(Math.ceil(retrySecs + 1) * 1000);
-            continue;
-          }
-
-          throw new Error(msg);
+        const attempt = await _attemptExtraction(endpoint, payload, base64, mimeType, retriedForQuota);
+        if (attempt.retryAfterMs) {
+          retriedForQuota = true;
+          await sleep(attempt.retryAfterMs);
+          continue;
         }
-
-        const text = resolveAiText(raw, json);
-
-        try {
-          let graph = normalizeExtractedGraph(extractJson(text));
-
-          if (needsActorEnrichment(graph)) {
-            try {
-              const actorPayload = await enrichActorsViaAi(endpoint, graph, { data: base64, mimeType });
-              graph = mergeActorData(graph, actorPayload);
-            } catch (e) {
-              // Optional enrichment should not block extraction flow.
-            }
-          }
-
-          return { graph, rawText: text, endpointUsed: endpoint, imageDataUrl: dataUrl };
-        } catch (parseErr) {
-          // Second pass: ask the model to repair its own malformed JSON.
-          const repairedText = await repairJsonViaAi(endpoint, text);
-          let graph = normalizeExtractedGraph(extractJson(repairedText));
-
-          if (needsActorEnrichment(graph)) {
-            try {
-              const actorPayload = await enrichActorsViaAi(endpoint, graph, { data: base64, mimeType });
-              graph = mergeActorData(graph, actorPayload);
-            } catch (e) {
-              // Optional enrichment should not block extraction flow.
-            }
-          }
-
-          return { graph, rawText: repairedText, endpointUsed: endpoint, imageDataUrl: dataUrl };
+        if (attempt.done) {
+          return { ...attempt.result, imageDataUrl: dataUrl };
         }
       }
     } catch (e) {
