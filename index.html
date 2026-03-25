@@ -8841,11 +8841,19 @@ function applyGlobalParams() {
   }
   // Cores — sempre aplica a paleta do design system, sobrescrevendo valores antigos
   // Valores legados que devem ser migrados para o novo design system
-  const _LEGACY_DEFAULTS = { corPrimaria:'#1B3022', corSecundaria:'#003366', corAcento:'#003366', corDestaque:'#c07800', corFundo:'#F5F5F5', corBorda:'#c0cccc' };
+  const _LEGACY_DEFAULTS = {
+    corPrimaria:  ['#1B3022','#060832','#003366','#2C3E50','#1a237e'],
+    corSecundaria:['#003366','#5699f0','#1565c0','#0d47a1'],
+    corAcento:    ['#003366','#1a1273','#c07800'],
+    corDestaque:  ['#c07800','#681d28','#b71c1c'],
+    corFundo:     ['#F5F5F5','#f4f7fb','#eaf0fb'],
+    corBorda:     ['#c0cccc','#d5d5dd','#cfd8dc'],
+  };
   _PARAMS_COLORS.forEach(c => {
     // Se o valor salvo for um default legado (não customizado pelo usuário), usa o novo default
     const saved = gp[c.key];
-    const isLegacy = !saved || saved === _LEGACY_DEFAULTS[c.key];
+    const legacyList = _LEGACY_DEFAULTS[c.key] || [];
+    const isLegacy = !saved || legacyList.includes(saved);
     const val = isLegacy ? c.def : saved;
     document.documentElement.style.setProperty(c.css, val);
     // Persiste o novo valor para evitar regressão
@@ -9723,19 +9731,19 @@ function _renderCfgCardAlertas(title, desc) {
 
   const rows = srvs.map((s) => {
     const nome   = s.nome || '';
-    const email  = s.email ? `<span style="font-size:11px;color:#94a3b8;">${s.email}</span>` : '<span style="font-size:11px;color:#e2e8f0;">sem e-mail</span>';
+    const email  = s.email ? `<span style="font-size:11px;color:#94a3b8;">${escapeHtml(s.email)}</span>` : '<span style="font-size:11px;color:#e2e8f0;">sem e-mail</span>';
     const checks = _ALERT_TYPES.map(a => {
       const checked = isSubscribed(nome, a.id) ? 'checked' : '';
       const noEmail = !s.email;
       return `<td style="text-align:center;padding:4px 8px;">
         <input type="checkbox" ${checked} ${noEmail ? 'disabled title="Cadastre o e-mail do servidor primeiro"' : ''}
-          onchange="configToggleAlerta('${nome.replace(/'/g,"\\'")}','${a.id}',this.checked)"
+          data-nome="${escapeHtml(nome)}" data-alertid="${escapeHtml(a.id)}" onchange="configToggleAlerta(this.dataset.nome,this.dataset.alertid,this.checked)"
           style="width:16px;height:16px;cursor:${noEmail?'not-allowed':'pointer'};">
       </td>`;
     }).join('');
     return `<tr style="border-top:1px solid #f1f5f9;">
       <td style="padding:8px 10px;">
-        <div style="font-size:13px;font-weight:500;color:#1e293b;">${nome}</div>
+        <div style="font-size:13px;font-weight:500;color:#1e293b;">${escapeHtml(nome)}</div>
         ${email}
       </td>
       ${checks}
@@ -11546,14 +11554,14 @@ async function loadRequestsList() {
     return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <div>
-          <div style="font-size:13px;font-weight:700;color:#1B3022;">${r.name||r.email}</div>
-          <div style="font-size:11px;color:#64748b;">${r.email}</div>
-          ${r.motivo ? '<div style="font-size:12px;color:#475569;margin-top:6px;font-style:italic;">' + r.motivo + '</div>' : ''}
+          <div style="font-size:13px;font-weight:700;color:#1B3022;">${escapeHtml(r.name||r.email)}</div>
+          <div style="font-size:11px;color:#64748b;">${escapeHtml(r.email)}</div>
+          ${r.motivo ? '<div style="font-size:12px;color:#475569;margin-top:6px;font-style:italic;">' + escapeHtml(r.motivo) + '</div>' : ''}
           <div style="font-size:10px;color:#94a3b8;margin-top:4px;">${new Date(r.requested_at).toLocaleString('pt-BR')}</div>
         </div>
         <span style="font-size:11px;font-weight:700;color:${statusColor};white-space:nowrap;">${statusLabel}</span>
       </div>
-      ${isPending ? `<div style="display:flex;gap:8px;margin-top:10px;"><button onclick="handleRequest('${r.email}','${(r.name||'').replace(/'/g,"\\'")}','aprovado')" style="flex:1;background:#dcfce7;color:#16a34a;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">Aprovar</button><button onclick="handleRequest('${r.email}','${(r.name||'').replace(/'/g,"\\'")}','rejeitado')" style="flex:1;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">Rejeitar</button></div>` : ''}
+      ${isPending ? `<div style="display:flex;gap:8px;margin-top:10px;"><button data-email="${escapeHtml(r.email)}" data-name="${escapeHtml(r.name||'')}" data-action="aprovado" onclick="handleRequest(this.dataset.email,this.dataset.name,this.dataset.action)" style="flex:1;background:#dcfce7;color:#16a34a;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">Aprovar</button><button data-email="${escapeHtml(r.email)}" data-name="${escapeHtml(r.name||'')}" data-action="rejeitado" onclick="handleRequest(this.dataset.email,this.dataset.name,this.dataset.action)" style="flex:1;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">Rejeitar</button></div>` : ''}
     </div>`;
   }).join('');
 }
@@ -11587,7 +11595,6 @@ async function loadEditorList() {
   if(!data?.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:16px 0;">Nenhum usuário cadastrado.</div>'; return; }
   el.innerHTML = data.map(e => {
     const isSelf    = e.email === currentUserEmail;
-    const safeEmail = e.email.replace(/'/g,"\'");
     const canManage = isAdmin && !isSelf;
     const role = e.is_admin ? 'admin' : (e.role || 'editor');
     const roleLabel = { admin:'Admin', editor:'Editor', viewer:'Visualizador' };
@@ -11596,16 +11603,16 @@ async function loadEditorList() {
     return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:8px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:600;color:var(--cage-blue);">${e.name||e.email}${isSelf ? ' <span style="font-size:10px;color:#94a3b8;">(você)</span>' : ''}</div>
-          <div style="font-size:11px;color:var(--text-muted);">${e.email}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--cage-blue);">${escapeHtml(e.name||e.email)}${isSelf ? ' <span style="font-size:10px;color:#94a3b8;">(você)</span>' : ''}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(e.email)}</div>
         </div>
         <span style="background:${roleBg[role]};color:${roleColor[role]};border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap;">${roleLabel[role]}</span>
       </div>
       ${canManage ? `<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
-        <button onclick="setEditorRole('${safeEmail}','viewer')" ${role==='viewer'?'disabled style="opacity:.4;cursor:default;"':''} style="flex:1;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">👁 Visualizador</button>
-        <button onclick="setEditorRole('${safeEmail}','editor')" ${role==='editor'?'disabled style="opacity:.4;cursor:default;"':''} style="flex:1;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">✏️ Editor</button>
-        <button onclick="setEditorRole('${safeEmail}','admin')"  ${role==='admin' ?'disabled style="opacity:.4;cursor:default;"':''} style="flex:1;background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">⭐ Admin</button>
-        <button onclick="removeEditor('${safeEmail}')" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">✕ Remover</button>
+        <button data-email="${escapeHtml(e.email)}" data-role="viewer" onclick="setEditorRole(this.dataset.email,this.dataset.role)" ${role==='viewer'?'disabled style="opacity:.4;cursor:default;"':''} style="flex:1;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">👁 Visualizador</button>
+        <button data-email="${escapeHtml(e.email)}" data-role="editor" onclick="setEditorRole(this.dataset.email,this.dataset.role)" ${role==='editor'?'disabled style="opacity:.4;cursor:default;"':''} style="flex:1;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">✏️ Editor</button>
+        <button data-email="${escapeHtml(e.email)}" data-role="admin"  onclick="setEditorRole(this.dataset.email,this.dataset.role)" ${role==='admin' ?'disabled style="opacity:.4;cursor:default;"':''} style="flex:1;background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">⭐ Admin</button>
+        <button data-email="${escapeHtml(e.email)}" onclick="removeEditor(this.dataset.email)" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">✕ Remover</button>
       </div>` : ''}
     </div>`;
   }).join('');
@@ -11959,22 +11966,24 @@ function showSimulatorModule(show=true) {
 }
 
 function _simulatorInit(frame) {
-  if(frame._simInited) return;
-  frame._simInited = true;
+  if(frame.dataset.simInited) return;
+  frame.dataset.simInited = '1';
 
   frame.addEventListener('load', () => {
     _simulatorSendCurrentPop(frame);
   });
 
   window.addEventListener('message', (ev) => {
+    if(ev.origin !== window.location.origin) return; // reject cross-origin messages
     try {
       const msg = ev.data;
       if(!msg || typeof msg !== 'object') return;
 
       if(msg.type === 'SIMULATOR_SAVE') {
         const { graph, popKey, linkedProcess, simResults } = msg.payload || {};
-        if(!graph || !popKey) return;
-        if(!DATA[popKey]) return;
+        // Validate popKey to prevent prototype pollution
+        if(!graph || !popKey || typeof popKey !== 'string' || !/^[a-zA-Z0-9_:./-]+$/.test(popKey)) return;
+        if(!Object.prototype.hasOwnProperty.call(DATA, popKey)) return;
         DATA[popKey].simulatorGraph = graph;
         // Vincula processo da Arquitetura de Processos, se informado
         if(linkedProcess) DATA[popKey].linkedProcess = linkedProcess;
@@ -11991,7 +12000,7 @@ function _simulatorInit(frame) {
       if(msg.type === 'SIMULATOR_REQUEST_PROCESS_LIST') {
         try {
           const list = typeof arqGetData === 'function' ? arqGetData() : [];
-          ev.source?.postMessage({ type: 'SIGA_PROCESS_LIST', payload: { list } }, '*');
+          ev.source?.postMessage({ type: 'SIGA_PROCESS_LIST', payload: { list } }, window.location.origin);
         } catch(e2) { console.warn('[SIGA] arqGetData error:', e2); }
       }
     } catch(e) { console.warn('[SIGA] simulator message error:', e); }
@@ -12008,7 +12017,7 @@ function _simulatorSendCurrentPop(frame) {
     if(!savedGraph) return; // no saved graph; simulator starts fresh
     frame.contentWindow.postMessage(
       { type: 'SIGA_LOAD_GRAPH', payload: { graph: savedGraph, popName, popKey: p } },
-      '*'
+      window.location.origin
     );
   } catch(e) { console.warn('[SIGA] _simulatorSendCurrentPop error:', e); }
 }
@@ -12016,12 +12025,12 @@ function _simulatorSendCurrentPop(frame) {
 // ── Excalidraw integration ───────────────────────────────────
 function _excalidrawInit() {
   const frame = document.getElementById('excalidraw-frame');
-  if(frame._inited) return;
-  frame._inited = true;
+  if(frame.dataset.excalidrawInited) return;
+  frame.dataset.excalidrawInited = '1';
 
   window.addEventListener('message', ev => {
     try {
-      if(!ev.origin || !ev.origin.includes('excalidraw')) return;
+      if(ev.origin !== 'https://excalidraw.com') return;
       const msg = ev.data;
       if(!msg || typeof msg !== 'object') return;
       // Capture scene updates emitted by Excalidraw embed
@@ -21552,7 +21561,7 @@ Regras obrigatórias:
         showToast('IA não retornou código válido. Tente novamente.', 'warn');
       }
     } catch(e) {
-      showToast('Erro ao chamar IA: ' + (e.message || String(e)), 'warn');
+      showToast('Erro ao chamar IA: ' + escapeHtml(e.message || String(e)), 'warn');
     } finally {
       if (btn) { btn.innerHTML = origText; btn.disabled = false; }
     }

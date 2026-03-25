@@ -31,7 +31,7 @@ function parseProbability(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   const text = String(value ?? '').trim();
   if (!text) return 0;
-  const normalized = text.replace('%', '').replace(',', '.').trim();
+  const normalized = text.replace(/%/g, '').replace(',', '.').trim();
   const num = Number(normalized);
   return Number.isFinite(num) ? num : 0;
 }

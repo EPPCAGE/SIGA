@@ -22,6 +22,8 @@ pool:
 
 variables:
   NODE_VERSION: '20.x'
+  # SONAR_TOKEN: configurar como variável secreta no pipeline (não no YAML)
+  #   Pipelines > Edit > Variables > + Add > Name: SONAR_TOKEN | Secret: ✔
 
 steps:
   - checkout: self
@@ -60,3 +62,100 @@ steps:
       codeCoverageTool: Cobertura
       summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
       reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
+
+  # ── SonarCloud — PR Gate (bloqueia SOMENTE em BLOCKER/CRITICAL) ───────────
+  # Pré-requisito: SONAR_TOKEN configurado como variável secreta no pipeline.
+  #   Pipelines > Edit > Variables > + Add > Name: SONAR_TOKEN | Secret: ✔
+  - task: SonarCloudPrepare@3
+    displayName: "☁️ Sonar — preparar análise"
+    inputs:
+      SonarCloud: "sonarcloud-gesproc"
+      organization: "sefaz-rs"
+      scannerMode: "CLI"
+      configMode: "file"
+      configFile: "sonar-project.properties"
+      extraProperties: |
+        sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+
+  - task: SonarCloudAnalyze@3
+    displayName: "☁️ Sonar — executar scanner"
+
+  # Aguarda análise e bloqueia SOMENTE em BLOCKER/CRITICAL
+  # Substitui SonarCloudPublish para evitar "Succeeded with Issues" no job
+  - task: PowerShell@2
+    displayName: "🔍 Sonar — aguardar análise e bloquear em BLOCKER/CRITICAL"
+    condition: succeeded()
+    env:
+      SONAR_TOKEN_ENV: $(SONAR_TOKEN)   # secret vars exigem mapeamento via env:
+    inputs:
+      targetType: "inline"
+      script: |
+        $token   = $env:SONAR_TOKEN_ENV
+        $project = "sefaz-rs_gesproc"
+        $baseUrl = "https://sonarcloud.io"
+
+        if (-not $token) {
+          Write-Host "##vso[task.logissue type=warning]⚠️  SONAR_TOKEN não configurado — verificação ignorada."
+          exit 0
+        }
+
+        $headers = @{ Authorization = "Bearer $token" }
+
+        # Lê o ceTaskId gerado pelo scanner após SonarCloudAnalyze
+        $reportFile = ".scannerwork/report-task.txt"
+        if (-not (Test-Path $reportFile)) {
+          Write-Host "##vso[task.logissue type=warning]⚠️  report-task.txt não encontrado."
+          exit 0
+        }
+        $ceTaskId = (Get-Content $reportFile | Where-Object { $_ -match "^ceTaskId=" }) -replace "ceTaskId=",""
+        if (-not $ceTaskId) {
+          Write-Host "##vso[task.logissue type=warning]⚠️  ceTaskId não encontrado em report-task.txt."
+          exit 0
+        }
+
+        Write-Host "Aguardando análise SonarCloud (task: $ceTaskId)..."
+
+        # Polling até a análise completar — timeout 5 min
+        $deadline   = (Get-Date).AddSeconds(300)
+        $analysisId = $null
+        while ((Get-Date) -lt $deadline) {
+          $task   = Invoke-RestMethod -Uri "$baseUrl/api/ce/task?id=$ceTaskId" -Headers $headers
+          $status = $task.task.status
+          Write-Host "  status: $status"
+          if ($status -eq "SUCCESS")                    { $analysisId = $task.task.analysisId; break }
+          if ($status -in @("FAILED","CANCELLED"))      { Write-Host "##vso[task.logissue type=warning]Análise SonarCloud $status."; exit 0 }
+          Start-Sleep -Seconds 10
+        }
+
+        if (-not $analysisId) {
+          Write-Host "##vso[task.logissue type=warning]⚠️  Timeout aguardando análise SonarCloud."
+          exit 0
+        }
+        Write-Host "Análise concluída: $analysisId"
+
+        # Contexto de PR ou branch
+        $prId = "$(System.PullRequest.PullRequestId)"
+        if ($prId -and $prId -notmatch '^\$\(') {
+          $scope = "&pullRequest=$prId"
+          $link  = "$baseUrl/project/issues?id=$project&pullRequest=$prId&severities=BLOCKER%2CCRITICAL"
+        } else {
+          $branch = [uri]::EscapeDataString("$(Build.SourceBranchName)")
+          $scope  = "&branch=$branch"
+          $link   = "$baseUrl/project/issues?id=$project&branch=$branch&severities=BLOCKER%2CCRITICAL&sinceLeakPeriod=true"
+        }
+
+        # Busca novas issues BLOCKER ou CRITICAL no código novo (leak period)
+        $uri  = "$baseUrl/api/issues/search?projectKeys=$project$scope&severities=BLOCKER,CRITICAL&resolved=false&sinceLeakPeriod=true&ps=1"
+        $resp = Invoke-RestMethod -Uri $uri -Headers $headers
+        $total = [int]$resp.total
+
+        Write-Host "Novas issues BLOCKER/CRITICAL: $total"
+
+        if ($total -gt 0) {
+          Write-Host "##vso[task.logissue type=error]🚫 PR BLOQUEADO: $total nova(s) issue(s) BLOCKER/CRITICAL."
+          Write-Host "Corrija antes de mergear: $link"
+          exit 1
+        }
+
+        Write-Host "✅ Nenhuma issue BLOCKER/CRITICAL — PR aprovado pelo SonarCloud."
+        exit 0
