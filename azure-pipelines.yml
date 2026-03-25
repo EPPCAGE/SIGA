@@ -1,0 +1,57 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: siga-secrets   # grupo criado em Pipelines > Library com SIGA_AZURE_API_KEY
+
+stages:
+  - stage: Build
+    displayName: Build Docker Images
+    jobs:
+      - job: BuildAndPush
+        displayName: Build & Push
+        steps:
+          - task: Docker@2
+            displayName: Build backend
+            inputs:
+              command: build
+              dockerfile: docker/backend/Dockerfile
+              repository: siga-backend
+              tags: $(Build.BuildId)
+
+          - task: Docker@2
+            displayName: Build frontend
+            inputs:
+              command: build
+              dockerfile: docker/frontend/Dockerfile
+              repository: siga-frontend
+              tags: $(Build.BuildId)
+
+  - stage: Deploy
+    displayName: Deploy
+    dependsOn: Build
+    jobs:
+      - deployment: DeployCompose
+        displayName: Docker Compose Up
+        environment: producao
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    cat > .env <<EOF
+                    SIGA_AI_PROVIDER=azure
+                    SIGA_AZURE_ENDPOINT=https://projeto-gesproc-cage.cognitiveservices.azure.com
+                    SIGA_AZURE_DEPLOYMENT=gpt-5.1-chat
+                    SIGA_AZURE_API_VERSION=2024-12-01-preview
+                    SIGA_AZURE_API_KEY=$(SIGA_AZURE_API_KEY)
+                    EOF
+                    docker compose up -d --build
+                  displayName: Deploy com docker compose
+                  env:
+                    SIGA_AZURE_API_KEY: $(SIGA_AZURE_API_KEY)

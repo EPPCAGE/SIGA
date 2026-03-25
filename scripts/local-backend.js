@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
+try { require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') }); } catch (_) { /* dotenv ausente em producao — vars vem do ambiente */ }
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
