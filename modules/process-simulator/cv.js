@@ -47,14 +47,14 @@ function allElements(doc) {
 function isTechnicalId(value) {
   const s = String(value || '').trim();
   if (!s) return false;
-  const normalized = s.replace(/[{}]/g, '');
+  const normalized = s.replaceAll(/[{}]/g, '');
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
     || /^[0-9a-f]{24,}$/i.test(s)
     || /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalized);
 }
 
 function normalizeLookupKey(value) {
-  return String(value || '').trim().replace(/[{}]/g, '').toLowerCase();
+  return String(value || '').trim().replaceAll(/[{}]/g, '').toLowerCase();
 }
 
 function participantDisplayName(participantEl, fallbackId) {
@@ -587,16 +587,16 @@ function repairJsonLike(text) {
 
   // Normalize smart quotes.
   s = s
-    .replace(/[\u201C\u201D]/g, '"')
-    .replace(/[\u2018\u2019]/g, "'");
+    .replaceAll(/[\u201C\u201D]/g, '"')
+    .replaceAll(/[\u2018\u2019]/g, "'");
 
   // Remove JS comments.
   s = s
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|\s)\/\/.*$/gm, '$1');
+    .replaceAll(/\/\*[\s\S]*?\*\//g, '')
+    .replaceAll(/(^|\s)\/\/.*$/gm, '$1');
 
   // Remove trailing commas before } or ].
-  s = s.replace(/,\s*([}\]])/g, '$1');
+  s = s.replaceAll(/,\s*([}\]])/g, '$1');
 
   // If response has extra text, keep only first object.
   const first = extractFirstObject(s);

@@ -85,10 +85,6 @@ body {
   display: block;
 }
 
-#simCanvas {
-  display: block;
-  width: 100%;
-}
 
 /* Live simulation overlay panel */
 .sim-live-panel {
@@ -239,6 +235,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 }
 
 #simCanvas {
+  display: block;
   width: 100%;
   height: 520px;
   border: 1px solid rgba(180, 201, 226, 0.45);

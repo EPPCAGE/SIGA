@@ -31,13 +31,13 @@ function parseProbability(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   const text = String(value ?? '').trim();
   if (!text) return 0;
-  const normalized = text.replace(/%/g, '').replace(',', '.').trim();
+  const normalized = text.replaceAll('%', '').replace(',', '.').trim();
   const num = Number(normalized);
   return Number.isFinite(num) ? num : 0;
 }
 
 function deepClone(value) {
-  return JSON.parse(JSON.stringify(value));
+  return structuredClone(value);
 }
 
 function buildMaps(graph) {
@@ -206,7 +206,7 @@ function pickEdge(edges) {
     acc += Number(e.probability || 0);
     if (roll <= acc) return e;
   }
-  return edges[edges.length - 1];
+  return edges.at(-1);
 }
 
 function pickEdgeWithLoopExitBoost(edges, visitCountOnCurrentNode) {
@@ -255,7 +255,7 @@ function pickEdgeWithLoopExitBoost(edges, visitCountOnCurrentNode) {
     acc += item.w;
     if (roll <= acc) return item.edge;
   }
-  return weighted[weighted.length - 1].edge;
+  return weighted.at(-1).edge;
 }
 
 function runSinglePath(graph, opts = {}) {
@@ -549,7 +549,7 @@ export function applyGatewayProbabilities(graph, gatewayId, probsByEdgeId) {
   const g = cloneGraph(graph);
   for (const edge of g.edges) {
     if (edge.from !== gatewayId) continue;
-    if (Object.prototype.hasOwnProperty.call(probsByEdgeId, edge.id)) {
+    if (Object.hasOwn(probsByEdgeId, edge.id)) {
       edge.probability = Number(probsByEdgeId[edge.id]);
     }
   }
