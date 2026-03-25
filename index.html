@@ -15146,7 +15146,7 @@ function renderChecklists(p) {
       <div class="ck-bar"><div class="ck-bar-fill" style="width:${pct}%"></div></div>
       <ul class="ck-items" style="margin-top:10px;">
         ${ck.items.map((it, ii) => `
-          <li class="ck-item" onclick="toggleChecklistItem('${p}',${ci},${ii})">
+          <li class="ck-item" onclick="toggleChecklistItem('${p}',${ci},${ii})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <input type="checkbox" ${it.checked ? 'checked' : ''} onclick="event.stopPropagation();toggleChecklistItem('${p}',${ci},${ii})">
             <span class="ck-item-text${it.checked ? ' done' : ''}">${escapeHtml(it.text)}</span>
           </li>`).join('')}
@@ -15623,17 +15623,17 @@ function arqRenderTable(filtered, all) {
         <span style="background:${nat.bg};color:${nat.color};font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;">${r.natureza||''}</span>
       </td>
       <td style="padding:10px 16px;color:#64748b;font-size:12px;">${r.area||''}</td>
-      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()">
+      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <button onclick="arqToggleCritico(${realIdx})"
           style="background:${critBg};color:${critColor};border:none;cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;transition:all .2s;"
           title="Clique para alternar">${critLabel}</button>
       </td>
-      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()">
+      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <button onclick="arqToggleMapeado(${realIdx})"
           style="background:${toggleBg};color:${toggleColor};border:none;cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;transition:all .2s;"
           title="Clique para alternar">${toggleLabel}</button>
       </td>
-      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()">
+      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         ${isEditor && !mapped ? `<button onclick="arqAbrirMapeamento(${realIdx})" style="background:#dcfce7;color:#166534;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Iniciar mapeamento deste processo">📝 Mapear</button>` : ''}
         ${isEditor ? `<button onclick="arqShowForm(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Editar">✏️</button>` : ''}
         ${isEditor ? `<button onclick="arqDelete(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Excluir">🗑</button>` : ''}
@@ -25371,11 +25371,11 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <thead>
           <tr style="background:#1B3022;color:white;">
-            <th class="arq-th-sort" data-col="macroprocesso" onclick="arqSortBy('macroprocesso')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;">Macroprocesso<span class="sort-arrow"> ↕</span></th>
-            <th class="arq-th-sort" data-col="processo" onclick="arqSortBy('processo')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;">Processo<span class="sort-arrow"> ↕</span></th>
-            <th class="arq-th-sort" data-col="subprocesso" onclick="arqSortBy('subprocesso')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;">Subprocesso<span class="sort-arrow"> ↕</span></th>
-            <th class="arq-th-sort" data-col="natureza" onclick="arqSortBy('natureza')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;">Natureza<span class="sort-arrow"> ↕</span></th>
-            <th class="arq-th-sort" data-col="area" onclick="arqSortBy('area')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;">Área<span class="sort-arrow"> ↕</span></th>
+            <th class="arq-th-sort" data-col="macroprocesso" onclick="arqSortBy('macroprocesso')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Macroprocesso<span class="sort-arrow"> ↕</span></th>
+            <th class="arq-th-sort" data-col="processo" onclick="arqSortBy('processo')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Processo<span class="sort-arrow"> ↕</span></th>
+            <th class="arq-th-sort" data-col="subprocesso" onclick="arqSortBy('subprocesso')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Subprocesso<span class="sort-arrow"> ↕</span></th>
+            <th class="arq-th-sort" data-col="natureza" onclick="arqSortBy('natureza')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Natureza<span class="sort-arrow"> ↕</span></th>
+            <th class="arq-th-sort" data-col="area" onclick="arqSortBy('area')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Área<span class="sort-arrow"> ↕</span></th>
             <th style="padding:12px 16px;text-align:center;font-weight:600;color:#fca5a5;">Crítico?</th>
             <th style="padding:12px 16px;text-align:center;font-weight:600;color:#6ee7b7;">Mapeado?</th>
             <th style="padding:12px 16px;text-align:center;font-weight:600;">Ações</th>
