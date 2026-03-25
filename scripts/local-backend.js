@@ -396,6 +396,18 @@ function isQuotaOrRateLimitError(error) {
     || msg.includes('retry in');
 }
 
+async function _handleAiFallback(error, parsed) {
+  if (isQuotaOrRateLimitError(error) && hasAzureProviderConfigured()) {
+    const text = await callAzureOpenAI(parsed);
+    return { text, providerUsed: 'azure-openai', fallbackFrom: 'ai', fallbackReason: 'quota_or_rate_limit' };
+  }
+  if (isQuotaOrRateLimitError(error) && hasGithubProviderConfigured()) {
+    const text = await callGithubModels(parsed);
+    return { text, providerUsed: 'github-models', fallbackFrom: 'ai', fallbackReason: 'quota_or_rate_limit' };
+  }
+  throw error;
+}
+
 async function callAiWithFallback(parsed, preferredProvider) {
   const provider = String(preferredProvider || 'ai').toLowerCase();
 
@@ -419,26 +431,26 @@ async function callAiWithFallback(parsed, preferredProvider) {
       fallbackReason: aiResult.fallbackReason || null
     };
   } catch (error) {
-    if (isQuotaOrRateLimitError(error) && hasAzureProviderConfigured()) {
-      const text = await callAzureOpenAI(parsed);
-      return {
-        text,
-        providerUsed: 'azure-openai',
-        fallbackFrom: 'ai',
-        fallbackReason: 'quota_or_rate_limit'
-      };
-    }
-    if (isQuotaOrRateLimitError(error) && hasGithubProviderConfigured()) {
-      const text = await callGithubModels(parsed);
-      return {
-        text,
-        providerUsed: 'github-models',
-        fallbackFrom: 'ai',
-        fallbackReason: 'quota_or_rate_limit'
-      };
-    }
-    throw error;
+    return _handleAiFallback(error, parsed);
   }
+}
+
+function _buildDataRecord(parsed, current) {
+  const hasValidData = parsed && typeof parsed.data === 'object' && parsed.data !== null;
+  const updatedBy = typeof parsed?.updated_by === 'string' && parsed.updated_by.trim()
+    ? parsed.updated_by.trim()
+    : 'local@admin';
+  const updatedByName = typeof parsed?.updated_by_name === 'string' && parsed.updated_by_name.trim()
+    ? parsed.updated_by_name.trim()
+    : 'Administrador Local';
+
+  return {
+    id: 1,
+    data: hasValidData ? parsed.data : current.data,
+    updated_at: new Date().toISOString(),
+    updated_by: updatedBy,
+    updated_by_name: updatedByName
+  };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -472,22 +484,7 @@ const server = http.createServer(async (req, res) => {
       const parsed = body ? JSON.parse(body) : {};
       const current = readRecord();
 
-      const next = {
-        id: 1,
-        data:
-          parsed && typeof parsed.data === 'object' && parsed.data !== null
-            ? parsed.data
-            : current.data,
-        updated_at: new Date().toISOString(),
-        updated_by:
-          typeof parsed?.updated_by === 'string' && parsed.updated_by.trim()
-            ? parsed.updated_by.trim()
-            : 'local@admin',
-        updated_by_name:
-          typeof parsed?.updated_by_name === 'string' && parsed.updated_by_name.trim()
-            ? parsed.updated_by_name.trim()
-            : 'Administrador Local'
-      };
+      const next = _buildDataRecord(parsed, current);
 
       writeRecord(next);
       sendJson(req, res, 200, { ok: true, row: next });
