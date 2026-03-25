@@ -22,6 +22,8 @@ pool:
 
 variables:
   NODE_VERSION: '20.x'
+  # SONAR_TOKEN: configurar como variável secreta no pipeline (não no YAML)
+  #   Pipelines > Edit > Variables > + Add > Name: SONAR_TOKEN | Secret: ✔
 
 steps:
   - checkout: self
@@ -60,3 +62,75 @@ steps:
       codeCoverageTool: Cobertura
       summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
       reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
+
+  # ── SonarCloud — PR Gate (bloqueia SOMENTE em BLOCKER/CRITICAL) ───────────
+  # Pré-requisito: SONAR_TOKEN configurado como variável secreta no pipeline.
+  #   Pipelines > Edit > Variables > + Add > Name: SONAR_TOKEN | Secret: ✔
+  - task: SonarCloudPrepare@2
+    displayName: "☁️ Sonar — preparar análise"
+    inputs:
+      SonarCloud: "sonarcloud-gesproc"
+      organization: "sefaz-rs"
+      scannerMode: "CLI"
+      configMode: "file"
+      configFile: "sonar-project.properties"
+      extraProperties: |
+        sonar.branch.name=$(Build.SourceBranchName)
+        sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+
+  - task: SonarCloudAnalyze@2
+    displayName: "☁️ Sonar — executar scanner"
+
+  - task: SonarCloudPublish@2
+    displayName: "☁️ Sonar — aguardar Quality Gate"
+    continueOnError: true   # Não bloqueia aqui — severidade verificada abaixo
+    inputs:
+      pollingTimeoutSec: "300"
+
+  - task: PowerShell@2
+    displayName: "🔍 Sonar — bloquear apenas em BLOCKER/CRITICAL"
+    condition: always()
+    inputs:
+      targetType: "inline"
+      script: |
+        $token   = "$(SONAR_TOKEN)"
+        $project = "sefaz-rs_gesproc"
+        $branch  = "$(Build.SourceBranchName)"
+        $baseUrl = "https://sonarcloud.io"
+
+        # Se o token não foi configurado, emite aviso e segue sem bloquear
+        if (-not $token -or $token -eq '$(SONAR_TOKEN)') {
+          Write-Host "##vso[task.logissue type=warning]⚠️  SONAR_TOKEN não configurado — verificação de severidade ignorada."
+          exit 0
+        }
+
+        $headers = @{ Authorization = "Bearer $token" }
+
+        # Busca novas issues BLOCKER ou CRITICAL introduzidas neste branch (leak period)
+        $uri = "$baseUrl/api/issues/search" +
+               "?projectKeys=$project" +
+               "&branch=$branch" +
+               "&severities=BLOCKER,CRITICAL" +
+               "&resolved=false" +
+               "&sinceLeakPeriod=true" +
+               "&ps=1"
+
+        try {
+          $resp  = Invoke-RestMethod -Uri $uri -Headers $headers -Method Get
+          $total = [int]$resp.total
+        } catch {
+          Write-Host "##vso[task.logissue type=warning]⚠️  Não foi possível consultar a API do SonarCloud: $($_.Exception.Message)"
+          exit 0
+        }
+
+        Write-Host "SonarCloud — novas issues BLOCKER/CRITICAL no código novo: $total"
+
+        if ($total -gt 0) {
+          Write-Host "##vso[task.logissue type=error]🚫 PR BLOQUEADO: $total nova(s) issue(s) BLOCKER/CRITICAL encontrada(s)."
+          Write-Host "Acesse e corrija antes de mergear:"
+          Write-Host "$baseUrl/project/issues?id=$project&branch=$([uri]::EscapeDataString($branch))&severities=BLOCKER%2CCRITICAL&sinceLeakPeriod=true"
+          exit 1
+        }
+
+        Write-Host "✅ Nenhuma issue BLOCKER/CRITICAL no código novo — PR aprovado pelo SonarCloud."
+        exit 0
