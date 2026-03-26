@@ -530,109 +530,6 @@ async function normalizeAiInput(parsed) {
   };
 }
 
-function buildAiApiUrl(model) {
-  const rawUrl = String(process.env.SIGA_AI_API_URL || '').trim();
-  if (!rawUrl) {
-    return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-  }
-
-  if (rawUrl.includes('{model}')) {
-    return rawUrl.replace('{model}', encodeURIComponent(model));
-  }
-
-  if (/\/models\/[^:/]+:generateContent/i.test(rawUrl)) {
-    return rawUrl.replace(/\/models\/[^:/]+:generateContent/i, `/models/${model}:generateContent`);
-  }
-
-  return rawUrl;
-}
-
-function aiModelCandidates() {
-  const primary = String(process.env.SIGA_AI_MODEL || '').trim();
-  const fallbacksRaw = String(process.env.SIGA_AI_FALLBACK_MODELS || '');
-  const fallbacks = fallbacksRaw
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  return [...new Set([primary, ...fallbacks])];
-}
-
-async function callAiOnce(parsed, model) {
-  const AI_KEY = process.env.SIGA_AI_API_KEY || '';
-  const AI_API_URL = buildAiApiUrl(model);
-
-  if (!AI_KEY) {
-    const err = new Error('IA nao configurada — defina SIGA_AI_API_KEY no ambiente');
-    err.statusCode = 503;
-    err.provider = 'ai';
-    err.model = model;
-    throw err;
-  }
-
-  const input = await normalizeAiInput(parsed);
-  const parts = [{ text: input.prompt }];
-  if (input.image) {
-    parts.push({ inline_data: { mime_type: input.image.mimeType, data: input.image.data } });
-  }
-
-  const aiResp = await fetch(AI_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': AI_KEY },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts }],
-      generationConfig: {
-        maxOutputTokens: Math.min(Math.max(Number(parsed.maxTokens) || 1800, 128), 65536),
-        temperature: 0.2
-      }
-    })
-  });
-
-  const aiData = await aiResp.json().catch(() => ({}));
-  if (!aiResp.ok) {
-    const err = new Error(aiData?.error?.message || 'Erro na API de IA');
-    err.statusCode = aiResp.status;
-    err.provider = 'ai';
-    err.model = model;
-    err.retryAfter = Number(aiResp.headers.get('retry-after') || 0) || null;
-    throw err;
-  }
-
-  const partsOut = aiData?.candidates?.[0]?.content?.parts || [];
-  const text = partsOut
-    .map(p => (typeof p?.text === 'string' ? p.text : ''))
-    .join('\n')
-    .trim();
-
-  return { text, modelUsed: model };
-}
-
-async function callAi(parsed) {
-  const models = aiModelCandidates();
-  const primaryModel = models[0] || '';
-  let lastError = null;
-
-  for (let i = 0; i < models.length; i += 1) {
-    const model = models[i];
-    try {
-      const result = await callAiOnce(parsed, model);
-      if (i === 0) return result;
-      return {
-        ...result,
-        fallbackFromModel: primaryModel,
-        fallbackReason: 'quota_or_rate_limit'
-      };
-    } catch (error) {
-      lastError = error;
-      const canTryNext = i < models.length - 1;
-      if (!(canTryNext && isQuotaOrRateLimitError(error))) {
-        throw error;
-      }
-    }
-  }
-
-  throw lastError || new Error('Erro na API de IA');
-}
 
 async function callAzureOpenAI(parsed) {
   const AZURE_API_KEY    = process.env.SIGA_AZURE_API_KEY || '';
@@ -699,42 +596,24 @@ function isQuotaOrRateLimitError(error) {
     || msg.includes('retry in');
 }
 
-async function _handleAiFallback(error, parsed) {
-  if (isQuotaOrRateLimitError(error) && hasAzureProviderConfigured()) {
-    const text = await callAzureOpenAI(parsed);
-    return { text, providerUsed: 'azure-openai', fallbackFrom: 'ai', fallbackReason: 'quota_or_rate_limit' };
-  }
-  if (isQuotaOrRateLimitError(error) && hasGithubProviderConfigured()) {
-    const text = await callGithubModels(parsed);
-    return { text, providerUsed: 'github-models', fallbackFrom: 'ai', fallbackReason: 'quota_or_rate_limit' };
-  }
-  throw error;
-}
-
 async function callAiWithFallback(parsed, preferredProvider) {
-  const provider = String(preferredProvider || 'ai').toLowerCase();
-
-  if (provider === 'azure' || provider === 'azure-openai') {
-    const text = await callAzureOpenAI(parsed);
-    return { text, providerUsed: 'azure-openai' };
-  }
+  const provider = String(preferredProvider || 'azure').toLowerCase();
 
   if (provider === 'github' || provider === 'github-models') {
     const text = await callGithubModels(parsed);
     return { text, providerUsed: 'github-models' };
   }
 
+  // Default: Azure OpenAI; fallback to GitHub Models on quota/rate-limit
   try {
-    const aiResult = await callAi(parsed);
-    return {
-      text: aiResult.text,
-      providerUsed: 'ai',
-      modelUsed: aiResult.modelUsed,
-      fallbackFromModel: aiResult.fallbackFromModel || null,
-      fallbackReason: aiResult.fallbackReason || null
-    };
+    const text = await callAzureOpenAI(parsed);
+    return { text, providerUsed: 'azure-openai' };
   } catch (error) {
-    return _handleAiFallback(error, parsed);
+    if (isQuotaOrRateLimitError(error) && hasGithubProviderConfigured()) {
+      const text = await callGithubModels(parsed);
+      return { text, providerUsed: 'github-models', fallbackFrom: 'azure-openai', fallbackReason: 'quota_or_rate_limit' };
+    }
+    throw error;
   }
 }
 

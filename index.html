@@ -4559,56 +4559,52 @@ function saveToStorage() {
 
 function loadFromStorage() { return false; } // dados vêm exclusivamente do Supabase
 
+// ── harvestEditables — lookup tables e helpers (evita if/else-if longas) ──────
+const _META_FIELD_MAP = {
+  obj:'desc', proc_desc:'desc', entrada_resumo:'input', proc_input:'input',
+  saida_resumo:'output', proc_output:'output', el_nome:'elaborado',
+  proc_elaborado:'elaborado', proc_revisado:'revisado', proc_name:'name', proc_macro:'macro',
+};
+const _STEP_DIRECT_FIELDS = new Set([
+  'title','subtitle','responsible','note','duracao',
+  'sistemas','documentos','pontosMelhoria','observacoes',
+]);
+function _applyRoleField(roles, rMatch, val) {
+  const ri = parseInt(rMatch[1]), type = rMatch[2], di = parseInt(rMatch[3]);
+  if(!roles[ri]) return;
+  if(type === 'n') roles[ri].name = val;
+  else if(type === 't') roles[ri].title = val;
+  else if(type === 'd' && !isNaN(di)) roles[ri].duties[di] = val;
+}
+
 function harvestEditables() {
   // Read contenteditable fields back into DATA
   document.querySelectorAll('[data-key]').forEach(el => {
     const [p, field] = el.dataset.key.split(':');
     if(!p || !field || !DATA[p]) return;
     const val = el.innerText?.trim() || el.textContent?.trim() || '';
-    // Map known fields to DATA structure
     const meta = DATA[p].meta || (DATA[p].meta = {});
-    if(field === 'obj' || field === 'proc_desc') meta.desc = val;
-    else if(field === 'entrada_resumo' || field === 'proc_input') meta.input = val;
-    else if(field === 'saida_resumo' || field === 'proc_output') meta.output = val;
-    else if(field === 'el_nome' || field === 'proc_elaborado') meta.elaborado = val;
-    else if(field === 'proc_revisado') meta.revisado = val;
-    else if(field === 'proc_name') meta.name = val;
-    else if(field === 'proc_macro') meta.macro = val;
-    // Roles
+    if(_META_FIELD_MAP[field]) meta[_META_FIELD_MAP[field]] = val;
     const rMatch = field.match(/^r(\d+)([ntd])(\d*)$/);
-    if(rMatch && DATA[p].roles) {
-      const ri = parseInt(rMatch[1]), type = rMatch[2], di = parseInt(rMatch[3]);
-      if(DATA[p].roles[ri]) {
-        if(type === 'n') DATA[p].roles[ri].name = val;
-        else if(type === 't') DATA[p].roles[ri].title = val;
-        else if(type === 'd' && !isNaN(di)) DATA[p].roles[ri].duties[di] = val;
-      }
-    }
+    if(rMatch && DATA[p].roles) _applyRoleField(DATA[p].roles, rMatch, val);
   });
 
   // Capturar campos de etapas (data-sf) que são persistidos via blur events
   document.querySelectorAll('[data-sf]').forEach(el => {
-    const pp = el.dataset.sp;
-    const si = parseInt(el.dataset.si);
-    const sf = el.dataset.sf;
+    const pp = el.dataset.sp, si = parseInt(el.dataset.si), sf = el.dataset.sf;
     if(!pp || isNaN(si) || !sf || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
     const val = el.innerText?.replace(/^👤\s*/, '').trim() || '';
     const step = DATA[pp].steps[si];
     if(sf.startsWith('tobe_')) {
       if(!step.tobe) step.tobe = {};
       step.tobe[sf.slice(5)] = val;
+    } else if(_STEP_DIRECT_FIELDS.has(sf)) {
+      step[sf] = val;
+    } else if(sf === 'dlabel' && step.decision) {
+      step.decision.label = val;
+    } else if(sf === 'dtext' && step.decision) {
+      step.decision.text = val;
     }
-    else if(sf === 'title')       step.title = val;
-    else if(sf === 'subtitle')    step.subtitle = val;
-    else if(sf === 'responsible') step.responsible = val;
-    else if(sf === 'note')        step.note = val;
-    else if(sf === 'duracao')         step.duracao = val;
-    else if(sf === 'sistemas')        step.sistemas = val;
-    else if(sf === 'documentos')      step.documentos = val;
-    else if(sf === 'pontosMelhoria')  step.pontosMelhoria = val;
-    else if(sf === 'observacoes')     step.observacoes = val;
-    else if(sf === 'dlabel' && step.decision) step.decision.label = val;
-    else if(sf === 'dtext'  && step.decision) step.decision.text  = val;
   });
 
   // Capturar métricas de volume/ciclo
@@ -4721,26 +4717,45 @@ function popDomId(pop) {
   return pop;
 }
 
-function switchPop(pop, tabEl) {
-  _navPush();
-  // Esconder galeria se estiver ativa
-  const gal = document.getElementById('pop-gallery-panel');
-  if(gal) gal.classList.remove('active');
-  // Se estava visualizando versão antiga do pop anterior, restaurar versão atual antes de trocar
+// ── switchPop helpers ─────────────────────────────────────────────────────────
+/** Restaura a versão atual do pop anterior caso estivesse em modo de visualização histórica. */
+function _restorePrevPopVersion() {
   try {
     const prevPrefix = popPrefix(currentPop);
     const prevD = DATA[prevPrefix];
-    if(prevD && prevD._viewingVersion) {
-      const curSnap = prevD._viewBuf;
-      if(curSnap) { VERSIONABLE_FIELDS.forEach(f => { if(curSnap[f] !== undefined) prevD[f] = curSnap[f]; }); delete prevD._viewBuf; }
-      delete prevD._viewingVersion;
-      renderVersionBadge(prevPrefix);
+    if(!prevD || !prevD._viewingVersion) return;
+    const curSnap = prevD._viewBuf;
+    if(curSnap) {
+      VERSIONABLE_FIELDS.forEach(f => { if(curSnap[f] !== undefined) prevD[f] = curSnap[f]; });
+      delete prevD._viewBuf;
     }
+    delete prevD._viewingVersion;
+    renderVersionBadge(prevPrefix);
   } catch(e) { console.warn('[siga]', e); }
+}
+
+/** Dispara todos os renders necessários após a troca de pop. */
+function _renderAfterSwitch(prefix) {
+  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
+  if(currentSection === 'maturidade') try { matRender(prefix); } catch(e) { console.warn('[siga]', e); }
+  _syncNovaVersaoBtn();
+  try { renderFicha(prefix); }       catch(e) { console.warn('[siga]', e); }
+  try { renderSipoc(prefix); }       catch(e) { console.warn('[siga]', e); }
+  try { renderFlowPreview(prefix); } catch(e) { console.warn('[siga]', e); }
+}
+
+function switchPop(pop, tabEl) {
+  _navPush();
+  _restorePrevPopVersion();
+
   const key    = popKey(pop);
   const domId  = popDomId(pop);
   const prefix = popPrefix(pop);
   currentPop = key;
+
+  // Esconder galeria se estiver ativa
+  const gal = document.getElementById('pop-gallery-panel');
+  if(gal) gal.classList.remove('active');
 
   // Garantir que nav-tabs e barra de processo fiquem visíveis ao entrar num POP
   const _navTabs = document.querySelector('.nav-tabs');
@@ -4762,7 +4777,7 @@ function switchPop(pop, tabEl) {
   const target = document.getElementById(prefix + '-visao-geral');
   if(target) target.classList.add('active');
 
-  // Close BI / PAT modules when switching pops
+  // Fechar módulos BI / PAT ao trocar de POP
   const _biMod = document.getElementById('bi-module');
   if(_biMod) _biMod.style.display = 'none';
   const _patMod = document.getElementById('pat-module');
@@ -4772,25 +4787,37 @@ function switchPop(pop, tabEl) {
   const labelEl = document.getElementById('current-pop-label');
   if(labelEl) {
     const names = { d:'Tratar Denuncias', r:'Tratar Representacoes' };
-    labelEl.textContent = names[key] || (DATA[key] && DATA[key].meta && DATA[key].meta.name) || key;
+    labelEl.textContent = names[key] || DATA[key]?.meta?.name || key;
   }
 
   if(editMode) enableEditables(true);
-  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
-  if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { console.warn('[siga]', e); }
-  _syncNovaVersaoBtn();
-  try { renderFicha(prefix); }       catch(e) { console.warn('[siga]', e); }
-  try { renderSipoc(prefix); }       catch(e) { console.warn('[siga]', e); }
-  try { renderFlowPreview(prefix); } catch(e) { console.warn('[siga]', e); }
+  _renderAfterSwitch(prefix);
 }
 
 // ═══ NAV ══════════════════════════════════════
+/** Renderiza a aba de maturidade e mostra erro no corpo caso falhe. */
+function _renderMaturidade(prefix) {
+  try {
+    matRender(prefix);
+  } catch(e) {
+    const c = document.getElementById(prefix + '-maturidade-body');
+    if(!c) return;
+    const errorEl = document.createElement('p');
+    errorEl.style.color   = 'red';
+    errorEl.style.padding = '20px';
+    errorEl.textContent   = 'Erro ao renderizar: ' + e.message;
+    c.innerHTML = '';
+    c.appendChild(errorEl);
+  }
+}
+
 function showSection(id, tab, silent) {
   currentSection = id;
-  // Esconder BPMN e módulos IA se estiverem visíveis (voltando de outra aba)
-  ['bpmn-module','fd-module','ai-module','ai-relatorio-module'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.style.display = 'none';
-  });
+  // Esconder BPMN e módulos IA se estiverem visíveis — usa filter para evitar if dentro de lambda
+  ['bpmn-module','fd-module','ai-module','ai-relatorio-module']
+    .map(mid => document.getElementById(mid))
+    .filter(Boolean)
+    .forEach(el => { el.style.display = 'none'; });
 
   // Garantir que o pop atual está ativo
   document.querySelectorAll('.pop-content').forEach(p => p.classList.remove('active'));
@@ -4805,9 +4832,9 @@ function showSection(id, tab, silent) {
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
   }
-  if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
-  if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) { console.warn('[siga]', e); }
-  if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) { const errorEl = document.createElement('p'); errorEl.style.color = 'red'; errorEl.style.padding = '20px'; errorEl.textContent = 'Erro ao renderizar: ' + e.message; c.innerHTML = ''; c.appendChild(errorEl); } } }
+  if(id === 'fluxo')      renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
+  if(id === 'checklists') try { renderChecklists(popPrefix(currentPop)); } catch(e) { console.warn('[siga]', e); }
+  if(id === 'maturidade') _renderMaturidade(popPrefix(currentPop));
   if(!silent && editMode) enableEditables(true);
   try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
 }
@@ -4816,6 +4843,20 @@ function showSection(id, tab, silent) {
 function _syncNovaVersaoBtn() {
   const btn = document.getElementById('nova-versao-btn');
   if(btn) btn.style.display = currentPop ? '' : 'none';
+}
+
+/** Notifica o usuário sobre a mudança de modo edição (apenas quando não forçado). */
+function _notifyEditModeChange(forceState) {
+  if(forceState !== undefined) return;
+  if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar', 'warn');
+  else showToast('Modo visualização ativo');
+}
+
+/** Auto-salva ao sair do modo edição se houver alterações pendentes. */
+function _autoSaveOnExitEdit() {
+  if(editMode || !currentUser || !window._appInitialized) return;
+  const unsavedDot = document.getElementById('unsaved-dot');
+  if(unsavedDot && unsavedDot.style.display === 'inline-block') saveToCloud();
 }
 
 function toggleEditMode(forceState) {
@@ -4840,21 +4881,10 @@ function toggleEditMode(forceState) {
   if(editMode) { _takeEditSnapshot(); }
   else { _undoStack = []; _undoShadow = null; _updateUndoBtn(); }
   try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
-  // Persistir estado do modo edição entre recarregamentos
   try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) { console.warn('[siga]', e); }
   try { _dndInit(editMode); } catch(e) { console.warn('[siga]', e); }
-  /* notifica o usuario do erro */
-  if(forceState === undefined) {
-    if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar','warn');
-    else showToast('Modo visualização ativo');
-  }
-  // Ao sair do modo edição, salvar se houver alterações pendentes
-  if(!editMode && currentUser && window._appInitialized) {
-    const unsavedDot = document.getElementById('unsaved-dot');
-    if(unsavedDot && unsavedDot.style.display === 'inline-block') {
-      saveToCloud();
-    }
-  }
+  _notifyEditModeChange(forceState);
+  _autoSaveOnExitEdit();
   _syncNovaVersaoBtn();
 }
 
@@ -5022,6 +5052,16 @@ function markChanged(quick=false, explicit=false) {
   }, quick ? 1500 : 3000);
 }
 
+/** Re-renderiza o POP atual após uma operação de undo. */
+function _rerenderCurrentPop() {
+  if(!currentPop) return;
+  const p = popPrefix(currentPop);
+  if(!DATA[p]) return;
+  try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) { console.warn('[siga]', e); }
+  try { renderTracker(p); } catch(e) { console.warn('[siga]', e); }
+  try { renderMetrics(p); } catch(e) { console.warn('[siga]', e); }
+}
+
 function undoLastChange() {
   if(!_undoStack.length) { showToast('Nada para desfazer.', 'warn'); return; }
   const prev = _undoStack.pop();
@@ -5029,20 +5069,12 @@ function undoLastChange() {
   const prevKeys = new Set(Object.keys(prev));
   Object.keys(DATA).forEach(k => { if(!prevKeys.has(k)) delete DATA[k]; });
   Object.assign(DATA, prev);
-  // Update shadow to current restored state
   try { _undoShadow = _snapshotData(); } catch(e) { console.warn('[siga]', e); }
   _updateUndoBtn();
-  // Re-render current POP if open
-  if(currentPop) {
-    const p = popPrefix(currentPop);
-    if(DATA[p]) {
-      try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) { console.warn('[siga]', e); }
-      try { renderTracker(p); } catch(e) { console.warn('[siga]', e); }
-      try { renderMetrics(p); } catch(e) { console.warn('[siga]', e); }
-    }
-  }
-  const n = _undoStack.length;
-  const undoMsg = n > 0 ? `↩ Desfeito. Mais ${n} ${n === 1 ? 'passo' : 'passos'} disponíveis.` : '↩ Desfeito. Estado inicial restaurado.';
+  _rerenderCurrentPop();
+  const n     = _undoStack.length;
+  const label = n === 1 ? 'passo' : 'passos';
+  const undoMsg = n > 0 ? `↩ Desfeito. Mais ${n} ${label} disponíveis.` : '↩ Desfeito. Estado inicial restaurado.';
   showToast(undoMsg, 'success');
   document.getElementById('unsaved-dot').style.display = n > 0 ? 'inline-block' : 'none';
 }
@@ -5118,17 +5150,35 @@ function _sanitizeStep(s) {
   };
 }
 
+/** Garante que todos os campos array obrigatórios de um POP existam. */
+function _ensurePopArrays(d) {
+  if(!Array.isArray(d.steps))          d.steps = [];
+  if(!Array.isArray(d.roles))          d.roles = [];
+  if(!Array.isArray(d.indicators))     d.indicators = [];
+  if(!Array.isArray(d.faqs))           d.faqs = [];
+  if(Array.isArray(d.faq) && !d.faqs.length) { d.faqs = d.faq; } // migrar campo antigo
+  delete d.faq;
+  if(!Array.isArray(d.normas))         d.normas = [];
+  if(!Array.isArray(d.revisions))      d.revisions = [];
+  if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
+  if(!Array.isArray(d.checklists))     d.checklists = [];
+}
+
+/** Garante que todos os campos escalares obrigatórios de um POP existam. */
+function _ensurePopMeta(d) {
+  if(!d.ficha)          d.ficha = {};
+  if(!d.meta)           d.meta  = {};
+  if(!d.versionNum)     d.versionNum = 1;
+  if(!d.etapasProgress) d.etapasProgress = {};
+  if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
+  if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
+  if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
+}
+
 function sanitizePop(p) {
   const d = DATA[p];
   if(!d) return;
-  if(!Array.isArray(d.steps))      d.steps = [];
-  if(!Array.isArray(d.roles))      d.roles = [];
-  if(!Array.isArray(d.indicators)) d.indicators = [];
-  if(!Array.isArray(d.faqs))       d.faqs = [];
-  if(Array.isArray(d.faq) && !d.faqs.length) { d.faqs = d.faq; } // migrar campo antigo
-  delete d.faq;
-  if(!Array.isArray(d.normas))     d.normas = [];
-  if(!Array.isArray(d.revisions))  d.revisions = [];
+  _ensurePopArrays(d);
   d.revisions = d.revisions.map((r,i) => ({
     num:    r?.num    ?? (i+1),
     date:   r?.date   || '',
@@ -5139,23 +5189,9 @@ function sanitizePop(p) {
     const today = new Date().toLocaleDateString('pt-BR');
     d.revisions = [{ num:0, date: today, desc:'Versão inicial', author:'CAGE-RS' }];
   }
-  if(!d.ficha)                     d.ficha = {};
-  if(!d.meta)                      d.meta = {};
-  if(!d.versionNum)                d.versionNum = 1;
-  if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
-  if(!Array.isArray(d.checklists))     d.checklists = [];
-  if(!d.etapasProgress)                d.etapasProgress = {};
-  if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
-  if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
-  if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
-  // Sanitizar steps
+  _ensurePopMeta(d);
   d.steps = d.steps.map(s => _sanitizeStep(s));
-  // Sanitizar roles
-  d.roles = d.roles.map(r => ({
-    ...r,
-    duties: Array.isArray(r?.duties) ? r.duties : []
-  }));
-  // Corrigir currentStep fora do range
+  d.roles  = d.roles.map(r => ({ ...r, duties: Array.isArray(r?.duties) ? r.duties : [] }));
   if(typeof d.currentStep !== 'number') d.currentStep = 0;
   if(d.steps.length > 0 && d.currentStep >= d.steps.length) d.currentStep = 0;
 }
@@ -5459,90 +5495,99 @@ function buildNestedBranchesHTML(p, si, ai, bi, bai, branches, em) {
   return `<div class="decision-branches nested">${branchItems}</div>`;
 }
 
+/**
+ * Resolve todos os valores de exibição de uma etapa (AS IS vs TO BE).
+ * Centraliza as dezenas de ternários condicionais e alivia renderStep.
+ */
+function _resolveStepDisplay(s, tb, isTobe, em, i, stepsLen) {
+  return {
+    title:        isTobe ? (tb.title      || s.title)      : s.title,
+    subtitle:     isTobe ? (tb.subtitle   || s.subtitle || '') : (s.subtitle || ''),
+    resp:         isTobe ? (tb.responsible || s.responsible) : s.responsible,
+    respClass:    isTobe ? (tb.respClass   || s.respClass)   : s.respClass,
+    note:         isTobe ? (tb.note        || s.note || '')  : (s.note || ''),
+    titleSf:      isTobe ? 'tobe_title'       : 'title',
+    subtitleSf:   isTobe ? 'tobe_subtitle'    : 'subtitle',
+    respSf:       isTobe ? 'tobe_responsible' : 'responsible',
+    noteSf:       isTobe ? 'tobe_note'        : 'note',
+    actions:      isTobe ? (tb.actions || []) : (s.actions || []),
+    panelClass:   isTobe ? ' tobe-mode'       : '',
+    modeBadge:    isTobe
+      ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📋 TO BE</span>`
+      : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📌 AS IS</span>`,
+    ce:           em ? 'contenteditable="true"' : '',
+    actListClass: em ? 'edit-mode-list' : '',
+    prevDisabled: i === 0          ? 'disabled' : '',
+    nextDisabled: i === stepsLen-1 ? 'disabled' : '',
+  };
+}
+
+/** Atualiza os controles de navegação da barra inferior da etapa. */
+function _updateStepNavButtons(p, i) {
+  const _stepPos = document.getElementById(p+'-step-pos');
+  const _btnPrev = document.getElementById(p+'-btn-prev');
+  const _btnNext = document.getElementById(p+'-btn-next');
+  if(_stepPos) _stepPos.textContent = `Etapa ${i+1} de ${DATA[p].steps.length}`;
+  if(_btnPrev) _btnPrev.disabled = i === 0;
+  if(_btnNext) _btnNext.textContent = i === DATA[p].steps.length-1 ? '✅ Concluído' : 'Próximo →';
+}
+
 function renderStep(p, i) {
-  if(!DATA[p] || !Array.isArray(DATA[p].steps) || !DATA[p].steps[i]) {
-    return;
-  }
+  if(!DATA[p] || !Array.isArray(DATA[p].steps)) return;
+  if(!DATA[p].steps[i]) return;
   const s = DATA[p].steps[i];
   if(!s.tobe) s.tobe = {};
-  const tb = s.tobe;
-  const em = editMode;
-  const ce = em ? 'contenteditable="true"' : '';
   const isTobe = flowMode === 'tobe';
+  const em     = editMode;
+  const d      = _resolveStepDisplay(s, s.tobe, isTobe, em, i, DATA[p].steps.length);
 
-  // Display values: TO BE falls back to AS IS if TO BE field is empty
-  const dispTitle     = isTobe ? (tb.title      || s.title)      : s.title;
-  const dispSubtitle  = isTobe ? (tb.subtitle    !== undefined && tb.subtitle !== '' ? tb.subtitle : (s.subtitle||'')) : (s.subtitle||'');
-  const dispResp      = isTobe ? (tb.responsible || s.responsible) : s.responsible;
-  const dispRespClass = isTobe ? (tb.respClass   || s.respClass)   : s.respClass;
-  const dispNote      = isTobe ? (tb.note        || s.note || '')  : (s.note || '');
-
-  const titleSf    = isTobe ? 'tobe_title'       : 'title';
-  const subtitleSf = isTobe ? 'tobe_subtitle'    : 'subtitle';
-  const respSf     = isTobe ? 'tobe_responsible' : 'responsible';
-  const noteSf     = isTobe ? 'tobe_note'        : 'note';
-
-  // AS IS and TO BE have independent action lists
-  const currentActions = isTobe ? (tb.actions || []) : (s.actions || []);
-  const actHTML = currentActions.map((a, ai) => _buildStepActionHTML(p, i, ai, a, isTobe, em)).join('');
+  const actHTML = d.actions.map((a, ai) => _buildStepActionHTML(p, i, ai, a, isTobe, em)).join('');
   const decHTML = s.decision ? `
     <div class="decision-box"><span class="dicon">⚡</span><div class="dtext">
-      <strong ${ce} data-sp="${p}" data-si="${i}" data-sf="dlabel">${s.decision.label}:</strong><br>
-      <span ${ce} data-sp="${p}" data-si="${i}" data-sf="dtext">${s.decision.text}</span>
+      <strong ${d.ce} data-sp="${p}" data-si="${i}" data-sf="dlabel">${s.decision.label}:</strong><br>
+      <span ${d.ce} data-sp="${p}" data-si="${i}" data-sf="dtext">${s.decision.text}</span>
     </div></div>` : '';
-  const noteHTML = dispNote ? `
+  const noteHTML = d.note ? `
     <div class="note-box"><span>💬</span>
-      <span ${ce} data-sp="${p}" data-si="${i}" data-sf="${noteSf}">${dispNote}</span>
+      <span ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.noteSf}">${d.note}</span>
     </div>` : '';
-
-  // Mode badge shown in step header
-  const modeBadge = isTobe
-    ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📋 TO BE</span>`
-    : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📌 AS IS</span>`;
-
-
+  const copyBtn = isTobe
+    ? `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowTobeToAsis('${p}')" title="Copiar todas as etapas do TO BE para o AS IS">⎘ Copiar TO BE → AS IS</button>`
+    : `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}')" title="Copiar todas as etapas do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>`;
+  const flowLabel = isTobe ? 'TO BE' : 'AS IS';
 
   const container = document.getElementById(p+'-step-panel');
-  if(!container) { return; }
+  if(!container) return;
   container.innerHTML = `
-    <div class="step-panel${isTobe ? ' tobe-mode' : ''}">
+    <div class="step-panel${d.panelClass}">
       <div class="step-panel-head">
         <div class="step-number">${i+1}</div>
         <div class="step-info" style="flex:1;">
-          <h3 ${ce} data-sp="${p}" data-si="${i}" data-sf="${titleSf}">${dispTitle}</h3>
-          <p ${ce} data-sp="${p}" data-si="${i}" data-sf="${subtitleSf}">${dispSubtitle}</p>
+          <h3 ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.titleSf}">${d.title}</h3>
+          <p ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.subtitleSf}">${d.subtitle}</p>
         </div>
-        ${modeBadge}
-        <button class="move-step-btn" onclick="moveStep('${p}',${i},-1)" title="Mover etapa para cima" ${i===0?'disabled':''}>↑</button>
-        <button class="move-step-btn" onclick="moveStep('${p}',${i},1)" title="Mover etapa para baixo" ${i===DATA[p].steps.length-1?'disabled':''}>↓</button>
+        ${d.modeBadge}
+        <button class="move-step-btn" onclick="moveStep('${p}',${i},-1)" title="Mover etapa para cima" ${d.prevDisabled}>↑</button>
+        <button class="move-step-btn" onclick="moveStep('${p}',${i},1)" title="Mover etapa para baixo" ${d.nextDisabled}>↓</button>
         <button class="rm-step-btn" onclick="rmStep('${p}',${i})" title="Apagar esta etapa">🗑 Apagar etapa</button>
       </div>
       <div class="step-panel-body">
-        <div class="resp-tag ${dispRespClass}" ${ce} data-sp="${p}" data-si="${i}" data-sf="${respSf}">👤 ${dispResp}</div>
-        <ul class="step-actions ${em ? 'edit-mode-list' : ''}" id="${p}-actions-list-${i}">${actHTML}</ul>
+        <div class="resp-tag ${d.respClass}" ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.respSf}">👤 ${d.resp}</div>
+        <ul class="step-actions ${d.actListClass}" id="${p}-actions-list-${i}">${actHTML}</ul>
         <div class="step-flow-actions">
           <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
-          <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}')" title="Limpar o fluxo ${isTobe ? 'TO BE' : 'AS IS'} inteiro (todas as etapas)">🗑 Limpar todo ${isTobe ? 'TO BE' : 'AS IS'}</button>
-          ${isTobe
-            ? `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowTobeToAsis('${p}')" title="Copiar todas as etapas do TO BE para o AS IS">⎘ Copiar TO BE → AS IS</button>`
-            : `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}')" title="Copiar todas as etapas do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>`
-          }
+          <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}')" title="Limpar o fluxo ${flowLabel} inteiro (todas as etapas)">🗑 Limpar todo ${flowLabel}</button>
+          ${copyBtn}
         </div>
         ${decHTML}${noteHTML}
       </div>
     </div>`;
-  // ── Wire interactions ─────────────────────────
-  if(editMode) { _wireStepDnD(p, i, container); }
+  if(editMode) _wireStepDnD(p, i, container);
   _wireStepFieldBlur(p, i, container);
   _wireStepActionBlur(p, i, container);
   _wireStepBranchBlurs(p, i, container);
   renderTracker(p);
-  const _stepPos  = document.getElementById(p+'-step-pos');
-  const _btnPrev  = document.getElementById(p+'-btn-prev');
-  const _btnNext  = document.getElementById(p+'-btn-next');
-  if(_stepPos) _stepPos.textContent = `Etapa ${i+1} de ${DATA[p].steps.length}`;
-  if(_btnPrev) _btnPrev.disabled = i===0;
-  if(_btnNext) _btnNext.textContent = i===DATA[p].steps.length-1 ? '✅ Concluído' : 'Próximo →';
+  _updateStepNavButtons(p, i);
 }
 
 function toggleAutomatico(p, si, ai) {
@@ -10008,10 +10053,10 @@ function getAlertSubscribers(tipoAlerta) {
 }
 
 async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
-  if(!toEmail || !subject || !htmlBody) return false;
+  if (!toEmail || !subject || !htmlBody) return false;
   // Email sending not yet implemented — stub for future backend integration
   void toNome;
-  return false;
+  throw new Error('sendAlertEmail: envio de e-mail ainda não implementado (integração futura com backend)');
 }
 
 function _buildAlertHtml(tipo, popName, popKey, extra) {
@@ -10076,11 +10121,15 @@ async function checkMapeamentoMilestones() {
       const dataEfetivaFmt = efetiva.toLocaleDateString('pt-BR');
       for(const {nome, email} of subs) {
         const label = months === 6 ? '6 meses' : '12 meses';
-        await sendAlertEmail(
-          email, nome,
-          `[EPP/CAGE-RS] ${label} desde conclusão: ${popName}`,
-          _buildAlertHtml(tipo, popName, pk, {dataEfetiva: dataEfetivaFmt})
-        );
+        try {
+          await sendAlertEmail(
+            email, nome,
+            `[EPP/CAGE-RS] ${label} desde conclusão: ${popName}`,
+            _buildAlertHtml(tipo, popName, pk, {dataEfetiva: dataEfetivaFmt})
+          );
+        } catch(e) {
+          console.warn('[siga] sendAlertEmail (mapeamento):', e.message);
+        }
       }
       sent[alKey] = today.toISOString().slice(0,10);
       changed = true;
@@ -10116,15 +10165,19 @@ async function checkActionsDeadlinesEmail() {
           /* log suppressed */
           let enviado = false;
           for(const {nome, email} of subs) {
-            const ok = await sendAlertEmail(
-              email, nome,
-              `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
-              _buildAlertHtml('plano_acao_vencido', popName, pk, {
-                desc: act.desc, resp: act.resp,
-                prazo: d.toLocaleDateString('pt-BR'),
-              })
-            );
-            if(ok) enviado = true;
+            try {
+              const ok = await sendAlertEmail(
+                email, nome,
+                `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
+                _buildAlertHtml('plano_acao_vencido', popName, pk, {
+                  desc: act.desc, resp: act.resp,
+                  prazo: d.toLocaleDateString('pt-BR'),
+                })
+              );
+              if(ok) enviado = true;
+            } catch(e) {
+              console.warn('[siga] sendAlertEmail (ação vencida):', e.message);
+            }
           }
           if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
     /* alert log suppressed */
@@ -10137,15 +10190,19 @@ async function checkActionsDeadlinesEmail() {
           /* log suppressed */
           let enviado = false;
           for(const {nome, email} of subs) {
-            const ok = await sendAlertEmail(
-              email, nome,
-              `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
-              _buildAlertHtml('plano_acao_7d', popName, pk, {
-                desc: act.desc, resp: act.resp,
-                prazo: d.toLocaleDateString('pt-BR'), dias,
-              })
-            );
-            if(ok) enviado = true;
+            try {
+              const ok = await sendAlertEmail(
+                email, nome,
+                `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
+                _buildAlertHtml('plano_acao_7d', popName, pk, {
+                  desc: act.desc, resp: act.resp,
+                  prazo: d.toLocaleDateString('pt-BR'), dias,
+                })
+              );
+              if(ok) enviado = true;
+            } catch(e) {
+              console.warn('[siga] sendAlertEmail (ação 7d):', e.message);
+            }
           }
           if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
     /* alert log suppressed */
