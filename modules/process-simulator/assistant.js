@@ -65,7 +65,7 @@ export function setLoopProbability(graph, taskNodeId, probabilityReturn = 30) {
   if (totalProb !== 100 && edgesFromTask.length > 0) {
     // Ajusta o último edge para compensar diferença de arredondamento
     const diff = 100 - totalProb;
-    edgesFromTask[edgesFromTask.length - 1].probability += diff;
+    edgesFromTask.at(-1).probability += diff;
   }
 
   return next;
