@@ -1,4413 +1,3 @@
-<!DOCTYPE html>
-<!--
-  © 2025 Felipe Cesar Tourinho. Todos os direitos reservados.
-  Programa de computador protegido pela Lei nº 9.609/1998 (Lei do Software) e pela Lei nº 9.610/1998 (Lei de Direitos Autorais).
-  É proibida a reprodução, distribuição ou modificação sem autorização expressa do autor.
--->
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>SIGA — Sistema Integrado de Gestão de Atividades da CAGE</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230a2540'/%3E%3Crect x='2' y='2' width='28' height='28' rx='4' fill='none' stroke='%2300a86b' stroke-width='2'/%3E%3Ctext x='16' y='22' font-family='Arial,sans-serif' font-size='13' font-weight='bold' fill='%2300a86b' text-anchor='middle'%3EEPP%3C/text%3E%3C/svg%3E">
-
-<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.4/Sortable.min.js"></script>
-<script src="https://unpkg.com/bpmn-js@17/dist/bpmn-modeler.production.min.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/bpmn-js@17/dist/assets/diagram-js.css">
-<link rel="stylesheet" href="https://unpkg.com/bpmn-js@17/dist/assets/bpmn-js.css">
-<link rel="stylesheet" href="https://unpkg.com/bpmn-js@17/dist/assets/bpmn-font/css/bpmn.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="./public-config.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    /* ── DESIGN SYSTEM SIGA/SEFAZ-RS ────────────────────────────────────
-       Design System v1.0 — Paleta unificada para todos os módulos
-       
-       CORES PRIMÁRIAS:
-       Header/Estrutura  #1F3D3B  → cabeçalho, navegação, estrutura
-       Primary          #3C6E71  → informações, elementos secundários
-       Accent (CTA)     #D97706  → botões, ações, destaque visível
-       
-       CORES FUNCIONIAS:
-       Background       #F5F5F4  → fundo principal
-       Surface          #FFFFFF  → cards, superfícies
-       Border           #E5E7EB  → linhas, divisores
-       
-       TEXTO:
-       Primário         #1F2A27  → texto principal
-       Secundário       #6B7280  → texto de apoio
-       
-       REGRA: Laranja (accent) APENAS para CTAs e ações principais
-    ──────────────────────────────────────────────────────────────────── */
-    --design-background:  #F5F5F4;
-    --design-surface:     #FFFFFF;
-    --design-header:      #1F3D3B;
-    --design-primary:     #3C6E71;
-    --design-primary-dark:#1F3D3B;
-    --design-accent:      #D97706;
-    --design-accent-hover:#B45309;
-    --design-accent-active:#92400E;
-    --design-accent-disabled:#FCD9B6;
-    --design-text-primary:#1F2A27;
-    --design-text-secondary:#6B7280;
-    --design-border:      #E5E7EB;
-    
-    /* LEGACY MAPPING - mantido para compatibilidade */
-    --cage-blue:  var(--design-header);
-    --cage-mid:   var(--design-primary);
-    --cage-accent:var(--design-accent);
-    --cage-gold:  var(--design-primary);
-    --cage-red:   #EF4444;
-    --cage-light: var(--design-background);
-    --cage-border:var(--design-border);
-    --text-primary:var(--design-text-primary);
-    --text-secondary:var(--design-text-secondary);
-    --text-muted: var(--design-text-secondary);
-    
-    /* EDIT MODE (mantém laranja do design system) */
-    --edit-color:#D97706;
-    --edit-bg:#FFFBEB;
-    --edit-border:#FCD34D;
-    
-    --pop-color: var(--design-accent);
-    --shadow-sm:0 1px 3px rgba(31,61,59,.08);
-    --shadow-md:0 4px 16px rgba(31,61,59,.12);
-    --shadow-lg:0 12px 40px rgba(31,61,59,.20);
-    --radius:12px;--radius-sm:8px;
-  }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'DM Sans',sans-serif;background:var(--cage-light);color:var(--text-primary);min-height:100vh;overflow-x:hidden;}
-
-  /* EDIT MODE */
-  body.edit-mode .header{background:var(--design-accent-active);}
-  body.edit-mode .nav-tabs{background:var(--design-accent-active);}
-  /* Cockpit: esconder barra de processo e tabs com !important para resistir a qualquer re-render do JS */
-  body.cockpit-active .nav-tabs,
-  body.cockpit-active #pop-switcher-bar { display:none!important; }
-  body.edit-mode .edit-bar{display:flex;}
-  body.edit-mode .edit-toggle{background:var(--edit-color);color:var(--design-accent-active);}
-  body.edit-mode [contenteditable="true"]{outline:2px dashed var(--edit-border);border-radius:4px;padding:2px 4px;cursor:text;transition:all .15s;}
-  body.edit-mode [contenteditable="true"]:hover{outline-color:var(--edit-color);background:rgba(217, 119, 6, .2);}
-  body.edit-mode [contenteditable="true"]:focus{outline:2px solid var(--edit-color);background:white;box-shadow:0 0 0 3px rgba(217, 119, 6, .15);}
-  body.edit-mode .edit-add-btn,body.edit-mode .edit-rm-btn{display:inline-flex;}
-
-  /* DRAG-AND-DROP em modo edição */
-  body.edit-mode .nav-tab,
-  body.edit-mode .sidebar-pat-btn,
-  body.edit-mode .home-card,
-  body.edit-mode #home-stats>[data-sortkey]{cursor:grab!important;user-select:none;transition:box-shadow .15s,opacity .15s;}
-  body.edit-mode .nav-tab:active,
-  body.edit-mode .sidebar-pat-btn:active,
-  body.edit-mode .home-card:active,
-  body.edit-mode #home-stats>[data-sortkey]:active{cursor:grabbing!important;}
-  /* Indicador de alça nos nav tabs */
-  body.edit-mode .nav-tab::after{content:'⠿';opacity:0;margin-left:5px;font-size:9px;vertical-align:middle;transition:opacity .15s;}
-  body.edit-mode .nav-tab:hover::after{opacity:.55;}
-  /* Indicador de alça nos sidebar buttons */
-  body.edit-mode .sidebar-pat-btn{padding-right:28px;position:relative;}
-  body.edit-mode .sidebar-pat-btn::after{content:'⠿';position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:13px;opacity:0;transition:opacity .15s;}
-  body.edit-mode .sidebar-pat-btn:hover::after{opacity:.55;}
-  /* Indicador de alça nos home cards */
-  body.edit-mode .home-card{position:relative;}
-  body.edit-mode .home-card::after{content:'⠿';position:absolute;top:10px;right:12px;font-size:16px;color:#94a3b8;opacity:0;transition:opacity .15s;line-height:1;pointer-events:none;}
-  body.edit-mode .home-card:hover::after{opacity:1;}
-  /* Indicador de alça nos stat cards */
-  body.edit-mode #home-stats>[data-sortkey]{position:relative;}
-  body.edit-mode #home-stats>[data-sortkey]::after{content:'⠿';position:absolute;top:3px;right:5px;font-size:9px;color:#94a3b8;opacity:0;transition:opacity .15s;pointer-events:none;}
-  body.edit-mode #home-stats>[data-sortkey]:hover::after{opacity:.8;}
-  /* Container sortável — destaque sutil */
-  body.edit-mode #nav-tabs-inner,
-  body.edit-mode #sidebar-nav-btns,
-  body.edit-mode #home-cards-grid,
-  body.edit-mode #home-stats{outline:2px dashed rgba(217, 119, 6, .35);outline-offset:3px;border-radius:4px;}
-  /* Ghost (placeholder durante o drag) */
-  .dnd-ghost{opacity:.25!important;background:#FFFBEB!important;border:2px dashed var(--design-accent)!important;box-shadow:none!important;}
-  /* Elemento sendo arrastado */
-  .dnd-dragging{opacity:.9!important;box-shadow:0 12px 32px rgba(0,0,0,.22)!important;transform:rotate(1deg) scale(1.02);z-index:9999;}
-
-  .edit-bar{display:none;background:var(--edit-bg);border-bottom:2px solid var(--edit-color);padding:10px 32px;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:64px;z-index:99;}
-  .edit-bar-left{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--design-accent-active);}
-  .unsaved{display:none;background:var(--design-accent);color:white;padding:2px 8px;border-radius:4px;font-size:11px;}
-  .edit-add-btn,.edit-rm-btn{display:none;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;border:none;transition:all .15s;}
-  .edit-add-btn{background:#dcfce7;color:#15803d;}.edit-add-btn:hover{background:#bbf7d0;}
-  .edit-rm-btn{background:#fee2e2;color:#b91c1c;margin-left:6px;}.edit-rm-btn:hover{background:#fecaca;}
-
-  /* HEADER */
-  .header{background:var(--cage-blue);color:white;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,.3);transition:background .3s;}
-  .header-inner{max-width:1300px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;gap:24px;}
-  .header-brand{display:flex;align-items:center;gap:12px;}
-  .header-logo{width:36px;height:36px;background:var(--cage-accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;}
-  .header-divider-line{width:1px;height:36px;background:rgba(255,255,255,.18);flex-shrink:0;}
-  .cage-banner-brand{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-  .cage-banner-shield{display:flex;align-items:center;flex-shrink:0;}
-
-  .cage-banner-text .cage-banner-title{font-weight:700;font-size:14px;color:white;letter-spacing:.3px;line-height:1.15;display:block;}
-  .cage-banner-text .cage-banner-sub{font-size:10px;color:rgba(255,255,255,.55);line-height:1.2;white-space:nowrap;display:block;}
-  .cage-official-logo{height:42px;max-width:170px;object-fit:contain;flex-shrink:0;filter:brightness(0) invert(1);}
-  .header-title{font-size:12px;font-weight:500;line-height:1.3;opacity:.8;}
-  .header-title strong{display:block;font-size:14px;font-weight:600;opacity:1;}
-  .header-meta{display:flex;align-items:center;gap:8px;}
-  .edit-toggle{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;background:#000;color:#fff;transition:all .2s;}
-  .edit-toggle:hover{background:#222;}
-  .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
-  .badge-green{background:#000;color:#fff;border:1px solid #022c22;}
-  .badge-blue{background:#000;color:#fff;border:1px solid #1e293b;}
-
-  /* POP SWITCHER */
-  .pop-switcher{background:var(--cage-blue);border-top:1px solid rgba(255,255,255,.06);padding:0 32px;}
-  .pop-switcher-inner{max-width:1300px;margin:0 auto;display:flex;align-items:center;gap:0;padding:8px 0;}
-  .pop-switcher-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em;margin-right:14px;white-space:nowrap;}
-  .pop-tab{padding:7px 18px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.55);transition:all .2s;border:1.5px solid transparent;white-space:nowrap;margin-right:6px;}
-  .pop-tab:hover{color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.2);}
-  .pop-tab.active{color:#fff;border-color:var(--pop-color);background:#000;}
-  .pop-tab.pop-novo.active{--pop-color:var(--design-accent);}
-  .pop-tab.pop-novo{color:rgba(255,255,255,.7);}
-
-  /* NAV TABS */
-  .nav-tabs{background:linear-gradient(180deg,#2A5154 0%,var(--design-header) 100%);border-top:1px solid rgba(255,255,255,.08);transition:background .3s;}
-  .nav-tabs-inner{max-width:1300px;margin:0 auto;padding:0 32px;display:flex;gap:2px;overflow-x:auto;}
-  .nav-tab{padding:10px 18px;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
-  .nav-tab:hover{color:rgba(255,255,255,.85);}
-  .nav-tab.active{color:white;border-bottom-color:var(--current-pop-color, #00a86b);}
-  body.edit-mode .nav-tab.active{border-bottom-color:var(--edit-color);}
-
-  .main{max-width:1300px;margin:0 auto;padding:32px;transition:none;}
-  .pop-content{display:none;}.pop-content.active{display:block;}
-  .section{display:none;}.section.active{display:block;}
-
-  /* POP BANNER */
-  .pop-banner{border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;gap:14px;}
-  .pop-banner.denuncias{background:linear-gradient(135deg,rgba(0,168,107,.12),rgba(0,168,107,.04));border:1.5px solid rgba(0,168,107,.25);}
-  .pop-banner.representacoes{background:linear-gradient(135deg,rgba(96,165,250,.12),rgba(96,165,250,.04));border:1.5px solid rgba(96,165,250,.25);}
-  .pop-banner-icon{font-size:28px;flex-shrink:0;}
-  .pop-banner-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--cage-blue);}
-  .pop-banner-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
-  .pop-banner-meta{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
-
-  .card{background:white;border-radius:var(--radius);border:1px solid var(--cage-border);box-shadow:var(--shadow-sm);overflow:hidden;}
-  .card-header{padding:20px 24px;border-bottom:1px solid var(--cage-border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
-  .card-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--cage-blue);}
-  .card-body{padding:24px;}
-
-  .overview-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;}
-  .overview-grid.four-col{grid-template-columns:repeat(4,1fr);}
-  .metric-card{background:white;border:1px solid var(--cage-border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;}
-  .metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
-  .metric-card.green::before{background:var(--cage-accent);}
-  .metric-card.blue::before{background:var(--cage-mid);}
-  .metric-card.gold::before{background:var(--cage-gold);}
-  .metric-card.red::before{background:var(--cage-red);}
-  .metric-card.purple::before{background:#7c3aed;}
-  .metric-card.teal::before{background:#0891b2;}
-  .metric-icon{font-size:28px;margin-bottom:10px;}
-  .metric-value{font-family:'DM Serif Display',serif;font-size:28px;color:var(--cage-blue);display:block;}
-  .metric-label{font-size:12px;color:var(--text-muted);margin-top:2px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;display:block;}
-
-  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
-  .info-block{background:var(--cage-light);border-radius:var(--radius-sm);padding:16px;}
-  .info-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
-  .info-item:last-child{margin-bottom:0;}
-  .info-dot{width:6px;height:6px;border-radius:50%;background:var(--cage-accent);margin-top:6px;flex-shrink:0;}
-  .info-text{font-size:13.5px;color:var(--text-secondary);line-height:1.5;flex:1;}
-
-  /* STEPS */
-  .step-tracker{display:flex;align-items:center;margin-bottom:32px;overflow-x:auto;padding-bottom:4px;}
-  .step-dot{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;}
-  .step-dot-circle{width:32px;height:32px;border-radius:50%;border:2px solid var(--cage-border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:white;color:var(--text-muted);transition:all .25s;}
-  .step-dot.active .step-dot-circle{border-color:var(--cage-accent);background:var(--cage-accent);color:white;}
-  .step-dot.done .step-dot-circle{border-color:var(--cage-mid);background:var(--cage-mid);color:white;}
-  .step-dot-label{font-size:10px;color:var(--text-muted);text-align:center;max-width:72px;line-height:1.2;}
-  .step-dot.active .step-dot-label,.step-dot.done .step-dot-label{color:var(--cage-blue);font-weight:500;}
-  .step-line{flex:1;height:2px;background:var(--cage-border);margin:0 -2px;margin-bottom:22px;min-width:20px;}
-  .step-line.done{background:var(--cage-mid);}
-  .step-panel{background:white;border:1.5px solid var(--cage-border);border-radius:var(--radius);box-shadow:var(--shadow-md);overflow:hidden;animation:slideIn .3s ease;}
-  @keyframes slideIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-  .step-panel-head{background:linear-gradient(135deg,var(--cage-blue),var(--cage-mid));color:white;padding:24px;display:flex;align-items:center;gap:16px;}
-  body.edit-mode .step-panel-head{background:linear-gradient(135deg,var(--design-accent-active),var(--design-accent-hover));}
-  .step-number{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:20px;flex-shrink:0;}
-  .step-info h3{font-size:18px;font-weight:600;margin-bottom:2px;}
-  .step-info p{font-size:13px;opacity:.75;}
-  .step-panel-body{padding:24px;}
-  .resp-tag{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:16px;}
-  .resp-green{background:#000;color:#fff;border:1px solid #022c22;}
-  .resp-blue{background:#000;color:#fff;border:1px solid #1e293b;}
-  .resp-gold{background:#FFD600;color:#000;border:1px solid #b45309;}
-  .step-actions{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
-
-  /* ── DRAG AND DROP (actions) ─────────────────── */
-  .step-action-item.dragging { opacity:0.4; cursor:grabbing; }
-  .step-action-item.drag-over { border-top:3px solid var(--cage-accent); margin-top:-2px; }
-  .step-actions.edit-mode-list .step-action-item { cursor:grab; }
-  .drag-handle { font-size:14px; color:var(--text-muted); cursor:grab; padding:0 4px; flex-shrink:0; user-select:none; opacity:0; transition:opacity .15s; }
-  .step-action-item:hover .drag-handle,
-  .step-actions.edit-mode-list .drag-handle { opacity:1; }
-
-  .step-action-item{display:block;background:var(--cage-light);border-radius:var(--radius-sm);border-left:3px solid var(--cage-accent);transition:border-color .2s;}
-  .action-main-row{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;}
-  .decision-branches{padding:2px 14px 8px 36px;display:flex;flex-direction:column;gap:6px;}
-  .decision-branch{border-left:2px solid var(--design-accent);padding:4px 0 4px 10px;border-radius:0 4px 4px 0;background:rgba(217, 119, 6, .04);}
-  .branch-header{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
-  .branch-connector{color:var(--design-accent);font-size:13px;flex-shrink:0;line-height:1;}
-  .branch-label{font-size:12px;font-weight:700;color:var(--design-accent-hover);flex:1;min-width:40px;outline:none;}
-  .branch-label[contenteditable]:empty::before{content:'Rótulo…';color:var(--design-accent);opacity:.6;}
-  .rm-branch-btn{display:none;padding:1px 5px;font-size:10px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;border-radius:4px;flex-shrink:0;}
-  .rm-branch-btn:hover{background:#fee2e2;color:#b91c1c;}
-  body.edit-mode .rm-branch-btn{display:inline-flex;}
-  .branch-actions{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px;}
-  .branch-action-item{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;background:white;border-radius:4px;border-left:2px solid var(--cage-accent);}
-  .branch-action-item[data-type="evento"]{border-left-color:#a78bfa;}.branch-action-item[data-type="decisao"]{border-left-color:var(--design-accent);}.branch-action-item[data-type="observacao"]{border-left-color:#60a5fa;}
-  /* Decisão aninhada dentro de caminho */
-  .nested-decision-wrapper{margin-top:4px;border-left:2px dashed #f59e0b;padding:4px 0 4px 8px;border-radius:0 4px 4px 0;background:rgba(245,158,11,.03);}
-  .nested-decision-header{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;background:rgba(217, 119, 6, .10);}
-  .nested-decision-text{font-size:12.5px;color:var(--design-accent-active);font-weight:600;flex:1;}
-  .decision-branches.nested{padding:2px 8px 6px 24px;border-left:2px solid #93c5fd;margin-top:4px;}
-  .decision-branches.nested .decision-branch{border-left-color:#3b82f6;background:rgba(59,130,246,.04);}
-  .decision-branches.nested .branch-connector{color:#3b82f6;}
-  .decision-branches.nested .branch-label{color:#1e40af;}
-  .branch-action-body{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
-  .branch-action-text{font-size:12.5px;color:var(--text-secondary);line-height:1.35;}
-  .branch-action-actor{font-size:10.5px;color:var(--text-muted);font-weight:600;}
-  .add-branch-btn,.add-branch-action-btn{display:none;margin-top:4px;padding:3px 10px;font-size:11px;background:transparent;border:1px dashed var(--design-accent);color:var(--design-accent);border-radius:4px;cursor:pointer;align-self:flex-start;}
-  .add-branch-btn:hover,.add-branch-action-btn:hover{background:#FEF3C7;}
-  body.edit-mode .add-branch-btn,body.edit-mode .add-branch-action-btn{display:inline-flex;}
-  .step-action-item[data-type="evento"]{border-left-color:#a78bfa;background:#faf5ff;}
-  .step-action-item[data-type="decisao"]{border-left-color:var(--design-accent);background:#FFFBF0;}
-  .step-action-item[data-type="observacao"]{border-left-color:#60a5fa;background:#f0f7ff;}
-  .action-icon{font-size:15px;flex-shrink:0;margin-top:1px;line-height:1;}
-  .action-body{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;}
-  .action-text{font-size:13.5px;color:var(--text-secondary);line-height:1.4;}
-  .action-actor{font-size:11px;color:var(--text-muted);font-weight:600;}
-  /* action type modal */
-  .action-type-modal{display:none;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center;background:rgba(0,0,0,.45);}
-  .action-type-modal.open{display:flex;}
-  .action-type-box{background:white;border-radius:var(--radius);padding:28px 28px 22px;width:460px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow-y:auto;max-height:90vh;}
-  .action-type-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--cage-blue);margin-bottom:4px;}
-  .action-type-sub{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
-  .action-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
-  .action-type-btn{padding:12px 14px;border-radius:10px;border:2px solid var(--cage-border);background:var(--cage-light);cursor:pointer;text-align:left;transition:all .15s;}
-  .action-type-btn:hover,.action-type-btn.selected{border-color:var(--cage-mid);background:white;box-shadow:0 2px 8px rgba(0,0,0,.08);}
-  .action-type-btn .atb-icon{font-size:20px;margin-bottom:6px;}
-  .action-type-btn .atb-name{font-size:13px;font-weight:700;color:var(--cage-blue);}
-  .action-type-btn .atb-desc{font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.3;}
-  .action-form{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--cage-border);padding-top:16px;}
-  .act-extra-fields{border-top:1px solid var(--cage-border);margin-top:4px;padding-top:12px;}
-  .act-extra-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);margin-bottom:8px;display:block;}
-  .act-extra-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .act-extra-grid .full{grid-column:1/-1;}
-  .step-flow-actions{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;}
-  .clear-flow-btn,.copy-flow-btn{padding:4px 10px;font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
-  /* clear e copy usam edit-add-btn para controle de visibilidade — override de cor/borda */
-  body.edit-mode .clear-flow-btn{background:transparent!important;color:#ef4444!important;border:1.5px solid #f87171!important;}
-  .clear-flow-btn:hover{background:#fef2f2!important;}
-  body.edit-mode .copy-flow-btn{background:transparent!important;color:#6366f1!important;border:1.5px solid #6366f1!important;}
-  .copy-flow-btn:hover{background:#eef2ff!important;}
-  .rm-step-btn{display:none;padding:4px 10px;font-size:11px;font-weight:700;border:1.5px solid rgba(255,255,255,.5);background:transparent;color:rgba(255,255,255,.85);border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
-  .rm-step-btn:hover{background:rgba(255,0,0,.25);border-color:white;}
-  body.edit-mode .rm-step-btn{display:inline-flex;}
-  .move-step-btn{display:none;padding:4px 8px;font-size:14px;font-weight:700;border:1.5px solid rgba(255,255,255,.5);background:transparent;color:rgba(255,255,255,.85);border-radius:6px;cursor:pointer;transition:all .15s;line-height:1;}
-  .move-step-btn:hover:not(:disabled){background:rgba(255,255,255,.2);border-color:white;}
-  .move-step-btn:disabled{opacity:.25;cursor:default;}
-  body.edit-mode .move-step-btn{display:inline-flex;}
-  .act-move-step-wrap{margin-top:4px;padding-top:12px;border-top:1px solid var(--cage-border);}
-  .act-move-step-wrap label{font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;}
-  .act-move-step-row{display:flex;gap:8px;align-items:center;}
-  /* removed duplicate .action-type-box */
-  .decision-box{background:#FFFBF0;border:1.5px solid var(--design-accent);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
-  .decision-box .dicon{font-size:18px;flex-shrink:0;}
-  .decision-text{font-size:13px;color:var(--design-accent-active);line-height:1.5;}
-  .note-box{background:#f0f7ff;border:1px solid #b3d4f5;border-radius:var(--radius-sm);padding:12px 14px;font-size:12.5px;color:var(--design-header);line-height:1.5;display:flex;gap:8px;align-items:flex-start;}
-  .nav-buttons{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:20px;padding-right:72px;border-top:1px solid var(--cage-border);}
-  .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
-  .btn-primary{background:var(--cage-accent);color:white;}.btn-primary:hover{background:var(--cage-mid);}
-  .btn-outline{background:white;color:var(--cage-accent);border:1.5px solid var(--cage-border);}.btn-outline:hover{border-color:var(--cage-accent);}
-  .btn-warn{background:#000;color:#FFD600;}.btn-warn:hover{background:#222;color:#FFD600;}
-  .btn-success{background:#1B6B2E;color:white;}.btn-success:hover{background:#155a26;}
-  .btn:disabled{opacity:.4;cursor:not-allowed;}
-
-  /* ── AS IS / TO BE FLOW MODE TOGGLE ─────────────────── */
-  .flow-mode-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;padding:12px 16px;background:linear-gradient(135deg,#f8faff,#eef3fb);border:1px solid var(--cage-border);border-radius:10px;}
-  .flow-mode-toggle{display:inline-flex;align-items:center;border:1.5px solid var(--cage-border);border-radius:10px;overflow:hidden;background:white;box-shadow:var(--shadow-sm);}
-  .flow-mode-btn{padding:7px 16px;font-size:12px;font-weight:700;border:none;background:transparent;cursor:pointer;transition:all .2s;color:var(--text-muted);letter-spacing:.2px;white-space:nowrap;}
-  .flow-mode-btn.active-asis{background:var(--cage-blue);color:white;}
-  .flow-mode-btn.active-tobe{background:#000;color:#FFD600;}
-  /* TO BE step panel */
-  .step-panel.tobe-mode .step-panel-head{background:linear-gradient(135deg,#064e3b,#059669);}
-  body.edit-mode .step-panel.tobe-mode .step-panel-head{background:linear-gradient(135deg,#064e3b,#059669);}
-  .step-panel.tobe-mode{border-color:#a7f3d0;}
-
-  /* ── STEP DETAILS EXPANDABLE ─────────────────────────── */
-  .step-details-wrap{margin-top:10px;}
-  .step-details-toggle-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 16px;background:var(--cage-light);border:1.5px solid var(--cage-border);border-radius:10px;font-size:12.5px;font-weight:600;color:var(--cage-mid);cursor:pointer;transition:all .2s;text-align:left;}
-  .step-details-toggle-btn:hover{background:#e8f0fb;border-color:var(--cage-mid);}
-  .step-details-toggle-btn.open{border-radius:10px 10px 0 0;border-bottom-color:var(--cage-mid);}
-  .step-details-panel{background:white;border:1.5px solid var(--cage-mid);border-top:none;border-radius:0 0 10px 10px;padding:16px;display:none;}
-  .step-details-panel.open{display:block;animation:slideIn .2s ease;}
-  .step-details-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-  @media(max-width:680px){.step-details-grid{grid-template-columns:1fr;}}
-  .sdf-row{display:flex;flex-direction:column;gap:6px;}
-  .sdf-row.full-width{grid-column:1/-1;}
-  .sdf-label{font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:5px;}
-  .sdf-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-  .sdf-col{display:flex;flex-direction:column;gap:3px;}
-  .sdf-tag{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:.4px;}
-  .sdf-tag.asis{background:rgba(27,48,34,.1);color:var(--cage-blue);}
-  .sdf-tag.tobe{background:#000;color:#FFD600;}
-  .sdf-val{font-size:12.5px;color:var(--text-secondary);background:var(--cage-light);border-radius:6px;padding:7px 10px;min-height:34px;line-height:1.45;word-break:break-word;}
-  .sdf-val.tobe-val{background:#f0fdf4;border:1px solid #bbf7d0;}
-  .sdf-val.improv-val{background:#fff8e6;border:1px solid #fcd34d;}
-  .sdf-val[contenteditable="true"]{outline:2px dashed var(--edit-border);cursor:text;}
-  .sdf-val[contenteditable="true"]:focus{outline:2px solid var(--edit-color);background:white;}
-  .sdf-empty{color:var(--text-muted);font-style:italic;font-size:11.5px;}
-  .step-pos{font-size:12px;color:var(--text-muted);}
-
-  /* ROLES */
-  .role-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
-  .role-card{border-radius:var(--radius);border:1px solid var(--cage-border);overflow:hidden;}
-  .role-card-head{padding:16px 20px;display:flex;align-items:center;gap:12px;}
-  .role-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-  .role-name{font-weight:600;font-size:14px;}
-  .role-title{font-size:12px;color:var(--text-muted);}
-  .role-duties{padding:0 20px 16px;list-style:none;display:flex;flex-direction:column;gap:6px;}
-  .role-duties li{font-size:13px;color:var(--text-secondary);display:flex;gap:8px;align-items:flex-start;}
-  .role-duties li::before{content:'›';color:var(--cage-accent);font-weight:700;flex-shrink:0;}
-  .role-green .role-card-head{background:#f0faf5;}.role-green .role-avatar{background:rgba(0,168,107,.15);}
-  .role-blue .role-card-head{background:#f0f5ff;}.role-blue .role-avatar{background:rgba(0,51,102,.12);}
-  .role-gold .role-card-head{background:#fffbf0;}.role-gold .role-avatar{background:rgba(232,160,32,.15);}
-  .role-purple .role-card-head{background:#faf0ff;}.role-purple .role-avatar{background:rgba(147,51,234,.12);}
-  .role-red .role-card-head{background:#fff5f5;}.role-red .role-avatar{background:rgba(220,38,38,.12);}
-
-  /* INDICATORS */
-  .indicator-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
-  .indicator-card{background:white;border:1px solid var(--cage-border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s,border-color .2s;}
-  .indicator-card:hover{box-shadow:var(--shadow-md);}
-  .ind-card-top{padding:20px 20px 14px;}
-  .ind-icon{font-size:26px;margin-bottom:10px;}
-  .ind-title{font-size:14px;font-weight:700;color:var(--cage-blue);margin-bottom:5px;display:block;line-height:1.3;}
-  .ind-desc{font-size:12.5px;color:var(--text-muted);line-height:1.5;display:block;}
-  .ind-tag{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:10px;}
-  .ind-tag-time{background:#e0f2fe;color:#0369a1;}.ind-tag-perc{background:#dcfce7;color:#15803d;}
-  .ind-card-details{border-top:1px solid var(--cage-border);background:var(--cage-light);padding:14px 20px;display:flex;flex-direction:column;gap:10px;flex:1;}
-  .ind-detail-row{display:flex;flex-direction:column;gap:3px;}
-  .ind-detail-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);}
-  .ind-detail-value{font-size:12.5px;color:var(--text-secondary);line-height:1.4;}
-  .ind-formula-box{background:white;border:1px solid var(--cage-border);border-radius:6px;padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--cage-mid);line-height:1.5;}
-  .ind-card-footer{padding:10px 20px 14px;background:var(--cage-light);border-top:1px dashed var(--cage-border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
-  .ind-meta-pill{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;}
-  .ind-edit-btn{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--cage-border);background:white;color:var(--cage-mid);transition:all .15s;display:inline-flex;align-items:center;gap:4px;}
-  .ind-edit-btn:hover{border-color:var(--cage-mid);background:var(--cage-light);}
-  .ind-rm-btn{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #fecaca;background:#fff5f5;color:#b91c1c;transition:all .15s;display:inline-flex;align-items:center;gap:4px;}
-  .ind-rm-btn:hover{background:#fee2e2;border-color:#f87171;}
-  /* Mini SISPLAN results section inside indicator card */
-  .ind-sisplan-results{border-top:1.5px solid #bae6fd;padding:12px 16px 10px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe22);}
-  .ind-sisplan-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-  .ind-sisplan-badge{font-size:10px;font-weight:700;color:#0369a1;background:#e0f2fe;border:1px solid #bae6fd;border-radius:6px;padding:2px 8px;letter-spacing:.04em;}
-  .ind-mini-kpi-row{display:flex;gap:6px;margin-bottom:8px;}
-  .ind-mini-kpi{flex:1;text-align:center;background:white;border-radius:6px;padding:5px 4px;border:1px solid #e2e8f0;}
-  .ind-mini-kpi-val{font-size:15px;font-weight:700;color:var(--cage-blue);line-height:1.2;}
-  .ind-mini-kpi-val.pct-verde{color:#16a34a;}.ind-mini-kpi-val.pct-amarelo{color:#ca8a04;}.ind-mini-kpi-val.pct-vermelho{color:#dc2626;}
-  .ind-mini-kpi-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-top:1px;}
-  .ind-mini-chart-wrap{position:relative;height:90px;margin:6px 0 8px;}
-  .ind-mini-table{width:100%;border-collapse:collapse;font-size:11px;}
-  .ind-mini-table th{font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;padding:3px 4px;text-align:right;border-bottom:1px solid var(--cage-border);}
-  .ind-mini-table th:first-child{text-align:left;}
-  .ind-mini-table td{padding:3px 4px;text-align:right;border-bottom:1px solid rgba(0,0,0,.04);color:var(--text-secondary);font-size:11px;}
-  .ind-mini-table td:first-child{text-align:left;color:var(--text-muted);}
-  .ind-mini-table tr:last-child td{border-bottom:none;}
-  .ind-mini-no-data{font-size:11px;color:var(--text-muted);text-align:center;padding:8px 0;font-style:italic;}
-  .btn-add-ind{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:var(--cage-accent);color:white;transition:all .2s;}
-  .btn-add-ind:hover{background:#00875a;box-shadow:0 2px 8px rgba(0,168,107,.3);}
-
-  /* FAQ */
-  .faq-list{display:flex;flex-direction:column;gap:8px;}
-  .faq-item{background:white;border:1px solid var(--cage-border);border-radius:var(--radius-sm);overflow:hidden;}
-  .faq-q{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;user-select:none;}
-  .faq-q-text{font-size:14px;font-weight:500;color:var(--text-primary);flex:1;}
-  .faq-chevron{font-size:18px;color:var(--text-muted);flex-shrink:0;transition:transform .2s;cursor:pointer;}
-  .faq-item.open .faq-chevron{transform:rotate(180deg);}
-  .faq-a{display:none;padding:14px 20px 16px;font-size:13.5px;color:var(--text-secondary);line-height:1.6;border-top:1px solid var(--cage-border);}
-  .faq-item.open .faq-a{display:block;}
-  .faq-pending{display:inline-flex;align-items:center;gap:5px;background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:4px 10px;font-size:12px;color:#856404;}
-
-  /* NORMAS */
-  .norm-list{display:flex;flex-direction:column;gap:10px;}
-  .norm-item{background:white;border:1px solid var(--cage-border);border-radius:var(--radius-sm);padding:16px 20px;display:flex;gap:14px;align-items:flex-start;}
-  .norm-icon-el{font-size:22px;flex-shrink:0;}
-
-  .norm-link { color:var(--cage-accent); text-decoration:none; font-weight:700; }
-  .norm-link:hover { text-decoration:underline; }
-
-  .norm-code{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--cage-mid);background:rgba(0,51,102,.08);padding:2px 6px;border-radius:4px;display:inline-block;margin-bottom:4px;}
-  .norm-name{font-size:13px;color:var(--text-secondary);}
-
-  /* SIPOC */
-  .sipoc-table{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--cage-border);border-radius:8px;overflow:hidden;}
-  .sipoc-col{display:flex;flex-direction:column;}
-  .sipoc-col-head{padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-align:center;}
-  .sipoc-col-body{padding:8px 10px;background:#fff;flex:1;border-top:1px solid var(--cage-border);}
-  .sipoc-col:not(:last-child) .sipoc-col-head,.sipoc-col:not(:last-child) .sipoc-col-body{border-right:1px solid var(--cage-border);}
-  .sipoc-item{font-size:12px;color:#374151;padding:3px 0;border-bottom:1px dotted #e5e7eb;}
-  .sipoc-item:last-child{border-bottom:none;}
-  .sipoc-processo{font-size:13px;font-weight:700;color:#059669;text-align:center;padding:8px 0;}
-  @media(max-width:700px){.sipoc-table{grid-template-columns:1fr;}}
-  /* SIGLAS */
-  .sigla-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-  .sigla-item{background:white;border:1px solid var(--cage-border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;}
-  .sigla-abbr{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--cage-blue);font-size:14px;min-width:80px;}
-  .sigla-def{font-size:12.5px;color:var(--text-secondary);line-height:1.4;flex:1;}
-
-  /* REVISION TABLE */
-  .rev-table{width:100%;border-collapse:collapse;font-size:13px;}
-  .rev-table th{background:var(--cage-light);padding:10px 14px;text-align:left;font-weight:600;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--cage-border);}
-  .rev-table td{padding:12px 14px;border-bottom:1px solid var(--cage-border);color:var(--text-secondary);vertical-align:top;}
-  .rev-table tr:last-child td{border-bottom:none;}
-  .rev-badge-el{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:var(--cage-light);color:var(--cage-mid);font-family:'JetBrains Mono',monospace;}
-
-  /* MODAL */
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;}
-  .modal-overlay.open{display:flex;}
-  .modal{background:white;border-radius:var(--radius);padding:28px;max-width:520px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
-  .modal h3{font-family:'DM Serif Display',serif;font-size:20px;color:var(--cage-blue);margin-bottom:8px;}
-  .modal p{font-size:13.5px;color:var(--text-secondary);line-height:1.6;margin-bottom:20px;}
-  .modal label{font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
-  .modal-input{width:100%;padding:10px 12px;border:1.5px solid var(--cage-border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;margin-bottom:12px;outline:none;}
-  .modal-input:focus{border-color:var(--cage-mid);}
-  .modal-textarea{min-height:80px;resize:vertical;}
-  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;}
-
-  /* TOAST */
-  .toast{position:fixed;bottom:24px;right:24px;background:var(--cage-blue);color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:2000;transform:translateY(80px);opacity:0;transition:all .3s;box-shadow:var(--shadow-lg);}
-  .toast.show{transform:translateY(0);opacity:1;}
-  .toast.success{background:var(--cage-accent);}
-  .toast.warn{background:#f59e0b;}
-
-  .fade-up{opacity:0;transform:translateY(12px);animation:fadeUp .4s ease forwards;}
-  @keyframes fadeUp{to{opacity:1;transform:none;}}
-  .delay-1{animation-delay:.08s;}.delay-2{animation-delay:.16s;}
-
-  @media(max-width:768px){
-    /* removed duplicate .main padding:16px; (conflicts with main definition above) */
-    .overview-grid,.two-col,.role-grid,.indicator-grid,.sigla-grid{grid-template-columns:repeat(2,1fr);}
-    .overview-grid .metric-card:last-child{grid-column:1/-1;}
-    .pop-switcher{padding:0 16px;}
-  }
-
-  /* ── FLOW DESIGNER ── */
-  .fd-ctx-item{padding:7px 14px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s;}
-  .fd-ctx-item:hover{background:#f1f5f9;}
-
-  /* ── BPMN MODULE ── */
-  .bpmn-panel{max-width:1300px;margin:0 auto;padding:0;}
-
-  /* Upload area */
-  .bpmn-upload-area{padding:40px 0;}
-  .bpmn-upload-inner{border:2px dashed var(--cage-border);border-radius:var(--radius);background:white;padding:48px 32px;text-align:center;transition:all .25s;cursor:default;}
-  .bpmn-upload-inner.dragover{border-color:var(--cage-accent);background:#f0faf5;box-shadow:0 0 0 4px rgba(0,168,107,.1);}
-  .bpmn-upload-icon{font-size:48px;margin-bottom:16px;line-height:1;}
-  .bpmn-upload-title{font-family:'DM Serif Display',serif;font-size:22px;color:var(--cage-blue);margin-bottom:6px;}
-  .bpmn-upload-sub{font-size:14px;color:var(--text-secondary);}
-  .bpmn-upload-hint{font-size:11px;color:var(--text-muted);margin-top:14px;line-height:1.5;}
-
-  /* Viewer */
-  .bpmn-viewer-wrap{display:flex;flex-direction:column;gap:0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--cage-border);box-shadow:var(--shadow-md);}
-  .bpmn-toolbar{background:var(--cage-blue);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
-  .bpmn-file-info{display:flex;align-items:center;gap:8px;}
-  .bpmn-file-icon{font-size:16px;}
-  .bpmn-file-name{font-size:13px;font-weight:600;color:white;font-family:'JetBrains Mono',monospace;}
-  .bpmn-toolbar-actions{display:flex;align-items:center;gap:6px;}
-  .bpmn-tool-btn{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#1e293b;transition:all .15s;white-space:nowrap;}
-  .bpmn-tool-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.4);}
-  .bpmn-tool-danger{border-color:#000;background:#000;color:#FFD600;}
-  .bpmn-tool-danger:hover{background:#222;}
-  .bpmn-zoom-label{font-size:12px;color:rgba(255,255,255,.7);min-width:40px;text-align:center;font-family:'JetBrains Mono',monospace;}
-  .bpmn-divider{width:1px;height:20px;background:rgba(255,255,255,.2);margin:0 4px;}
-
-  .bpmn-canvas-wrap{position:relative;background:#f8f9fc;height:80vh;min-height:560px;}
-  #bpmn-canvas{width:100%;height:100%;}
-  #bpmn-canvas .djs-container svg{width:100%!important;height:100%!important;}
-
-  .bpmn-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(248,249,252,.9);font-size:13px;color:var(--text-muted);}
-  .bpmn-spinner{width:36px;height:36px;border:3px solid var(--cage-border);border-top-color:var(--cage-accent);border-radius:50%;animation:spin .8s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .bpmn-error{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;background:rgba(248,249,252,.95);}
-  .bpmn-error-title{font-weight:700;font-size:16px;color:var(--cage-blue);margin-bottom:6px;}
-  .bpmn-error-desc{font-size:13px;color:var(--text-muted);max-width:480px;line-height:1.5;}
-
-  /* Image viewer */
-  #bpmn-img-inner { position:absolute; }
-
-  /* bpmn-js overrides */
-  .djs-palette{border-radius:8px!important;border-color:var(--cage-border)!important;}
-  .bjs-powered-by{display:none!important;}
-
-
-  /* ── NOVO POP ─────────────────────────────── */
-  .pop-tab-new{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;
-    color:#1B3022;background:#fbbf24;border:none;white-space:nowrap;
-    margin-left:auto;transition:all .2s;display:flex;align-items:center;gap:6px;box-shadow:0 1px 4px rgba(0,0,0,.2);}
-  .pop-tab-new:hover{background:#f59e0b;transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.25);}
-
-  /* New POP wizard modal */
-  .npop-overlay{display:none;position:fixed;inset:0;z-index:3000;align-items:center;justify-content:center;background:rgba(0,0,0,.55);}
-  .npop-overlay.open{display:flex;}
-  .npop-box{background:white;border-radius:16px;width:580px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);}
-  .npop-header{background:var(--cage-blue);border-radius:16px 16px 0 0;padding:24px 28px 20px;}
-  .npop-header h2{font-family:'DM Serif Display',serif;font-size:22px;color:white;margin:0 0 4px;}
-  .npop-header p{font-size:13px;color:rgba(255,255,255,.65);margin:0;}
-  .npop-body{padding:24px 28px;}
-  .npop-step{display:none;}.npop-step.active{display:block;}
-
-  /* Method cards */
-  .npop-methods{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px;}
-  .npop-method{border:2px solid var(--cage-border);border-radius:12px;padding:20px 18px;cursor:pointer;transition:all .2s;text-align:center;}
-  .npop-method:hover,.npop-method.selected{border-color:var(--cage-mid);box-shadow:0 4px 16px rgba(27,48,34,.12);}
-  .npop-method.selected{border-color:var(--cage-accent);background:#f0faf5;}
-  .npop-method-icon{font-size:32px;margin-bottom:10px;}
-  .npop-method-name{font-size:14px;font-weight:700;color:var(--cage-blue);margin-bottom:4px;}
-  .npop-method-desc{font-size:12px;color:var(--text-muted);line-height:1.4;}
-
-  /* Upload zone inside modal */
-  .npop-upload-zone{border:2px dashed var(--cage-border);border-radius:10px;padding:32px 20px;text-align:center;background:var(--cage-light);margin:16px 0;transition:all .2s;cursor:pointer;}
-  .npop-upload-zone.dragover{border-color:var(--cage-accent);background:#f0faf5;}
-  .npop-upload-zone:hover{border-color:var(--cage-mid);}
-  .npop-upload-icon{font-size:36px;margin-bottom:10px;}
-  .npop-upload-title{font-size:14px;font-weight:600;color:var(--cage-blue);margin-bottom:4px;}
-  .npop-upload-hint{font-size:11.5px;color:var(--text-muted);}
-  .npop-file-chosen{display:none;align-items:center;gap:10px;padding:12px 16px;background:#f0faf5;border:1px solid #a7f3d0;border-radius:8px;margin:12px 0;}
-  .npop-file-chosen.show{display:flex;}
-
-  /* Manual form */
-  .npop-form{display:flex;flex-direction:column;gap:12px;}
-  .npop-form label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);display:block;margin-bottom:3px;}
-  .npop-form .modal-input{width:100%;box-sizing:border-box;}
-  .npop-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-
-  /* AI extracting state */
-  .npop-extracting{text-align:center;padding:32px 20px;}
-  .npop-extract-spin{width:48px;height:48px;border:4px solid var(--cage-border);border-top-color:var(--cage-accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;}
-  .npop-extract-title{font-size:16px;font-weight:700;color:var(--cage-blue);margin-bottom:6px;}
-  .npop-extract-sub{font-size:13px;color:var(--text-muted);}
-  .npop-progress{height:4px;background:var(--cage-border);border-radius:2px;margin-top:16px;overflow:hidden;}
-  .npop-progress-bar{height:100%;background:var(--cage-accent);border-radius:2px;width:0%;transition:width .4s ease;}
-
-  /* Footer */
-  .npop-footer{padding:16px 28px;border-top:1px solid var(--cage-border);display:flex;justify-content:space-between;align-items:center;gap:12px;}
-
-
-  /* ── RISCOS ──────────────────────────────── */
-  .risk-matrix{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
-  .risk-card{border-radius:10px;padding:14px 16px;border-left:4px solid;position:relative;}
-  .risk-card.risco{border-left-color:#ef4444;background:#fff5f5;}
-  .risk-card.oportunidade{border-left-color:#10b981;background:#f0faf5;}
-  .risk-score{font-size:22px;font-weight:800;font-family:"JetBrains Mono",monospace;}
-  .risk-score.critico{color:#7c1d1d;} .risk-score.alto{color:#dc2626;} .risk-score.medio{color:#f59e0b;} .risk-score.baixo{color:#16a34a;}
-  .risk-level-badge{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;opacity:.85;}
-  .risk-type-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;text-transform:uppercase;display:inline-block;margin-bottom:6px;}
-  .risk-type-badge.risco{background:#fee2e2;color:#b91c1c;}
-  .risk-type-badge.oportunidade{background:#d1fae5;color:#065f46;}
-  .risk-title{font-size:13px;font-weight:700;color:var(--cage-blue);margin-bottom:4px;}
-  .risk-desc{font-size:12px;color:var(--text-secondary);line-height:1.4;margin-bottom:8px;}
-  .risk-meta{font-size:11px;color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap;}
-  .risk-actions-row{display:flex;gap:6px;margin-top:10px;}
-  .treat-badge{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;background:var(--cage-light);color:var(--cage-blue);}
-
-  /* ── VERSIONAMENTO ───────────────────────── */
-  .ver-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;font-family:"JetBrains Mono",monospace;background:#000;color:#FFD600;border:1px solid #FFD600;cursor:pointer;transition:background .15s;}
-  .ver-badge:hover{background:#222;}
-  .ver-badge.viewing-old{background:#FFD600;color:#000;border-color:#b45309;}
-  .version-bar{position:sticky;top:0;z-index:30;padding:6px 20px;font-size:12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(0,0,0,.06);}
-  .version-ro-bar{background:linear-gradient(135deg,#fef3c7,#fffbeb);color:#92400e;}
-  .version-inherit-bar{background:linear-gradient(135deg,#e0f2fe,#f0f9ff);color:#0369a1;}
-  .version-bar button{font-size:11px;padding:4px 12px;border-radius:8px;border:1.5px solid currentColor;background:transparent;color:inherit;cursor:pointer;font-weight:600;transition:background .15s;}
-  .version-bar button:hover{background:rgba(0,0,0,.07);}
-  .version-selector-panel{position:absolute;top:100%;right:0;z-index:200;min-width:280px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:12px 0;overflow:hidden;}
-  .version-selector-panel .vs-item{padding:9px 16px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:10px;transition:background .1s;}
-  .version-selector-panel .vs-item:hover{background:#f8fafc;}
-  .version-selector-panel .vs-item.active{background:#f0f9ff;font-weight:700;color:#0369a1;}
-  .version-selector-panel .vs-item.vs-new{color:#059669;font-weight:600;border-top:1px solid #e2e8f0;margin-top:4px;padding-top:12px;}
-  .version-selector-panel .vs-meta{font-size:11px;color:var(--text-muted);margin-top:1px;}
-  .version-badge-wrap{position:relative;display:inline-block;}
-  .pa-table{width:100%;border-collapse:collapse;font-size:13px;}
-  .pa-table th{background:var(--cage-blue);color:white;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
-  .pa-table td{padding:10px 12px;border-bottom:1px solid var(--cage-border);vertical-align:top;}
-  .pa-table tr:hover td{background:var(--cage-light);}
-  .pa-status{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
-  .pa-status.pendente{background:#fef3c7;color:#92400e;}
-  .pa-status.andamento{background:#dbeafe;color:#1e40af;}
-  .pa-status.concluido{background:#d1fae5;color:#065f46;}
-  .pa-status.atrasado{background:#fee2e2;color:#991b1b;}
-
-  /* ── CHECKLISTS ──────────────────────────── */
-  .ck-card{background:white;border:1px solid var(--cage-border);border-radius:10px;padding:16px 18px;margin-bottom:12px;}
-  .ck-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:12px;}
-  .ck-title{font-size:14px;font-weight:700;color:var(--cage-blue);}
-  .ck-step-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;background:#e0e7ff;color:#3730a3;}
-  .ck-progress{font-size:11px;color:var(--text-muted);}
-  .ck-items{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px;}
-  .ck-item{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;transition:background .1s;cursor:pointer;}
-  .ck-item:hover{background:#f8fafc;}
-  .ck-item input[type=checkbox]{width:15px;height:15px;margin-top:2px;accent-color:var(--cage-accent);cursor:pointer;flex-shrink:0;}
-  .ck-item-text{font-size:13px;color:#334155;line-height:1.4;}
-  .ck-item-text.done{text-decoration:line-through;color:var(--text-muted);}
-  .ck-bar{height:4px;border-radius:2px;background:#e2e8f0;margin-top:10px;overflow:hidden;}
-  .ck-bar-fill{height:100%;background:var(--cage-accent);border-radius:2px;transition:width .3s;}
-
-
-  /* ── NATUREZA DA ATIVIDADE ───────────────── */
-  .natureza-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
-  .natureza-btn{padding:5px 10px;border-radius:8px;border:1.5px solid #e2e8f0;background:white;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;color:#64748b;}
-  .natureza-btn.selected{border-color:var(--cage-accent);background:rgba(0,168,107,.12);color:var(--cage-accent);}
-  .natureza-badge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;text-transform:uppercase;letter-spacing:.4px;margin-left:4px;}
-  .nat-execucao{background:#dcfce7;color:#166534;}
-  .nat-revisao{background:#dbeafe;color:#1e40af;}
-  .nat-aprovacao{background:#fef9c3;color:#854d0e;}
-  .nat-distribuicao{background:#f3e8ff;color:#6b21a8;}
-  .nat-comunicacao{background:#ffedd5;color:#9a3412;}
-
-  /* ── REUNIÕES ────────────────────────────── */
-  .meet-card{background:white;border:1px solid var(--cage-border);border-radius:10px;padding:16px 18px;margin-bottom:12px;}
-  .meet-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px;}
-  .meet-type-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;background:#e0e7ff;color:#3730a3;white-space:nowrap;}
-  .meet-date{font-size:12px;color:var(--text-muted);}
-  .meet-participants{font-size:12px;color:var(--text-secondary);margin-bottom:8px;}
-  .meet-ata{font-size:13px;color:var(--text-primary);line-height:1.6;white-space:pre-wrap;}
-
-  /* ── MODAL GENÉRICO (riscos / pa / reunião) ── */
-  .gmod-overlay{display:none;position:fixed;inset:0;z-index:2500;align-items:center;justify-content:center;background:rgba(0,0,0,.5);}
-  .gmod-overlay.open{display:flex;}
-  .gmod-box{background:white;border-radius:14px;width:620px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.2);}
-  .gmod-head{background:var(--cage-blue);border-radius:14px 14px 0 0;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;}
-  .gmod-head h3{font-family:"DM Serif Display",serif;font-size:18px;color:white;margin:0;}
-  .gmod-close{background:none;border:none;color:rgba(255,255,255,.7);font-size:20px;cursor:pointer;line-height:1;}
-  .gmod-body{padding:22px 24px;display:flex;flex-direction:column;gap:14px;}
-  .gmod-foot{padding:14px 24px;border-top:1px solid var(--cage-border);display:flex;justify-content:flex-end;gap:8px;}
-  .gmod-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .gmod-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);display:block;margin-bottom:4px;}
-  .matrix-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:6px 0;}
-  .matrix-cell{height:36px;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;transition:all .15s;}
-  .matrix-cell:hover{transform:scale(1.08);}
-  .matrix-cell.selected{box-shadow:0 0 0 3px var(--cage-blue),0 0 0 5px white;}
-
-
-  /* ── SUPABASE AUTH ──────────────────────── */
-  .auth-overlay{position:fixed;inset:0;z-index:9000;background:var(--cage-blue);display:none;align-items:center;justify-content:center;}
-  .auth-box{background:white;border-radius:20px;padding:40px 44px;width:420px;max-width:92vw;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.35);}
-  .auth-logo-siga{width:100%;margin:0 auto 20px;}
-  .auth-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px;line-height:1.5;}
-  .auth-ms-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border:none;border-radius:10px;background:#0078d4;cursor:pointer;font-size:14px;font-weight:600;color:white;transition:all .2s;margin-bottom:12px;}
-  .auth-ms-btn:hover{background:#106ebe;transform:translateY(-1px);}
-  .auth-google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border:2px solid var(--cage-border);border-radius:10px;background:white;cursor:pointer;font-size:14px;font-weight:600;color:var(--cage-blue);transition:all .2s;margin-bottom:12px;}
-  .auth-google-btn:hover{border-color:var(--cage-mid);background:var(--cage-light);transform:translateY(-1px);}
-  .auth-google-icon{width:20px;height:20px;}
-  .auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--text-muted);font-size:12px;}
-  .auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--cage-border);}
-  .auth-email-row{display:flex;gap:8px;}
-  .auth-status{font-size:12px;color:var(--text-muted);margin-top:12px;min-height:18px;}
-  .user-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border-radius:20px;padding:4px 12px 4px 4px;font-size:12px;color:#1e293b;}
-  .user-avatar{width:26px;height:26px;border-radius:50%;background:var(--cage-accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;}
-  .sync-indicator{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:4px;}
-  .sync-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;}
-  .sync-dot.syncing{background:#fbbf24;animation:pulse .8s infinite;}
-  .sync-dot.error{background:#f87171;}
-
-
-
-
-
-  /* ── BACKUP / IMPORT ───────────────────────────────────── */
-  .backup-modal-body { display:flex; flex-direction:column; gap:16px; }
-  .backup-zone { border:2px dashed var(--cage-border); border-radius:10px; padding:24px;
-    text-align:center; cursor:pointer; transition:all .2s; background:var(--cage-light); }
-  .backup-zone:hover { border-color:var(--cage-accent); background:#f0faf5; }
-  .backup-zone input[type=file] { display:none; }
-  .backup-zone-icon { font-size:32px; margin-bottom:8px; }
-  .backup-zone-label { font-size:14px; font-weight:600; color:var(--cage-blue); margin-bottom:4px; }
-  .backup-zone-sub { font-size:12px; color:var(--text-muted); }
-  .backup-import-preview { background:#f8fafc; border-radius:8px; padding:12px 16px;
-    font-size:12px; color:var(--text-secondary); display:none; border:1px solid var(--cage-border); }
-  .backup-import-preview.visible { display:block; }
-  .backup-import-preview strong { color:var(--cage-blue); }
-
-
-  /* ── QUADRO DE ESBOÇO (Excalidraw) ───────────────────────── */
-  #quadro-module { display:none; }
-  .quadro-toolbar { background:var(--cage-blue); padding:10px 20px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-bottom:2px solid var(--cage-accent); }
-  .q-btn { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08); color:#1e293b; transition:all .15s; white-space:nowrap; }
-  .q-btn:hover { background:rgba(255,255,255,.18); color:#1e293b; }
-
-  /* ── BUSCA GLOBAL ────────────────────────────────────────── */
-  .search-input-wrap { position:relative; display:flex; align-items:center; }
-  .search-input { background:#222; border:1.5px solid rgba(255,255,255,.15);
-    border-radius:20px; color:#fff; font-size:12px; padding:6px 14px 6px 32px;
-    width:180px; outline:none; transition:all .2s; font-family:inherit; }
-  .search-input::placeholder { color:rgba(255,255,255,.4); }
-  .search-input:focus { background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.4); width:240px; }
-  .search-icon { position:absolute; left:10px; font-size:12px; pointer-events:none; opacity:.5; }
-  .search-clear { position:absolute; right:10px; background:none; border:none; color:rgba(255,255,255,.5);
-    cursor:pointer; font-size:13px; padding:0; display:none; line-height:1; }
-  .search-clear.visible { display:block; }
-
-  /* Modal de resultados */
-  .search-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55);
-    z-index:1100; display:none; align-items:flex-start; justify-content:center; padding-top:80px; }
-  .search-modal-overlay.open { display:flex; }
-  .search-modal { background:white; border-radius:16px; width:680px; max-width:95vw;
-    max-height:75vh; display:flex; flex-direction:column;
-    box-shadow:0 24px 80px rgba(0,0,0,.3); overflow:hidden; }
-  .search-modal-head { padding:16px 20px; border-bottom:1px solid var(--cage-border);
-    display:flex; align-items:center; gap:10px; background:var(--cage-light); }
-  .search-modal-head input { flex:1; border:none; background:transparent; font-size:15px;
-    outline:none; color:var(--cage-blue); font-family:inherit; font-weight:500; }
-  .search-modal-head span { font-size:18px; }
-  .search-modal-count { font-size:11px; color:var(--text-muted); white-space:nowrap; }
-  .search-modal-body { overflow-y:auto; flex:1; padding:8px 0; }
-  .search-result-item { padding:14px 20px; cursor:pointer; border-bottom:1px solid var(--cage-border);
-    transition:background .15s; }
-  .search-result-item:last-child { border-bottom:none; }
-  .search-result-item:hover { background:var(--cage-light); }
-  .search-result-pop { font-size:10px; font-weight:700; text-transform:uppercase;
-    letter-spacing:.06em; color:var(--cage-accent); margin-bottom:4px; }
-  .search-result-q { font-size:14px; font-weight:600; color:var(--cage-blue);
-    margin-bottom:4px; line-height:1.4; }
-  .search-result-a { font-size:13px; color:var(--text-secondary); line-height:1.5; }
-  .search-result-a mark { background:#fef08a; border-radius:2px; padding:0 2px; font-style:normal; }
-  .search-empty { text-align:center; padding:48px 20px; color:var(--text-muted); }
-  .search-empty-icon { font-size:36px; margin-bottom:12px; }
-  .search-modal-close { background:none; border:none; font-size:18px; cursor:pointer;
-    color:var(--text-muted); padding:4px 8px; border-radius:6px; transition:background .15s; }
-  .search-modal-close:hover { background:var(--cage-border); }
-
-  /* ── PAT MODULE ──────────────────────────────── */
-  .pat-module { display:none; padding:32px; max-width:1100px; margin:0 auto; }
-  .pat-module.active { display:block; }
-  .pat-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
-  .pat-kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:20px; }
-  .pat-kpi-card { background:white; border-radius:10px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-  .pat-progress-row { display:flex; align-items:center; gap:10px; }
-  .pat-progress-bar-bg { flex:1; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; }
-  .pat-progress-bar-fill { height:100%; border-radius:3px; transition:width .4s; }
-  .pat-progress-label { font-size:12px; font-weight:700; color:var(--text-muted); width:36px; text-align:right; }
-
-  /* ── PERMISSIONS / HISTORY ───────────────────────── */
-  .perm-panel{position:fixed;bottom:24px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
-  .perm-fab{width:46px;height:46px;border-radius:50%;background:var(--cage-accent);color:white;border:none;font-size:18px;cursor:pointer;box-shadow:0 4px 16px rgba(27,48,34,.25);display:flex;align-items:center;justify-content:center;transition:all .2s;}
-  .perm-fab:hover{background:var(--design-accent-hover);transform:scale(1.08);}
-  .history-chip{background:var(--cage-blue);color:rgba(255,255,255,.7);font-size:11px;padding:4px 10px;border-radius:10px;white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
-  .readonly-banner{background:#fef3c7;border-bottom:2px solid #f59e0b;padding:8px 32px;font-size:13px;color:#92400e;text-align:center;display:none;}
-  .readonly-banner.show{display:block;}
-  .editor-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cage-border);}
-  .editor-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;}
-  .editor-badge.admin{background:#dbeafe;color:#1e40af;}
-  .editor-badge.editor{background:#d1fae5;color:#065f46;}
-  .history-list{max-height:300px;overflow-y:auto;}
-  .hist-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--cage-border);font-size:12px;}
-  .hist-avatar{width:28px;height:28px;border-radius:50%;background:var(--cage-accent);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
-  .hist-info{flex:1;}
-  .hist-name{font-weight:600;color:var(--cage-blue);}
-  .hist-action{color:var(--text-secondary);}
-  .hist-time{font-size:11px;color:var(--text-muted);}
-
-
-  /* ── SIDEBAR ──────────────────────────────────────── */
-  .sidebar{position:fixed;top:64px;left:0;width:260px;height:calc(100vh - 64px);background:var(--cage-blue);z-index:90;transform:translateX(-260px);transition:transform .25s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(0,0,0,.25);}
-  .sidebar.open{transform:translateX(0);}
-  .sidebar-toggle{position:fixed;top:50%;left:0;transform:translateY(-50%);z-index:91;background:var(--cage-accent);color:white;border:none;width:22px;height:52px;cursor:pointer;border-radius:0 8px 8px 0;font-size:11px;transition:left .25s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:center;}
-  .sidebar.open ~ .sidebar-toggle,.sidebar.open + * .sidebar-toggle{left:260px;}
-  .sidebar-toggle.shifted{left:260px;}
-  .sidebar-head{padding:16px 16px 10px;border-bottom:1px solid rgba(255,255,255,.08);}
-  .sidebar-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:10px;}
-  .sidebar-new-btn{width:100%;padding:8px 12px;background:#FFD600;color:#000;border:1.5px solid #b45309;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
-  .sidebar-new-btn:hover{background:#ffe066;}
-  .sidebar-pat-btn{width:100%;margin-top:6px;padding:8px 12px;background:rgba(0,51,102,.25);color:#a8c4e8;border:1.5px solid rgba(0,51,102,.4);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
-  .sidebar-pat-btn:hover{background:rgba(0,51,102,.40);}
-  .sidebar-list{flex:1;overflow-y:auto;padding:8px 0;}
-  .sidebar-list::-webkit-scrollbar{width:4px;}
-  .sidebar-list::-webkit-scrollbar-track{background:transparent;}
-  .sidebar-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
-  .sidebar-group{margin-bottom:2px;}
-  .sidebar-group-label{padding:8px 16px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);}
-  .sidebar-macro-label{display:flex;align-items:center;gap:6px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);margin-top:4px;}
-  .sidebar-macro-label:first-child{border-top:none;margin-top:0;}
-  .sidebar-macro-icon{font-size:12px;}
-  .sidebar-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:12px;font-weight:500;color:#fff;cursor:pointer;border-left:3px solid transparent;transition:all .15s;background:#222;}
-  .sidebar-item:hover{background:#000;color:#FFD600;}
-  .sidebar-item.active{background:#FFD600;color:#000;border-left-color:var(--cage-accent);}
-  .sidebar-item-icon{font-size:14px;flex-shrink:0;}
-  .sidebar-item-name{flex:1;line-height:1.3;}
-  .sidebar-item-badge{font-size:9px;padding:1px 5px;border-radius:8px;background:#000;color:#FFD600;}
-
-  /* ── SIDEBAR is always overlay — never pushes content ──────────── */
-  /* removed duplicate .main transition:none; */
-
-  /* ── PLANO DE TRABALHO ────────────────────────── */
-  /* removed duplicate .pat-module and .pat-module.active */
-  /* removed duplicate .pat-header-row and .pat-kpi-row */
-  .pat-kpi{background:white;border-radius:10px;padding:16px 18px;border-left:4px solid;box-shadow:0 1px 4px rgba(27,48,34,.07);}
-  .pat-kpi.total{border-left-color:var(--cage-blue);}
-  .pat-kpi.andamento{border-left-color:#3b82f6;}
-  .pat-kpi.concluido{border-left-color:var(--cage-accent);}
-  .pat-kpi.atrasado{border-left-color:var(--cage-red);}
-  .pat-kpi-value{font-size:28px;font-weight:800;font-family:"JetBrains Mono",monospace;color:var(--cage-blue);}
-  .pat-kpi-label{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
-  .pat-card{background:white;border-radius:10px;padding:16px 18px;box-shadow:0 1px 4px rgba(27,48,34,.07);margin-bottom:12px;border-left:4px solid var(--cage-border);transition:box-shadow .15s;}
-  .pat-card:hover{box-shadow:0 4px 16px rgba(27,48,34,.1);}
-  .pat-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;}
-  .pat-card-title{font-size:14px;font-weight:700;color:var(--cage-blue);}
-  .pat-card-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--text-muted);}
-  .pat-progress-bar{height:6px;background:var(--cage-border);border-radius:3px;margin-top:10px;overflow:hidden;}
-  .pat-progress-fill{height:100%;border-radius:3px;transition:width .4s;}
-  .pat-filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
-  .pat-filter-btn{padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;border:1.5px solid var(--cage-border);background:white;cursor:pointer;color:var(--text-secondary);transition:all .15s;}
-  .pat-filter-btn.active{background:var(--cage-blue);color:white;border-color:var(--cage-blue);}
-
-
-  /* ── EPP MODULE (Gestão EPP) ── */
-  .epp-tab{padding:9px 20px;border:none;border-bottom:3px solid transparent;background:none;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;white-space:nowrap;transition:all .15s;}
-  .epp-tab.active{color:#1B3022;border-bottom-color:#1B3022;}
-  .epp-tab:hover{color:#1B3022;}
-  .epp-dash-section{background:white;border-radius:14px;padding:22px 24px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
-  .epp-dash-section-title{font-size:15px;font-weight:800;color:#1B3022;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-  .epp-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:16px;}
-  .epp-kpi-card{background:#f8fafc;border-radius:10px;padding:16px 18px;border-left:4px solid #1B3022;}
-  .epp-kpi-value{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;color:#1B3022;line-height:1.1;}
-  .epp-kpi-label{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:4px;}
-  .epp-kpi-sub{font-size:11px;color:#94a3b8;margin-top:2px;}
-  .epp-prog-bar{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-top:6px;}
-  .epp-prog-fill{height:100%;border-radius:4px;transition:width .6s ease;}
-  .epp-macro-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;}
-  .epp-macro-row:last-child{border-bottom:none;}
-  .epp-tri-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-  .epp-tri-card{background:#f8fafc;border-radius:10px;padding:14px 12px;text-align:center;}
-  .epp-tri-label{font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;}
-  .epp-tri-val{font-size:20px;font-weight:800;color:#1B3022;}
-  .epp-tri-sub{font-size:11px;color:#94a3b8;margin-top:2px;}
-  .epp-horas-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;}
-  .epp-horas-table th{text-align:left;padding:7px 10px;font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;}
-  .epp-horas-table td{padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#334155;}
-  .epp-horas-table tr:last-child td{border-bottom:none;}
-
-  /* ── MONITORING MODULE ── */
-  .mon-sub-btn{padding:7px 18px;border:none;border-bottom:3px solid transparent;background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-muted);transition:all .15s;white-space:nowrap;}
-  .mon-sub-btn.active{color:var(--cage-blue);border-bottom-color:var(--cage-blue);}
-  .mon-sub-btn:hover{color:var(--cage-blue);}
-  .mon-online-card{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;background:#f8fafc;}
-  .mon-online-dot{width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2);flex-shrink:0;}
-  .mon-online-dot.away{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.2);}
-  .mon-online-avatar{width:36px;height:36px;border-radius:50%;background:var(--cage-blue);color:white;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .mon-online-name{font-size:13px;font-weight:700;color:#1B3022;}
-  .mon-online-email{font-size:11px;color:var(--text-muted);}
-  .mon-online-time{font-size:11px;color:var(--text-muted);margin-left:auto;white-space:nowrap;}
-  .mon-log-table{width:100%;border-collapse:collapse;font-size:12px;}
-  .mon-log-table th{text-align:left;padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);border-bottom:2px solid #e2e8f0;white-space:nowrap;}
-  .mon-log-table td{padding:8px 10px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:top;}
-  .mon-log-table tr:last-child td{border-bottom:none;}
-  .mon-log-table tr:hover td{background:#f8fafc;}
-  .mon-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;}
-  .mon-badge-login{background:#dcfce7;color:#15803d;}
-  .mon-badge-logout{background:#fee2e2;color:#b91c1c;}
-  .mon-badge-save{background:#dbeafe;color:#1d4ed8;}
-  .mon-filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
-  .mon-filter-row input,.mon-filter-row select{padding:6px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;color:#334155;}
-  .mon-empty{text-align:center;padding:32px 0;color:var(--text-muted);font-size:13px;}
-  .mon-load-more{width:100%;padding:8px;background:none;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;color:var(--text-muted);cursor:pointer;margin-top:10px;}
-  .mon-load-more:hover{background:#f8fafc;}
-  /* ── AUDIT MODULE ── */
-  .audit-tab{padding:8px 18px;border:none;border-bottom:3px solid transparent;background:none;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;white-space:nowrap;transition:all .15s;}
-  .audit-tab.active{color:#1B3022;border-bottom-color:#1B3022;}
-  .audit-tab:hover{color:#1B3022;}
-  .audit-tab-panel{display:block;}
-  .audit-label{font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;letter-spacing:.04em;}
-  .audit-card{background:white;border-radius:12px;padding:18px 20px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:12px;border-left:4px solid #1B3022;transition:box-shadow .15s;cursor:pointer;}
-  .audit-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.1);}
-  .audit-card-title{font-size:14px;font-weight:700;color:#1B3022;margin-bottom:4px;}
-  .audit-card-meta{font-size:12px;color:#64748b;display:flex;gap:14px;flex-wrap:wrap;}
-  .audit-badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
-  .audit-badge-planejada{background:#eff6ff;color:#1d4ed8;}
-  .audit-badge-em_execucao{background:#fef9c3;color:#a16207;}
-  .audit-badge-concluida{background:#dcfce7;color:#15803d;}
-  .audit-badge-cancelada{background:#f1f5f9;color:#334155;}
-  .audit-badge-aberta{background:#fee2e2;color:#b91c1c;}
-  .audit-badge-em_tratamento{background:#fef9c3;color:#a16207;}
-  .audit-badge-fechada{background:#dcfce7;color:#15803d;}
-  .audit-badge-pendente{background:#f1f5f9;color:#334155;}
-  .audit-badge-em_andamento{background:#fef9c3;color:#a16207;}
-  .audit-nc-filter{padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;border:1.5px solid #e2e8f0;background:white;cursor:pointer;color:#64748b;transition:all .15s;}
-  .audit-nc-filter.active{background:#1B3022;color:white;border-color:#1B3022;}
-  .audit-nc-critica{border-left-color:#dc2626 !important;}
-  .audit-nc-moderada{border-left-color:#f59e0b !important;}
-  .audit-nc-leve{border-left-color:#22c55e !important;}
-  .checklist-row{background:#f8fafc;border:1px solid #e9eef5;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;}
-  .checklist-row-top{display:flex;align-items:flex-start;gap:10px;}
-  .checklist-row-num{background:#003366;color:white;font-size:11px;font-weight:700;border-radius:50%;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
-  .checklist-row-q{flex:1;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;background:white;outline:none;resize:vertical;min-height:52px;line-height:1.45;font-family:inherit;}
-  .checklist-row-q:focus{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.15);}
-  .checklist-row-bottom{display:flex;gap:8px;align-items:center;}
-  .checklist-row-bottom select{font-size:12px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;background:white;outline:none;flex-shrink:0;}
-  .checklist-row-obs{flex:1;font-size:12px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;background:white;outline:none;}
-  .checklist-row-obs:focus{border-color:#3b82f6;}
-
-  /* ── HOME PAGE ── */
-  .home-card {
-    background: white;
-    border-radius: 14px;
-    padding: 24px 22px 18px;
-    cursor: pointer;
-    box-shadow: 0 2px 12px rgba(0,0,0,.07);
-    transition: transform .15s, box-shadow .15s;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    /* Verde Profundo em todos os módulos — sobrescreve inline styles */
-    border-top: 4px solid #1B3022 !important;
-  }
-  .home-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(27,48,34,.18); }
-  .home-card-icon {
-    width: 48px; height: 48px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center; font-size: 22px;
-    /* Fundo e ícone no verde profundo — sobrescreve inline styles */
-    background: #e3ede5 !important;
-    color: #1B3022 !important;
-  }
-  .home-card-title { font-size: 15px; font-weight: 700; color: #1B3022; }
-  .home-card-desc { font-size: 13px; color: #64748b; line-height: 1.5; flex: 1; }
-  .home-card-footer { font-size: 12px; color: #94a3b8; font-weight: 500; margin-top: 4px; }
-  .home-card-editor-badge { color: #1B3022; font-weight: 600; }
-  #home-stats > div { background: white; border-radius: 8px; padding: 7px 10px; box-shadow: 0 2px 6px rgba(0,0,0,.06); flex: 1 1 0; min-width: 0; }
-
-
-/* ═══ RESPONSIVIDADE MOBILE ═══════════════════════════════ */
-@media (max-width: 768px) {
-  /* Header */
-  .header-inner { padding: 0 12px; gap: 8px; height: 56px; }
-  .header-title strong { font-size: 13px; }
-  .header-title span:last-child { display: none; }
-  .header-actions { gap: 4px; }
-  .header-actions .btn { font-size: 11px; padding: 5px 8px; }
-  #perm-panel { display: none !important; }
-
-  /* Sidebar */
-  .sidebar { width: 88vw; max-width: 320px; }
-
-  /* Pop switcher */
-  .pop-switcher-inner { padding: 0 8px; overflow-x: auto; }
-
-  /* Nav tabs */
-  .nav-tabs-inner { padding: 0 4px; gap: 0; overflow-x: auto; }
-  .nav-tab { font-size: 11px; padding: 9px 8px; white-space: nowrap; }
-
-  /* Main content — padding-left maior para não esconder atrás do toggle (32px fixo) */
-  .main { padding: 10px 10px 40px 44px; }
-
-  /* Cards grid */
-  .visao-grid { grid-template-columns: 1fr !important; }
-  .flow-step { flex-direction: column; }
-
-  /* HOME — forçar layout mobile */
-  #home-page {
-    padding: 16px 12px 40px !important;
-    max-width: 100vw !important;
-    box-sizing: border-box !important;
-  }
-  #home-page > div:first-child > div:first-child { font-size: 22px !important; }
-  #home-page > div:first-child > div:last-child  { font-size: 13px !important; }
-  #home-stats { gap: 6px !important; flex-wrap: wrap !important; }
-  #home-stats > div { flex: 1 1 calc(50% - 6px) !important; min-width: 0 !important; padding: 8px 10px !important; }
-
-  /* Home cards grid — 1 coluna em mobile */
-  #home-page > div:nth-child(2) {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
-  #home-pops-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
-  .home-card { padding: 12px !important; }
-  .home-card-icon { width: 40px !important; height: 40px !important; font-size: 18px !important; }
-  .home-card-title { font-size: 14px !important; }
-  .home-card-desc { font-size: 12px !important; }
-
-  /* Módulos */
-  #repo-module, #drops-module, #arq-module, #pat-module {
-    padding: 14px 10px 40px !important;
-    max-width: 100vw !important;
-    box-sizing: border-box !important;
-  }
-  #drops-grid { grid-template-columns: 1fr !important; }
-  #repo-grid  { grid-template-columns: 1fr !important; }
-
-  /* Modais */
-  .npop-box, .gmod-box { width: 96vw !important; margin: 8px auto !important; }
-  .npop-row { grid-template-columns: 1fr !important; }
-  .npop-methods { grid-template-columns: 1fr !important; }
-  .modal { width: 94vw !important; padding: 20px 16px !important; }
-
-  /* Fluxo BPMN */
-  .bpmn-canvas-wrap { height: 50vh !important; }
-  .bpmn-toolbar { flex-wrap: wrap; gap: 4px; padding: 6px 8px !important; }
-  .bpmn-toolbar button { font-size: 11px !important; padding: 5px 8px !important; }
-
-  /* Tabela Arq */
-  #arq-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  #arq-filter-bar { flex-direction: column !important; gap: 6px !important; }
-  #arq-filter-bar input, #arq-filter-bar select { width: 100% !important; box-sizing: border-box !important; }
-  #arq-table th, #arq-table td { font-size: 11px; padding: 5px 6px; white-space: nowrap; }
-
-  /* PAT */
-  .pat-kpi-row { grid-template-columns: repeat(2, 1fr) !important; }
-  .pat-header-row { flex-direction: column; align-items: flex-start !important; gap: 8px !important; }
-  .pat-card { padding: 14px 12px !important; }
-
-  /* Indicadores */
-  .ind-grid { grid-template-columns: 1fr !important; }
-
-  /* Step panel */
-  .step-panel { padding: 14px !important; }
-  .step-actions { padding-left: 0 !important; }
-
-  /* Ficha técnica */
-  .ficha-grid { grid-template-columns: 1fr !important; }
-
-  /* Risk matrix */
-  #risk-impact-btns, #risk-prob-btns { flex-wrap: wrap; }
-
-  /* Drops/Repo modais */
-  #drops-modal > div, #repo-upload-modal > div { width: 96vw !important; max-height: 92vh !important; overflow-y: auto !important; }
-
-  /* Search */
-  .search-overlay-inner { padding: 12px 10px !important; }
-  .search-input-wrap input { font-size: 14px !important; }
-
-  /* Auth box */
-  .auth-box { padding: 28px 20px !important; width: 92vw !important; }
-
-  /* Edit bar — ajustar top para altura do header mobile (56px) */
-  .edit-bar { top: 56px; }
-
-  /* Sidebar — ajustar top e altura para header mobile */
-  /* .sidebar { top: 56px; height: calc(100vh - 56px); }  Removido seletor duplicado */
-
-  /* Sidebar toggle — área de toque maior e posição correta para sidebar 88vw */
-  .sidebar-toggle { width: 32px; }
-  .sidebar-toggle.shifted { left: min(88vw, 320px); }
-  .sidebar.open ~ .sidebar-toggle { left: min(88vw, 320px); }
-
-  /* BPMN — remover min-height que causa overflow em tela pequena */
-  /* .bpmn-canvas-wrap { min-height: 0 !important; }  Removido seletor duplicado */
-
-  /* Search modal — reduzir padding-top excessivo */
-  .search-modal-overlay { padding-top: 16px; }
-
-  /* Toast — afastar da borda inferior em mobile */
-  .toast { bottom: 12px; right: 12px; left: 12px; text-align: center; }
-}
-
-/* --- RESET TOTAL E BARRA INFERIOR MOBILE --- */
-@media (max-width: 768px) {
-    
-    /* 1. MATAR O BOTÃO DE 3 LINHAS (HAMBÚRGUER) */
-    /* Isso remove as linhas verdes que não funcionam */
-    .menu-toggle, #sidebarCollapse, .hamburger, .toggle-sidebar {
-        display: none !important;
-    }
-
-    /* 2. FORÇAR A SIDEBAR PARA O RODAPÉ */
-    .sidebar {
-        display: flex !important;
-        visibility: visible !important;
-        position: fixed !important;
-        bottom: 0 !important;
-        top: auto !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 70px !important;
-        flex-direction: row !important; /* Ícones lado a lado */
-        justify-content: space-around !important;
-        align-items: center !important;
-        background-color: #ffffff !important;
-        box-shadow: 0 -3px 15px rgba(0,0,0,0.1) !important;
-        z-index: 99999 !important;
-        transform: none !important; /* Anula qualquer animação de esconder */
-        padding: 0 !important;
-        margin: 0 !important;
-        border-right: none !important;
-        border-top: 1px solid #eee !important;
-    }
-
-    /* 3. AJUSTAR OS LINKS (ÍCONE EM CIMA, TEXTO EMBAIXO) */
-    .sidebar a {
-        flex: 1 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-size: 10px !important;
-        color: #2e7d32 !important; /* Verde do seu tema */
-        height: 100% !important;
-        padding: 5px 0 !important;
-    }
-
-    .sidebar a i {
-        font-size: 22px !important;
-        margin-bottom: 4px !important;
-        margin-right: 0 !important;
-    }
-
-    /* 4. LIBERAR O CONTEÚDO PRINCIPAL */
-    /* Removemos a margem da esquerda e damos espaço no fundo */
-    main, .content, .main-content, #app {
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding: 15px !important;
-        margin-bottom: 80px !important; /* Espaço para não cobrir o último item */
-    }
-
-    /* 5. LIMPEZA DE ELEMENTOS DESNECESSÁRIOS */
-    .sidebar-header, .logo, .user-profile, .sidebar span:not(.icon-text) {
-        display: none !important;
-    }
-}
-
-/* ── Flow Designer: modo texto/Mermaid ────────────────────────── */
-#fd-left-panel { width:260px; flex-shrink:0; display:flex; flex-direction:column; border-right:1px solid var(--cage-border); transition:width .2s; }
-#fd-left-panel.collapsed { width:0 !important; overflow:hidden; border-right:none; }
-#fd-collapse-btn { padding:4px 8px; background:#000; color:#FFD600; border:1px solid #FFD600; border-radius:5px; font-size:11px; cursor:pointer; flex-shrink:0; }
-/* ── Flow Designer: BPMN 2.0 (bpmn-js) ───────────────────────── */
-#fd-module { background:#f0f2f7; }
-#fd-mode-bar { display:flex; gap:0; background:#0d2e52; border-bottom:1px solid rgba(255,255,255,.1); padding:0 14px; }
-.fd-mode-btn { padding:8px 16px; font-size:12px; font-weight:600; color:rgba(255,255,255,.55); background:none; border:none; border-bottom:3px solid transparent; cursor:pointer; transition:all .15s; white-space:nowrap; }
-.fd-mode-btn.active { color:white; border-bottom-color:#00a86b; }
-#fd-bpmn-toolbar { height:46px; padding:0 14px; background:var(--cage-blue); display:flex; align-items:center; gap:6px; flex-wrap:nowrap; overflow-x:auto; }
-#fd-bpmn-container { height:calc(100vh - 262px); min-height:400px; background:#fff; }
-.bpmn-icon-bpmn-io { display:none !important; }
-
-
-  /* ══════════════════════════════════════════════
-     INDICADORES CAGE MODULE
-  ══════════════════════════════════════════════ */
-  #indicadores-cage-module { background:white; border-bottom:2px solid #e2e8f0; position:sticky; top:64px; z-index:20; }
-  .indcage-header { max-width:1200px; margin:0 auto; padding:16px 32px 0; }
-  .indcage-tabs { display:flex; gap:0; }
-  .indcage-tab { padding:10px 20px; font-size:13px; font-weight:600; color:#64748b; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; white-space:nowrap; background:none; border-left:none; border-right:none; border-top:none; }
-  .indcage-tab:hover { color:#1B3022; }
-  .indcage-tab.active { color:#e8a020; border-bottom-color:#e8a020; }
-  #indcage-panel { max-width:1200px; margin:0 auto; padding:24px 32px 80px; }
-  .indcage-section { display:none; }
-  .indcage-section.active { display:block; }
-
-  /* Indicator card grid */
-  .indcage-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin-top:20px; }
-  .indcage-card { background:white; border:1.5px solid var(--cage-border); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow-sm); transition:box-shadow .2s; position:relative; }
-  .indcage-card:hover { box-shadow:var(--shadow-md); }
-  .indcage-card-header { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
-  .indcage-card-codigo { font-size:11px; font-weight:700; color:#607070; text-transform:uppercase; letter-spacing:.06em; }
-  .indcage-card-titulo { font-size:14px; font-weight:600; color:var(--cage-blue); line-height:1.35; margin-top:2px; }
-  .indcage-card-nivel { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-top:6px; }
-  .nivel-atividade { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
-  .nivel-processo { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
-  .nivel-macroprocesso { background:#fdf4ff; color:#7e22ce; border:1px solid #e9d5ff; }
-  .nivel-acao { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
-  .nivel-etapa { background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; }
-  .indcage-card-meta { display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--cage-border); font-size:12px; color:var(--text-secondary); }
-  .indcage-card-sisplan { font-size:10px; color:#607070; margin-top:4px; }
-  .indcage-card-pop { font-size:11px; color:#1B3022; background:#F5F5F5; border-radius:6px; padding:2px 6px; margin-top:4px; display:inline-block; }
-  .indcage-card-actions { display:flex; gap:6px; margin-top:12px; }
-
-  /* Resultados tab */
-  .indcage-import-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#F5F5F5; border-radius:var(--radius); padding:14px 18px; margin-bottom:24px; }
-  .indcage-filter-bar { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; align-items:flex-end; }
-  .indcage-filter-group { display:flex; flex-direction:column; gap:4px; }
-  .indcage-filter-label { font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.05em; }
-  .indcage-filter-select { padding:7px 12px; border:1.5px solid var(--cage-border); border-radius:8px; font-size:13px; background:white; color:var(--text-primary); min-width:180px; }
-  .indcage-filter-select:focus { outline:none; border-color:var(--cage-accent); }
-
-  /* KPI cards for indicator result */
-  .indcage-kpi-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:24px; }
-  .indcage-kpi { background:white; border:1.5px solid var(--cage-border); border-radius:var(--radius); padding:14px 16px; text-align:center; }
-  .indcage-kpi-value { font-size:28px; font-weight:800; font-family:'JetBrains Mono',monospace; color:var(--cage-blue); line-height:1.1; }
-  .indcage-kpi-value.verde { color:#16a34a; }
-  .indcage-kpi-value.vermelho { color:#dc2626; }
-  .indcage-kpi-value.amarelo { color:#d97706; }
-  .indcage-kpi-label { font-size:11px; color:#64748b; margin-top:4px; font-weight:500; }
-  .indcage-kpi-sub { font-size:10px; color:#94a3b8; margin-top:2px; }
-
-  /* Charts */
-  .indcage-charts-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
-  @media(max-width:800px){ .indcage-charts-row { grid-template-columns:1fr; } }
-  .indcage-chart-card { background:white; border:1.5px solid var(--cage-border); border-radius:var(--radius); padding:16px; }
-  .indcage-chart-title { font-size:13px; font-weight:700; color:var(--cage-blue); margin-bottom:12px; }
-  .indcage-chart-wrap { position:relative; height:220px; }
-
-  /* Results table */
-  .indcage-table-wrap { overflow-x:auto; border-radius:var(--radius); border:1.5px solid var(--cage-border); }
-  .indcage-table { width:100%; border-collapse:collapse; font-size:12px; }
-  .indcage-table thead th { background:var(--cage-blue); color:white; padding:10px 12px; text-align:left; white-space:nowrap; font-weight:600; font-size:11px; }
-  .indcage-table tbody tr:nth-child(even) { background:#f8fafc; }
-  .indcage-table tbody td { padding:9px 12px; border-bottom:1px solid var(--cage-border); vertical-align:middle; }
-  .indcage-table tbody tr:hover { background:#f0f9ff; }
-  .indcage-pct-pill { display:inline-block; padding:2px 8px; border-radius:10px; font-weight:700; font-size:11px; font-family:'JetBrains Mono',monospace; }
-  /* Override panel */
-  .indcage-cfg-panel { background:#fafbff; border:1.5px solid #c7d7f5; border-radius:10px; margin-bottom:14px; overflow:hidden; }
-  .indcage-cfg-header { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; cursor:pointer; user-select:none; background:#eef3fc; }
-  .indcage-cfg-header:hover { background:#e2eaf9; }
-  .indcage-cfg-title { font-size:12px; font-weight:700; color:#1e3a7a; text-transform:uppercase; letter-spacing:.5px; }
-  .indcage-cfg-body { padding:14px 16px; display:none; border-top:1.5px solid #c7d7f5; }
-  .indcage-cfg-body.open { display:block; }
-  .indcage-cfg-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px 20px; }
-  .indcage-cfg-field { display:flex; flex-direction:column; gap:4px; }
-  .indcage-cfg-label { font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
-  .indcage-cfg-input { padding:6px 10px; border:1.5px solid #d1d9f0; border-radius:7px; font-size:13px; color:#1B3022; background:white; outline:none; }
-  .indcage-cfg-input:focus { border-color:#3b7ddd; }
-  .indcage-cfg-radio-row { display:flex; gap:10px; flex-wrap:wrap; }
-  .indcage-cfg-radio { display:flex; align-items:center; gap:5px; font-size:12px; color:#334155; cursor:pointer; }
-  .indcage-cfg-radio input { cursor:pointer; }
-  .indcage-cfg-badge { display:inline-block; padding:1px 7px; border-radius:8px; font-size:10px; font-weight:700; }
-  .indcage-cfg-save-row { display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:14px; padding-top:12px; border-top:1px solid #d1d9f0; }
-  .indcage-cfg-saved-msg { font-size:11px; color:#16a34a; font-weight:600; display:none; }
-  .pct-verde { background:#dcfce7; color:#15803d; }
-  .pct-amarelo { background:#fef9c3; color:#a16207; }
-  .pct-vermelho { background:#fee2e2; color:#b91c1c; }
-  .pct-cinza { background:#f1f5f9; color:#334155; }
-
-  /* Indicator CAGE modal */
-  #indcage-modal .gmod-body { display:flex; flex-direction:column; gap:14px; }
-  .indcage-nivel-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-
-  /* ── Relatório PPT tab ───────────────────────── */
-  .indrel-config-bar { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; background:#f8fafc; border:1.5px solid var(--cage-border); border-radius:var(--radius); padding:16px 18px; margin-bottom:24px; }
-  .indrel-config-field { display:flex; flex-direction:column; gap:5px; }
-  .indrel-list { display:flex; flex-direction:column; gap:8px; }
-  .indrel-item { display:flex; align-items:center; gap:14px; background:white; border:1.5px solid var(--cage-border); border-radius:var(--radius-sm); padding:12px 16px; cursor:pointer; transition:all .15s; user-select:none; }
-  .indrel-item:hover { border-color:#93c5fd; background:#f0f9ff; }
-  .indrel-item.selected { border-color:#3b82f6; background:#eff6ff; }
-  .indrel-checkbox { width:18px; height:18px; accent-color:#1B3022; cursor:pointer; flex-shrink:0; }
-  .indrel-item-info { flex:1; min-width:0; }
-  .indrel-item-codigo { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#1B3022; }
-  .indrel-item-enunciado { font-size:13px; color:#1e293b; margin-top:2px; }
-  .indrel-item-meta { font-size:11px; color:#64748b; margin-top:3px; display:flex; gap:12px; flex-wrap:wrap; }
-  .indrel-item-meta span { display:flex; align-items:center; gap:3px; }
-  .indrel-has-data { background:#dcfce7; color:#15803d; font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; flex-shrink:0; }
-  .indrel-no-data { background:#f1f5f9; color:#334155; font-size:10px; font-weight:600; padding:2px 7px; border-radius:6px; flex-shrink:0; }
-
-  /* ── ANÁLISE INTELIGENTE ── */
-  #ai-module { padding: 32px 32px 60px; max-width: 960px; margin: 0 auto; box-sizing: border-box; }
-  .ai-header { display:flex; align-items:center; gap:14px; margin-bottom:24px; }
-  .ai-header-icon { width:52px; height:52px; border-radius:14px; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
-  .ai-header-title { font-family:'DM Serif Display',serif; font-size:22px; color:#1B3022; margin:0 0 4px; }
-  .ai-header-sub { font-size:13px; color:#64748b; }
-  .ai-run-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 22px; background:#000; color:#FFD600; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
-  .ai-run-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(99,102,241,.35); }
-  .ai-run-btn:disabled { opacity:.55; cursor:not-allowed; transform:none; }
-  .ai-spinner { display:none; flex-direction:column; align-items:center; gap:16px; padding:48px 0; color:#6366f1; }
-  .ai-spinner svg { animation: ai-spin 1s linear infinite; }
-  @keyframes ai-spin { to { transform: rotate(360deg); } }
-  .ai-results { display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:24px; }
-  @media(max-width:700px) { .ai-results { grid-template-columns:1fr; } }
-  .ai-card { border-radius:12px; border:1.5px solid; padding:18px; }
-  .ai-card-title { font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; display:flex; align-items:center; gap:7px; }
-  .ai-card-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
-  .ai-card-list li { font-size:13px; color:#FFD600; line-height:1.5; padding:8px 10px; border-radius:7px; background:#000; }
-  .ai-card-list li::before { content:"•"; margin-right:6px; font-weight:900; }
-  .ai-card-empty { font-size:12px; color:#94a3b8; font-style:italic; }
-  .ai-card.gargalos   { border-color:#fca5a5; background:#fff5f5; } .ai-card.gargalos   .ai-card-title { color:#dc2626; }
-  .ai-card.inconsistencias { border-color:#fdba74; background:#fffbf0; } .ai-card.inconsistencias .ai-card-title { color:#d97706; }
-  .ai-card.retrabalhos { border-color:#93c5fd; background:#eff6ff; } .ai-card.retrabalhos .ai-card-title { color:#2563eb; }
-  .ai-card.pontos-cegos { border-color:#c4b5fd; background:#f5f3ff; } .ai-card.pontos-cegos .ai-card-title { color:#7c3aed; }
-  .ai-card.riscos      { border-color:#f87171; background:#fef2f2; } .ai-card.riscos      .ai-card-title { color:#b91c1c; }
-  .ai-card.oportunidades { border-color:#6ee7b7; background:#f0fdf4; } .ai-card.oportunidades .ai-card-title { color:#059669; }
-  .ai-summary { background:linear-gradient(135deg,#eef2ff,#f5f3ff); border-radius:12px; padding:18px 20px; margin-top:20px; font-size:13px; color:#1e293b; line-height:1.7; border:1.5px solid #c4b5fd; }
-  .ai-summary strong { color:#6366f1; }
-  .ai-no-data { text-align:center; padding:48px 0; color:#94a3b8; font-size:14px; }
-
-  /* ── RELATÓRIO IA ── */
-  #ai-relatorio-module { box-sizing:border-box; }
-  .rel-gen-wrap { max-width:960px; margin:0 auto; padding:32px 32px 60px; }
-  .rel-gen-header { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
-  .rel-gen-icon { width:52px; height:52px; border-radius:14px; background:linear-gradient(135deg,#1B3022,#003366); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
-  .rel-gen-title { font-family:'DM Serif Display',serif; font-size:22px; color:#1B3022; margin:0 0 4px; }
-  .rel-gen-sub { font-size:13px; color:#64748b; }
-  .rel-gen-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 22px; background:linear-gradient(135deg,#1B3022,#003366); color:white; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
-  .rel-gen-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(27,48,34,.3); }
-  .rel-gen-btn:disabled { opacity:.55; cursor:not-allowed; transform:none; }
-  .rel-quant-box { background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; margin-bottom:16px; overflow:hidden; }
-  .rel-quant-toggle { width:100%; padding:12px 16px; background:none; border:none; text-align:left; cursor:pointer; font-size:13px; font-weight:600; color:#1B3022; display:flex; align-items:center; gap:8px; }
-  .rel-quant-toggle:hover { background:#f1f5f9; }
-  .rel-quant-body { padding:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px; border-top:1px solid #e2e8f0; }
-  @media(max-width:600px){ .rel-quant-body { grid-template-columns:1fr; } }
-  .rel-quant-field label { display:block; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
-  .rel-quant-field input { width:100%; padding:7px 10px; border:1.5px solid #e2e8f0; border-radius:7px; font-size:13px; outline:none; font-family:inherit; box-sizing:border-box; }
-  .rel-quant-field input:focus { border-color:#1B3022; }
-  /* Report document */
-  .rel-doc { background:white; border:1px solid #e2e8f0; border-radius:14px; padding:48px 52px; margin-top:24px; font-family:'Inter',sans-serif; box-shadow:0 4px 24px rgba(0,0,0,.06); }
-  .rel-doc-header { text-align:center; margin-bottom:32px; padding-bottom:24px; border-bottom:2px solid #1B3022; }
-  .rel-doc-badge { display:inline-block; background:#1B3022; color:white; font-size:10px; font-weight:700; letter-spacing:.1em; padding:4px 12px; border-radius:20px; margin-bottom:12px; }
-  .rel-doc-title { font-family:'DM Serif Display',serif; font-size:26px; color:#1B3022; margin:0 0 6px; }
-  .rel-doc-org { font-size:13px; color:#64748b; }
-  .rel-ficha { width:100%; border-collapse:collapse; margin-bottom:28px; font-size:13px; }
-  .rel-ficha td { padding:8px 12px; border:1px solid #e2e8f0; }
-  .rel-ficha td:first-child { font-weight:700; color:#1B3022; background:#f8fafc; width:220px; white-space:nowrap; }
-  .rel-ficha td:last-child { color:#1e293b; }
-  .rel-h1 { font-family:'DM Serif Display',serif; font-size:18px; color:#1B3022; margin:28px 0 12px; padding-bottom:6px; border-bottom:2px solid #00a86b; }
-  .rel-h2 { font-size:13px; font-weight:800; color:#1B3022; margin:20px 0 8px; text-transform:uppercase; letter-spacing:.04em; }
-  .rel-p { font-size:14px; color:#1e293b; line-height:1.75; margin:0 0 12px; }
-  .rel-ul { margin:0 0 12px; padding-left:22px; }
-  .rel-ul li { font-size:14px; color:#1e293b; line-height:1.7; margin-bottom:4px; }
-  .rel-table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13px; }
-  .rel-table th { background:#1B3022; color:white; padding:9px 12px; text-align:left; font-weight:700; }
-  .rel-table td { padding:8px 12px; border-bottom:1px solid #e2e8f0; color:#1e293b; vertical-align:top; }
-  .rel-table tr:nth-child(even) td { background:#f8fafc; }
-  .rel-tag-risk { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
-  .rel-tag-risk.critico { background:#fecaca; color:#7c1d1d; }
-  .rel-tag-risk.alto    { background:#fee2e2; color:#991b1b; }
-  .rel-tag-risk.medio   { background:#fef3c7; color:#92400e; }
-  .rel-tag-risk.baixo   { background:#d1fae5; color:#065f46; }
-  .rel-status { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
-  .rel-status.concluido { background:#d1fae5; color:#065f46; }
-  .rel-status.pendente  { background:#fef3c7; color:#92400e; }
-  .rel-status.andamento { background:#dbeafe; color:#1e40af; }
-  .rel-status.atrasado  { background:#fee2e2; color:#991b1b; }
-  .rel-diagram-box { border:1.5px dashed #cbd5e1; border-radius:10px; padding:16px; text-align:center; margin:12px 0; }
-  .rel-diagram-box img { max-width:100%; border-radius:6px; }
-  .rel-print-bar { display:flex; gap:10px; justify-content:flex-end; padding-top:24px; margin-top:24px; border-top:1px solid #e2e8f0; }
-  .rel-print-btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; }
-  .rel-print-btn.primary   { background:#1B3022; color:white; }
-  .rel-print-btn.secondary { background:#f1f5f9; color:#1B3022; }
-  .rel-empty { font-style:italic; color:#94a3b8; font-size:13px; margin-bottom:12px; }
-  .rel-doc.rel-editing { outline:2px solid #3b82f6; outline-offset:3px; }
-  .rel-doc.rel-editing [contenteditable]:focus,
-  .rel-doc.rel-editing:focus { outline:none; }
-  .rel-print-btn.edit-active { background:#dbeafe !important; color:#1e40af !important; }
-  @media(max-width:700px){ .rel-doc { padding:24px 16px; } }
-</style>
-</head>
-<body>
-
-<!-- ═══ AUTH OVERLAY ═══════════════════════ -->
-<div id="auth-overlay" class="auth-overlay">
-  <div class="auth-box">
-    <div class="auth-logo-siga">
-      <img src="public-config/siga-logo.png" alt="SIGA - Sistema Integrado de Gestão de Atividades" style="max-width:320px;width:100%;height:auto;" />
-    </div>
-    <div class="auth-sub">Faça login para acessar e sincronizar seus dados</div>
-    <button class="auth-google-btn" onclick="signInMicrosoft()">
-      <svg class="auth-google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Entrar com Microsoft Entra ID
-    </button>
-    <div class="auth-status" id="auth-status"></div>
-  </div>
-</div>
-
-<!-- HEADER -->
-<header class="header">
-  <div class="header-inner">
-    <div class="header-brand">
-      <!-- EPP icon in square -->
-      <div class="header-logo">
-        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="34" height="34" rx="5" fill="#1B3022" stroke="#00a86b" stroke-width="2"/>
-          <text x="18" y="24" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#00a86b" text-anchor="middle">EPP</text>
-        </svg>
-      </div>
-      <!-- CAGE-RS institutional banner -->
-      <div class="cage-banner-brand">
-        <div class="cage-banner-text">
-          <span class="cage-banner-title">CAGE-RS</span>
-          <span class="cage-banner-sub">Contadoria e Auditoria-Geral do Estado</span>
-        </div>
-      </div>
-      <div class="header-divider-line"></div>
-      <button type="button" class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início"><strong>SIGA</strong></button>
-    </div>
-    <div class="header-meta">
-      <button onclick="showHome()" title="Voltar à página inicial" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.45);background:none;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.1);transition:color .2s,border-color .2s;white-space:nowrap;" onmouseover="this.style.color='rgba(255,255,255,.85)';this.style.borderColor='rgba(255,255,255,.25)'" onmouseout="this.style.color='rgba(255,255,255,.45)';this.style.borderColor='rgba(255,255,255,.1)'">
-        🏠 Início
-      </button>
-      <div class="sync-indicator" id="sync-indicator" style="display:none;">
-        <div class="sync-dot" id="sync-dot"></div>
-        <span id="sync-label">Sincronizado</span>
-      </div>
-      <div class="user-chip" id="user-chip" style="display:none;">
-        <div class="user-avatar" id="user-avatar">?</div>
-        <span id="user-name">...</span>
-        <button onclick="signOut()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:11px;padding:0 0 0 4px;" title="Sair">✕</button>
-      </div>
-      <div class="search-input-wrap">
-        <span class="search-icon">🔍</span>
-        <input class="search-input" id="global-search-input" placeholder="Buscar (FAQs, Normas, Manuais)..."
-          onfocus="openSearchModal()" oninput="runSearch(this.value)" autocomplete="off">
-        <button class="search-clear" id="search-clear-btn" onclick="clearSearch()">✕</button>
-      </div>
-      <button class="edit-toggle" id="new-pop-btn" onclick="openNovoPop()" style="display:none;" title="Criar novo mapeamento">＋ Novo Mapeamento</button>
-      <button id="backup-btn" class="edit-toggle" onclick="openBackupModal()" title="Exportar/Importar backup dos dados">💾 Backup</button>
-      <button class="edit-toggle" onclick="saveToCloud()" id="save-btn" title="Salvar na nuvem (Ctrl+S)">☁️ Salvar</button>
-      <button class="edit-toggle" onclick="toggleEditMode()" id="edit-toggle">✏️ Modo Edição</button>
-    </div>
-  </div>
-</header>
-
-<!-- EDIT BAR -->
-<div class="edit-bar" id="edit-bar">
-  <div class="edit-bar-left">
-    <span>✏️</span>
-    <span>MODO EDIÇÃO ATIVO — Clique em qualquer texto para editar</span>
-    <span class="unsaved" id="unsaved-dot">● Alterações não salvas</span>
-  </div>
-  <div style="display:flex;gap:8px;align-items:center;">
-    <button id="undo-btn" class="btn btn-outline" style="font-size:12px;padding:7px 14px;" onclick="undoLastChange()" disabled title="Nada para desfazer">↩ Desfazer</button>
-    <button class="btn btn-primary" style="font-size:12px;padding:7px 14px;" onclick="saveToStorage()">💾 Salvar</button>
-    <button id="nova-versao-btn" class="btn btn-outline" style="font-size:12px;padding:7px 14px;color:#059669;border-color:#059669;" onclick="openNewVersionModal()">📌 Nova Versão</button>
-  </div>
-</div>
-
-<!-- SIDEBAR -->
-<!-- Backdrop escuro ao abrir sidebar no mobile — clique fecha -->
-<button type="button" id="sidebar-backdrop" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:89;"></button>
-
-<div class="sidebar" id="sidebar">
-  <div class="sidebar-head">
-    <div class="sidebar-title">Gestão EPP</div>
-    <div id="sidebar-nav-btns">
-      <button data-mod="home"        data-sortkey="home"        class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:#047857;color:#fff;border-color:#03543f;">🏠 Página Inicial</button>
-      <button data-mod="repo"        data-sortkey="repo"        class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:#b91c1c;color:#fff;border-color:#7f1d1d;">📚 Documentos e Manuais</button>
-      <button data-mod="drops"       data-sortkey="drops"       class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:#0369a1;color:#fff;border-color:#0c4a6e;">💧 Drops de Conhecimento</button>
-      <button data-mod="audit"       data-sortkey="audit"       class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:#991b1b;color:#fff;border-color:#7f1d1d;">🔍 Auditoria de Processos</button>
-      <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:#1e40af;color:#fff;border-color:#1e3a8a;">🏢 Gestão EPP</button>
-      <button data-mod="bi"          data-sortkey="bi"          class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:#b45309;color:#fff;border-color:#78350f;">📊 Cadeia de Valor e Mapa Estratégico</button>
-      <button data-mod="quadro"      data-sortkey="quadro"      class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:#065f46;color:#fff;border-color:#064e3b;">🗒 Quadro de Esboço</button>
-      <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:#3730a3;color:#fff;border-color:#312e81;">🏛 Organograma CAGE</button>
-      <button data-mod="simulator"   data-sortkey="simulator"   class="sidebar-pat-btn" onclick="closeSidebar();showSimulatorModule();" style="margin-top:4px;background:#065f46;color:#fff;border-color:#047857;">🧪 Simulador de Processos</button>
-      <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:#eab308;color:#1e293b;border-color:#b45309;">📈 Indicadores CAGE</button>
-      <button data-mod="organograma" data-sortkey="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:#312e81;color:#fff;border-color:#3730a3;">🏛 Organograma CAGE</button>
-      <button data-mod="cockpit"     data-sortkey="cockpit"     class="sidebar-pat-btn" onclick="closeSidebar();showCockpitModule();" style="margin-top:4px;background:#1e293b;color:#fff;border-color:#1e293b;">🎯 Cockpit de Gestão</button>
-    </div>
-  </div>
-  <div class="sidebar-list" id="sidebar-list"></div>
-</div>
-<button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="Mostrar/ocultar processos">☰</button>
-
-<!-- POP SWITCHER (agora só mostra processo ativo) -->
-<div class="pop-switcher" id="pop-switcher-bar">
-  <div class="pop-switcher-inner">
-    <span class="pop-switcher-label">Processo:</span>
-    <span id="current-pop-label" style="font-size:13px;font-weight:600;color:white;opacity:.9;"></span>
-  </div>
-</div>
-
-<!-- NAV TABS -->
-<nav class="nav-tabs">
-  <div class="nav-tabs-inner" id="nav-tabs-inner">
-    <button type="button" class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)">🏠 Visão Geral</button>
-    <button type="button" class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)">⚙️ Fluxo</button>
-    <button type="button" class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)">👥 Responsabilidades</button>
-    <button type="button" class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)">📊 Indicadores</button>
-    <button type="button" class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)">❓ FAQ</button>
-    <button type="button" class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)">📜 Normas &amp; Revisões</button>
-    <button type="button" class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)">⚠️ Riscos</button>
-    <button type="button" class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)">✅ Plano de Ação</button>
-    <button type="button" class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)">🤝 Reuniões</button>
-    <button type="button" class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)">📋 Acompanhamento</button>
-    <button type="button" class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)">☑️ Checklists</button>
-    <button type="button" class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</button>
-    <button type="button" class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</button>
-    <button type="button" class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)">📊 Maturidade</button>
-    <button type="button" class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</button>
-    <button type="button" class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</button>
-  </div>
-</nav>
-
-<!-- BARRA SOMENTE-LEITURA (versão antiga) -->
-<div class="version-bar version-ro-bar" id="version-ro-bar" style="display:none;">
-  🕑 <span id="version-ro-label">Visualizando v1</span>
-  <button onclick="backToCurrentVersion()">← Voltar para versão atual</button>
-</div>
-<!-- BARRA HERDAR (edição de versão > 1) -->
-<div class="version-bar version-inherit-bar" id="version-inherit-bar" style="display:none;">
-  📋 <span id="version-inherit-label">Repetir conteúdo da versão anterior</span>
-  <button id="version-inherit-btn" onclick="_repeatCurrentSection()">↩ Repetir versão anterior</button>
-</div>
-
-<main class="main">
-
-<!-- ══════════════════ HOME PAGE ══════════════════ -->
-<div id="home-page" style="display:none;padding:40px 32px 60px;max-width:1200px;margin:0 auto;">
-
-  <!-- Cabeçalho da home -->
-  <div style="margin-bottom:36px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:20px;">
-    <div>
-      <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#00a86b;margin-bottom:6px;">CAGE-RS · Contadoria e Auditoria-Geral do Estado</div>
-      <div style="font-family:'DM Serif Display',serif;font-size:34px;color:#1B3022;line-height:1.15;">SIGA</div>
-      <div style="font-size:15px;color:#64748b;margin-top:4px;font-weight:500;">Sistema Integrado de Gestão de Atividades da CAGE</div>
-    </div>
-    <!-- Logos -->
-    <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
-      <button type="button" id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()">
-        <img id="epp-logo-img" src="" alt="Logo EPP" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
-        <div id="epp-logo-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
-          <span style="font-size:22px;">🖼</span>
-          <span>Logo EPP<br><span style="font-size:10px;">(clique para configurar)</span></span>
-        </div>
-        <div id="epp-logo-editor-hint" style="display:none;position:absolute;top:4px;right:6px;font-size:10px;color:#94a3b8;">✎</div>
-      </div>
-      <button type="button" id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()">
-        <img id="logo2-img" src="" alt="Segundo Logo" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
-        <div id="logo2-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
-          <span style="font-size:22px;">📤</span>
-          <span>Segundo logo<br><span style="font-size:10px;">(clique para upload)</span></span>
-        </div>
-        <button type="button" id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#333;background:#fff;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo" aria-label="Remover logo">✕</button>
-        <input type="file" id="logo2-file-input" accept="image/*" style="display:none;" onchange="logo2FileSelected(this.files[0])">
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ MÓDULOS ══ -->
-  <div id="home-block-processos" style="display:block;margin-bottom:40px;">
-    <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
-      <button type="button" class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
-        <div class="home-card-icon" style="background:#f0faf5;color:#14532d;">📋</div>
-        <button type="button" class="home-card-title" contenteditable="false" aria-label="Procedimentos Operacionais (clique para acessar)" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation(); else this.parentElement.click();" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Procedimentos Operacionais</button>
-        <button type="button" class="home-card-desc" contenteditable="false" aria-label="Descrição: Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas." onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation();" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</button>
-        <div class="home-card-footer" id="home-pops-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
-        <div class="home-card-icon" style="background:#f5f3ff;color:#4c1d95;">🏛</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Arquitetura de Processos</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</button>
-        <div class="home-card-footer" id="home-arq-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
-        <div class="home-card-icon" style="background:#fffbeb;color:#b45309;">📊</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Cadeia de Valor e Mapa Estratégico</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</button>
-        <div class="home-card-footer">Imagens configuráveis</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
-        <div class="home-card-icon" style="background:#fff1f2;color:#7f1d1d;">🔍</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Auditoria de Processos</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</button>
-        <div class="home-card-footer" id="home-audit-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
-        <div class="home-card-icon" style="background:#fffbeb;color:#92400e;">📈</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Indicadores CAGE</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</button>
-        <div class="home-card-footer" id="home-indcage-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
-        <div class="home-card-icon" style="background:#eef2ff;color:#1e40af;">🏗️</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Modelador BPMN 2.0</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</button>
-        <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
-        <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🗒</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</button>
-        <div class="home-card-footer">Canvas interativo</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;">
-        <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🧪</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simulador de Processos</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</button>
-        <div class="home-card-footer">Motor estocástico e dashboard</div>
-      </button>
-      <button type="button" class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
-        <div class="home-card-icon" style="background:#eff6ff;color:#1e3a8a;">🏢</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gestão EPP</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</button>
-        <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
-        <div class="home-card-icon" style="background:#f8fafc;color:#334155;">🔍</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Busca Global</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</button>
-        <div class="home-card-footer">Busca em tempo real</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
-        <div class="home-card-icon" style="background:#fff1f2;color:#831843;">📚</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Documentos e Manuais</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</button>
-        <div class="home-card-footer" id="home-repo-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
-        <div class="home-card-icon" style="background:#f0f9ff;color:#0369a1;">💧</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Drops de Conhecimento</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</button>
-        <div class="home-card-footer" id="home-drops-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
-        <div class="home-card-icon" style="background:#fdf2f8;color:#a21caf;">💡</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Caixinha de Ideias</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</button>
-        <div class="home-card-footer">Formulário Microsoft Forms</div>
-      </button>
-    </div>
-  </div>
-
-
-  <!-- Rodapé de contato -->
-  <div style="margin-top:20px;padding-top:24px;border-top:1px solid #e2e8f0;text-align:center;font-size:13px;color:#64748b;line-height:1.7;">
-    Dúvidas, sugestões ou oportunidades de melhoria podem ser encaminhadas para:
-    <a href="mailto:epp.cage@sefaz.rs.gov.br" style="color:#00a86b;font-weight:600;text-decoration:none;margin-left:4px;">epp.cage@sefaz.rs.gov.br</a>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- MODAL: STATUS REPORT CONFIG (com seleção de indicadores)  -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="gmod-overlay" id="status-report-modal" style="display:none;">
-  <div class="gmod-box" style="max-width:720px;max-height:90vh;display:flex;flex-direction:column;">
-    <div class="gmod-head">
-      <span>📊 Exportar Status Report Executivo</span>
-      <button class="gmod-close" onclick="document.getElementById('status-report-modal').style.display='none'">✕</button>
-    </div>
-    <div class="gmod-body" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px;">
-
-      <!-- Configurações gerais -->
-      <div>
-        <div style="font-size:13px;font-weight:700;color:#1B3022;margin-bottom:10px;">⚙️ Configurações do Relatório</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <div class="indrel-config-field">
-            <label for="sr-trimestre" class="indcage-filter-label">Trimestre</label>
-            <select id="sr-trimestre" class="indcage-filter-select">
-              <option value="1">1º Trimestre</option>
-              <option value="2">2º Trimestre</option>
-              <option value="3">3º Trimestre</option>
-              <option value="4">4º Trimestre</option>
-            </select>
-          </div>
-          <div class="indrel-config-field">
-            <label for="sr-ano" class="indcage-filter-label">Ano</label>
-            <input type="number" id="sr-ano" class="indcage-filter-select" value="2026" min="2020" max="2035" style="width:110px;">
-          </div>
-          <div class="indrel-config-field" style="flex:1;min-width:200px;">
-            <label for="sr-subtitulo" class="indcage-filter-label">Subtítulo / Órgão</label>
-            <input type="text" id="sr-subtitulo" class="indcage-filter-select" placeholder="Ex: CAGE-RS — Escritório de Processos" style="width:100%;">
-          </div>
-        </div>
-      </div>
-
-      <!-- Seção de indicadores -->
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-          <div>
-            <div style="font-size:13px;font-weight:700;color:#1B3022;">📈 Indicadores para incluir no relatório</div>
-            <div style="font-size:11px;color:#64748b;margin-top:2px;">Opcional — deixe todos desmarcados para gerar apenas o relatório de projetos</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <label for="sr-usar-ia" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1e3a7a;font-weight:600;cursor:pointer;white-space:nowrap;">
-              <input type="checkbox" id="sr-usar-ia" checked style="accent-color:#1B3022;width:15px;height:15px;">
-              🤖 Análise IA
-            </label>
-            <button class="btn btn-outline" onclick="srSelTodos()" style="font-size:11px;padding:4px 10px;">✓ Todos</button>
-            <button class="btn btn-outline" onclick="srDeselTodos()" style="font-size:11px;padding:4px 10px;">✗ Nenhum</button>
-          </div>
-        </div>
-        <div id="sr-ind-list" class="indrel-list" style="max-height:260px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:8px;"></div>
-        <div id="sr-ind-empty" style="display:none;text-align:center;padding:24px;color:#94a3b8;font-size:13px;">
-          Nenhum indicador cadastrado. Cadastre no módulo <strong>Indicadores CAGE</strong>.
-        </div>
-      </div>
-    </div>
-
-    <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #e2e8f0;background:#f8fafc;border-radius:0 0 12px 12px;">
-      <button class="btn btn-outline" onclick="document.getElementById('status-report-modal').style.display='none'">Cancelar</button>
-      <button class="btn btn-primary" id="sr-gerar-btn" onclick="eppExportStatusReportConfirm()" style="background:#00a86b;border-color:#00a86b;padding:8px 22px;">
-        📊 Gerar Status Report
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- MÓDULO: GESTÃO ESCRITÓRIO DE PROCESSOS (EPP)              -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div id="epp-module" style="display:none;background:white;border-bottom:2px solid #e2e8f0;position:sticky;top:64px;z-index:20;">
-  <div style="max-width:1100px;margin:0 auto;padding:16px 32px 0;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
-      <div>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:#1B3022;margin:0 0 2px;">🏢 Gestão EPP</h2>
-        <div style="font-size:12px;color:#64748b;">CAGE-RS · Plano Anual de Trabalho e Dashboard de Desempenho</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button id="epp-report-btn" onclick="eppExportStatusReport()" class="btn btn-primary" style="font-size:12px;padding:6px 14px;background:#00a86b;border-color:#00a86b;">📊 Exportar Status Report</button>
-        <button class="btn btn-outline" onclick="showHome()" style="font-size:12px;padding:6px 14px;">← Início</button>
-      </div>
-    </div>
-    <div style="display:flex;gap:0;">
-      <button class="epp-tab active" data-tab="pat"    onclick="eppTab('pat',this)">📅 Plano Anual de Trabalho</button>
-      <button class="epp-tab"        data-tab="dash"   onclick="eppTab('dash',this)">📊 Dashboard EPP</button>
-      <button class="epp-tab"        data-tab="config" onclick="eppTab('config',this)">⚙️ Tabelas de Referência</button>
-      <button class="epp-tab"        data-tab="users"  onclick="eppTab('users',this)">👥 Usuários</button>
-      <button class="epp-tab"        data-tab="params" onclick="eppTab('params',this)">🛠 Parâmetros Globais</button>
-      <button class="epp-tab"        data-tab="monitoring" onclick="eppTab('monitoring',this)" id="epp-tab-monitoring">📋 Monitoramento</button>
-    </div>
-  </div>
-</div>
-
-<!-- EPP: Dashboard panel (shown when dashboard tab is active) -->
-<div id="epp-dash-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
-  <!-- Block 1: Impacto Gerado -->
-  <div class="epp-dash-section">
-    <div class="epp-dash-section-title">💡 Impacto Gerado</div>
-    <div class="epp-kpi-grid" style="margin-bottom:20px;">
-      <div class="epp-kpi-card" style="border-left-color:#00a86b;">
-        <div class="epp-kpi-value" id="epp-kpi-horas-total">—</div>
-        <div class="epp-kpi-label">Horas economizadas / ano</div>
-        <div class="epp-kpi-sub">Soma de todos os processos redesenhados</div>
-      </div>
-      <div class="epp-kpi-card" style="border-left-color:#1B3022;">
-        <div class="epp-kpi-value" id="epp-kpi-procs-redesenhados">—</div>
-        <div class="epp-kpi-label">Processos com ganho calculado</div>
-        <div class="epp-kpi-sub">Com métricas de volume e ciclo preenchidas</div>
-      </div>
-      <div class="epp-kpi-card" style="border-left-color:#8b5cf6;">
-        <div class="epp-kpi-value" id="epp-kpi-valor-eco">—</div>
-        <div class="epp-kpi-label">Valor economizado / mês</div>
-        <div class="epp-kpi-sub" id="epp-kpi-valor-sub">
-          <span id="epp-valor-hora-display">Valor/hora não definido</span>
-          <span id="epp-valor-hora-edit-btn" style="display:none;">
-            &nbsp;·&nbsp;<button onclick="eppSetValorHora()" style="color:#8b5cf6;font-weight:600;text-decoration:none;background:none;border:none;padding:0;cursor:pointer;font-size:inherit;">✏️ definir</button>
-          </span>
-        </div>
-      </div>
-    </div>
-    <div id="epp-horas-detail" style="display:none;">
-      <table class="epp-horas-table">
-        <thead><tr><th>Processo</th><th>Vol./mês (antes→depois)</th><th>Ciclo h (antes→depois)</th><th>Economia/mês</th><th>Economia/ano</th></tr></thead>
-        <tbody id="epp-horas-tbody"></tbody>
-      </table>
-    </div>
-    <button id="epp-horas-toggle" onclick="eppToggleHorasDetail()" style="background:none;border:none;color:#1B3022;font-size:12px;font-weight:600;cursor:pointer;padding:0;margin-top:6px;">▼ Ver detalhes por processo</button>
-  </div>
-
-  <!-- Block 2: Cobertura da Arquitetura -->
-  <div class="epp-dash-section">
-    <div class="epp-dash-section-title">🗺 Cobertura da Arquitetura de Processos</div>
-    <div style="display:flex;align-items:center;gap:24px;margin-bottom:16px;flex-wrap:wrap;">
-      <div style="text-align:center;">
-        <div style="font-size:44px;font-weight:800;color:#8b5cf6;font-family:'JetBrains Mono',monospace;" id="epp-pct-mapeado">—%</div>
-        <div style="font-size:12px;color:#64748b;font-weight:600;">da arquitetura mapeada</div>
-        <div style="font-size:11px;color:#94a3b8;" id="epp-mapeado-label">— de — processos</div>
-      </div>
-      <div style="flex:1;min-width:200px;">
-        <div class="epp-prog-bar" style="height:14px;">
-          <div class="epp-prog-fill" id="epp-prog-geral" style="background:#8b5cf6;width:0%;"></div>
-        </div>
-        <div style="font-size:11px;color:#94a3b8;margin-top:4px;text-align:right;" id="epp-mapeado-meta"></div>
-      </div>
-    </div>
-    <div id="epp-macro-list"></div>
-  </div>
-
-  <!-- Block 2b: Cobertura por Objetivo Estratégico -->
-  <div class="epp-dash-section">
-    <div class="epp-dash-section-title">🎯 Cobertura por Objetivo Estratégico</div>
-    <div id="epp-obj-list"></div>
-  </div>
-
-  <!-- Block 3: Performance do EPP -->
-  <div class="epp-dash-section">
-    <div class="epp-dash-section-title">⚡ Performance do Gestão EPP</div>
-    <div class="epp-kpi-grid">
-      <div class="epp-kpi-card" style="border-left-color:#3b82f6;">
-        <div class="epp-kpi-value" id="epp-kpi-prazo">—</div>
-        <div class="epp-kpi-label">Dias — prazo médio de entrega</div>
-        <div class="epp-kpi-sub">Média entre data início e fim (atividades concluídas)</div>
-      </div>
-      <div class="epp-kpi-card" style="border-left-color:#00a86b;">
-        <div class="epp-kpi-value" id="epp-kpi-ontime">—</div>
-        <div class="epp-kpi-label">Taxa de cumprimento de prazo</div>
-        <div class="epp-kpi-sub">% entregas concluídas (não marcadas como atrasadas)</div>
-      </div>
-      <div class="epp-kpi-card" style="border-left-color:#f59e0b;">
-        <div class="epp-kpi-value" id="epp-kpi-entrtri">—</div>
-        <div class="epp-kpi-label">Entregas no trimestre atual</div>
-        <div class="epp-kpi-sub" id="epp-kpi-entrtri-label">—</div>
-      </div>
-      <div class="epp-kpi-card" style="border-left-color:#1B3022;">
-        <div class="epp-kpi-value" id="epp-kpi-total-ativ">—</div>
-        <div class="epp-kpi-label">Total de atividades no PAT</div>
-        <div class="epp-kpi-sub">Planejadas + em andamento + concluídas</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Block 3b: Mapeamentos do trimestre -->
-  <div class="epp-dash-section">
-    <div class="epp-dash-section-title">🗂 Mapeamentos — Desempenho do Trimestre</div>
-    <div style="font-size:12px;color:#64748b;margin-bottom:14px;" id="epp-map-tri-label">—</div>
-    <div class="epp-kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;" id="epp-map-stats-grid"></div>
-  </div>
-
-  <!-- Block 4: Execução do PAT -->
-  <div class="epp-dash-section">
-    <div class="epp-dash-section-title">📅 Execução do Plano Anual de Trabalho</div>
-    <div style="display:flex;align-items:center;gap:24px;margin-bottom:20px;flex-wrap:wrap;">
-      <div style="text-align:center;">
-        <div style="font-size:44px;font-weight:800;color:#3b82f6;font-family:'JetBrains Mono',monospace;" id="epp-pct-pat">—%</div>
-        <div style="font-size:12px;color:#64748b;font-weight:600;">do PAT realizado</div>
-        <div style="font-size:11px;color:#94a3b8;" id="epp-pat-label">— de — atividades concluídas</div>
-      </div>
-      <div style="flex:1;min-width:200px;">
-        <div class="epp-prog-bar" style="height:14px;">
-          <div class="epp-prog-fill" id="epp-prog-pat" style="background:#3b82f6;width:0%;"></div>
-        </div>
-      </div>
-    </div>
-    <!-- Por trimestre -->
-    <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;">Entregas por trimestre — <span id="epp-ano-label"></span></div>
-    <div class="epp-tri-grid" id="epp-tri-grid"></div>
-    <!-- Por tipo -->
-    <div style="font-size:12px;font-weight:700;color:#64748b;margin:16px 0 10px;text-transform:uppercase;letter-spacing:.04em;">Status atual do PAT</div>
-    <div class="epp-kpi-grid" id="epp-status-grid" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;"></div>
-  </div>
-
-  <!-- Block 5: Rankings de Maturidade -->
-  <div class="epp-dash-section">
-    <div class="epp-dash-section-title">🏆 Rankings de Processos Mapeados</div>
-    <div id="epp-ranking-tabs" style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;"></div>
-    <div id="epp-ranking-body"></div>
-  </div>
-</div>
-
-<!-- EPP: Config panel (shown when config tab is active) -->
-<div id="epp-config-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
-  <div style="margin-bottom:20px;">
-    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">⚙️ Tabelas de Referência</h3>
-    <p style="font-size:13px;color:#64748b;margin:0;">Gerencie as listas de opções usadas nos formulários do sistema. As alterações são salvas automaticamente e refletem imediatamente nos formulários.</p>
-  </div>
-  <div id="epp-config-tables-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
-    <!-- Preenchido por renderConfigPanel() -->
-  </div>
-</div>
-
-<!-- EPP: Users panel (shown when users tab is active) -->
-<div id="epp-users-panel" style="display:none;max-width:760px;margin:0 auto;padding:24px 32px 80px;">
-  <div style="margin-bottom:20px;">
-    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">👥 Controle de Usuários</h3>
-    <p style="font-size:13px;color:#64748b;margin:0;">Gerencie usuários, perfis de acesso e solicitações de entrada no sistema.</p>
-  </div>
-  <!-- Sub-tabs -->
-  <div style="display:flex;gap:0;border-bottom:2px solid var(--cage-border);margin-bottom:16px;">
-    <button id="epp-utab-editors"  onclick="eppSwitchUsersTab('editors')"
-      style="padding:8px 20px;border:none;background:none;font-weight:700;font-size:13px;color:var(--cage-blue);border-bottom:3px solid var(--cage-blue);cursor:pointer;">
-      👤 Editores
-    </button>
-    <button id="epp-utab-requests" onclick="eppSwitchUsersTab('requests')"
-      style="padding:8px 20px;border:none;background:none;font-weight:600;font-size:13px;color:var(--text-muted);cursor:pointer;">
-      📨 Solicitações <span id="epp-u-req-badge" style="display:none;background:#e11d48;color:white;border-radius:20px;padding:1px 6px;font-size:10px;margin-left:2px;">0</span>
-    </button>
-    <button id="epp-utab-history"  onclick="eppSwitchUsersTab('history')"
-      style="padding:8px 20px;border:none;background:none;font-weight:600;font-size:13px;color:var(--text-muted);cursor:pointer;">
-      🕐 Histórico
-    </button>
-  </div>
-  <!-- Editores -->
-  <div id="epp-u-editors-panel">
-    <div id="epp-u-editor-list" style="margin-bottom:12px;"></div>
-    <div id="epp-u-add-row" style="display:none;gap:8px;flex-direction:column;">
-      <div class="gmod-row">
-        <div>
-          <label for="epp-u-new-email" class="gmod-label">E-mail *</label>
-          <input class="modal-input" id="epp-u-new-email" type="email" placeholder="usuario@email.com">
-        </div>
-        <div>
-          <label for="epp-u-new-name" class="gmod-label">Nome</label>
-          <input class="modal-input" id="epp-u-new-name" type="text" placeholder="Nome do usuário">
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <div>
-          <label for="epp-u-new-role" class="gmod-label">Perfil</label>
-          <select id="epp-u-new-role" style="padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;">
-            <option value="viewer">Visualizador</option>
-            <option value="editor">Editor</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-        <button class="btn btn-success" style="margin-left:auto;font-size:12px;align-self:flex-end;" onclick="saveNewEditor()">Adicionar</button>
-        <button class="btn btn-outline" style="font-size:12px;align-self:flex-end;"
-          onclick="document.getElementById('epp-u-add-row').style.display='none';document.getElementById('epp-u-add-btn-row').style.display=''">Cancelar</button>
-      </div>
-    </div>
-    <div id="epp-u-add-btn-row">
-      <button class="btn btn-primary" style="font-size:12px;width:100%;" onclick="showAddEditor()">＋ Adicionar Usuário</button>
-    </div>
-  </div>
-  <!-- Solicitações -->
-  <div id="epp-u-requests-panel" style="display:none;">
-    <div id="epp-u-requests-list"></div>
-  </div>
-  <!-- Histórico -->
-  <div id="epp-u-history-panel" style="display:none;">
-    <div class="history-list" id="epp-u-history-list"></div>
-  </div>
-</div>
-
-<!-- EPP: Params panel (shown when params tab is active) -->
-<div id="epp-params-panel" style="display:none;max-width:900px;margin:0 auto;padding:24px 32px 80px;">
-  <div style="margin-bottom:20px;">
-    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">🛠 Parâmetros Globais</h3>
-    <p style="font-size:13px;color:#64748b;margin:0;">Configure a identidade visual, cores, módulos e botões de navegação do sistema. As alterações são aplicadas imediatamente.</p>
-  </div>
-
-  <!-- Identidade -->
-  <div class="card fade-up" style="margin-bottom:20px;">
-    <div class="card-header"><span class="card-title">🏷 Identidade do Sistema</span></div>
-    <div class="card-body" style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div>
-        <label for="gp-nome-sistema" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Nome do Sistema</label>
-        <input class="modal-input" id="gp-nome-sistema" type="text" placeholder="SIGA" oninput="saveGlobalParam('nomeSistema',this.value);applyGlobalParams()">
-      </div>
-      <div>
-        <label for="gp-subtitulo" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Subtítulo Institucional</label>
-        <input class="modal-input" id="gp-subtitulo" type="text" placeholder="Contadoria e Auditoria-Geral do Estado" oninput="saveGlobalParam('subtitulo',this.value);applyGlobalParams()">
-      </div>
-    </div>
-  </div>
-
-  <!-- Logo da Barra Superior -->
-  <div class="card fade-up" style="margin-bottom:20px;">
-    <div class="card-header"><span class="card-title">🏷 Logo da Barra Superior</span></div>
-    <div class="card-body" style="padding:20px;display:flex;gap:20px;align-items:flex-start;">
-      <div style="flex:1;">
-        <label for="gp-logo-barra-url" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">URL da Imagem</label>
-        <input class="modal-input" id="gp-logo-barra-url" type="url" placeholder="https://..." oninput="saveGlobalParam('logoHeaderUrl',this.value);applyHeaderBtnColors();_gpLogoBarraPreview(this.value)">
-        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Aparece no canto esquerdo da barra superior em formato triangular alargado. Deixe vazio para usar o ícone padrão.</div>
-      </div>
-      <div id="gp-logo-barra-preview" style="width:120px;height:44px;border:2px dashed var(--cage-border);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;color:var(--text-muted);background:var(--cage-light);">🖼</div>
-    </div>
-  </div>
-
-  <!-- Logotipo -->
-  <div class="card fade-up" style="margin-bottom:20px;">
-    <div class="card-header"><span class="card-title">🖼 Logotipo (Página Inicial)</span></div>
-    <div class="card-body" style="padding:20px;display:flex;gap:20px;align-items:flex-start;">
-      <div style="flex:1;">
-        <label for="gp-logo-url" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">URL da Imagem</label>
-        <input class="modal-input" id="gp-logo-url" type="url" placeholder="https://..." oninput="saveGlobalParam('logoUrl',this.value);gpUpdateLogoPreview();applyGlobalParams()">
-        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Cole a URL de uma imagem PNG/SVG. Aparece no bloco de logo da página inicial.</div>
-      </div>
-      <div id="gp-logo-preview" style="width:80px;height:80px;border:2px dashed var(--cage-border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:24px;color:var(--text-muted);">🖼</div>
-    </div>
-  </div>
-
-  <!-- Cores -->
-  <div class="card fade-up" style="margin-bottom:20px;">
-    <div class="card-header">
-      <span class="card-title">🎨 Cores do Sistema</span>
-      <button class="edit-add-btn" onclick="resetGlobalColors()" style="font-size:11px;">↺ Restaurar padrão</button>
-    </div>
-    <div class="card-body" style="padding:20px;" id="gp-colors-grid">
-      <!-- rendered by eppRenderParams() -->
-    </div>
-  </div>
-
-  <!-- Módulos -->
-  <div class="card fade-up" style="margin-bottom:20px;">
-    <div class="card-header"><span class="card-title">📱 Módulos — Visibilidade e Ordem</span></div>
-    <div class="card-body" style="padding:16px;" id="gp-modules-list">
-      <!-- rendered by eppRenderParams() -->
-    </div>
-  </div>
-
-  <!-- Botões da barra superior -->
-  <div class="card fade-up">
-    <div class="card-header"><span class="card-title">🔘 Botões da Barra Superior</span></div>
-    <div class="card-body" style="padding:16px;" id="gp-header-btns-list">
-      <!-- rendered by eppRenderParams() -->
-    </div>
-  </div>
-</div>
-
-<!-- EPP: Monitoring panel -->
-<div id="epp-monitoring-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
-  <div style="margin-bottom:16px;">
-    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">📋 Monitoramento do Sistema</h3>
-    <p style="font-size:13px;color:#64748b;margin:0;">Usuários online, logs de alterações e relatórios de acesso.</p>
-  </div>
-  <!-- Sub-tabs -->
-  <div style="display:flex;gap:0;border-bottom:2px solid var(--cage-border);margin-bottom:20px;">
-    <button class="mon-sub-btn active" id="mon-sub-online"  onclick="eppMonTab('online',this)">🟢 Online Agora</button>
-    <button class="mon-sub-btn"        id="mon-sub-changes" onclick="eppMonTab('changes',this)">🔄 Logs de Alterações</button>
-    <button class="mon-sub-btn"        id="mon-sub-access"  onclick="eppMonTab('access',this)">🔐 Relatório de Acesso</button>
-  </div>
-
-  <!-- Online Now -->
-  <div id="mon-panel-online">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <span style="font-size:12px;color:var(--text-muted);">Usuários com atividade nos últimos 5 minutos</span>
-      <button class="btn btn-outline" style="font-size:11px;padding:4px 12px;" onclick="eppLoadOnlineUsers()">↺ Atualizar</button>
-    </div>
-    <div id="mon-online-list"><div class="mon-empty">Carregando...</div></div>
-  </div>
-
-  <!-- Change logs -->
-  <div id="mon-panel-changes" style="display:none;">
-    <div class="mon-filter-row">
-      <input type="text" id="mon-changes-search" placeholder="Filtrar por usuário ou ação..." oninput="eppFilterChangeLogs()" style="flex:1;min-width:180px;">
-      <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="eppLoadChangeLogs(true)">↺ Recarregar</button>
-    </div>
-    <div style="overflow-x:auto;">
-      <table class="mon-log-table">
-        <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th></tr></thead>
-        <tbody id="mon-changes-tbody"></tbody>
-      </table>
-    </div>
-    <button class="mon-load-more" id="mon-changes-more" style="display:none;" onclick="eppLoadMoreChanges()">Carregar mais...</button>
-  </div>
-
-  <!-- Access logs -->
-  <div id="mon-panel-access" style="display:none;">
-    <div class="mon-filter-row">
-      <input type="text" id="mon-access-search" placeholder="Filtrar por usuário..." oninput="eppFilterAccessLogs()" style="flex:1;min-width:180px;">
-      <select id="mon-access-action" onchange="eppFilterAccessLogs()">
-        <option value="">Todos os eventos</option>
-        <option value="login">Login</option>
-        <option value="logout">Logout</option>
-      </select>
-      <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="eppLoadAccessLogs(true)">↺ Recarregar</button>
-    </div>
-    <div style="overflow-x:auto;">
-      <table class="mon-log-table">
-        <thead><tr><th>Data/Hora</th><th>Usuário</th><th>E-mail</th><th>Evento</th></tr></thead>
-        <tbody id="mon-access-tbody"></tbody>
-      </table>
-    </div>
-    <button class="mon-load-more" id="mon-access-more" style="display:none;" onclick="eppLoadMoreAccess()">Carregar mais...</button>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- MÓDULO: PLANO DE TRABALHO                  -->
-<!-- ═══════════════════════════════════════════ -->
-<div id="pat-module" class="pat-module" style="display:none;">
-  <div class="pat-header-row">
-    <div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">📅 Plano de Trabalho — Gestão EPP</h2>
-      <div style="font-size:13px;color:var(--text-muted);">Gestão EPP — Visível apenas para editores</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="openPatModal()" style="font-size:13px;">＋ Nova Atividade</button>
-      <button class="btn btn-outline" onclick="showPatModule(false)" style="font-size:13px;">✕ Fechar</button>
-    </div>
-  </div>
-
-  <!-- KPIs -->
-  <div class="pat-kpi-row" id="pat-kpis"></div>
-
-  <!-- Status Filters -->
-  <div class="pat-filter-row" id="pat-filters">
-    <button class="pat-filter-btn active" onclick="filterPat('todos',this)">Todos</button>
-    <button class="pat-filter-btn" onclick="filterPat('planejado',this)">Planejado</button>
-    <button class="pat-filter-btn" onclick="filterPat('andamento',this)">Em Andamento</button>
-    <button class="pat-filter-btn" onclick="filterPat('concluido',this)">Concluído</button>
-    <button class="pat-filter-btn" onclick="filterPat('atrasado',this)">Atrasado</button>
-    <button class="pat-filter-btn" onclick="filterPat('cancelado',this)">Cancelado</button>
-  </div>
-
-  <!-- Quarter Filters -->
-  <div class="pat-filter-row" id="pat-quarter-filters">
-    <span style="font-size:11px;font-weight:700;color:var(--text-muted);align-self:center;margin-right:4px;">TRIMESTRE:</span>
-    <button class="pat-filter-btn active" onclick="filterPatQuarter('todos',this)">Todos</button>
-    <button class="pat-filter-btn" onclick="filterPatQuarter('q1',this)">1º Tri (Jan–Mar)</button>
-    <button class="pat-filter-btn" onclick="filterPatQuarter('q2',this)">2º Tri (Abr–Jun)</button>
-    <button class="pat-filter-btn" onclick="filterPatQuarter('q3',this)">3º Tri (Jul–Set)</button>
-    <button class="pat-filter-btn" onclick="filterPatQuarter('q4',this)">4º Tri (Out–Dez)</button>
-  </div>
-
-  <!-- Tipo Filter (dropdown) -->
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-    <span style="font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">TIPO:</span>
-    <select id="pat-tipo-select" onchange="filterPatTipo(this.value)"
-      style="padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;border:1.5px solid var(--cage-border);background:white;cursor:pointer;color:var(--text-secondary);">
-      <option value="">Todos os tipos</option>
-      <option>Mapeamento de Processo</option>
-      <option>Monitoramento de Indicadores</option>
-      <option>Acompanhamento de Implementação</option>
-      <option>Auditoria</option>
-      <option>Controle Interno</option>
-      <option>Consultoria</option>
-      <option>Fiscalização</option>
-      <option>Normatização</option>
-      <option>Capacitação</option>
-      <option>Outro</option>
-    </select>
-  </div>
-
-  <!-- Cards -->
-  <div id="pat-cards"></div>
-</div>
-
-<!-- BI MODULE — Cadeia de Valor e Mapa Estratégico CAGE -->
-<div id="bi-module" style="display:none;">
-  <div style="padding:28px 32px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-      <div>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">📊 Cadeia de Valor e Mapa Estratégico CAGE</h2>
-        <div style="font-size:13px;color:var(--text-muted);">CAGE-RS — Indicadores e Processos Institucionais</div>
-      </div>
-      <button class="btn btn-outline" onclick="showBiModule(false)" style="font-size:13px;">✕ Fechar painel</button>
-    </div>
-
-    <!-- Cards descritivos -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:20px;margin-bottom:28px;">
-      <div style="background:white;border-radius:12px;padding:22px 24px;border-left:4px solid #f59e0b;box-shadow:0 2px 10px rgba(0,0,0,.07);">
-        <div style="font-size:16px;font-weight:700;color:#1B3022;margin-bottom:10px;">🔗 Cadeia de Valor</div>
-        <div style="font-size:13px;color:#475569;line-height:1.7;">A cadeia de valor representa, de forma estruturada, as principais atividades que a instituição realiza para gerar valor à sociedade. Ela serve para entender como os processos se conectam, navegar na arquitetura de processos, alinhar as ações ao planejamento estratégico e identificar oportunidades de melhoria e inovação na entrega dos serviços públicos, figurando como uma valiosa ferramenta de apoio à tomada de decisão.</div>
-      </div>
-      <div style="background:white;border-radius:12px;padding:22px 24px;border-left:4px solid #1B3022;box-shadow:0 2px 10px rgba(0,0,0,.07);">
-        <div style="font-size:16px;font-weight:700;color:#1B3022;margin-bottom:10px;">🧭 Mapa Estratégico</div>
-        <div style="font-size:13px;color:#475569;line-height:1.7;">O Mapa Estratégico é uma representação gráfica que organiza e comunica os objetivos estratégicos de uma organização de forma clara e estruturada. Ele mostra como diferentes metas estão conectadas e contribuem para o alcance da visão e missão da empresa, facilitando o alinhamento entre áreas e a tomada de decisões. Essa ferramenta ajuda a transformar a estratégia em ações concretas, promovendo foco e coerência na execução.</div>
-      </div>
-    </div>
-
-    <!-- Imagem: Cadeia de Valor -->
-    <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.1);border:1px solid var(--cage-border);margin-bottom:20px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-        <div style="font-size:16px;font-weight:700;color:#1B3022;">🔗 Imagem — Cadeia de Valor</div>
-        <div id="bi-cadeia-actions" class="editor-only" style="display:flex;gap:8px;">
-          <button id="bi-cadeia-upload-btn" class="btn btn-primary" style="font-size:13px;" onclick="biImgClick('cadeia')">📤 Carregar imagem</button>
-          <button id="bi-cadeia-remove-btn" class="btn btn-outline" style="font-size:13px;display:none;" onclick="biImgRemove('cadeia')">✕ Remover</button>
-        </div>
-        <input type="file" id="bi-cadeia-file-input" accept="image/*" style="display:none;" onchange="biImgFileSelected(this.files[0],'cadeia');this.value=''">
-      </div>
-      <div id="bi-cadeia-placeholder" style="border:2px dashed #cbd5e1;border-radius:10px;padding:40px 24px;text-align:center;color:#94a3b8;font-size:14px;">
-        Nenhuma imagem carregada. Clique em <strong>Carregar imagem</strong> para adicionar a Cadeia de Valor.
-      </div>
-      <div id="bi-cadeia-preview" style="display:none;text-align:center;">
-        <img id="bi-cadeia-img" src="" alt="Cadeia de Valor" style="max-width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.1);">
-      </div>
-    </div>
-
-    <!-- Imagem: Mapa Estratégico -->
-    <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.1);border:1px solid var(--cage-border);margin-bottom:20px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-        <div style="font-size:16px;font-weight:700;color:#1B3022;">🧭 Imagem — Mapa Estratégico</div>
-        <div id="bi-mapa-actions" class="editor-only" style="display:flex;gap:8px;">
-          <button id="bi-mapa-upload-btn" class="btn btn-primary" style="font-size:13px;" onclick="biImgClick('mapa')">📤 Carregar imagem</button>
-          <button id="bi-mapa-remove-btn" class="btn btn-outline" style="font-size:13px;display:none;" onclick="biImgRemove('mapa')">✕ Remover</button>
-        </div>
-        <input type="file" id="bi-mapa-file-input" accept="image/*" style="display:none;" onchange="biImgFileSelected(this.files[0],'mapa');this.value=''">
-      </div>
-      <div id="bi-mapa-placeholder" style="border:2px dashed #cbd5e1;border-radius:10px;padding:40px 24px;text-align:center;color:#94a3b8;font-size:14px;">
-        Nenhuma imagem carregada. Clique em <strong>Carregar imagem</strong> para adicionar o Mapa Estratégico.
-      </div>
-      <div id="bi-mapa-preview" style="display:none;text-align:center;">
-        <img id="bi-mapa-img" src="" alt="Mapa Estratégico" style="max-width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.1);">
-      </div>
-    </div>
-
-    <div style="background:white;border-radius:12px;padding:22px 24px;border-left:4px solid #6366f1;box-shadow:0 2px 10px rgba(0,0,0,.07);margin-top:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-      <div>
-        <div style="font-size:16px;font-weight:700;color:#1B3022;margin-bottom:6px;">🏛 Organograma CAGE</div>
-        <div style="font-size:13px;color:#475569;">Visualize a estrutura organizacional da CAGE com Contador-Geral, Adjuntos, Unidades e Equipes.</div>
-      </div>
-      <button onclick="showOrganogramaModule()" class="btn btn-primary" style="font-size:13px;white-space:nowrap;">Ver Organograma →</button>
-    </div>
-  </div>
-</div>
-
-<!-- ORGANOGRAMA CAGE -->
-<div id="organograma-module" style="display:none;">
-  <div style="padding:28px 32px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-      <div>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">🏛 Organograma CAGE</h2>
-        <div style="font-size:13px;color:var(--text-muted);">CAGE-RS — Estrutura Organizacional por Unidades e Equipes</div>
-      </div>
-      <div style="display:flex;gap:10px;align-items:center;">
-        <button class="btn btn-outline" onclick="showOrganogramaModule(false)" style="font-size:13px;">✕ Fechar painel</button>
-      </div>
-    </div>
-    <div id="organograma-render" style="min-height:200px;"></div>
-  </div>
-</div>
-
-<!-- QUADRO DE ESBOÇO — Excalidraw -->
-<div id="quadro-module" style="display:none;flex-direction:column;height:100vh;">
-  <div class="quadro-toolbar">
-    <span style="font-size:13px;font-weight:700;color:white;letter-spacing:.4px;">✏️ Quadro de Esboço</span>
-    <span style="font-size:11px;color:rgba(255,255,255,.45);margin-left:6px;">— Excalidraw</span>
-    <div style="flex:1;"></div>
-    <button class="q-btn editor-only" onclick="quadroSaveCloud()" title="Salvar quadro na nuvem (preserva entre sessões)">☁️ Salvar</button>
-    <button class="q-btn" onclick="showQuadroModule(false)" title="Fechar">✕ Fechar</button>
-  </div>
-  <iframe id="excalidraw-frame"
-    src="https://excalidraw.com?embed=1"
-    style="flex:1;width:100%;border:none;display:block;"
-    allow="clipboard-read; clipboard-write"
-    title="Excalidraw — Quadro de Esboço">
-  </iframe>
-</div>
-
-<!-- SIMULADOR DE PROCESSOS -->
-<div id="simulator-module" style="display:none;max-width:1250px;margin:0 auto;padding:24px 32px 80px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
-    <div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">🧪 Simulador de Processos</h2>
-      <div style="font-size:13px;color:var(--text-muted);">TEP, índice de Phillip e simulação estocástica de cenários</div>
-    </div>
-    <button class="btn btn-outline" onclick="showSimulatorModule(false)" style="font-size:13px;">✕ Fechar painel</button>
-  </div>
-  <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);">
-    <iframe id="simulator-frame" data-src="modules/process-simulator/index.html" src="" title="Simulador de Processos" style="width:100%;height:calc(100vh - 230px);min-height:620px;border:none;display:block;"></iframe>
-  </div>
-</div>
-
-<!-- MODAL PLANO DE TRABALHO -->
-<div class="gmod-overlay" id="pat-modal">
-  <div class="gmod-box" style="width:680px;">
-    <div class="gmod-head">
-      <h3 id="pat-modal-title">📅 Nova Atividade</h3>
-      <button class="gmod-close" onclick="closeModal('pat-modal')">✕</button>
-    </div>
-    <div class="gmod-body">
-      <div>
-        <label for="pat-titulo" class="gmod-label">Título da Atividade *</label>
-        <input class="modal-input" id="pat-titulo" type="text" placeholder="Ex: Mapear processo de Tomadas de Contas Especiais">
-      </div>
-      <div class="gmod-row">
-        <div>
-          <label for="pat-unidade" class="gmod-label">Unidade</label>
-          <select class="modal-input" id="pat-unidade">
-            <option value="">Selecione...</option>
-            <option>DCO</option><option>DIR</option><option>DIE</option>
-            <option>DTTI</option><option>GAB</option><option>DAUD</option><option>DCON</option>
-          </select>
-        </div>
-        <div>
-          <label for="pat-tipo" class="gmod-label">Tipo</label>
-          <select class="modal-input" id="pat-tipo">
-            <option value="">Selecione...</option>
-            <option>Mapeamento de Processo</option>
-            <option>Monitoramento de Indicadores</option>
-            <option>Acompanhamento de Implementação</option>
-            <option>Auditoria</option>
-            <option>Controle Interno</option>
-            <option>Consultoria</option>
-            <option>Fiscalização</option>
-            <option>Normatização</option>
-            <option>Capacitação</option>
-            <option>Outro</option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <label for="pat-desc" class="gmod-label">Descrição / Objetivo</label>
-        <textarea class="modal-input modal-textarea" id="pat-desc" style="min-height:64px;" placeholder="Descreva o objetivo desta atividade..."></textarea>
-      </div>
-      <div class="gmod-row">
-        <div>
-          <label for="pat-responsavel" class="gmod-label">Responsável</label>
-          <input class="modal-input" id="pat-responsavel" type="text" placeholder="Nome do responsável">
-        </div>
-        <div>
-          <label for="pat-equipe" class="gmod-label">Equipe</label>
-          <input class="modal-input" id="pat-equipe" type="text" placeholder="Membros da equipe">
-        </div>
-      </div>
-      <div class="gmod-row">
-        <div>
-          <label for="pat-inicio" class="gmod-label">Data de Início</label>
-          <input class="modal-input" id="pat-inicio" type="date">
-        </div>
-        <div>
-          <label for="pat-fim" class="gmod-label">Data de Conclusão Prevista</label>
-          <input class="modal-input" id="pat-fim" type="date">
-        </div>
-      </div>
-      <div class="gmod-row">
-        <div>
-          <label for="pat-status" class="gmod-label">Status</label>
-          <select class="modal-input" id="pat-status">
-            <option value="planejado">📋 Planejado</option>
-            <option value="andamento">🔵 Em Andamento</option>
-            <option value="concluido">🟢 Concluído</option>
-            <option value="atrasado">🔴 Atrasado</option>
-            <option value="cancelado">⚫ Cancelado</option>
-          </select>
-        </div>
-        <div>
-          <label for="pat-progresso" class="gmod-label">% Progresso</label>
-          <input class="modal-input" id="pat-progresso" type="number" min="0" max="100" placeholder="0–100">
-        </div>
-      </div>
-      <div class="gmod-row">
-        <div>
-          <label for="pat-meta" class="gmod-label">Meta <span style="font-weight:400;color:var(--text-muted);">(facultativo)</span></label>
-          <input class="modal-input" id="pat-meta" type="number" min="0" placeholder="Ex: 10" oninput="patCalcProgresso()">
-        </div>
-        <div>
-          <label for="pat-qtd" class="gmod-label">Quantidade realizada <span style="font-weight:400;color:var(--text-muted);">(facultativo)</span></label>
-          <input class="modal-input" id="pat-qtd" type="number" min="0" placeholder="Ex: 7" oninput="patCalcProgresso()">
-        </div>
-      </div>
-      <div id="pat-meta-preview" style="display:none;font-size:12px;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:6px 10px;margin-top:-6px;">
-        <!-- filled by patCalcProgresso -->
-      </div>
-      <div>
-        <label for="pat-pop-vinc" class="gmod-label">POP Vinculado (opcional)</label>
-        <select class="modal-input" id="pat-pop-vinc">
-          <option value="">Nenhum</option>
-        </select>
-      </div>
-      <div>
-        <label for="pat-obs" class="gmod-label">Observações</label>
-        <textarea class="modal-input modal-textarea" id="pat-obs" style="min-height:56px;" placeholder="Riscos, dependências, observações..."></textarea>
-      </div>
-    </div>
-    <div class="gmod-foot">
-      <button class="btn btn-outline" onclick="closeModal('pat-modal')">Cancelar</button>
-      <button class="btn btn-success" onclick="savePat()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-
-
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- BPMN MODULE (global, not per-pop) -->
-<!-- ═══════════════════════════════════════════ -->
-<div id="bpmn-module" style="display:none;">
-  <div class="bpmn-panel">
-
-    <!-- Upload area -->
-    <div class="bpmn-upload-area" id="bpmn-upload-area">
-      <div class="bpmn-upload-inner" id="bpmn-drop-zone">
-        <div class="bpmn-upload-icon">🔀</div>
-        <div class="bpmn-upload-title">Importar Imagem do Fluxo</div>
-        <div class="bpmn-upload-sub">Arraste e solte uma imagem <strong>.jpg</strong> ou <strong>.png</strong> aqui</div>
-        <div style="margin:16px 0;color:var(--text-muted);font-size:12px;">— ou —</div>
-        <label for="bpmn-file-input" class="btn btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
-          📂 Selecionar arquivo
-          <input type="file" id="bpmn-file-input" accept=".jpg,.jpeg,.png" style="display:none;">
-        </label>
-        <div class="bpmn-upload-hint">Suporta JPG e PNG · Tamanho máximo: <strong>10MB</strong> · Imagem salva em alta qualidade no storage</div>
-      </div>
-    </div>
-
-    <!-- Viewer (hidden until file loaded) -->
-    <div class="bpmn-viewer-wrap" id="bpmn-viewer-wrap" style="display:none;">
-      <div class="bpmn-toolbar">
-        <div class="bpmn-file-info">
-          <span class="bpmn-file-icon">📄</span>
-          <span class="bpmn-file-name" id="bpmn-file-name">—</span>
-        </div>
-        <div class="bpmn-toolbar-actions">
-          <button class="bpmn-tool-btn" onclick="imgZoom(0.15)" title="Zoom in">＋</button>
-          <span class="bpmn-zoom-label" id="bpmn-zoom-label">100%</span>
-          <button class="bpmn-tool-btn" onclick="imgZoom(-0.15)" title="Zoom out">－</button>
-          <button class="bpmn-tool-btn" onclick="bpmnFit()" title="Encaixar na tela">⛶</button>
-          <div class="bpmn-divider"></div>
-          <button class="bpmn-tool-btn" onclick="exportBpmnSvg()" title="Baixar imagem">⬇ Baixar</button>
-          <button class="bpmn-tool-btn bpmn-tool-danger" onclick="resetBpmn()" title="Trocar arquivo">🔄 Trocar</button>
-        </div>
-      </div>
-      <div class="bpmn-canvas-wrap">
-        <div id="bpmn-canvas" style="display:none;"></div>
-        <div class="bpmn-loading" id="bpmn-loading" style="display:none;">
-          <div class="bpmn-spinner"></div>
-          <span>Carregando imagem...</span>
-        </div>
-        <div class="bpmn-error" id="bpmn-error" style="display:none;">
-          <div style="font-size:32px;margin-bottom:12px;">⚠️</div>
-          <div class="bpmn-error-title">Não foi possível carregar a imagem</div>
-          <div class="bpmn-error-desc" id="bpmn-error-msg"></div>
-          <button class="btn btn-outline" style="margin-top:16px;" onclick="resetBpmn()">Tentar outro arquivo</button>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- FLOW DESIGNER MODULE — Excalidraw + BPMN 2.0              -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div id="fd-module" style="display:none;">
-
-  <!-- Seletor de modo -->
-  <div id="fd-mode-bar">
-    <button id="fd-btn-mermaid" class="fd-mode-btn active" onclick="fdSetMode('mermaid')">🤖 Fluxo com IA</button>
-    <button id="fd-btn-bpmn"    class="fd-mode-btn"        onclick="fdSetMode('bpmn')">🏗️ Editor BPMN 2.0</button>
-  </div>
-
-  <!-- ── MODO MERMAID + IA ───────────────────────────── -->
-  <div id="fd-text-mode" style="display:flex;height:calc(100vh - 218px);min-height:520px;background:white;border-radius:var(--radius);border:1px solid var(--cage-border);overflow:hidden;box-shadow:var(--shadow-md);">
-
-    <!-- LEFT: Mermaid code editor panel -->
-    <div id="fd-left-panel">
-      <div style="padding:10px 14px;border-bottom:1px solid var(--cage-border);background:var(--cage-blue);display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:white;margin-bottom:1px;">Código Mermaid</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.55);line-height:1.4;">Gere com IA ou edite manualmente.</div>
-        </div>
-        <button id="fd-collapse-btn" title="Recolher painel" onclick="fdToggleLeftPanel()">◀</button>
-      </div>
-      <textarea id="fd-text-input" style="flex:1;border:none;outline:none;resize:none;padding:12px 14px;font-size:12px;font-family:'JetBrains Mono',monospace;line-height:1.65;background:#f8fafc;color:var(--text-primary);" placeholder="flowchart LR
-  A([Início]) --> B[Receber Solicitação]
-  B --> C{Documentação Completa?}
-  C -->|Sim| D[Elaborar Parecer]
-  C -->|Não| E[Notificar Solicitante]
-  E --> B
-  D --> F[Assinar e Arquivar]
-  F --> G([Fim])"></textarea>
-      <div style="padding:10px 12px;border-top:1px solid var(--cage-border);background:#f8fafc;display:flex;flex-direction:column;gap:6px;">
-        <button onclick="fdGenerateWithAI()" style="padding:9px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🤖 Gerar com IA</button>
-        <button onclick="fdRenderMermaid()" style="padding:9px;background:var(--cage-accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">▶ Renderizar</button>
-        <div style="font-size:10px;color:var(--text-muted);line-height:1.5;"><strong>Dica:</strong> A IA lê os passos do processo e gera o diagrama automaticamente.</div>
-      </div>
-    </div>
-
-    <!-- CENTER: Mermaid diagram canvas -->
-    <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
-      <!-- Toolbar -->
-      <div style="padding:7px 12px;border-bottom:1px solid var(--cage-border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--cage-blue);">
-        <button id="fd-expand-btn" title="Expandir painel de código" onclick="fdToggleLeftPanel()" style="display:none;padding:4px 8px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;">▶ Código</button>
-        <label for="fd-lr-toggle" style="font-size:11px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:5px;cursor:pointer;">
-          <input type="checkbox" id="fd-lr-toggle" onchange="fdToggleDirection(this.checked)" checked style="cursor:pointer;">
-          Esquerda→Direita
-        </label>
-        <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
-        <button onclick="fdExportSVG()" title="Exportar SVG" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;">⬇ SVG</button>
-        <button onclick="fdExportPNG()" title="Exportar PNG" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;">⬇ PNG</button>
-        <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
-        <button onclick="fdZoom(-0.15)" title="Diminuir zoom" style="padding:4px 8px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">−</button>
-        <button type="button" id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;background:none;border:none;padding:0;">100%</button>
-        <button onclick="fdZoom(+0.15)" title="Aumentar zoom" style="padding:4px 8px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">+</button>
-        <button onclick="fdSave()" title="Salvar (Ctrl+S)" style="padding:4px 9px;background:#000;color:#fff;border:1px solid #000;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;">☁️ Salvar</button>
-      </div>
-      <!-- Mermaid diagram area -->
-      <div id="fd-canvas-wrap" style="flex:1;overflow:auto;position:relative;background:#f8fafc;">
-        <div id="fd-mermaid-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#f8fafc;z-index:2;flex-direction:column;gap:12px;pointer-events:none;">
-          <div style="font-size:13px;color:#64748b;text-align:center;padding:20px;">Clique em <strong>🤖 Gerar com IA</strong> para criar o fluxo automaticamente<br>a partir dos passos do processo, ou edite o código Mermaid manualmente.</div>
-        </div>
-        <div id="fd-mermaid-output" style="padding:20px;min-height:100%;display:flex;align-items:flex-start;justify-content:center;"></div>
-      </div>
-    </div>
-
-  </div><!-- /fd-text-mode -->
-
-  <!-- ── MODO BPMN 2.0 ──────────────────────────────────────── -->
-  <div id="fd-bpmn-mode" style="display:none;">
-    <div id="fd-bpmn-toolbar">
-      <span style="font-size:13px;font-weight:700;color:white;white-space:nowrap;margin-right:4px;">🏗️ <span id="fd-bpmn-pop-name" style="font-weight:400;opacity:.8;"></span></span>
-      <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 4px;flex-shrink:0;"></div>
-      <button onclick="fdUndo()" title="Desfazer (Ctrl+Z)" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">↩ Desfazer</button>
-      <button onclick="fdRedo()" title="Refazer (Ctrl+Y)" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">↪ Refazer</button>
-      <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 4px;flex-shrink:0;"></div>
-      <button onclick="fdFitView()" title="Ajustar ao canvas" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⊞ Ajustar</button>
-      <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 4px;flex-shrink:0;"></div>
-      <button onclick="fdExportBpmnSVG()" title="Exportar SVG" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⬇ SVG</button>
-      <button onclick="fdExportBpmnPNG()" title="Exportar PNG" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⬇ PNG</button>
-      <button onclick="fdExportBPMN()" title="Baixar arquivo .bpmn" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⬇ BPMN</button>
-      <button onclick="fdSaveBpmn()" title="Salvar BPMN (Ctrl+S)" style="padding:4px 9px;background:#000;color:#fff;border:1px solid #000;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;flex-shrink:0;">💾 Salvar</button>
-    </div>
-    <div id="fd-bpmn-container"></div>
-  </div><!-- /fd-bpmn-mode -->
-
-</div><!-- /fd-module -->
-
-<!-- ══════════════════ COCKPIT DE GESTÃO ══════════════════ -->
-<div id="cockpit-module" style="display:none;max-width:1200px;margin:0 auto;padding:24px 32px 80px;">
-
-  <!-- Header -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
-    <div>
-      <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#0ea5e9;margin-bottom:4px;">CAGE-RS · Gestão EPP</div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:28px;color:#1B3022;margin:0;line-height:1.2;">🎯 Cockpit de Gestão</h2>
-      <div style="font-size:13px;color:#64748b;margin-top:4px;">Visão estratégica em tempo real</div>
-    </div>
-    <button onclick="showHome()" style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:7px 16px;font-size:12px;color:#64748b;cursor:pointer;">← Página Inicial</button>
-  </div>
-
-  <!-- Stats Row (mesmos indicadores da home) -->
-  <div id="cockpit-stats-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:20px;"></div>
-
-  <!-- KPI Row (status dos mapeamentos) -->
-  <div id="cockpit-kpi-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;"></div>
-
-  <!-- Mid row: donut + rankings -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;align-items:start;">
-
-    <!-- Status donut -->
-    <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);">
-      <div style="font-size:13px;font-weight:800;color:#1B3022;margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em;">📊 Mapeamentos por Status</div>
-      <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
-        <div style="position:relative;width:140px;height:140px;flex-shrink:0;">
-          <canvas id="cockpit-donut-chart" width="140" height="140"></canvas>
-          <div id="cockpit-donut-center" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
-            <div style="font-size:26px;font-weight:800;color:#1B3022;" id="cockpit-donut-total">0</div>
-            <div style="font-size:10px;color:#64748b;font-weight:600;">TOTAL</div>
-          </div>
-        </div>
-        <div id="cockpit-donut-legend" style="flex:1;display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-    </div>
-
-    <!-- Rankings por maturidade -->
-    <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);">
-      <div style="font-size:13px;font-weight:800;color:#1B3022;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;">🏆 Ranking de Maturidade</div>
-      <div id="cockpit-ranking-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-    </div>
-
-  </div>
-
-  <!-- Horas economizadas -->
-  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;">
-    <div style="font-size:13px;font-weight:800;color:#1B3022;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;">⏱ Impacto: Horas Economizadas</div>
-    <div id="cockpit-horas-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;"></div>
-  </div>
-
-  <!-- Cobertura por Macroprocesso -->
-  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;">
-    <div style="font-size:13px;font-weight:800;color:#1B3022;margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em;">🗺 Cobertura de Mapeamento por Macroprocesso</div>
-    <div id="cockpit-coverage-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-  </div>
-
-  <!-- Distribuição de POPs -->
-  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-      <div style="font-size:13px;font-weight:800;color:#1B3022;text-transform:uppercase;letter-spacing:.05em;">📊 Distribuição de POPs</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="cockpit-dist-filters">
-        <button onclick="cockpitDistBy('macro')" data-dist="macro" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #1e293b;background:#1e293b;color:#fff;">Macroprocesso</button>
-        <button onclick="cockpitDistBy('patrocinador')" data-dist="patrocinador" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;">Patrocinador</button>
-        <button onclick="cockpitDistBy('area')" data-dist="area" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;">Área</button>
-        <button onclick="cockpitDistBy('obj')" data-dist="obj" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;">Obj. Estratégico</button>
-      </div>
-    </div>
-    <div style="position:relative;height:260px;">
-      <canvas id="cockpit-dist-chart"></canvas>
-    </div>
-  </div>
-
-  <!-- Process Inspector (full width) -->
-  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.05);">
-    <div style="font-size:13px;font-weight:800;color:#1B3022;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;">🔍 Inspetor de Processo</div>
-    <select id="cockpit-pop-selector" onchange="cockpitLoadPop()" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#1B3022;background:#f8fafc;margin-bottom:16px;cursor:pointer;">
-      <option value="">— Selecione um processo para inspecionar —</option>
-    </select>
-    <div id="cockpit-pop-detail" style="display:none;">
-      <div id="cockpit-pop-header" style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid #f1f5f9;"></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:20px;" id="cockpit-pop-kpis"></div>
-      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">🗺 Mapa do Processo</div>
-      <div id="cockpit-pop-flow" style="overflow-x:auto;padding-bottom:12px;"></div>
-      <div id="cockpit-pop-inds" style="margin-top:16px;"></div>
-    </div>
-    <div id="cockpit-pop-empty" style="color:#94a3b8;font-size:13px;text-align:center;padding:32px 0;">Selecione um processo para ver seu mapa, etapas e indicadores</div>
-  </div>
-
-</div><!-- /cockpit-module -->
-
-</main>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="rev-modal">
-  <div class="modal">
-    <h3>📋 Registrar Nova Revisão</h3>
-    <p>Preencha as informações desta revisão. Ela será adicionada ao histórico de controle do POP.</p>
-    <label for="rm-date">Número da Revisão</label><input class="modal-input" id="rm-num" type="text">
-    <label for="rm-desc">Data</label><input class="modal-input" id="rm-date" type="text">
-    <label for="rm-author">Descrição</label><textarea class="modal-input modal-textarea" id="rm-desc"></textarea>
-    <label for="rm-author">Autor</label><input class="modal-input" id="rm-author" type="text">
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="document.getElementById('rev-modal').classList.remove('open')">Cancelar</button>
-      <button class="btn btn-warn" onclick="saveRevision()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- MÓDULO: RELATÓRIO DE MAPEAMENTO DE PROCESSO (IA)          -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div id="ai-relatorio-module" style="display:none;">
-  <div class="rel-gen-wrap">
-    <div class="rel-gen-header">
-      <div class="rel-gen-icon">📄</div>
-      <div>
-        <div class="rel-gen-title">Relatório de Mapeamento de Processo</div>
-        <div class="rel-gen-sub" id="rel-pop-name">Selecione um POP para gerar o relatório</div>
-      </div>
-    </div>
-
-    <!-- Dados Quantitativos (opcional) -->
-    <div class="rel-quant-box">
-      <button class="rel-quant-toggle" onclick="(function(b){const d=document.getElementById('rel-quant-body'),open=d.style.display!=='grid';d.style.display=open?'grid':'none';b.querySelector('.rq-arrow').textContent=open?'▲':'▼';})(this)">
-        📊 Dados Quantitativos <span style="font-weight:400;color:#64748b;">— volumetria e tempo (opcional, enriquece o relatório)</span>
-        <span class="rq-arrow" style="margin-left:auto;font-size:11px;">▼</span>
-      </button>
-      <div id="rel-quant-body" class="rel-quant-body" style="display:none;">
-        <div class="rel-quant-field"><label for="rq-vol-anual">Execuções médias / mês</label><input type="text" id="rq-vol-mensal" placeholder="ex: 120" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label for="rq-sazonalidade">Execuções anuais estimadas</label><input type="text" id="rq-vol-anual" placeholder="ex: 1.440" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label for="rq-tempo-medio">Variação sazonal</label><input type="text" id="rq-sazonalidade" placeholder="ex: maior no 1º trimestre" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label for="rq-tempo-espera">Tempo médio de execução</label><input type="text" id="rq-tempo-medio" placeholder="ex: 12 dias úteis" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label for="rq-tempo-espera">Tempo médio de espera</label><input type="text" id="rq-tempo-espera" placeholder="ex: 3 dias" oninput="saveRelQuant()"></div>
-      </div>
-    </div>
-
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
-      <button class="rel-gen-btn" id="rel-gen-btn" onclick="runAiRelatorio()">📄 Gerar Relatório com IA</button>
-      <span style="font-size:12px;color:#94a3b8;">Powered by GitHub Copilot · Baseado em todas as abas do mapeamento</span>
-    </div>
-
-    <!-- Spinner -->
-    <div id="rel-spinner" style="display:none;flex-direction:column;align-items:center;gap:16px;padding:48px 0;">
-      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style="animation:ai-spin 1s linear infinite;">
-        <circle cx="22" cy="22" r="18" stroke="#1B3022" stroke-width="4" stroke-dasharray="90 28" stroke-linecap="round"/>
-      </svg>
-      <div style="font-size:14px;font-weight:700;color:#1B3022;">Gerando relatório com IA…</div>
-      <div style="font-size:12px;color:#94a3b8;">Analisando todas as abas do mapeamento, aguarde</div>
-    </div>
-
-    <!-- Report Output -->
-    <div id="rel-output"></div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- NOVO POP WIZARD MODAL                       -->
-<!-- ═══════════════════════════════════════════ -->
-<div class="npop-overlay" id="npop-overlay">
-  <div class="npop-box">
-
-    <div class="npop-header">
-      <h2>➕ Novo Mapeamento</h2>
-      <p>Escolha entre preenchimento manual ou importação por POP Word.</p>
-    </div>
-
-    <!-- STEP 1: escolher método -->
-    <div class="npop-body">
-      <div class="npop-step active" id="npop-s1">
-        <div class="npop-methods" style="display:block;">
-          <button type="button" class="npop-method selected" id="npop-m-manual" onclick="selectNpopMethod('manual')">
-            <div class="npop-method-icon">✍️</div>
-            <div class="npop-method-name">Preenchimento Manual</div>
-            <div class="npop-method-desc">Preencha os campos do mapeamento diretamente no sistema.</div>
-          </div>
-          <button type="button" class="npop-method" id="npop-m-workflow" onclick="selectNpopMethod('workflow')" style="margin-top:8px;">
-            <div class="npop-method-icon">📝</div>
-            <div class="npop-method-name">Importar por POP Word</div>
-            <div class="npop-method-desc">Envie o POP em Word e clique em <strong>Criar mapeamento</strong> para abrir o formulário de revisão e edição.</div>
-          </div>
-          <div id="npop-workflow-block" style="margin-top:12px;display:none;">
-            <button type="button" class="npop-upload-zone" id="npop-drop-zone"
-              onclick="document.getElementById('npop-file-input').click()"
-              ondragover="event.preventDefault();this.classList.add('dragover')"
-              ondragleave="this.classList.remove('dragover')"
-              ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])"
-              aria-label="Clique ou arraste o POP Word aqui">
-              <span class="npop-upload-icon" aria-hidden="true">📄</span>
-              <span class="npop-upload-title">Clique ou arraste o POP Word aqui</span>
-              <span class="npop-upload-hint">Apenas .doc e .docx</span>
-            </button>
-            <input type="file" id="npop-file-input" accept=".docx" style="display:none">
-            <div class="npop-file-chosen" id="npop-file-chosen">
-              <span style="font-size:20px;">📄</span>
-              <span id="npop-file-name" style="font-size:13px;font-weight:600;color:var(--cage-blue);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-              <button onclick="resetNpopFile()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:0;line-height:1;">✕</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Manual: dados básicos -->
-        <div id="npop-manual-form" style="margin-top:16px;">
-          <div class="npop-form">
-
-            <!-- SEÇÃO: Identificação -->
-            <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;margin-bottom:4px;">
-              <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📋 Identificação</div>
-              <div style="display:flex;flex-direction:column;gap:10px;">
-                <div>
-                  <label for="nf-macro">Macroprocesso *</label>
-                  <select class="modal-input" id="nf-macro" onchange="npopUpdateProcessoList()">
-                    <option value="">Selecione o macroprocesso...</option>
-                  </select>
-                </div>
-                <div class="npop-row">
-                  <div>
-                    <label for="nf-processo">Processo *</label>
-                    <input class="modal-input" id="nf-processo" type="text" placeholder="Digite para filtrar processos..." list="nf-processo-list" autocomplete="off" oninput="npopUpdateSubprocessoList()">
-                    <datalist id="nf-processo-list"></datalist>
-                  </div>
-                  <div>
-                    <label for="nf-subprocesso">Subprocesso</label>
-                    <input class="modal-input" id="nf-subprocesso" type="text" placeholder="Digite para filtrar subprocessos..." list="nf-subprocesso-list" autocomplete="off" oninput="npopAutoFill()">
-                    <datalist id="nf-subprocesso-list"></datalist>
-                  </div>
-                </div>
-                <!-- Campos auto-preenchidos -->
-                <div class="npop-row">
-                  <div>
-                    <label for="nf-unidade">Unidade (ou Divisão)</label>
-                    <input class="modal-input" id="nf-unidade" type="text" readonly style="background:#f1f5f9;color:#475569;cursor:default;" placeholder="Preenchido automaticamente">
-                  </div>
-                  <div>
-                    <label for="nf-gerente">Gerente do Processo</label>
-                    <input class="modal-input" id="nf-gerente" type="text" placeholder="Preenchido automaticamente">
-                  </div>
-                </div>
-                <div>
-                  <label for="nf-obj-estrategico">Objetivo Estratégico</label>
-                  <div id="nf-obj-estrategico-tags" style="min-height:34px;padding:5px 8px;background:#f1f5f9;border:1px solid var(--cage-border);border-radius:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;"><span style="color:#94a3b8;font-size:12px;">Preenchido automaticamente ao selecionar o processo</span></div>
-                  <input type="hidden" id="nf-obj-estrategico">
-                </div>
-                <!-- Seleções -->
-                <div class="npop-row">
-                  <div>
-                    <label for="nf-equipe-resp">Equipe Responsável</label>
-                    <select class="modal-input" id="nf-equipe-resp">
-                      <option value="">Selecione a equipe...</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="nf-tipo">Tipo de Trabalho</label>
-                    <select class="modal-input" id="nf-tipo">
-                      <option value="">Selecione...</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="npop-row">
-                  <div>
-                    <label for="nf-dificuldade">Dificuldade</label>
-                    <select class="modal-input" id="nf-dificuldade">
-                      <option value="">Selecione...</option>
-                      <option>Baixa</option><option>Média</option><option>Alta</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="nf-status-display">Status do Mapeamento</label>
-                    <input class="modal-input" id="nf-status-display" type="text" readonly style="background:#f1f5f9;color:#475569;cursor:default;" placeholder="Calculado pelas datas">
-                    <input type="hidden" id="nf-status-map">
-                  </div>
-                </div>
-                <div class="npop-row">
-                  <div>
-                    <label for="nf-data-inicio">Data de Início</label>
-                    <input class="modal-input" id="nf-data-inicio" type="date" onchange="npopUpdateDataFim();npopUpdateStatus();">
-                  </div>
-                  <div>
-                    <label for="nf-data-prevista">Data de Fim <span style="color:#94a3b8;font-weight:400;font-size:11px;">(90 dias após início)</span></label>
-                    <input class="modal-input" id="nf-data-prevista" type="date" onchange="npopUpdateStatus();">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- SEÇÃO: Pessoas -->
-            <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;margin-bottom:4px;">
-              <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">👥 Pessoas</div>
-              <div style="display:flex;flex-direction:column;gap:10px;">
-                <div class="npop-row">
-                  <div>
-                    <label for="nf-solicitante">Solicitante</label>
-                    <input class="modal-input" id="nf-solicitante" type="text" placeholder="Quem solicitou o mapeamento">
-                  </div>
-                  <div>
-                    <label for="nf-patrocinador">Patrocinador</label>
-                    <select class="modal-input" id="nf-patrocinador"><option value="">— selecione —</option></select>
-                  </div>
-                </div>
-                <div>
-                  <label for="nf-equipe">Equipe de Mapeamento</label>
-                  <input class="modal-input" id="nf-equipe" type="text" placeholder="Ex: Edison Weber, Ana Silva, Carlos Lima...">
-                </div>
-              </div>
-            </div>
-
-            <!-- SEÇÃO: Processo -->
-            <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;margin-bottom:4px;">
-              <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">⚙️ Processo</div>
-              <div style="display:flex;flex-direction:column;gap:10px;">
-                <div>
-                  <label for="nf-desc">Objetivo</label>
-                  <textarea class="modal-input modal-textarea" id="nf-desc" placeholder="Descreva o objetivo deste processo..." style="min-height:56px;"></textarea>
-                </div>
-                <div class="npop-row">
-                  <div>
-                    <label for="nf-input">Entradas</label>
-                    <textarea class="modal-input modal-textarea" id="nf-input" placeholder="Insumos / entradas do processo..." style="min-height:48px;"></textarea>
-                  </div>
-                  <div>
-                    <label for="nf-output">Saídas</label>
-                    <textarea class="modal-input modal-textarea" id="nf-output" placeholder="Produtos / saídas do processo..." style="min-height:48px;"></textarea>
-                  </div>
-                </div>
-                <div>
-                  <label for="nf-resultados">Resultados Esperados</label>
-                  <textarea class="modal-input modal-textarea" id="nf-resultados" placeholder="Quais resultados e benefícios esperados..." style="min-height:48px;"></textarea>
-                </div>
-                <div class="npop-row">
-                  <div>
-                    <label for="nf-fornecedores">Fornecedores</label>
-                    <input class="modal-input" id="nf-fornecedores" type="text" placeholder="Quem fornece insumos ao processo">
-                  </div>
-                  <div>
-                    <label for="nf-clientes">Clientes / Destinatários</label>
-                    <input class="modal-input" id="nf-clientes" type="text" placeholder="Quem recebe o resultado">
-                  </div>
-                </div>
-                <div>
-                  <label for="nf-sistemas">Sistemas Utilizados</label>
-                  <input class="modal-input" id="nf-sistemas" type="text" placeholder="Ex: SAEWEB, SEI, FalaBR, e-SIC...">
-                </div>
-                <div>
-                  <label for="nf-atores">Atores <span style="color:#94a3b8;font-weight:400;font-size:11px;">(clique para selecionar)</span></label>
-                  <div id="nf-atores-wrap" style="display:flex;flex-wrap:wrap;gap:6px;padding:6px 8px;background:#f8fafc;border:1px solid var(--cage-border);border-radius:6px;min-height:38px;"></div>
-                  <input type="hidden" id="nf-atores">
-                </div>
-              </div>
-            </div>
-
-            <!-- SEÇÃO: Vínculo com PAT -->
-            <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:12px 14px;">
-              <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📋 Vínculo com o PAT</div>
-              <div>
-                <label for="nf-pat-vinc" style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Item do Plano Anual de Trabalho <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-                <select class="modal-input" id="nf-pat-vinc" style="width:100%;">
-                  <option value="">— Nenhum vínculo —</option>
-                </select>
-                <div style="font-size:11px;color:#78716c;margin-top:5px;">Vincule este mapeamento a uma atividade já cadastrada no PAT. O campo <em>POP Vinculado</em> do item selecionado será atualizado automaticamente.</div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- IA desativada neste fluxo: placeholders ocultos para compatibilidade -->
-        <div id="npop-ia-form" style="display:none;margin-top:16px;">
-          <textarea id="npop-json-paste" style="display:none;"></textarea>
-          <div id="npop-json-status" style="display:none;"></div>
-          <div id="npop-prompt-wrap" style="display:none;"><pre id="npop-prompt-text"></pre></div>
-          <button id="npop-copy-btn" style="display:none;"></button>
-        </div>
-      </div>
-
-      <!-- STEP 2: extracting (IA only) -->
-      <div class="npop-step" id="npop-s2">
-        <div class="npop-extracting">
-          <div class="npop-extract-spin"></div>
-          <div class="npop-extract-title">Extraindo informações com IA…</div>
-          <div class="npop-extract-sub" id="npop-extract-msg">Lendo o documento enviado…</div>
-          <div class="npop-progress"><div class="npop-progress-bar" id="npop-pbar"></div></div>
-        </div>
-      </div>
-
-      <!-- STEP 3: extracted preview / error -->
-      <div class="npop-step" id="npop-s3">
-        <div id="npop-extract-result"></div>
-      </div>
-
-    </div><!-- /npop-body -->
-
-    <div class="npop-footer">
-      <button class="btn btn-outline" onclick="closeNovoPop()">Cancelar</button>
-      <div style="display:flex;gap:8px;">
-        <span id="npop-method-badge" style="font-size:12px;color:var(--text-muted);align-self:center;"></span>
-        <button class="btn btn-success" id="npop-confirm-btn" onclick="confirmNovoPop()">Criar Mapeamento →</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: Revisão e Ordenação de Etapas (antes de criar o POP) -->
-<div id="npop-order-modal" style="display:none;position:fixed;inset:0;z-index:4300;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:14px;width:940px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.35);">
-    <div style="padding:14px 16px;background:#1B3022;color:white;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-      <div>
-        <div style="font-weight:700;font-size:14px;">🔀 Revisar e Ordenar Etapas</div>
-        <div style="font-size:12px;opacity:.9;">Arraste para reorganizar etapas e atividades antes de criar o mapeamento.</div>
-      </div>
-      <button onclick="closeNpopOrderModal()" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;line-height:1;">✕</button>
-    </div>
-    <div style="padding:12px 14px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:12px;color:#475569;">Cada card abaixo representa uma etapa. Dentro de cada etapa, você também pode arrastar as atividades para definir a ordem correta.</div>
-    <div id="npop-order-steps" style="padding:14px;display:flex;flex-direction:column;gap:10px;overflow:auto;max-height:56vh;"></div>
-    <div style="padding:12px 14px;display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e2e8f0;background:#fff;">
-      <button class="btn btn-outline" onclick="closeNpopOrderModal()">Cancelar</button>
-      <button class="btn btn-success" onclick="confirmNpopOrder()">✅ Confirmar Ordem</button>
-    </div>
-  </div>
-</div>
-
-
-
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- MÓDULO: REPOSITÓRIO DE DOCUMENTOS          -->
-<!-- ═══════════════════════════════════════════ -->
-<div id="repo-module" style="display:none;padding:32px 24px 60px;max-width:1100px;margin:0 auto;">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
-    <div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:#1B3022;margin:0 0 4px;">📚 Documentos e Manuais</h2>
-      <div style="font-size:13px;color:#64748b;">Repositório de documentos do Escritório de Processos</div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-outline" onclick="showHome()" style="font-size:13px;">← Início</button>
-      <button class="btn btn-primary editor-only" onclick="repoOpenUpload()" style="font-size:13px;background:#e11d48;border-color:#e11d48;">＋ Adicionar Documento</button>
-    </div>
-  </div>
-
-  <!-- Filter bar -->
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center;">
-    <input type="text" id="repo-search" placeholder="🔍 Buscar documento..." oninput="repoRender()"
-      style="padding:8px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;flex:1;min-width:180px;outline:none;">
-    <select id="repo-filter-type" onchange="repoRender()"
-      style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;color:#374151;">
-      <option value="">Todos os tipos</option>
-      <option value="pdf">PDF</option>
-      <option value="word">Word</option>
-      <option value="ppt">PowerPoint</option>
-      <option value="bpmn">BPMN</option>
-      <option value="image">Imagem</option>
-      <option value="outro">Outro</option>
-    </select>
-    <select id="repo-filter-cat" onchange="repoRender()"
-      style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;color:#374151;">
-      <option value="">Todas as categorias</option>
-      <option value="Metodologia">Metodologia</option>
-      <option value="Manual">Manual</option>
-      <option value="Guia">Guia</option>
-      <option value="Template">Template</option>
-      <option value="Normativo">Normativo</option>
-      <option value="Apresentação">Apresentação</option>
-      <option value="Outro">Outro</option>
-    </select>
-  </div>
-
-  <!-- Docs grid -->
-  <div id="repo-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;"></div>
-  <div id="repo-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-    <div style="font-size:48px;margin-bottom:12px;">📂</div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhum documento ainda</div>
-    <div style="font-size:13px;">Clique em "Adicionar Documento" para começar</div>
-  </div>
-</div>
-
-<!-- REPO: Upload modal -->
-<div id="repo-upload-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;width:520px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);">
-    <div style="background:#1B3022;border-radius:16px 16px 0 0;padding:20px 24px;">
-      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;">📎 Adicionar Documento</h3>
-    </div>
-    <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
-      <div>
-        <label for="repo-title" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Título do Documento *</label>
-        <input class="modal-input" id="repo-title" type="text" placeholder="Ex: Manual de Mapeamento de Processos">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div>
-          <label for="repo-cat" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Categoria</label>
-          <select class="modal-input" id="repo-cat">
-            <option>Metodologia</option><option>Manual</option><option>Guia</option>
-            <option>Template</option><option>Normativo</option><option>Apresentação</option><option>Outro</option>
-          </select>
-        </div>
-        <div>
-          <label for="repo-version" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Versão</label>
-          <input class="modal-input" id="repo-version" type="text" placeholder="Ex: v1.0">
-        </div>
-      </div>
-      <div>
-        <label for="repo-desc" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Descrição</label>
-        <textarea class="modal-input" id="repo-desc" rows="2" placeholder="Breve descrição do conteúdo..." style="resize:vertical;min-height:60px;"></textarea>
-      </div>
-      <div>
-        <label for="repo-file-input" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:6px;">Arquivo</label>
-        <button type="button" id="repo-drop-zone" onclick="document.getElementById('repo-file-input').click()"
-          style="border:2px dashed #e2e8f0;border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;background:#f8fafc;transition:all .2s;"
-          onmouseover="this.style.borderColor='#e11d48';this.style.background='#fff1f2'"
-          onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
-          ondragover="event.preventDefault();this.style.borderColor='#e11d48'"
-          ondrop="repoHandleDrop(event)">
-          <div style="font-size:32px;margin-bottom:8px;">📁</div>
-          <div style="font-size:14px;font-weight:600;color:#1B3022;margin-bottom:4px;">Arraste o arquivo ou clique para selecionar</div>
-          <div style="font-size:12px;color:#94a3b8;">PDF, Word, PowerPoint, BPMN, JPG, PNG</div>
-        </div>
-        <input type="file" id="repo-file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.bpmn,.jpg,.jpeg,.png,.gif,.webp" style="display:none" onchange="repoFileSelected(this.files[0])">
-        <div id="repo-file-chosen" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:#f0faf5;border:1px solid #a7f3d0;border-radius:8px;margin-top:8px;">
-          <span id="repo-file-icon" style="font-size:20px;">📄</span>
-          <span id="repo-file-name" style="font-size:13px;font-weight:600;color:#1B3022;flex:1;"></span>
-          <span id="repo-file-size" style="font-size:11px;color:#64748b;"></span>
-        </div>
-      </div>
-      <div id="repo-upload-progress" style="display:none;">
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px;" id="repo-upload-msg">Enviando...</div>
-        <div style="height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;">
-          <div id="repo-upload-bar" style="height:100%;background:#e11d48;border-radius:2px;width:0%;transition:width .4s;"></div>
-        </div>
-      </div>
-    </div>
-    <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;">
-      <button class="btn btn-outline" onclick="repoCloseUpload()">Cancelar</button>
-      <button class="btn btn-primary" onclick="repoSaveDoc()" style="background:#e11d48;border-color:#e11d48;">Salvar Documento</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- MÓDULO: DROPS DE CONHECIMENTO              -->
-<!-- ═══════════════════════════════════════════ -->
-<div id="drops-module" style="display:none;padding:32px 24px 60px;max-width:1100px;margin:0 auto;">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
-    <div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:#1B3022;margin:0 0 4px;">💧 Drops de Conhecimento</h2>
-      <div style="font-size:13px;color:#64748b;">Publicações mensais do Escritório de Processos · CAGE-RS</div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-outline" onclick="showHome()" style="font-size:13px;">← Início</button>
-      <button class="btn btn-primary editor-only" onclick="dropsOpenNew()" style="font-size:13px;background:#0ea5e9;border-color:#0ea5e9;">＋ Novo Drop</button>
-    </div>
-  </div>
-
-  <!-- Search -->
-  <div style="margin-bottom:20px;">
-    <input type="text" id="drops-search" placeholder="🔍 Buscar drops..." oninput="dropsRender()"
-      style="padding:8px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;width:100%;max-width:380px;box-sizing:border-box;outline:none;">
-  </div>
-
-  <!-- Grid -->
-  <div id="drops-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;"></div>
-  <div id="drops-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-    <div style="font-size:48px;margin-bottom:12px;">💧</div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhum Drop publicado ainda</div>
-    <div style="font-size:13px;">Clique em "Novo Drop" para publicar o primeiro</div>
-  </div>
-</div>
-
-<!-- DROPS: New/Edit modal -->
-<div id="drops-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;width:580px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);">
-    <div style="background:#1B3022;border-radius:16px 16px 0 0;padding:20px 24px;">
-      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;" id="drops-modal-title">💧 Novo Drop de Conhecimento</h3>
-    </div>
-    <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
-      <div>
-        <label for="drop-title" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Título *</label>
-        <input class="modal-input" id="drop-title" type="text" placeholder="Ex: O que é BPMN?">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-        <div>
-          <label for="drop-edicao" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Edição / Mês</label>
-          <input class="modal-input" id="drop-edicao" type="text" placeholder="Ex: Edição 01 · Jan/2025">
-        </div>
-        <div>
-          <label for="drop-date" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Data de Publicação</label>
-          <input class="modal-input" id="drop-date" type="date">
-        </div>
-        <div>
-          <label for="drop-tag" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Tag / Tema</label>
-          <input class="modal-input" id="drop-tag" type="text" placeholder="Ex: BPMN, Mapeamento, BPM...">
-        </div>
-      </div>
-      <div>
-        <label for="drop-resumo" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Resumo</label>
-        <textarea class="modal-input" id="drop-resumo" rows="3" placeholder="Breve resumo do conteúdo do Drop..." style="resize:vertical;min-height:70px;"></textarea>
-      </div>
-      <div>
-        <label for="drop-link" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Link do Arquivo (PDF, Canva, Drive...)</label>
-        <input class="modal-input" id="drop-link" type="url" placeholder="https://...">
-      </div>
-      <div>
-        <label for="drop-cover-url" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:4px;">Imagem de Capa (URL ou upload)</label>
-        <div style="display:flex;gap:8px;">
-          <input class="modal-input" id="drop-cover-url" type="url" placeholder="https://... ou faça upload →" style="flex:1;">
-          <button class="btn btn-outline" onclick="document.getElementById('drop-cover-file').click()" style="font-size:12px;white-space:nowrap;">📤 Upload</button>
-          <input type="file" id="drop-cover-file" accept="image/*" style="display:none" onchange="dropCoverSelected(this.files[0])">
-        </div>
-        <div id="drop-cover-preview" style="display:none;margin-top:8px;border-radius:8px;overflow:hidden;max-height:120px;">
-          <img id="drop-cover-img" src="" alt="Capa do drop" style="width:100%;max-height:120px;object-fit:cover;">
-        </div>
-      </div>
-    </div>
-    <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
-      <button class="btn btn-outline" onclick="dropsCloseModal()">Cancelar</button>
-      <div style="display:flex;gap:8px;">
-        <button id="drop-delete-btn" class="btn btn-outline" style="color:#e11d48;border-color:#fda4af;display:none;" onclick="dropDelete()">🗑 Excluir</button>
-        <button class="btn btn-primary" onclick="dropSave()" style="background:#0ea5e9;border-color:#0ea5e9;">Publicar Drop</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- DROPS: lightbox para imagem de capa -->
-<button id="drops-lightbox" type="button" onclick="dropsCloseLightbox()" onkeydown="if(event.key==='Enter'||event.key===' '){dropsCloseLightbox()}" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;border:none;padding:0;width:100%;height:100%;" aria-label="Fechar visualização de imagem ampliada">
-  <img id="drops-lightbox-img" src="" alt="Drop" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
-</button>
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- MÓDULO: AUDITORIA DE PROCESSOS             -->
-<!-- ═══════════════════════════════════════════ -->
-<div id="audit-module" style="display:none;padding:32px 24px 80px;max-width:1100px;margin:0 auto;">
-
-  <!-- Header -->
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:28px;">
-    <div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:#1B3022;margin:0 0 4px;">🔍 Auditoria de Processos</h2>
-      <div style="font-size:13px;color:#64748b;">Planejamento, execução e gestão de não conformidades · CAGE-RS</div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <button class="btn btn-outline" onclick="showHome()" style="font-size:13px;">← Início</button>
-      <button id="audit-new-btn" class="btn btn-primary audit-edit-only" onclick="auditOpenPlanModal()" style="font-size:13px;">＋ Novo Plano</button>
-    </div>
-  </div>
-
-  <!-- VIEW: Lista de Planos -->
-  <div id="audit-view-plans">
-    <div style="font-size:14px;font-weight:600;color:#1B3022;margin-bottom:16px;">Planos de Auditoria</div>
-    <div id="audit-plans-list"></div>
-    <div id="audit-plans-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-      <div style="font-size:48px;margin-bottom:12px;">📋</div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhum plano criado</div>
-      <div style="font-size:13px;">Clique em "Novo Plano" para criar o primeiro plano de auditoria</div>
-    </div>
-  </div>
-
-  <!-- VIEW: Pasta do Plano -->
-  <div id="audit-view-detail" style="display:none;">
-
-    <!-- Breadcrumb + ações -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn btn-outline" onclick="auditClosePlan()" style="font-size:13px;">← Planos</button>
-        <div style="font-size:13px;color:#94a3b8;">/</div>
-        <div id="audit-plan-detail-title" style="font-size:15px;font-weight:700;color:#1B3022;max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-outline audit-edit-only" onclick="auditOpenPlanModal(_auditCurrentPlanId)" style="font-size:12px;">✏️ Editar Plano</button>
-        <button class="btn btn-outline" onclick="auditExportPlanDoc(_auditCurrentPlanId)" style="font-size:12px;color:#1e40af;border-color:#bfdbfe;">📋 Exportar Plano</button>
-      </div>
-    </div>
-
-    <!-- Resumo do plano -->
-    <div id="audit-plan-summary" style="margin-bottom:20px;"></div>
-
-    <!-- Subabas do plano -->
-    <div style="display:flex;gap:2px;border-bottom:2px solid #e2e8f0;margin-bottom:24px;overflow-x:auto;">
-      <button class="audit-tab active" data-ptab="exec"    onclick="auditPlanSubTab('exec',this)">▶ Execução</button>
-      <button class="audit-tab"        data-ptab="nc"      onclick="auditPlanSubTab('nc',this)">⚠️ Não Conformidades</button>
-      <button class="audit-tab"        data-ptab="actions" onclick="auditPlanSubTab('actions',this)">✅ Plano de Ação</button>
-      <button class="audit-tab"        data-ptab="trail"   onclick="auditPlanSubTab('trail',this)">🕐 Trilha</button>
-      <button class="audit-tab"        data-ptab="heatmap" onclick="auditPlanSubTab('heatmap',this)">🗺 Matriz de Riscos</button>
-    </div>
-
-    <!-- Painel: Execução -->
-    <div id="audit-tab-exec" class="audit-tab-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-        <div style="font-size:14px;font-weight:600;color:#1B3022;">Execução de Auditorias</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-outline" onclick="auditExportRelatorioFinal(_auditCurrentPlanId)" style="font-size:12px;color:#1e40af;border-color:#bfdbfe;">📄 Exportar Relatório Final</button>
-          <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Nova Execução</button>
-        </div>
-      </div>
-      <div id="audit-exec-list"></div>
-      <div id="audit-exec-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-        <div style="font-size:48px;margin-bottom:12px;">▶</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma execução registrada</div>
-        <div style="font-size:13px;">Inicie a execução com checklist para este plano</div>
-      </div>
-    </div>
-
-    <!-- Painel: NCs -->
-    <div id="audit-tab-nc" class="audit-tab-panel" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-        <div style="font-size:14px;font-weight:600;color:#1B3022;">Não Conformidades</div>
-        <button class="btn btn-primary audit-edit-only" onclick="auditOpenNcModal()" style="font-size:12px;background:#dc2626;border-color:#dc2626;">＋ Registrar NC</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-        <button class="audit-nc-filter active" data-g="" onclick="auditFilterNc('',this)">Todas</button>
-        <button class="audit-nc-filter" data-g="critica" onclick="auditFilterNc('critica',this)">🔴 Crítica</button>
-        <button class="audit-nc-filter" data-g="moderada" onclick="auditFilterNc('moderada',this)">🟡 Moderada</button>
-        <button class="audit-nc-filter" data-g="leve" onclick="auditFilterNc('leve',this)">🟢 Leve</button>
-      </div>
-      <div id="audit-nc-list"></div>
-      <div id="audit-nc-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-        <div style="font-size:48px;margin-bottom:12px;">✅</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma não conformidade registrada</div>
-        <div style="font-size:13px;">Ótimo! Nenhuma NC encontrada neste plano.</div>
-      </div>
-    </div>
-
-    <!-- Painel: Ações -->
-    <div id="audit-tab-actions" class="audit-tab-panel" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-        <div style="font-size:14px;font-weight:600;color:#1B3022;">Plano de Ação — Correções</div>
-        <button class="btn btn-primary audit-edit-only" onclick="auditOpenActionModal()" style="font-size:12px;background:#1B3022;border-color:#1B3022;">＋ Nova Ação</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-        <button class="audit-nc-filter active" data-g="" onclick="auditFilterAction('',this)">Todas</button>
-        <button class="audit-nc-filter" data-g="pendente" onclick="auditFilterAction('pendente',this)">Pendente</button>
-        <button class="audit-nc-filter" data-g="em_andamento" onclick="auditFilterAction('em_andamento',this)">Em Andamento</button>
-        <button class="audit-nc-filter" data-g="concluida" onclick="auditFilterAction('concluida',this)">Concluída</button>
-      </div>
-      <div id="audit-actions-list"></div>
-      <div id="audit-actions-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-        <div style="font-size:48px;margin-bottom:12px;">✅</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma ação cadastrada</div>
-        <div style="font-size:13px;">Registre não conformidades e crie ações corretivas</div>
-      </div>
-    </div>
-
-    <!-- Painel: Trilha -->
-    <div id="audit-tab-trail" class="audit-tab-panel" style="display:none;">
-      <div style="font-size:14px;font-weight:600;color:#1B3022;margin-bottom:20px;">Trilha de Auditoria — Linha do Tempo</div>
-      <div id="audit-trail-list" style="position:relative;padding-left:32px;">
-        <div style="position:absolute;left:11px;top:0;bottom:0;width:2px;background:#e2e8f0;border-radius:2px;"></div>
-      </div>
-      <div id="audit-trail-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-        <div style="font-size:48px;margin-bottom:12px;">🕐</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhum evento registrado</div>
-        <div style="font-size:13px;">A trilha aparece conforme execuções e NCs são criadas neste plano</div>
-      </div>
-    </div>
-
-    <!-- Painel: Matriz de Riscos -->
-    <div id="audit-tab-heatmap" class="audit-tab-panel" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-        <div style="font-size:14px;font-weight:600;color:#1B3022;">Matriz de Riscos por Etapa</div>
-        <div style="font-size:12px;color:#64748b;">Incidência de não conformidades por etapa do processo</div>
-      </div>
-      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;font-size:12px;align-items:center;">
-        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#dcfce7;border-radius:3px;border:1px solid #86efac;"></span> 0 NCs</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fef9c3;border-radius:3px;border:1px solid #fde047;"></span> 1-2 NCs</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fed7aa;border-radius:3px;border:1px solid #fb923c;"></span> 3-4 NCs</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fecaca;border-radius:3px;border:1px solid #f87171;"></span> 5+ NCs</span>
-      </div>
-      <div id="audit-heatmap-body"></div>
-      <div id="audit-heatmap-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-        <div style="font-size:48px;margin-bottom:12px;">🗺</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Sem dados suficientes</div>
-        <div style="font-size:13px;">Registre não conformidades neste plano para visualizar a matriz</div>
-      </div>
-    </div>
-
-  </div><!-- /audit-view-detail -->
-</div>
-
-<!-- ═══ MODAL: Plano de Auditoria ═══ -->
-<div id="audit-plan-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;width:640px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);">
-    <div style="background:#1B3022;border-radius:16px 16px 0 0;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;" id="audit-plan-modal-title">📋 Novo Plano de Auditoria</h3>
-      <button onclick="auditClosePlanModal()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;">✕</button>
-    </div>
-    <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div style="grid-column:1/-1;">
-          <label for="ap-processo" class="audit-label">Processo Auditado *</label>
-          <select class="modal-input" id="ap-processo" onchange="auditPlanProcessoChange()">
-            <option value="">— Selecione o processo —</option>
-          </select>
-        </div>
-        <div style="grid-column:1/-1;">
-          <label for="ap-unidade" class="audit-label">Equipe Auditada</label>
-          <select class="modal-input" id="ap-unidade">
-            <option value="">— Selecione a equipe —</option>
-          </select>
-        </div>
-        <div style="grid-column:1/-1;">
-          <label for="ap-objetivo" class="audit-label">Objetivo da Auditoria *</label>
-          <textarea class="modal-input" id="ap-objetivo" rows="2" placeholder="Ex: Verificar aderência ao POP vigente" style="resize:vertical;min-height:60px;"></textarea>
-        </div>
-        <div>
-          <label for="ap-auditor" class="audit-label">Auditor Responsável *</label>
-          <input class="modal-input" id="ap-auditor" type="text" placeholder="Nome do auditor">
-        </div>
-        <div>
-          <label for="ap-data" class="audit-label">Data Prevista</label>
-          <input class="modal-input" id="ap-data" type="date">
-        </div>
-        <div style="grid-column:1/-1;">
-          <span class="audit-label">Critérios de Auditoria</span>
-          <div id="ap-criterios-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
-          <button type="button" onclick="auditAddCriterio()" style="background:#f0f9ff;border:1px dashed #7dd3fc;color:#0369a1;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;width:100%;">＋ Adicionar Critério</button>
-        </div>
-        <div style="grid-column:1/-1;">
-          <label for="ap-escopo" class="audit-label">Escopo da Auditoria</label>
-          <textarea class="modal-input" id="ap-escopo" rows="2" placeholder="Descreva o escopo da auditoria (processos, unidades, período, limites)..." style="resize:vertical;min-height:60px;"></textarea>
-        </div>
-        <div>
-          <label for="ap-status" class="audit-label">Status</label>
-          <select class="modal-input" id="ap-status">
-            <option value="planejada">Planejada</option>
-            <option value="em_execucao">Em Execução</option>
-            <option value="concluida">Concluída</option>
-            <option value="cancelada">Cancelada</option>
-          </select>
-        </div>
-        <div>
-          <label for="ap-periodo" class="audit-label">Período</label>
-          <select class="modal-input" id="ap-periodo">
-            <option value="">— Selecione —</option>
-            <option value="1º Trimestre">1º Trimestre</option>
-            <option value="2º Trimestre">2º Trimestre</option>
-            <option value="3º Trimestre">3º Trimestre</option>
-            <option value="4º Trimestre">4º Trimestre</option>
-          </select>
-        </div>
-        <div style="grid-column:1/-1;">
-          <label for="ap-pat-vinc" class="audit-label">📅 Trabalho do Plano de Trabalho Anual (PTA) vinculado</label>
-          <select class="modal-input" id="ap-pat-vinc">
-            <option value="">— Nenhum —</option>
-          </select>
-          <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Ao vincular, o status e o progresso do trabalho do PTA serão sincronizados automaticamente.</div>
-        </div>
-      </div>
-    </div>
-    <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
-      <button id="ap-delete-btn" class="btn btn-outline" style="color:#e11d48;border-color:#fda4af;display:none;" onclick="auditDeletePlan()">🗑 Excluir</button>
-      <div style="display:flex;gap:8px;margin-left:auto;">
-        <button class="btn btn-outline" onclick="auditClosePlanModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="auditSavePlan()">Salvar Plano</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL: Execução / Checklist ═══ -->
-<div id="audit-exec-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;width:1000px;max-width:97vw;max-height:95vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);">
-    <div style="background:#003366;border-radius:16px 16px 0 0;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;" id="audit-exec-modal-title">▶ Execução de Auditoria</h3>
-      <button onclick="auditCloseExecModal()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;">✕</button>
-    </div>
-    <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div style="grid-column:1/-1;">
-          <label for="ae-plan" class="audit-label">Plano de Auditoria *</label>
-          <select class="modal-input" id="ae-plan" onchange="auditExecPlanChange()">
-            <option value="">— Selecione o plano —</option>
-          </select>
-        </div>
-        <div>
-          <label for="ae-data" class="audit-label">Data de Execução</label>
-          <input class="modal-input" id="ae-data" type="date">
-        </div>
-        <div>
-          <label for="ae-status" class="audit-label">Status</label>
-          <select class="modal-input" id="ae-status">
-            <option value="em_andamento">Em Andamento</option>
-            <option value="concluida">Concluída</option>
-          </select>
-        </div>
-        <div style="grid-column:1/-1;">
-          <label for="ae-obs" class="audit-label">Observações Gerais</label>
-          <textarea class="modal-input" id="ae-obs" rows="2" placeholder="Observações da execução..." style="resize:vertical;min-height:60px;"></textarea>
-        </div>
-        <div style="grid-column:1/-1;">
-          <label for="ae-amostra" class="audit-label">📂 Amostra — Expedientes/Demandas Analisados</label>
-          <textarea class="modal-input" id="ae-amostra" rows="3" placeholder="Liste os expedientes, protocolos, demandas ou solicitações selecionados para análise amostral. Ex: Processo nº 001/2025, Protocolo 12345, Solicitação SEI 6789..." style="resize:vertical;min-height:72px;font-family:monospace;font-size:12px;"></textarea>
-          <div style="font-size:11px;color:#94a3b8;margin-top:3px;">Registre os números de identificação dos expedientes utilizados como base da auditoria.</div>
-        </div>
-      </div>
-      <!-- Checklist -->
-      <div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-          <span class="audit-label" style="margin-bottom:0;">Checklist de Auditoria</span>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-outline" onclick="auditGerarChecklistBtn()" style="font-size:11px;padding:4px 12px;color:#1e40af;border-color:#93c5fd;font-weight:600;">🤖 Gerar do processo</button>
-            <button class="btn btn-outline" onclick="auditAddChecklistItem()" style="font-size:11px;padding:4px 10px;">＋ Item manual</button>
-          </div>
-        </div>
-        <div id="ae-checklist-hint" style="font-size:11px;color:#64748b;margin-bottom:8px;background:#f8fafc;border-radius:6px;padding:6px 10px;display:none;">
-          ℹ️ Selecione um plano de auditoria acima e clique em <strong>🤖 Gerar do processo</strong> para gerar o checklist automaticamente com base no mapeamento do processo.
-        </div>
-        <div id="ae-checklist" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-    </div>
-    <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
-      <button id="ae-delete-btn" class="btn btn-outline" style="color:#e11d48;border-color:#fda4af;display:none;" onclick="auditDeleteExec()">🗑 Excluir</button>
-      <div style="display:flex;gap:8px;margin-left:auto;">
-        <button class="btn btn-outline" onclick="auditCloseExecModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="auditSaveExec()" style="background:#003366;border-color:#003366;">Salvar Execução</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL: Não Conformidade ═══ -->
-<div id="audit-nc-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;width:720px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);">
-    <div style="background:#991b1b;border-radius:16px 16px 0 0;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;" id="audit-nc-modal-title">⚠️ Registrar Não Conformidade</h3>
-      <button onclick="auditCloseNcModal()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;">✕</button>
-    </div>
-    <div style="padding:24px;display:flex;flex-direction:column;gap:16px;">
-
-      <!-- CATÁLOGO DE APONTAMENTOS -->
-      <div style="border:1px solid #fca5a5;border-radius:10px;padding:14px;background:#fff7f7;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <label for="nc-cat-search" style="font-weight:700;color:#991b1b;font-size:13px;">📋 Apontamentos Padrão <span id="nc-cat-count" style="font-weight:400;color:#64748b;"></span></label>
-          <button onclick="_ncNewCatalogItem()" style="font-size:11px;background:#991b1b;color:white;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;">➕ Novo apontamento</button>
-        </div>
-        <input id="nc-cat-search" type="text" placeholder="Buscar por apontamento ou categoria..." oninput="_ncFilterCatalog()" style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;margin-bottom:8px;box-sizing:border-box;">
-        <div id="nc-cat-list" style="max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;"></div>
-        <div style="margin-top:8px;font-size:11px;color:#94a3b8;">Selecione um ou mais apontamentos para pré-preencher descrição e recomendações.</div>
-      </div>
-
-      <!-- CAMPOS DO REGISTRO -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div>
-          <label for="nc-plan" class="audit-label">Plano / Auditoria</label>
-          <select class="modal-input" id="nc-plan" onchange="auditNcPlanChange()">
-            <option value="">— Sem vínculo —</option>
-          </select>
-        </div>
-        <div>
-          <label for="nc-processo" class="audit-label">Processo</label>
-          <input class="modal-input" id="nc-processo" type="text" placeholder="Processo afetado">
-        </div>
-        <div>
-          <label for="nc-etapa" class="audit-label">Etapa do Processo</label>
-          <select class="modal-input" id="nc-etapa">
-            <option value="">— Selecione um plano para carregar as etapas —</option>
-          </select>
-        </div>
-        <div>
-          <label for="nc-gravidade" class="audit-label">Gravidade *</label>
-          <select class="modal-input" id="nc-gravidade">
-            <option value="leve">🟢 Leve — Melhoria recomendada</option>
-            <option value="moderada">🟡 Moderada — Execução inadequada</option>
-            <option value="critica">🔴 Crítica — Risco legal / impacto ao cliente</option>
-          </select>
-        </div>
-        <div style="grid-column:1/-1;">
-          <label for="nc-descricao" class="audit-label">Descrição da Não Conformidade *</label>
-          <textarea class="modal-input" id="nc-descricao" rows="3" placeholder="Descreva o problema encontrado..." style="resize:vertical;min-height:70px;"></textarea>
-        </div>
-        <div style="grid-column:1/-1;">
-          <label for="nc-causa" class="audit-label">Causa Provável</label>
-          <textarea class="modal-input" id="nc-causa" rows="2" placeholder="Qual a causa raiz?" style="resize:vertical;min-height:50px;"></textarea>
-        </div>
-        <div>
-          <label for="nc-responsavel" class="audit-label">Responsável</label>
-          <input class="modal-input" id="nc-responsavel" type="text" placeholder="Nome do responsável">
-        </div>
-        <div>
-          <label for="nc-status" class="audit-label">Status</label>
-          <select class="modal-input" id="nc-status">
-            <option value="aberta">Aberta</option>
-            <option value="em_tratamento">Em Tratamento</option>
-            <option value="fechada">Fechada</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- RECOMENDAÇÕES -->
-      <div style="border:1px solid #bbf7d0;border-radius:10px;padding:14px;background:#f0fdf4;">
-        <label for="nc-rec-input" style="font-weight:700;color:#15803d;font-size:13px;display:block;margin-bottom:10px;">💡 Recomendações</label>
-        <div id="nc-rec-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;min-height:32px;"></div>
-        <div style="display:flex;gap:8px;">
-          <input id="nc-rec-input" type="text" placeholder="Adicionar recomendação..." style="flex:1;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;" onkeydown="if(event.key==='Enter'){event.preventDefault();_ncAddRec();}">
-          <button onclick="_ncAddRec()" style="background:#15803d;color:white;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:16px;line-height:1;">+</button>
-        </div>
-      </div>
-
-    </div>
-    <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
-      <button id="nc-delete-btn" class="btn btn-outline" style="color:#e11d48;border-color:#fda4af;display:none;" onclick="auditDeleteNc()">🗑 Excluir</button>
-      <div style="display:flex;gap:8px;margin-left:auto;">
-        <button class="btn btn-outline" onclick="auditCloseNcModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="auditSaveNc()" style="background:#991b1b;border-color:#991b1b;">Salvar NC</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL: Ação Corretiva ═══ -->
-<div id="audit-action-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;width:600px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);">
-    <div style="background:#065f46;border-radius:16px 16px 0 0;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;" id="audit-action-modal-title">✅ Nova Ação Corretiva</h3>
-      <button onclick="auditCloseActionModal()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;">✕</button>
-    </div>
-    <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div style="grid-column:1/-1;">
-          <label for="ac-nc" class="audit-label">Não Conformidade Vinculada</label>
-          <select class="modal-input" id="ac-nc">
-            <option value="">— Sem vínculo —</option>
-          </select>
-        </div>
-        <div style="grid-column:1/-1;">
-          <label for="ac-acao" class="audit-label">Ação a ser executada *</label>
-          <textarea class="modal-input" id="ac-acao" rows="3" placeholder="Descreva a ação corretiva..." style="resize:vertical;min-height:70px;"></textarea>
-        </div>
-        <div>
-          <label for="ac-responsavel" class="audit-label">Responsável *</label>
-          <input class="modal-input" id="ac-responsavel" type="text" placeholder="Nome / setor responsável">
-        </div>
-        <div>
-          <label for="ac-prazo" class="audit-label">Prazo</label>
-          <input class="modal-input" id="ac-prazo" type="date">
-        </div>
-        <div>
-          <label for="ac-status" class="audit-label">Status</label>
-          <select class="modal-input" id="ac-status">
-            <option value="pendente">Pendente</option>
-            <option value="em_andamento">Em Andamento</option>
-            <option value="concluida">Concluída</option>
-            <option value="cancelada">Cancelada</option>
-          </select>
-        </div>
-        <div>
-          <label for="ac-setor" class="audit-label">Área / Setor</label>
-          <input class="modal-input" id="ac-setor" type="text" placeholder="Ex: RH, TI, Contabilidade">
-        </div>
-      </div>
-    </div>
-    <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
-      <button id="ac-delete-btn" class="btn btn-outline" style="color:#e11d48;border-color:#fda4af;display:none;" onclick="auditDeleteAction()">🗑 Excluir</button>
-      <div style="display:flex;gap:8px;margin-left:auto;">
-        <button class="btn btn-outline" onclick="auditCloseActionModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="auditSaveAction()" style="background:#065f46;border-color:#065f46;">Salvar Ação</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL RISCOS ═══════════════════════ -->
-<!-- MODAL CHECKLIST -->
-<div class="gmod-overlay" id="ck-modal">
-  <div class="gmod-box" style="max-width:520px;">
-    <div class="gmod-head">
-      <h3 id="ck-modal-title">☑️ Novo Checklist</h3>
-      <button class="gmod-close" onclick="closeModal('ck-modal')">✕</button>
-    </div>
-    <div class="gmod-body">
-      <div>
-        <label for="ck-title" class="gmod-label">Título do Checklist</label>
-        <input class="modal-input" id="ck-title" type="text" placeholder="Ex: Checklist de análise do expediente">
-      </div>
-      <div style="margin-top:10px;">
-        <label for="ck-step-sel" class="gmod-label">Etapa do Processo</label>
-        <select class="modal-input" id="ck-step-sel"></select>
-      </div>
-      <div style="margin-top:10px;">
-        <label for="ck-text" class="gmod-label">Cole o texto do checklist <span style="color:var(--text-muted);font-weight:400;">(um item por linha — aceita -, *, □, números)</span></label>
-        <textarea class="modal-input" id="ck-text" rows="8" placeholder="Ex:&#10;- Verificar dados do requerente&#10;- Analisar documentação&#10;□ Consultar sistema FalaBR&#10;1. Registrar no SAEWEB"></textarea>
-      </div>
-      <div id="ck-preview" style="margin-top:10px;display:none;">
-        <div style="font-size:12px;font-weight:600;color:var(--cage-blue);margin-bottom:6px;">Pré-visualização (<span id="ck-preview-count">0</span> itens):</div>
-        <ul id="ck-preview-list" style="font-size:12px;color:#334155;padding-left:18px;max-height:120px;overflow-y:auto;"></ul>
-      </div>
-    </div>
-    <div class="gmod-footer">
-      <button class="btn btn-outline" onclick="closeModal('ck-modal')">Cancelar</button>
-      <button class="btn btn-primary" onclick="previewChecklist()">👁 Pré-visualizar</button>
-      <button class="btn btn-success" onclick="saveChecklist()">✅ Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL NOVA VERSÃO -->
-<div class="gmod-overlay" id="new-version-modal">
-  <div class="gmod-box" style="max-width:440px;">
-    <div class="gmod-head">
-      <h3>📌 Criar Nova Versão</h3>
-      <button class="gmod-close" onclick="closeModal('new-version-modal')">✕</button>
-    </div>
-    <div class="gmod-body">
-      <div id="new-version-info" style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;padding:10px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"></div>
-      <div>
-        <label for="new-version-note" class="gmod-label">Nota / Descrição da versão (opcional)</label>
-        <input class="modal-input" id="new-version-note" type="text" placeholder="Ex: Revisão após alinhamento com equipe">
-      </div>
-      <div style="margin-top:12px;font-size:12px;color:var(--text-muted);">
-        💡 Cada aba da nova versão começa vazia. Use o botão <strong>"↩ Repetir versão anterior"</strong> em cada seção para copiar o conteúdo da versão anterior.
-      </div>
-    </div>
-    <div class="gmod-footer">
-      <button class="btn btn-outline" onclick="closeModal('new-version-modal')">Cancelar</button>
-      <button class="btn btn-primary" onclick="_doCreateVersion()">📌 Criar v<span id="new-version-num">2</span></button>
-    </div>
-  </div>
-</div>
-
-<div class="gmod-overlay" id="risk-modal">
-  <div class="gmod-box">
-    <div class="gmod-head">
-      <h3 id="risk-modal-title">⚠️ Novo Item de Risco</h3>
-      <button class="gmod-close" onclick="closeModal('risk-modal')">✕</button>
-    </div>
-    <div class="gmod-body">
-      <div>
-        <span class="gmod-label">Tipo</span>
-        <div style="display:flex;gap:10px;">
-          <button id="risk-btn-risco" class="btn btn-primary" style="flex:1;font-size:13px;" onclick="selectRiskType('risco')">⚠️ Risco</button>
-          <button id="risk-btn-oportunidade" class="btn btn-outline" style="flex:1;font-size:13px;" onclick="selectRiskType('oportunidade')">✅ Oportunidade</button>
-        </div>
-      </div>
-      <div>
-        <label for="risk-title" class="gmod-label">Título do Risco / Oportunidade *</label>
-        <input class="modal-input" id="risk-title" type="text" placeholder="Ex: Perda de dados por falha de sistema">
-      </div>
-      <div>
-        <label for="risk-desc" class="gmod-label">Descrição</label>
-        <textarea class="modal-input modal-textarea" id="risk-desc" style="min-height:60px;" placeholder="Descreva o risco ou oportunidade em detalhe..."></textarea>
-      </div>
-      <div>
-        <label for="risk-causa" class="gmod-label">Causa</label>
-        <input class="modal-input" id="risk-causa" type="text" placeholder="Ex: Ausência de backup automatizado">
-      </div>
-      <div>
-        <span class="gmod-label">Matriz de Risco — clique para selecionar Impacto × Probabilidade</span>
-        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
-          <div>
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Impacto (1–5)</div>
-            <div style="display:flex;gap:4px;" id="risk-impact-btns">
-              <button class="btn btn-outline" style="width:36px;padding:6px 0;font-size:12px;font-weight:700;" onclick="selectImpact(1)">1</button>
-              <button class="btn btn-outline" style="width:36px;padding:6px 0;font-size:12px;font-weight:700;" onclick="selectImpact(2)">2</button>
-              <button class="btn btn-outline" style="width:36px;padding:6px 0;font-size:12px;font-weight:700;" onclick="selectImpact(3)">3</button>
-              <button class="btn btn-outline" style="width:36px;padding:6px 0;font-size:12px;font-weight:700;" onclick="selectImpact(4)">4</button>
-              <button class="btn btn-outline" style="width:36px;padding:6px 0;font-size:12px;font-weight:700;" onclick="selectImpact(5)">5</button>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Probabilidade (1–5)</div>
-            <div style="display:flex;gap:4px;" id="risk-prob-btns">
-              <button class="btn btn-outline" style="width:36px;padding:6px 0;font-size:12px;font-weight:700;" onclick="selectProb(1)">1</button>
-              <button class="btn btn-outline" style="width:36px;padding:6px 0;font-size:12px;font-weight:700;" onclick="selectProb(2)">2</button>
-              <button class="btn btn-outline" style="width:36px;padding:6px 0;font-size:12px;font-weight:700;" onclick="selectProb(3)">3</button>
-              <button class="btn btn-outline" style="width:36px;padding:6px 0;font-size:12px;font-weight:700;" onclick="selectProb(4)">4</button>
-              <button class="btn btn-outline" style="width:36px;padding:6px 0;font-size:12px;font-weight:700;" onclick="selectProb(5)">5</button>
-            </div>
-          </div>
-          <div style="background:var(--cage-light);border-radius:8px;padding:10px 16px;text-align:center;min-width:80px;">
-            <div style="font-size:11px;color:var(--text-muted);">Nota</div>
-            <div id="risk-score-display" style="font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--cage-blue);">—</div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <span class="gmod-label">Tratamento Recomendado</span>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="risk-treat-btns">
-          <button class="btn btn-outline" style="font-size:12px;" onclick="selectTreat('Aceitar')">Aceitar</button>
-          <button class="btn btn-outline" style="font-size:12px;" onclick="selectTreat('Mitigar')">Mitigar</button>
-          <button class="btn btn-outline" style="font-size:12px;" onclick="selectTreat('Eliminar')">Eliminar</button>
-          <button class="btn btn-outline" style="font-size:12px;" onclick="selectTreat('Transferir')">Transferir</button>
-          <button class="btn btn-outline" style="font-size:12px;" onclick="selectTreat('Compartilhar')">Compartilhar</button>
-        </div>
-      </div>
-      <div>
-        <label for="risk-solucao" class="gmod-label">Proposta de Solução</label>
-        <textarea class="modal-input modal-textarea" id="risk-solucao" style="min-height:70px;" placeholder="Descreva as ações ou controles propostos para tratar este risco..."></textarea>
-      </div>
-    </div>
-    <div class="gmod-foot">
-      <button class="btn btn-outline" onclick="closeModal('risk-modal')">Cancelar</button>
-      <button class="btn btn-success" onclick="saveRisk()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL PLANO DE AÇÃO ════════════════ -->
-<div class="gmod-overlay" id="pa-modal">
-  <div class="gmod-box">
-    <div class="gmod-head">
-      <h3>✅ Nova Ação</h3>
-      <button class="gmod-close" onclick="closeModal('pa-modal')">✕</button>
-    </div>
-    <div class="gmod-body">
-      <div>
-        <label for="pa-desc" class="gmod-label">Descrição da Ação *</label>
-        <textarea class="modal-input modal-textarea" id="pa-desc" style="min-height:70px;" placeholder="Descreva a ação que a equipe se comprometeu a realizar..."></textarea>
-      </div>
-      <div class="gmod-row">
-        <div>
-          <label for="pa-resp" class="gmod-label">Responsável *</label>
-          <input class="modal-input" id="pa-resp" type="text" placeholder="Nome do responsável">
-        </div>
-        <div>
-          <label for="pa-prazo" class="gmod-label">Prazo de Entrega</label>
-          <input class="modal-input" id="pa-prazo" type="date">
-        </div>
-      </div>
-      <div>
-        <label for="pa-status" class="gmod-label">Status</label>
-        <select class="modal-input" id="pa-status">
-          <option value="pendente">🟡 Pendente</option>
-          <option value="andamento">🔵 Em Andamento</option>
-          <option value="concluido">🟢 Concluído</option>
-          <option value="atrasado">🔴 Atrasado</option>
-        </select>
-      </div>
-    </div>
-    <div class="gmod-foot">
-      <button class="btn btn-outline" onclick="closeModal('pa-modal')">Cancelar</button>
-      <button class="btn btn-success" onclick="savePa()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL REUNIÃO ═══════════════════════ -->
-<!-- ATA DE REUNIÃO DE ACOMPANHAMENTO MODAL -->
-<div class="gmod-overlay" id="ata-acomp-modal" style="align-items:flex-start;padding:24px 0;overflow-y:auto;">
-  <div class="gmod-box" style="max-width:720px;width:100%;margin:auto;">
-    <div class="gmod-head" style="position:sticky;top:0;background:white;z-index:1;border-bottom:2px solid #e2e8f0;padding-bottom:12px;">
-      <h3 id="ata-acomp-modal-title">📄 Ata de Reunião de Acompanhamento</h3>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button onclick="printAtaAcomp()" style="padding:6px 14px;background:#1B3022;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">🖨️ Imprimir / PDF</button>
-        <button onclick="copyAtaAcomp()" style="padding:6px 14px;background:#f1f5f9;color:#334155;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">📋 Copiar texto</button>
-        <button class="gmod-close" onclick="closeModal('ata-acomp-modal')">✕</button>
-      </div>
-    </div>
-    <div class="gmod-body" style="padding:0;">
-      <div id="ata-acomp-content" style="padding:32px 40px;font-family:'Inter',sans-serif;color:#1e293b;line-height:1.7;"></div>
-    </div>
-  </div>
-</div>
-
-<div class="gmod-overlay" id="meet-modal">
-  <div class="gmod-box">
-    <div class="gmod-head">
-      <h3>🤝 Registrar Reunião</h3>
-      <button class="gmod-close" onclick="closeModal('meet-modal')">✕</button>
-    </div>
-    <div class="gmod-body">
-      <div class="gmod-row">
-        <div>
-          <label for="meet-date" class="gmod-label">Data *</label>
-          <input class="modal-input" id="meet-date" type="date">
-        </div>
-        <div>
-          <label for="meet-type" class="gmod-label">Tipo de Reunião *</label>
-          <select class="modal-input" id="meet-type">
-            <option value="entendimento">Entendimento</option>
-            <option value="revisao">Revisão</option>
-            <option value="aprovacao">Aprovação do Patrocinador</option>
-            <option value="desenho">Desenho</option>
-            <option value="documentacao">Elaboração de Documentação</option>
-            <option value="auditoria">Auditoria</option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <label for="meet-participants" class="gmod-label">Participantes</label>
-        <input class="modal-input" id="meet-participants" type="text" placeholder="Ex: Edison Weber, Felipe Tourinho, Ana Silva...">
-      </div>
-      <div>
-        <label for="meet-ata" class="gmod-label">Ata / Resumo da Reunião *</label>
-        <textarea class="modal-input modal-textarea" id="meet-ata" style="min-height:120px;" placeholder="Registre os principais pontos discutidos, decisões tomadas e encaminhamentos..."></textarea>
-      </div>
-    </div>
-    <div class="gmod-foot">
-      <button class="btn btn-outline" onclick="closeModal('meet-modal')">Cancelar</button>
-      <button class="btn btn-success" onclick="saveMeet()">Salvar Registro</button>
-    </div>
-  </div>
-</div>
-<!-- ACTION TYPE MODAL -->
-<div class="action-type-modal" id="action-type-modal">
-  <div class="action-type-box">
-    <div class="action-type-title">Configurar Ação</div>
-    <div class="action-type-sub">Escolha o tipo de elemento e quem o executa</div>
-    <div class="action-type-grid">
-      <button class="action-type-btn selected" data-type="atividade" onclick="selectActionType('atividade')">
-        <div class="atb-icon">▶</div>
-        <div class="atb-name">Atividade</div>
-        <div class="atb-desc">Tarefa executada por um ator do processo</div>
-      </button>
-      <button class="action-type-btn" data-type="evento" onclick="selectActionType('evento')">
-        <div class="atb-icon">⬤</div>
-        <div class="atb-name">Evento</div>
-        <div class="atb-desc">Disparo ou recebimento que inicia ou encerra algo</div>
-      </button>
-      <button class="action-type-btn" data-type="decisao" onclick="selectActionType('decisao')">
-        <div class="atb-icon">◆</div>
-        <div class="atb-name">Decisão</div>
-        <div class="atb-desc">Ponto de escolha com dois ou mais caminhos</div>
-      </button>
-      <button class="action-type-btn" data-type="observacao" onclick="selectActionType('observacao')">
-        <div class="atb-icon">💬</div>
-        <div class="atb-name">Observação</div>
-        <div class="atb-desc">Nota informativa sem execução direta</div>
-      </button>
-    </div>
-    <div class="action-form">
-      <div>
-        <label for="act-text">Descrição da ação</label>
-        <textarea class="modal-input modal-textarea" id="act-text" rows="2" placeholder="Descreva o que acontece neste elemento..."></textarea>
-      </div>
-      <div>
-        <label for="act-actor">Executor / Ator responsável <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
-        <input class="modal-input" id="act-actor" type="text" list="act-actor-list" placeholder="Selecione ou digite um novo ator...">
-        <datalist id="act-actor-list"></datalist>
-      </div>
-      <div id="act-natureza-wrap" style="display:none;">
-        <span style="display:flex;align-items:center;gap:8px;">Natureza da Atividade <span id="act-nat-auto-hint" style="display:none;font-size:10px;font-weight:600;color:#fff;background:#1e293b;padding:1px 7px;border-radius:8px;">✨ sugerido</span></span>
-        <div class="natureza-grid">
-          <button class="natureza-btn selected" data-nat="execucao" onclick="selectNatureza('execucao')">▶ Execução</button>
-          <button class="natureza-btn" data-nat="revisao" onclick="selectNatureza('revisao')">🔍 Revisão</button>
-          <button class="natureza-btn" data-nat="aprovacao" onclick="selectNatureza('aprovacao')">✅ Aprovação</button>
-          <button class="natureza-btn" data-nat="distribuicao" onclick="selectNatureza('distribuicao')">📤 Distribuição</button>
-          <button class="natureza-btn" data-nat="comunicacao" onclick="selectNatureza('comunicacao')">📢 Comunicação</button>
-        </div>
-      </div>
-      <div id="act-evento-tipo-wrap" style="display:none;">
-        <span>Tipo de Evento</span>
-        <div class="natureza-grid">
-          <button class="natureza-btn selected" data-etipo="inicio" onclick="selectEventoTipo('inicio')">⬤ Início</button>
-          <button class="natureza-btn" data-etipo="intermediario" onclick="selectEventoTipo('intermediario')">⬤ Intermediário</button>
-          <button class="natureza-btn" data-etipo="encerramento" onclick="selectEventoTipo('encerramento')">⬤ Encerramento</button>
-        </div>
-      </div>
-      <div class="act-extra-fields">
-        <span class="act-extra-label">📋 Informações Complementares</span>
-        <div class="act-extra-grid">
-          <div>
-            <label for="act-duracao">⏱ Prazo / Duração</label>
-            <input class="modal-input" id="act-duracao" type="text" placeholder="Ex: 2 dias úteis">
-          </div>
-          <div>
-            <label for="act-sistemas">💻 Sistemas Envolvidos</label>
-            <input class="modal-input" id="act-sistemas" type="text" placeholder="Ex: SAEWEB, SEI">
-          </div>
-          <div>
-            <label for="act-documentos">📄 Documentos Utilizados</label>
-            <input class="modal-input" id="act-documentos" type="text" placeholder="Ex: Formulário X, Ofício Y">
-          </div>
-          <div>
-            <label for="act-observacoes">💬 Observações</label>
-            <textarea class="modal-input" id="act-observacoes" rows="2" placeholder="Observações sobre esta ação..."></textarea>
-          </div>
-          <div class="full">
-            <label for="act-pontos">⚠️ Pontos de Melhoria</label>
-            <textarea class="modal-input" id="act-pontos" rows="2" placeholder="Pontos de melhoria identificados..."></textarea>
-          </div>
-        </div>
-      </div>
-      <div class="act-move-step-wrap" id="act-move-step-wrap">
-        <label for="act-move-step-select">📤 Mover ação para outra etapa</label>
-        <div class="act-move-step-row">
-          <select class="modal-input" id="act-move-step-select" style="flex:1;"></select>
-          <button class="btn btn-outline" onclick="moveActionToStep()">Mover</button>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-outline" onclick="closeActionModal()">Cancelar</button>
-        <button class="btn btn-success" onclick="saveActionModal()">💾 Salvar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- IMPORT TARGET MODAL -->
-<div class="modal-overlay" id="import-target-modal" style="display:none;z-index:9999;">
-  <div class="modal" style="max-width:420px;text-align:center;">
-    <h3>🤖 Importar Fluxo com IA</h3>
-    <p style="color:var(--text-muted);margin-bottom:20px;">O fluxo importado será integrado em qual versão do processo?</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-      <button class="btn" style="padding:20px 12px;background:var(--cage-blue);color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.4;" onclick="setImportTarget('asis')">
-        📌 AS IS<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Atual</span>
-      </button>
-      <button class="btn" style="padding:20px 12px;background:#14532d;color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.4;" onclick="setImportTarget('tobe')">
-        📋 TO BE<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Futuro</span>
-      </button>
-    </div>
-    <button class="btn btn-outline" onclick="document.getElementById('import-target-modal').style.display='none'">Cancelar</button>
-  </div>
-</div>
-
-<!-- FLOW PICK MODAL — reutilizável para análise, exportação, etc. -->
-<div class="modal-overlay" id="flow-pick-modal" style="display:none;z-index:10000;">
-  <div class="modal" style="max-width:420px;text-align:center;">
-    <h3 id="flow-pick-title">Qual fluxo usar?</h3>
-    <p id="flow-pick-sub" style="color:var(--text-muted);margin-bottom:20px;font-size:13px;"></p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-      <button class="btn" style="padding:20px 12px;background:var(--cage-blue);color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.5;" onclick="_flowPickSelect('asis')">
-        📌 AS IS<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Atual</span>
-      </button>
-      <button class="btn" style="padding:20px 12px;background:#14532d;color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.5;" onclick="_flowPickSelect('tobe')">
-        📋 TO BE<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Futuro</span>
-      </button>
-    </div>
-    <button class="btn btn-outline" onclick="_flowPickCancel()">Cancelar</button>
-  </div>
-</div>
-
-<!-- INDICATOR MODAL -->
-<div class="modal-overlay" id="ind-modal">
-  <div class="modal" style="max-width:600px;">
-    <h3>📐 Indicador</h3>
-    <p>Preencha todos os campos do indicador. A fórmula de cálculo é essencial para garantir uniformidade na medição.</p>
-    <div style="display:grid;grid-template-columns:80px 1fr;gap:12px;margin-bottom:12px;">
-      <div>
-        <label for="im-icon">Ícone</label>
-        <input class="modal-input" id="im-icon" type="text" placeholder="📌" style="text-align:center;font-size:20px;padding:8px;">
-      </div>
-      <div>
-        <label for="im-title">Nome do Indicador</label>
-        <input class="modal-input" id="im-title" type="text" placeholder="Ex: Taxa de denúncias concluídas no prazo">
-      </div>
-    </div>
-    <label for="im-desc">Descrição (o que o indicador mostra)</label>
-    <textarea class="modal-input modal-textarea" id="im-desc" placeholder="Descreva o que este indicador mede e por que é relevante..." style="min-height:60px;"></textarea>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div>
-        <label for="im-tag">Tipo</label>
-        <select class="modal-input" id="im-tag" style="cursor:pointer;">
-          <option value="perc">% Percentual</option>
-          <option value="time">⏱ Tempo</option>
-          <option value="num">🔢 Número absoluto</option>
-        </select>
-      </div>
-      <div>
-        <label for="im-meta">Meta</label>
-        <input class="modal-input" id="im-meta" type="text" placeholder="Ex: ≥ 90% ou ≤ 30 dias">
-      </div>
-    </div>
-    <label for="im-formula">Fórmula de Cálculo</label>
-    <textarea class="modal-input modal-textarea" id="im-formula" placeholder="Ex: (Denúncias concluídas no prazo ÷ Total de denúncias recebidas) × 100" style="min-height:70px;font-family:'JetBrains Mono',monospace;font-size:12px;"></textarea>
-    <label for="im-fonte">Fonte dos Dados</label>
-    <input class="modal-input" id="im-fonte" type="text" placeholder="Ex: SAEWEB / Planilha de controle">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div>
-        <label for="im-period">Periodicidade de Medição</label>
-        <select class="modal-input" id="im-period" style="cursor:pointer;">
-          <option value="">— Selecione —</option>
-          <option value="Diária">Diária</option>
-          <option value="Semanal">Semanal</option>
-          <option value="Mensal">Mensal</option>
-          <option value="Bimestral">Bimestral</option>
-          <option value="Trimestral">Trimestral</option>
-          <option value="Semestral">Semestral</option>
-          <option value="Anual">Anual</option>
-        </select>
-      </div>
-      <div>
-        <label for="im-resp">Responsável pela Medição</label>
-        <input class="modal-input" id="im-resp" type="text" placeholder="Ex: Chefia DIR">
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeIndModal()">Cancelar</button>
-      <button class="btn btn-success" onclick="saveIndModal()">💾 Salvar Indicador</button>
-    </div>
-  </div>
-</div>
-
-<!-- SISPLAN INDICATOR PICKER MODAL -->
-<div class="modal-overlay" id="ind-sisplan-picker-modal">
-  <div class="modal" style="max-width:640px;">
-    <h3>🔗 Vincular Indicador do SISPLAN</h3>
-    <p>Selecione um indicador importado do SISPLAN para vincular a este mapeamento.</p>
-    <input type="hidden" id="ind-sisplan-picker-pop">
-    <div style="margin-bottom:12px;">
-      <input class="modal-input" id="ind-sisplan-picker-search" type="text" placeholder="Filtrar por código ou nome..." oninput="renderSisplanPickerList()" style="width:100%;">
-    </div>
-    <div id="ind-sisplan-picker-list" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;"></div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeIndSisplanPicker()">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════════ -->
-<!-- MÓDULO: INDICADORES CAGE                                      -->
-<!-- ═══════════════════════════════════════════════════════════════ -->
-<div id="indicadores-cage-module" style="display:none;">
-  <div class="indcage-header">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
-      <div>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:#1B3022;margin:0 0 2px;">📈 Indicadores CAGE</h2>
-        <div style="font-size:12px;color:#64748b;">CAGE-RS · Gestão de Indicadores de Desempenho</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="btn btn-outline" onclick="showHome()" style="font-size:12px;padding:6px 14px;">← Início</button>
-      </div>
-    </div>
-    <div class="indcage-tabs">
-      <button class="indcage-tab active" data-indcage-tab="indicadores" onclick="indcageTab('indicadores',this)">📋 Indicadores</button>
-      <button class="indcage-tab" data-indcage-tab="resultados" onclick="indcageTab('resultados',this)">📊 Resultados</button>
-    </div>
-  </div>
-</div>
-
-<div id="indcage-panel" style="display:none;">
-  <!-- ─── TAB: INDICADORES ─────────────────────────────────── -->
-  <div id="indcage-sec-indicadores" class="indcage-section active">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
-      <div>
-        <div style="font-size:15px;font-weight:700;color:#1B3022;">Todos os Indicadores</div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">Indicadores dos mapeamentos + indicadores autônomos cadastrados</div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-outline" onclick="indcageClearImportados()" style="font-size:12px;padding:7px 13px;color:#b91c1c;border-color:#fecaca;background:#fff7f7;" title="Remove todos os indicadores criados automaticamente pela importação SISPLAN">🗑 Limpar Importados SISPLAN</button>
-        <button class="btn btn-success" onclick="indcageOpenModal(null)" style="font-size:13px;">+ Novo Indicador</button>
-      </div>
-    </div>
-    <!-- Filter bar -->
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
-      <input id="indcage-search" type="text" class="modal-input" placeholder="🔍 Buscar por código ou enunciado…" style="max-width:280px;padding:8px 12px;font-size:13px;" oninput="indcageRenderIndicadores()">
-      <select id="indcage-filter-divisao" class="indcage-filter-select" onchange="indcageRenderIndicadores()" style="min-width:160px;">
-        <option value="">Todas as divisões</option>
-      </select>
-    </div>
-    <div id="indcage-grid" class="indcage-grid"></div>
-  </div>
-
-  <!-- ─── TAB: RESULTADOS ──────────────────────────────────── -->
-  <div id="indcage-sec-resultados" class="indcage-section">
-
-    <!-- Sincronização Automática via URL -->
-    <div style="background:#f0f7ff;border:1px solid #c5d8f5;border-radius:8px;padding:12px 16px;margin-bottom:10px;">
-      <div style="font-size:13px;font-weight:700;color:#1B3022;margin-bottom:4px;">🔗 Sincronização Automática via URL</div>
-      <div style="font-size:11px;color:#64748b;margin-bottom:10px;">Cole a URL da planilha <b>publicada como CSV</b> no Google Sheets (<i>Arquivo → Compartilhar → Publicar na web → CSV</i>) e clique em Sincronizar — sem baixar nem selecionar arquivo.</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <input id="indcage-sync-url" type="url" class="modal-input" placeholder="https://docs.google.com/spreadsheets/d/…/pub?output=csv" style="flex:1;min-width:260px;font-size:12px;" oninput="indcageSaveUrl()">
-        <button class="btn btn-primary" onclick="indcageSyncFromUrl()" style="font-size:12px;padding:8px 16px;white-space:nowrap;">🔄 Sincronizar</button>
-        <label for="indcage-sync-auto" style="display:flex;align-items:center;gap:5px;font-size:12px;color:#334155;cursor:pointer;white-space:nowrap;">
-          <input type="checkbox" id="indcage-sync-auto" onchange="indcageSaveUrl()" style="width:14px;height:14px;"> Auto ao abrir
-        </label>
-      </div>
-      <div id="indcage-sync-status" style="font-size:11px;color:#64748b;margin-top:6px;min-height:16px;"></div>
-    </div>
-
-    <!-- Import bar (manual) -->
-    <div class="indcage-import-bar">
-      <div style="flex:1;min-width:200px;">
-        <div style="font-size:13px;font-weight:700;color:#1B3022;">📥 Importar Planilha SISPLAN</div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px;">Colunas esperadas: 🧰️ Divisão Ind. · ☑️ Indicador · 🔤 Enunciado Ind. · 🔡 Descrição Ind. · ⌛ Periodicidade · 📅 Período · 📅 Ciclo Indicador · 💰 PPE? · 〽️ % Índice · 💹 Meta · ✔️ Realizado · 🔡 Análise</div>
-      </div>
-      <label for="indcage-import-file" class="btn btn-primary" style="font-size:12px;padding:8px 16px;cursor:pointer;margin:0;">
-        📂 Escolher Arquivo Excel
-        <input type="file" id="indcage-import-file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="indcageImportExcel(this)">
-      </label>
-      <button class="btn btn-outline" onclick="indcageClearResultados()" style="font-size:12px;padding:8px 14px;">🗑 Limpar Dados</button>
-      <div id="indcage-import-status" style="font-size:12px;color:#64748b;"></div>
-    </div>
-
-    <!-- Filters -->
-    <div class="indcage-filter-bar">
-      <div class="indcage-filter-group" style="flex:1;min-width:200px;">
-        <label for="indcage-res-search" class="indcage-filter-label">🔍 Buscar por texto</label>
-        <input id="indcage-res-search" type="text" class="indcage-filter-select" placeholder="Buscar por indicador, enunciado, descrição…" style="width:100%;padding:7px 10px;font-size:13px;" oninput="indcageRenderResultados()">
-      </div>
-      <div class="indcage-filter-group">
-        <label for="indcage-res-filter-ind" class="indcage-filter-label">Indicador</label>
-        <select id="indcage-res-filter-ind" class="indcage-filter-select" onchange="indcageRenderResultados()">
-          <option value="">Todos</option>
-        </select>
-      </div>
-      <div class="indcage-filter-group">
-        <label for="indcage-res-filter-div" class="indcage-filter-label">Divisão</label>
-        <select id="indcage-res-filter-div" class="indcage-filter-select" onchange="indcageRenderResultados()">
-          <option value="">Todas</option>
-        </select>
-      </div>
-      <div class="indcage-filter-group">
-        <label for="indcage-res-filter-ano" class="indcage-filter-label">Ano</label>
-        <select id="indcage-res-filter-ano" class="indcage-filter-select" onchange="indcageRenderResultados()">
-          <option value="">Todos</option>
-        </select>
-      </div>
-      <div class="indcage-filter-group">
-        <label for="indcage-res-filter-periodo" class="indcage-filter-label">Período (mês)</label>
-        <select id="indcage-res-filter-periodo" class="indcage-filter-select" onchange="indcageRenderResultados()">
-          <option value="">Todos os períodos</option>
-        </select>
-      </div>
-      <div class="indcage-filter-group">
-        <label for="indcage-res-filter-ciclo" class="indcage-filter-label">Ciclo</label>
-        <select id="indcage-res-filter-ciclo" class="indcage-filter-select" onchange="indcageRenderResultados()">
-          <option value="">Todos os ciclos</option>
-        </select>
-      </div>
-      <div class="indcage-filter-group">
-        <label for="indcage-res-filter-periodicidade" class="indcage-filter-label">Periodicidade</label>
-        <select id="indcage-res-filter-periodicidade" class="indcage-filter-select" onchange="indcageRenderResultados()">
-          <option value="">Todas</option>
-        </select>
-      </div>
-      <div class="indcage-filter-group">
-        <label for="indcage-res-filter-ppe" class="indcage-filter-label">PPE?</label>
-        <select id="indcage-res-filter-ppe" class="indcage-filter-select" onchange="indcageRenderResultados()" style="min-width:120px;">
-          <option value="">Todos</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Dados básicos do indicador selecionado -->
-    <div id="indcage-ind-info" style="display:none;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 18px;margin-bottom:14px;">
-      <div style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">☑️ Dados do Indicador Selecionado</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 20px;" id="indcage-ind-info-body"></div>
-    </div>
-
-    <!-- Painel de configurações do indicador (override manual) -->
-    <div id="indcage-cfg-panel" class="indcage-cfg-panel" style="display:none;">
-      <button type="button" class="indcage-cfg-header" onclick="indcageCfgToggle()" style="background:none;border:none;padding:0;width:100%;text-align:left;">
-        <span class="indcage-cfg-title">⚙️ Configurações do Indicador</span>
-        <span id="indcage-cfg-chevron" style="font-size:12px;color:#1e3a7a;transition:transform .2s;">▼</span>
-      </div>
-      <div class="indcage-cfg-body" id="indcage-cfg-body">
-        <div class="indcage-cfg-grid">
-          <!-- Sentido -->
-          <div class="indcage-cfg-field" style="grid-column:1/-1;">
-            <div class="indcage-cfg-label">📐 Sentido do indicador</div>
-            <div class="indcage-cfg-radio-row">
-              <label for="cfg-sentido-menor" class="indcage-cfg-radio"><input type="radio" name="cfg-sentido" id="cfg-sentido-maior" value="maior"> ↑ Quanto <strong>maior</strong>, melhor</label>
-              <label for="cfg-sentido-menor" class="indcage-cfg-radio"><input type="radio" name="cfg-sentido" id="cfg-sentido-menor" value="menor"> ↓ Quanto <strong>menor</strong>, melhor</label>
-            </div>
-          </div>
-          <!-- Tipo -->
-          <div class="indcage-cfg-field">
-            <label class="indcage-cfg-label" for="cfg-tipo">📊 Tipo de indicador</label>
-            <select class="indcage-cfg-input" id="cfg-tipo">
-              <option value="auto">Automático (detectar)</option>
-              <option value="percentual">Percentual (%)</option>
-              <option value="prazo">Prazo / Tempo</option>
-              <option value="numero">Número absoluto</option>
-              <option value="moeda">Valor monetário (R$)</option>
-            </select>
-          </div>
-          <!-- Unidade -->
-          <div class="indcage-cfg-field">
-            <label class="indcage-cfg-label" for="cfg-unidade">🏷️ Unidade de medida</label>
-            <input class="indcage-cfg-input" id="cfg-unidade" type="text" placeholder="Ex: %, dias, R$, unidades…">
-          </div>
-          <!-- Casas decimais -->
-          <div class="indcage-cfg-field">
-            <label class="indcage-cfg-label" for="cfg-decimais">🔢 Casas decimais</label>
-            <select class="indcage-cfg-input" id="cfg-decimais">
-              <option value="0">0 — Inteiro (ex: 42)</option>
-              <option value="1">1 — Ex: 42,5</option>
-              <option value="2">2 — Ex: 42,50</option>
-            </select>
-          </div>
-          <!-- Faixa verde -->
-          <div class="indcage-cfg-field">
-            <label class="indcage-cfg-label" for="cfg-faixa-verde">🟢 Limite para verde (%)</label>
-            <input class="indcage-cfg-input" id="cfg-faixa-verde" type="number" step="1" placeholder="Ex: 100">
-            <div style="font-size:10px;color:#94a3b8;margin-top:2px;" id="cfg-faixa-verde-hint">Para "maior melhor": ≥ este valor = verde</div>
-          </div>
-          <!-- Faixa amarela -->
-          <div class="indcage-cfg-field">
-            <label class="indcage-cfg-label" for="cfg-faixa-amarelo">🟡 Limite para amarelo (%)</label>
-            <input class="indcage-cfg-input" id="cfg-faixa-amarelo" type="number" step="1" placeholder="Ex: 80">
-            <div style="font-size:10px;color:#94a3b8;margin-top:2px;" id="cfg-faixa-amarelo-hint">Para "maior melhor": ≥ este valor e &lt; verde = amarelo</div>
-          </div>
-          <!-- Meta de referência -->
-          <div class="indcage-cfg-field">
-            <label class="indcage-cfg-label" for="cfg-meta-ref">🎯 Meta de referência (override)</label>
-            <input class="indcage-cfg-input" id="cfg-meta-ref" type="number" step="any" placeholder="Deixe vazio para usar dados importados">
-          </div>
-          <!-- Comentário -->
-          <div class="indcage-cfg-field" style="grid-column:1/-1;">
-            <label class="indcage-cfg-label" for="cfg-comentario">📝 Observações / justificativa da configuração</label>
-            <textarea class="indcage-cfg-input" id="cfg-comentario" rows="2" placeholder="Por que você ajustou essas configurações…" style="resize:vertical;font-size:12px;"></textarea>
-          </div>
-        </div>
-        <div class="indcage-cfg-save-row">
-          <span class="indcage-cfg-saved-msg" id="cfg-saved-msg">✔ Configuração salva!</span>
-          <button class="btn btn-outline" style="font-size:12px;padding:6px 14px;" onclick="indcageResetOverride()">↺ Restaurar padrão</button>
-          <button class="btn btn-primary" style="font-size:12px;padding:6px 16px;" onclick="indcageSaveOverride()">💾 Salvar configuração</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- KPIs do período selecionado -->
-    <div id="indcage-kpi-row" class="indcage-kpi-row"></div>
-
-    <!-- Charts -->
-    <div id="indcage-charts-area" class="indcage-charts-row" style="display:none;">
-      <div class="indcage-chart-card" id="indcage-chart-card-evo">
-        <div class="indcage-chart-title">📈 Evolução do Indicador (últimos 18 meses)</div>
-        <div class="indcage-chart-wrap"><canvas id="indcage-chart-evolucao"></canvas></div>
-      </div>
-      <div class="indcage-chart-card" id="indcage-chart-card-yoy">
-        <div class="indcage-chart-title">📊 Comparativo Ano a Ano (mesmo mês)</div>
-        <div class="indcage-chart-wrap"><canvas id="indcage-chart-yoy"></canvas></div>
-      </div>
-      <div class="indcage-chart-card" id="indcage-chart-card-abs" style="display:none;grid-column:1/-1;">
-        <div class="indcage-chart-title">📊 Evolução — Número Absoluto vs Meta (últimos 18 meses)</div>
-        <div class="indcage-chart-wrap"><canvas id="indcage-chart-absoluto"></canvas></div>
-      </div>
-    </div>
-
-    <!-- Results table -->
-    <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:13px;font-weight:700;color:#1B3022;" id="indcage-table-title">Resultados Importados</div>
-      <div style="font-size:12px;color:#64748b;" id="indcage-table-count"></div>
-    </div>
-    <div id="indcage-table-wrap" class="indcage-table-wrap">
-      <table class="indcage-table">
-        <thead>
-          <tr>
-            <th>🧰️ Divisão Ind.</th>
-            <th>☑️ Indicador</th>
-            <th>🔤 Enunciado Ind.</th>
-            <th>🔡 Descrição Ind.</th>
-            <th>⌛ Periodicidade</th>
-            <th>📅 Período</th>
-            <th>📅 Ciclo</th>
-            <th>💰 PPE?</th>
-            <th>〽️ % Índice</th>
-            <th>💹 Meta</th>
-            <th>✔️ Realizado</th>
-            <th>🔡 Análise</th>
-          </tr>
-        </thead>
-        <tbody id="indcage-table-body"></tbody>
-      </table>
-    </div>
-    <div id="indcage-empty-state" style="display:none;text-align:center;padding:60px 20px;">
-      <div style="font-size:48px;margin-bottom:12px;">📂</div>
-      <div style="font-size:16px;font-weight:600;color:#1B3022;margin-bottom:6px;">Nenhum resultado importado</div>
-      <div style="font-size:13px;color:#64748b;">Importe uma planilha Excel com os resultados dos indicadores para visualizar os gráficos e tabelas.</div>
-    </div>
-  </div>
-
-  <!-- ─── TAB: RELATÓRIO PPT (fundido no Status Report Executivo) ── -->
-  <div id="indcage-sec-relatorio" class="indcage-section" style="display:none!important;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
-      <div>
-        <div style="font-size:15px;font-weight:700;color:#1B3022;">📊 Gerar Relatório de Monitoramento</div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">Selecione os indicadores desejados e gere uma apresentação PowerPoint (.pptx) com gráficos e análise automática por IA da variação temporal dos resultados.</div>
-      </div>
-    </div>
-
-    <!-- Configurações do relatório -->
-    <div class="indrel-config-bar">
-      <div class="indrel-config-field">
-        <label for="rel-trimestre" class="indcage-filter-label">Trimestre</label>
-        <select id="rel-trimestre" class="indcage-filter-select">
-          <option value="1">1º Trimestre</option>
-          <option value="2">2º Trimestre</option>
-          <option value="3">3º Trimestre</option>
-          <option value="4">4º Trimestre</option>
-        </select>
-      </div>
-      <div class="indrel-config-field">
-        <label for="rel-ano" class="indcage-filter-label">Ano</label>
-        <input type="number" id="rel-ano" class="indcage-filter-select" value="2026" min="2020" max="2035" style="width:110px;">
-      </div>
-      <div class="indrel-config-field" style="flex:1;min-width:200px;">
-        <label for="rel-subtitulo" class="indcage-filter-label">Subtítulo / Órgão (opcional)</label>
-        <input type="text" id="rel-subtitulo" class="indcage-filter-select" placeholder="Ex: CAGE-RS — Escritório de Processos" style="width:100%;">
-      </div>
-      <div class="indrel-config-field" style="justify-content:flex-end;gap:6px;">
-        <label for="rel-usar-ia" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1e3a7a;font-weight:600;cursor:pointer;white-space:nowrap;">
-          <input type="checkbox" id="rel-usar-ia" checked style="accent-color:#1B3022;width:15px;height:15px;">
-          🤖 Análise IA por indicador
-        </label>
-      </div>
-      <button class="btn btn-primary" onclick="indcageGerarRelatorioPpt()" id="rel-generate-btn" style="margin-top:auto;padding:10px 20px;font-size:13px;">
-        📊 Gerar Relatório PPT
-      </button>
-    </div>
-
-    <!-- Seleção de indicadores -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:13px;font-weight:700;color:#1B3022;">Indicadores para incluir no relatório <span id="rel-count-sel" style="font-size:12px;font-weight:400;color:#64748b;margin-left:6px;"></span></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-outline" onclick="indcageRelSelecionarTodos()" style="font-size:11px;padding:5px 12px;">✓ Selecionar todos</button>
-        <button class="btn btn-outline" onclick="indcageRelDesmarcarTodos()" style="font-size:11px;padding:5px 12px;">✗ Desmarcar todos</button>
-      </div>
-    </div>
-
-    <div id="indcage-rel-list" class="indrel-list"></div>
-
-    <div id="indrel-empty" style="display:none;text-align:center;padding:48px 20px;color:#94a3b8;">
-      <div style="font-size:40px;margin-bottom:10px;">📋</div>
-      <div style="font-size:14px;font-weight:600;color:#1B3022;">Nenhum indicador cadastrado</div>
-      <div style="font-size:12px;margin-top:4px;">Cadastre indicadores na aba <strong>Indicadores</strong> ou importe via SISPLAN.</div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: Indicador CAGE -->
-<div class="gmod-overlay" id="indcage-modal">
-  <div class="gmod-box" style="max-width:600px;">
-    <div class="gmod-head">
-      <span id="indcage-modal-title">Novo Indicador CAGE</span>
-      <button class="gmod-close" onclick="indcageCloseModal()">✕</button>
-    </div>
-    <div class="gmod-body" style="display:flex;flex-direction:column;gap:14px;">
-      <div class="indcage-nivel-grid">
-        <div>
-          <label for="ic-codigo" class="gmod-label">Código do Indicador</label>
-          <input class="modal-input" id="ic-codigo" type="text" placeholder="Ex: IND-001">
-        </div>
-        <div>
-          <label for="ic-sisplan" class="gmod-label">Código SISPLAN <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-          <input class="modal-input" id="ic-sisplan" type="text" placeholder="Ex: SP-2024-001">
-        </div>
-      </div>
-      <div>
-        <label for="ic-enunciado" class="gmod-label">Enunciado do Indicador *</label>
-        <input class="modal-input" id="ic-enunciado" type="text" placeholder="Nome/descrição do indicador">
-      </div>
-      <div class="indcage-nivel-grid">
-        <div>
-          <label for="ic-nivel" class="gmod-label">Tipo / Nível *</label>
-          <select class="modal-input" id="ic-nivel">
-            <option value="atividade">Atividade</option>
-            <option value="processo" selected>Processo / Projeto</option>
-            <option value="macroprocesso">Macroprocesso / Proj Estratégico</option>
-            <option value="acao">Ação</option>
-            <option value="etapa">Etapa</option>
-          </select>
-        </div>
-        <div>
-          <label for="ic-divisao" class="gmod-label">Divisão</label>
-          <input class="modal-input" id="ic-divisao" type="text" placeholder="Ex: DAF, DCA, DGE…">
-        </div>
-      </div>
-      <div>
-        <label for="ic-pop" class="gmod-label">Vincular a Mapeamento <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-        <select class="modal-input" id="ic-pop">
-          <option value="">— Nenhum vínculo —</option>
-        </select>
-      </div>
-      <div class="indcage-nivel-grid">
-        <div>
-          <label for="ic-meta" class="gmod-label">Meta</label>
-          <input class="modal-input" id="ic-meta" type="text" placeholder="Ex: 90%, 30 dias…">
-        </div>
-        <div>
-          <label for="ic-periodicidade" class="gmod-label">Periodicidade</label>
-          <select class="modal-input" id="ic-periodicidade">
-            <option value="mensal">Mensal</option>
-            <option value="bimestral">Bimestral</option>
-            <option value="trimestral">Trimestral</option>
-            <option value="semestral">Semestral</option>
-            <option value="anual">Anual</option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <label for="ic-responsavel" class="gmod-label">Responsável</label>
-        <input class="modal-input" id="ic-responsavel" type="text" placeholder="Nome do responsável pelo indicador">
-      </div>
-      <div>
-        <label for="ic-formula" class="gmod-label">Fórmula de Cálculo</label>
-        <input class="modal-input" id="ic-formula" type="text" placeholder="Ex: (Realizados / Total) × 100">
-      </div>
-      <div>
-        <label for="ic-fonte" class="gmod-label">Fonte dos Dados</label>
-        <input class="modal-input" id="ic-fonte" type="text" placeholder="Sistema, planilha, relatório…">
-      </div>
-    </div>
-    <div class="gmod-foot">
-      <button class="btn btn-outline" onclick="indcageCloseModal()">Cancelar</button>
-      <button class="btn btn-success" onclick="indcageSaveModal()">💾 Salvar Indicador</button>
-    </div>
-  </div>
-</div>
-
-<button id="btn-nav-back" onclick="goBack()" style="display:none;position:fixed;top:14px;left:14px;z-index:3500;background:#1B3022;color:white;border:none;border-radius:8px;padding:7px 16px 7px 12px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 14px rgba(0,0,0,.35);align-items:center;gap:6px;white-space:nowrap;">← Voltar</button>
-
-<div class="toast" id="toast"></div>
-
-<script>
 // ═══ DATA ════════════════════════════════════
 const DATA = {
   d: { steps: [], currentStep: 0, roles: [], indicators: [], faqs: [], normas: [], revisions: [], siglas: [], risks: [], actions_plan: [], meetings: [], meta: { name:"Tratar Denúncias", macro:"Promoção da Integridade e Prevenção à Corrupção", processo:"Tratar Denúncias e Representações", desc:"O subprocesso Tratar Denúncias tem como objetivo realizar o recebimento, tratamento, apuração e comunicação de resultados de denúncias pela CAGE.", input:"Denúncia por FalaBR, e-mail ou presencialmente", output:"Denúncia tratada e comunicação de resultados", elaborado:"Edison Weber Woycinck", revisado:"Felipe Cesar Tourinho" }, ficha: {}, flowDiagram: null },
@@ -4511,25 +101,7 @@ function saveToStorage() {
   }
 }
 
-function loadFromStorage() {} // dados vêm exclusivamente do Supabase
-
-// ── harvestEditables — lookup tables e helpers (evita if/else-if longas) ──────
-const _META_FIELD_MAP = {
-  obj:'desc', proc_desc:'desc', entrada_resumo:'input', proc_input:'input',
-  saida_resumo:'output', proc_output:'output', el_nome:'elaborado',
-  proc_elaborado:'elaborado', proc_revisado:'revisado', proc_name:'name', proc_macro:'macro',
-};
-const _STEP_DIRECT_FIELDS = new Set([
-  'title','subtitle','responsible','note','duracao',
-  'sistemas','documentos','pontosMelhoria','observacoes',
-]);
-function _applyRoleField(roles, rMatch, val) {
-  const ri = parseInt(rMatch[1]), type = rMatch[2], di = parseInt(rMatch[3]);
-  if(!roles[ri]) return;
-  if(type === 'n') roles[ri].name = val;
-  else if(type === 't') roles[ri].title = val;
-  else if(type === 'd' && !isNaN(di)) roles[ri].duties[di] = val;
-}
+function loadFromStorage() { return false; } // dados vêm exclusivamente do Supabase
 
 function harvestEditables() {
   // Read contenteditable fields back into DATA
@@ -4537,28 +109,50 @@ function harvestEditables() {
     const [p, field] = el.dataset.key.split(':');
     if(!p || !field || !DATA[p]) return;
     const val = el.innerText?.trim() || el.textContent?.trim() || '';
+    // Map known fields to DATA structure
     const meta = DATA[p].meta || (DATA[p].meta = {});
-    if(_META_FIELD_MAP[field]) meta[_META_FIELD_MAP[field]] = val;
+    if(field === 'obj' || field === 'proc_desc') meta.desc = val;
+    else if(field === 'entrada_resumo' || field === 'proc_input') meta.input = val;
+    else if(field === 'saida_resumo' || field === 'proc_output') meta.output = val;
+    else if(field === 'el_nome' || field === 'proc_elaborado') meta.elaborado = val;
+    else if(field === 'proc_revisado') meta.revisado = val;
+    else if(field === 'proc_name') meta.name = val;
+    else if(field === 'proc_macro') meta.macro = val;
+    // Roles
     const rMatch = field.match(/^r(\d+)([ntd])(\d*)$/);
-    if(rMatch && DATA[p].roles) _applyRoleField(DATA[p].roles, rMatch, val);
+    if(rMatch && DATA[p].roles) {
+      const ri = parseInt(rMatch[1]), type = rMatch[2], di = parseInt(rMatch[3]);
+      if(DATA[p].roles[ri]) {
+        if(type === 'n') DATA[p].roles[ri].name = val;
+        else if(type === 't') DATA[p].roles[ri].title = val;
+        else if(type === 'd' && !isNaN(di)) DATA[p].roles[ri].duties[di] = val;
+      }
+    }
   });
 
   // Capturar campos de etapas (data-sf) que são persistidos via blur events
   document.querySelectorAll('[data-sf]').forEach(el => {
-    const pp = el.dataset.sp, si = parseInt(el.dataset.si), sf = el.dataset.sf;
+    const pp = el.dataset.sp;
+    const si = parseInt(el.dataset.si);
+    const sf = el.dataset.sf;
     if(!pp || isNaN(si) || !sf || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
     const val = el.innerText?.replace(/^👤\s*/, '').trim() || '';
     const step = DATA[pp].steps[si];
     if(sf.startsWith('tobe_')) {
       if(!step.tobe) step.tobe = {};
       step.tobe[sf.slice(5)] = val;
-    } else if(_STEP_DIRECT_FIELDS.has(sf)) {
-      step[sf] = val;
-    } else if(sf === 'dlabel' && step.decision) {
-      step.decision.label = val;
-    } else if(sf === 'dtext' && step.decision) {
-      step.decision.text = val;
     }
+    else if(sf === 'title')       step.title = val;
+    else if(sf === 'subtitle')    step.subtitle = val;
+    else if(sf === 'responsible') step.responsible = val;
+    else if(sf === 'note')        step.note = val;
+    else if(sf === 'duracao')         step.duracao = val;
+    else if(sf === 'sistemas')        step.sistemas = val;
+    else if(sf === 'documentos')      step.documentos = val;
+    else if(sf === 'pontosMelhoria')  step.pontosMelhoria = val;
+    else if(sf === 'observacoes')     step.observacoes = val;
+    else if(sf === 'dlabel' && step.decision) step.decision.label = val;
+    else if(sf === 'dtext'  && step.decision) step.decision.text  = val;
   });
 
   // Capturar métricas de volume/ciclo
@@ -4567,7 +161,7 @@ function harvestEditables() {
     if(!m) return;
     const [, p, field] = m;
     if(!DATA[p]?.meta) return;
-    const val = Number.parseFloat(el.textContent?.trim()) || 0;
+    const val = parseFloat(el.textContent?.trim()) || 0;
     const keyMap = {'metric-vol-pre':'volPre','metric-vol-pos':'volPos','metric-ciclo-pre':'cicloPre','metric-ciclo-pos':'cicloPos'};
     if(keyMap[field]) DATA[p].meta[keyMap[field]] = val;
   });
@@ -4575,9 +169,9 @@ function harvestEditables() {
   // Capturar texto das ações (data-ai) que são persistidos via blur events
   document.querySelectorAll('[data-ai][data-sp]').forEach(el => {
     const pp = el.dataset.sp;
-    const si = Number.parseInt(el.dataset.si);
-    const ai = Number.parseInt(el.dataset.ai);
-    if(!pp || Number.isNaN(si) || Number.isNaN(ai) || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
+    const si = parseInt(el.dataset.si);
+    const ai = parseInt(el.dataset.ai);
+    if(!pp || isNaN(si) || isNaN(ai) || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
     const step = DATA[pp].steps[si];
     const isTb = el.dataset.tobe === 'true';
     if(isTb) {
@@ -4671,45 +265,26 @@ function popDomId(pop) {
   return pop;
 }
 
-// ── switchPop helpers ─────────────────────────────────────────────────────────
-/** Restaura a versão atual do pop anterior caso estivesse em modo de visualização histórica. */
-function _restorePrevPopVersion() {
+function switchPop(pop, tabEl) {
+  _navPush();
+  // Esconder galeria se estiver ativa
+  const gal = document.getElementById('pop-gallery-panel');
+  if(gal) gal.classList.remove('active');
+  // Se estava visualizando versão antiga do pop anterior, restaurar versão atual antes de trocar
   try {
     const prevPrefix = popPrefix(currentPop);
     const prevD = DATA[prevPrefix];
-    if(!prevD || !prevD._viewingVersion) return;
-    const curSnap = prevD._viewBuf;
-    if(curSnap) {
-      VERSIONABLE_FIELDS.forEach(f => { if(curSnap[f] !== undefined) prevD[f] = curSnap[f]; });
-      delete prevD._viewBuf;
+    if(prevD && prevD._viewingVersion) {
+      const curSnap = prevD._viewBuf;
+      if(curSnap) { VERSIONABLE_FIELDS.forEach(f => { if(curSnap[f] !== undefined) prevD[f] = curSnap[f]; }); delete prevD._viewBuf; }
+      delete prevD._viewingVersion;
+      renderVersionBadge(prevPrefix);
     }
-    delete prevD._viewingVersion;
-    renderVersionBadge(prevPrefix);
   } catch(e) { console.warn('[siga]', e); }
-}
-
-/** Dispara todos os renders necessários após a troca de pop. */
-function _renderAfterSwitch(prefix) {
-  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
-  if(currentSection === 'maturidade') try { matRender(prefix); } catch(e) { console.warn('[siga]', e); }
-  _syncNovaVersaoBtn();
-  try { renderFicha(prefix); }       catch(e) { console.warn('[siga]', e); }
-  try { renderSipoc(prefix); }       catch(e) { console.warn('[siga]', e); }
-  try { renderFlowPreview(prefix); } catch(e) { console.warn('[siga]', e); }
-}
-
-function switchPop(pop, tabEl) {
-  _navPush();
-  _restorePrevPopVersion();
-
   const key    = popKey(pop);
   const domId  = popDomId(pop);
   const prefix = popPrefix(pop);
   currentPop = key;
-
-  // Esconder galeria se estiver ativa
-  const gal = document.getElementById('pop-gallery-panel');
-  if(gal) gal.classList.remove('active');
 
   // Garantir que nav-tabs e barra de processo fiquem visíveis ao entrar num POP
   const _navTabs = document.querySelector('.nav-tabs');
@@ -4731,7 +306,7 @@ function switchPop(pop, tabEl) {
   const target = document.getElementById(prefix + '-visao-geral');
   if(target) target.classList.add('active');
 
-  // Fechar módulos BI / PAT ao trocar de POP
+  // Close BI / PAT modules when switching pops
   const _biMod = document.getElementById('bi-module');
   if(_biMod) _biMod.style.display = 'none';
   const _patMod = document.getElementById('pat-module');
@@ -4741,37 +316,25 @@ function switchPop(pop, tabEl) {
   const labelEl = document.getElementById('current-pop-label');
   if(labelEl) {
     const names = { d:'Tratar Denuncias', r:'Tratar Representacoes' };
-    labelEl.textContent = names[key] || DATA[key]?.meta?.name || key;
+    labelEl.textContent = names[key] || (DATA[key] && DATA[key].meta && DATA[key].meta.name) || key;
   }
 
   if(editMode) enableEditables(true);
-  _renderAfterSwitch(prefix);
+  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
+  if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { console.warn('[siga]', e); }
+  _syncNovaVersaoBtn();
+  try { renderFicha(prefix); }       catch(e) { console.warn('[siga]', e); }
+  try { renderSipoc(prefix); }       catch(e) { console.warn('[siga]', e); }
+  try { renderFlowPreview(prefix); } catch(e) { console.warn('[siga]', e); }
 }
 
 // ═══ NAV ══════════════════════════════════════
-/** Renderiza a aba de maturidade e mostra erro no corpo caso falhe. */
-function _renderMaturidade(prefix) {
-  try {
-    matRender(prefix);
-  } catch(e) {
-    const c = document.getElementById(prefix + '-maturidade-body');
-    if(!c) return;
-    const errorEl = document.createElement('p');
-    errorEl.style.color   = 'red';
-    errorEl.style.padding = '20px';
-    errorEl.textContent   = 'Erro ao renderizar: ' + e.message;
-    c.innerHTML = '';
-    c.appendChild(errorEl);
-  }
-}
-
 function showSection(id, tab, silent) {
   currentSection = id;
-  // Esconder BPMN e módulos IA se estiverem visíveis — usa filter para evitar if dentro de lambda
-  ['bpmn-module','fd-module','ai-module','ai-relatorio-module']
-    .map(mid => document.getElementById(mid))
-    .filter(Boolean)
-    .forEach(el => { el.style.display = 'none'; });
+  // Esconder BPMN e módulos IA se estiverem visíveis (voltando de outra aba)
+  ['bpmn-module','fd-module','ai-module','ai-relatorio-module'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
 
   // Garantir que o pop atual está ativo
   document.querySelectorAll('.pop-content').forEach(p => p.classList.remove('active'));
@@ -4786,9 +349,9 @@ function showSection(id, tab, silent) {
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
   }
-  if(id === 'fluxo')      renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
-  if(id === 'checklists') try { renderChecklists(popPrefix(currentPop)); } catch(e) { console.warn('[siga]', e); }
-  if(id === 'maturidade') _renderMaturidade(popPrefix(currentPop));
+  if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
+  if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) { console.warn('[siga]', e); }
+  if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) { const errorEl = document.createElement('p'); errorEl.style.color = 'red'; errorEl.style.padding = '20px'; errorEl.textContent = 'Erro ao renderizar: ' + e.message; c.innerHTML = ''; c.appendChild(errorEl); } } }
   if(!silent && editMode) enableEditables(true);
   try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
 }
@@ -4797,20 +360,6 @@ function showSection(id, tab, silent) {
 function _syncNovaVersaoBtn() {
   const btn = document.getElementById('nova-versao-btn');
   if(btn) btn.style.display = currentPop ? '' : 'none';
-}
-
-/** Notifica o usuário sobre a mudança de modo edição (apenas quando não forçado). */
-function _notifyEditModeChange(forceState) {
-  if(forceState !== undefined) return;
-  if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar', 'warn');
-  else showToast('Modo visualização ativo');
-}
-
-/** Auto-salva ao sair do modo edição se houver alterações pendentes. */
-function _autoSaveOnExitEdit() {
-  if(editMode || !currentUser || !window._appInitialized) return;
-  const unsavedDot = document.getElementById('unsaved-dot');
-  if(unsavedDot && unsavedDot.style.display === 'inline-block') saveToCloud();
 }
 
 function toggleEditMode(forceState) {
@@ -4835,10 +384,21 @@ function toggleEditMode(forceState) {
   if(editMode) { _takeEditSnapshot(); }
   else { _undoStack = []; _undoShadow = null; _updateUndoBtn(); }
   try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
+  // Persistir estado do modo edição entre recarregamentos
   try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) { console.warn('[siga]', e); }
   try { _dndInit(editMode); } catch(e) { console.warn('[siga]', e); }
-  _notifyEditModeChange(forceState);
-  _autoSaveOnExitEdit();
+  /* notifica o usuario do erro */
+  if(forceState === undefined) {
+    if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar','warn');
+    else showToast('Modo visualização ativo');
+  }
+  // Ao sair do modo edição, salvar se houver alterações pendentes
+  if(!editMode && currentUser && window._appInitialized) {
+    const unsavedDot = document.getElementById('unsaved-dot');
+    if(unsavedDot && unsavedDot.style.display === 'inline-block') {
+      saveToCloud();
+    }
+  }
   _syncNovaVersaoBtn();
 }
 
@@ -4959,7 +519,7 @@ let _undoShadow    = null; // state captured AFTER the last change — pushed on
 const _UNDO_MAX = 40;
 
 function _snapshotData() {
-  return structuredClone(DATA);
+  return JSON.parse(JSON.stringify(DATA));
 }
 
 function _takeEditSnapshot() {
@@ -5006,16 +566,6 @@ function markChanged(quick=false, explicit=false) {
   }, quick ? 1500 : 3000);
 }
 
-/** Re-renderiza o POP atual após uma operação de undo. */
-function _rerenderCurrentPop() {
-  if(!currentPop) return;
-  const p = popPrefix(currentPop);
-  if(!DATA[p]) return;
-  try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) { console.warn('[siga]', e); }
-  try { renderTracker(p); } catch(e) { console.warn('[siga]', e); }
-  try { renderMetrics(p); } catch(e) { console.warn('[siga]', e); }
-}
-
 function undoLastChange() {
   if(!_undoStack.length) { showToast('Nada para desfazer.', 'warn'); return; }
   const prev = _undoStack.pop();
@@ -5023,12 +573,20 @@ function undoLastChange() {
   const prevKeys = new Set(Object.keys(prev));
   Object.keys(DATA).forEach(k => { if(!prevKeys.has(k)) delete DATA[k]; });
   Object.assign(DATA, prev);
+  // Update shadow to current restored state
   try { _undoShadow = _snapshotData(); } catch(e) { console.warn('[siga]', e); }
   _updateUndoBtn();
-  _rerenderCurrentPop();
-  const n     = _undoStack.length;
-  const label = n === 1 ? 'passo' : 'passos';
-  const undoMsg = n > 0 ? `↩ Desfeito. Mais ${n} ${label} disponíveis.` : '↩ Desfeito. Estado inicial restaurado.';
+  // Re-render current POP if open
+  if(currentPop) {
+    const p = popPrefix(currentPop);
+    if(DATA[p]) {
+      try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) { console.warn('[siga]', e); }
+      try { renderTracker(p); } catch(e) { console.warn('[siga]', e); }
+      try { renderMetrics(p); } catch(e) { console.warn('[siga]', e); }
+    }
+  }
+  const n = _undoStack.length;
+  const undoMsg = n > 0 ? `↩ Desfeito. Mais ${n} ${n === 1 ? 'passo' : 'passos'} disponíveis.` : '↩ Desfeito. Estado inicial restaurado.';
   showToast(undoMsg, 'success');
   document.getElementById('unsaved-dot').style.display = n > 0 ? 'inline-block' : 'none';
 }
@@ -5041,23 +599,13 @@ function renderTracker(p) {
   el.innerHTML = '';
   DATA[p].steps.forEach((s,i) => {
     const dot = document.createElement('div');
-    if (i === cur) {
-      dot.className = 'step-dot active';
-    } else if (i < cur) {
-      dot.className = 'step-dot done';
-    } else {
-      dot.className = 'step-dot';
-    }
+    dot.className = 'step-dot'+(i===cur?' active':i<cur?' done':'');
     dot.innerHTML = `<div class="step-dot-circle">${i<cur?'✓':i+1}</div><div class="step-dot-label">${escapeHtml(resolveStep(s, flowMode).title)}</div>`;
     dot.onclick = () => { DATA[p].currentStep=i; renderStep(p,i); };
     el.appendChild(dot);
     if(i<DATA[p].steps.length-1){
       const line = document.createElement('div');
-      if (i < cur) {
-        line.className = 'step-line done';
-      } else {
-        line.className = 'step-line';
-      }
+      line.className = 'step-line'+(i<cur?' done':'');
       el.appendChild(line);
     }
   });
@@ -5114,35 +662,17 @@ function _sanitizeStep(s) {
   };
 }
 
-/** Garante que todos os campos array obrigatórios de um POP existam. */
-function _ensurePopArrays(d) {
-  if(!Array.isArray(d.steps))          d.steps = [];
-  if(!Array.isArray(d.roles))          d.roles = [];
-  if(!Array.isArray(d.indicators))     d.indicators = [];
-  if(!Array.isArray(d.faqs))           d.faqs = [];
-  if(Array.isArray(d.faq) && !d.faqs.length) { d.faqs = d.faq; } // migrar campo antigo
-  delete d.faq;
-  if(!Array.isArray(d.normas))         d.normas = [];
-  if(!Array.isArray(d.revisions))      d.revisions = [];
-  if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
-  if(!Array.isArray(d.checklists))     d.checklists = [];
-}
-
-/** Garante que todos os campos escalares obrigatórios de um POP existam. */
-function _ensurePopMeta(d) {
-  if(!d.ficha)          d.ficha = {};
-  if(!d.meta)           d.meta  = {};
-  if(!d.versionNum)     d.versionNum = 1;
-  if(!d.etapasProgress) d.etapasProgress = {};
-  if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
-  if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
-  if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
-}
-
 function sanitizePop(p) {
   const d = DATA[p];
   if(!d) return;
-  _ensurePopArrays(d);
+  if(!Array.isArray(d.steps))      d.steps = [];
+  if(!Array.isArray(d.roles))      d.roles = [];
+  if(!Array.isArray(d.indicators)) d.indicators = [];
+  if(!Array.isArray(d.faqs))       d.faqs = [];
+  if(Array.isArray(d.faq) && !d.faqs.length) { d.faqs = d.faq; } // migrar campo antigo
+  delete d.faq;
+  if(!Array.isArray(d.normas))     d.normas = [];
+  if(!Array.isArray(d.revisions))  d.revisions = [];
   d.revisions = d.revisions.map((r,i) => ({
     num:    r?.num    ?? (i+1),
     date:   r?.date   || '',
@@ -5153,9 +683,23 @@ function sanitizePop(p) {
     const today = new Date().toLocaleDateString('pt-BR');
     d.revisions = [{ num:0, date: today, desc:'Versão inicial', author:'CAGE-RS' }];
   }
-  _ensurePopMeta(d);
+  if(!d.ficha)                     d.ficha = {};
+  if(!d.meta)                      d.meta = {};
+  if(!d.versionNum)                d.versionNum = 1;
+  if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
+  if(!Array.isArray(d.checklists))     d.checklists = [];
+  if(!d.etapasProgress)                d.etapasProgress = {};
+  if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
+  if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
+  if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
+  // Sanitizar steps
   d.steps = d.steps.map(s => _sanitizeStep(s));
-  d.roles  = d.roles.map(r => ({ ...r, duties: Array.isArray(r?.duties) ? r.duties : [] }));
+  // Sanitizar roles
+  d.roles = d.roles.map(r => ({
+    ...r,
+    duties: Array.isArray(r?.duties) ? r.duties : []
+  }));
+  // Corrigir currentStep fora do range
   if(typeof d.currentStep !== 'number') d.currentStep = 0;
   if(d.steps.length > 0 && d.currentStep >= d.steps.length) d.currentStep = 0;
 }
@@ -5459,99 +1003,90 @@ function buildNestedBranchesHTML(p, si, ai, bi, bai, branches, em) {
   return `<div class="decision-branches nested">${branchItems}</div>`;
 }
 
-/**
- * Resolve todos os valores de exibição de uma etapa (AS IS vs TO BE).
- * Centraliza as dezenas de ternários condicionais e alivia renderStep.
- */
-function _resolveStepDisplay(s, tb, isTobe, em, i, stepsLen) {
-  return {
-    title:        isTobe ? (tb.title      || s.title)      : s.title,
-    subtitle:     isTobe ? (tb.subtitle   || s.subtitle || '') : (s.subtitle || ''),
-    resp:         isTobe ? (tb.responsible || s.responsible) : s.responsible,
-    respClass:    isTobe ? (tb.respClass   || s.respClass)   : s.respClass,
-    note:         isTobe ? (tb.note        || s.note || '')  : (s.note || ''),
-    titleSf:      isTobe ? 'tobe_title'       : 'title',
-    subtitleSf:   isTobe ? 'tobe_subtitle'    : 'subtitle',
-    respSf:       isTobe ? 'tobe_responsible' : 'responsible',
-    noteSf:       isTobe ? 'tobe_note'        : 'note',
-    actions:      isTobe ? (tb.actions || []) : (s.actions || []),
-    panelClass:   isTobe ? ' tobe-mode'       : '',
-    modeBadge:    isTobe
-      ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📋 TO BE</span>`
-      : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📌 AS IS</span>`,
-    ce:           em ? 'contenteditable="true"' : '',
-    actListClass: em ? 'edit-mode-list' : '',
-    prevDisabled: i === 0          ? 'disabled' : '',
-    nextDisabled: i === stepsLen-1 ? 'disabled' : '',
-  };
-}
-
-/** Atualiza os controles de navegação da barra inferior da etapa. */
-function _updateStepNavButtons(p, i) {
-  const _stepPos = document.getElementById(p+'-step-pos');
-  const _btnPrev = document.getElementById(p+'-btn-prev');
-  const _btnNext = document.getElementById(p+'-btn-next');
-  if(_stepPos) _stepPos.textContent = `Etapa ${i+1} de ${DATA[p].steps.length}`;
-  if(_btnPrev) _btnPrev.disabled = i === 0;
-  if(_btnNext) _btnNext.textContent = i === DATA[p].steps.length-1 ? '✅ Concluído' : 'Próximo →';
-}
-
 function renderStep(p, i) {
-  if(!DATA[p] || !Array.isArray(DATA[p].steps)) return;
-  if(!DATA[p].steps[i]) return;
+  if(!DATA[p] || !Array.isArray(DATA[p].steps) || !DATA[p].steps[i]) {
+    return;
+  }
   const s = DATA[p].steps[i];
   if(!s.tobe) s.tobe = {};
+  const tb = s.tobe;
+  const em = editMode;
+  const ce = em ? 'contenteditable="true"' : '';
   const isTobe = flowMode === 'tobe';
-  const em     = editMode;
-  const d      = _resolveStepDisplay(s, s.tobe, isTobe, em, i, DATA[p].steps.length);
 
-  const actHTML = d.actions.map((a, ai) => _buildStepActionHTML(p, i, ai, a, isTobe, em)).join('');
+  // Display values: TO BE falls back to AS IS if TO BE field is empty
+  const dispTitle     = isTobe ? (tb.title      || s.title)      : s.title;
+  const dispSubtitle  = isTobe ? (tb.subtitle    !== undefined && tb.subtitle !== '' ? tb.subtitle : (s.subtitle||'')) : (s.subtitle||'');
+  const dispResp      = isTobe ? (tb.responsible || s.responsible) : s.responsible;
+  const dispRespClass = isTobe ? (tb.respClass   || s.respClass)   : s.respClass;
+  const dispNote      = isTobe ? (tb.note        || s.note || '')  : (s.note || '');
+
+  const titleSf    = isTobe ? 'tobe_title'       : 'title';
+  const subtitleSf = isTobe ? 'tobe_subtitle'    : 'subtitle';
+  const respSf     = isTobe ? 'tobe_responsible' : 'responsible';
+  const noteSf     = isTobe ? 'tobe_note'        : 'note';
+
+  // AS IS and TO BE have independent action lists
+  const currentActions = isTobe ? (tb.actions || []) : (s.actions || []);
+  const actHTML = currentActions.map((a, ai) => _buildStepActionHTML(p, i, ai, a, isTobe, em)).join('');
   const decHTML = s.decision ? `
     <div class="decision-box"><span class="dicon">⚡</span><div class="dtext">
-      <strong ${d.ce} data-sp="${p}" data-si="${i}" data-sf="dlabel">${s.decision.label}:</strong><br>
-      <span ${d.ce} data-sp="${p}" data-si="${i}" data-sf="dtext">${s.decision.text}</span>
+      <strong ${ce} data-sp="${p}" data-si="${i}" data-sf="dlabel">${s.decision.label}:</strong><br>
+      <span ${ce} data-sp="${p}" data-si="${i}" data-sf="dtext">${s.decision.text}</span>
     </div></div>` : '';
-  const noteHTML = d.note ? `
+  const noteHTML = dispNote ? `
     <div class="note-box"><span>💬</span>
-      <span ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.noteSf}">${d.note}</span>
+      <span ${ce} data-sp="${p}" data-si="${i}" data-sf="${noteSf}">${dispNote}</span>
     </div>` : '';
-  const copyBtn = isTobe
-    ? `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowTobeToAsis('${p}')" title="Copiar todas as etapas do TO BE para o AS IS">⎘ Copiar TO BE → AS IS</button>`
-    : `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}')" title="Copiar todas as etapas do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>`;
-  const flowLabel = isTobe ? 'TO BE' : 'AS IS';
+
+  // Mode badge shown in step header
+  const modeBadge = isTobe
+    ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📋 TO BE</span>`
+    : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📌 AS IS</span>`;
+
+
 
   const container = document.getElementById(p+'-step-panel');
-  if(!container) return;
+  if(!container) { return; }
   container.innerHTML = `
-    <div class="step-panel${d.panelClass}">
+    <div class="step-panel${isTobe ? ' tobe-mode' : ''}">
       <div class="step-panel-head">
         <div class="step-number">${i+1}</div>
         <div class="step-info" style="flex:1;">
-          <h3 ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.titleSf}">${d.title}</h3>
-          <p ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.subtitleSf}">${d.subtitle}</p>
+          <h3 ${ce} data-sp="${p}" data-si="${i}" data-sf="${titleSf}">${dispTitle}</h3>
+          <p ${ce} data-sp="${p}" data-si="${i}" data-sf="${subtitleSf}">${dispSubtitle}</p>
         </div>
-        ${d.modeBadge}
-        <button class="move-step-btn" onclick="moveStep('${p}',${i},-1)" title="Mover etapa para cima" ${d.prevDisabled}>↑</button>
-        <button class="move-step-btn" onclick="moveStep('${p}',${i},1)" title="Mover etapa para baixo" ${d.nextDisabled}>↓</button>
+        ${modeBadge}
+        <button class="move-step-btn" onclick="moveStep('${p}',${i},-1)" title="Mover etapa para cima" ${i===0?'disabled':''}>↑</button>
+        <button class="move-step-btn" onclick="moveStep('${p}',${i},1)" title="Mover etapa para baixo" ${i===DATA[p].steps.length-1?'disabled':''}>↓</button>
         <button class="rm-step-btn" onclick="rmStep('${p}',${i})" title="Apagar esta etapa">🗑 Apagar etapa</button>
       </div>
       <div class="step-panel-body">
-        <div class="resp-tag ${d.respClass}" ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.respSf}">👤 ${d.resp}</div>
-        <ul class="step-actions ${d.actListClass}" id="${p}-actions-list-${i}">${actHTML}</ul>
+        <div class="resp-tag ${dispRespClass}" ${ce} data-sp="${p}" data-si="${i}" data-sf="${respSf}">👤 ${dispResp}</div>
+        <ul class="step-actions ${em ? 'edit-mode-list' : ''}" id="${p}-actions-list-${i}">${actHTML}</ul>
         <div class="step-flow-actions">
           <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
-          <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}')" title="Limpar o fluxo ${flowLabel} inteiro (todas as etapas)">🗑 Limpar todo ${flowLabel}</button>
-          ${copyBtn}
+          <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}')" title="Limpar o fluxo ${isTobe ? 'TO BE' : 'AS IS'} inteiro (todas as etapas)">🗑 Limpar todo ${isTobe ? 'TO BE' : 'AS IS'}</button>
+          ${isTobe
+            ? `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowTobeToAsis('${p}')" title="Copiar todas as etapas do TO BE para o AS IS">⎘ Copiar TO BE → AS IS</button>`
+            : `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}')" title="Copiar todas as etapas do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>`
+          }
         </div>
         ${decHTML}${noteHTML}
       </div>
     </div>`;
-  if(editMode) _wireStepDnD(p, i, container);
+  // ── Wire interactions ─────────────────────────
+  if(editMode) { _wireStepDnD(p, i, container); }
   _wireStepFieldBlur(p, i, container);
   _wireStepActionBlur(p, i, container);
   _wireStepBranchBlurs(p, i, container);
   renderTracker(p);
-  _updateStepNavButtons(p, i);
+  const _stepPos  = document.getElementById(p+'-step-pos');
+  const _btnPrev  = document.getElementById(p+'-btn-prev');
+  const _btnNext  = document.getElementById(p+'-btn-next');
+  if(_stepPos) _stepPos.textContent = `Etapa ${i+1} de ${DATA[p].steps.length}`;
+  if(_btnPrev) _btnPrev.disabled = i===0;
+  if(_btnNext) _btnNext.textContent = i===DATA[p].steps.length-1 ? '✅ Concluído' : 'Próximo →';
 }
 
 function toggleAutomatico(p, si, ai) {
@@ -5793,15 +1328,7 @@ function setFlowMode(mode) {
   // Update all toggle buttons in DOM
   document.querySelectorAll('.flow-mode-btn[data-mode]').forEach(btn => {
     const m = btn.dataset.mode;
-    if (m === mode) {
-      if (mode === 'asis') {
-        btn.className = 'flow-mode-btn active-asis';
-      } else {
-        btn.className = 'flow-mode-btn active-tobe';
-      }
-    } else {
-      btn.className = 'flow-mode-btn';
-    }
+    btn.className = 'flow-mode-btn' + (m === mode ? (mode === 'asis' ? ' active-asis' : ' active-tobe') : '');
   });
   const p = popPrefix(currentPop);
   if(DATA[p] && Array.isArray(DATA[p].steps) && DATA[p].steps.length > 0) {
@@ -5948,14 +1475,7 @@ function renderRoles(p) {
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:5px;">${g.isResp ? '★ ' : ''}${g.stepTitle}</div>
         ${g.actions.length ? `<ul class="role-duties" style="margin:0;">
           ${g.actions.map(a => {
-            let ico;
-            if (a.type === 'decisao') {
-              ico = '◇';
-            } else if (a.type === 'evento') {
-              ico = '○';
-            } else {
-              ico = '▸';
-            }
+            const ico = a.type==='decisao' ? '◇' : a.type==='evento' ? '○' : '▸';
             return `<li style="align-items:flex-start;gap:6px;">
               <span style="font-size:11px;color:var(--text-muted);flex-shrink:0;margin-top:1px;">${ico}</span>
               <span style="flex:1;font-size:12px;">${a.text||''}</span>
@@ -6001,24 +1521,13 @@ function _fmtNumSimple(v) {
 }
 
 function _pctColorClass(pct) {
-  if (pct === null || pct === undefined) return '';
-  if (pct >= 100) {
-    return 'pct-verde';
-  } else if (pct >= 80) {
-    return 'pct-amarelo';
-  } else {
-    return 'pct-vermelho';
-  }
+  if(pct === null || pct === undefined) return '';
+  return pct >= 100 ? 'pct-verde' : pct >= 80 ? 'pct-amarelo' : 'pct-vermelho';
+}
 
 function _pctStyle(pct) {
-  if (pct === null || pct === undefined) return '';
-  if (pct >= 100) {
-    return 'color:#16a34a;';
-  } else if (pct >= 80) {
-    return 'color:#ca8a04;';
-  } else {
-    return 'color:#dc2626;';
-  }
+  if(pct === null || pct === undefined) return '';
+  return pct >= 100 ? 'color:#16a34a;' : pct >= 80 ? 'color:#ca8a04;' : 'color:#dc2626;';
 }
 
 function _buildSisplanTableRow(r) {
@@ -6271,7 +1780,7 @@ function renderSisplanPickerList() {
     return;
   }
   list.innerHTML = filtered.map(ind => `
-    <button type="button" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;width:100%;text-align:left;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')">
+    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
         <div style="flex:1;">
           <div style="font-size:11px;font-weight:700;color:#607070;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">${ind.codigo||'—'} · ${ind.divisao||''}</div>
@@ -6385,14 +1894,7 @@ async function _generateFaqIAWithMode(p, mode) {
     // Riscos
     const risksText = (D.risks||[]).length
       ? (D.risks||[]).map(r => {
-          let nivel;
-          if (r.score >= 16) {
-            nivel = 'Alto';
-          } else if (r.score >= 8) {
-            nivel = 'Médio';
-          } else {
-            nivel = 'Baixo';
-          }
+          const nivel = r.score >= 16 ? 'Alto' : r.score >= 8 ? 'Médio' : 'Baixo';
           const partes = [`[${nivel}] ${r.title||''}`];
           if(r.desc)    partes.push(`Descrição: ${r.desc}`);
           if(r.causa)   partes.push(`Causa: ${r.causa}`);
@@ -7776,11 +3278,11 @@ function mountNewPopTab(key, label, silent=false) {
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                 <div>
-                  <label for="${key}-acomp-6m-data" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Data de Realização</label>
+                  <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Data de Realização</label>
                   <input type="date" id="${key}-acomp-6m-data" class="modal-input" style="width:100%;" oninput="saveAcomp('${key}')">
                 </div>
                 <div>
-                  <label for="${key}-acomp-6m-situacao" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Situação da Implementação</label>
+                  <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Situação da Implementação</label>
                   <select id="${key}-acomp-6m-situacao" class="modal-input" style="width:100%;" onchange="toggleAcompJustif('${key}','6m');saveAcomp('${key}')">
                     <option value="">— Selecione —</option>
                     <option value="de_acordo">✅ De acordo</option>
@@ -7790,23 +3292,23 @@ function mountNewPopTab(key, label, silent=false) {
                 </div>
               </div>
               <div style="margin-bottom:16px;">
-                <label for="${key}-acomp-6m-participantes" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Participantes</label>
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Participantes</label>
                 <textarea id="${key}-acomp-6m-participantes" class="modal-input" rows="2" placeholder="Liste os participantes da reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('${key}')"></textarea>
               </div>
               <div id="${key}-acomp-6m-justif-wrap" style="margin-bottom:16px;display:none;">
-                <label for="${key}-acomp-6m-justif" style="font-size:12px;font-weight:600;color:#c0392b;display:block;margin-bottom:6px;">Justificativa da Não Implementação / Implementação Parcial</label>
+                <label style="font-size:12px;font-weight:600;color:#c0392b;display:block;margin-bottom:6px;">Justificativa da Não Implementação / Implementação Parcial</label>
                 <textarea id="${key}-acomp-6m-justif" class="modal-input" rows="3" placeholder="Descreva os motivos da não implementação ou implementação parcial..." style="width:100%;resize:vertical;border-color:#fca5a5;" oninput="saveAcomp('${key}')"></textarea>
               </div>
               <div style="margin-bottom:16px;">
-                <label for="${key}-acomp-6m-inconformidades" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Inconformidades Identificadas</label>
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Inconformidades Identificadas</label>
                 <textarea id="${key}-acomp-6m-inconformidades" class="modal-input" rows="3" placeholder="Registre as inconformidades observadas em relação ao processo definido..." style="width:100%;resize:vertical;" oninput="saveAcomp('${key}')"></textarea>
               </div>
               <div style="margin-bottom:16px;">
-                <label for="${key}-acomp-6m-recomendacoes" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Recomendações de Melhorias</label>
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Recomendações de Melhorias</label>
                 <textarea id="${key}-acomp-6m-recomendacoes" class="modal-input" rows="3" placeholder="Registre as recomendações de melhorias identificadas..." style="width:100%;resize:vertical;" oninput="saveAcomp('${key}')"></textarea>
               </div>
               <div>
-                <label for="${key}-acomp-6m-encaminhamentos" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Encaminhamentos</label>
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Encaminhamentos</label>
                 <textarea id="${key}-acomp-6m-encaminhamentos" class="modal-input" rows="3" placeholder="Registre os encaminhamentos definidos na reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('${key}')"></textarea>
               </div>
             </div>
@@ -7820,11 +3322,11 @@ function mountNewPopTab(key, label, silent=false) {
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                 <div>
-                  <label for="${key}-acomp-1a-data" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Data de Realização</label>
+                  <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Data de Realização</label>
                   <input type="date" id="${key}-acomp-1a-data" class="modal-input" style="width:100%;" oninput="saveAcomp('${key}')">
                 </div>
                 <div>
-                  <label for="${key}-acomp-1a-situacao" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Situação da Implementação</label>
+                  <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Situação da Implementação</label>
                   <select id="${key}-acomp-1a-situacao" class="modal-input" style="width:100%;" onchange="toggleAcompJustif('${key}','1a');saveAcomp('${key}')">
                     <option value="">— Selecione —</option>
                     <option value="de_acordo">✅ De acordo</option>
@@ -7834,23 +3336,23 @@ function mountNewPopTab(key, label, silent=false) {
                 </div>
               </div>
               <div style="margin-bottom:16px;">
-                <label for="${key}-acomp-1a-participantes" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Participantes</label>
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Participantes</label>
                 <textarea id="${key}-acomp-1a-participantes" class="modal-input" rows="2" placeholder="Liste os participantes da reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('${key}')"></textarea>
               </div>
               <div id="${key}-acomp-1a-justif-wrap" style="margin-bottom:16px;display:none;">
-                <label for="${key}-acomp-1a-justif" style="font-size:12px;font-weight:600;color:#c0392b;display:block;margin-bottom:6px;">Justificativa da Não Implementação / Implementação Parcial</label>
+                <label style="font-size:12px;font-weight:600;color:#c0392b;display:block;margin-bottom:6px;">Justificativa da Não Implementação / Implementação Parcial</label>
                 <textarea id="${key}-acomp-1a-justif" class="modal-input" rows="3" placeholder="Descreva os motivos da não implementação ou implementação parcial..." style="width:100%;resize:vertical;border-color:#fca5a5;" oninput="saveAcomp('${key}')"></textarea>
               </div>
               <div style="margin-bottom:16px;">
-                <label for="${key}-acomp-1a-inconformidades" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Inconformidades Identificadas</label>
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Inconformidades Identificadas</label>
                 <textarea id="${key}-acomp-1a-inconformidades" class="modal-input" rows="3" placeholder="Registre as inconformidades observadas em relação ao processo definido..." style="width:100%;resize:vertical;" oninput="saveAcomp('${key}')"></textarea>
               </div>
               <div style="margin-bottom:16px;">
-                <label for="${key}-acomp-1a-recomendacoes" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Recomendações de Melhorias</label>
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Recomendações de Melhorias</label>
                 <textarea id="${key}-acomp-1a-recomendacoes" class="modal-input" rows="3" placeholder="Registre as recomendações de melhorias identificadas..." style="width:100%;resize:vertical;" oninput="saveAcomp('${key}')"></textarea>
               </div>
               <div>
-                <label for="${key}-acomp-1a-encaminhamentos" style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Encaminhamentos</label>
+                <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">Encaminhamentos</label>
                 <textarea id="${key}-acomp-1a-encaminhamentos" class="modal-input" rows="3" placeholder="Registre os encaminhamentos definidos na reunião..." style="width:100%;resize:vertical;" oninput="saveAcomp('${key}')"></textarea>
               </div>
             </div>
@@ -9155,24 +4657,24 @@ function eppRenderParams() {
       <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🔵 Logo EPP — Barra Superior</div>
       <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
         <div style="flex:1;min-width:160px;">
-          <label for="gp-logo-header-url" style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">URL da Imagem (opcional)</label>
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">URL da Imagem (opcional)</label>
           <input class="modal-input" id="gp-logo-header-url" type="url" value="${gp.logoHeaderUrl||''}" placeholder="https://... (deixe vazio para usar texto)"
             oninput="saveGlobalParam('logoHeaderUrl',this.value);applyHeaderBtnColors();" style="font-size:12px;">
         </div>
         <div>
-          <label for="gp-logo-header-bg" style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Fundo</label>
-          <input type="color" id="gp-logo-header-bg" value="${gp.logoHeaderBg||'#1B3022'}" title="Cor de fundo do logo"
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Fundo</label>
+          <input type="color" value="${gp.logoHeaderBg||'#1B3022'}" title="Cor de fundo do logo"
             style="width:36px;height:36px;border:none;border-radius:6px;cursor:pointer;padding:2px;background:none;"
             oninput="saveGlobalParam('logoHeaderBg',this.value);applyHeaderBtnColors();">
         </div>
         <div>
-          <label for="gp-logo-header-color" style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Cor do texto</label>
-          <input type="color" id="gp-logo-header-color" value="${gp.logoHeaderColor||'#00a86b'}" title="Cor do texto EPP"
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Cor do texto</label>
+          <input type="color" value="${gp.logoHeaderColor||'#00a86b'}" title="Cor do texto EPP"
             style="width:36px;height:36px;border:none;border-radius:6px;cursor:pointer;padding:2px;background:none;"
             oninput="saveGlobalParam('logoHeaderColor',this.value);applyHeaderBtnColors();">
         </div>
         <div style="flex:1;min-width:100px;">
-          <label for="gp-logo-header-text" style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Texto do logo</label>
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Texto do logo</label>
           <input class="modal-input" id="gp-logo-header-text" type="text" maxlength="4" value="${gp.logoHeaderText||'EPP'}" placeholder="EPP"
             oninput="saveGlobalParam('logoHeaderText',this.value);applyHeaderBtnColors();" style="font-size:12px;">
         </div>
@@ -9187,13 +4689,13 @@ function eppRenderParams() {
       const clrHex = savedColors[b.key + '_color_hex'] || '#ffffff';
       return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--cage-light);border-radius:8px;border:1px solid var(--cage-border);margin-bottom:6px;flex-wrap:wrap;">
         <span style="font-size:13px;flex:1;min-width:120px;">${b.label}</span>
-        <label for="${b.key}-bg-color" style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">Fundo
-          <input type="color" id="${b.key}-bg-color" value="${bgHex}" title="Cor de fundo do botão"
+        <label style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">Fundo
+          <input type="color" value="${bgHex}" title="Cor de fundo do botão"
             style="width:28px;height:28px;border:none;border-radius:4px;cursor:pointer;padding:1px;background:none;"
             oninput="eppSetHeaderBtnColor('${b.key}','bg',this.value)">
         </label>
-        <label for="${b.key}-text-color" style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">Texto
-          <input type="color" id="${b.key}-text-color" value="${clrHex}" title="Cor do texto do botão"
+        <label style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">Texto
+          <input type="color" value="${clrHex}" title="Cor do texto do botão"
             style="width:28px;height:28px;border:none;border-radius:4px;cursor:pointer;padding:1px;background:none;"
             oninput="eppSetHeaderBtnColor('${b.key}','color',this.value)">
         </label>
@@ -9537,39 +5039,39 @@ function _renderCfgCardAptCatalog(title, desc) {
       <div id="cfg-apt-edit-${i}" style="display:none;padding:12px 16px;border-top:1px solid #e2e8f0;background:white;">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
           <div>
-            <label for="cfg-apt-cat-${i}" style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Categoria</label>
-            <select id="cfg-apt-cat-${i}" class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;"
+            <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Categoria</label>
+            <select class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;"
               onchange="cfgAptField(${i},'categoria',this.value)">
               ${catOpts.replace(`value="${a.categoria||''}"`,`value="${a.categoria||''}" selected`)}
             </select>
           </div>
           <div>
-            <label for="cfg-apt-crit-${i}" style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Criticidade</label>
-            <select id="cfg-apt-crit-${i}" class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;"
+            <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Criticidade</label>
+            <select class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;"
               onchange="cfgAptField(${i},'criticidade',this.value)">
               ${critOpts.replace(`value="${a.criticidade||''}"`,`value="${a.criticidade||''}" selected`)}
             </select>
           </div>
           <div>
-            <label for="cfg-apt-id-${i}" style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">ID</label>
-            <input id="cfg-apt-id-${i}" class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;" value="${(a.id||'').replace(/"/g,'&quot;')}"
+            <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">ID</label>
+            <input class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;" value="${(a.id||'').replace(/"/g,'&quot;')}"
               onchange="cfgAptField(${i},'id',this.value)">
           </div>
         </div>
         <div style="margin-bottom:10px;">
-          <label for="cfg-apt-apt-${i}" style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Apontamento</label>
-          <input id="cfg-apt-apt-${i}" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;width:100%;box-sizing:border-box;"
+          <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Apontamento</label>
+          <input class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;width:100%;box-sizing:border-box;"
             value="${(a.apontamento||'').replace(/"/g,'&quot;')}"
             onchange="cfgAptField(${i},'apontamento',this.value)">
         </div>
         <div style="margin-bottom:10px;">
-          <label for="cfg-apt-imp-${i}" style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Impacto</label>
-          <input id="cfg-apt-imp-${i}" class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;width:100%;box-sizing:border-box;"
+          <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Impacto</label>
+          <input class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;width:100%;box-sizing:border-box;"
             value="${(a.impacto||'').replace(/"/g,'&quot;')}"
             onchange="cfgAptField(${i},'impacto',this.value)">
         </div>
         <div>
-          <label for="cfg-apt-rec-new-${i}" style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:6px;">💡 Recomendações (${recs.length})</label>
+          <label style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:6px;">💡 Recomendações (${recs.length})</label>
           <div id="cfg-apt-recs-${i}">${recsHtml}</div>
           <div style="display:flex;gap:6px;margin-top:6px;">
             <input id="cfg-apt-rec-new-${i}" class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;flex:1;"
@@ -10050,10 +5552,10 @@ function getAlertSubscribers(tipoAlerta) {
 }
 
 async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
-  if (!toEmail || !subject || !htmlBody) throw new Error('sendAlertEmail: parâmetros obrigatórios ausentes');
+  if(!toEmail || !subject || !htmlBody) return false;
   // Email sending not yet implemented — stub for future backend integration
   void toNome;
-  throw new Error('sendAlertEmail: envio de e-mail ainda não implementado (integração futura com backend)');
+  return false;
 }
 
 function _buildAlertHtml(tipo, popName, popKey, extra) {
@@ -10118,15 +5620,11 @@ async function checkMapeamentoMilestones() {
       const dataEfetivaFmt = efetiva.toLocaleDateString('pt-BR');
       for(const {nome, email} of subs) {
         const label = months === 6 ? '6 meses' : '12 meses';
-        try {
-          await sendAlertEmail(
-            email, nome,
-            `[EPP/CAGE-RS] ${label} desde conclusão: ${popName}`,
-            _buildAlertHtml(tipo, popName, pk, {dataEfetiva: dataEfetivaFmt})
-          );
-        } catch(e) {
-          console.warn('[siga] sendAlertEmail (mapeamento):', e.message);
-        }
+        await sendAlertEmail(
+          email, nome,
+          `[EPP/CAGE-RS] ${label} desde conclusão: ${popName}`,
+          _buildAlertHtml(tipo, popName, pk, {dataEfetiva: dataEfetivaFmt})
+        );
       }
       sent[alKey] = today.toISOString().slice(0,10);
       changed = true;
@@ -10162,19 +5660,15 @@ async function checkActionsDeadlinesEmail() {
           /* log suppressed */
           let enviado = false;
           for(const {nome, email} of subs) {
-            try {
-              const ok = await sendAlertEmail(
-                email, nome,
-                `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
-                _buildAlertHtml('plano_acao_vencido', popName, pk, {
-                  desc: act.desc, resp: act.resp,
-                  prazo: d.toLocaleDateString('pt-BR'),
-                })
-              );
-              if(ok) enviado = true;
-            } catch(e) {
-              console.warn('[siga] sendAlertEmail (ação vencida):', e.message);
-            }
+            const ok = await sendAlertEmail(
+              email, nome,
+              `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
+              _buildAlertHtml('plano_acao_vencido', popName, pk, {
+                desc: act.desc, resp: act.resp,
+                prazo: d.toLocaleDateString('pt-BR'),
+              })
+            );
+            if(ok) enviado = true;
           }
           if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
     /* alert log suppressed */
@@ -10187,19 +5681,15 @@ async function checkActionsDeadlinesEmail() {
           /* log suppressed */
           let enviado = false;
           for(const {nome, email} of subs) {
-            try {
-              const ok = await sendAlertEmail(
-                email, nome,
-                `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
-                _buildAlertHtml('plano_acao_7d', popName, pk, {
-                  desc: act.desc, resp: act.resp,
-                  prazo: d.toLocaleDateString('pt-BR'), dias,
-                })
-              );
-              if(ok) enviado = true;
-            } catch(e) {
-              console.warn('[siga] sendAlertEmail (ação 7d):', e.message);
-            }
+            const ok = await sendAlertEmail(
+              email, nome,
+              `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
+              _buildAlertHtml('plano_acao_7d', popName, pk, {
+                desc: act.desc, resp: act.resp,
+                prazo: d.toLocaleDateString('pt-BR'), dias,
+              })
+            );
+            if(ok) enviado = true;
           }
           if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
     /* alert log suppressed */
@@ -11076,7 +6566,7 @@ async function showAccessRequestOverlay() {
       ${msg}
       ${!existing ? `
       <div style="text-align:left;margin-bottom:16px;">
-        <label for="req-motivo" style="font-size:12px;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">MOTIVO DA SOLICITAÇÃO (opcional)</label>
+        <label style="font-size:12px;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">MOTIVO DA SOLICITAÇÃO (opcional)</label>
         <textarea id="req-motivo" rows="3" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:10px;font-size:13px;resize:none;box-sizing:border-box;"
           placeholder="Ex: Sou servidor da CAGE e preciso acesso para..."></textarea>
       </div>
@@ -12049,7 +7539,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSupabase().catch(e => {
     try {
       document.getElementById('auth-status').textContent = '⚠️ Erro ao inicializar: ' + e.message;
-      if ((SIGA_AUTH.mode || 'local') === 'entra') document.getElementById('auth-overlay').style.display = 'flex';
+      document.getElementById('auth-overlay').style.display = 'flex';
     } catch(_) { console.warn('[siga]', _); }
   });
 });
@@ -13282,7 +8772,7 @@ function _srCarregarIndicadores() {
       ind.periodicidade ? `🔁 ${ind.periodicidade}` : '',
     ].filter(Boolean).join('  ');
     return `
-    <label for="${ind.id || ''}" class="indrel-item">
+    <label class="indrel-item">
       <input type="checkbox" class="sr-ind-check indrel-checkbox" value="${ind.codigo || ''}" data-id="${ind.id || ''}">
       <div class="indrel-item-info">
         ${ind.codigo ? `<div class="indrel-item-codigo">${ind.codigo}</div>` : ''}
@@ -14327,7 +9817,7 @@ function renderFicha(p) {
       matBadgeHtml = `
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);">
           <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;">Maturidade</div>
-          <button type="button" style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;width:100%;text-align:left;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
+          <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
             <div style="text-align:center;flex-shrink:0;">
               <div style="font-size:30px;font-weight:900;color:${matFinal.levelColor};line-height:1;">${matFinal.final}</div>
               <div style="font-size:9px;color:#94a3b8;line-height:1.2;">/ 100</div>
@@ -14881,7 +10371,7 @@ function openVersionSelector(p, badgeEl) {
 
   panel.innerHTML = allVersions.map(item => {
     const isActive = item.v === viewing;
-    return `<button type="button" class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();" style="width:100%;text-align:left;background:none;border:none;padding:0;">
+    return `<div class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();">
       <div>
         <div>${item.isCurrent ? '✏️' : '📄'} <strong>v${item.v}</strong>${item.isCurrent ? ' <span style="font-size:10px;color:#059669;">(atual)</span>' : ''}</div>
         <div class="vs-meta">${item.date}${item.note ? ' · ' + item.note : ''}</div>
@@ -15134,7 +10624,7 @@ function renderChecklists(p) {
       <div class="ck-bar"><div class="ck-bar-fill" style="width:${pct}%"></div></div>
       <ul class="ck-items" style="margin-top:10px;">
         ${ck.items.map((it, ii) => `
-          <li class="ck-item" onclick="toggleChecklistItem('${p}',${ci},${ii})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          <li class="ck-item" onclick="toggleChecklistItem('${p}',${ci},${ii})">
             <input type="checkbox" ${it.checked ? 'checked' : ''} onclick="event.stopPropagation();toggleChecklistItem('${p}',${ci},${ii})">
             <span class="ck-item-text${it.checked ? ' done' : ''}">${escapeHtml(it.text)}</span>
           </li>`).join('')}
@@ -15611,17 +11101,17 @@ function arqRenderTable(filtered, all) {
         <span style="background:${nat.bg};color:${nat.color};font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;">${r.natureza||''}</span>
       </td>
       <td style="padding:10px 16px;color:#64748b;font-size:12px;">${r.area||''}</td>
-      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()">
         <button onclick="arqToggleCritico(${realIdx})"
           style="background:${critBg};color:${critColor};border:none;cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;transition:all .2s;"
           title="Clique para alternar">${critLabel}</button>
       </td>
-      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()">
         <button onclick="arqToggleMapeado(${realIdx})"
           style="background:${toggleBg};color:${toggleColor};border:none;cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;transition:all .2s;"
           title="Clique para alternar">${toggleLabel}</button>
       </td>
-      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()">
         ${isEditor && !mapped ? `<button onclick="arqAbrirMapeamento(${realIdx})" style="background:#dcfce7;color:#166534;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Iniciar mapeamento deste processo">📝 Mapear</button>` : ''}
         ${isEditor ? `<button onclick="arqShowForm(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Editar">✏️</button>` : ''}
         ${isEditor ? `<button onclick="arqDelete(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Excluir">🗑</button>` : ''}
@@ -15692,8 +11182,8 @@ function arqShowForm(idx = null) {
     ? objsList.map(o => {
         const esc = o.replace(/"/g, '&quot;');
         const checked = existingObjs.includes(o) ? 'checked' : '';
-        return `<label for="obj-chk-${esc}" style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#1e293b;cursor:pointer;padding:5px 8px;background:white;border-radius:6px;border:1px solid #e2e8f0;line-height:1.4;">
-          <input id="obj-chk-${esc}" type="checkbox" value="${esc}" ${checked} style="margin-top:2px;accent-color:#6366f1;flex-shrink:0;">
+        return `<label style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#1e293b;cursor:pointer;padding:5px 8px;background:white;border-radius:6px;border:1px solid #e2e8f0;line-height:1.4;">
+          <input type="checkbox" value="${esc}" ${checked} style="margin-top:2px;accent-color:#6366f1;flex-shrink:0;">
           ${o}
         </label>`;
       }).join('')
@@ -16453,10 +11943,10 @@ function renderPopsGrid() {
               style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 4px;border-radius:4px;z-index:1;"
               onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-right:${canDelete?'20px':'0'};">
-              <button type="button" style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;background:none;border:none;padding:0;" onclick="hideHome();switchPop('${p.key}')">${meta.name || p.label}</button>
+              <div style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;" onclick="hideHome();switchPop('${p.key}')">${meta.name || p.label}</div>
               ${sc ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};white-space:nowrap;flex-shrink:0;">${stLabel}</span>` : ''}
             </div>
-            <button type="button" onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;background:none;border:none;padding:0;width:100%;text-align:left;">
+            <div onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;">
             ${macroMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macroMeta}</div>` : ''}
             ${processoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Processo:</span> ${processoMeta}</div>` : ''}
             ${subprocessoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Subprocesso:</span> ${subprocessoMeta}</div>` : ''}
@@ -17582,7 +13072,7 @@ function npopRenderAtores(selectedArr, isCreateForm) {
   const selected = new Set(selectedArr || []);
   wrap.innerHTML = atores.map(a => {
     const on = selected.has(a);
-    return `<button type="button" data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${escapeHtml(a)}</button>`;
+    return `<span data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${escapeHtml(a)}</span>`;
   }).join('');
   if(hidden) hidden.value = [...selected].join(',');
 }
@@ -18878,7 +14368,7 @@ function _ncFilterCatalog() {
   const critColor = {Alta:'#dc2626', Média:'#d97706', Media:'#d97706', Baixa:'#16a34a'};
   list.innerHTML = filtered.map(a => {
     const sel = _ncSelectedAptIds.includes(a.id);
-    return '<div onclick="_ncToggleApt(\''+a.id+'\')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;background:'+(sel?'#fee2e2':'#fff')+';border:1px solid '+(sel?'#fca5a5':'#e2e8f0')+';" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<div onclick="_ncToggleApt(\''+a.id+'\')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;background:'+(sel?'#fee2e2':'#fff')+';border:1px solid '+(sel?'#fca5a5':'#e2e8f0')+';">'+
       '<input type="checkbox" '+(sel?'checked':'')+' onclick="event.stopPropagation();_ncToggleApt(\''+a.id+'\')" style="cursor:pointer;accent-color:#991b1b;width:15px;height:15px;flex-shrink:0;">'+
       '<div style="flex:1;min-width:0;">'+
         '<div style="font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+a.apontamento+'</div>'+
@@ -19100,7 +14590,7 @@ function auditRenderPlans() {
     const patBadge  = patItem
       ? '<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap;">📅 PTA: '+patItem.titulo+'</span>'
       : '';
-    return '<div class="audit-card" onclick="auditOpenPlan(\''+p.id+'\')" style="cursor:pointer;" title="Abrir pasta do plano" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<div class="audit-card" onclick="auditOpenPlan(\''+p.id+'\')" style="cursor:pointer;" title="Abrir pasta do plano">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
         '<div class="audit-card-title">📁 '+(p.processoNome||p.processo||'(sem processo)')+'</div>'+
         _auditBadge(p.status||'planejada')+
@@ -19283,7 +14773,7 @@ function auditRenderExec() {
     const total = (e.checklist||[]).length;
     const conf  = (e.checklist||[]).filter(c=>c.conformidade==='conforme').length;
     const nc    = (e.checklist||[]).filter(c=>c.conformidade==='nao_conforme').length;
-    return '<div class="audit-card" style="border-left-color:#003366;" onclick="auditOpenExecModal(\''+e.id+'\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<div class="audit-card" style="border-left-color:#003366;" onclick="auditOpenExecModal(\''+e.id+'\')">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
         '<div class="audit-card-title">▶ '+(plan?.processoNome||plan?.objetivo||'Execução')+'</div>'+
         _auditBadge(e.status||'em_andamento')+
@@ -19529,7 +15019,7 @@ function auditRenderNc() {
       return a ? '<span style="background:#fee2e2;color:#991b1b;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;">'+a.id+'</span>' : '';
     }).join(' ');
     const recCount = (nc.recomendacoes||[]).length;
-    return '<div class="audit-card audit-nc-'+(nc.gravidade||'leve')+'" onclick="auditOpenNcModal(\''+nc.id+'\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<div class="audit-card audit-nc-'+(nc.gravidade||'leve')+'" onclick="auditOpenNcModal(\''+nc.id+'\')">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'+
         '<div class="audit-card-title">⚠️ '+(nc.processo||'Processo não informado')+(nc.etapa?' — '+nc.etapa:'')+' </div>'+
         '<div style="display:flex;gap:6px;">'+_auditGravBadge(nc.gravidade||'leve')+' '+_auditBadge(nc.status||'aberta')+'</div>'+
@@ -19638,7 +15128,7 @@ function auditRenderActions() {
   list.innerHTML = acts.map(a => {
     const nc = DATA.audits.nonconformities.find(n=>n.id===a.ncId);
     const overdue = a.prazo && a.status!=='concluida' && a.status!=='cancelada' && new Date(a.prazo+'T23:59:59') < new Date();
-    return '<div class="audit-card" style="border-left-color:'+(overdue?'#dc2626':'#065f46')+'" onclick="auditOpenActionModal(\''+a.id+'\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<div class="audit-card" style="border-left-color:'+(overdue?'#dc2626':'#065f46')+'" onclick="auditOpenActionModal(\''+a.id+'\')">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'+
         '<div class="audit-card-title">✅ '+(a.acao||'(sem descrição)')+'</div>'+
         _auditBadge(a.status||'pendente')+
@@ -23064,7 +18554,7 @@ Regras obrigatórias:
         ind.responsavel ? `👤 ${ind.responsavel}` : '',
       ].filter(Boolean).join('  ');
       return `
-      <label for="${ind.id || ''}" class="indrel-item" id="indrel-item-${ind.codigo || ind.id}">
+      <label class="indrel-item" id="indrel-item-${ind.codigo || ind.id}">
         <input type="checkbox" class="rel-ind-check indrel-checkbox" value="${ind.codigo || ''}" data-id="${ind.id || ''}" onchange="indcageRelUpdateCount()">
         <div class="indrel-item-info">
           ${ind.codigo ? `<div class="indrel-item-codigo">${ind.codigo}</div>` : ''}
@@ -25077,637 +20567,3 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
   }
 }
 
-</script>
-
-<!-- READONLY BANNER -->
-<div class="readonly-banner" id="readonly-banner">
-  🔒 Você está em modo de <strong>visualização</strong>. Apenas editores autorizados podem fazer alterações.
-</div>
-
-<!-- FAB BOTTOM RIGHT -->
-<div class="perm-panel" id="perm-panel" style="display:none;">
-  <div class="history-chip" id="last-save-chip">Carregando...</div>
-  <button class="perm-fab" id="viewer-preview-btn" onclick="eppToggleViewerPreview()" title="Simular perfil de visualizador" style="display:none;background:var(--cage-accent);font-size:13px;padding:0 14px;border-radius:20px;height:40px;width:auto;">👁 Simular</button>
-  <button class="perm-fab" onclick="openPermModal()" title="Gerenciar acesso e histórico">👥</button>
-</div>
-<!-- Banner de preview de visualizador -->
-<div id="viewer-preview-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:3000;background:#312e81;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:700;letter-spacing:.03em;">
-  👁 MODO VISUALIZADOR — Você está simulando o perfil de um usuário sem permissão de edição.
-  <button onclick="eppExitViewerPreview()" style="margin-left:16px;background:#1e293b;color:#fff;border:none;border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;cursor:pointer;">↩ Voltar ao Admin</button>
-</div>
-
-<!-- MODAL PERMISSÕES -->
-<div class="gmod-overlay" id="perm-modal">
-  <div class="gmod-box" style="width:560px;">
-    <div class="gmod-head">
-      <h3>👥 Acesso e Histórico</h3>
-      <button class="gmod-close" onclick="closeModal('perm-modal')">✕</button>
-    </div>
-    <div class="gmod-body">
-      <!-- Tabs -->
-      <div style="display:flex;gap:0;border-bottom:2px solid var(--cage-border);margin-bottom:4px;">
-        <button id="ptab-editors" onclick="switchPermTab('editors')"
-          style="flex:1;padding:8px;border:none;background:none;font-weight:700;font-size:13px;color:var(--cage-blue);border-bottom:3px solid var(--cage-blue);cursor:pointer;">
-          👤 Editores
-        </button>
-        <button id="ptab-requests" onclick="switchPermTab('requests')"
-          style="flex:1;padding:8px;border:none;background:none;font-weight:600;font-size:13px;color:var(--text-muted);cursor:pointer;">
-          📨 Solicitações <span id="req-badge" style="display:none;background:#e11d48;color:white;border-radius:20px;padding:1px 6px;font-size:10px;margin-left:2px;">0</span>
-        </button>
-        <button id="ptab-history" onclick="switchPermTab('history')"
-          style="flex:1;padding:8px;border:none;background:none;font-weight:600;font-size:13px;color:var(--text-muted);cursor:pointer;">
-          🕐 Histórico
-        </button>
-      </div>
-
-      <!-- Editores -->
-      <div id="perm-editors-panel">
-        <div id="perm-editor-list" style="margin-bottom:12px;"></div>
-        <div id="perm-add-row" style="display:none;gap:8px;flex-direction:column;">
-          <div class="gmod-row">
-            <div>
-              <label for="perm-new-email" class="gmod-label">E-mail *</label>
-              <input class="modal-input" id="perm-new-email" type="email" placeholder="usuario@email.com">
-            </div>
-            <div>
-              <label for="perm-new-name" class="gmod-label">Nome</label>
-              <input class="modal-input" id="perm-new-name" type="text" placeholder="Nome do usuário">
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <div>
-              <label for="perm-new-role" class="gmod-label">Perfil</label>
-              <select id="perm-new-role" style="padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;">
-                <option value="viewer">Visualizador</option>
-                <option value="editor">Editor</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <button class="btn btn-success" style="margin-left:auto;font-size:12px;align-self:flex-end;" onclick="saveNewEditor()">Adicionar</button>
-            <button class="btn btn-outline" style="font-size:12px;align-self:flex-end;" onclick="document.getElementById('perm-add-row').style.display='none'">Cancelar</button>
-          </div>
-        </div>
-        <div id="perm-add-btn-row">
-          <button class="btn btn-primary" style="font-size:12px;width:100%;" onclick="showAddEditor()">＋ Adicionar Editor</button>
-        </div>
-      </div>
-
-      <!-- Histórico -->
-      <div id="perm-requests-panel" style="display:none;">
-        <div id="perm-requests-list" style="margin-bottom:12px;"></div>
-      </div>
-
-      <div id="perm-history-panel" style="display:none;">
-        <div class="history-list" id="perm-history-list"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- MODAL FAQ -->
-<div class="gmod-overlay" id="faq-modal">
-  <div class="gmod-box" style="width:560px;">
-    <div class="gmod-head">
-      <h3 id="faq-modal-title">❓ Nova Pergunta</h3>
-      <button class="gmod-close" onclick="closeModal('faq-modal')">✕</button>
-    </div>
-    <div class="gmod-body" style="display:flex;flex-direction:column;gap:14px;">
-      <div>
-        <label for="nf-faq-q" class="gmod-label">Pergunta *</label>
-        <textarea class="modal-input modal-textarea" id="nf-faq-q" style="min-height:64px;" placeholder="Ex: Qual o prazo para resposta de uma denúncia?"></textarea>
-      </div>
-      <div>
-        <label for="nf-faq-a" class="gmod-label">Resposta</label>
-        <textarea class="modal-input modal-textarea" id="nf-faq-a" style="min-height:96px;" placeholder="Resposta detalhada. Deixe em branco para marcar como pendente."></textarea>
-      </div>
-    </div>
-    <div class="gmod-foot">
-      <button class="btn btn-outline" onclick="closeModal('faq-modal')">Cancelar</button>
-      <button class="btn btn-success" onclick="saveFaqModal()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL NORMA -->
-<div class="gmod-overlay" id="norma-modal">
-  <div class="gmod-box" style="width:520px;">
-    <div class="gmod-head">
-      <h3 id="norma-modal-title">📄 Nova Norma</h3>
-      <button class="gmod-close" onclick="closeModal('norma-modal')">✕</button>
-    </div>
-    <div class="gmod-body" style="display:flex;flex-direction:column;gap:14px;">
-      <div>
-        <label for="nf-norma-code" class="gmod-label">Nome / Código *</label>
-        <input class="modal-input" id="nf-norma-code" type="text" placeholder="Ex: IN CAGE 006/2023, Lei 13.451/2010">
-      </div>
-      <div>
-        <label for="nf-norma-name" class="gmod-label">Descrição</label>
-        <input class="modal-input" id="nf-norma-name" type="text" placeholder="Ex: Instrução Normativa sobre Denúncias">
-      </div>
-      <div>
-        <label for="nf-norma-url" class="gmod-label">URL da norma</label>
-        <input class="modal-input" id="nf-norma-url" type="url" placeholder="https://...">
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Link para abrir o documento ao clicar no nome da norma.</div>
-      </div>
-    </div>
-    <div class="gmod-foot">
-      <button class="btn btn-outline" onclick="closeModal('norma-modal')">Cancelar</button>
-      <button class="btn btn-success" onclick="saveNorma()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- BUSCA GLOBAL -->
-<dialog class="search-modal-overlay" id="search-overlay">
-  <div class="search-modal">
-    <div class="search-modal-head">
-      <span>🔍</span>
-      <input id="search-modal-input" placeholder="Buscar em FAQs, Normas e Documentos..."
-        oninput="runSearch(this.value)" autofocus>
-      <span class="search-modal-count" id="search-count"></span>
-      <button class="search-modal-close" onclick="closeSearchModal()">✕</button>
-    </div>
-    <div class="search-modal-body" id="search-results"></div>
-  </div>
-</dialog>
-
-
-<!-- MODAL BACKUP -->
-<div class="gmod-overlay" id="backup-modal">
-  <div class="gmod-box" style="width:560px;">
-    <div class="gmod-head">
-      <h3>💾 Backup de Dados</h3>
-      <button class="gmod-close" onclick="closeModal('backup-modal')">✕</button>
-    </div>
-    <div class="gmod-body backup-modal-body">
-
-      <!-- EXPORT -->
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--cage-blue);margin-bottom:8px;">⬇ Exportar backup</div>
-        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5;">
-          Salva todos os dados dos POPs, FAQs, normas, indicadores, plano de trabalho e demais conteúdos em um arquivo <strong>.json</strong> no seu computador.
-        </div>
-        <button class="btn btn-primary" onclick="exportBackup()" style="width:100%;">⬇ Baixar arquivo de backup (.json)</button>
-      </div>
-
-      <hr style="border:none;border-top:1px solid var(--cage-border);">
-
-      <!-- IMPORT -->
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--cage-blue);margin-bottom:8px;">⬆ Importar backup</div>
-        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5;">
-          Restaura os dados a partir de um arquivo de backup gerado anteriormente. <strong>Atenção: substituirá todos os dados atuais.</strong>
-        </div>
-        <button type="button" class="backup-zone" onclick="document.getElementById('backup-file-input').click()" style="width:100%;background:none;border:none;padding:0;text-align:left;">
-          <input type="file" id="backup-file-input" accept=".json" onchange="previewBackupFile(this)">
-          <div class="backup-zone-icon">📂</div>
-          <div class="backup-zone-label">Clique para selecionar o arquivo .json</div>
-          <div class="backup-zone-sub">ou arraste e solte aqui</div>
-        </div>
-        <div class="backup-import-preview" id="backup-preview"></div>
-        <button class="btn btn-success" id="backup-import-btn" onclick="importBackup()" style="width:100%;margin-top:10px;display:none;">✅ Confirmar importação</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-
-<!-- ══════════════════════════════════════════════════════════
-     MÓDULO ARQUITETURA DE PROCESSOS
-════════════════════════════════════════════════════════════ -->
-<div id="arq-module" style="display:none;position:fixed;inset:0;z-index:900;background:#f0f2f7;overflow:auto;">
-  <div style="max-width:1200px;margin:0 auto;padding:28px 24px 60px;">
-    <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
-      <div>
-        <div style="font-size:22px;font-weight:700;color:#1B3022;">🏛 Arquitetura de Processos CAGE-RS</div>
-        <div style="font-size:13px;color:#64748b;margin-top:2px;">Gerencie macroprocessos, processos e subprocessos</div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary editor-only" onclick="arqShowForm()">＋ Novo Processo</button>
-        <button class="btn btn-outline editor-only" onclick="showPatrocinadoresModal()">🤝 Patrocinadores</button>
-        <button class="btn btn-outline" onclick="showArqModule(false)">✕ Fechar</button>
-      </div>
-    </div>
-
-    <!-- Filtros -->
-    <div style="background:white;border-radius:12px;padding:16px 20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-      <div style="flex:1;min-width:160px;">
-        <label for="arq-filter-macro" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Macroprocesso</label>
-        <select id="arq-filter-macro" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
-          <option value="">Todos</option>
-        </select>
-      </div>
-      <div style="flex:1;min-width:160px;">
-        <label for="arq-filter-natureza" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Natureza</label>
-        <select id="arq-filter-natureza" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
-          <option value="">Todas</option>
-          <option>FINALÍSTICO</option>
-          <option>APOIO</option>
-          <option>GESTÃO</option>
-        </select>
-      </div>
-      <div style="flex:1;min-width:160px;">
-        <label for="arq-filter-area" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Área</label>
-        <select id="arq-filter-area" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
-          <option value="">Todas</option>
-        </select>
-      </div>
-      <div style="flex:1;min-width:160px;">
-        <label for="arq-filter-gerente" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Gerente</label>
-        <select id="arq-filter-gerente" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
-          <option value="">Todos</option>
-        </select>
-      </div>
-      <div style="flex:2;min-width:200px;">
-        <label for="arq-filter-obj" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Objetivo Estratégico</label>
-        <select id="arq-filter-obj" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
-          <option value="">Todos</option>
-        </select>
-      </div>
-      <div style="flex:0 0 140px;">
-        <label for="arq-filter-critico" style="font-size:12px;font-weight:600;color:#dc2626;display:block;margin-bottom:4px;">Crítico?</label>
-        <select id="arq-filter-critico" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
-          <option value="">Todos</option>
-          <option value="sim">⚠️ Sim</option>
-          <option value="nao">○ Não</option>
-        </select>
-      </div>
-      <div style="flex:0 0 140px;">
-        <label for="arq-filter-mapeado" style="font-size:12px;font-weight:600;color:#00a86b;display:block;margin-bottom:4px;">Mapeado?</label>
-        <select id="arq-filter-mapeado" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
-          <option value="">Todos</option>
-          <option value="sim">✅ Sim</option>
-          <option value="nao">○ Não</option>
-        </select>
-      </div>
-      <div style="flex:2;min-width:180px;">
-        <label for="arq-filter-search" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Buscar</label>
-        <input id="arq-filter-search" oninput="arqApplyFilter()" placeholder="Digite para filtrar processos..." style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-      <button class="btn btn-outline" onclick="arqClearFilter()" style="font-size:12px;padding:8px 14px;">Limpar</button>
-    </div>
-
-    <!-- Stats -->
-    <div id="arq-stats" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;"></div>
-
-    <!-- Table -->
-    <div style="background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;">
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <thead>
-          <tr style="background:#1B3022;color:white;">
-            <th class="arq-th-sort" data-col="macroprocesso" style="padding:12px 16px;text-align:left;font-weight:600;user-select:none;white-space:nowrap;">
-              <button type="button" style="all:unset;cursor:pointer;display:inline-block;width:100%;text-align:left;" onclick="arqSortBy('macroprocesso')" onkeydown="if(event.key==='Enter'||event.key===' '){arqSortBy('macroprocesso')}">Macroprocesso<span class="sort-arrow"> ↕</span></button>
-            </th>
-            <th class="arq-th-sort" data-col="processo" style="padding:12px 16px;text-align:left;font-weight:600;user-select:none;white-space:nowrap;">
-              <button type="button" style="all:unset;cursor:pointer;display:inline-block;width:100%;text-align:left;" onclick="arqSortBy('processo')" onkeydown="if(event.key==='Enter'||event.key===' '){arqSortBy('processo')}">Processo<span class="sort-arrow"> ↕</span></button>
-            </th>
-            <th class="arq-th-sort" data-col="subprocesso" style="padding:12px 16px;text-align:left;font-weight:600;user-select:none;white-space:nowrap;">
-              <button type="button" style="all:unset;cursor:pointer;display:inline-block;width:100%;text-align:left;" onclick="arqSortBy('subprocesso')" onkeydown="if(event.key==='Enter'||event.key===' '){arqSortBy('subprocesso')}">Subprocesso<span class="sort-arrow"> ↕</span></button>
-            </th>
-            <th class="arq-th-sort" data-col="natureza" style="padding:12px 16px;text-align:left;font-weight:600;user-select:none;white-space:nowrap;">
-              <button type="button" style="all:unset;cursor:pointer;display:inline-block;width:100%;text-align:left;" onclick="arqSortBy('natureza')" onkeydown="if(event.key==='Enter'||event.key===' '){arqSortBy('natureza')}">Natureza<span class="sort-arrow"> ↕</span></button>
-            </th>
-            <th class="arq-th-sort" data-col="area" style="padding:12px 16px;text-align:left;font-weight:600;user-select:none;white-space:nowrap;">
-              <button type="button" style="all:unset;cursor:pointer;display:inline-block;width:100%;text-align:left;" onclick="arqSortBy('area')" onkeydown="if(event.key==='Enter'||event.key===' '){arqSortBy('area')}">Área<span class="sort-arrow"> ↕</span></button>
-            </th>
-            <th style="padding:12px 16px;text-align:center;font-weight:600;color:#fca5a5;">Crítico?</th>
-            <th style="padding:12px 16px;text-align:center;font-weight:600;color:#6ee7b7;">Mapeado?</th>
-            <th style="padding:12px 16px;text-align:center;font-weight:600;">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="arq-tbody"></tbody>
-      </table>
-      <div id="arq-empty" style="display:none;text-align:center;padding:40px;color:#94a3b8;">Nenhum processo encontrado.</div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Form -->
-<div id="arq-form-modal" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;width:620px;max-width:96vw;max-height:92vh;overflow-y:auto;padding:32px;box-shadow:0 32px 80px rgba(0,0,0,.25);">
-    <div style="font-size:18px;font-weight:700;color:#1B3022;margin-bottom:20px;" id="arq-form-title">Novo Processo</div>
-    <input type="hidden" id="arq-form-idx">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div style="grid-column:1/-1;">
-        <label for="arq-f-macro" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Macroprocesso *</label>
-        <select id="arq-f-macro" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;background:white;">
-          <option value="">Selecione o macroprocesso...</option>
-        </select>
-      </div>
-      <div style="grid-column:1/-1;">
-        <label for="arq-f-processo" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Processo *</label>
-        <input id="arq-f-processo" placeholder="Nome do processo" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-      <div style="grid-column:1/-1;">
-        <label for="arq-f-sub" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Subprocesso</label>
-        <input id="arq-f-sub" placeholder="Deixe em branco se não houver" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-      <div>
-        <label for="arq-f-natureza" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Natureza</label>
-        <select id="arq-f-natureza" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;">
-          <option>FINALÍSTICO</option><option>APOIO</option><option>GESTÃO</option>
-        </select>
-      </div>
-      <div>
-        <label for="arq-f-area" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Área</label>
-        <select id="arq-f-area" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;background:white;"></select>
-      </div>
-      <div>
-        <label for="arq-f-gerente" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Gerente do Processo</label>
-        <input id="arq-f-gerente" placeholder="Nome ou cargo" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-      <div>
-        <label for="arq-f-equipe" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Equipe responsável</label>
-        <select id="arq-f-equipe" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;background:white;">
-          <option value="">— Nenhuma —</option>
-        </select>
-      </div>
-      <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:4px 0;">
-        <input type="checkbox" id="arq-f-critico" style="width:16px;height:16px;accent-color:#dc2626;cursor:pointer;">
-        <label for="arq-f-critico" style="font-size:13px;font-weight:600;color:#dc2626;cursor:pointer;">⚠️ Processo Crítico</label>
-      </div>
-      <div style="grid-column:1/-1;">
-        <label for="arq-f-objetivo" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Objetivo do Processo</label>
-        <textarea id="arq-f-objetivo" rows="3" placeholder="Descreva o objetivo..." style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
-      </div>
-      <div style="grid-column:1/-1;">
-        <span style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">🎯 Objetivos Estratégicos</span>
-        <div id="arq-f-objs-container" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;min-height:40px;"></div>
-        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Gerencie a lista em Gestão do Site → Objetivos Estratégicos</div>
-      </div>
-      <div style="grid-column:1/-1;">
-        <label for="arq-f-entradas" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Entradas do Processo</label>
-        <input id="arq-f-entradas" placeholder="O que inicia/alimenta este processo" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-      <div style="grid-column:1/-1;">
-        <label for="arq-f-entregas" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Entregas do Processo</label>
-        <input id="arq-f-entregas" placeholder="Produtos/resultados gerados" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-      <div style="grid-column:1/-1;">
-        <label for="arq-f-clientes" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Clientes do Processo</label>
-        <input id="arq-f-clientes" placeholder="Quem recebe as entregas" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
-      </div>
-    </div>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;">
-      <button class="btn btn-outline" onclick="arqCloseForm()">Cancelar</button>
-      <button class="btn btn-primary" onclick="arqSaveForm()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Patrocinadores -->
-<div id="pat-mgmt-modal" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;width:480px;max-width:96vw;max-height:85vh;overflow-y:auto;padding:28px;box-shadow:0 32px 80px rgba(0,0,0,.25);">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div style="font-size:18px;font-weight:700;color:#1B3022;">🤝 Patrocinadores</div>
-      <button onclick="closePatrocinadoresModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1;">✕</button>
-    </div>
-    <div style="font-size:12px;color:#64748b;margin-bottom:14px;">Lista de patrocinadores disponíveis para seleção nos formulários.</div>
-    <div id="pat-mgmt-list"></div>
-    <div style="display:flex;gap:8px;margin-top:16px;">
-      <input id="pat-mgmt-new" type="text" placeholder="Novo patrocinador..." class="modal-input" style="flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;" onkeydown="if(event.key==='Enter')patAddNew()">
-      <button class="btn btn-primary" onclick="patAddNew()" style="white-space:nowrap;">＋ Adicionar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- MODAL: EDITAR FICHA TÉCNICA DO MAPEAMENTO   -->
-<!-- ═══════════════════════════════════════════ -->
-<div class="gmod-overlay" id="status-map-modal">
-  <div class="gmod-box" style="width:620px;max-height:90vh;overflow-y:auto;">
-    <div class="gmod-head">
-      <span>📋 Editar Ficha Técnica</span>
-      <button class="gmod-close" onclick="closeModal('status-map-modal')">✕</button>
-    </div>
-    <div class="gmod-body" style="display:flex;flex-direction:column;gap:14px;">
-      <input type="hidden" id="status-modal-pop">
-
-      <!-- Capa (Apresentação) -->
-      <div style="background:linear-gradient(135deg,rgba(0,168,107,.08),rgba(0,168,107,.03));border:1.5px solid rgba(0,168,107,.2);border-radius:8px;padding:12px 14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🖼 Capa — Apresentação do Módulo</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div class="gmod-row">
-            <div style="flex:0 0 90px;">
-              <label for="status-modal-icon" class="gmod-label">Ícone (emoji)</label>
-              <input class="modal-input" id="status-modal-icon" type="text" maxlength="4" placeholder="📋" style="font-size:22px;text-align:center;padding:6px;">
-            </div>
-            <div style="flex:1;">
-              <label for="status-modal-nome" class="gmod-label">Nome do Subprocesso *</label>
-              <input class="modal-input" id="status-modal-nome" type="text" placeholder="Nome do subprocesso">
-            </div>
-          </div>
-          <div>
-            <label for="status-modal-banner-sub" class="gmod-label">Subtítulo da Capa (deixe vazio para gerar automaticamente)</label>
-            <input class="modal-input" id="status-modal-banner-sub" type="text" placeholder="Ex: Macroprocesso: ... · Processo: ...">
-          </div>
-        </div>
-      </div>
-
-      <!-- Identificação -->
-      <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🏷 Identificação</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div>
-            <label for="status-modal-macro" class="gmod-label">Macroprocesso</label>
-            <select class="modal-input" id="status-modal-macro" onchange="statusModalUpdateProcessoList()">
-              <option value="">Selecione o macroprocesso...</option>
-            </select>
-          </div>
-          <div class="gmod-row">
-            <div>
-              <label for="status-modal-processo" class="gmod-label">Processo</label>
-              <input class="modal-input" id="status-modal-processo" type="text" placeholder="Digite para filtrar processos..." list="status-modal-processo-list" autocomplete="off" oninput="statusModalUpdateSubList()">
-              <datalist id="status-modal-processo-list"></datalist>
-            </div>
-            <div>
-              <label for="status-modal-sub" class="gmod-label">Subprocesso</label>
-              <input class="modal-input" id="status-modal-sub" type="text" placeholder="Digite para filtrar subprocessos..." list="status-modal-sub-list" autocomplete="off" oninput="statusModalAutoFill()">
-              <datalist id="status-modal-sub-list"></datalist>
-            </div>
-          </div>
-          <div class="gmod-row">
-            <div>
-              <label for="status-modal-unidade" class="gmod-label">Unidade (ou Divisão)</label>
-              <input class="modal-input" id="status-modal-unidade" type="text" readonly style="background:#f1f5f9;color:#475569;cursor:default;" placeholder="Preenchido automaticamente">
-            </div>
-            <div>
-              <label for="status-modal-gerente" class="gmod-label">Gerente do Processo</label>
-              <input class="modal-input" id="status-modal-gerente" type="text" placeholder="Preenchido automaticamente">
-            </div>
-          </div>
-          <div>
-            <label for="status-modal-obj-estrategico" class="gmod-label">Objetivo Estratégico</label>
-            <div id="status-modal-obj-tags" style="min-height:34px;padding:5px 8px;background:#f1f5f9;border:1px solid var(--cage-border);border-radius:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;"><span style="color:#94a3b8;font-size:12px;">Preenchido automaticamente ao selecionar o processo</span></div>
-            <input type="hidden" id="status-modal-obj-estrategico">
-          </div>
-          <div class="gmod-row">
-            <div>
-              <label for="status-modal-equipe-resp" class="gmod-label">Equipe Responsável</label>
-              <select class="modal-input" id="status-modal-equipe-resp">
-                <option value="">Selecione a equipe...</option>
-              </select>
-            </div>
-            <div>
-              <label for="status-modal-tipo" class="gmod-label">Tipo de Trabalho</label>
-              <select class="modal-input" id="status-modal-tipo">
-                <option value="">Selecione...</option>
-              </select>
-            </div>
-          </div>
-          <div style="max-width:220px;">
-            <label for="status-modal-dificuldade" class="gmod-label">Dificuldade</label>
-            <select class="modal-input" id="status-modal-dificuldade">
-              <option value="">Selecione...</option>
-              <option>Baixa</option><option>Média</option><option>Alta</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Status e Datas -->
-      <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📅 Status e Datas</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div class="gmod-row">
-            <div>
-              <label for="status-modal-status" class="gmod-label">Status do Mapeamento <span style="color:#94a3b8;font-weight:400;font-size:10px;">(calculado pelas datas)</span></label>
-              <select class="modal-input" id="status-modal-status">
-                <option value="">Selecione...</option>
-                <option value="planejado">📋 Planejado</option>
-                <option value="em_andamento">🔄 Em Andamento</option>
-                <option value="concluido">✅ Concluído</option>
-                <option value="atrasado">⚠️ Atrasado</option>
-                <option value="suspenso">⏸ Suspenso</option>
-              </select>
-            </div>
-            <div>
-              <label for="status-modal-inicio" class="gmod-label">Data de Início</label>
-              <input class="modal-input" id="status-modal-inicio" type="date" onchange="statusModalUpdateStatus();">
-            </div>
-          </div>
-          <div class="gmod-row">
-            <div>
-              <label for="status-modal-prevista" class="gmod-label">Data de Fim <span style="color:#94a3b8;font-weight:400;font-size:10px;">(90 dias após início)</span></label>
-              <input class="modal-input" id="status-modal-prevista" type="date" onchange="statusModalUpdateStatus();">
-            </div>
-            <div>
-              <label for="status-modal-efetiva" class="gmod-label">Data de Conclusão Efetiva</label>
-              <input class="modal-input" id="status-modal-efetiva" type="date" onchange="statusModalUpdateStatus();">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pessoas -->
-      <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">👥 Pessoas</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div class="gmod-row">
-            <div>
-              <label for="status-modal-solicitante" class="gmod-label">Solicitante</label>
-              <input class="modal-input" id="status-modal-solicitante" type="text" placeholder="Quem solicitou o mapeamento">
-            </div>
-            <div>
-              <label for="status-modal-patrocinador" class="gmod-label">Patrocinador</label>
-              <select class="modal-input" id="status-modal-patrocinador"><option value="">— selecione —</option></select>
-            </div>
-          </div>
-          <div>
-            <label for="status-modal-equipe" class="gmod-label">Equipe de Mapeamento</label>
-            <input class="modal-input" id="status-modal-equipe" type="text" placeholder="Ex: Ana Silva, Carlos Lima...">
-          </div>
-        </div>
-      </div>
-
-      <!-- Processo -->
-      <div style="background:var(--cage-light);border-radius:8px;padding:12px 14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--cage-blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">⚙️ Processo</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div>
-            <label for="status-modal-desc" class="gmod-label">Objetivo</label>
-            <textarea class="modal-input modal-textarea" id="status-modal-desc" placeholder="Descreva o objetivo deste processo..." style="min-height:56px;"></textarea>
-          </div>
-          <div class="gmod-row">
-            <div>
-              <label for="status-modal-input" class="gmod-label">Entradas</label>
-              <textarea class="modal-input modal-textarea" id="status-modal-input" placeholder="Insumos / entradas do processo..." style="min-height:48px;"></textarea>
-            </div>
-            <div>
-              <label for="status-modal-output" class="gmod-label">Saídas</label>
-              <textarea class="modal-input modal-textarea" id="status-modal-output" placeholder="Produtos / saídas do processo..." style="min-height:48px;"></textarea>
-            </div>
-          </div>
-          <div>
-            <label for="status-modal-resultados" class="gmod-label">Resultados Esperados</label>
-            <textarea class="modal-input modal-textarea" id="status-modal-resultados" placeholder="Resultados e benefícios esperados..." style="min-height:48px;"></textarea>
-          </div>
-          <div class="gmod-row">
-            <div>
-              <label for="status-modal-fornecedores" class="gmod-label">Fornecedores</label>
-              <input class="modal-input" id="status-modal-fornecedores" type="text" placeholder="Quem fornece insumos ao processo">
-            </div>
-            <div>
-              <label for="status-modal-clientes" class="gmod-label">Clientes / Destinatários</label>
-              <input class="modal-input" id="status-modal-clientes" type="text" placeholder="Quem recebe o resultado">
-            </div>
-          </div>
-          <div>
-            <label for="status-modal-sistemas" class="gmod-label">Sistemas Utilizados</label>
-            <input class="modal-input" id="status-modal-sistemas" type="text" placeholder="Ex: SAEWEB, SEI, FalaBR...">
-          </div>
-          <div>
-            <label for="status-modal-atores" class="gmod-label">Atores <span style="color:#94a3b8;font-weight:400;font-size:11px;">(clique para selecionar)</span></label>
-            <div id="status-modal-atores-wrap" style="display:flex;flex-wrap:wrap;gap:6px;padding:6px 8px;background:#f8fafc;border:1px solid var(--cage-border);border-radius:6px;min-height:38px;"></div>
-            <input type="hidden" id="status-modal-atores">
-          </div>
-        </div>
-      </div>
-
-      <!-- Vínculo com PAT -->
-      <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:12px 14px;">
-        <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📋 Vínculo com o PAT</div>
-        <div>
-          <label for="status-modal-pat-vinc" class="gmod-label">Item do Plano Anual de Trabalho <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-          <select class="modal-input" id="status-modal-pat-vinc" style="width:100%;">
-            <option value="">— Nenhum vínculo —</option>
-          </select>
-          <div style="font-size:11px;color:#78716c;margin-top:5px;">Vincule este mapeamento a uma atividade cadastrada no PAT.</div>
-        </div>
-      </div>
-
-    </div>
-    <div class="gmod-foot">
-      <button class="btn btn-outline" onclick="closeModal('status-map-modal')">Cancelar</button>
-      <button class="btn btn-success" onclick="saveStatusModal()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-
-<script>
-// ─── Service Worker — cache-busting (network-first para HTML) ────────────────
-// SW_VERSION: incremente este número a cada deploy para forçar atualização em todos os usuários.
-// NÃO use Date.now() aqui — causaria um SW novo a cada milissegundo (loop infinito).
-const SW_VERSION = '4';
-
-if ('serviceWorker' in navigator) {
-  if (['localhost', '127.0.0.1'].includes(location.hostname)) {
-    navigator.serviceWorker.getRegistrations()
-      .then(regs => Promise.all(regs.map(reg => reg.unregister())))
-      .catch(e => { console.warn('[siga] service worker unregister', e); });
-  } else {
-    navigator.serviceWorker.register('/sw.js?v=' + SW_VERSION).then(reg => {
-      // Sem onupdatefound/reload: o SW já é network-first para HTML,
-      // então o conteúdo mais recente é sempre servido da rede.
-      // O reload forçado causava interrupção do loadFromCloud/saveToCloud a cada F5.
-    }).catch(e => { console.warn('[siga] service worker registration', e); });
-  }
-// Removido fechamento extra de chave para corrigir erro de sintaxe
-</script>
-</body>
-</html>
