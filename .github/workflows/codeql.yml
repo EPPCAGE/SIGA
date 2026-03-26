@@ -79,7 +79,6 @@ jobs:
               - .claude
               - dist
               - "**/*.min.js"
-              - obfuscate.js
 
       # Para javascript "none" build mode, não precisa de build steps
       # Se precisar executar build:

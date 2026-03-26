@@ -3301,52 +3301,35 @@ function _finalizeTokenStep(t, edge, toId, loopCounters) {
   return true;
 }
 
+function _animateToken(t, simulationClockMs, dt) {
+  if (t.ended) return;
+  if (!t.launched) {
+    if (simulationClockMs >= t.launchAtMs) t.launched = true;
+    else return;
+  }
+  const fromId = t.path[t.step];
+  const toId = t.path[t.step + 1];
+  if (!toId) { t.ended = true; return; }
+  const edge = edgeBetween(fromId, toId);
+  const dur = edgeDurationMinutes(fromId, toId);
+  t.progress += (1 / Math.max(dur, 0.1)) * dt * t.speedFactor;
+  const { color, speedFactor } = _classifyToken(t, edge, nodeById(toId), nodeById(fromId));
+  t.color = color;
+  t.speedFactor = speedFactor;
+  if (dur > 20) t.speedFactor *= 0.5;
+  _finalizeTokenStep(t, edge, toId, loopCounters);
+}
+
 function animate(frameTimeMs = performance.now()) {
   if (!running) return;
-
   if (!animationLastTickMs) animationLastTickMs = frameTimeMs;
   const deltaMs = Math.max(1, frameTimeMs - animationLastTickMs);
   animationLastTickMs = frameTimeMs;
-
   const speedGlobal = Math.max(0.1, Number($('speed')?.value || 1));
   simulationClockMs += deltaMs * speedGlobal;
   const dt = (deltaMs / 1000) * 0.9 * speedGlobal;
 
-  for (const t of globalThis.__tokens) {
-    if (t.ended) continue;
-
-    if (!t.launched) {
-      if (simulationClockMs >= t.launchAtMs) {
-        t.launched = true;
-      } else {
-        continue;
-      }
-    }
-
-    const fromId = t.path[t.step];
-    const toId = t.path[t.step + 1];
-    if (!toId) {
-      t.ended = true;
-      continue;
-    }
-
-    const edge = edgeBetween(fromId, toId);
-    const to = nodeById(toId);
-    const dur = edgeDurationMinutes(fromId, toId);
-
-    t.progress += (1 / Math.max(dur, 0.1)) * dt * t.speedFactor;
-
-    const fromNode = nodeById(fromId);
-    const { color, speedFactor } = _classifyToken(t, edge, to, fromNode);
-    t.color = color;
-    t.speedFactor = speedFactor;
-
-    if (dur > 20) {
-      t.speedFactor *= 0.5;
-    }
-
-    _finalizeTokenStep(t, edge, toId, loopCounters);
-  }
+  for (const t of globalThis.__tokens) _animateToken(t, simulationClockMs, dt);
 
   drawTokens(globalThis.__tokens);
   refreshLiveSimulationStatus(globalThis.__tokens);
@@ -4153,60 +4136,46 @@ function saveToSIGA() {
   }
 }
 
+function _handleMsgLoadGraph(ev, msg) {
+  const { graph: g, popName, popKey } = msg.payload || {};
+  _sigaPopKey = popKey || null;
+  const titleEl = document.querySelector('.topbar h1');
+  if (titleEl && popName) titleEl.textContent = `Simulador — ${popName}`;
+  const saveBtn = $('btnSaveToSiga');
+  if (saveBtn) saveBtn.style.display = popKey ? 'inline-flex' : 'none';
+  if (g && g.nodes && g.edges) {
+    graph = normalizeGraph(g);
+    normalizeActorCodesInGraph();
+    $('graphJson').value = JSON.stringify(graph, null, 2);
+    refreshAll();
+    revealDashboard();
+  }
+  ev.source?.postMessage({ type: 'SIMULATOR_READY', popKey }, globalThis.location.origin);
+}
+
+function _handleMsgProcessList(msg) {
+  const { list } = msg.payload || {};
+  if (Array.isArray(list) && list.length) {
+    _sigaProcessList = list;
+    if (!$('setupModal')?.classList.contains('hidden')) renderSetupSection0();
+  }
+}
+
+function _dispatchSimulatorMessage(ev, msg) {
+  if (msg.type === 'SIGA_LOAD_GRAPH') { _handleMsgLoadGraph(ev, msg); return; }
+  if (msg.type === 'SIGA_REQUEST_GRAPH' && graph) {
+    ev.source?.postMessage({ type: 'SIMULATOR_SAVE', payload: { graph: cloneLocal(graph), popKey: _sigaPopKey } }, globalThis.location.origin);
+  }
+  if (msg.type === 'SIGA_PROCESS_LIST') _handleMsgProcessList(msg);
+}
+
 globalThis.addEventListener('message', (ev) => {
-  if(ev.origin !== globalThis.location.origin) return; // reject cross-origin messages
+  if (ev.origin !== globalThis.location.origin) return;
   try {
     const msg = ev.data;
     if (!msg || typeof msg !== 'object') return;
-
-    // ── Parent sends a saved graph to load ──────────────────
-    if (msg.type === 'SIGA_LOAD_GRAPH') {
-      const { graph: g, popName, popKey } = msg.payload || {};
-      _sigaPopKey = popKey || null;
-
-      // Update topbar label
-      const titleEl = document.querySelector('.topbar h1');
-      if (titleEl && popName) titleEl.textContent = `Simulador — ${popName}`;
-
-      // Show / hide the "Salvar no SIGA" button
-      const saveBtn = $('btnSaveToSiga');
-      if (saveBtn) saveBtn.style.display = popKey ? 'inline-flex' : 'none';
-
-      if (g && g.nodes && g.edges) {
-        graph = normalizeGraph(g);
-        normalizeActorCodesInGraph();
-        $('graphJson').value = JSON.stringify(graph, null, 2);
-        refreshAll();
-        revealDashboard();
-      }
-      // Acknowledge readiness
-      ev.source?.postMessage({ type: 'SIMULATOR_READY', popKey }, globalThis.location.origin);
-      return;
-    }
-
-    // ── Parent requests current graph (e.g. before navigating away) ──
-    if (msg.type === 'SIGA_REQUEST_GRAPH') {
-      if (graph) {
-        ev.source?.postMessage(
-          { type: 'SIMULATOR_SAVE', payload: { graph: cloneLocal(graph), popKey: _sigaPopKey } },
-          globalThis.location.origin
-        );
-      }
-    }
-
-    // ── Parent envia lista de processos da Arquitetura ──────────
-    if (msg.type === 'SIGA_PROCESS_LIST') {
-      const { list } = msg.payload || {};
-      if (Array.isArray(list) && list.length) {
-        _sigaProcessList = list;
-        // Re-renderiza a Seção 0 se o modal estiver aberto
-        if (!$('setupModal')?.classList.contains('hidden')) {
-          renderSetupSection0();
-        }
-      }
-    }
+    _dispatchSimulatorMessage(ev, msg);
   } catch (e) {
-    /* erro nao-fatal — registra aviso */
     console.warn('[Simulator] message handler error:', e);
   }
 });
