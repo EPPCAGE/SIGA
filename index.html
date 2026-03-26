@@ -10533,12 +10533,6 @@ function patCheckDeadlines() {
 // ── Verificar prazos do Plano de Ação dos mapeamentos ───────────────────────
 function checkActionsDeadlines() {
   const today = new Date(); today.setHours(0,0,0,0);
-  const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
-
-  // Verificar se alertas já foram exibidos hoje
-  const lastAlertDate = localStorage.getItem('lastActionsDeadlineAlert');
-  const alertsAlreadyShownToday = lastAlertDate === todayStr;
-
   const in7   = new Date(today); in7.setDate(in7.getDate() + 7);
   const popKeys = ['d','r',...Object.keys(DATA).filter(k=>k.startsWith('pop_'))];
 
@@ -10571,12 +10565,6 @@ function checkActionsDeadlines() {
   // Banners de alerta apenas para editores e admins
   if(!isEditor && !isAdmin) return;
   if(!overdueActs.length && !soonActs.length) return;
-
-  // Não exibir alertas se já foram mostrados hoje
-  if(alertsAlreadyShownToday) return;
-
-  // Marcar que alertas foram exibidos hoje
-  localStorage.setItem('lastActionsDeadlineAlert', todayStr);
 
   // Banner de alertas de plano de ação
   let banner = document.getElementById('actions-deadline-banner');
