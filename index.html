@@ -10008,10 +10008,10 @@ function getAlertSubscribers(tipoAlerta) {
 }
 
 async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
-  if(!toEmail || !subject || !htmlBody) return false;
+  if (!toEmail || !subject || !htmlBody) return false;
   // Email sending not yet implemented — stub for future backend integration
   void toNome;
-  return false;
+  throw new Error('sendAlertEmail: envio de e-mail ainda não implementado (integração futura com backend)');
 }
 
 function _buildAlertHtml(tipo, popName, popKey, extra) {
@@ -10076,11 +10076,15 @@ async function checkMapeamentoMilestones() {
       const dataEfetivaFmt = efetiva.toLocaleDateString('pt-BR');
       for(const {nome, email} of subs) {
         const label = months === 6 ? '6 meses' : '12 meses';
-        await sendAlertEmail(
-          email, nome,
-          `[EPP/CAGE-RS] ${label} desde conclusão: ${popName}`,
-          _buildAlertHtml(tipo, popName, pk, {dataEfetiva: dataEfetivaFmt})
-        );
+        try {
+          await sendAlertEmail(
+            email, nome,
+            `[EPP/CAGE-RS] ${label} desde conclusão: ${popName}`,
+            _buildAlertHtml(tipo, popName, pk, {dataEfetiva: dataEfetivaFmt})
+          );
+        } catch(e) {
+          console.warn('[siga] sendAlertEmail (mapeamento):', e.message);
+        }
       }
       sent[alKey] = today.toISOString().slice(0,10);
       changed = true;
@@ -10116,15 +10120,19 @@ async function checkActionsDeadlinesEmail() {
           /* log suppressed */
           let enviado = false;
           for(const {nome, email} of subs) {
-            const ok = await sendAlertEmail(
-              email, nome,
-              `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
-              _buildAlertHtml('plano_acao_vencido', popName, pk, {
-                desc: act.desc, resp: act.resp,
-                prazo: d.toLocaleDateString('pt-BR'),
-              })
-            );
-            if(ok) enviado = true;
+            try {
+              const ok = await sendAlertEmail(
+                email, nome,
+                `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
+                _buildAlertHtml('plano_acao_vencido', popName, pk, {
+                  desc: act.desc, resp: act.resp,
+                  prazo: d.toLocaleDateString('pt-BR'),
+                })
+              );
+              if(ok) enviado = true;
+            } catch(e) {
+              console.warn('[siga] sendAlertEmail (ação vencida):', e.message);
+            }
           }
           if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
     /* alert log suppressed */
@@ -10137,15 +10145,19 @@ async function checkActionsDeadlinesEmail() {
           /* log suppressed */
           let enviado = false;
           for(const {nome, email} of subs) {
-            const ok = await sendAlertEmail(
-              email, nome,
-              `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
-              _buildAlertHtml('plano_acao_7d', popName, pk, {
-                desc: act.desc, resp: act.resp,
-                prazo: d.toLocaleDateString('pt-BR'), dias,
-              })
-            );
-            if(ok) enviado = true;
+            try {
+              const ok = await sendAlertEmail(
+                email, nome,
+                `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
+                _buildAlertHtml('plano_acao_7d', popName, pk, {
+                  desc: act.desc, resp: act.resp,
+                  prazo: d.toLocaleDateString('pt-BR'), dias,
+                })
+              );
+              if(ok) enviado = true;
+            } catch(e) {
+              console.warn('[siga] sendAlertEmail (ação 7d):', e.message);
+            }
           }
           if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
     /* alert log suppressed */
