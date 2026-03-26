@@ -7,6 +7,8 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: 3000
+      # Caminho dentro do container — mapeado para ./data no host via volume abaixo.
+      # Em desenvolvimento local (sem Docker): padrão é <raiz>/backups/local-data.json
       SIGA_DATA_FILE: /data/local-data.json
       SIGA_MAX_BODY_BYTES: 52428800
       # ── IA / Azure OpenAI (GPT-5.1) ──────────────────────────────────

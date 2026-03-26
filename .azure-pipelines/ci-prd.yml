@@ -46,12 +46,9 @@ stages:
           - script: npm ci
             displayName: "📥 npm ci"
 
-          - script: npm run test
-            displayName: "✅ Testes unitários"
-            continueOnError: false
-
+          # test:coverage já executa todos os testes E gera junit.xml (jest-junit) + coverage/
           - script: npm run test:coverage
-            displayName: "📊 Cobertura de código"
+            displayName: "✅ Testes unitários + cobertura"
             continueOnError: false
 
           - task: PublishTestResults@2
