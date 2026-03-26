@@ -25,10 +25,7 @@ const ALLOWED_ORIGINS = (process.env.SIGA_ALLOWED_ORIGIN
 
 function corsHeadersFor(req) {
   const origin = req.headers.origin || '';
-  const allowAny = ALLOWED_ORIGINS.includes('*');
-  const allowedOrigin = allowAny
-    ? '*'
-    : (ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
