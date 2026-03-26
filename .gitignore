@@ -1,5 +1,7 @@
 node_modules/
 .claude/
+.mcp.json
+.env
 coverage/
 junit.xml
 

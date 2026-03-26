@@ -13,7 +13,7 @@ trigger:
 pr: none                          # PRs para hml são tratados pelo pipeline de dev
 
 pool:
-  name: "sefaz-self-hosted"
+  vmImage: "ubuntu-latest"
 
 variables:
   - group: siga-hml-vars          # Grupo de variáveis HML (Azure DevOps Library)
@@ -47,11 +47,9 @@ stages:
           - script: npm ci
             displayName: "📥 npm ci"
 
-          - script: npm run test
-            displayName: "✅ Testes unitários"
-
+          # test:coverage já executa todos os testes E gera junit.xml (jest-junit) + coverage/
           - script: npm run test:coverage
-            displayName: "📊 Cobertura de código"
+            displayName: "✅ Testes unitários + cobertura"
 
           - task: PublishTestResults@2
             displayName: "📋 Publicar resultados"
@@ -109,7 +107,7 @@ stages:
               sourceFolder: "$(Pipeline.Workspace)/coverage-hml-$(Build.BuildId)"
               targetFolder: "$(System.DefaultWorkingDirectory)/coverage"
 
-          - task: SonarCloudPrepare@2
+          - task: SonarCloudPrepare@3
             displayName: "☁️ Preparar análise"
             inputs:
               SonarCloud: "sonarcloud-gesproc"
@@ -121,10 +119,10 @@ stages:
                 sonar.branch.name=$(Build.SourceBranchName)
                 sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
 
-          - task: SonarCloudAnalyze@2
+          - task: SonarCloudAnalyze@3
             displayName: "☁️ Executar scanner"
 
-          - task: SonarCloudPublish@2
+          - task: SonarCloudPublish@3
             displayName: "☁️ Publicar e verificar Quality Gate"
             inputs:
               pollingTimeoutSec: "300"
@@ -162,7 +160,7 @@ stages:
               targetType: "inline"
               script: |
                 Write-Host "=== npm audit (ambiente HML) ==="
-                npm audit --json | Out-File -Encoding utf8 npm-audit-report.json
+                npm audit --omit=dev --json | Out-File -Encoding utf8 npm-audit-report.json
                 $exitCode = $LASTEXITCODE
 
                 $audit = $null

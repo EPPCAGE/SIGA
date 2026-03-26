@@ -47,14 +47,14 @@ function allElements(doc) {
 function isTechnicalId(value) {
   const s = String(value || '').trim();
   if (!s) return false;
-  const normalized = s.replace(/[{}]/g, '');
+  const normalized = s.replaceAll(/[{}]/g, '');
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
     || /^[0-9a-f]{24,}$/i.test(s)
     || /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalized);
 }
 
 function normalizeLookupKey(value) {
-  return String(value || '').trim().replace(/[{}]/g, '').toLowerCase();
+  return String(value || '').trim().replaceAll(/[{}]/g, '').toLowerCase();
 }
 
 function participantDisplayName(participantEl, fallbackId) {
@@ -234,74 +234,52 @@ function applyMissingLayout(graph) {
   });
 }
 
-function parseBpmnXml(doc) {
-  const elements = allElements(doc);
+function _resolveNodeType(ln, mappedType, el) {
+  if (mappedType === 'timer_candidate') {
+    const childNames = Array.from(el.querySelectorAll('*')).map((c) => localNameOf(c));
+    return childNames.includes('timerEventDefinition') ? 'timer' : 'task';
+  }
+  if (mappedType === 'start') {
+    const childNames = Array.from(el.querySelectorAll('*')).map((c) => localNameOf(c));
+    if (childNames.includes('timerEventDefinition')) return 'timer';
+  }
+  return mappedType;
+}
+
+const _BPMN_TYPE_MAP = {
+  startEvent: 'start', endEvent: 'end',
+  exclusiveGateway: 'gateway', inclusiveGateway: 'gateway',
+  parallelGateway: 'gateway', eventBasedGateway: 'gateway', complexGateway: 'gateway',
+  intermediateCatchEvent: 'timer_candidate', intermediateThrowEvent: 'timer_candidate',
+  boundaryEvent: 'timer_candidate',
+};
+const _BPMN_TASK_TAGS = new Set(['task','userTask','manualTask','serviceTask','scriptTask',
+  'businessRuleTask','callActivity','subProcess','receiveTask','sendTask']);
+const _BPMN_AUTO_TAGS = new Set(['serviceTask','scriptTask','businessRuleTask']);
+
+function _parseBpmnNodes(elements) {
   const nodes = [];
   const nodeById = new Map();
-  const laneAliasById = new Map();
-
-  const typeMap = {
-    startEvent: 'start',
-    endEvent: 'end',
-    exclusiveGateway: 'gateway',
-    inclusiveGateway: 'gateway',
-    parallelGateway: 'gateway',
-    eventBasedGateway: 'gateway',
-    complexGateway: 'gateway',
-    intermediateCatchEvent: 'timer_candidate',
-    intermediateThrowEvent: 'timer_candidate',
-    boundaryEvent: 'timer_candidate',
-  };
-
   for (const el of elements) {
     const ln = localNameOf(el);
     const id = attrOf(el, ['id', 'Id', 'ID']);
     if (!id) continue;
-
-    const isTaskLike = ln === 'task'
-      || ln === 'userTask'
-      || ln === 'manualTask'
-      || ln === 'serviceTask'
-      || ln === 'scriptTask'
-      || ln === 'businessRuleTask'
-      || ln === 'callActivity'
-      || ln === 'subProcess'
-      || ln === 'receiveTask'
-      || ln === 'sendTask';
-
-    let mappedType = typeMap[ln] || (isTaskLike ? 'task' : '');
+    let mappedType = _BPMN_TYPE_MAP[ln] || (_BPMN_TASK_TAGS.has(ln) ? 'task' : '');
     if (!mappedType) continue;
-
-    // Resolver timer_candidate: e timer se tiver filho timerEventDefinition
-    if (mappedType === 'timer_candidate') {
-      const childNames = Array.from(el.querySelectorAll('*')).map((c) => localNameOf(c));
-      mappedType = childNames.includes('timerEventDefinition') ? 'timer' : 'task';
-    }
-
-    // startEvent com timerEventDefinition = timer de inicio (mantemos como start mas marcamos timer)
-    if (mappedType === 'start') {
-      const childNames = Array.from(el.querySelectorAll('*')).map((c) => localNameOf(c));
-      if (childNames.includes('timerEventDefinition')) mappedType = 'timer';
-    }
-
-    const label = attrOf(el, ['name', 'Name']) || id;
-    const automated = ln === 'serviceTask' || ln === 'scriptTask' || ln === 'businessRuleTask';
+    mappedType = _resolveNodeType(ln, mappedType, el);
     const node = {
-      id,
-      type: mappedType,
-      label,
-      x: null,
-      y: null,
-      lane: '',
-      executor: '',
-      sector: '',
-      org: '',
-      automated,
+      id, type: mappedType,
+      label: attrOf(el, ['name', 'Name']) || id,
+      x: null, y: null, lane: '', executor: '', sector: '', org: '',
+      automated: _BPMN_AUTO_TAGS.has(ln),
     };
     nodes.push(node);
     nodeById.set(id, node);
   }
+  return { nodes, nodeById };
+}
 
+function _parseBpmnEdges(elements) {
   const edges = [];
   for (const el of elements) {
     if (localNameOf(el) !== 'sequenceFlow') continue;
@@ -311,21 +289,22 @@ function parseBpmnXml(doc) {
     if (!from || !to) continue;
     edges.push({ id, from, to, probability: 100, isLoopReturn: false, isErrorPath: false });
   }
+  return edges;
+}
 
-  const laneEls = elements.filter((e) => localNameOf(e) === 'lane');
+function _buildBpmnLaneAlias(laneEls) {
+  const laneAliasById = new Map();
   let laneCounter = 0;
   for (const laneEl of laneEls) {
     const laneId = attrOf(laneEl, ['id', 'Id']);
-    const laneNameRaw = attrOf(laneEl, ['name', 'Name']) || laneId || '';
-    let laneName = laneNameRaw;
-    if (!laneName || isTechnicalId(laneName)) {
-      laneCounter += 1;
-      laneName = `Raia ${laneCounter}`;
-    }
+    let laneName = attrOf(laneEl, ['name', 'Name']) || laneId || '';
+    if (!laneName || isTechnicalId(laneName)) { laneCounter += 1; laneName = `Raia ${laneCounter}`; }
     if (laneId) laneAliasById.set(laneId, laneName);
   }
+  return laneAliasById;
+}
 
-  // Lane -> flow node refs mapping.
+function _applyBpmnLaneRefs(laneEls, nodeById, laneAliasById) {
   for (const laneEl of laneEls) {
     const laneId = attrOf(laneEl, ['id', 'Id']);
     const laneNameRaw = attrOf(laneEl, ['name', 'Name']) || laneId || '';
@@ -336,31 +315,36 @@ function parseBpmnXml(doc) {
       .filter(Boolean);
     for (const ref of refs) {
       const n = nodeById.get(ref);
-      if (!n) continue;
-      n.lane = laneName;
-      n.executor = laneName;
+      if (n) { n.lane = laneName; n.executor = laneName; }
     }
   }
+}
 
-  // BPMN DI coordinates.
+function _applyBpmnShapeCoords(nodeById, elements) {
   for (const shapeEl of elements.filter((e) => localNameOf(e) === 'BPMNShape')) {
-    const ref = attrOf(shapeEl, ['bpmnElement', 'BPMNElement']);
-    const node = nodeById.get(ref);
+    const node = nodeById.get(attrOf(shapeEl, ['bpmnElement', 'BPMNElement']));
     if (!node) continue;
-
     const bounds = Array.from(shapeEl.querySelectorAll('*')).find((e) => localNameOf(e) === 'Bounds');
     if (!bounds) continue;
-
     const x = Number(attrOf(bounds, ['x', 'X']));
     const y = Number(attrOf(bounds, ['y', 'Y']));
-    const w = Number(attrOf(bounds, ['width', 'Width'])) || 0;
-    const h = Number(attrOf(bounds, ['height', 'Height'])) || 0;
     if (Number.isFinite(x) && Number.isFinite(y)) {
-      node.x = x + (Number.isFinite(w) ? (w / 2) : 0);
-      node.y = y + (Number.isFinite(h) ? (h / 2) : 0);
+      const w = Number(attrOf(bounds, ['width', 'Width'])) || 0;
+      const h = Number(attrOf(bounds, ['height', 'Height'])) || 0;
+      node.x = x + w / 2;
+      node.y = y + h / 2;
     }
   }
+}
 
+function parseBpmnXml(doc) {
+  const elements = allElements(doc);
+  const { nodes, nodeById } = _parseBpmnNodes(elements);
+  const edges = _parseBpmnEdges(elements);
+  const laneEls = elements.filter((e) => localNameOf(e) === 'lane');
+  const laneAliasById = _buildBpmnLaneAlias(laneEls);
+  _applyBpmnLaneRefs(laneEls, nodeById, laneAliasById);
+  _applyBpmnShapeCoords(nodeById, elements);
   const graph = { nodes, edges };
   normalizeTechnicalActorLabels(nodes, 'Raia');
   inferStartEndByTopology(graph);
@@ -368,108 +352,103 @@ function parseBpmnXml(doc) {
   return graph;
 }
 
-function parseXpdlXml(doc) {
-  const elements = allElements(doc);
-  const participants = new Map();
-  const parentPoolActors = extractXpdlParentPoolActors(elements);
-
-  for (const a of parentPoolActors) {
-    if (a.id) {
-      participants.set(a.id, a.name);
-      participants.set(normalizeLookupKey(a.id), a.name);
+function _isXpdlTimerEvent(allChildren) {
+  return allChildren.some((c) => {
+    const ln = localNameOf(c);
+    if (ln === 'TimerEventDetail' || ln === 'TriggerTimer') return true;
+    if (ln === 'IntermediateEvent') {
+      const code = attrOf(c, ['EventTypeCode', 'eventTypeCode', 'Trigger', 'trigger', 'Type', 'type']) || '';
+      if (/timer/i.test(code)) return true;
+      if (Array.from(c.querySelectorAll('*')).some((gc) => localNameOf(gc) === 'TimerEventDetail')) return true;
     }
-  }
+    return false;
+  });
+}
 
+function _buildXpdlParticipants(elements, parentPoolActors) {
+  const participants = new Map();
+  for (const a of parentPoolActors) {
+    if (a.id) { participants.set(a.id, a.name); participants.set(normalizeLookupKey(a.id), a.name); }
+  }
   for (const el of elements.filter((e) => localNameOf(e) === 'Participant')) {
     const id = attrOf(el, ['Id', 'id', 'ID']);
     const name = participantDisplayName(el, id);
-    if (id) {
-      participants.set(id, name);
-      participants.set(normalizeLookupKey(id), name);
-    }
+    if (id) { participants.set(id, name); participants.set(normalizeLookupKey(id), name); }
   }
+  return participants;
+}
 
+function _resolveXpdlNodeType(allChildren) {
+  if (allChildren.some((c) => localNameOf(c) === 'Route')) return 'gateway';
+  if (allChildren.some((c) => localNameOf(c) === 'StartEvent')) return 'start';
+  if (allChildren.some((c) => localNameOf(c) === 'EndEvent')) return 'end';
+  if (_isXpdlTimerEvent(allChildren)) return 'timer';
+  return 'task';
+}
+
+function _resolveXpdlPerformer(el, participants) {
+  const performerId = textOfFirstChildByLocalName(el, 'Performer');
+  const laneRef = attrOf(el, ['Lane', 'LaneId', 'lane', 'laneId', 'Participant', 'participant']);
+  return participants.get(performerId)
+    || participants.get(normalizeLookupKey(performerId))
+    || participants.get(laneRef)
+    || participants.get(normalizeLookupKey(laneRef))
+    || '';
+}
+
+function _resolveXpdlCoords(el) {
+  const ngi = Array.from(el.querySelectorAll('*')).find((c) => localNameOf(c) === 'NodeGraphicsInfo');
+  if (!ngi) return null;
+  const coords = Array.from(ngi.querySelectorAll('*')).find((c) => localNameOf(c) === 'Coordinates');
+  if (!coords) return null;
+  const x = Number(attrOf(coords, ['XCoordinate', 'x', 'X']));
+  const y = Number(attrOf(coords, ['YCoordinate', 'y', 'Y']));
+  return (Number.isFinite(x) && Number.isFinite(y)) ? { x, y } : null;
+}
+
+function _parseXpdlActivities(elements, participants, parentPoolActors) {
   const nodes = [];
   const nodeById = new Map();
   for (const el of elements.filter((e) => localNameOf(e) === 'Activity')) {
     const id = attrOf(el, ['Id', 'id', 'ID']);
     if (!id) continue;
-    const label = attrOf(el, ['Name', 'name']) || id;
-
-    let type = 'task';
     const allChildren = Array.from(el.querySelectorAll('*'));
-    if (allChildren.some((c) => localNameOf(c) === 'Route')) type = 'gateway';
-    if (allChildren.some((c) => localNameOf(c) === 'StartEvent')) type = 'start';
-    if (allChildren.some((c) => localNameOf(c) === 'EndEvent')) type = 'end';
-
-    // Detectar Evento Timer: IntermediateEvent com EventTypeCode/Trigger="Timer", ou filho TimerEventDetail
-    const isTimerEvent = allChildren.some((c) => {
-      const ln = localNameOf(c);
-      if (ln === 'TimerEventDetail' || ln === 'TriggerTimer') return true;
-      if (ln === 'IntermediateEvent') {
-        const code = attrOf(c, ['EventTypeCode', 'eventTypeCode', 'Trigger', 'trigger', 'Type', 'type']) || '';
-        if (/timer/i.test(code)) return true;
-        // filho TimerEventDetail dentro do IntermediateEvent
-        if (Array.from(c.querySelectorAll('*')).some((gc) => localNameOf(gc) === 'TimerEventDetail')) return true;
-      }
-      return false;
-    });
-    if (isTimerEvent) type = 'timer';
-
-    const performerId = textOfFirstChildByLocalName(el, 'Performer');
-    const laneRef = attrOf(el, ['Lane', 'LaneId', 'lane', 'laneId', 'Participant', 'participant']);
-    const performerName = participants.get(performerId)
-      || participants.get(normalizeLookupKey(performerId))
-      || participants.get(laneRef)
-      || participants.get(normalizeLookupKey(laneRef))
-      || '';
-
+    const performerName = _resolveXpdlPerformer(el, participants);
+    const coords = _resolveXpdlCoords(el);
     const node = {
-      id,
-      type,
-      label,
-      x: null,
-      y: null,
-      lane: performerName,
-      executor: performerName,
-      sector: '',
-      org: '',
-      automated: false,
+      id, type: _resolveXpdlNodeType(allChildren),
+      label: attrOf(el, ['Name', 'name']) || id,
+      x: coords ? coords.x : null, y: coords ? coords.y : null,
+      lane: performerName, executor: performerName, sector: '', org: '', automated: false,
     };
-
-    const ngi = Array.from(el.querySelectorAll('*')).find((c) => localNameOf(c) === 'NodeGraphicsInfo');
-    const coords = ngi ? Array.from(ngi.querySelectorAll('*')).find((c) => localNameOf(c) === 'Coordinates') : null;
-    if (coords) {
-      const x = Number(attrOf(coords, ['XCoordinate', 'x', 'X']));
-      const y = Number(attrOf(coords, ['YCoordinate', 'y', 'Y']));
-      if (Number.isFinite(x) && Number.isFinite(y)) {
-        node.x = x;
-        node.y = y;
-      }
-    }
-
     if (!node.lane && !node.executor) {
       const inferredActor = resolveActorByLaneGeometry(node, parentPoolActors);
-      if (inferredActor) {
-        node.lane = inferredActor;
-        node.executor = inferredActor;
-      }
+      if (inferredActor) { node.lane = inferredActor; node.executor = inferredActor; }
     }
-
     nodes.push(node);
     nodeById.set(id, node);
   }
+  return { nodes, nodeById };
+}
 
+function _parseXpdlEdges(elements, nodeById) {
   const edges = [];
   for (const el of elements.filter((e) => localNameOf(e) === 'Transition')) {
     const id = attrOf(el, ['Id', 'id', 'ID']) || `e${edges.length + 1}`;
     const from = attrOf(el, ['From', 'from', 'Source', 'source']);
     const to = attrOf(el, ['To', 'to', 'Target', 'target']);
-    if (!from || !to) continue;
-    if (!nodeById.has(from) || !nodeById.has(to)) continue;
+    if (!from || !to || !nodeById.has(from) || !nodeById.has(to)) continue;
     edges.push({ id, from, to, probability: 100, isLoopReturn: false, isErrorPath: false });
   }
+  return edges;
+}
 
+function parseXpdlXml(doc) {
+  const elements = allElements(doc);
+  const parentPoolActors = extractXpdlParentPoolActors(elements);
+  const participants = _buildXpdlParticipants(elements, parentPoolActors);
+  const { nodes, nodeById } = _parseXpdlActivities(elements, participants, parentPoolActors);
+  const edges = _parseXpdlEdges(elements, nodeById);
   const graph = { nodes, edges };
   normalizeXpdlActorLabels(nodes, participants);
   normalizeTechnicalActorLabels(nodes, 'Ator');
@@ -542,6 +521,13 @@ function extractJson(text) {
   throw new Error('Resposta da IA nao veio em JSON valido para topologia BPMN.');
 }
 
+function _advanceStringState(ch, escaping) {
+  if (escaping) return { escaping: false, inString: true };
+  if (ch === '\\') return { escaping: true, inString: true };
+  if (ch === '"') return { escaping: false, inString: false };
+  return { escaping: false, inString: true };
+}
+
 function extractFirstObject(text) {
   const s = String(text || '');
   const start = s.indexOf('{');
@@ -554,27 +540,14 @@ function extractFirstObject(text) {
   for (let i = start; i < s.length; i += 1) {
     const ch = s[i];
     if (inString) {
-      if (escaping) {
-        escaping = false;
-      } else if (ch === '\\') {
-        escaping = true;
-      } else if (ch === '"') {
-        inString = false;
-      }
+      ({ escaping, inString } = _advanceStringState(ch, escaping));
       continue;
     }
-
-    if (ch === '"') {
-      inString = true;
-      continue;
-    }
-
-    if (ch === '{') depth += 1;
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{') { depth += 1; continue; }
     if (ch === '}') {
       depth -= 1;
-      if (depth === 0) {
-        return s.slice(start, i + 1);
-      }
+      if (depth === 0) return s.slice(start, i + 1);
     }
   }
 
@@ -587,16 +560,16 @@ function repairJsonLike(text) {
 
   // Normalize smart quotes.
   s = s
-    .replace(/[\u201C\u201D]/g, '"')
-    .replace(/[\u2018\u2019]/g, "'");
+    .replaceAll(/[\u201C\u201D]/g, '"')
+    .replaceAll(/[\u2018\u2019]/g, "'");
 
   // Remove JS comments.
   s = s
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|\s)\/\/.*$/gm, '$1');
+    .replaceAll(/\/\*[\s\S]*?\*\//g, '')
+    .replaceAll(/(^|\s)\/\/.*$/gm, '$1');
 
   // Remove trailing commas before } or ].
-  s = s.replace(/,\s*([}\]])/g, '$1');
+  s = s.replaceAll(/,\s*([}\]])/g, '$1');
 
   // If response has extra text, keep only first object.
   const first = extractFirstObject(s);
@@ -835,6 +808,42 @@ async function enrichActorsViaAi(endpoint, baseGraph, image) {
   return extractJson(text);
 }
 
+async function _attemptExtraction(endpoint, payload, base64, mimeType, retriedForQuota) {
+  const resp = await postWithTimeout(endpoint, payload, 45000);
+  const { raw, json } = await readResponseBodySafe(resp);
+  if (!resp.ok) {
+    const msg = resolveErrorMessage(resp.status, raw, json, 'Falha na extracao');
+    const retrySecs = parseRetryAfterSeconds(msg, raw, json);
+    if (!retriedForQuota && isQuotaOrRateLimitMessage(msg) && retrySecs > 0 && retrySecs <= 90) {
+      return { done: false, result: null, error: null, retryAfterMs: Math.ceil(retrySecs + 1) * 1000 };
+    }
+    throw new Error(msg);
+  }
+
+  const text = resolveAiText(raw, json);
+
+  let parsedText;
+  try {
+    parsedText = text;
+    extractJson(text);
+  } catch (parseErr) {
+    parsedText = await repairJsonViaAi(endpoint, text);
+  }
+
+  let graph = normalizeExtractedGraph(extractJson(parsedText));
+
+  if (needsActorEnrichment(graph)) {
+    try {
+      const actorPayload = await enrichActorsViaAi(endpoint, graph, { data: base64, mimeType });
+      graph = mergeActorData(graph, actorPayload);
+    } catch (e) {
+      // Optional enrichment should not block extraction flow.
+    }
+  }
+
+  return { done: true, result: { graph, rawText: parsedText, endpointUsed: endpoint }, error: null };
+}
+
 async function postWithTimeout(url, payload, timeoutMs = 30000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -874,51 +883,14 @@ export async function extractTopologyFromImage(file, aiEndpoint = '/api/ai') {
     let retriedForQuota = false;
     try {
       while (true) {
-        const resp = await postWithTimeout(endpoint, payload, 45000);
-        const { raw, json } = await readResponseBodySafe(resp);
-        if (!resp.ok) {
-          const msg = resolveErrorMessage(resp.status, raw, json, 'Falha na extracao');
-          const retrySecs = parseRetryAfterSeconds(msg, raw, json);
-
-          if (!retriedForQuota && isQuotaOrRateLimitMessage(msg) && retrySecs > 0 && retrySecs <= 90) {
-            retriedForQuota = true;
-            await sleep(Math.ceil(retrySecs + 1) * 1000);
-            continue;
-          }
-
-          throw new Error(msg);
+        const attempt = await _attemptExtraction(endpoint, payload, base64, mimeType, retriedForQuota);
+        if (attempt.retryAfterMs) {
+          retriedForQuota = true;
+          await sleep(attempt.retryAfterMs);
+          continue;
         }
-
-        const text = resolveAiText(raw, json);
-
-        try {
-          let graph = normalizeExtractedGraph(extractJson(text));
-
-          if (needsActorEnrichment(graph)) {
-            try {
-              const actorPayload = await enrichActorsViaAi(endpoint, graph, { data: base64, mimeType });
-              graph = mergeActorData(graph, actorPayload);
-            } catch (e) {
-              // Optional enrichment should not block extraction flow.
-            }
-          }
-
-          return { graph, rawText: text, endpointUsed: endpoint, imageDataUrl: dataUrl };
-        } catch (parseErr) {
-          // Second pass: ask the model to repair its own malformed JSON.
-          const repairedText = await repairJsonViaAi(endpoint, text);
-          let graph = normalizeExtractedGraph(extractJson(repairedText));
-
-          if (needsActorEnrichment(graph)) {
-            try {
-              const actorPayload = await enrichActorsViaAi(endpoint, graph, { data: base64, mimeType });
-              graph = mergeActorData(graph, actorPayload);
-            } catch (e) {
-              // Optional enrichment should not block extraction flow.
-            }
-          }
-
-          return { graph, rawText: repairedText, endpointUsed: endpoint, imageDataUrl: dataUrl };
+        if (attempt.done) {
+          return { ...attempt.result, imageDataUrl: dataUrl };
         }
       }
     } catch (e) {
