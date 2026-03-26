@@ -34,11 +34,8 @@ export function scanSuggestions(graph) {
 export function markAutomation(graph, nodeId, automated = true) {
   const next = structuredClone(graph);
   const node = next.nodes.find((n) => n.id === nodeId);
-  if (node) {
-    node.automated = Boolean(automated);
-    return next;
-  }
-  return undefined;
+  if (node) node.automated = Boolean(automated);
+  return next;
 }
 
 export function setLoopProbability(graph, taskNodeId, probabilityReturn = 30) {
