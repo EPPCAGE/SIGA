@@ -1,7 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -230,16 +230,32 @@ function inferNodeTypeFromPhrase(text) {
   return 'task';
 }
 
-function parseXlsxTopology(base64Data) {
+async function parseXlsxTopology(base64Data) {
   const buf = Buffer.from(String(base64Data || ''), 'base64');
   if (!buf.length) throw new Error('Arquivo XLSX vazio ou invalido.');
 
-  const wb = XLSX.read(buf, { type: 'buffer' });
-  const sheetName = wb.SheetNames[0];
-  if (!sheetName) throw new Error('Planilha sem abas.');
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buf);
 
-  const ws = wb.Sheets[sheetName];
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+  const ws = workbook.worksheets[0];
+  if (!ws) throw new Error('Planilha sem abas.');
+  const sheetName = ws.name;
+
+  // Converte para array de arrays (equivalente a sheet_to_json com header:1, raw:false, defval:'')
+  const rows = [];
+  ws.eachRow({ includeEmpty: false }, (row) => {
+    const maxCol = row.cellCount;
+    const arr = [];
+    for (let c = 1; c <= maxCol; c++) {
+      const cell = row.getCell(c);
+      const v = cell.value;
+      if (v === null || v === undefined) { arr.push(''); continue; }
+      if (typeof v === 'object' && v.richText) { arr.push(v.richText.map((r) => r.text).join('')); continue; }
+      if (typeof v === 'object' && v.result !== undefined) { arr.push(String(v.result)); continue; }
+      arr.push(String(v));
+    }
+    rows.push(arr);
+  });
   if (!rows.length) throw new Error('Planilha sem dados.');
 
   const headerIdx = findHeaderIndex(rows);
@@ -734,7 +750,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      const parsedGraph = parseXlsxTopology(data);
+      const parsedGraph = await parseXlsxTopology(data);
       sendJson(req, res, 200, {
         ok: true,
         graph: { nodes: parsedGraph.nodes, edges: parsedGraph.edges },
@@ -755,7 +771,19 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+// Verifica dependências opcionais no startup para evitar falhas silenciosas em runtime.
+function checkOptionalDeps() {
+  const missing = [];
+  try { require('mammoth'); } catch (_) { missing.push('mammoth (DOCX parser)'); }
+  try { require('exceljs'); } catch (_) { missing.push('exceljs (XLSX parser)'); }
+  if (missing.length) {
+    console.warn(`[siga-local-backend] AVISO: dependencias ausentes — execute "npm install":`);
+    for (const dep of missing) console.warn(`  • ${dep}`);
+  }
+}
+
 server.listen(PORT, HOST, () => {
   console.log(`[siga-local-backend] running at http://${HOST}:${PORT}`);
   console.log(`[siga-local-backend] data file: ${DATA_FILE}`);
+  checkOptionalDeps();
 });

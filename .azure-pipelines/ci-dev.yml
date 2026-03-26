@@ -57,12 +57,9 @@ stages:
               NODE_AUTH_TOKEN: $(NPM_TOKEN)
 
           # ── Testes ──
-          - script: npm run test
-            displayName: "✅ Executar testes unitários"
-            continueOnError: false
-
+          # test:coverage já executa todos os testes E gera junit.xml (jest-junit) + coverage/
           - script: npm run test:coverage
-            displayName: "📊 Executar testes com cobertura"
+            displayName: "✅ Testes unitários + cobertura"
             continueOnError: false
 
           - task: PublishTestResults@2
