@@ -4559,56 +4559,52 @@ function saveToStorage() {
 
 function loadFromStorage() { return false; } // dados vêm exclusivamente do Supabase
 
+// ── harvestEditables — lookup tables e helpers (evita if/else-if longas) ──────
+const _META_FIELD_MAP = {
+  obj:'desc', proc_desc:'desc', entrada_resumo:'input', proc_input:'input',
+  saida_resumo:'output', proc_output:'output', el_nome:'elaborado',
+  proc_elaborado:'elaborado', proc_revisado:'revisado', proc_name:'name', proc_macro:'macro',
+};
+const _STEP_DIRECT_FIELDS = new Set([
+  'title','subtitle','responsible','note','duracao',
+  'sistemas','documentos','pontosMelhoria','observacoes',
+]);
+function _applyRoleField(roles, rMatch, val) {
+  const ri = parseInt(rMatch[1]), type = rMatch[2], di = parseInt(rMatch[3]);
+  if(!roles[ri]) return;
+  if(type === 'n') roles[ri].name = val;
+  else if(type === 't') roles[ri].title = val;
+  else if(type === 'd' && !isNaN(di)) roles[ri].duties[di] = val;
+}
+
 function harvestEditables() {
   // Read contenteditable fields back into DATA
   document.querySelectorAll('[data-key]').forEach(el => {
     const [p, field] = el.dataset.key.split(':');
     if(!p || !field || !DATA[p]) return;
     const val = el.innerText?.trim() || el.textContent?.trim() || '';
-    // Map known fields to DATA structure
     const meta = DATA[p].meta || (DATA[p].meta = {});
-    if(field === 'obj' || field === 'proc_desc') meta.desc = val;
-    else if(field === 'entrada_resumo' || field === 'proc_input') meta.input = val;
-    else if(field === 'saida_resumo' || field === 'proc_output') meta.output = val;
-    else if(field === 'el_nome' || field === 'proc_elaborado') meta.elaborado = val;
-    else if(field === 'proc_revisado') meta.revisado = val;
-    else if(field === 'proc_name') meta.name = val;
-    else if(field === 'proc_macro') meta.macro = val;
-    // Roles
+    if(_META_FIELD_MAP[field]) meta[_META_FIELD_MAP[field]] = val;
     const rMatch = field.match(/^r(\d+)([ntd])(\d*)$/);
-    if(rMatch && DATA[p].roles) {
-      const ri = parseInt(rMatch[1]), type = rMatch[2], di = parseInt(rMatch[3]);
-      if(DATA[p].roles[ri]) {
-        if(type === 'n') DATA[p].roles[ri].name = val;
-        else if(type === 't') DATA[p].roles[ri].title = val;
-        else if(type === 'd' && !isNaN(di)) DATA[p].roles[ri].duties[di] = val;
-      }
-    }
+    if(rMatch && DATA[p].roles) _applyRoleField(DATA[p].roles, rMatch, val);
   });
 
   // Capturar campos de etapas (data-sf) que são persistidos via blur events
   document.querySelectorAll('[data-sf]').forEach(el => {
-    const pp = el.dataset.sp;
-    const si = parseInt(el.dataset.si);
-    const sf = el.dataset.sf;
+    const pp = el.dataset.sp, si = parseInt(el.dataset.si), sf = el.dataset.sf;
     if(!pp || isNaN(si) || !sf || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
     const val = el.innerText?.replace(/^👤\s*/, '').trim() || '';
     const step = DATA[pp].steps[si];
     if(sf.startsWith('tobe_')) {
       if(!step.tobe) step.tobe = {};
       step.tobe[sf.slice(5)] = val;
+    } else if(_STEP_DIRECT_FIELDS.has(sf)) {
+      step[sf] = val;
+    } else if(sf === 'dlabel' && step.decision) {
+      step.decision.label = val;
+    } else if(sf === 'dtext' && step.decision) {
+      step.decision.text = val;
     }
-    else if(sf === 'title')       step.title = val;
-    else if(sf === 'subtitle')    step.subtitle = val;
-    else if(sf === 'responsible') step.responsible = val;
-    else if(sf === 'note')        step.note = val;
-    else if(sf === 'duracao')         step.duracao = val;
-    else if(sf === 'sistemas')        step.sistemas = val;
-    else if(sf === 'documentos')      step.documentos = val;
-    else if(sf === 'pontosMelhoria')  step.pontosMelhoria = val;
-    else if(sf === 'observacoes')     step.observacoes = val;
-    else if(sf === 'dlabel' && step.decision) step.decision.label = val;
-    else if(sf === 'dtext'  && step.decision) step.decision.text  = val;
   });
 
   // Capturar métricas de volume/ciclo
@@ -4721,26 +4717,45 @@ function popDomId(pop) {
   return pop;
 }
 
-function switchPop(pop, tabEl) {
-  _navPush();
-  // Esconder galeria se estiver ativa
-  const gal = document.getElementById('pop-gallery-panel');
-  if(gal) gal.classList.remove('active');
-  // Se estava visualizando versão antiga do pop anterior, restaurar versão atual antes de trocar
+// ── switchPop helpers ─────────────────────────────────────────────────────────
+/** Restaura a versão atual do pop anterior caso estivesse em modo de visualização histórica. */
+function _restorePrevPopVersion() {
   try {
     const prevPrefix = popPrefix(currentPop);
     const prevD = DATA[prevPrefix];
-    if(prevD && prevD._viewingVersion) {
-      const curSnap = prevD._viewBuf;
-      if(curSnap) { VERSIONABLE_FIELDS.forEach(f => { if(curSnap[f] !== undefined) prevD[f] = curSnap[f]; }); delete prevD._viewBuf; }
-      delete prevD._viewingVersion;
-      renderVersionBadge(prevPrefix);
+    if(!prevD || !prevD._viewingVersion) return;
+    const curSnap = prevD._viewBuf;
+    if(curSnap) {
+      VERSIONABLE_FIELDS.forEach(f => { if(curSnap[f] !== undefined) prevD[f] = curSnap[f]; });
+      delete prevD._viewBuf;
     }
+    delete prevD._viewingVersion;
+    renderVersionBadge(prevPrefix);
   } catch(e) { console.warn('[siga]', e); }
+}
+
+/** Dispara todos os renders necessários após a troca de pop. */
+function _renderAfterSwitch(prefix) {
+  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
+  if(currentSection === 'maturidade') try { matRender(prefix); } catch(e) { console.warn('[siga]', e); }
+  _syncNovaVersaoBtn();
+  try { renderFicha(prefix); }       catch(e) { console.warn('[siga]', e); }
+  try { renderSipoc(prefix); }       catch(e) { console.warn('[siga]', e); }
+  try { renderFlowPreview(prefix); } catch(e) { console.warn('[siga]', e); }
+}
+
+function switchPop(pop, tabEl) {
+  _navPush();
+  _restorePrevPopVersion();
+
   const key    = popKey(pop);
   const domId  = popDomId(pop);
   const prefix = popPrefix(pop);
   currentPop = key;
+
+  // Esconder galeria se estiver ativa
+  const gal = document.getElementById('pop-gallery-panel');
+  if(gal) gal.classList.remove('active');
 
   // Garantir que nav-tabs e barra de processo fiquem visíveis ao entrar num POP
   const _navTabs = document.querySelector('.nav-tabs');
@@ -4762,7 +4777,7 @@ function switchPop(pop, tabEl) {
   const target = document.getElementById(prefix + '-visao-geral');
   if(target) target.classList.add('active');
 
-  // Close BI / PAT modules when switching pops
+  // Fechar módulos BI / PAT ao trocar de POP
   const _biMod = document.getElementById('bi-module');
   if(_biMod) _biMod.style.display = 'none';
   const _patMod = document.getElementById('pat-module');
@@ -4772,16 +4787,11 @@ function switchPop(pop, tabEl) {
   const labelEl = document.getElementById('current-pop-label');
   if(labelEl) {
     const names = { d:'Tratar Denuncias', r:'Tratar Representacoes' };
-    labelEl.textContent = names[key] || (DATA[key] && DATA[key].meta && DATA[key].meta.name) || key;
+    labelEl.textContent = names[key] || DATA[key]?.meta?.name || key;
   }
 
   if(editMode) enableEditables(true);
-  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
-  if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { console.warn('[siga]', e); }
-  _syncNovaVersaoBtn();
-  try { renderFicha(prefix); }       catch(e) { console.warn('[siga]', e); }
-  try { renderSipoc(prefix); }       catch(e) { console.warn('[siga]', e); }
-  try { renderFlowPreview(prefix); } catch(e) { console.warn('[siga]', e); }
+  _renderAfterSwitch(prefix);
 }
 
 // ═══ NAV ══════════════════════════════════════
