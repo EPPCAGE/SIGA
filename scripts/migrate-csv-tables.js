@@ -1,54 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-
-function getArg(name, fallback = undefined) {
-  const token = process.argv.find((arg) => arg.startsWith(`--${name}=`));
-  if (!token) return fallback;
-  return token.slice(name.length + 3);
-}
-
-function parseCsvRecord(record, delimiter = ',') {
-  const fields = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < record.length; i += 1) {
-    const ch = record[i];
-
-    if (ch === '"') {
-      if (inQuotes && record[i + 1] === '"') {
-        current += '"';
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-
-    if (ch === delimiter && !inQuotes) {
-      fields.push(current);
-      current = '';
-      continue;
-    }
-
-    current += ch;
-  }
-
-  fields.push(current);
-  return fields;
-}
-
-function ensureDir(filePath) {
-  const dir = path.dirname(filePath);
-  fs.mkdirSync(dir, { recursive: true });
-}
-
-function writeJsonAtomic(filePath, payload) {
-  ensureDir(filePath);
-  const tempPath = `${filePath}.tmp`;
-  fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
-  fs.renameSync(tempPath, filePath);
-}
+const { getArg, parseCsvRecord, ensureDir, writeJsonAtomic } = require('./utils');
 
 function normalizeValue(header, raw) {
   if (raw == null) return null;

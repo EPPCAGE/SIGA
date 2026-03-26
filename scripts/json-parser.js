@@ -71,7 +71,11 @@ function parseAiJson(text) {
     // Keep trying with truncation repair below.
   }
 
-  return JSON.parse(truncateRepairJson(clean));
+  try {
+    return JSON.parse(truncateRepairJson(clean));
+  } catch (e) {
+    throw new Error(`Falha em todos os mecanismos de reparo JSON: ${e.message}`);
+  }
 }
 
 module.exports = {

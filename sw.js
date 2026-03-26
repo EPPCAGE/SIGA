@@ -28,10 +28,11 @@ self.addEventListener('fetch', event => {
 
   event.respondWith(
     fetch(event.request)
-      .then(response => {
+      .then(async response => {
         // Guarda cópia fresca no cache para uso offline
         const clone = response.clone();
-        caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
+        const cache = await caches.open(CACHE_VERSION);
+        await cache.put(event.request, clone);
         return response;
       })
       .catch(() => {
