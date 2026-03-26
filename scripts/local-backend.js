@@ -425,7 +425,10 @@ async function callGithubModels(parsed) {
     })
   });
 
-  const aiData = await aiResp.json().catch(() => ({}));
+  const aiData = await aiResp.json().catch((err) => {
+    console.warn('Falha ao parsear resposta IA (primeira chamada):', err.message);
+    return {};
+  });
   if (!aiResp.ok) {
     const err = new Error(aiData?.error?.message || 'Erro na API de IA (GitHub Models)');
     err.statusCode = aiResp.status;
@@ -547,7 +550,10 @@ async function callAzureOpenAI(parsed) {
     })
   });
 
-  const aiData = await aiResp.json().catch(() => ({}));
+  const aiData = await aiResp.json().catch((err) => {
+    console.warn('Falha ao parsear resposta IA (segunda chamada):', err.message);
+    return {};
+  });
   if (!aiResp.ok) {
     const err = new Error(aiData?.error?.message || 'Erro na API Azure OpenAI');
     err.statusCode = aiResp.status;
