@@ -29,7 +29,9 @@ function _updateBracketStack(c, stack) {
 
 function truncateRepairJson(str) {
   let s = repairJsonString(str);
-  s = s.replaceAll(/,\s*([}\]])/g, '$1');
+  // Remove trailing commas antes de } ou ] iterativamente (uma passagem pode deixar ",," → ",]")
+  let prev;
+  do { prev = s; s = s.replace(/,\s*([}\]])/g, '$1'); } while (s !== prev);
 
   const stack = [];
   let inString = false;
