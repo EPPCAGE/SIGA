@@ -1,21 +1,19 @@
 :root {
-  /* ── Tema escuro — alinhado à paleta SIGA ──
-     Fundo: Verde Profundo (#1B3022) como base dark
-     CTAs:  Azul Royal (#003366)
-     Texto: Off-White (#F5F5F5 / #f2f6fb)
-     Apoio: Cinza Chumbo (#2F4F4F) adaptado para fundo escuro
+  /* ── Design System SIGA/SEFAZ-RS — Tema Escuro ──
+     Nova Paleta: Header#1F3D3B, Primary#3C6E71, Accent#D97706
+     Adaptada para interfaz escura do simulador
   */
-  --bg0: #0e1a10;        /* Verde Profundo escuríssimo */
-  --bg1: #1B3022;        /* Verde Profundo — painéis */
+  --bg0: #0e1a10;        /* Fundo escuríssimo */
+  --bg1: #1F3D3B;        /* Header/Estrutura — novo design system */
   --ink: #f2f6fb;        /* Off-white — texto principal */
-  --muted: #9fb8b0;      /* Cinza Chumbo claro adaptado */
+  --muted: #9fb8b0;      /* Cinza de apoio */
   --line: rgba(180, 210, 190, 0.22);
   --card: #ffffff;
-  --primary:   #003366;  /* Azul Royal — CTAs */
-  --primary-2: #002855;  /* Azul Royal escuro — hover */
-  --ok:   #3f6f4a;
-  --warn: #8a6d3b;
-  --err:  #8f3d3a;
+  --primary:   #D97706;  /* Accent — CTAs e ações principais */
+  --primary-2: #B45309;  /* Accent hover — novo design system */
+  --ok:   #10B981;       /* Success — novo design system */
+  --warn: #F59E0B;       /* Warning — novo design system */
+  --err:  #EF4444;       /* Error — novo design system */
   --shadow: 0 18px 42px rgba(10, 25, 12, 0.40);
 }
 
@@ -87,10 +85,6 @@ body {
   display: block;
 }
 
-#simCanvas {
-  display: block;
-  width: 100%;
-}
 
 /* Live simulation overlay panel */
 .sim-live-panel {
@@ -241,6 +235,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 }
 
 #simCanvas {
+  display: block;
   width: 100%;
   height: 520px;
   border: 1px solid rgba(180, 201, 226, 0.45);
@@ -1499,10 +1494,13 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   background: #ffffff !important;
 }
 
-/* Palete de ferramentas */
+/* Palete de ferramentas — sem corte embaixo */
 .bpmn-container .djs-palette {
   background: #f0f4f8 !important;
   border-right: 2px solid #1a4070 !important;
+  max-height: calc(100% - 8px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 .bpmn-container .djs-palette .entry:hover {
   background: #dde8f5 !important;
@@ -1516,12 +1514,21 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   stroke-width: 2.5px !important;
 }
 
-/* Eventos (círculos) */
+/* Eventos de início e intermediários (círculos com stroke-width != 6) */
 .bpmn-container .djs-visual circle,
 .bpmn-container .djs-visual ellipse {
   fill: #e8f4e8 !important;     /* verde-claro para eventos */
   stroke: #1a5030 !important;
   stroke-width: 2.5px !important;
+}
+
+/* Evento de fim: bpmn-js renderiza com stroke-width="6" — cor vermelha */
+.bpmn-container .djs-visual circle[stroke-width="6"],
+.bpmn-container .djs-visual circle[style*="stroke-width: 6"],
+.bpmn-container .djs-visual circle[style*="stroke-width:6"] {
+  fill: #fee2e2 !important;
+  stroke: #dc2626 !important;
+  stroke-width: 4px !important;
 }
 
 /* Gateways (losangos) */
@@ -1546,6 +1553,61 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   fill: #000000 !important;
   font-weight: 700 !important;
   font-size: 13px !important;
+}
+
+/* ── EDIÇÃO DIRETA: fonte preta no input de texto ──
+   bpmn-js cria um div contenteditable sobreposto ao elemento */
+.djs-direct-editing-parent {
+  color: #000000 !important;
+  caret-color: #000000 !important;
+}
+.djs-direct-editing-parent > div,
+.djs-direct-editing-parent [contenteditable] {
+  color: #000000 !important;
+  caret-color: #000000 !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-radius: 3px !important;
+}
+
+/* ── CONTEXT PAD (ações ao selecionar elemento) ──
+   Botões de ação ficam visíveis com fundo branco e ícones escuros */
+.djs-context-pad {
+  background: transparent !important;
+}
+.djs-context-pad .entry {
+  background: #ffffff !important;
+  border: 1.5px solid #93c5fd !important;
+  border-radius: 4px !important;
+  color: #1e3a5f !important;
+  opacity: 1 !important;
+}
+.djs-context-pad .entry:hover {
+  background: #dde8f5 !important;
+  border-color: #2563eb !important;
+}
+/* Ícones do context pad (font bpmn) */
+.djs-context-pad .entry::before {
+  color: #1e3a5f !important;
+}
+
+/* ── POPUP DE SUBSTITUIÇÃO/ADIÇÃO DE ELEMENTO ──
+   Aparece ao clicar em "Mudar tipo" no context pad */
+.djs-popup {
+  background: #ffffff !important;
+  border: 1.5px solid #93c5fd !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15) !important;
+  color: #1e3a5f !important;
+}
+.djs-popup .entry {
+  color: #1e3a5f !important;
+  background: #ffffff !important;
+}
+.djs-popup .entry:hover {
+  background: #dde8f5 !important;
+}
+.djs-popup .entry::before {
+  color: #1e3a5f !important;
 }
 
 /* Setas de sequência */

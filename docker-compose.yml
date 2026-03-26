@@ -11,13 +11,16 @@ services:
       # Em desenvolvimento local (sem Docker): padrão é <raiz>/backups/local-data.json
       SIGA_DATA_FILE: /data/local-data.json
       SIGA_MAX_BODY_BYTES: 52428800
-      # ── IA / GitHub Copilot ──────────────────────────────────────────
-      # Gere um PAT em https://github.com/settings/tokens com escopo model:read
-      # (ou use um token de Organization do GitHub Copilot).
-      # Descomente e preencha para habilitar os recursos de IA no sistema.
-      # SIGA_AI_TOKEN: ghp_xxxxxxxxxxxxxxxxxxxx
-      # SIGA_AI_MODEL: openai/gpt-4.1-mini          # modelo padrao
-      # SIGA_AI_API_URL: https://models.github.ai/inference/chat/completions
+      # ── IA / Azure OpenAI (GPT-5.1) ──────────────────────────────────
+      # Defina as variáveis abaixo no arquivo .env do servidor (nunca aqui).
+      # O Docker Compose lê o .env automaticamente.
+      SIGA_AI_PROVIDER: ${SIGA_AI_PROVIDER:-azure}
+      SIGA_AZURE_ENDPOINT: ${SIGA_AZURE_ENDPOINT:-https://projeto-gesproc-cage.cognitiveservices.azure.com}
+      SIGA_AZURE_DEPLOYMENT: ${SIGA_AZURE_DEPLOYMENT:-gpt-5.1-chat}
+      SIGA_AZURE_API_VERSION: ${SIGA_AZURE_API_VERSION:-2024-12-01-preview}
+      SIGA_AZURE_API_KEY: ${SIGA_AZURE_API_KEY}
+      # ── IA / GitHub Copilot (fallback) ───────────────────────────────
+      # SIGA_AI_TOKEN: ${SIGA_AI_TOKEN}
     volumes:
       - ./data:/data
     restart: unless-stopped

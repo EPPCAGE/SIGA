@@ -32,14 +32,14 @@ export function scanSuggestions(graph) {
 }
 
 export function markAutomation(graph, nodeId, automated = true) {
-  const next = JSON.parse(JSON.stringify(graph));
+  const next = structuredClone(graph);
   const node = next.nodes.find((n) => n.id === nodeId);
   if (node) node.automated = Boolean(automated);
   return next;
 }
 
 export function setLoopProbability(graph, taskNodeId, probabilityReturn = 30) {
-  const next = JSON.parse(JSON.stringify(graph));
+  const next = structuredClone(graph);
   const edgesFromTask = next.edges.filter((e) => e.from === taskNodeId);
   if (!edgesFromTask.length) return next;
 

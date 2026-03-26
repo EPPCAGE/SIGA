@@ -107,7 +107,7 @@ stages:
               sourceFolder: "$(Pipeline.Workspace)/coverage-hml-$(Build.BuildId)"
               targetFolder: "$(System.DefaultWorkingDirectory)/coverage"
 
-          - task: SonarCloudPrepare@2
+          - task: SonarCloudPrepare@3
             displayName: "☁️ Preparar análise"
             inputs:
               SonarCloud: "sonarcloud-gesproc"
@@ -119,10 +119,10 @@ stages:
                 sonar.branch.name=$(Build.SourceBranchName)
                 sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
 
-          - task: SonarCloudAnalyze@2
+          - task: SonarCloudAnalyze@3
             displayName: "☁️ Executar scanner"
 
-          - task: SonarCloudPublish@2
+          - task: SonarCloudPublish@3
             displayName: "☁️ Publicar e verificar Quality Gate"
             inputs:
               pollingTimeoutSec: "300"
@@ -160,7 +160,7 @@ stages:
               targetType: "inline"
               script: |
                 Write-Host "=== npm audit (ambiente HML) ==="
-                npm audit --json | Out-File -Encoding utf8 npm-audit-report.json
+                npm audit --omit=dev --json | Out-File -Encoding utf8 npm-audit-report.json
                 $exitCode = $LASTEXITCODE
 
                 $audit = $null

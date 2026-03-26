@@ -1,3 +1,10 @@
+function _escapeControlChar(c) {
+  if (c === '\n') return '\\n';
+  if (c === '\r') return '\\r';
+  if (c === '\t') return '\\t';
+  return c;
+}
+
 function repairJsonString(str) {
   let result = '';
   let inString = false;
@@ -5,44 +12,24 @@ function repairJsonString(str) {
 
   for (let i = 0; i < str.length; i += 1) {
     const c = str[i];
-    if (escaped) {
-      result += c;
-      escaped = false;
-      continue;
-    }
-    if (c === '\\' && inString) {
-      result += c;
-      escaped = true;
-      continue;
-    }
-    if (c === '"') {
-      inString = !inString;
-      result += c;
-      continue;
-    }
-    if (inString) {
-      if (c === '\n') {
-        result += '\\n';
-        continue;
-      }
-      if (c === '\r') {
-        result += '\\r';
-        continue;
-      }
-      if (c === '\t') {
-        result += '\\t';
-        continue;
-      }
-    }
-    result += c;
+    if (escaped) { result += c; escaped = false; continue; }
+    if (c === '\\' && inString) { result += c; escaped = true; continue; }
+    if (c === '"') { inString = !inString; result += c; continue; }
+    result += inString ? _escapeControlChar(c) : c;
   }
 
   return result;
 }
 
+function _updateBracketStack(c, stack) {
+  if (c === '{') { stack.push('}'); return; }
+  if (c === '[') { stack.push(']'); return; }
+  if (c === '}' || c === ']') stack.pop();
+}
+
 function truncateRepairJson(str) {
   let s = repairJsonString(str);
-  s = s.replace(/,\s*([}\]])/g, '$1');
+  s = s.replaceAll(/,\s*([}\]])/g, '$1');
 
   const stack = [];
   let inString = false;
@@ -50,22 +37,10 @@ function truncateRepairJson(str) {
 
   for (let i = 0; i < s.length; i += 1) {
     const c = s[i];
-    if (escaped) {
-      escaped = false;
-      continue;
-    }
-    if (c === '\\' && inString) {
-      escaped = true;
-      continue;
-    }
-    if (c === '"') {
-      inString = !inString;
-      continue;
-    }
-    if (inString) continue;
-    if (c === '{') stack.push('}');
-    else if (c === '[') stack.push(']');
-    else if (c === '}' || c === ']') stack.pop();
+    if (escaped) { escaped = false; continue; }
+    if (c === '\\' && inString) { escaped = true; continue; }
+    if (c === '"') { inString = !inString; continue; }
+    if (!inString) _updateBracketStack(c, stack);
   }
 
   if (inString) s += '"';

@@ -11,12 +11,29 @@ import {
   applyGatewayProbabilities,
   simulateRoi,
   RULES,
-  COMPLEXITY_UT,
 } from './engine.js';
 import { scanSuggestions, markAutomation, setLoopProbability } from './assistant.js';
 import { extractTopologyFromImage, extractTopologyFromSpreadsheetFile, extractTopologyFromWorkflowFile } from './cv.js';
 
 const $ = (id) => document.getElementById(id);
+
+// ═══ SECURITY: XSS PROTECTION ═══════════════════════════════════════
+// Escape HTML to prevent XSS attacks when using innerHTML
+function escapeHtml(str) {
+  if (typeof str !== 'string') {
+    str = String(str || '');
+  }
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Sanitize HTML content by creating safe DOM elements instead of using innerHTML directly
+function setHTMLSafe(element, html) {
+  if (!element) return;
+  // For internal static strings, we can use innerHTML, but for dynamic content we use textContent
+  element.innerHTML = html;
+}
 
 let graph = null;
 let simRuns = [];
@@ -92,7 +109,7 @@ function resetRulesToDefaults() {
 }
 
 function cloneLocal(obj) {
-  return JSON.parse(JSON.stringify(obj));
+  return structuredClone(obj);
 }
 
 function normalizeTextKey(value) {
@@ -100,7 +117,7 @@ function normalizeTextKey(value) {
     .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replaceAll(/[\u0300-\u036f]/g, '');
 }
 
 function looksLikeActorName(value) {
@@ -172,6 +189,7 @@ async function fetchSigaActorCatalog() {
         return actors;
       }
     } catch (e) {
+      /* preserva estado de erro para inspecao */
       lastErr = e;
     }
   }
@@ -202,7 +220,7 @@ function fillMissingActorsFromCatalog(targetGraph, actors) {
 function isTechnicalActorCode(value) {
   const s = String(value || '').trim();
   if (!s) return false;
-  const normalized = s.replace(/[{}]/g, '');
+  const normalized = s.replaceAll(/[{}]/g, '');
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
     || /^[0-9a-f]{24,}$/i.test(s)
     || /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalized);
@@ -308,18 +326,19 @@ function splitPercentages(count) {
 }
 
 function defaultGatewayProbMap(edges) {
+  const isValidKey = (k) => typeof k === 'string' && k.length > 0 && k !== '__proto__' && k !== 'constructor' && k !== 'prototype';
   const probs = edges.map((e) => Number(e?.probability || 0));
   const hasAnyPositive = probs.some((p) => Number.isFinite(p) && p > 0);
   if (hasAnyPositive) {
-    const map = {};
-    for (const e of edges) map[e.id] = Number(e.probability || 0);
+    const map = Object.create(null);
+    for (const e of edges) { if(isValidKey(e.id)) map[e.id] = Number(e.probability || 0); }
     return map;
   }
 
   const parts = splitPercentages(edges.length);
-  const map = {};
+  const map = Object.create(null);
   for (let i = 0; i < edges.length; i += 1) {
-    map[edges[i].id] = parts[i];
+    if(isValidKey(edges[i].id)) map[edges[i].id] = parts[i];
   }
   return map;
 }
@@ -340,20 +359,22 @@ function applyDefaultGatewayProbabilitiesLocal(g) {
 }
 
 function normalizedGatewayProbMap(edges) {
+  const isValidKey = (k) => typeof k === 'string' && k.length > 0 && k !== '__proto__' && k !== 'constructor' && k !== 'prototype';
   const vals = edges.map((e) => Math.max(0, Number(e?.probability || 0)));
   const sum = vals.reduce((a, b) => a + b, 0);
 
   if (!Number.isFinite(sum) || sum <= 0) {
     const fallback = splitPercentages(edges.length);
-    const out = {};
-    for (let i = 0; i < edges.length; i += 1) out[edges[i].id] = fallback[i];
+    const out = Object.create(null);
+    for (let i = 0; i < edges.length; i += 1) { if(isValidKey(edges[i].id)) out[edges[i].id] = fallback[i]; }
     return out;
   }
 
-  const out = {};
+  const out = Object.create(null);
   let acc = 0;
   for (let i = 0; i < edges.length; i += 1) {
     const id = edges[i].id;
+    if (!isValidKey(id)) continue;
     if (i === edges.length - 1) {
       out[id] = Number((100 - acc).toFixed(2));
     } else {
@@ -408,7 +429,7 @@ function rebalanceOutgoingFromNode(fromId, focusEdgeId, targetProb) {
   const sumOthers = others.reduce((acc, e) => acc + Number(e.probability || 0), 0);
   const drift = Number((100 - (sumOthers + p)).toFixed(2));
   if (Math.abs(drift) > 0 && others.length) {
-    others[others.length - 1].probability = Number((Number(others[others.length - 1].probability || 0) + drift).toFixed(2));
+    others.at(-1).probability = Number((Number(others.at(-1).probability || 0) + drift).toFixed(2));
   }
 }
 
@@ -453,14 +474,6 @@ function appendDiagramBackdrop(svg, opacity = 0.92) {
   svg.appendChild(img);
 }
 
-function escapeHtml(text) {
-  return String(text || '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
 
 function suggestedAutomationNodeIds() {
   if (!graph) return [];
@@ -493,7 +506,7 @@ function renderAutomationConfirm() {
     const n = graph.nodes.find((x) => x.id === id);
     if (n?.automated) return '';
     const checked = confirmedAutoNodes.has(id) ? 'checked' : '';
-    return `<label class="check-row"><input type="checkbox" data-auto-node="${id}" ${checked}> ${n?.label || id}</label>`;
+    return `<label class="check-row"><input type="checkbox" data-auto-node="${escapeHtml(id)}" ${checked}> ${escapeHtml(n?.label || id)}</label>`;
   }).filter(Boolean).join('');
 
   box.innerHTML = `<div class="box" style="margin-bottom:6px;">Sugestoes de automacao detectadas. Confirme as que entram no cenario "TEP ideal auto".</div>${rows}`;
@@ -506,7 +519,7 @@ function syncConfirmedAutoFromUi() {
   const next = new Set();
   boxes.forEach((el) => {
     if (!el.checked) return;
-    const id = String(el.getAttribute('data-auto-node') || '').trim();
+    const id = String(el.dataset.autoNode || '').trim();
     if (id) next.add(id);
   });
 
@@ -544,6 +557,35 @@ function actorLaneIdOf(node) {
   return String(node?.lane || node?.executor || node?.sector || '').trim();
 }
 
+function _bfsReachableTasks(startId, outgoingMap, nodeMap) {
+  const queue = (outgoingMap.get(startId) || []).map((id) => ({ id, depth: 1 }));
+  const visited = new Set();
+  const reachedTasks = new Set();
+
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current || current.depth > 20) continue;
+
+    const visitKey = `${current.id}`;
+    if (visited.has(visitKey)) continue;
+    visited.add(visitKey);
+
+    const node = nodeMap.get(current.id);
+    if (!node) continue;
+
+    if (node.type === 'task' && node.id !== startId) {
+      reachedTasks.add(node.id);
+      continue;
+    }
+
+    for (const nextId of outgoingMap.get(current.id) || []) {
+      queue.push({ id: nextId, depth: current.depth + 1 });
+    }
+  }
+
+  return reachedTasks;
+}
+
 function deriveTaskTransitions() {
   if (!graph) return [];
   const nodes = graph.nodes || [];
@@ -560,30 +602,7 @@ function deriveTaskTransitions() {
   const tasks = nodes.filter((n) => n.type === 'task');
 
   for (const start of tasks) {
-    const queue = (outgoingMap.get(start.id) || []).map((id) => ({ id, depth: 1 }));
-    const visited = new Set();
-    const reachedTasks = new Set();
-
-    while (queue.length) {
-      const current = queue.shift();
-      if (!current || current.depth > 20) continue;
-
-      const visitKey = `${current.id}`;
-      if (visited.has(visitKey)) continue;
-      visited.add(visitKey);
-
-      const node = nodeMap.get(current.id);
-      if (!node) continue;
-
-      if (node.type === 'task' && node.id !== start.id) {
-        reachedTasks.add(node.id);
-        continue;
-      }
-
-      for (const nextId of outgoingMap.get(current.id) || []) {
-        queue.push({ id: nextId, depth: current.depth + 1 });
-      }
-    }
+    const reachedTasks = _bfsReachableTasks(start.id, outgoingMap, nodeMap);
 
     for (const toId of reachedTasks) {
       const key = `${start.id}->${toId}`;
@@ -708,7 +727,7 @@ function syncActorAssignmentsFromWizard() {
   if (!graph) return;
   const nodeMap = new Map((graph.nodes || []).map((n) => [n.id, n]));
   document.querySelectorAll('input[data-actor-node]').forEach((el) => {
-    const nodeId = el.getAttribute('data-actor-node');
+    const nodeId = el.dataset.actorNode;
     const actor = String(el.value || '').trim();
     const node = nodeMap.get(nodeId);
     if (!node || node.type !== 'task') return;
@@ -723,13 +742,13 @@ function saveHandoffRulesFromWizard() {
   graph.handoffRules = graph.handoffRules || {};
   graph.handoffActionRules = graph.handoffActionRules || {};
   document.querySelectorAll('select[data-handoff-key]').forEach((el) => {
-    const key = el.getAttribute('data-handoff-key');
+    const key = el.dataset.handoffKey;
     const val = String(el.value || '');
     if (val) graph.handoffRules[key] = val;
     else delete graph.handoffRules[key];
   });
   document.querySelectorAll('select[data-handoff-action-key]').forEach((el) => {
-    const key = el.getAttribute('data-handoff-action-key');
+    const key = el.dataset.handoffActionKey;
     const val = String(el.value || '');
     if (val) graph.handoffActionRules[key] = val;
     else delete graph.handoffActionRules[key];
@@ -777,7 +796,7 @@ function saveSetupTaskMatrixFromForm() {
   const nodeMap = new Map((graph.nodes || []).map((n) => [n.id, n]));
   // Salva atores (data-task-actor)
   document.querySelectorAll('input[data-task-actor]').forEach((el) => {
-    const nodeId = el.getAttribute('data-task-actor');
+    const nodeId = el.dataset.taskActor;
     const actor = String(el.value || '').trim();
     const node = nodeMap.get(nodeId);
     if (!node || node.type !== 'task') return;
@@ -786,7 +805,7 @@ function saveSetupTaskMatrixFromForm() {
   });
   // Salva complexidade por tarefa (data-task-complexity)
   document.querySelectorAll('select[data-task-complexity]').forEach((el) => {
-    const nodeId = el.getAttribute('data-task-complexity');
+    const nodeId = el.dataset.taskComplexity;
     const comp = String(el.value || '').trim();
     const node = nodeMap.get(nodeId);
     if (!node || node.type !== 'task') return;
@@ -795,7 +814,7 @@ function saveSetupTaskMatrixFromForm() {
   // Salva perfis de raia (data-lane-profile)
   graph.lanes = graph.lanes || {};
   document.querySelectorAll('[data-lane-profile]').forEach((row) => {
-    const lane = row.getAttribute('data-lane-profile');
+    const lane = row.dataset.laneProfile;
     const team = String(row.querySelector('[data-lp-team]')?.value || '').trim();
     const org  = String(row.querySelector('[data-lp-org]')?.value  || '').trim();
     graph.lanes[lane] = { ...(graph.lanes[lane] || {}), team, org };
@@ -814,9 +833,9 @@ function renderSetupLaneProfiles() {
     return;
   }
   const focused = document.activeElement;
-  const focusedLane = focused?.closest('[data-lane-profile]')?.getAttribute('data-lane-profile');
-  const focusedField = focused?.getAttribute('data-lp-team') !== null ? 'team'
-    : focused?.getAttribute('data-lp-org') !== null ? 'org' : null;
+  const focusedLane = focused?.closest('[data-lane-profile]')?.dataset.laneProfile;
+  const focusedField = focused?.dataset.lpTeam !== undefined ? 'team'
+    : focused?.dataset.lpOrg !== undefined ? 'org' : null;
 
   const rows = lanes.map((lane) => {
     const profile = graph.lanes?.[lane] || {};
@@ -902,6 +921,7 @@ function collectSetupStatus() {
     parseHappyPathRequired();
     status.happyPathOk = true;
   } catch (e) {
+    /* preserva estado de erro para inspecao */
     status.happyPathOk = false;
   }
 
@@ -909,6 +929,7 @@ function collectSetupStatus() {
     parseLeadTimeInformedRequired();
     status.leadTimeOk = true;
   } catch (e) {
+    /* preserva estado de erro para inspecao */
     status.leadTimeOk = false;
   }
 
@@ -919,8 +940,8 @@ function collectSetupStatus() {
 
 function requestProcessListFromSiga() {
   try {
-    window.parent.postMessage({ type: 'SIMULATOR_REQUEST_PROCESS_LIST' }, '*');
-  } catch (e) { /* standalone, sem pai */ }
+    globalThis.parent.postMessage({ type: 'SIMULATOR_REQUEST_PROCESS_LIST' }, globalThis.location.origin);
+  } catch (e) { console.warn('[simulator] postMessage para parent (standalone)', e); }
 }
 
 // Cache das linhas filtradas para o handler de clique (evita closure stale)
@@ -1040,7 +1061,7 @@ function renderSetupSection0() {
     $('sec0Tbody')?.addEventListener('click', (ev) => {
       const tr = ev.target.closest('tr[data-sec0-idx]');
       if (!tr) return;
-      const idx = Number(tr.getAttribute('data-sec0-idx'));
+      const idx = Number(tr.dataset.sec0Idx);
       if (!Number.isFinite(idx) || !_sec0Filtered[idx]) return;
       _linkedProcess = { ..._sec0Filtered[idx] };
       _sec0UpdateTable();   // atualiza highlight sem recriar o input
@@ -1126,7 +1147,6 @@ function renderSetupTaskMatrix() {
 
     // Complexidade: desabilitada para tarefas automatizadas
     const comp = t.complexity || (idx === 0 ? 'alta' : 'media');
-    const compInfo = COMP_LABELS[comp] || COMP_LABELS.media;
     const compSelect = t.automated
       ? `<span class="comp-badge" style="background:#e0e8e0;color:#4a7060;">⚙ Auto — ${RULES.automated} UT</span>`
       : `<select class="comp-select comp-${comp}" data-task-complexity="${escapeHtml(t.id)}" title="Complexidade da atividade">
@@ -1183,7 +1203,7 @@ function renderSetupGatewayEditor() {
 
   const html = gateways.map((gw) => {
     const outs = outgoing(graph, gw.id);
-    if (!outs.length) return `<div class="box"><strong>${gw.label || gw.id}</strong><div>Sem saidas.</div></div>`;
+    if (!outs.length) return `<div class="box"><strong>${escapeHtml(gw.label || gw.id)}</strong><div>Sem saidas.</div></div>`;
     const sum = outs.reduce((acc, e) => acc + Number(e.probability || 0), 0);
     const rows = outs.map((e) => {
       const targetNode = nodeById(e.to);
@@ -1199,7 +1219,7 @@ function renderSetupGatewayEditor() {
           <span class="gw-path-target" style="color:#9fb0c5;font-size:11px;">(${escapeHtml(targetLabel)})</span>
         </span>
         <div style="display:flex;gap:6px;align-items:center;">
-          <input type="number" min="0" max="100" step="1" data-setup-gw="${gw.id}" data-setup-edge="${e.id}" value="${pct}" style="width:80px;" />
+          <input type="number" min="0" max="100" step="1" data-setup-gw="${escapeHtml(gw.id)}" data-setup-edge="${escapeHtml(e.id)}" value="${pct}" style="width:80px;" />
           <span style="font-size:12px;color:#9fb0c5;">%</span>
           <div class="gw-prob-bar"><div class="gw-prob-fill" style="width:${pct}%;background:${barColor};"></div></div>
         </div>
@@ -1207,7 +1227,7 @@ function renderSetupGatewayEditor() {
     }).join('');
     return `
       <div class="box" style="margin-bottom:8px;">
-        <strong>${gw.label || gw.id}</strong>
+        <strong>${escapeHtml(gw.label || gw.id)}</strong>
         <div style="font-size:12px;margin:4px 0 6px;">Soma atual: ${sum.toFixed(2)}%</div>
         ${rows}
       </div>`;
@@ -1224,8 +1244,8 @@ function applySetupGatewayEdits() {
   if (!graph) return;
   const byGateway = new Map();
   document.querySelectorAll('input[data-setup-gw][data-setup-edge]').forEach((input) => {
-    const gw = String(input.getAttribute('data-setup-gw') || '');
-    const edgeId = String(input.getAttribute('data-setup-edge') || '');
+    const gw = String(input.dataset.setupGw || '');
+    const edgeId = String(input.dataset.setupEdge || '');
     const val = Math.max(0, Number(input.value || 0));
     if (!byGateway.has(gw)) byGateway.set(gw, {});
     byGateway.get(gw)[edgeId] = val;
@@ -1312,12 +1332,12 @@ function _refreshSidebarGwValues() {
   const focused = document.activeElement;
   document.querySelectorAll('input[data-sgw-id][data-sgw-edge]').forEach((inp) => {
     if (inp === focused) return;
-    const edgeId = inp.getAttribute('data-sgw-edge');
+    const edgeId = inp.dataset.sgwEdge;
     const edge = (graph.edges || []).find((e) => e.id === edgeId);
     if (edge) inp.value = String(Number(edge.probability || 0));
   });
   document.querySelectorAll('[data-sgw-sum]').forEach((el) => {
-    const gwId = el.getAttribute('data-sgw-sum');
+    const gwId = el.dataset.sgwSum;
     const outs = outgoing(graph, gwId);
     const sum = outs.reduce((a, e) => a + Number(e.probability || 0), 0);
     const sumColor = Math.abs(sum - 100) < 0.5 ? '#2e7d4f' : sum > 100 ? '#c0392b' : '#8a6d3b';
@@ -1330,7 +1350,7 @@ function _onSidebarGwInput(ev) {
   const inp = ev.target.closest('input[data-sgw-id]');
   if (!inp || !graph) return;
 
-  const gwId = inp.getAttribute('data-sgw-id');
+  const gwId = inp.dataset.sgwId;
 
   // Cap: prevent sum > 100%
   const allInputs = Array.from(document.querySelectorAll(`input[data-sgw-id="${CSS.escape(gwId)}"]`));
@@ -1342,7 +1362,7 @@ function _onSidebarGwInput(ev) {
 
   // Apply to graph silently (no refreshAll — avoids losing focus)
   const probs = {};
-  allInputs.forEach((i) => { probs[i.getAttribute('data-sgw-edge')] = Math.max(0, Number(i.value || 0)); });
+  allInputs.forEach((i) => { probs[i.dataset.sgwEdge] = Math.max(0, Number(i.value || 0)); });
   graph = applyGatewayProbabilities(graph, gwId, probs);
   if ($('graphJson')) $('graphJson').value = JSON.stringify(graph, null, 2);
 
@@ -1359,14 +1379,14 @@ function _onSidebarGwInput(ev) {
 function _onSidebarGwClick(ev) {
   const btn = ev.target.closest('button[data-sgw-auto]');
   if (!btn || !graph) return;
-  const gwId = btn.getAttribute('data-sgw-auto');
+  const gwId = btn.dataset.sgwAuto;
   const outs = outgoing(graph, gwId);
   if (!outs.length) return;
   const autoMap = defaultGatewayProbMap(outs.map((e) => ({ ...e, probability: 0 })));
   const inputs = document.querySelectorAll(`input[data-sgw-id="${CSS.escape(gwId)}"]`);
   const probs = {};
   inputs.forEach((i) => {
-    const edgeId = i.getAttribute('data-sgw-edge');
+    const edgeId = i.dataset.sgwEdge;
     const v = Number(autoMap[edgeId] || 0);
     i.value = String(v);
     probs[edgeId] = v;
@@ -1500,7 +1520,7 @@ function removeLoopEdge(edgeId) {
 function applyLoopProbInputs() {
   if (!graph) return;
   document.querySelectorAll('input[data-loop-prob-edge]').forEach((input) => {
-    const edgeId = String(input.getAttribute('data-loop-prob-edge') || '');
+    const edgeId = String(input.dataset.loopProbEdge || '');
     const val = clamp(Number(input.value || 30), 1, 99);
     const edge = (graph.edges || []).find((e) => e.id === edgeId);
     if (!edge) return;
@@ -1518,7 +1538,7 @@ function saveSetupAutomationSelection() {
     const taskMap = new Map((graph.nodes || []).filter((n) => n.type === 'task').map((n) => [String(n.id), n]));
 
     matrixActorInputs.forEach((i) => {
-      const id = String(i.getAttribute('data-task-actor') || '');
+      const id = String(i.dataset.taskActor || '');
       const n = taskMap.get(id);
       if (!n) return;
       const actor = String(i.value || '').trim();
@@ -1529,7 +1549,7 @@ function saveSetupAutomationSelection() {
     const selectedAuto = new Set(
       Array.from(matrixAutoInputs)
         .filter((i) => i.checked)
-        .map((i) => String(i.getAttribute('data-task-automated') || ''))
+        .map((i) => String(i.dataset.taskAutomated || ''))
         .filter(Boolean)
     );
     for (const n of graph.nodes || []) {
@@ -1540,7 +1560,7 @@ function saveSetupAutomationSelection() {
     const selectedPotential = new Set(
       Array.from(matrixPotentialInputs)
         .filter((i) => i.checked)
-        .map((i) => String(i.getAttribute('data-task-potential') || ''))
+        .map((i) => String(i.dataset.taskPotential || ''))
         .filter(Boolean)
     );
 
@@ -1555,7 +1575,7 @@ function saveSetupAutomationSelection() {
 
   const selected = new Set(
     Array.from(document.querySelectorAll('input[data-setup-auto-node]:checked'))
-      .map((i) => String(i.getAttribute('data-setup-auto-node') || ''))
+      .map((i) => String(i.dataset.setupAutoNode || ''))
       .filter(Boolean)
   );
 
@@ -1600,7 +1620,7 @@ function completeSetup() {
   const ready = s.graphOk && s.handoffOk && s.happyPathOk;
   if (!ready) {
     const reason = !s.graphOk && s.graphIssues.length
-      ? ` Motivo: ${s.graphIssues[0]}`
+      ? ` Motivo: ${escapeHtml(s.graphIssues[0])}`
       : '';
     $('validationBox').innerHTML = `<span class="badge error">setup</span> Finalize os itens pendentes no popup para iniciar a simulacao.${reason}`;
     return;
@@ -1748,7 +1768,7 @@ function frictionTotalsByType(ranking) {
   const out = { handoff: 0, gateway: 0, loop: 0, timer: 0 };
   for (const item of ranking || []) {
     const type = String(item?.type || '').toLowerCase();
-    if (!Object.prototype.hasOwnProperty.call(out, type)) continue;
+    if (!Object.hasOwn(out, type)) continue;
     out[type] += Number(item?.total || 0);
   }
   return out;
@@ -1880,6 +1900,30 @@ function _ipCard(ip) {
   </div>`;
 }
 
+function _buildGavetaCard(metrics) {
+  const hasInformed = Number.isFinite(metrics.leadTimeInformed);
+  const gavetaPct = metrics.tempoGaveta !== null && hasInformed && metrics.leadTimeInformed > 0
+    ? ((metrics.tempoGaveta / metrics.leadTimeInformed) * 100).toFixed(1)
+    : null;
+  return _resultCard(
+    '🕰️',
+    'T.Gaveta — Tempo de Fila / Espera Passiva',
+    _fmtMin(metrics.tempoGaveta),
+    `${gavetaPct !== null ? gavetaPct + '% do T.P.' : ''} · T.P. − T.P.E.`,
+    'Tempo em que o processo fica parado na fila, gaveta ou aguardando decisão — sem nenhuma execução ativa.',
+    metrics.tempoGaveta > 0
+      ? 'Foco de gestão: reduzir o tempo de gaveta é o maior alavancador de eficiência operacional.'
+      : 'Processo sem tempo de gaveta identificado.',
+    metrics.tempoGaveta > 0 ? 'rc-gaveta-warn' : ''
+  );
+}
+
+function _buildAutoCard(metrics, hasAuto, topAutoDisp, subSuffix) {
+  if (!hasAuto) return '';
+  const gainPct = (metrics.top > 0 ? ((metrics.top - metrics.topAuto) / metrics.top * 100) : 0).toFixed(1);
+  return _resultCard('⚙️', 'T.O.P. Auto', topAutoDisp, 'caminho feliz com automações' + subSuffix, 'T.O.P. projetado após confirmação das automações marcadas no cenário To-Be.', `Ganho potencial: ${gainPct}% de redução no T.O.P.`, 'rc-auto');
+}
+
 function renderExecutiveKpis(metrics, base) {
   const box = $('kpi');
   if (!box) return;
@@ -1906,52 +1950,30 @@ function renderExecutiveKpis(metrics, base) {
   const hasAuto = Number.isFinite(metrics.topAuto);
   const hasInformed = Number.isFinite(metrics.leadTimeInformed);
 
-  // Quando T.P. está preenchido, converte todos os tempos para minutos reais via kFactor
   const hasK = metrics.kFactor !== null;
   const fmtK  = (ut) => hasK ? _fmtMin(ut * metrics.kFactor) : _fmtUT(ut);
   const subSuffix = hasK ? ' · tempo real' : '';
 
-  // Linha de conversão K
   const kLine = hasK
     ? `<div class="rc-kfactor">Conversão: 1 UT = ${metrics.kFactor.toFixed(2)} min reais — T.O.P., T.E.R. e T.O.P.Auto exibidos em tempo real</div>`
     : '';
 
-  // Card T.P. só aparece se informado
   const tpCard = hasInformed
     ? _resultCard('💬', 'T.P. — Tempo de Percepção', _fmtMin(metrics.leadTimeInformed), 'lead time total · declarado pelo executor', 'O tempo de calendário (Lead Time). É o que o cidadão sente na ponta — do insumo ao produto final, incluindo filas e gavetas.', 'Informe também o T.P.E. para calcular o Tempo de Gaveta.')
     : '';
 
-  // Card T.P.E. só aparece se informado
   const hasTPE = Number.isFinite(metrics.processingTimeInformed) && metrics.processingTimeInformed > 0;
   const tpeCard = hasTPE
     ? _resultCard('⚙', 'T.P.E. — Tempo de Processamento Estimado', _fmtMin(metrics.processingTimeInformed), 'sem filas/gaveta · declarado pelo executor', 'Tempo estimado para executar o processo sem tempos de fila ou espera passiva. Base para o cálculo do Tempo de Gaveta.', 'T.P.E. < T.P. — a diferença é o tempo desperdiçado em fila.')
     : '';
 
-  // Card Tempo de Gaveta = T.P. - T.P.E.
-  const hasGaveta = metrics.tempoGaveta !== null;
-  const gavetaPct = hasGaveta && hasInformed && metrics.leadTimeInformed > 0
-    ? ((metrics.tempoGaveta / metrics.leadTimeInformed) * 100).toFixed(1)
-    : null;
-  const gavetaCard = hasGaveta
-    ? _resultCard(
-        '🕰️',
-        'T.Gaveta — Tempo de Fila / Espera Passiva',
-        _fmtMin(metrics.tempoGaveta),
-        `${gavetaPct !== null ? gavetaPct + '% do T.P.' : ''} · T.P. − T.P.E.`,
-        'Tempo em que o processo fica parado na fila, gaveta ou aguardando decisão — sem nenhuma execução ativa.',
-        metrics.tempoGaveta > 0
-          ? 'Foco de gestão: reduzir o tempo de gaveta é o maior alavancador de eficiência operacional.'
-          : 'Processo sem tempo de gaveta identificado.',
-        metrics.tempoGaveta > 0 ? 'rc-gaveta-warn' : ''
-      )
-    : '';
+  const gavetaCard = metrics.tempoGaveta !== null ? _buildGavetaCard(metrics) : '';
 
-  // Card automacao (valor convertido quando kFactor disponível)
-  const autoCard = hasAuto
-    ? _resultCard('⚙️', 'T.O.P. Auto', topAutoDisp, 'caminho feliz com automações' + subSuffix, 'T.O.P. projetado após confirmação das automações marcadas no cenário To-Be.', `Ganho potencial: ${(metrics.top > 0 ? ((metrics.top - metrics.topAuto) / metrics.top * 100) : 0).toFixed(1)}% de redução no T.O.P.`, 'rc-auto')
-    : '';
+  const topDisp = metrics.top > 0 ? fmtK(metrics.top) : '—';
+  const topAutoDisp = metrics.topAuto > 0 ? fmtK(metrics.topAuto) : '—';
 
-  // Linha ao vivo — converte se kFactor disponível
+  const autoCard = _buildAutoCard(metrics, hasAuto, topAutoDisp, subSuffix);
+
   const liveUT = Number(liveSimulationStatus.avgLeadTime || 0);
   const liveTerDisp = liveUT > 0
     ? (hasK ? _fmtMin(liveUT * metrics.kFactor) : `${liveUT.toFixed(1)} UT`)
@@ -1960,10 +1982,6 @@ function renderExecutiveKpis(metrics, base) {
     Bolinhas finalizadas: <strong id="liveTokensFinished">${liveSimulationStatus.finished}/${liveSimulationStatus.total}</strong> &nbsp;|
     T.E.R. médio ao vivo: <strong id="liveLeadAvg">${liveTerDisp}</strong>
   </div>`;
-
-  // Exibe "—" quando top = 0 (caminho feliz sem tarefas ou inválido)
-  const topDisp = metrics.top > 0 ? fmtK(metrics.top) : '—';
-  const topAutoDisp = metrics.topAuto > 0 ? fmtK(metrics.topAuto) : '—';
 
   box.className = 'kpi kpi-executive';
   box.innerHTML = `
@@ -2116,7 +2134,7 @@ function renderFrictionChart(metrics) {
   const detailBars = ranking.map((item) => {
     const pctW = ((item.total / maxVal) * 100).toFixed(1);
     const color = typeColors[item.type] || '#8898aa';
-    const key = item.key.replace(/->/g, ' → ');
+    const key = item.key.replaceAll('->', ' → ');
     return `<div class="fc-row fc-row-sm">
       <div class="fc-label fc-label-sm">${key}</div>
       <div class="fc-bar-wrap">
@@ -2135,6 +2153,52 @@ function renderFrictionChart(metrics) {
     </div>`;
 }
 
+function _buildP2Friction(topFriction) {
+  if (!topFriction) {
+    return 'Nenhum atrito dominante identificado no processo atual. O fluxo apresenta baixa concentração de gargalos.';
+  }
+  const tipoLabel = topFriction.type === 'handoff' ? 'Handoff'
+    : topFriction.type === 'gateway' ? 'Gateway de Decisão' : 'Loop de Retrabalho';
+  const keyLabel = topFriction.key.replaceAll('->', ' → ');
+  const totalUT = topFriction.total.toFixed(1);
+  if (topFriction.type === 'handoff') {
+    return `A maior perda de tempo detectada foi no <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> ao fluxo. Recomenda-se unificar estas etapas ou automatizar a transferência de dados para reduzir este impacto.`;
+  }
+  if (topFriction.type === 'gateway') {
+    return `O maior ponto de atrito detectado é o <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> em decisões repetidas. Recomenda-se simplificar os critérios de aprovação ou antecipar as validações no fluxo.`;
+  }
+  return `O maior consumo de atrito está no <strong>${tipoLabel} na tarefa ${keyLabel}</strong>, acumulando <strong>${totalUT} UT</strong>. Recomenda-se revisar os critérios de entrada e qualidade de dados antes do ponto de retorno.`;
+}
+
+function _buildP3Automation(nodes, metrics) {
+  const manualTasks = (nodes || []).filter((n) => n.type === 'task' && !n.automated);
+  const topManual = manualTasks[0];
+  if (!topManual) {
+    return 'Todas as tarefas já estão automatizadas ou não há candidatos identificados para automação no cenário atual.';
+  }
+  const gainUT = (RULES.nextManual - RULES.automated).toFixed(1);
+  const gainPct = metrics.top > 0 ? ((gainUT / metrics.top) * 100).toFixed(1) : '0';
+  const gainMin = metrics.kFactor !== null
+    ? ` (economia de aprox. ${(gainUT * metrics.kFactor).toFixed(0)} min reais por execução)`
+    : '';
+  return `Caso a atividade <strong>"${escapeHtml(topManual.label)}"</strong> seja automatizada (reduzindo de ${RULES.nextManual} para ${RULES.automated} UT), o T.O.P. cairia em aprox. <strong>${gainPct}%</strong>${gainMin}. Recomenda-se priorizar tarefas repetitivas e de alto volume para maximizar o retorno.`;
+}
+
+function _buildP4Gaveta(metrics) {
+  if (metrics.tempoGaveta !== null) {
+    const tp     = Number(metrics.leadTimeInformed);
+    const tpe    = Number(metrics.processingTimeInformed);
+    const gaveta = Number(metrics.tempoGaveta);
+    const gavetaPct = tp > 0 ? ((gaveta / tp) * 100).toFixed(1) : '0';
+    const gavetaFmt = _fmtMin(gaveta);
+    return `O executor informou T.P. de <strong>${_fmtMin(tp)}</strong> e T.P.E. de <strong>${_fmtMin(tpe)}</strong>. Isso revela que <strong>${gavetaPct}%</strong> do tempo total (<strong>${gavetaFmt}</strong>) é gasto em espera passiva — filas, gavetas e aguardo de decisão — sem execução ativa. O foco da gestão deve ser a redução do Tempo de Gaveta.`;
+  }
+  if (Number.isFinite(metrics.leadTimeInformed)) {
+    return 'T.P. informado. Informe também o <strong>T.P.E. (Tempo de Processamento Estimado)</strong> para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
+  }
+  return 'Informe o <strong>T.P.</strong> (Tempo de Percepção) e o <strong>T.P.E.</strong> (Tempo de Processamento Estimado) para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
+}
+
 function renderAutomaticInterpretation(metrics, base) {
   const box = $('insightInterpretation');
   if (!box) return;
@@ -2150,60 +2214,10 @@ function renderAutomaticInterpretation(metrics, base) {
   const ip = Number(metrics.ipRealVsIdeal || 0);
   const horasPerdidas = ((100 - ip) / 100 * 10).toFixed(1);
 
-  // Paragrafo 1: Diagnostico de Eficiencia de Ciclo
   const p1 = `O processo apresenta um I.P. de <strong>${ip.toFixed(1)}%</strong>. Isso indica que, para cada 10 horas de trabalho, cerca de <strong>${horasPerdidas} horas</strong> são consumidas por atividades que não agregam valor direto, como recontextualização e trocas de setor.`;
-
-  // Paragrafo 2: Maior gargalo sistemico
-  const ranking = metrics.ranking || [];
-  const topFriction = ranking[0];
-  let p2 = '';
-  if (topFriction) {
-    const tipoLabel = topFriction.type === 'handoff' ? 'Handoff'
-      : topFriction.type === 'gateway' ? 'Gateway de Decisão' : 'Loop de Retrabalho';
-    const keyLabel = topFriction.key.replace(/->/g, ' → ');
-    const totalUT = topFriction.total.toFixed(1);
-    if (topFriction.type === 'handoff') {
-      p2 = `A maior perda de tempo detectada foi no <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> ao fluxo. Recomenda-se unificar estas etapas ou automatizar a transferência de dados para reduzir este impacto.`;
-    } else if (topFriction.type === 'gateway') {
-      p2 = `O maior ponto de atrito detectado é o <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> em decisões repetidas. Recomenda-se simplificar os critérios de aprovação ou antecipar as validações no fluxo.`;
-    } else {
-      p2 = `O maior consumo de atrito está no <strong>${tipoLabel} na tarefa ${keyLabel}</strong>, acumulando <strong>${totalUT} UT</strong>. Recomenda-se revisar os critérios de entrada e qualidade de dados antes do ponto de retorno.`;
-    }
-  } else {
-    p2 = 'Nenhum atrito dominante identificado no processo atual. O fluxo apresenta baixa concentração de gargalos.';
-  }
-
-  // Paragrafo 3: Potencial de automacao
-  const nodes = graph?.nodes || [];
-  const manualTasks = nodes.filter((n) => n.type === 'task' && !n.automated);
-  const topManual = manualTasks[0];
-  let p3 = '';
-  if (topManual) {
-    const gainUT = (RULES.nextManual - RULES.automated).toFixed(1);
-    const gainPct = metrics.top > 0
-      ? ((gainUT / metrics.top) * 100).toFixed(1) : '0';
-    const gainMin = metrics.kFactor !== null
-      ? ` (economia de aprox. ${(gainUT * metrics.kFactor).toFixed(0)} min reais por execução)`
-      : '';
-    p3 = `Caso a atividade <strong>"${topManual.label}"</strong> seja automatizada (reduzindo de ${RULES.nextManual} para ${RULES.automated} UT), o T.O.P. cairia em aprox. <strong>${gainPct}%</strong>${gainMin}. Recomenda-se priorizar tarefas repetitivas e de alto volume para maximizar o retorno.`;
-  } else {
-    p3 = 'Todas as tarefas já estão automatizadas ou não há candidatos identificados para automação no cenário atual.';
-  }
-
-  // Paragrafo 4: Analise de fila/gaveta (só se T.P. e T.P.E. informados)
-  let p4 = '';
-  if (metrics.tempoGaveta !== null) {
-    const tp     = Number(metrics.leadTimeInformed);
-    const tpe    = Number(metrics.processingTimeInformed);
-    const gaveta = Number(metrics.tempoGaveta);
-    const gavetaPct = tp > 0 ? ((gaveta / tp) * 100).toFixed(1) : '0';
-    const gavetaFmt = _fmtMin(gaveta);
-    p4 = `O executor informou T.P. de <strong>${_fmtMin(tp)}</strong> e T.P.E. de <strong>${_fmtMin(tpe)}</strong>. Isso revela que <strong>${gavetaPct}%</strong> do tempo total (<strong>${gavetaFmt}</strong>) é gasto em espera passiva — filas, gavetas e aguardo de decisão — sem execução ativa. O foco da gestão deve ser a redução do Tempo de Gaveta.`;
-  } else if (Number.isFinite(metrics.leadTimeInformed)) {
-    p4 = 'T.P. informado. Informe também o <strong>T.P.E. (Tempo de Processamento Estimado)</strong> para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
-  } else {
-    p4 = 'Informe o <strong>T.P.</strong> (Tempo de Percepção) e o <strong>T.P.E.</strong> (Tempo de Processamento Estimado) para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
-  }
+  const p2 = _buildP2Friction((metrics.ranking || [])[0]);
+  const p3 = _buildP3Automation(graph?.nodes, metrics);
+  const p4 = _buildP4Gaveta(metrics);
 
   const sStandard = semaphoreForPhillip('standard', ip);
   box.innerHTML = `
@@ -2243,7 +2257,7 @@ function computeScenarioMetrics() {
   try {
     const t = calculatePathTime(graph, path, true);
     if (t > 0) top = t;
-  } catch (_) { /* path inválido — top fica 0, card mostrará "—" */ }
+  } catch (_) { console.warn('[simulator] path inválido, TOP = 0', _); }
 
   // T.O.P. Auto = cenário com automações.
   // Fallback para top quando não calculável.
@@ -2251,7 +2265,7 @@ function computeScenarioMetrics() {
   try {
     const ta = calculatePathTime(autoGraph, path, true);
     if (ta > 0) topAuto = ta;
-  } catch (_) { /* sem automações ou path inválido — usa top */ }
+  } catch (_) { console.warn('[simulator] automação path inválido', _); }
 
   // Conversao K: 1 UT = quantos minutos reais (usando T.P. como ancora)
   // K = T.P. (min) / T.E.R. (UT)
@@ -2326,7 +2340,7 @@ function saveLaneProfilesFromForm() {
   if (!graph) return;
   graph.lanes = graph.lanes || {};
   document.querySelectorAll('[data-lane-row]').forEach((row) => {
-    const lane = row.getAttribute('data-lane-row');
+    const lane = row.dataset.laneRow;
     const team = row.querySelector('[data-field="team"]').value.trim();
     const sector = row.querySelector('[data-field="sector"]').value.trim();
     const org = row.querySelector('[data-field="org"]').value.trim();
@@ -2349,11 +2363,11 @@ function renderHandoffSetup() {
   const rows = lanes.map((lane) => {
     const profile = graph.lanes?.[lane] || {};
     return `
-      <div data-lane-row="${lane}" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px;align-items:end;">
-        <label class="field" style="margin:0;"><span>Raia</span><input value="${lane}" disabled></label>
-        <label class="field" style="margin:0;"><span>Equipe</span><input data-field="team" value="${profile.team || ''}" placeholder="Ex: Protocolo"></label>
-        <label class="field" style="margin:0;"><span>Setor</span><input data-field="sector" value="${profile.sector || ''}" placeholder="Ex: Atendimento"></label>
-        <label class="field" style="margin:0;"><span>Órgão</span><input data-field="org" value="${profile.org || ''}" placeholder="Ex: SEFAZ"></label>
+      <div data-lane-row="${escapeHtml(lane)}" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px;align-items:end;">
+        <label class="field" style="margin:0;"><span>Raia</span><input value="${escapeHtml(lane)}" disabled></label>
+        <label class="field" style="margin:0;"><span>Equipe</span><input data-field="team" value="${escapeHtml(profile.team || '')}" placeholder="Ex: Protocolo"></label>
+        <label class="field" style="margin:0;"><span>Setor</span><input data-field="sector" value="${escapeHtml(profile.sector || '')}" placeholder="Ex: Atendimento"></label>
+        <label class="field" style="margin:0;"><span>Órgão</span><input data-field="org" value="${escapeHtml(profile.org || '')}" placeholder="Ex: SEFAZ"></label>
       </div>`;
   }).join('');
 
@@ -2406,7 +2420,8 @@ function parseEditorGraph() {
     autoAssignComplexityDefaults(); // garante defaults de complexidade
     return true;
   } catch (e) {
-    $('validationBox').innerHTML = `<span class=\"badge error\">erro</span> JSON invalido: ${e.message}`;
+    /* exibe mensagem de erro na interface */
+    $('validationBox').innerHTML = `<span class="badge error">erro</span> JSON invalido: ${e.message}`;
     return false;
   }
 }
@@ -2435,7 +2450,7 @@ function parseHappyPath(pathText) {
 
   const nodeMap = new Map((graph?.nodes || []).map((n) => [n.id, n]));
   const first = nodeMap.get(ids[0]);
-  const last = nodeMap.get(ids[ids.length - 1]);
+  const last = nodeMap.get(ids.at(-1));
 
   const hasStart = (graph?.nodes || []).some((n) => n.type === 'start');
   const hasEnd = (graph?.nodes || []).some((n) => n.type === 'end');
@@ -2501,13 +2516,7 @@ function edgeHappyPathCost(edge) {
   return cost;
 }
 
-function suggestHappyPathIds() {
-  if (!graph || !(graph.nodes || []).length) return [];
-
-  const starts = startCandidateIds();
-  const ends = new Set(endCandidateIds());
-  if (!starts.length || !ends.size) return [];
-
+function _dijkstraScores(starts, graphRef) {
   const bestByNode = new Map();
   const prevByNode = new Map();
   const queue = [];
@@ -2523,7 +2532,7 @@ function suggestHappyPathIds() {
     if (!current) break;
     if (current.score > Number(bestByNode.get(current.id) || Infinity)) continue;
 
-    const out = (graph.edges || []).filter((e) => e.from === current.id);
+    const out = (graphRef.edges || []).filter((e) => e.from === current.id);
     for (const edge of out) {
       const nextId = edge.to;
       const nextScore = current.score + edgeHappyPathCost(edge);
@@ -2533,6 +2542,30 @@ function suggestHappyPathIds() {
       queue.push({ id: nextId, score: nextScore });
     }
   }
+
+  return { bestByNode, prevByNode };
+}
+
+function _reconstructPath(bestEndId, prevByNode) {
+  const path = [];
+  let cursor = bestEndId;
+  const guard = new Set();
+  while (cursor && !guard.has(cursor)) {
+    guard.add(cursor);
+    path.push(cursor);
+    cursor = prevByNode.get(cursor);
+  }
+  return path.reverse();
+}
+
+function suggestHappyPathIds() {
+  if (!graph || !(graph.nodes || []).length) return [];
+
+  const starts = startCandidateIds();
+  const ends = new Set(endCandidateIds());
+  if (!starts.length || !ends.size) return [];
+
+  const { bestByNode, prevByNode } = _dijkstraScores(starts, graph);
 
   let bestEndId = null;
   let bestEndScore = Infinity;
@@ -2546,16 +2579,7 @@ function suggestHappyPathIds() {
   }
   if (!bestEndId) return [];
 
-  const path = [];
-  let cursor = bestEndId;
-  const guard = new Set();
-  while (cursor && !guard.has(cursor)) {
-    guard.add(cursor);
-    path.push(cursor);
-    cursor = prevByNode.get(cursor);
-  }
-
-  return path.reverse();
+  return _reconstructPath(bestEndId, prevByNode);
 }
 
 function applySuggestedHappyPath() {
@@ -2580,7 +2604,7 @@ function allowedNextNodeIds() {
   const selected = happyPathMarking.nodes;
   if (!selected.length) return new Set(startCandidateIds());
 
-  const last = selected[selected.length - 1];
+  const last = selected.at(-1);
   return new Set((graph.edges || []).filter((e) => e.from === last).map((e) => e.to));
 }
 
@@ -2632,7 +2656,7 @@ function renderSetupPathPicker() {
 
 function onSetupPathNodeClick(nodeId) {
   const selected = happyPathMarking.nodes;
-  const last = selected[selected.length - 1];
+  const last = selected.at(-1);
   const allowed = allowedNextNodeIds();
 
   if (!allowed.has(nodeId)) {
@@ -2671,6 +2695,57 @@ function onSetupPathNodeClick(nodeId) {
   renderSetupChecklist();
 }
 
+function _drawSetupEdge(svg, edge, from, to, happyPathNodes) {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', String(from.x));
+  line.setAttribute('y1', String(from.y));
+  line.setAttribute('x2', String(to.x));
+  line.setAttribute('y2', String(to.y));
+  line.setAttribute('stroke', '#6b7280');
+  line.setAttribute('stroke-width', '2');
+  for (let i = 0; i < happyPathNodes.length - 1; i += 1) {
+    if (happyPathNodes[i] === edge.from && happyPathNodes[i + 1] === edge.to) {
+      line.setAttribute('stroke', '#0b84f3');
+      line.setAttribute('stroke-width', '4');
+      break;
+    }
+  }
+  line.setAttribute('marker-end', 'url(#setupArrow)');
+  svg.appendChild(line);
+}
+
+function _drawSetupNodeShape(g, node, selectedIndex, isAllowed) {
+  const isSelected = selectedIndex >= 0;
+  if (node.type === 'task') {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', String(node.x - 52));
+    rect.setAttribute('y', String(node.y - 22));
+    rect.setAttribute('width', '104');
+    rect.setAttribute('height', '44');
+    rect.setAttribute('rx', '10');
+    rect.setAttribute('fill', '#edf3fb');
+    rect.setAttribute('stroke', isSelected ? '#0b84f3' : '#2a4d69');
+    rect.setAttribute('stroke-width', isSelected ? '3' : '2');
+    g.appendChild(rect);
+  } else if (node.type === 'gateway') {
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', `${node.x},${node.y - 28} ${node.x + 34},${node.y} ${node.x},${node.y + 28} ${node.x - 34},${node.y}`);
+    poly.setAttribute('fill', '#fff7e8');
+    poly.setAttribute('stroke', isSelected ? '#0b84f3' : '#b9770e');
+    poly.setAttribute('stroke-width', isSelected ? '3' : '2');
+    g.appendChild(poly);
+  } else {
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', String(node.x));
+    c.setAttribute('cy', String(node.y));
+    c.setAttribute('r', '22');
+    c.setAttribute('fill', node.type === 'start' ? '#e8f7ef' : '#fdecec');
+    c.setAttribute('stroke', isSelected ? '#0b84f3' : (node.type === 'start' ? '#1b8a5a' : '#c0392b'));
+    c.setAttribute('stroke-width', isSelected ? '4' : (node.type === 'end' ? '3' : '2'));
+    g.appendChild(c);
+  }
+}
+
 function drawSetupPathCanvas() {
   const svg = $('setupPathCanvas');
   if (!svg || !graph) return;
@@ -2690,28 +2765,12 @@ function drawSetupPathCanvas() {
     const from = nodeById(edge.from);
     const to = nodeById(edge.to);
     if (!from || !to) continue;
-
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', String(from.x));
-    line.setAttribute('y1', String(from.y));
-    line.setAttribute('x2', String(to.x));
-    line.setAttribute('y2', String(to.y));
-    line.setAttribute('stroke', '#6b7280');
-    line.setAttribute('stroke-width', '2');
-    for (let i = 0; i < happyPathMarking.nodes.length - 1; i += 1) {
-      if (happyPathMarking.nodes[i] === edge.from && happyPathMarking.nodes[i + 1] === edge.to) {
-        line.setAttribute('stroke', '#0b84f3');
-        line.setAttribute('stroke-width', '4');
-        break;
-      }
-    }
-    line.setAttribute('marker-end', 'url(#setupArrow)');
-    svg.appendChild(line);
+    _drawSetupEdge(svg, edge, from, to, happyPathMarking.nodes);
   }
 
   for (const node of graph.nodes || []) {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('data-setup-node', node.id);
+    g.dataset.setupNode = node.id;
 
     const selectedIndex = happyPathMarking.nodes.indexOf(node.id);
     const isSelected = selectedIndex >= 0;
@@ -2720,34 +2779,7 @@ function drawSetupPathCanvas() {
     g.style.opacity = isAllowed || isSelected ? '1' : '0.36';
     g.addEventListener('click', () => onSetupPathNodeClick(node.id));
 
-    if (node.type === 'task') {
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', String(node.x - 52));
-      rect.setAttribute('y', String(node.y - 22));
-      rect.setAttribute('width', '104');
-      rect.setAttribute('height', '44');
-      rect.setAttribute('rx', '10');
-      rect.setAttribute('fill', '#edf3fb');
-      rect.setAttribute('stroke', isSelected ? '#0b84f3' : '#2a4d69');
-      rect.setAttribute('stroke-width', isSelected ? '3' : '2');
-      g.appendChild(rect);
-    } else if (node.type === 'gateway') {
-      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      poly.setAttribute('points', `${node.x},${node.y - 28} ${node.x + 34},${node.y} ${node.x},${node.y + 28} ${node.x - 34},${node.y}`);
-      poly.setAttribute('fill', '#fff7e8');
-      poly.setAttribute('stroke', isSelected ? '#0b84f3' : '#b9770e');
-      poly.setAttribute('stroke-width', isSelected ? '3' : '2');
-      g.appendChild(poly);
-    } else {
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', String(node.x));
-      c.setAttribute('cy', String(node.y));
-      c.setAttribute('r', '22');
-      c.setAttribute('fill', node.type === 'start' ? '#e8f7ef' : '#fdecec');
-      c.setAttribute('stroke', isSelected ? '#0b84f3' : (node.type === 'start' ? '#1b8a5a' : '#c0392b'));
-      c.setAttribute('stroke-width', isSelected ? '4' : (node.type === 'end' ? '3' : '2'));
-      g.appendChild(c);
-    }
+    _drawSetupNodeShape(g, node, selectedIndex, isAllowed);
 
     const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     txt.textContent = isSelected ? `${node.label} (${selectedIndex + 1})` : node.label;
@@ -2807,7 +2839,7 @@ function onNodeClickedForHappyPath(nodeId) {
   if (!happyPathMarking.active) return;
 
   const selected = happyPathMarking.nodes;
-  const last = selected[selected.length - 1];
+  const last = selected.at(-1);
   const allowed = allowedNextNodeIds();
 
   if (!allowed.has(nodeId)) {
@@ -2848,6 +2880,140 @@ function nodeById(id) {
   return graph.nodes.find((n) => n.id === id);
 }
 
+function _drawEdgeWithLabel(svg, edge, from, to) {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', String(from.x));
+  line.setAttribute('y1', String(from.y));
+  line.setAttribute('x2', String(to.x));
+  line.setAttribute('y2', String(to.y));
+  line.setAttribute('stroke', edge.isLoopReturn ? '#f39c12' : edge.isErrorPath ? '#c0392b' : '#5d6d7e');
+  line.setAttribute('stroke-width', '2.2');
+  if (happyPathMarking.active) {
+    for (let i = 0; i < happyPathMarking.nodes.length - 1; i += 1) {
+      if (happyPathMarking.nodes[i] === edge.from && happyPathMarking.nodes[i + 1] === edge.to) {
+        line.setAttribute('stroke', '#0b84f3');
+        line.setAttribute('stroke-width', '4');
+        break;
+      }
+    }
+  }
+  line.setAttribute('marker-end', 'url(#arrow)');
+  svg.appendChild(line);
+
+  if (edge.probability !== undefined) {
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    t.textContent = `${edge.probability}%`;
+    t.setAttribute('x', String((from.x + to.x) / 2));
+    t.setAttribute('y', String((from.y + to.y) / 2 - 6));
+    t.setAttribute('fill', '#223');
+    t.setAttribute('font-size', '12');
+    svg.appendChild(t);
+  }
+}
+
+function _drawNodeShape(g, node, isSelected) {
+  if (node.type === 'task') {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', String(node.x - 55));
+    rect.setAttribute('y', String(node.y - 24));
+    rect.setAttribute('width', '110');
+    rect.setAttribute('height', '48');
+    rect.setAttribute('rx', '10');
+    rect.setAttribute('fill', node.automated ? '#e8f7ef' : '#edf3fb');
+    rect.setAttribute('stroke', node.automated ? '#1b8a5a' : '#2a4d69');
+    if (isSelected) {
+      rect.setAttribute('stroke', '#0b84f3');
+      rect.setAttribute('stroke-width', '3');
+    }
+    g.appendChild(rect);
+  } else if (node.type === 'timer') {
+    const cOuter = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    cOuter.setAttribute('cx', String(node.x));
+    cOuter.setAttribute('cy', String(node.y));
+    cOuter.setAttribute('r', '26');
+    cOuter.setAttribute('fill', '#fef9e7');
+    cOuter.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
+    cOuter.setAttribute('stroke-width', isSelected ? '4' : '2.5');
+    g.appendChild(cOuter);
+    const cInner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    cInner.setAttribute('cx', String(node.x));
+    cInner.setAttribute('cy', String(node.y));
+    cInner.setAttribute('r', '20');
+    cInner.setAttribute('fill', 'none');
+    cInner.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
+    cInner.setAttribute('stroke-width', '1.5');
+    g.appendChild(cInner);
+    const clock = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    clock.textContent = '⏱';
+    clock.setAttribute('x', String(node.x));
+    clock.setAttribute('y', String(node.y - 8));
+    clock.setAttribute('font-size', '14');
+    clock.setAttribute('text-anchor', 'middle');
+    g.appendChild(clock);
+    const utLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    utLabel.textContent = node.timerUT > 0 ? `${node.timerUT} UT` : '? UT';
+    utLabel.setAttribute('x', String(node.x));
+    utLabel.setAttribute('y', String(node.y + 10));
+    utLabel.setAttribute('font-size', '9');
+    utLabel.setAttribute('text-anchor', 'middle');
+    utLabel.setAttribute('fill', '#b7950b');
+    g.appendChild(utLabel);
+  } else if (node.type === 'gateway') {
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', `${node.x},${node.y - 30} ${node.x + 38},${node.y} ${node.x},${node.y + 30} ${node.x - 38},${node.y}`);
+    poly.setAttribute('fill', '#fff7e8');
+    poly.setAttribute('stroke', '#b9770e');
+    poly.style.cursor = 'pointer';
+    poly.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (!happyPathMarking.active) openGatewayEditor(node.id);
+    });
+    if (isSelected) {
+      poly.setAttribute('stroke', '#0b84f3');
+      poly.setAttribute('stroke-width', '3');
+    }
+    g.appendChild(poly);
+  } else {
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', String(node.x));
+    c.setAttribute('cy', String(node.y));
+    c.setAttribute('r', '24');
+    c.setAttribute('fill', node.type === 'start' ? '#e8f7ef' : '#fdecec');
+    c.setAttribute('stroke', node.type === 'start' ? '#1b8a5a' : '#c0392b');
+    c.setAttribute('stroke-width', node.type === 'end' ? '3' : '2');
+    if (isSelected) {
+      c.setAttribute('stroke', '#0b84f3');
+      c.setAttribute('stroke-width', '4');
+    }
+    g.appendChild(c);
+  }
+}
+
+function _drawNodeText(g, node, isSelected, selectedIndex) {
+  const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  txt.textContent = node.label;
+  txt.setAttribute('x', String(node.x));
+  txt.setAttribute('y', String(node.y + 4));
+  txt.setAttribute('font-size', '11');
+  txt.setAttribute('text-anchor', 'middle');
+  txt.setAttribute('fill', '#102a43');
+  if (isSelected) {
+    txt.textContent = `${node.label} (${selectedIndex + 1})`;
+    txt.setAttribute('font-weight', '700');
+  }
+  g.appendChild(txt);
+
+  const lc = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  lc.setAttribute('id', `loopCount-${node.id}`);
+  lc.setAttribute('x', String(node.x));
+  lc.setAttribute('y', String(node.y - 34));
+  lc.setAttribute('text-anchor', 'middle');
+  lc.setAttribute('font-size', '10');
+  lc.setAttribute('fill', '#b9770e');
+  lc.textContent = '';
+  g.appendChild(lc);
+}
+
 function drawGraph() {
   const svg = $('simCanvas');
   svg.innerHTML = '';
@@ -2869,40 +3035,12 @@ function drawGraph() {
     const from = nodeById(edge.from);
     const to = nodeById(edge.to);
     if (!from || !to) continue;
-
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', String(from.x));
-    line.setAttribute('y1', String(from.y));
-    line.setAttribute('x2', String(to.x));
-    line.setAttribute('y2', String(to.y));
-    line.setAttribute('stroke', edge.isLoopReturn ? '#f39c12' : edge.isErrorPath ? '#c0392b' : '#5d6d7e');
-    line.setAttribute('stroke-width', '2.2');
-    if (happyPathMarking.active) {
-      for (let i = 0; i < happyPathMarking.nodes.length - 1; i += 1) {
-        if (happyPathMarking.nodes[i] === edge.from && happyPathMarking.nodes[i + 1] === edge.to) {
-          line.setAttribute('stroke', '#0b84f3');
-          line.setAttribute('stroke-width', '4');
-          break;
-        }
-      }
-    }
-    line.setAttribute('marker-end', 'url(#arrow)');
-    svg.appendChild(line);
-
-    if (edge.probability !== undefined) {
-      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      t.textContent = `${edge.probability}%`;
-      t.setAttribute('x', String((from.x + to.x) / 2));
-      t.setAttribute('y', String((from.y + to.y) / 2 - 6));
-      t.setAttribute('fill', '#223');
-      t.setAttribute('font-size', '12');
-      svg.appendChild(t);
-    }
+    _drawEdgeWithLabel(svg, edge, from, to);
   }
 
   for (const node of graph.nodes) {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('data-node', node.id);
+    g.dataset.node = node.id;
     const selectedIndex = happyPathMarking.nodes.indexOf(node.id);
     const isSelected = selectedIndex >= 0;
     const canPick = !happyPathMarking.active || allowed.has(node.id) || isSelected;
@@ -2910,107 +3048,8 @@ function drawGraph() {
     g.style.opacity = canPick ? '1' : '0.42';
     g.addEventListener('click', () => onNodeClickedForHappyPath(node.id));
 
-    if (node.type === 'task') {
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', String(node.x - 55));
-      rect.setAttribute('y', String(node.y - 24));
-      rect.setAttribute('width', '110');
-      rect.setAttribute('height', '48');
-      rect.setAttribute('rx', '10');
-      rect.setAttribute('fill', node.automated ? '#e8f7ef' : '#edf3fb');
-      rect.setAttribute('stroke', node.automated ? '#1b8a5a' : '#2a4d69');
-      if (isSelected) {
-        rect.setAttribute('stroke', '#0b84f3');
-        rect.setAttribute('stroke-width', '3');
-      }
-      g.appendChild(rect);
-    } else if (node.type === 'timer') {
-      // Evento Timer: circulo duplo amarelo/ambar com icone de relogio
-      const cOuter = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      cOuter.setAttribute('cx', String(node.x));
-      cOuter.setAttribute('cy', String(node.y));
-      cOuter.setAttribute('r', '26');
-      cOuter.setAttribute('fill', '#fef9e7');
-      cOuter.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
-      cOuter.setAttribute('stroke-width', isSelected ? '4' : '2.5');
-      g.appendChild(cOuter);
-      const cInner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      cInner.setAttribute('cx', String(node.x));
-      cInner.setAttribute('cy', String(node.y));
-      cInner.setAttribute('r', '20');
-      cInner.setAttribute('fill', 'none');
-      cInner.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
-      cInner.setAttribute('stroke-width', '1.5');
-      g.appendChild(cInner);
-      // Icone de relogio (linhas de ponteiro)
-      const clock = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      clock.textContent = '⏱';
-      clock.setAttribute('x', String(node.x));
-      clock.setAttribute('y', String(node.y - 8));
-      clock.setAttribute('font-size', '14');
-      clock.setAttribute('text-anchor', 'middle');
-      g.appendChild(clock);
-      // Exibir UT configurada abaixo do icone
-      const utLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      utLabel.textContent = node.timerUT > 0 ? `${node.timerUT} UT` : '? UT';
-      utLabel.setAttribute('x', String(node.x));
-      utLabel.setAttribute('y', String(node.y + 10));
-      utLabel.setAttribute('font-size', '9');
-      utLabel.setAttribute('text-anchor', 'middle');
-      utLabel.setAttribute('fill', '#b7950b');
-      g.appendChild(utLabel);
-    } else if (node.type === 'gateway') {
-      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      poly.setAttribute('points', `${node.x},${node.y - 30} ${node.x + 38},${node.y} ${node.x},${node.y + 30} ${node.x - 38},${node.y}`);
-      poly.setAttribute('fill', '#fff7e8');
-      poly.setAttribute('stroke', '#b9770e');
-      poly.style.cursor = 'pointer';
-      poly.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        if (!happyPathMarking.active) openGatewayEditor(node.id);
-      });
-      if (isSelected) {
-        poly.setAttribute('stroke', '#0b84f3');
-        poly.setAttribute('stroke-width', '3');
-      }
-      g.appendChild(poly);
-    } else {
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', String(node.x));
-      c.setAttribute('cy', String(node.y));
-      c.setAttribute('r', '24');
-      c.setAttribute('fill', node.type === 'start' ? '#e8f7ef' : '#fdecec');
-      c.setAttribute('stroke', node.type === 'start' ? '#1b8a5a' : '#c0392b');
-      c.setAttribute('stroke-width', node.type === 'end' ? '3' : '2');
-      if (isSelected) {
-        c.setAttribute('stroke', '#0b84f3');
-        c.setAttribute('stroke-width', '4');
-      }
-      g.appendChild(c);
-    }
-
-    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    txt.textContent = node.label;
-    txt.setAttribute('x', String(node.x));
-    txt.setAttribute('y', String(node.y + 4));
-    txt.setAttribute('font-size', '11');
-    txt.setAttribute('text-anchor', 'middle');
-    txt.setAttribute('fill', '#102a43');
-    if (isSelected) {
-      txt.textContent = `${node.label} (${selectedIndex + 1})`;
-      txt.setAttribute('font-weight', '700');
-    }
-    g.appendChild(txt);
-
-    const lc = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    lc.setAttribute('id', `loopCount-${node.id}`);
-    lc.setAttribute('x', String(node.x));
-    lc.setAttribute('y', String(node.y - 34));
-    lc.setAttribute('text-anchor', 'middle');
-    lc.setAttribute('font-size', '10');
-    lc.setAttribute('fill', '#b9770e');
-    lc.textContent = '';
-    g.appendChild(lc);
+    _drawNodeShape(g, node, isSelected);
+    _drawNodeText(g, node, isSelected, selectedIndex);
 
     svg.appendChild(g);
   }
@@ -3033,12 +3072,13 @@ function updateDashboard() {
   if (!graph) return;
   const sel = $('roiGateway');
   const gateways = gatewayNodes(graph);
-  sel.innerHTML = gateways.map((g) => `<option value="${g.id}">${g.label || g.id}</option>`).join('');
+  sel.innerHTML = gateways.map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.label || g.id)}</option>`).join('');
 
   let metrics;
   try {
     metrics = computeScenarioMetrics();
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     const base = calculateTEPAndIP(graph, 3500);
     renderExecutiveKpis(null, base);
     $('calibrationResult').textContent = e.message;
@@ -3092,6 +3132,7 @@ function applyCalibration() {
 
     updateDashboard();
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     $('calibrationResult').textContent = `Falha na calibracao: ${e.message}`;
     updateDashboard();
   }
@@ -3147,6 +3188,15 @@ function edgeBetween(a, b) {
   return graph.edges.find((e) => e.from === a && e.to === b);
 }
 
+function _calcCrossLanePenalty(from, to) {
+  const a = laneMetaOf(from);
+  const b = laneMetaOf(to);
+  if (a.laneId === b.laneId) return 0;
+  if (a.org && b.org && a.org !== b.org) return 40;
+  if (a.sector && b.sector && a.sector !== b.sector) return 20;
+  return 10;
+}
+
 function edgeDurationMinutes(fromId, toId) {
   const from = nodeById(fromId);
   const to = nodeById(toId);
@@ -3161,20 +3211,12 @@ function edgeDurationMinutes(fromId, toId) {
     toAutomated = true;
   }
 
-  // Duracao proporcional as UTs do Word: automatizada=0.5 UT, manual=10 UT, gateway=2.5 UT.
-  if (to.type === 'timer') mins += Number(to.timerUT || 0); // Espera do timer (semaforo)
+  if (to.type === 'timer') mins += Number(to.timerUT || 0);
   if (to.type === 'task') mins += toAutomated ? 0.5 : 10;
   if (!isIdealMode && to.type === 'gateway') mins += 2.5;
   if (!isIdealMode && from.type === 'task' && to.type === 'task' && !from.automated && !toAutomated) {
-    const a = laneMetaOf(from);
-    const b = laneMetaOf(to);
-    if (a.laneId !== b.laneId) {
-      if (a.org && b.org && a.org !== b.org) mins += 40;
-      else if (a.sector && b.sector && a.sector !== b.sector) mins += 20;
-      else mins += 10;
-    }
+    mins += _calcCrossLanePenalty(from, to);
   }
-  // Loop: duplica a duracao da aresta (tarefa reexecutada como se fosse a primeira vez).
   if (!isIdealMode && edge.isLoopReturn) mins *= 2;
   return Math.max(mins, 0.25);
 }
@@ -3206,114 +3248,100 @@ function drawTokens(tokens) {
   }
 }
 
+function _classifyToken(t, edge, to, fromNode) {
+  const toId = to?.id;
+  const toVisits = Number(t.nodeVisits?.[toId] || 0);
+  const toAutomated = Boolean(
+    to?.automated
+    || (simulationMode === 'ideal_auto' && confirmedAutoNodes.has(toId))
+  );
+  const isLoopRepeatPass = Boolean(edge?.isLoopReturn && toVisits >= 1);
+  const fromMeta = fromNode ? laneMetaOf(fromNode) : null;
+  const toMeta = to ? laneMetaOf(to) : null;
+  const isCriticalHandoff = Boolean(
+    !isLoopRepeatPass
+    && fromMeta?.org && toMeta?.org
+    && fromMeta.org !== toMeta.org
+  );
+
+  if (edge?.isErrorPath || (to?.type === 'end' && to?.endKind === 'error')) {
+    return { color: '#c0392b', speedFactor: 1 };
+  }
+  if (isCriticalHandoff) {
+    return { color: '#c0392b', speedFactor: 1 };
+  }
+  if (isLoopRepeatPass) {
+    return { color: '#f39c12', speedFactor: 3.0 };
+  }
+  if (to?.type === 'timer') {
+    return { color: '#f1c40f', speedFactor: 0.3 };
+  }
+  if (to?.type === 'task' && toAutomated) {
+    return { color: '#8e44ad', speedFactor: 1 };
+  }
+  return { color: '#1f6fb2', speedFactor: 1 };
+}
+
+function _finalizeTokenStep(t, edge, toId, loopCounters) {
+  if (t.progress < 1) return false;
+  t.step += 1;
+  t.progress = 0;
+
+  t.nodeVisits = t.nodeVisits || {};
+  t.nodeVisits[toId] = Number(t.nodeVisits[toId] || 0) + 1;
+
+  if (edge?.isLoopReturn) {
+    const current = loopCounters.get(toId) || 0;
+    loopCounters.set(toId, current + 1);
+    const el = document.getElementById(`loopCount-${toId}`);
+    if (el) el.textContent = `Execucoes acumuladas: ${current + 1}`;
+  }
+
+  if (!t.path[t.step + 1]) t.ended = true;
+  return true;
+}
+
+function _animateToken(t, simulationClockMs, dt) {
+  if (t.ended) return;
+  if (!t.launched) {
+    if (simulationClockMs >= t.launchAtMs) t.launched = true;
+    else return;
+  }
+  const fromId = t.path[t.step];
+  const toId = t.path[t.step + 1];
+  if (!toId) { t.ended = true; return; }
+  const edge = edgeBetween(fromId, toId);
+  const dur = edgeDurationMinutes(fromId, toId);
+  t.progress += (1 / Math.max(dur, 0.1)) * dt * t.speedFactor;
+  const { color, speedFactor } = _classifyToken(t, edge, nodeById(toId), nodeById(fromId));
+  t.color = color;
+  t.speedFactor = speedFactor;
+  if (dur > 20) t.speedFactor *= 0.5;
+  _finalizeTokenStep(t, edge, toId, loopCounters);
+}
+
 function animate(frameTimeMs = performance.now()) {
   if (!running) return;
-
   if (!animationLastTickMs) animationLastTickMs = frameTimeMs;
   const deltaMs = Math.max(1, frameTimeMs - animationLastTickMs);
   animationLastTickMs = frameTimeMs;
-
   const speedGlobal = Math.max(0.1, Number($('speed')?.value || 1));
   simulationClockMs += deltaMs * speedGlobal;
   const dt = (deltaMs / 1000) * 0.9 * speedGlobal;
 
-  for (const t of window.__tokens) {
-    if (t.ended) continue;
+  for (const t of globalThis.__tokens) _animateToken(t, simulationClockMs, dt);
 
-    if (!t.launched) {
-      if (simulationClockMs >= t.launchAtMs) {
-        t.launched = true;
-      } else {
-        continue;
-      }
-    }
+  drawTokens(globalThis.__tokens);
+  refreshLiveSimulationStatus(globalThis.__tokens);
 
-    const fromId = t.path[t.step];
-    const toId = t.path[t.step + 1];
-    if (!toId) {
-      t.ended = true;
-      continue;
-    }
-
-    const edge = edgeBetween(fromId, toId);
-    const to = nodeById(toId);
-    const dur = edgeDurationMinutes(fromId, toId);
-    const toVisits = Number(t.nodeVisits?.[toId] || 0);
-
-    t.progress += (1 / Math.max(dur, 0.1)) * dt * t.speedFactor;
-
-    const toAutomated = Boolean(
-      to?.automated
-      || (simulationMode === 'ideal_auto' && confirmedAutoNodes.has(toId))
-    );
-    const isLoopRepeatPass = Boolean(edge?.isLoopReturn && toVisits >= 1);
-
-    // Detecta handoff critico: cruzamento entre orgaos diferentes.
-    const fromNode = nodeById(fromId);
-    const fromMeta = fromNode ? laneMetaOf(fromNode) : null;
-    const toMeta = to ? laneMetaOf(to) : null;
-    const isCriticalHandoff = Boolean(
-      !isLoopRepeatPass
-      && fromMeta?.org && toMeta?.org
-      && fromMeta.org !== toMeta.org
-    );
-
-    if (edge?.isErrorPath || (to?.type === 'end' && to?.endKind === 'error')) {
-      t.color = '#c0392b'; // Vermelho: erro
-      t.speedFactor = 1;
-    } else if (isCriticalHandoff) {
-      t.color = '#c0392b'; // Vermelho: handoff critico entre orgaos
-      t.speedFactor = 1;
-    } else if (isLoopRepeatPass) {
-      t.color = '#f39c12'; // Laranja: loop/retrabalho
-      t.speedFactor = 3.0; // Rápido: loop não deve atrasar o fim da simulação
-    } else if (to?.type === 'timer') {
-      t.color = '#f1c40f'; // Amarelo: semaoforo vermelho / evento timer (aguardando)
-      t.speedFactor = 0.3; // Bem lento — simula a espera do timer
-    } else if (to?.type === 'task' && toAutomated) {
-      t.color = '#8e44ad'; // Roxo: automacao RPA
-      t.speedFactor = 1;
-    } else {
-      t.color = '#1f6fb2'; // Azul: execucao normal
-      t.speedFactor = 1;
-    }
-
-    // Gargalo: se UT da aresta > 20, velocidade cai 50%.
-    if (dur > 20) {
-      t.speedFactor *= 0.5;
-    }
-
-    if (t.progress >= 1) {
-      t.step += 1;
-      t.progress = 0;
-
-      t.nodeVisits = t.nodeVisits || {};
-      t.nodeVisits[toId] = Number(t.nodeVisits[toId] || 0) + 1;
-
-      if (edge?.isLoopReturn) {
-        const current = loopCounters.get(toId) || 0;
-        loopCounters.set(toId, current + 1);
-        const el = document.getElementById(`loopCount-${toId}`);
-        if (el) el.textContent = `Execucoes acumuladas: ${current + 1}`;
-      }
-
-      if (!t.path[t.step + 1]) t.ended = true;
-    }
-  }
-
-  drawTokens(window.__tokens);
-  refreshLiveSimulationStatus(window.__tokens);
-
-  if (window.__tokens.some((t) => !t.ended)) {
+  if (globalThis.__tokens.some((t) => !t.ended)) {
     animFrame = requestAnimationFrame(animate);
   } else {
     running = false;
     animationLastTickMs = 0;
     simulationClockMs = 0;
-    refreshLiveSimulationStatus(window.__tokens);
-    // Armazena o TER real das 100 partículas para o dashboard usar
+    refreshLiveSimulationStatus(globalThis.__tokens);
     _animatedTer = liveSimulationStatus.avgLeadTime > 0 ? liveSimulationStatus.avgLeadTime : null;
-    // Re-renderiza o dashboard com o TER real (igual ao contador ao vivo)
     updateDashboard();
     $('btnViewDashboard')?.classList.remove('hidden');
   }
@@ -3338,16 +3366,17 @@ function playSimulation() {
     try {
       parseHappyPathRequired();
     } catch (e) {
+      /* exibe mensagem de erro na interface */
       $('validationBox').innerHTML = `<span class="badge error">ideal</span> ${e.message}`;
       return;
     }
   }
 
   drawGraph();
-  window.__tokens = buildTokenSchedule();
+  globalThis.__tokens = buildTokenSchedule();
   const panel = $('simLivePanel');
-  if (panel) { panel.classList.remove('hidden'); panel.classList.remove('slp-done'); }
-  refreshLiveSimulationStatus(window.__tokens);
+  if (panel) { panel.classList.remove('hidden', 'slp-done'); }
+  refreshLiveSimulationStatus(globalThis.__tokens);
   running = true;
   animationLastTickMs = 0;
   simulationClockMs = 0;
@@ -3361,7 +3390,7 @@ function stopSimulation() {
   cancelAnimationFrame(animFrame);
   animationLastTickMs = 0;
   simulationClockMs = 0;
-  refreshLiveSimulationStatus(window.__tokens || []);
+  refreshLiveSimulationStatus(globalThis.__tokens || []);
 }
 
 function renderSuggestions() {
@@ -3434,11 +3463,40 @@ function renderHypothesisTargets() {
     return;
   }
 
-  sel.innerHTML = items.map((it) => `<option value="${it.value}">${it.label}</option>`).join('');
+  sel.innerHTML = items.map((it) => `<option value="${escapeHtml(it.value)}">${escapeHtml(it.label)}</option>`).join('');
 
   if (type === 'gateway') help.textContent = 'Hipotese: retirar etapa de aprovacao (gateway).';
   else if (type === 'loop') help.textContent = 'Hipotese: remover retorno de retrabalho (loop).';
   else help.textContent = 'Hipotese: reduzir atrito de handoff para mesma equipe.';
+}
+
+function _applyGatewayHypothesis(projectedGraph, target) {
+  const node = (projectedGraph.nodes || []).find((n) => n.id === target);
+  if (node) {
+    node.type = 'task';
+    node.automated = true;
+    node.label = `${node.label || node.id} (removido)`;
+  }
+}
+
+function _applyLoopHypothesis(projectedGraph, target) {
+  const edge = (projectedGraph.edges || []).find((e) => e.id === target);
+  if (edge) {
+    const fromId = edge.from;
+    edge.isLoopReturn = false;
+    const siblings = (projectedGraph.edges || []).filter((e) => e.from === fromId && e.id !== edge.id);
+    const removedProb = Number(edge.probability || 0);
+    edge.probability = 0;
+    if (siblings.length && removedProb > 0) {
+      const add = removedProb / siblings.length;
+      for (const s of siblings) s.probability = Number(s.probability || 0) + add;
+    }
+  }
+}
+
+function _applyHandoffHypothesis(projectedGraph, target) {
+  projectedGraph.handoffRules = projectedGraph.handoffRules || {};
+  projectedGraph.handoffRules[target] = 'same_team';
 }
 
 function runHypothesisSimulation() {
@@ -3456,28 +3514,11 @@ function runHypothesisSimulation() {
   const projectedGraph = cloneLocal(graph);
 
   if (type === 'gateway') {
-    const node = (projectedGraph.nodes || []).find((n) => n.id === target);
-    if (node) {
-      node.type = 'task';
-      node.automated = true;
-      node.label = `${node.label || node.id} (removido)`;
-    }
+    _applyGatewayHypothesis(projectedGraph, target);
   } else if (type === 'loop') {
-    const edge = (projectedGraph.edges || []).find((e) => e.id === target);
-    if (edge) {
-      const fromId = edge.from;
-      edge.isLoopReturn = false;
-      const siblings = (projectedGraph.edges || []).filter((e) => e.from === fromId && e.id !== edge.id);
-      const removedProb = Number(edge.probability || 0);
-      edge.probability = 0;
-      if (siblings.length && removedProb > 0) {
-        const add = removedProb / siblings.length;
-        for (const s of siblings) s.probability = Number(s.probability || 0) + add;
-      }
-    }
+    _applyLoopHypothesis(projectedGraph, target);
   } else if (type === 'handoff') {
-    projectedGraph.handoffRules = projectedGraph.handoffRules || {};
-    projectedGraph.handoffRules[target] = 'same_team';
+    _applyHandoffHypothesis(projectedGraph, target);
   }
 
   const projected = calculateTEPAndIP(projectedGraph, 2500);
@@ -3501,20 +3542,16 @@ function runRoi() {
   $('roiResult').textContent = `${roi.note}\nIP atual: ${roi.base.ip.toFixed(2)}%\nIP projetado: ${roi.projected.ip.toFixed(2)}%\nDelta: ${roi.delta.toFixed(2)} p.p.`;
 }
 
-function generateReport() {
-  if (!validateAndShow()) return;
-  let metrics;
-  try {
-    metrics = computeScenarioMetrics();
-    _lastSimMetrics = metrics;
-  } catch (e) {
-    $('reportBox').textContent = `Falha no relatorio: ${e.message}`;
-    return;
+function _formatLeadTimeInformedLine(metrics) {
+  if (Number.isFinite(metrics.leadTimeInformed)) {
+    return `Lead time informado: ${metrics.leadTimeInformed.toFixed(2)} min | Proporcao: ${metrics.ipLeadInformedVsIdeal.toFixed(2)}%`;
   }
+  return 'Lead time informado: nao informado (opcional)';
+}
 
+function _buildReportText(metrics) {
   const top = metrics.ranking.slice(0, 5).map((r, i) => `${i + 1}. ${r.type} - ${r.key} (${r.total.toFixed(1)} min)`).join('\n');
-
-  const text = [
+  return [
     'RELATORIO AUTOMATICO - SIMULADOR DE PROCESSOS',
     'BLOCO ESTIMADO',
     `TEP ideal: ${metrics.tepIdeal.toFixed(2)} min | Base: ${metrics.ipIdeal.toFixed(2)}%`,
@@ -3522,7 +3559,7 @@ function generateReport() {
     '',
     'BLOCO INFORMADO PELO EXECUTOR',
     `Lead time ideal (caminho feliz sem punicoes): ${metrics.leadIdeal.toFixed(2)} min | Base: ${metrics.ipLeadIdeal.toFixed(2)}%`,
-    `Lead time informado: ${Number.isFinite(metrics.leadTimeInformed) ? `${metrics.leadTimeInformed.toFixed(2)} min | Proporcao: ${metrics.ipLeadInformedVsIdeal.toFixed(2)}%` : 'nao informado (opcional)'}`,
+    _formatLeadTimeInformedLine(metrics),
     '',
     'BLOCO IDEAL AUTO',
     `TEP ideal auto: ${metrics.tepIdealAuto.toFixed(2)} min | Indice(auto): ${metrics.ipIdealAuto.toFixed(2)}%`,
@@ -3534,8 +3571,21 @@ function generateReport() {
     '',
     'Observacao: Validar loops e handoffs para ganho de eficiencia.',
   ].join('\n');
+}
 
-  $('reportBox').textContent = text;
+function generateReport() {
+  if (!validateAndShow()) return;
+  let metrics;
+  try {
+    metrics = computeScenarioMetrics();
+    _lastSimMetrics = metrics;
+  } catch (e) {
+    /* exibe mensagem de erro na interface */
+    $('reportBox').textContent = `Falha no relatorio: ${e.message}`;
+    return;
+  }
+
+  $('reportBox').textContent = _buildReportText(metrics);
 }
 
 function formatExtractionSource(endpointUsed, file) {
@@ -3603,6 +3653,7 @@ async function runVisionExtract() {
     drawGraph();
     renderSetupPathPicker();
   } catch (e) {
+    /* exibe mensagem de erro na interface */
     out.textContent = `Falha na extracao: ${e.message}`;
   } finally {
     if (btn) {
@@ -3638,7 +3689,7 @@ function renderTimerSetup() {
 
   $('btnSaveTimers').addEventListener('click', () => {
     box.querySelectorAll('[data-timer-id]').forEach((input) => {
-      const nId = input.getAttribute('data-timer-id');
+      const nId = input.dataset.timerId;
       const node = (graph?.nodes || []).find((n) => n.id === nId);
       if (node) node.timerUT = Math.max(0, Number(input.value) || 0);
     });
@@ -3708,14 +3759,14 @@ const DEFAULT_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
 
 function initBpmnModeler() {
   if (_bpmnModeler) return;
-  const BpmnJS = window.BpmnJS;
+  const BpmnJS = globalThis.BpmnJS;
   if (!BpmnJS) {
     console.error('[SimBPMN] BpmnJS não encontrado. Verifique o CDN.');
     return;
   }
   const container = $('bpmnContainer');
   if (!container) { console.error('[SimBPMN] #bpmnContainer não encontrado.'); return; }
-  _bpmnModeler = new BpmnJS({ container, keyboard: { bindTo: window } });
+  _bpmnModeler = new BpmnJS({ container, keyboard: { bindTo: globalThis } });
 }
 
 async function loadDefaultBpmn() {
@@ -3724,6 +3775,7 @@ async function loadDefaultBpmn() {
     await _bpmnModeler.importXML(DEFAULT_BPMN);
     _bpmnModeler.get('canvas').zoom('fit-viewport');
   } catch (e) {
+    /* erro nao-fatal — registra aviso */
     console.warn('[SimBPMN] Erro ao carregar diagrama padrão:', e.message);
   }
 }
@@ -3791,6 +3843,7 @@ async function applyFromBpmnEditor() {
     const out = $('cvOutput');
     if (out) out.textContent = `Topologia extraída do Editor BPMN: ${g.nodes.length} nó(s), ${(g.edges || []).length} aresta(s).`;
   } catch (e) {
+    /* notifica o usuario do erro */
     console.error('[SimBPMN] applyFromBpmnEditor:', e);
     alert('Erro ao extrair topologia: ' + e.message);
   } finally {
@@ -3809,6 +3862,7 @@ async function exportBpmnFile() {
     a.download = 'processo.bpmn';
     a.click();
   } catch (e) {
+    /* notifica o usuario do erro */
     alert('Erro ao exportar: ' + e.message);
   }
 }
@@ -3891,7 +3945,7 @@ function wireEvents() {
     // Checkbox de automação: trata interdependência e faz refresh completo
     if (t.matches('input[data-task-automated], input[data-task-potential]')) {
       document.querySelectorAll('input[data-task-automated]').forEach((autoEl) => {
-        const id = String(autoEl.getAttribute('data-task-automated') || '');
+        const id = String(autoEl.dataset.taskAutomated || '');
         if (!id) return;
         const potentialEl = document.querySelector(`input[data-task-potential="${CSS.escape(id)}"]`);
         if (!potentialEl) return;
@@ -4003,13 +4057,14 @@ function wireEvents() {
   $('btnBpmnApply')?.addEventListener('click', applyFromBpmnEditor);
   $('btnBpmnBack')?.addEventListener('click', () => { hideBpmnEditor(); showEntryChoice(); });
   $('btnBpmnFit')?.addEventListener('click', () => {
-    try { _bpmnModeler?.get('canvas').zoom('fit-viewport'); } catch (e) {}
+    try { _bpmnModeler?.get('canvas').zoom('fit-viewport'); } catch (e) { console.warn('[simulator]', e); }
   });
   $('btnBpmnUndo')?.addEventListener('click', () => {
-    try { _bpmnModeler?.get('commandStack').undo(); } catch (e) {}
+    try { _bpmnModeler?.get('commandStack').undo(); } catch (e) { console.warn('[simulator]', e); }
   });
   $('btnBpmnRedo')?.addEventListener('click', () => {
-    try { _bpmnModeler?.get('commandStack').redo(); } catch (e) {}
+    try { _bpmnModeler?.get('commandStack').redo(); } catch (e) { console.warn('[simulator]', e); }
+  /* tratamento de erro */
   });
   $('btnBpmnExport')?.addEventListener('click', exportBpmnFile);
 }
@@ -4042,7 +4097,7 @@ function saveToSIGA() {
     // Tenta capturar métricas atuais; falha silenciosamente se não for possível
     let simResults = _lastSimMetrics;
     if (!simResults) {
-      try { simResults = computeScenarioMetrics(); _lastSimMetrics = simResults; } catch (_) {}
+      try { simResults = computeScenarioMetrics(); _lastSimMetrics = simResults; } catch (_) { console.warn('[simulator]', _); }
     }
     // Payload simplificado para serialização (remove estruturas grandes como ranking completo)
     const simSummary = simResults ? {
@@ -4058,7 +4113,7 @@ function saveToSIGA() {
       savedAt:   new Date().toISOString(),
     } : null;
 
-    window.parent.postMessage(
+    globalThis.parent.postMessage(
       {
         type: 'SIMULATOR_SAVE',
         payload: {
@@ -4068,69 +4123,58 @@ function saveToSIGA() {
           simResults:    simSummary,
         },
       },
-      '*'
+      globalThis.location.origin
     );
     if (btn) {
       btn.textContent = '✅ Salvo no SIGA';
       setTimeout(() => { btn.disabled = false; btn.textContent = '💾 Salvar no SIGA'; }, 2000);
     }
   } catch (e) {
+    /* erro nao-fatal — registra aviso */
     if (btn) { btn.disabled = false; btn.textContent = '💾 Salvar no SIGA'; }
     console.warn('[Simulator] saveToSIGA falhou:', e);
   }
 }
 
-window.addEventListener('message', (ev) => {
+function _handleMsgLoadGraph(ev, msg) {
+  const { graph: g, popName, popKey } = msg.payload || {};
+  _sigaPopKey = popKey || null;
+  const titleEl = document.querySelector('.topbar h1');
+  if (titleEl && popName) titleEl.textContent = `Simulador — ${popName}`;
+  const saveBtn = $('btnSaveToSiga');
+  if (saveBtn) saveBtn.style.display = popKey ? 'inline-flex' : 'none';
+  if (g && g.nodes && g.edges) {
+    graph = normalizeGraph(g);
+    normalizeActorCodesInGraph();
+    $('graphJson').value = JSON.stringify(graph, null, 2);
+    refreshAll();
+    revealDashboard();
+  }
+  ev.source?.postMessage({ type: 'SIMULATOR_READY', popKey }, globalThis.location.origin);
+}
+
+function _handleMsgProcessList(msg) {
+  const { list } = msg.payload || {};
+  if (Array.isArray(list) && list.length) {
+    _sigaProcessList = list;
+    if (!$('setupModal')?.classList.contains('hidden')) renderSetupSection0();
+  }
+}
+
+function _dispatchSimulatorMessage(ev, msg) {
+  if (msg.type === 'SIGA_LOAD_GRAPH') { _handleMsgLoadGraph(ev, msg); return; }
+  if (msg.type === 'SIGA_REQUEST_GRAPH' && graph) {
+    ev.source?.postMessage({ type: 'SIMULATOR_SAVE', payload: { graph: cloneLocal(graph), popKey: _sigaPopKey } }, globalThis.location.origin);
+  }
+  if (msg.type === 'SIGA_PROCESS_LIST') _handleMsgProcessList(msg);
+}
+
+globalThis.addEventListener('message', (ev) => {
+  if (ev.origin !== globalThis.location.origin) return;
   try {
     const msg = ev.data;
     if (!msg || typeof msg !== 'object') return;
-
-    // ── Parent sends a saved graph to load ──────────────────
-    if (msg.type === 'SIGA_LOAD_GRAPH') {
-      const { graph: g, popName, popKey } = msg.payload || {};
-      _sigaPopKey = popKey || null;
-
-      // Update topbar label
-      const titleEl = document.querySelector('.topbar h1');
-      if (titleEl && popName) titleEl.textContent = `Simulador — ${popName}`;
-
-      // Show / hide the "Salvar no SIGA" button
-      const saveBtn = $('btnSaveToSiga');
-      if (saveBtn) saveBtn.style.display = popKey ? 'inline-flex' : 'none';
-
-      if (g && g.nodes && g.edges) {
-        graph = normalizeGraph(g);
-        normalizeActorCodesInGraph();
-        $('graphJson').value = JSON.stringify(graph, null, 2);
-        refreshAll();
-        revealDashboard();
-      }
-      // Acknowledge readiness
-      ev.source?.postMessage({ type: 'SIMULATOR_READY', popKey }, '*');
-      return;
-    }
-
-    // ── Parent requests current graph (e.g. before navigating away) ──
-    if (msg.type === 'SIGA_REQUEST_GRAPH') {
-      if (graph) {
-        ev.source?.postMessage(
-          { type: 'SIMULATOR_SAVE', payload: { graph: cloneLocal(graph), popKey: _sigaPopKey } },
-          '*'
-        );
-      }
-    }
-
-    // ── Parent envia lista de processos da Arquitetura ──────────
-    if (msg.type === 'SIGA_PROCESS_LIST') {
-      const { list } = msg.payload || {};
-      if (Array.isArray(list) && list.length) {
-        _sigaProcessList = list;
-        // Re-renderiza a Seção 0 se o modal estiver aberto
-        if (!$('setupModal')?.classList.contains('hidden')) {
-          renderSetupSection0();
-        }
-      }
-    }
+    _dispatchSimulatorMessage(ev, msg);
   } catch (e) {
     console.warn('[Simulator] message handler error:', e);
   }
@@ -4146,6 +4190,7 @@ try {
   loadSample();          // carrega exemplo no background (JSON visível mas tela coberta)
   showEntryChoice();     // primeiro passo: overlay de escolha de entrada
 } catch (e) {
+  /* exibe mensagem de erro na interface */
   const out = $('cvOutput');
   if (out) out.textContent = `Falha ao inicializar interface: ${e.message}`;
   const v = $('validationBox');

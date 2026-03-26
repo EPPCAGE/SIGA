@@ -1,0 +1,60 @@
+# ════════════════════════════════════════════════════════════════
+# Azure DevOps Advanced Security — Padrões de Detecção
+# ════════════════════════════════════════════════════════════════
+#
+# Este arquivo define padrões customizados para detecção de secrets
+# no Azure DevOps Advanced Security / Secret Scanning.
+#
+# Referência: https://learn.microsoft.com/en-us/azure/devops/repos/security/secrets-scanning
+#
+
+[string]
+# GitHub Personal Access Token — padrão ghp_
+  pattern: ghp_[0-9a-zA-Z]{36,255}
+  severity: critical
+  
+[string]
+# Azure Storage Account Key (padrão64 chars Base64)
+  pattern: DefaultEndpointsProtocol=https;AccountName=[^;]+;AccountKey=[A-Za-z0-9+/]{88}==
+  severity: critical
+
+[string]  
+# Microsoft Entra ID / Azure AD Client Secret
+  pattern: [a-zA-Z0-9~._-]*[A-Za-z0-9~._-]{34}[A-Za-z0-9~._-]*
+  severity: critical
+
+[string]
+# AWS Access Key
+  pattern: AKIA[0-9A-Z]{16}
+  severity: critical
+
+[string]
+# API Keys genéricos (padrão comum api_key=...)
+  pattern: api[_-]?key\s*[=:]\s*['\"]?[a-zA-Z0-9_-]{20,}['\"]?
+  severity: high
+
+[string]
+# Private RSA / SSH Keys
+  pattern: -----BEGIN PRIVATE KEY-----
+  severity: critical
+
+[string]
+# SQL Server Connection Strings com password
+  pattern: Server=[^;]+;.*Password=[^;]+
+  severity: high
+
+[string]
+# OAuth Tokens (Bearer)
+  pattern: Bearer\s+[A-Za-z0-9\-._~+/]+=*
+  severity: high
+
+[regex]
+# JSON Web Tokens (JWT)
+  pattern: eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+
+  severity: medium
+
+[string]
+# Hardcoded email (suspeito)
+  pattern: [a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|org|gov|edu|mil|net)
+  severity: low
+  # Excluded: noreply@*, do-not-reply@*, example@*, test@*

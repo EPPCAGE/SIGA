@@ -31,13 +31,13 @@ function parseProbability(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   const text = String(value ?? '').trim();
   if (!text) return 0;
-  const normalized = text.replace('%', '').replace(',', '.').trim();
+  const normalized = text.replaceAll('%', '').replace(',', '.').trim();
   const num = Number(normalized);
   return Number.isFinite(num) ? num : 0;
 }
 
 function deepClone(value) {
-  return JSON.parse(JSON.stringify(value));
+  return structuredClone(value);
 }
 
 function buildMaps(graph) {
@@ -87,6 +87,48 @@ export function validateProbabilities(graph) {
   return errors;
 }
 
+function validateNodeConnectivity(graph, nodeMap, outMap, inMap, errors, warnings) {
+  for (const node of graph.nodes || []) {
+    if (!nodeMap.has(node.id)) { errors.push(`No invalido: ${node.id}`); continue; }
+    const noIncoming = node.type !== 'start' && (inMap.get(node.id) || []).length === 0;
+    const noOutgoing = node.type !== 'end' && (outMap.get(node.id) || []).length === 0;
+    if (noIncoming) warnings.push(`No ${node.label || node.id} nao possui entrada (ponta solta).`);
+    if (noOutgoing) warnings.push(`No ${node.label || node.id} nao possui saida (ponta solta).`);
+  }
+}
+
+function validateEdgeRefs(graph, nodeMap, errors) {
+  for (const edge of graph.edges || []) {
+    const missingRef = !nodeMap.has(edge.from) || !nodeMap.has(edge.to);
+    if (missingRef) errors.push(`Aresta ${edge.id || `${edge.from}->${edge.to}`} referencia no inexistente.`);
+  }
+}
+
+function buildReachableSet(startId, outMap) {
+  const reachable = new Set();
+  const q = [startId];
+  while (q.length) {
+    const id = q.shift();
+    if (reachable.has(id)) continue;
+    reachable.add(id);
+    for (const e of outMap.get(id) || []) q.push(e.to);
+  }
+  return reachable;
+}
+
+function validateReachability(graph, starts, ends, outMap, errors, warnings) {
+  const canCheck = starts.length === 1 && ends.length > 0;
+  if (!canCheck) return;
+
+  const reachable = buildReachableSet(starts[0].id, outMap);
+  const hasPathToEnd = ends.some((e) => reachable.has(e.id));
+  if (!hasPathToEnd) errors.push('Nao existe caminho do inicio ate um fim (fluxo interrompido).');
+
+  for (const node of graph.nodes || []) {
+    if (!reachable.has(node.id)) warnings.push(`No ${node.label || node.id} esta desconectado do inicio.`);
+  }
+}
+
 export function validateGraphIntegrity(graph) {
   const errors = [];
   const warnings = [];
@@ -96,41 +138,9 @@ export function validateGraphIntegrity(graph) {
   if (starts.length !== 1) errors.push(`Esperado 1 evento de inicio, encontrado ${starts.length}.`);
   if (ends.length < 1) errors.push('Nenhum evento de fim encontrado.');
 
-  for (const node of graph.nodes || []) {
-    if (!nodeMap.has(node.id)) errors.push(`No invalido: ${node.id}`);
-    if (node.type !== 'start' && (inMap.get(node.id) || []).length === 0) {
-      warnings.push(`No ${node.label || node.id} nao possui entrada (ponta solta).`);
-    }
-    if (node.type !== 'end' && (outMap.get(node.id) || []).length === 0) {
-      warnings.push(`No ${node.label || node.id} nao possui saida (ponta solta).`);
-    }
-  }
-
-  for (const edge of graph.edges || []) {
-    if (!nodeMap.has(edge.from) || !nodeMap.has(edge.to)) {
-      errors.push(`Aresta ${edge.id || `${edge.from}->${edge.to}`} referencia no inexistente.`);
-    }
-  }
-
-  if (starts.length === 1 && ends.length > 0) {
-    const reachable = new Set();
-    const q = [starts[0].id];
-    while (q.length) {
-      const id = q.shift();
-      if (reachable.has(id)) continue;
-      reachable.add(id);
-      for (const e of outMap.get(id) || []) q.push(e.to);
-    }
-
-    const hasPathToEnd = ends.some((e) => reachable.has(e.id));
-    if (!hasPathToEnd) {
-      errors.push('Nao existe caminho do inicio ate um fim (fluxo interrompido).');
-    }
-
-    for (const node of graph.nodes || []) {
-      if (!reachable.has(node.id)) warnings.push(`No ${node.label || node.id} esta desconectado do inicio.`);
-    }
-  }
+  validateNodeConnectivity(graph, nodeMap, outMap, inMap, errors, warnings);
+  validateEdgeRefs(graph, nodeMap, errors);
+  validateReachability(graph, starts, ends, outMap, errors, warnings);
 
   return { errors, warnings };
 }
@@ -206,7 +216,28 @@ function pickEdge(edges) {
     acc += Number(e.probability || 0);
     if (roll <= acc) return e;
   }
-  return edges[edges.length - 1];
+  return edges.at(-1);
+}
+
+function distributeWeights(group, base, target) {
+  if (base > 0) {
+    return group.map((e) => ({ edge: e, w: (parseProbability(e.probability) / base) * target }));
+  }
+  const each = target / group.length;
+  return group.map((e) => ({ edge: e, w: each }));
+}
+
+function pickWeighted(weighted, edges) {
+  const total = weighted.reduce((a, i) => a + i.w, 0);
+  if (!total) return pickEdge(edges);
+
+  const roll = Math.random() * total;
+  let acc = 0;
+  for (const item of weighted) {
+    acc += item.w;
+    if (roll <= acc) return item.edge;
+  }
+  return weighted.at(-1).edge;
 }
 
 function pickEdgeWithLoopExitBoost(edges, visitCountOnCurrentNode) {
@@ -227,35 +258,41 @@ function pickEdgeWithLoopExitBoost(edges, visitCountOnCurrentNode) {
   const passBase = passEdges.reduce((a, e) => a + parseProbability(e.probability), 0);
   const loopBase = loopEdges.reduce((a, e) => a + parseProbability(e.probability), 0);
 
-  const weighted = [];
-  if (passBase > 0) {
-    for (const e of passEdges) {
-      weighted.push({ edge: e, w: (parseProbability(e.probability) / passBase) * passTarget });
-    }
-  } else {
-    const each = passTarget / passEdges.length;
-    for (const e of passEdges) weighted.push({ edge: e, w: each });
-  }
+  const weighted = [
+    ...distributeWeights(passEdges, passBase, passTarget),
+    ...distributeWeights(loopEdges, loopBase, loopTarget),
+  ];
 
-  if (loopBase > 0) {
-    for (const e of loopEdges) {
-      weighted.push({ edge: e, w: (parseProbability(e.probability) / loopBase) * loopTarget });
-    }
-  } else {
-    const each = loopTarget / loopEdges.length;
-    for (const e of loopEdges) weighted.push({ edge: e, w: each });
-  }
+  return pickWeighted(weighted, edges);
+}
 
-  const total = weighted.reduce((a, i) => a + i.w, 0);
-  if (!total) return pickEdge(edges);
+function accumulateGatewayFriction(node, useIdeal, friction) {
+  if (node.type !== 'gateway' || useIdeal) return;
+  friction.gateways.set(node.id, (friction.gateways.get(node.id) || 0) + RULES.gatewayPenalty);
+}
 
-  const roll = Math.random() * total;
-  let acc = 0;
-  for (const item of weighted) {
-    acc += item.w;
-    if (roll <= acc) return item.edge;
+function accumulateTimerFriction(node, useIdeal, friction) {
+  if (node.type !== 'timer' || useIdeal) return;
+  const tUT = Number(node.timerUT || 0);
+  if (tUT > 0) friction.timers.set(node.id, (friction.timers.get(node.id) || 0) + tUT);
+}
+
+function accumulateHandoffFriction(graph, current, next, useIdeal, time, friction) {
+  const hPenalty = handoffPenalty(graph, current, next, useIdeal);
+  if (hPenalty > 0) {
+    const key = `${current.id}->${next.id}`;
+    friction.handoffs.set(key, (friction.handoffs.get(key) || 0) + hPenalty);
   }
-  return weighted[weighted.length - 1].edge;
+  return time + hPenalty;
+}
+
+function accumulateLoopFriction(next, visitedCounts, useIdeal, time, friction) {
+  const revisiting = visitedCounts.has(next.id);
+  if (useIdeal || !revisiting || next.type !== 'task') return time;
+  const loopState = { manualCount: 0 }; // estado fictício para respeitar complexity
+  const taskTime = next.automated ? RULES.automated : manualTaskTime(next, loopState);
+  friction.loops.set(next.id, (friction.loops.get(next.id) || 0) + taskTime);
+  return time + taskTime;
 }
 
 function runSinglePath(graph, opts = {}) {
@@ -265,7 +302,6 @@ function runSinglePath(graph, opts = {}) {
   if (!start) throw new Error('Grafo sem no de inicio.');
 
   let current = start;
-  let prev = null;
   let time = 0;
   let steps = 0;
   const visitedCounts = new Map();
@@ -285,42 +321,21 @@ function runSinglePath(graph, opts = {}) {
     visitedCounts.set(current.id, (visitedCounts.get(current.id) || 0) + 1);
     const currentVisitCount = visitedCounts.get(current.id) || 1;
 
-    const baseTime = nodeBaseTime(current, state, useIdeal);
-    time += baseTime;
-
-    if (current.type === 'gateway' && !useIdeal) {
-      friction.gateways.set(current.id, (friction.gateways.get(current.id) || 0) + RULES.gatewayPenalty);
-    }
-    if (current.type === 'timer' && !useIdeal) {
-      const tUT = Number(current.timerUT || 0);
-      if (tUT > 0) friction.timers.set(current.id, (friction.timers.get(current.id) || 0) + tUT);
-    }
+    time += nodeBaseTime(current, state, useIdeal);
+    accumulateGatewayFriction(current, useIdeal, friction);
+    accumulateTimerFriction(current, useIdeal, friction);
 
     const out = outMap.get(current.id) || [];
     if (!out.length) break;
 
     const edge = pickEdgeWithLoopExitBoost(out, currentVisitCount);
     const next = nodeMap.get(edge.to);
-
     if (!next) break;
 
-    const hPenalty = handoffPenalty(graph, current, next, useIdeal);
-    time += hPenalty;
-    if (hPenalty > 0) {
-      const key = `${current.id}->${next.id}`;
-      friction.handoffs.set(key, (friction.handoffs.get(key) || 0) + hPenalty);
-    }
-
+    time = accumulateHandoffFriction(graph, current, next, useIdeal, time, friction);
     // Loop rule: ao revisitar uma tarefa, a pontuacao e somada como se fosse a primeira vez (dobra na pratica).
-    const revisiting = visitedCounts.has(next.id);
-    if (!useIdeal && revisiting && next.type === 'task') {
-      const loopState = { manualCount: 0 }; // estado fictício para respeitar complexity
-      const taskTime = next.automated ? RULES.automated : manualTaskTime(next, loopState);
-      time += taskTime;
-      friction.loops.set(next.id, (friction.loops.get(next.id) || 0) + taskTime);
-    }
+    time = accumulateLoopFriction(next, visitedCounts, useIdeal, time, friction);
 
-    prev = current;
     current = next;
     path.push(current.id);
 
@@ -549,7 +564,7 @@ export function applyGatewayProbabilities(graph, gatewayId, probsByEdgeId) {
   const g = cloneGraph(graph);
   for (const edge of g.edges) {
     if (edge.from !== gatewayId) continue;
-    if (Object.prototype.hasOwnProperty.call(probsByEdgeId, edge.id)) {
+    if (Object.hasOwn(probsByEdgeId, edge.id)) {
       edge.probability = Number(probsByEdgeId[edge.id]);
     }
   }

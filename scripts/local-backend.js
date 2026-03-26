@@ -1,3 +1,4 @@
+try { require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') }); } catch (_) { /* dotenv ausente em producao — vars vem do ambiente */ }
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -51,15 +52,18 @@ function ensureDataFile() {
   const dir = path.dirname(DATA_FILE);
   fs.mkdirSync(dir, { recursive: true });
 
-  if (!fs.existsSync(DATA_FILE)) {
-    const initial = {
-      id: 1,
-      data: {},
-      updated_at: null,
-      updated_by: 'local@admin',
-      updated_by_name: 'Administrador Local'
-    };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2), 'utf8');
+  const initial = {
+    id: 1,
+    data: {},
+    updated_at: null,
+    updated_by: 'local@admin',
+    updated_by_name: 'Administrador Local'
+  };
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2), { encoding: 'utf8', flag: 'wx' });
+  } catch (e) {
+    if (e.code !== 'EEXIST') throw e;
+    // File already exists — that's fine
   }
 }
 
@@ -476,7 +480,7 @@ async function extractDocxTextFromBase64(base64Data) {
     err.statusCode = 400;
     throw err;
   }
-  const text = String(result?.value || '').replace(/\r/g, '').trim();
+  const text = String(result?.value || '').replaceAll('\r', '').trim();
   if (!text) {
     const err = new Error('Nao foi possivel extrair texto do DOCX. Verifique se o arquivo contém texto legível (não apenas imagens).');
     err.statusCode = 400;
@@ -624,8 +628,59 @@ async function callAi(parsed) {
   throw lastError || new Error('Erro na API de IA');
 }
 
+async function callAzureOpenAI(parsed) {
+  const AZURE_API_KEY    = process.env.SIGA_AZURE_API_KEY || '';
+  const AZURE_ENDPOINT   = (process.env.SIGA_AZURE_ENDPOINT || 'https://projeto-gesproc-cage.cognitiveservices.azure.com').replace(/\/$/, '');
+  const AZURE_DEPLOYMENT = process.env.SIGA_AZURE_DEPLOYMENT || 'gpt-5.1-chat';
+  const AZURE_API_VER    = process.env.SIGA_AZURE_API_VERSION || '2024-12-01-preview';
+
+  if (!AZURE_API_KEY) {
+    const err = new Error('Azure OpenAI nao configurada — defina SIGA_AZURE_API_KEY no ambiente');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  const input = await normalizeAiInput(parsed);
+  const maxTokens = Math.min(Math.max(Number(parsed.maxTokens) || 1800, 256), 16384);
+  const userContent = [{ type: 'text', text: input.prompt }];
+  if (input.image) {
+    userContent.push({ type: 'image_url', image_url: { url: `data:${input.image.mimeType};base64,${input.image.data}` } });
+  }
+
+  const url = `${AZURE_ENDPOINT}/openai/deployments/${encodeURIComponent(AZURE_DEPLOYMENT)}/chat/completions?api-version=${encodeURIComponent(AZURE_API_VER)}`;
+
+  const aiResp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': AZURE_API_KEY
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: 'system', content: 'Você é um assistente para análise de processos da CAGE-RS. Responda em português de forma objetiva e estruturada.' },
+        { role: 'user', content: userContent.length === 1 ? input.prompt : userContent }
+      ],
+      max_completion_tokens: maxTokens
+    })
+  });
+
+  const aiData = await aiResp.json().catch(() => ({}));
+  if (!aiResp.ok) {
+    const err = new Error(aiData?.error?.message || 'Erro na API Azure OpenAI');
+    err.statusCode = aiResp.status;
+    err.retryAfter = Number(aiResp.headers.get('retry-after') || 0) || null;
+    throw err;
+  }
+
+  return aiData?.choices?.[0]?.message?.content || '';
+}
+
 function hasGithubProviderConfigured() {
   return Boolean(process.env.SIGA_AI_TOKEN);
+}
+
+function hasAzureProviderConfigured() {
+  return Boolean(process.env.SIGA_AZURE_API_KEY);
 }
 
 function isQuotaOrRateLimitError(error) {
@@ -638,8 +693,25 @@ function isQuotaOrRateLimitError(error) {
     || msg.includes('retry in');
 }
 
+async function _handleAiFallback(error, parsed) {
+  if (isQuotaOrRateLimitError(error) && hasAzureProviderConfigured()) {
+    const text = await callAzureOpenAI(parsed);
+    return { text, providerUsed: 'azure-openai', fallbackFrom: 'ai', fallbackReason: 'quota_or_rate_limit' };
+  }
+  if (isQuotaOrRateLimitError(error) && hasGithubProviderConfigured()) {
+    const text = await callGithubModels(parsed);
+    return { text, providerUsed: 'github-models', fallbackFrom: 'ai', fallbackReason: 'quota_or_rate_limit' };
+  }
+  throw error;
+}
+
 async function callAiWithFallback(parsed, preferredProvider) {
   const provider = String(preferredProvider || 'ai').toLowerCase();
+
+  if (provider === 'azure' || provider === 'azure-openai') {
+    const text = await callAzureOpenAI(parsed);
+    return { text, providerUsed: 'azure-openai' };
+  }
 
   if (provider === 'github' || provider === 'github-models') {
     const text = await callGithubModels(parsed);
@@ -656,118 +728,79 @@ async function callAiWithFallback(parsed, preferredProvider) {
       fallbackReason: aiResult.fallbackReason || null
     };
   } catch (error) {
-    if (isQuotaOrRateLimitError(error) && hasGithubProviderConfigured()) {
-      const text = await callGithubModels(parsed);
-      return {
-        text,
-        providerUsed: 'github-models',
-        fallbackFrom: 'ai',
-        fallbackReason: 'quota_or_rate_limit'
-      };
-    }
-    throw error;
+    return _handleAiFallback(error, parsed);
   }
+}
+
+function _buildDataRecord(parsed, current) {
+  const hasValidData = parsed && typeof parsed.data === 'object' && parsed.data !== null;
+  const updatedBy = typeof parsed?.updated_by === 'string' && parsed.updated_by.trim()
+    ? parsed.updated_by.trim()
+    : 'local@admin';
+  const updatedByName = typeof parsed?.updated_by_name === 'string' && parsed.updated_by_name.trim()
+    ? parsed.updated_by_name.trim()
+    : 'Administrador Local';
+
+  return {
+    id: 1,
+    data: hasValidData ? parsed.data : current.data,
+    updated_at: new Date().toISOString(),
+    updated_by: updatedBy,
+    updated_by_name: updatedByName
+  };
+}
+
+async function _handleRequest(req, res, url) {
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeadersFor(req)); res.end(); return;
+  }
+  if (req.method === 'GET' && url.pathname === '/health') {
+    sendJson(req, res, 200, { ok: true, service: 'siga-local-backend', dataFile: DATA_FILE, aiProvider: process.env.SIGA_AI_PROVIDER || 'ai' });
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/data') {
+    sendJson(req, res, 200, readRecord()); return;
+  }
+  if (req.method === 'POST' && url.pathname === '/data') {
+    const body = await collectRequestBody(req);
+    const next = _buildDataRecord(body ? JSON.parse(body) : {}, readRecord());
+    writeRecord(next);
+    sendJson(req, res, 200, { ok: true, row: next }); return;
+  }
+  if (req.method === 'POST' && url.pathname === '/ai') {
+    const body = await collectRequestBody(req);
+    const parsed = body ? JSON.parse(body) : {};
+    const result = await callAiWithFallback(parsed, String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase());
+    sendJson(req, res, 200, { ok: true, text: result.text, providerUsed: result.providerUsed, modelUsed: result.modelUsed || null, fallbackFrom: result.fallbackFrom || null, fallbackFromModel: result.fallbackFromModel || null, fallbackReason: result.fallbackReason || null });
+    return;
+  }
+  if (req.method === 'POST' && url.pathname === '/parse-xlsx') {
+    const body = await collectRequestBody(req);
+    const parsed = body ? JSON.parse(body) : {};
+    const data = typeof parsed?.data === 'string' ? parsed.data : '';
+    if (!data) {
+      sendJson(req, res, 400, { ok: false, error: 'Campo obrigatorio: data (base64 do xlsx)' });
+      return;
+    }
+    const parsedGraph = await parseXlsxTopology(data);
+    sendJson(req, res, 200, {
+      ok: true,
+      graph: { nodes: parsedGraph.nodes, edges: parsedGraph.edges },
+      notes: parsedGraph.notes,
+    });
+    return;
+  }
+
+  sendJson(req, res, 404, { ok: false, error: 'Not found' });
 }
 
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || `${HOST}:${PORT}`}`);
-
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204, corsHeadersFor(req));
-      res.end();
-      return;
-    }
-
-    if (req.method === 'GET' && url.pathname === '/health') {
-      sendJson(req, res, 200, {
-        ok: true,
-        service: 'siga-local-backend',
-        dataFile: DATA_FILE,
-        aiProvider: process.env.SIGA_AI_PROVIDER || 'ai'
-      });
-      return;
-    }
-
-    if (req.method === 'GET' && url.pathname === '/data') {
-      const record = readRecord();
-      sendJson(req, res, 200, record);
-      return;
-    }
-
-    if (req.method === 'POST' && url.pathname === '/data') {
-      const body = await collectRequestBody(req);
-      const parsed = body ? JSON.parse(body) : {};
-      const current = readRecord();
-
-      const next = {
-        id: 1,
-        data:
-          parsed && typeof parsed.data === 'object' && parsed.data !== null
-            ? parsed.data
-            : current.data,
-        updated_at: new Date().toISOString(),
-        updated_by:
-          typeof parsed?.updated_by === 'string' && parsed.updated_by.trim()
-            ? parsed.updated_by.trim()
-            : 'local@admin',
-        updated_by_name:
-          typeof parsed?.updated_by_name === 'string' && parsed.updated_by_name.trim()
-            ? parsed.updated_by_name.trim()
-            : 'Administrador Local'
-      };
-
-      writeRecord(next);
-      sendJson(req, res, 200, { ok: true, row: next });
-      return;
-    }
-
-    if (req.method === 'POST' && url.pathname === '/ai') {
-      const body   = await collectRequestBody(req);
-      const parsed = body ? JSON.parse(body) : {};
-      const provider = String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase();
-
-      const result = await callAiWithFallback(parsed, provider);
-
-      sendJson(req, res, 200, {
-        ok: true,
-        text: result.text,
-        providerUsed: result.providerUsed,
-        modelUsed: result.modelUsed || null,
-        fallbackFrom: result.fallbackFrom || null,
-        fallbackFromModel: result.fallbackFromModel || null,
-        fallbackReason: result.fallbackReason || null
-      });
-      return;
-    }
-
-    if (req.method === 'POST' && url.pathname === '/parse-xlsx') {
-      const body = await collectRequestBody(req);
-      const parsed = body ? JSON.parse(body) : {};
-      const data = typeof parsed?.data === 'string' ? parsed.data : '';
-      if (!data) {
-        sendJson(req, res, 400, { ok: false, error: 'Campo obrigatorio: data (base64 do xlsx)' });
-        return;
-      }
-
-      const parsedGraph = await parseXlsxTopology(data);
-      sendJson(req, res, 200, {
-        ok: true,
-        graph: { nodes: parsedGraph.nodes, edges: parsedGraph.edges },
-        notes: parsedGraph.notes,
-      });
-      return;
-    }
-
-    sendJson(req, res, 404, { ok: false, error: 'Not found' });
+    await _handleRequest(req, res, url);
   } catch (error) {
     const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
-    sendJson(req, res, statusCode, {
-      ok: false,
-      error: error?.message || 'Internal server error',
-      provider: error?.provider || null,
-      retryAfter: error?.retryAfter || null
-    });
+    sendJson(req, res, statusCode, { ok: false, error: error?.message || 'Internal server error', provider: error?.provider || null, retryAfter: error?.retryAfter || null });
   }
 });
 
