@@ -237,153 +237,63 @@ function inferNodeTypeFromPhrase(text) {
   return 'task';
 }
 
-async function parseXlsxTopology(base64Data) {
-  const buf = Buffer.from(String(base64Data || ''), 'base64');
-  if (!buf.length) throw new Error('Arquivo XLSX vazio ou invalido.');
+// ── helpers: parseXlsxTopology (S3776 — Cognitive Complexity) ────────────────
 
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buf);
+/** Converte o valor bruto de uma célula ExcelJS para string. */
+function _xlsxCellValue(cell) {
+  const v = cell.value;
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'object' && v.richText) return v.richText.map((r) => r.text).join('');
+  if (typeof v === 'object' && v.result !== undefined) return String(v.result);
+  return String(v);
+}
 
-  const ws = workbook.worksheets[0];
-  if (!ws) throw new Error('Planilha sem abas.');
-  const sheetName = ws.name;
-
-  // Converte para array de arrays (equivalente a sheet_to_json com header:1, raw:false, defval:'')
+/** Extrai todas as linhas de uma aba XLSX como arrays de strings. */
+function _xlsxWorksheetRows(ws) {
   const rows = [];
   ws.eachRow({ includeEmpty: false }, (row) => {
-    const maxCol = row.cellCount;
     const arr = [];
-    for (let c = 1; c <= maxCol; c++) {
-      const cell = row.getCell(c);
-      const v = cell.value;
-      if (v === null || v === undefined) { arr.push(''); continue; }
-      if (typeof v === 'object' && v.richText) { arr.push(v.richText.map((r) => r.text).join('')); continue; }
-      if (typeof v === 'object' && v.result !== undefined) { arr.push(String(v.result)); continue; }
-      arr.push(String(v));
-    }
+    for (let c = 1; c <= row.cellCount; c++) arr.push(_xlsxCellValue(row.getCell(c)));
     rows.push(arr);
   });
-  if (!rows.length) throw new Error('Planilha sem dados.');
+  return rows;
+}
 
-  const headerIdx = findHeaderIndex(rows);
-  const headers = (rows[headerIdx] || []).map(normalizeCell);
-  const dataRows = rows.slice(headerIdx + 1);
-
-  const actionIdx = findColumnIdx(headers, ['acao', 'atividade', 'tarefa', 'etapa', 'passo']);
-  const nextIdx = findColumnIdx(headers, ['proxima', 'destino', 'next', 'to', 'saida']);
-  const actorIdx = findColumnIdx(headers, ['ator', 'responsavel', 'raia', 'executor', 'owner']);
-  const probIdx = findColumnIdx(headers, ['prob', 'percent', '%']);
-
-  if (actionIdx < 0) {
-    // No explicit action column: semantic fallback by phrase classification.
+/** Garante/retorna um nó pelo label normalizado; cria se não existir. */
+function _xlsxEnsureNode(label, nodeByLabel, nodes, usedIds) {
+  const key = normalizeCell(label);
+  if (!key) return null;
+  if (nodeByLabel.has(key)) return nodeByLabel.get(key);
+  let id = sanitizeNodeId(key, `n${nodeByLabel.size + 1}`);
+  if (usedIds.has(id)) {
+    let counter = 2;
+    while (usedIds.has(`${id}_${counter}`)) counter++;
+    id = `${id}_${counter}`;
   }
+  usedIds.add(id);
+  const node = {
+    id, type: 'task', label: key,
+    x: 120 + ((nodeByLabel.size % 6) * 170),
+    y: 120 + (Math.floor(nodeByLabel.size / 6) * 110),
+    lane: '', executor: '', sector: '', org: '', automated: false,
+  };
+  nodeByLabel.set(key, node);
+  nodes.push(node);
+  return node;
+}
 
-  const nodes = [];
-  const nodeByLabel = new Map();
-  const usedIds = new Set();
-  const actorByAction = new Map();
-  let inferredEdgeSeq = 0;
-
-  function ensureNode(label) {
-    const key = normalizeCell(label);
-    if (!key) return null;
-    if (nodeByLabel.has(key)) return nodeByLabel.get(key);
-    let id = sanitizeNodeId(key, `n${nodeByLabel.size + 1}`);
-    if (usedIds.has(id)) {
-      let counter = 2;
-      while (usedIds.has(`${id}_${counter}`)) counter++;
-      id = `${id}_${counter}`;
-    }
-    usedIds.add(id);
-    const node = {
-      id,
-      type: 'task',
-      label: key,
-      x: 120 + ((nodeByLabel.size % 6) * 170),
-      y: 120 + (Math.floor(nodeByLabel.size / 6) * 110),
-      lane: '',
-      executor: '',
-      sector: '',
-      org: '',
-      automated: false,
-    };
-    nodeByLabel.set(key, node);
-    nodes.push(node);
-    return node;
+/** Distribui 100% igualmente entre as arestas de saída de um gateway. */
+function _xlsxDistributeProbabilities(outs) {
+  const base = Math.floor(100 / outs.length);
+  let rem = 100 - (base * outs.length);
+  for (const e of outs) {
+    e.probability = base + (rem > 0 ? 1 : 0);
+    if (rem > 0) rem -= 1;
   }
+}
 
-  const edges = [];
-  for (let i = 0; i < dataRows.length; i += 1) {
-    const row = dataRows[i] || [];
-    const cells = row.map(normalizeCell).filter(Boolean);
-
-    let action = actionIdx >= 0 ? normalizeCell(row[actionIdx]) : '';
-    let inferredActor = actorIdx >= 0 ? normalizeCell(row[actorIdx]) : '';
-
-    if (!action) {
-      const actionCell = cells.find((c) => startsWithVerbPt(c) || isDecisionPhrase(c) || isPastPerfectLike(c));
-      action = actionCell || '';
-    }
-
-    if (!inferredActor) {
-      const actorCell = cells.find((c) => isActorPhrase(c));
-      inferredActor = actorCell || '';
-    }
-
-    if (!action) continue;
-
-    const actionNode = ensureNode(action);
-    const actor = inferredActor;
-    if (actor) actorByAction.set(action, actor);
-
-    const to = nextIdx >= 0 ? normalizeCell(row[nextIdx]) : '';
-    if (to) {
-      const toNode = ensureNode(to);
-      const p = probIdx >= 0 ? Number(String(row[probIdx]).replace(',', '.')) : NaN;
-      edges.push({
-        id: `e${edges.length + 1}`,
-        from: actionNode.id,
-        to: toNode.id,
-        probability: Number.isFinite(p) && p > 0 ? p : 100,
-        isLoopReturn: false,
-        isErrorPath: false,
-      });
-    } else {
-      const nextRow = dataRows[i + 1] || [];
-      const seqTo = normalizeCell(nextRow[actionIdx]);
-      if (seqTo) {
-        const toNode = ensureNode(seqTo);
-        inferredEdgeSeq += 1;
-        edges.push({ id: `es${inferredEdgeSeq}`, from: actionNode.id, to: toNode.id, probability: 100, isLoopReturn: false, isErrorPath: false });
-      }
-    }
-  }
-
-  // Extra pass for actor mappings that may appear in final lines.
-  const tail = dataRows.slice(Math.max(0, dataRows.length - 20));
-  for (const row of tail) {
-    const vals = row.map(normalizeCell).filter(Boolean);
-    if (vals.length < 2) continue;
-    const maybeAction = vals[0];
-    const maybeActor = vals[1];
-    if (nodeByLabel.has(maybeAction) && maybeActor) {
-      actorByAction.set(maybeAction, maybeActor);
-    }
-  }
-
-  for (const n of nodes) {
-    const actor = actorByAction.get(n.label) || '';
-    if (actor) {
-      n.lane = actor;
-      n.executor = actor;
-    }
-    n.type = inferNodeTypeFromPhrase(n.label);
-  }
-
-  if (!nodes.some((n) => n.type === 'start') && nodes.length) nodes[0].type = 'start';
-  if (!nodes.some((n) => n.type === 'end') && nodes.length > 1) nodes[nodes.length - 1].type = 'end';
-
-  // Normalize probabilities per source gateway if all were 100 defaults.
+/** Normaliza probabilidades dos gateways (distribui se todos eram 100 defaults). */
+function _xlsxNormalizeProbabilities(edges) {
   const byFrom = new Map();
   for (const e of edges) {
     if (!byFrom.has(e.from)) byFrom.set(e.from, []);
@@ -391,23 +301,96 @@ async function parseXlsxTopology(base64Data) {
   }
   for (const outs of byFrom.values()) {
     if (outs.length <= 1) continue;
-    const hasCustom = outs.some((e) => Number(e.probability) !== 100);
-    if (hasCustom) continue;
-    const base = Math.floor(100 / outs.length);
-    let rem = 100 - (base * outs.length);
-    for (const e of outs) {
-      e.probability = base + (rem > 0 ? 1 : 0);
-      if (rem > 0) rem -= 1;
-    }
+    if (outs.some((e) => Number(e.probability) !== 100)) continue;
+    _xlsxDistributeProbabilities(outs);
   }
+}
+
+/** Processa uma linha de dados: cria nó, registra ator e adiciona aresta. */
+function _xlsxHandleDataRow(row, i, dataRows, actionIdx, nextIdx, actorIdx, probIdx,
+                             nodeByLabel, nodes, usedIds, actorByAction, edges, seqCounter) {
+  const cells = row.map(normalizeCell).filter(Boolean);
+  let action = actionIdx >= 0 ? normalizeCell(row[actionIdx]) : '';
+  let actor  = actorIdx  >= 0 ? normalizeCell(row[actorIdx])  : '';
+  if (!action) action = cells.find((c) => startsWithVerbPt(c) || isDecisionPhrase(c) || isPastPerfectLike(c)) || '';
+  if (!actor)  actor  = cells.find((c) => isActorPhrase(c)) || '';
+  if (!action) return;
+  const actionNode = _xlsxEnsureNode(action, nodeByLabel, nodes, usedIds);
+  if (actor) actorByAction.set(action, actor);
+  const to = nextIdx >= 0 ? normalizeCell(row[nextIdx]) : '';
+  if (to) {
+    const toNode = _xlsxEnsureNode(to, nodeByLabel, nodes, usedIds);
+    const p = probIdx >= 0 ? Number(String(row[probIdx]).replace(',', '.')) : NaN;
+    edges.push({ id: `e${edges.length + 1}`, from: actionNode.id, to: toNode.id,
+      probability: Number.isFinite(p) && p > 0 ? p : 100, isLoopReturn: false, isErrorPath: false });
+    return;
+  }
+  const seqTo = normalizeCell((dataRows[i + 1] || [])[actionIdx]);
+  if (seqTo) {
+    seqCounter.n += 1;
+    const toNode = _xlsxEnsureNode(seqTo, nodeByLabel, nodes, usedIds);
+    edges.push({ id: `es${seqCounter.n}`, from: actionNode.id, to: toNode.id,
+      probability: 100, isLoopReturn: false, isErrorPath: false });
+  }
+}
+
+/** Constrói nós e arestas a partir das linhas de dados. */
+function _xlsxBuildGraph(dataRows, actionIdx, nextIdx, actorIdx, probIdx) {
+  const nodeByLabel = new Map(), nodes = [], usedIds = new Set();
+  const actorByAction = new Map(), edges = [], seqCounter = { n: 0 };
+  for (let i = 0; i < dataRows.length; i += 1)
+    _xlsxHandleDataRow(dataRows[i] || [], i, dataRows, actionIdx, nextIdx, actorIdx, probIdx,
+                       nodeByLabel, nodes, usedIds, actorByAction, edges, seqCounter);
+  const tail = dataRows.slice(Math.max(0, dataRows.length - 20));
+  for (const row of tail) {
+    const vals = row.map(normalizeCell).filter(Boolean);
+    if (vals.length < 2) continue;
+    if (nodeByLabel.has(vals[0]) && vals[1]) actorByAction.set(vals[0], vals[1]);
+  }
+  return { nodes, actorByAction, edges };
+}
+
+/** Aplica atores, infere tipos e define start/end padrão. */
+function _xlsxApplyActors(nodes, actorByAction) {
+  for (const n of nodes) {
+    const actor = actorByAction.get(n.label) || '';
+    if (actor) { n.lane = actor; n.executor = actor; }
+    n.type = inferNodeTypeFromPhrase(n.label);
+  }
+  if (!nodes.some((n) => n.type === 'start') && nodes.length) nodes[0].type = 'start';
+  if (!nodes.some((n) => n.type === 'end') && nodes.length > 1) nodes[nodes.length - 1].type = 'end';
+}
+
+async function parseXlsxTopology(base64Data) {
+  const buf = Buffer.from(String(base64Data || ''), 'base64');
+  if (!buf.length) throw new Error('Arquivo XLSX vazio ou invalido.');
+
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buf);
+  const ws = workbook.worksheets[0];
+  if (!ws) throw new Error('Planilha sem abas.');
+  const sheetName = ws.name;
+
+  const rows = _xlsxWorksheetRows(ws);
+  if (!rows.length) throw new Error('Planilha sem dados.');
+
+  const headerIdx = findHeaderIndex(rows);
+  const headers   = (rows[headerIdx] || []).map(normalizeCell);
+  const dataRows  = rows.slice(headerIdx + 1);
+  const actionIdx = findColumnIdx(headers, ['acao', 'atividade', 'tarefa', 'etapa', 'passo']);
+  const nextIdx   = findColumnIdx(headers, ['proxima', 'destino', 'next', 'to', 'saida']);
+  const actorIdx  = findColumnIdx(headers, ['ator', 'responsavel', 'raia', 'executor', 'owner']);
+  const probIdx   = findColumnIdx(headers, ['prob', 'percent', '%']);
+
+  const { nodes, actorByAction, edges } = _xlsxBuildGraph(dataRows, actionIdx, nextIdx, actorIdx, probIdx);
+  _xlsxApplyActors(nodes, actorByAction);
+  _xlsxNormalizeProbabilities(edges);
 
   return {
-    nodes,
-    edges,
+    nodes, edges,
     notes: `XLSX local parse: aba ${sheetName}, linhas ${dataRows.length}, nos ${nodes.length}, arestas ${edges.length}`,
   };
 }
-
 async function callGithubModels(parsed) {
   const AI_TOKEN = process.env.SIGA_AI_TOKEN || '';
   const AI_API_URL = process.env.SIGA_AI_API_URL || 'https://models.github.ai/inference/chat/completions';
@@ -442,7 +425,10 @@ async function callGithubModels(parsed) {
     })
   });
 
-  const aiData = await aiResp.json().catch(() => ({}));
+  const aiData = await aiResp.json().catch((err) => {
+    console.warn('Falha ao parsear resposta IA (primeira chamada):', err.message);
+    return {};
+  });
   if (!aiResp.ok) {
     const err = new Error(aiData?.error?.message || 'Erro na API de IA (GitHub Models)');
     err.statusCode = aiResp.status;
@@ -564,7 +550,10 @@ async function callAzureOpenAI(parsed) {
     })
   });
 
-  const aiData = await aiResp.json().catch(() => ({}));
+  const aiData = await aiResp.json().catch((err) => {
+    console.warn('Falha ao parsear resposta IA (segunda chamada):', err.message);
+    return {};
+  });
   if (!aiResp.ok) {
     const err = new Error(aiData?.error?.message || 'Erro na API Azure OpenAI');
     err.statusCode = aiResp.status;
@@ -632,60 +621,81 @@ function _buildDataRecord(parsed, current) {
   };
 }
 
-async function _handleRequest(req, res, url) {
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204, corsHeadersFor(req)); res.end(); return;
-  }
-  if (req.method === 'GET' && url.pathname === '/health') {
-    sendJson(req, res, 200, { ok: true, service: 'siga-local-backend', dataFile: DATA_FILE, aiProvider: process.env.SIGA_AI_PROVIDER || 'ai' });
-    return;
-  }
-  if (req.method === 'GET' && url.pathname === '/data') {
-    sendJson(req, res, 200, readRecord()); return;
-  }
-  if (req.method === 'POST' && url.pathname === '/data') {
-    const body = await collectRequestBody(req);
-    let bodyParsed;
-    try { bodyParsed = body ? JSON.parse(body) : {}; } catch (_e) {
-      sendJson(req, res, 400, { ok: false, error: 'Body invalido: JSON malformado' }); return;
-    }
-    const next = _buildDataRecord(bodyParsed, readRecord());
-    writeRecord(next);
-    sendJson(req, res, 200, { ok: true, row: next }); return;
-  }
-  if (req.method === 'POST' && url.pathname === '/ai') {
-    const body = await collectRequestBody(req);
-    let parsed;
-    try { parsed = body ? JSON.parse(body) : {}; } catch (_e) {
-      sendJson(req, res, 400, { ok: false, error: 'Body invalido: JSON malformado' }); return;
-    }
-    const result = await callAiWithFallback(parsed, String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase());
-    sendJson(req, res, 200, { ok: true, text: result.text, providerUsed: result.providerUsed, modelUsed: result.modelUsed || null, fallbackFrom: result.fallbackFrom || null, fallbackFromModel: result.fallbackFromModel || null, fallbackReason: result.fallbackReason || null });
-    return;
-  }
-  if (req.method === 'POST' && url.pathname === '/parse-xlsx') {
-    const body = await collectRequestBody(req);
-    let parsed;
-    try { parsed = body ? JSON.parse(body) : {}; } catch (_e) {
-      sendJson(req, res, 400, { ok: false, error: 'Body invalido: JSON malformado' }); return;
-    }
-    const data = typeof parsed?.data === 'string' ? parsed.data : '';
-    if (!data) {
-      sendJson(req, res, 400, { ok: false, error: 'Campo obrigatorio: data (base64 do xlsx)' });
-      return;
-    }
-    const parsedGraph = await parseXlsxTopology(data);
-    sendJson(req, res, 200, {
-      ok: true,
-      graph: { nodes: parsedGraph.nodes, edges: parsedGraph.edges },
-      notes: parsedGraph.notes,
-    });
-    return;
-  }
+// ── helpers: _handleRequest (S3776 — Cognitive Complexity) ──────────────────
 
-  sendJson(req, res, 404, { ok: false, error: 'Not found' });
+/** Analisa o body JSON; retorna null e envia 400 se inválido. */
+async function _parseRequestBody(req, res) {
+  const body = await collectRequestBody(req);
+  try {
+    return body ? JSON.parse(body) : {};
+  } catch (_e) {
+    sendJson(req, res, 400, { ok: false, error: 'Body invalido: JSON malformado' });
+    return null;
+  }
 }
 
+async function _routeOptions(req, res) {
+  res.writeHead(204, corsHeadersFor(req)); res.end();
+}
+
+async function _routeGetHealth(req, res) {
+  sendJson(req, res, 200, {
+    ok: true, service: 'siga-local-backend',
+    dataFile: DATA_FILE, aiProvider: process.env.SIGA_AI_PROVIDER || 'ai',
+  });
+}
+
+async function _routeGetData(req, res) {
+  sendJson(req, res, 200, readRecord());
+}
+
+async function _routePostData(req, res) {
+  const parsed = await _parseRequestBody(req, res);
+  if (parsed === null) return;
+  const next = _buildDataRecord(parsed, readRecord());
+  writeRecord(next);
+  sendJson(req, res, 200, { ok: true, row: next });
+}
+
+async function _routePostAi(req, res) {
+  const parsed = await _parseRequestBody(req, res);
+  if (parsed === null) return;
+  const provider = String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase();
+  const result = await callAiWithFallback(parsed, provider);
+  sendJson(req, res, 200, {
+    ok: true, text: result.text, providerUsed: result.providerUsed,
+    modelUsed: result.modelUsed || null, fallbackFrom: result.fallbackFrom || null,
+    fallbackFromModel: result.fallbackFromModel || null, fallbackReason: result.fallbackReason || null,
+  });
+}
+
+async function _routePostParseXlsx(req, res) {
+  const parsed = await _parseRequestBody(req, res);
+  if (parsed === null) return;
+  const data = typeof parsed?.data === 'string' ? parsed.data : '';
+  if (!data) { sendJson(req, res, 400, { ok: false, error: 'Campo obrigatorio: data (base64 do xlsx)' }); return; }
+  const parsedGraph = await parseXlsxTopology(data);
+  sendJson(req, res, 200, {
+    ok: true,
+    graph: { nodes: parsedGraph.nodes, edges: parsedGraph.edges },
+    notes: parsedGraph.notes,
+  });
+}
+
+const _ROUTE_MAP = new Map([
+  ['GET /health',      _routeGetHealth],
+  ['GET /data',        _routeGetData],
+  ['POST /data',       _routePostData],
+  ['POST /ai',         _routePostAi],
+  ['POST /parse-xlsx', _routePostParseXlsx],
+]);
+
+async function _handleRequest(req, res, url) {
+  if (req.method === 'OPTIONS') { await _routeOptions(req, res); return; }
+  const handler = _ROUTE_MAP.get(`${req.method} ${url.pathname}`);
+  if (handler) { await handler(req, res); return; }
+  sendJson(req, res, 404, { ok: false, error: 'Not found' });
+}
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || `${HOST}:${PORT}`}`);

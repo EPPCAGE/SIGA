@@ -1,49 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-
-function getArg(name, fallback = undefined) {
-  const raw = process.argv.find((a) => a.startsWith(`--${name}=`));
-  if (!raw) return fallback;
-  return raw.slice(name.length + 3);
-}
-
-function getIntArg(name, fallback) {
-  const value = getArg(name);
-  if (value == null) return fallback;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function parseCsvRecord(record, delimiter = ',') {
-  const fields = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < record.length; i += 1) {
-    const ch = record[i];
-
-    if (ch === '"') {
-      if (inQuotes && record[i + 1] === '"') {
-        current += '"';
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-
-    if (ch === delimiter && !inQuotes) {
-      fields.push(current);
-      current = '';
-      continue;
-    }
-
-    current += ch;
-  }
-
-  fields.push(current);
-  return fields;
-}
+const { getArg, getIntArg, parseCsvRecord } = require('./utils');
 
 async function main() {
   const input = getArg('input');

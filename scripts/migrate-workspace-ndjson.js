@@ -2,58 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const readline = require('readline');
-
-function getArg(name, fallback = undefined) {
-  const token = process.argv.find((a) => a.startsWith(`--${name}=`));
-  if (!token) return fallback;
-  return token.slice(name.length + 3);
-}
-
-function getBoolArg(name, fallback) {
-  const value = getArg(name);
-  if (value == null) return fallback;
-  return String(value).toLowerCase() === 'true';
-}
-
-function parseCsvRecord(record, delimiter = ',') {
-  const fields = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < record.length; i += 1) {
-    const ch = record[i];
-    if (ch === '"') {
-      if (inQuotes && record[i + 1] === '"') {
-        current += '"';
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-    if (ch === delimiter && !inQuotes) {
-      fields.push(current);
-      current = '';
-      continue;
-    }
-    current += ch;
-  }
-
-  fields.push(current);
-  return fields;
-}
-
-function ensureDir(filePath) {
-  const dir = path.dirname(filePath);
-  fs.mkdirSync(dir, { recursive: true });
-}
-
-function atomicWriteJson(filePath, payload) {
-  ensureDir(filePath);
-  const tempPath = `${filePath}.tmp`;
-  fs.writeFileSync(tempPath, JSON.stringify(payload, null, 2), 'utf8');
-  fs.renameSync(tempPath, filePath);
-}
+const { getArg, getBoolArg, parseCsvRecord, ensureDir, writeJsonAtomic } = require('./utils');
 
 function sha256File(filePath) {
   return new Promise((resolve, reject) => {
@@ -63,6 +12,18 @@ function sha256File(filePath) {
     stream.on('data', (chunk) => hash.update(chunk));
     stream.on('end', () => resolve(hash.digest('hex')));
   });
+}
+
+/**
+ * Valida que filePath está dentro do basePath (previne path traversal)
+ */
+function validateFilePath(filePath, basePath) {
+  const resolved = path.resolve(filePath);
+  const baseResolved = path.resolve(basePath);
+  if (!resolved.startsWith(baseResolved + path.sep) && resolved !== baseResolved) {
+    throw new Error(`Path traversal detectado: ${filePath}`);
+  }
+  return resolved;
 }
 
 function normalizeCandidate(raw) {
@@ -229,12 +190,19 @@ async function main() {
 
   if (!best) {
     const backupsDir = path.join(path.dirname(output));
-    const candidateList =
-      backupFallback === 'auto'
-        ? listBackupCandidates(backupsDir)
-        : backupFallback && backupFallback !== 'none'
-          ? [{ fullPath: backupFallback }]
-          : [];
+    let candidateList = [];
+
+    if (backupFallback === 'auto') {
+      candidateList = listBackupCandidates(backupsDir);
+    } else if (backupFallback && backupFallback !== 'none') {
+      try {
+        const validatedPath = validateFilePath(backupFallback, backupsDir);
+        candidateList = [{ fullPath: validatedPath }];
+      } catch (err) {
+        console.warn(`Aviso: ${err.message}. Ignorando backupFallback.`);
+        candidateList = [];
+      }
+    }
 
     for (const candidate of candidateList) {
       try {
@@ -266,7 +234,7 @@ async function main() {
     : { id: 1, data: {}, updated_at: null, updated_by: 'migration', updated_by_name: 'migration' };
 
   if (fs.existsSync(output)) {
-    atomicWriteJson(backupPath, current);
+    writeJsonAtomic(backupPath, current);
   }
 
   const migrated = {
@@ -291,9 +259,9 @@ async function main() {
     },
   };
 
-  atomicWriteJson(snapshotPath, migrated);
+  writeJsonAtomic(snapshotPath, migrated);
   if (apply) {
-    atomicWriteJson(output, migrated);
+    writeJsonAtomic(output, migrated);
   }
 
   const report = {
