@@ -1,9 +1,7 @@
 <!DOCTYPE html>
-<!--
-  © 2025 Felipe Cesar Tourinho. Todos os direitos reservados.
-  Programa de computador protegido pela Lei nº 9.609/1998 (Lei do Software) e pela Lei nº 9.610/1998 (Lei de Direitos Autorais).
-  É proibida a reprodução, distribuição ou modificação sem autorização expressa do autor.
--->
+<!-- © 2025 Felipe Cesar Tourinho. Todos os direitos reservados.
+     Programa de computador protegido pela Lei nº 9.609/1998 (Lei do Software) e pela Lei nº 9.610/1998 (Lei de Direitos Autorais).
+     É proibida a reprodução, distribuição ou modificação sem autorização expressa do autor. -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -745,8 +743,8 @@
 
   /* ── BUSCA GLOBAL ────────────────────────────────────────── */
   .search-input-wrap { position:relative; display:flex; align-items:center; }
-  .search-input { background:#222; border:1.5px solid rgba(255,255,255,.15);
-    border-radius:20px; color:#fff; font-size:12px; padding:6px 14px 6px 32px;
+  .search-input { background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.15);
+    border-radius:20px; color:white; background:#000; font-size:12px; padding:6px 14px 6px 32px;
     width:180px; outline:none; transition:all .2s; font-family:inherit; }
   .search-input::placeholder { color:rgba(255,255,255,.4); }
   .search-input:focus { background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.4); width:240px; }
@@ -1090,7 +1088,7 @@
   .edit-bar { top: 56px; }
 
   /* Sidebar — ajustar top e altura para header mobile */
-  /* .sidebar { top: 56px; height: calc(100vh - 56px); }  Removido seletor duplicado */
+  .sidebar { top: 56px; height: calc(100vh - 56px); }
 
   /* Sidebar toggle — área de toque maior e posição correta para sidebar 88vw */
   .sidebar-toggle { width: 32px; }
@@ -1098,7 +1096,7 @@
   .sidebar.open ~ .sidebar-toggle { left: min(88vw, 320px); }
 
   /* BPMN — remover min-height que causa overflow em tela pequena */
-  /* .bpmn-canvas-wrap { min-height: 0 !important; }  Removido seletor duplicado */
+  .bpmn-canvas-wrap { min-height: 0 !important; }
 
   /* Search modal — reduzir padding-top excessivo */
   .search-modal-overlay { padding-top: 16px; }
@@ -1391,7 +1389,14 @@
 <div id="auth-overlay" class="auth-overlay">
   <div class="auth-box">
     <div class="auth-logo-siga">
-      <img src="public-config/siga-logo.png" alt="SIGA - Sistema Integrado de Gestão de Atividades" style="max-width:320px;width:100%;height:auto;" />
+      <svg viewBox="185 25 355 145" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SIGA">
+        <!-- Text: SIGA -->
+        <text x="188" y="96" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="80" fill="#1A3A8A">SIGA</text>
+        <!-- Text: subtitle -->
+        <text x="190" y="122" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="16" fill="#1A3A8A" letter-spacing="0.6">SISTEMA INTEGRADO DE</text>
+        <text x="190" y="142" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="16" fill="#1A3A8A" letter-spacing="0.6">GESTÃO DE ATIVIDADES</text>
+        <text x="190" y="161" font-family="Arial,Helvetica,sans-serif" font-size="12.5" fill="#4A6FA5">Gestão de Processos e Projetos | CAGE-RS</text>
+      </svg>
     </div>
     <div class="auth-sub">Faça login para acessar e sincronizar seus dados</div>
     <button class="auth-google-btn" onclick="signInMicrosoft()">
@@ -1483,7 +1488,7 @@
       <button data-mod="simulator"   data-sortkey="simulator"   class="sidebar-pat-btn" onclick="closeSidebar();showSimulatorModule();" style="margin-top:4px;background:#065f46;color:#fff;border-color:#047857;">🧪 Simulador de Processos</button>
       <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:#eab308;color:#1e293b;border-color:#b45309;">📈 Indicadores CAGE</button>
       <button data-mod="organograma" data-sortkey="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:#312e81;color:#fff;border-color:#3730a3;">🏛 Organograma CAGE</button>
-      <button data-mod="cockpit"     data-sortkey="cockpit"     class="sidebar-pat-btn" onclick="closeSidebar();showCockpitModule();" style="margin-top:4px;background:#1e293b;color:#fff;border-color:#1e293b;">🎯 Cockpit de Gestão</button>
+      <button data-mod="cockpit"     data-sortkey="cockpit"     class="sidebar-pat-btn" onclick="closeSidebar();showCockpitModule();" style="margin-top:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">🎯 Cockpit de Gestão</button>
     </div>
   </div>
   <div class="sidebar-list" id="sidebar-list"></div>
@@ -1577,73 +1582,73 @@
       <button type="button" class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
         <div class="home-card-icon" style="background:#f5f3ff;color:#4c1d95;">🏛</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Arquitetura de Processos</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</section>
         <div class="home-card-footer" id="home-arq-count">—</div>
       </button>
       <button type="button" class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
         <div class="home-card-icon" style="background:#fffbeb;color:#b45309;">📊</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Cadeia de Valor e Mapa Estratégico</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</section>
         <div class="home-card-footer">Imagens configuráveis</div>
       </button>
       <button type="button" class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
         <div class="home-card-icon" style="background:#fff1f2;color:#7f1d1d;">🔍</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Auditoria de Processos</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</section>
         <div class="home-card-footer" id="home-audit-count">—</div>
       </button>
       <button type="button" class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
         <div class="home-card-icon" style="background:#fffbeb;color:#92400e;">📈</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Indicadores CAGE</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</section>
         <div class="home-card-footer" id="home-indcage-count">—</div>
       </button>
       <button type="button" class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
         <div class="home-card-icon" style="background:#eef2ff;color:#1e40af;">🏗️</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Modelador BPMN 2.0</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</section>
         <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
       </button>
       <button type="button" class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
         <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🗒</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</section>
         <div class="home-card-footer">Canvas interativo</div>
       </button>
       <button type="button" class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;">
         <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🧪</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simulador de Processos</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</section>
         <div class="home-card-footer">Motor estocástico e dashboard</div>
       </button>
       <button type="button" class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
         <div class="home-card-icon" style="background:#eff6ff;color:#1e3a8a;">🏢</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gestão EPP</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</section>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </button>
       <button type="button" class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
         <div class="home-card-icon" style="background:#f8fafc;color:#334155;">🔍</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Busca Global</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</section>
         <div class="home-card-footer">Busca em tempo real</div>
       </button>
       <button type="button" class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
         <div class="home-card-icon" style="background:#fff1f2;color:#831843;">📚</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Documentos e Manuais</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</section>
         <div class="home-card-footer" id="home-repo-count">—</div>
       </button>
       <button type="button" class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
         <div class="home-card-icon" style="background:#f0f9ff;color:#0369a1;">💧</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Drops de Conhecimento</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</section>
         <div class="home-card-footer" id="home-drops-count">—</div>
       </button>
       <button type="button" class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
         <div class="home-card-icon" style="background:#fdf2f8;color:#a21caf;">💡</div>
         <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Caixinha de Ideias</button>
-        <button type="button" class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</button>
+        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</section>
         <div class="home-card-footer">Formulário Microsoft Forms</div>
       </button>
     </div>
@@ -2472,19 +2477,19 @@
     <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
       <!-- Toolbar -->
       <div style="padding:7px 12px;border-bottom:1px solid var(--cage-border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--cage-blue);">
-        <button id="fd-expand-btn" title="Expandir painel de código" onclick="fdToggleLeftPanel()" style="display:none;padding:4px 8px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;">▶ Código</button>
+        <button id="fd-expand-btn" title="Expandir painel de código" onclick="fdToggleLeftPanel()" style="display:none;padding:4px 8px;background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">▶ Código</button>
         <label for="fd-lr-toggle" style="font-size:11px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:5px;cursor:pointer;">
           <input type="checkbox" id="fd-lr-toggle" onchange="fdToggleDirection(this.checked)" checked style="cursor:pointer;">
           Esquerda→Direita
         </label>
         <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
-        <button onclick="fdExportSVG()" title="Exportar SVG" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;">⬇ SVG</button>
-        <button onclick="fdExportPNG()" title="Exportar PNG" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;">⬇ PNG</button>
+        <button onclick="fdExportSVG()" title="Exportar SVG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">⬇ SVG</button>
+        <button onclick="fdExportPNG()" title="Exportar PNG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">⬇ PNG</button>
         <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
-        <button onclick="fdZoom(-0.15)" title="Diminuir zoom" style="padding:4px 8px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">−</button>
+        <button onclick="fdZoom(-0.15)" title="Diminuir zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">−</button>
         <button type="button" id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;background:none;border:none;padding:0;">100%</button>
-        <button onclick="fdZoom(+0.15)" title="Aumentar zoom" style="padding:4px 8px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">+</button>
-        <button onclick="fdSave()" title="Salvar (Ctrl+S)" style="padding:4px 9px;background:#000;color:#fff;border:1px solid #000;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;">☁️ Salvar</button>
+        <button onclick="fdZoom(+0.15)" title="Aumentar zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">+</button>
+        <button onclick="fdSave()" title="Salvar (Ctrl+S)" style="padding:4px 9px;background:rgba(0,168,107,.3);color:#4ade80;border:1px solid rgba(0,168,107,.5);border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;">☁️ Salvar</button>
       </div>
       <!-- Mermaid diagram area -->
       <div id="fd-canvas-wrap" style="flex:1;overflow:auto;position:relative;background:#f8fafc;">
@@ -2502,15 +2507,15 @@
     <div id="fd-bpmn-toolbar">
       <span style="font-size:13px;font-weight:700;color:white;white-space:nowrap;margin-right:4px;">🏗️ <span id="fd-bpmn-pop-name" style="font-weight:400;opacity:.8;"></span></span>
       <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 4px;flex-shrink:0;"></div>
-      <button onclick="fdUndo()" title="Desfazer (Ctrl+Z)" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">↩ Desfazer</button>
-      <button onclick="fdRedo()" title="Refazer (Ctrl+Y)" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">↪ Refazer</button>
+      <button onclick="fdUndo()" title="Desfazer (Ctrl+Z)" style="padding:4px 9px;background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">↩ Desfazer</button>
+      <button onclick="fdRedo()" title="Refazer (Ctrl+Y)" style="padding:4px 9px;background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">↪ Refazer</button>
       <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 4px;flex-shrink:0;"></div>
-      <button onclick="fdFitView()" title="Ajustar ao canvas" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⊞ Ajustar</button>
+      <button onclick="fdFitView()" title="Ajustar ao canvas" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⊞ Ajustar</button>
       <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 4px;flex-shrink:0;"></div>
-      <button onclick="fdExportBpmnSVG()" title="Exportar SVG" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⬇ SVG</button>
-      <button onclick="fdExportBpmnPNG()" title="Exportar PNG" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⬇ PNG</button>
-      <button onclick="fdExportBPMN()" title="Baixar arquivo .bpmn" style="padding:4px 9px;background:#fff;color:#222;border:1px solid #222;border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⬇ BPMN</button>
-      <button onclick="fdSaveBpmn()" title="Salvar BPMN (Ctrl+S)" style="padding:4px 9px;background:#000;color:#fff;border:1px solid #000;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;flex-shrink:0;">💾 Salvar</button>
+      <button onclick="fdExportBpmnSVG()" title="Exportar SVG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⬇ SVG</button>
+      <button onclick="fdExportBpmnPNG()" title="Exportar PNG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⬇ PNG</button>
+      <button onclick="fdExportBPMN()" title="Baixar arquivo .bpmn" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);border-radius:5px;font-size:11px;cursor:pointer;flex-shrink:0;">⬇ BPMN</button>
+      <button onclick="fdSaveBpmn()" title="Salvar BPMN (Ctrl+S)" style="padding:4px 9px;background:rgba(0,168,107,.35);color:#4ade80;border:1px solid rgba(0,168,107,.5);border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;flex-shrink:0;">💾 Salvar</button>
     </div>
     <div id="fd-bpmn-container"></div>
   </div><!-- /fd-bpmn-mode -->
@@ -2579,7 +2584,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
       <div style="font-size:13px;font-weight:800;color:#1B3022;text-transform:uppercase;letter-spacing:.05em;">📊 Distribuição de POPs</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;" id="cockpit-dist-filters">
-        <button onclick="cockpitDistBy('macro')" data-dist="macro" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #1e293b;background:#1e293b;color:#fff;">Macroprocesso</button>
+        <button onclick="cockpitDistBy('macro')" data-dist="macro" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #0ea5e9;background:#0ea5e9;color:#fff;">Macroprocesso</button>
         <button onclick="cockpitDistBy('patrocinador')" data-dist="patrocinador" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;">Patrocinador</button>
         <button onclick="cockpitDistBy('area')" data-dist="area" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;">Área</button>
         <button onclick="cockpitDistBy('obj')" data-dist="obj" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;">Obj. Estratégico</button>
@@ -2699,16 +2704,15 @@
             <div class="npop-method-desc">Envie o POP em Word e clique em <strong>Criar mapeamento</strong> para abrir o formulário de revisão e edição.</div>
           </div>
           <div id="npop-workflow-block" style="margin-top:12px;display:none;">
-            <button type="button" class="npop-upload-zone" id="npop-drop-zone"
+            <div class="npop-upload-zone" id="npop-drop-zone"
               onclick="document.getElementById('npop-file-input').click()"
               ondragover="event.preventDefault();this.classList.add('dragover')"
               ondragleave="this.classList.remove('dragover')"
-              ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])"
-              aria-label="Clique ou arraste o POP Word aqui">
-              <span class="npop-upload-icon" aria-hidden="true">📄</span>
-              <span class="npop-upload-title">Clique ou arraste o POP Word aqui</span>
-              <span class="npop-upload-hint">Apenas .doc e .docx</span>
-            </button>
+              ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])">
+              <div class="npop-upload-icon">📄</div>
+              <div class="npop-upload-title">Clique ou arraste o POP Word aqui</div>
+              <div class="npop-upload-hint">Apenas .doc e .docx</div>
+            </div>
             <input type="file" id="npop-file-input" accept=".docx" style="display:none">
             <div class="npop-file-chosen" id="npop-file-chosen">
               <span style="font-size:20px;">📄</span>
@@ -3123,7 +3127,7 @@
           <input type="file" id="drop-cover-file" accept="image/*" style="display:none" onchange="dropCoverSelected(this.files[0])">
         </div>
         <div id="drop-cover-preview" style="display:none;margin-top:8px;border-radius:8px;overflow:hidden;max-height:120px;">
-          <img id="drop-cover-img" src="" alt="Capa do drop" style="width:100%;max-height:120px;object-fit:cover;">
+          <img id="drop-cover-img" src="" style="width:100%;max-height:120px;object-fit:cover;">
         </div>
       </div>
     </div>
@@ -3138,9 +3142,9 @@
 </div>
 
 <!-- DROPS: lightbox para imagem de capa -->
-<button id="drops-lightbox" type="button" onclick="dropsCloseLightbox()" onkeydown="if(event.key==='Enter'||event.key===' '){dropsCloseLightbox()}" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;border:none;padding:0;width:100%;height:100%;" aria-label="Fechar visualização de imagem ampliada">
-  <img id="drops-lightbox-img" src="" alt="Drop" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
-</button>
+<div id="drops-lightbox" role="button" tabindex="0" onclick="dropsCloseLightbox()" onkeydown="if(event.key==='Enter'||event.key===' '){dropsCloseLightbox()}" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;">
+  <img id="drops-lightbox-img" src="" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
+</div>
 
 <!-- ═══════════════════════════════════════════ -->
 <!-- MÓDULO: AUDITORIA DE PROCESSOS             -->
@@ -3842,7 +3846,7 @@
         <datalist id="act-actor-list"></datalist>
       </div>
       <div id="act-natureza-wrap" style="display:none;">
-        <span style="display:flex;align-items:center;gap:8px;">Natureza da Atividade <span id="act-nat-auto-hint" style="display:none;font-size:10px;font-weight:600;color:#fff;background:#1e293b;padding:1px 7px;border-radius:8px;">✨ sugerido</span></span>
+        <span style="display:flex;align-items:center;gap:8px;">Natureza da Atividade <span id="act-nat-auto-hint" style="display:none;font-size:10px;font-weight:600;color:#0891b2;background:#e0f2fe;padding:1px 7px;border-radius:8px;">✨ sugerido</span></span>
         <div class="natureza-grid">
           <button class="natureza-btn selected" data-nat="execucao" onclick="selectNatureza('execucao')">▶ Execução</button>
           <button class="natureza-btn" data-nat="revisao" onclick="selectNatureza('revisao')">🔍 Revisão</button>
@@ -3908,7 +3912,7 @@
       <button class="btn" style="padding:20px 12px;background:var(--cage-blue);color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.4;" onclick="setImportTarget('asis')">
         📌 AS IS<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Atual</span>
       </button>
-      <button class="btn" style="padding:20px 12px;background:#14532d;color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.4;" onclick="setImportTarget('tobe')">
+      <button class="btn" style="padding:20px 12px;background:#059669;color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.4;" onclick="setImportTarget('tobe')">
         📋 TO BE<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Futuro</span>
       </button>
     </div>
@@ -3925,7 +3929,7 @@
       <button class="btn" style="padding:20px 12px;background:var(--cage-blue);color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.5;" onclick="_flowPickSelect('asis')">
         📌 AS IS<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Atual</span>
       </button>
-      <button class="btn" style="padding:20px 12px;background:#14532d;color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.5;" onclick="_flowPickSelect('tobe')">
+      <button class="btn" style="padding:20px 12px;background:#059669;color:white;border-radius:12px;font-size:14px;font-weight:700;line-height:1.5;" onclick="_flowPickSelect('tobe')">
         📋 TO BE<br><span style="font-size:11px;font-weight:400;opacity:.85;">Processo Futuro</span>
       </button>
     </div>
@@ -25091,9 +25095,9 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
   <button class="perm-fab" onclick="openPermModal()" title="Gerenciar acesso e histórico">👥</button>
 </div>
 <!-- Banner de preview de visualizador -->
-<div id="viewer-preview-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:3000;background:#312e81;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:700;letter-spacing:.03em;">
+<div id="viewer-preview-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:3000;background:#8b5cf6;color:white;text-align:center;padding:8px 16px;font-size:13px;font-weight:700;letter-spacing:.03em;">
   👁 MODO VISUALIZADOR — Você está simulando o perfil de um usuário sem permissão de edição.
-  <button onclick="eppExitViewerPreview()" style="margin-left:16px;background:#1e293b;color:#fff;border:none;border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;cursor:pointer;">↩ Voltar ao Admin</button>
+  <button onclick="eppExitViewerPreview()" style="margin-left:16px;background:white;color:#8b5cf6;border:none;border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;cursor:pointer;">↩ Voltar ao Admin</button>
 </div>
 
 <!-- MODAL PERMISSÕES -->
@@ -25220,7 +25224,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
 
 
 <!-- BUSCA GLOBAL -->
-<dialog class="search-modal-overlay" id="search-overlay">
+<div class="search-modal-overlay" id="search-overlay" role="dialog" tabindex="-1" onclick="closeSearchIfOutside(event)">
   <div class="search-modal">
     <div class="search-modal-head">
       <span>🔍</span>
@@ -25231,7 +25235,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
     </div>
     <div class="search-modal-body" id="search-results"></div>
   </div>
-</dialog>
+</div>
 
 
 <!-- MODAL BACKUP -->
@@ -25359,21 +25363,11 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <thead>
           <tr style="background:#1B3022;color:white;">
-            <th class="arq-th-sort" data-col="macroprocesso" style="padding:12px 16px;text-align:left;font-weight:600;user-select:none;white-space:nowrap;">
-              <button type="button" style="all:unset;cursor:pointer;display:inline-block;width:100%;text-align:left;" onclick="arqSortBy('macroprocesso')" onkeydown="if(event.key==='Enter'||event.key===' '){arqSortBy('macroprocesso')}">Macroprocesso<span class="sort-arrow"> ↕</span></button>
-            </th>
-            <th class="arq-th-sort" data-col="processo" style="padding:12px 16px;text-align:left;font-weight:600;user-select:none;white-space:nowrap;">
-              <button type="button" style="all:unset;cursor:pointer;display:inline-block;width:100%;text-align:left;" onclick="arqSortBy('processo')" onkeydown="if(event.key==='Enter'||event.key===' '){arqSortBy('processo')}">Processo<span class="sort-arrow"> ↕</span></button>
-            </th>
-            <th class="arq-th-sort" data-col="subprocesso" style="padding:12px 16px;text-align:left;font-weight:600;user-select:none;white-space:nowrap;">
-              <button type="button" style="all:unset;cursor:pointer;display:inline-block;width:100%;text-align:left;" onclick="arqSortBy('subprocesso')" onkeydown="if(event.key==='Enter'||event.key===' '){arqSortBy('subprocesso')}">Subprocesso<span class="sort-arrow"> ↕</span></button>
-            </th>
-            <th class="arq-th-sort" data-col="natureza" style="padding:12px 16px;text-align:left;font-weight:600;user-select:none;white-space:nowrap;">
-              <button type="button" style="all:unset;cursor:pointer;display:inline-block;width:100%;text-align:left;" onclick="arqSortBy('natureza')" onkeydown="if(event.key==='Enter'||event.key===' '){arqSortBy('natureza')}">Natureza<span class="sort-arrow"> ↕</span></button>
-            </th>
-            <th class="arq-th-sort" data-col="area" style="padding:12px 16px;text-align:left;font-weight:600;user-select:none;white-space:nowrap;">
-              <button type="button" style="all:unset;cursor:pointer;display:inline-block;width:100%;text-align:left;" onclick="arqSortBy('area')" onkeydown="if(event.key==='Enter'||event.key===' '){arqSortBy('area')}">Área<span class="sort-arrow"> ↕</span></button>
-            </th>
+            <th class="arq-th-sort" data-col="macroprocesso" onclick="arqSortBy('macroprocesso')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Macroprocesso<span class="sort-arrow"> ↕</span></th>
+            <th class="arq-th-sort" data-col="processo" onclick="arqSortBy('processo')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Processo<span class="sort-arrow"> ↕</span></th>
+            <th class="arq-th-sort" data-col="subprocesso" onclick="arqSortBy('subprocesso')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Subprocesso<span class="sort-arrow"> ↕</span></th>
+            <th class="arq-th-sort" data-col="natureza" onclick="arqSortBy('natureza')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Natureza<span class="sort-arrow"> ↕</span></th>
+            <th class="arq-th-sort" data-col="area" onclick="arqSortBy('area')" style="padding:12px 16px;text-align:left;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Área<span class="sort-arrow"> ↕</span></th>
             <th style="padding:12px 16px;text-align:center;font-weight:600;color:#fca5a5;">Crítico?</th>
             <th style="padding:12px 16px;text-align:center;font-weight:600;color:#6ee7b7;">Mapeado?</th>
             <th style="padding:12px 16px;text-align:center;font-weight:600;">Ações</th>
@@ -25387,7 +25381,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
 </div>
 
 <!-- Modal Form -->
-<div id="arq-form-modal" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
+<div id="arq-form-modal" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:16px;width:620px;max-width:96vw;max-height:92vh;overflow-y:auto;padding:32px;box-shadow:0 32px 80px rgba(0,0,0,.25);">
     <div style="font-size:18px;font-weight:700;color:#1B3022;margin-bottom:20px;" id="arq-form-title">Novo Processo</div>
     <input type="hidden" id="arq-form-idx">

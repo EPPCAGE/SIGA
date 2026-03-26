@@ -3,37 +3,55 @@ trigger:
     include:
       - main
 
-# Agente self-hosted instalado no servidor on-premises da SEFAZ-RS
-# Consulte o Guia de Implantação (seção 4.2) para instalar o agente
 pool:
-  name: sefaz-self-hosted-deployment-container-dev
+  vmImage: ubuntu-latest
 
 variables:
   - group: siga-secrets   # grupo criado em Pipelines > Library com SIGA_AZURE_API_KEY
-  SIGA_DIR: /opt/siga     # caminho onde o repositório está clonado no servidor
 
-steps:
-  - checkout: self
+stages:
+  - stage: Build
+    displayName: Build Docker Images
+    jobs:
+      - job: BuildAndPush
+        displayName: Build & Push
+        steps:
+          - task: Docker@2
+            displayName: Build backend
+            inputs:
+              command: build
+              dockerfile: docker/backend/Dockerfile
+              repository: siga-backend
+              tags: $(Build.BuildId)
 
-  - script: |
-      set -e
+          - task: Docker@2
+            displayName: Build frontend
+            inputs:
+              command: build
+              dockerfile: docker/frontend/Dockerfile
+              repository: siga-frontend
+              tags: $(Build.BuildId)
 
-      # Garante que o arquivo .env existe com as variáveis de ambiente
-      cat > "$(SIGA_DIR)/.env" <<EOF
-      SIGA_AI_PROVIDER=azure
-      SIGA_AZURE_ENDPOINT=https://projeto-gesproc-cage.cognitiveservices.azure.com
-      SIGA_AZURE_DEPLOYMENT=gpt-5.1-chat
-      SIGA_AZURE_API_VERSION=2024-12-01-preview
-      SIGA_AZURE_API_KEY=$(SIGA_AZURE_API_KEY)
-      EOF
-
-      # Atualiza o código e reinicia os containers
-      cd "$(SIGA_DIR)"
-      git pull origin main
-      docker compose up -d --build --remove-orphans
-      docker image prune -f
-
-      echo "Deploy concluído: $(date)"
-    displayName: "Deploy SIGA no servidor on-premises"
-    env:
-      SIGA_AZURE_API_KEY: $(SIGA_AZURE_API_KEY)
+  - stage: Deploy
+    displayName: Deploy
+    dependsOn: Build
+    jobs:
+      - deployment: DeployCompose
+        displayName: Docker Compose Up
+        environment: producao
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    cat > .env <<EOF
+                    SIGA_AI_PROVIDER=azure
+                    SIGA_AZURE_ENDPOINT=https://projeto-gesproc-cage.cognitiveservices.azure.com
+                    SIGA_AZURE_DEPLOYMENT=gpt-5.1-chat
+                    SIGA_AZURE_API_VERSION=2024-12-01-preview
+                    SIGA_AZURE_API_KEY=$(SIGA_AZURE_API_KEY)
+                    EOF
+                    docker compose up -d --build
+                  displayName: Deploy com docker compose
+                  env:
+                    SIGA_AZURE_API_KEY: $(SIGA_AZURE_API_KEY)
