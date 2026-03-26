@@ -147,18 +147,18 @@
   .header-divider-line{width:1px;height:36px;background:rgba(255,255,255,.18);flex-shrink:0;}
   .cage-banner-brand{display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .cage-banner-shield{display:flex;align-items:center;flex-shrink:0;}
-  .cage-banner-text{}
+
   .cage-banner-text .cage-banner-title{font-weight:700;font-size:14px;color:white;letter-spacing:.3px;line-height:1.15;display:block;}
   .cage-banner-text .cage-banner-sub{font-size:10px;color:rgba(255,255,255,.55);line-height:1.2;white-space:nowrap;display:block;}
   .cage-official-logo{height:42px;max-width:170px;object-fit:contain;flex-shrink:0;filter:brightness(0) invert(1);}
   .header-title{font-size:12px;font-weight:500;line-height:1.3;opacity:.8;}
   .header-title strong{display:block;font-size:14px;font-weight:600;opacity:1;}
   .header-meta{display:flex;align-items:center;gap:8px;}
-  .edit-toggle{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);color:white;transition:all .2s;}
-  .edit-toggle:hover{background:rgba(255,255,255,.22);}
+  .edit-toggle{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;background:#000;color:#fff;transition:all .2s;}
+  .edit-toggle:hover{background:#222;}
   .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
-  .badge-green{background:rgba(0,168,107,.2);color:#4ade80;border:1px solid rgba(0,168,107,.3);}
-  .badge-blue{background:rgba(96,165,250,.15);color:#93c5fd;border:1px solid rgba(96,165,250,.2);}
+  .badge-green{background:#000;color:#fff;border:1px solid #022c22;}
+  .badge-blue{background:#000;color:#fff;border:1px solid #1e293b;}
 
   /* POP SWITCHER */
   .pop-switcher{background:var(--cage-blue);border-top:1px solid rgba(255,255,255,.06);padding:0 32px;}
@@ -166,7 +166,7 @@
   .pop-switcher-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em;margin-right:14px;white-space:nowrap;}
   .pop-tab{padding:7px 18px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.55);transition:all .2s;border:1.5px solid transparent;white-space:nowrap;margin-right:6px;}
   .pop-tab:hover{color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.2);}
-  .pop-tab.active{color:white;border-color:var(--pop-color);background:rgba(255,255,255,.08);}
+  .pop-tab.active{color:#fff;border-color:var(--pop-color);background:#000;}
   .pop-tab.pop-novo.active{--pop-color:var(--design-accent);}
   .pop-tab.pop-novo{color:rgba(255,255,255,.7);}
 
@@ -178,7 +178,7 @@
   .nav-tab.active{color:white;border-bottom-color:var(--current-pop-color, #00a86b);}
   body.edit-mode .nav-tab.active{border-bottom-color:var(--edit-color);}
 
-  .main{max-width:1300px;margin:0 auto;padding:32px;}
+  .main{max-width:1300px;margin:0 auto;padding:32px;transition:none;}
   .pop-content{display:none;}.pop-content.active{display:block;}
   .section{display:none;}.section.active{display:block;}
 
@@ -236,9 +236,9 @@
   .step-info p{font-size:13px;opacity:.75;}
   .step-panel-body{padding:24px;}
   .resp-tag{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:16px;}
-  .resp-green{background:rgba(0,168,107,.1);color:#00875a;border:1px solid rgba(0,168,107,.2);}
-  .resp-blue{background:rgba(0,51,102,.1);color:var(--cage-mid);border:1px solid rgba(0,51,102,.2);}
-  .resp-gold{background:rgba(232,160,32,.1);color:#c07c10;border:1px solid rgba(232,160,32,.2);}
+  .resp-green{background:#000;color:#fff;border:1px solid #022c22;}
+  .resp-blue{background:#000;color:#fff;border:1px solid #1e293b;}
+  .resp-gold{background:#FFD600;color:#000;border:1px solid #b45309;}
   .step-actions{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
 
   /* ── DRAG AND DROP (actions) ─────────────────── */
@@ -258,7 +258,7 @@
   .branch-label{font-size:12px;font-weight:700;color:var(--design-accent-hover);flex:1;min-width:40px;outline:none;}
   .branch-label[contenteditable]:empty::before{content:'Rótulo…';color:var(--design-accent);opacity:.6;}
   .rm-branch-btn{display:none;padding:1px 5px;font-size:10px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;border-radius:4px;flex-shrink:0;}
-  .rm-branch-btn:hover{background:#fee2e2;color:#ef4444;}
+  .rm-branch-btn:hover{background:#fee2e2;color:#b91c1c;}
   body.edit-mode .rm-branch-btn{display:inline-flex;}
   .branch-actions{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px;}
   .branch-action-item{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;background:white;border-radius:4px;border-left:2px solid var(--cage-accent);}
@@ -287,7 +287,7 @@
   /* action type modal */
   .action-type-modal{display:none;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center;background:rgba(0,0,0,.45);}
   .action-type-modal.open{display:flex;}
-  .action-type-box{background:white;border-radius:var(--radius);padding:28px 28px 22px;width:460px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.2);}
+  .action-type-box{background:white;border-radius:var(--radius);padding:28px 28px 22px;width:460px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow-y:auto;max-height:90vh;}
   .action-type-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--cage-blue);margin-bottom:4px;}
   .action-type-sub{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
   .action-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
@@ -318,7 +318,7 @@
   .act-move-step-wrap{margin-top:4px;padding-top:12px;border-top:1px solid var(--cage-border);}
   .act-move-step-wrap label{font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;}
   .act-move-step-row{display:flex;gap:8px;align-items:center;}
-  .action-type-box{overflow-y:auto;max-height:90vh;}
+  /* removed duplicate .action-type-box */
   .decision-box{background:#FFFBF0;border:1.5px solid var(--design-accent);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
   .decision-box .dicon{font-size:18px;flex-shrink:0;}
   .decision-text{font-size:13px;color:var(--design-accent-active);line-height:1.5;}
@@ -327,7 +327,7 @@
   .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
   .btn-primary{background:var(--cage-accent);color:white;}.btn-primary:hover{background:var(--cage-mid);}
   .btn-outline{background:white;color:var(--cage-accent);border:1.5px solid var(--cage-border);}.btn-outline:hover{border-color:var(--cage-accent);}
-  .btn-warn{background:#f59e0b;color:white;}.btn-warn:hover{background:#d97706;}
+  .btn-warn{background:#000;color:#FFD600;}.btn-warn:hover{background:#222;color:#FFD600;}
   .btn-success{background:#1B6B2E;color:white;}.btn-success:hover{background:#155a26;}
   .btn:disabled{opacity:.4;cursor:not-allowed;}
 
@@ -336,7 +336,7 @@
   .flow-mode-toggle{display:inline-flex;align-items:center;border:1.5px solid var(--cage-border);border-radius:10px;overflow:hidden;background:white;box-shadow:var(--shadow-sm);}
   .flow-mode-btn{padding:7px 16px;font-size:12px;font-weight:700;border:none;background:transparent;cursor:pointer;transition:all .2s;color:var(--text-muted);letter-spacing:.2px;white-space:nowrap;}
   .flow-mode-btn.active-asis{background:var(--cage-blue);color:white;}
-  .flow-mode-btn.active-tobe{background:#059669;color:white;}
+  .flow-mode-btn.active-tobe{background:#000;color:#FFD600;}
   /* TO BE step panel */
   .step-panel.tobe-mode .step-panel-head{background:linear-gradient(135deg,#064e3b,#059669);}
   body.edit-mode .step-panel.tobe-mode .step-panel-head{background:linear-gradient(135deg,#064e3b,#059669);}
@@ -358,7 +358,7 @@
   .sdf-col{display:flex;flex-direction:column;gap:3px;}
   .sdf-tag{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:.4px;}
   .sdf-tag.asis{background:rgba(27,48,34,.1);color:var(--cage-blue);}
-  .sdf-tag.tobe{background:rgba(5,150,105,.12);color:#059669;}
+  .sdf-tag.tobe{background:#000;color:#FFD600;}
   .sdf-val{font-size:12.5px;color:var(--text-secondary);background:var(--cage-light);border-radius:6px;padding:7px 10px;min-height:34px;line-height:1.45;word-break:break-word;}
   .sdf-val.tobe-val{background:#f0fdf4;border:1px solid #bbf7d0;}
   .sdf-val.improv-val{background:#fff8e6;border:1px solid #fcd34d;}
@@ -492,7 +492,7 @@
   .delay-1{animation-delay:.08s;}.delay-2{animation-delay:.16s;}
 
   @media(max-width:768px){
-    .main{padding:16px;}
+    /* removed duplicate .main padding:16px; (conflicts with main definition above) */
     .overview-grid,.two-col,.role-grid,.indicator-grid,.sigla-grid{grid-template-columns:repeat(2,1fr);}
     .overview-grid .metric-card:last-child{grid-column:1/-1;}
     .pop-switcher{padding:0 16px;}
@@ -521,10 +521,10 @@
   .bpmn-file-icon{font-size:16px;}
   .bpmn-file-name{font-size:13px;font-weight:600;color:white;font-family:'JetBrains Mono',monospace;}
   .bpmn-toolbar-actions{display:flex;align-items:center;gap:6px;}
-  .bpmn-tool-btn{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:white;transition:all .15s;white-space:nowrap;}
+  .bpmn-tool-btn{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#1e293b;transition:all .15s;white-space:nowrap;}
   .bpmn-tool-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.4);}
-  .bpmn-tool-danger{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.15);color:#fca5a5;}
-  .bpmn-tool-danger:hover{background:rgba(239,68,68,.3);}
+  .bpmn-tool-danger{border-color:#000;background:#000;color:#FFD600;}
+  .bpmn-tool-danger:hover{background:#222;}
   .bpmn-zoom-label{font-size:12px;color:rgba(255,255,255,.7);min-width:40px;text-align:center;font-family:'JetBrains Mono',monospace;}
   .bpmn-divider{width:1px;height:20px;background:rgba(255,255,255,.2);margin:0 4px;}
 
@@ -618,9 +618,9 @@
   .treat-badge{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;background:var(--cage-light);color:var(--cage-blue);}
 
   /* ── VERSIONAMENTO ───────────────────────── */
-  .ver-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;font-family:"JetBrains Mono",monospace;background:rgba(0,168,107,.15);color:#00a86b;border:1px solid rgba(0,168,107,.25);cursor:pointer;transition:background .15s;}
-  .ver-badge:hover{background:rgba(0,168,107,.28);}
-  .ver-badge.viewing-old{background:rgba(245,158,11,.15);color:#d97706;border-color:rgba(245,158,11,.3);}
+  .ver-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;font-family:"JetBrains Mono",monospace;background:#000;color:#FFD600;border:1px solid #FFD600;cursor:pointer;transition:background .15s;}
+  .ver-badge:hover{background:#222;}
+  .ver-badge.viewing-old{background:#FFD600;color:#000;border-color:#b45309;}
   .version-bar{position:sticky;top:0;z-index:30;padding:6px 20px;font-size:12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(0,0,0,.06);}
   .version-ro-bar{background:linear-gradient(135deg,#fef3c7,#fffbeb);color:#92400e;}
   .version-inherit-bar{background:linear-gradient(135deg,#e0f2fe,#f0f9ff);color:#0369a1;}
@@ -709,7 +709,7 @@
   .auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--cage-border);}
   .auth-email-row{display:flex;gap:8px;}
   .auth-status{font-size:12px;color:var(--text-muted);margin-top:12px;min-height:18px;}
-  .user-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border-radius:20px;padding:4px 12px 4px 4px;font-size:12px;color:white;}
+  .user-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border-radius:20px;padding:4px 12px 4px 4px;font-size:12px;color:#1e293b;}
   .user-avatar{width:26px;height:26px;border-radius:50%;background:var(--cage-accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;}
   .sync-indicator{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:4px;}
   .sync-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;}
@@ -738,13 +738,13 @@
   /* ── QUADRO DE ESBOÇO (Excalidraw) ───────────────────────── */
   #quadro-module { display:none; }
   .quadro-toolbar { background:var(--cage-blue); padding:10px 20px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-bottom:2px solid var(--cage-accent); }
-  .q-btn { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08); color:rgba(255,255,255,.8); transition:all .15s; white-space:nowrap; }
-  .q-btn:hover { background:rgba(255,255,255,.18); color:white; }
+  .q-btn { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08); color:#1e293b; transition:all .15s; white-space:nowrap; }
+  .q-btn:hover { background:rgba(255,255,255,.18); color:#1e293b; }
 
   /* ── BUSCA GLOBAL ────────────────────────────────────────── */
   .search-input-wrap { position:relative; display:flex; align-items:center; }
   .search-input { background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.15);
-    border-radius:20px; color:white; font-size:12px; padding:6px 14px 6px 32px;
+    border-radius:20px; color:white; background:#000; font-size:12px; padding:6px 14px 6px 32px;
     width:180px; outline:none; transition:all .2s; font-family:inherit; }
   .search-input::placeholder { color:rgba(255,255,255,.4); }
   .search-input:focus { background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.4); width:240px; }
@@ -789,14 +789,6 @@
   .pat-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
   .pat-kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:20px; }
   .pat-kpi-card { background:white; border-radius:10px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-  .pat-filter-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
-  .pat-filter-btn { padding:6px 16px; border-radius:20px; border:1.5px solid var(--cage-border); background:white; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:all .15s; }
-  .pat-filter-btn:hover { border-color:var(--cage-accent); color:var(--cage-accent); }
-  .pat-filter-btn.active { background:var(--cage-blue); border-color:var(--cage-blue); color:white; }
-  .pat-card { background:white; border-radius:12px; padding:18px 20px; margin-bottom:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); border:1px solid var(--cage-border); transition:box-shadow .2s; }
-  .pat-card:hover { box-shadow:0 4px 20px rgba(0,0,0,.12); }
-  .pat-card-head { display:flex; align-items:flex-start; gap:12px; margin-bottom:10px; }
-  .pat-card-meta { display:flex; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--text-muted); margin-bottom:10px; }
   .pat-progress-row { display:flex; align-items:center; gap:10px; }
   .pat-progress-bar-bg { flex:1; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; }
   .pat-progress-bar-fill { height:100%; border-radius:3px; transition:width .4s; }
@@ -830,8 +822,8 @@
   .sidebar-toggle.shifted{left:260px;}
   .sidebar-head{padding:16px 16px 10px;border-bottom:1px solid rgba(255,255,255,.08);}
   .sidebar-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:10px;}
-  .sidebar-new-btn{width:100%;padding:8px 12px;background:rgba(251,191,36,.15);color:#fcd34d;border:1.5px solid rgba(251,191,36,.3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
-  .sidebar-new-btn:hover{background:rgba(251,191,36,.25);}
+  .sidebar-new-btn{width:100%;padding:8px 12px;background:#FFD600;color:#000;border:1.5px solid #b45309;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
+  .sidebar-new-btn:hover{background:#ffe066;}
   .sidebar-pat-btn{width:100%;margin-top:6px;padding:8px 12px;background:rgba(0,51,102,.25);color:#a8c4e8;border:1.5px solid rgba(0,51,102,.4);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
   .sidebar-pat-btn:hover{background:rgba(0,51,102,.40);}
   .sidebar-list{flex:1;overflow-y:auto;padding:8px 0;}
@@ -843,21 +835,19 @@
   .sidebar-macro-label{display:flex;align-items:center;gap:6px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);margin-top:4px;}
   .sidebar-macro-label:first-child{border-top:none;margin-top:0;}
   .sidebar-macro-icon{font-size:12px;}
-  .sidebar-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:12px;font-weight:500;color:rgba(255,255,255,.6);cursor:pointer;border-left:3px solid transparent;transition:all .15s;}
-  .sidebar-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);}
-  .sidebar-item.active{background:rgba(255,255,255,.1);color:white;border-left-color:var(--cage-accent);}
+  .sidebar-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:12px;font-weight:500;color:#fff;cursor:pointer;border-left:3px solid transparent;transition:all .15s;background:#222;}
+  .sidebar-item:hover{background:#000;color:#FFD600;}
+  .sidebar-item.active{background:#FFD600;color:#000;border-left-color:var(--cage-accent);}
   .sidebar-item-icon{font-size:14px;flex-shrink:0;}
   .sidebar-item-name{flex:1;line-height:1.3;}
-  .sidebar-item-badge{font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);}
+  .sidebar-item-badge{font-size:9px;padding:1px 5px;border-radius:8px;background:#000;color:#FFD600;}
 
   /* ── SIDEBAR is always overlay — never pushes content ──────────── */
-  .main{transition:none;}
+  /* removed duplicate .main transition:none; */
 
   /* ── PLANO DE TRABALHO ────────────────────────── */
-  .pat-module{display:none;}
-  .pat-module.active{display:block;}
-  .pat-header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
-  .pat-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+  /* removed duplicate .pat-module and .pat-module.active */
+  /* removed duplicate .pat-header-row and .pat-kpi-row */
   .pat-kpi{background:white;border-radius:10px;padding:16px 18px;border-left:4px solid;box-shadow:0 1px 4px rgba(27,48,34,.07);}
   .pat-kpi.total{border-left-color:var(--cage-blue);}
   .pat-kpi.andamento{border-left-color:#3b82f6;}
@@ -941,11 +931,11 @@
   .audit-badge-planejada{background:#eff6ff;color:#1d4ed8;}
   .audit-badge-em_execucao{background:#fef9c3;color:#a16207;}
   .audit-badge-concluida{background:#dcfce7;color:#15803d;}
-  .audit-badge-cancelada{background:#f1f5f9;color:#94a3b8;}
-  .audit-badge-aberta{background:#fee2e2;color:#dc2626;}
+  .audit-badge-cancelada{background:#f1f5f9;color:#334155;}
+  .audit-badge-aberta{background:#fee2e2;color:#b91c1c;}
   .audit-badge-em_tratamento{background:#fef9c3;color:#a16207;}
   .audit-badge-fechada{background:#dcfce7;color:#15803d;}
-  .audit-badge-pendente{background:#f1f5f9;color:#64748b;}
+  .audit-badge-pendente{background:#f1f5f9;color:#334155;}
   .audit-badge-em_andamento{background:#fef9c3;color:#a16207;}
   .audit-nc-filter{padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;border:1.5px solid #e2e8f0;background:white;cursor:pointer;color:#64748b;transition:all .15s;}
   .audit-nc-filter.active{background:#1B3022;color:white;border-color:#1B3022;}
@@ -1184,7 +1174,7 @@
 /* ── Flow Designer: modo texto/Mermaid ────────────────────────── */
 #fd-left-panel { width:260px; flex-shrink:0; display:flex; flex-direction:column; border-right:1px solid var(--cage-border); transition:width .2s; }
 #fd-left-panel.collapsed { width:0 !important; overflow:hidden; border-right:none; }
-#fd-collapse-btn { padding:4px 8px; background:rgba(255,255,255,.1); color:white; border:1px solid rgba(255,255,255,.2); border-radius:5px; font-size:11px; cursor:pointer; flex-shrink:0; }
+#fd-collapse-btn { padding:4px 8px; background:#000; color:#FFD600; border:1px solid #FFD600; border-radius:5px; font-size:11px; cursor:pointer; flex-shrink:0; }
 /* ── Flow Designer: BPMN 2.0 (bpmn-js) ───────────────────────── */
 #fd-module { background:#f0f2f7; }
 #fd-mode-bar { display:flex; gap:0; background:#0d2e52; border-bottom:1px solid rgba(255,255,255,.1); padding:0 14px; }
@@ -1280,7 +1270,7 @@
   .pct-verde { background:#dcfce7; color:#15803d; }
   .pct-amarelo { background:#fef9c3; color:#a16207; }
   .pct-vermelho { background:#fee2e2; color:#b91c1c; }
-  .pct-cinza { background:#f1f5f9; color:#64748b; }
+  .pct-cinza { background:#f1f5f9; color:#334155; }
 
   /* Indicator CAGE modal */
   #indcage-modal .gmod-body { display:flex; flex-direction:column; gap:14px; }
@@ -1300,7 +1290,7 @@
   .indrel-item-meta { font-size:11px; color:#64748b; margin-top:3px; display:flex; gap:12px; flex-wrap:wrap; }
   .indrel-item-meta span { display:flex; align-items:center; gap:3px; }
   .indrel-has-data { background:#dcfce7; color:#15803d; font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; flex-shrink:0; }
-  .indrel-no-data { background:#f1f5f9; color:#94a3b8; font-size:10px; font-weight:600; padding:2px 7px; border-radius:6px; flex-shrink:0; }
+  .indrel-no-data { background:#f1f5f9; color:#334155; font-size:10px; font-weight:600; padding:2px 7px; border-radius:6px; flex-shrink:0; }
 
   /* ── ANÁLISE INTELIGENTE ── */
   #ai-module { padding: 32px 32px 60px; max-width: 960px; margin: 0 auto; box-sizing: border-box; }
@@ -1308,7 +1298,7 @@
   .ai-header-icon { width:52px; height:52px; border-radius:14px; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
   .ai-header-title { font-family:'DM Serif Display',serif; font-size:22px; color:#1B3022; margin:0 0 4px; }
   .ai-header-sub { font-size:13px; color:#64748b; }
-  .ai-run-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 22px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
+  .ai-run-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 22px; background:#000; color:#FFD600; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
   .ai-run-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(99,102,241,.35); }
   .ai-run-btn:disabled { opacity:.55; cursor:not-allowed; transform:none; }
   .ai-spinner { display:none; flex-direction:column; align-items:center; gap:16px; padding:48px 0; color:#6366f1; }
@@ -1319,7 +1309,7 @@
   .ai-card { border-radius:12px; border:1.5px solid; padding:18px; }
   .ai-card-title { font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; display:flex; align-items:center; gap:7px; }
   .ai-card-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
-  .ai-card-list li { font-size:13px; color:#1e293b; line-height:1.5; padding:8px 10px; border-radius:7px; background:rgba(0,0,0,.04); }
+  .ai-card-list li { font-size:13px; color:#FFD600; line-height:1.5; padding:8px 10px; border-radius:7px; background:#000; }
   .ai-card-list li::before { content:"•"; margin-right:6px; font-weight:900; }
   .ai-card-empty { font-size:12px; color:#94a3b8; font-style:italic; }
   .ai-card.gargalos   { border-color:#fca5a5; background:#fff5f5; } .ai-card.gargalos   .ai-card-title { color:#dc2626; }
@@ -1436,7 +1426,7 @@
         </div>
       </div>
       <div class="header-divider-line"></div>
-      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><strong>SIGA</strong></div>
+      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início"><strong>SIGA</strong></div>
     </div>
     <div class="header-meta">
       <button onclick="showHome()" title="Voltar à página inicial" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.45);background:none;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.1);transition:color .2s,border-color .2s;white-space:nowrap;" onmouseover="this.style.color='rgba(255,255,255,.85)';this.style.borderColor='rgba(255,255,255,.25)'" onmouseout="this.style.color='rgba(255,255,255,.45)';this.style.borderColor='rgba(255,255,255,.1)'">
@@ -1481,23 +1471,23 @@
 
 <!-- SIDEBAR -->
 <!-- Backdrop escuro ao abrir sidebar no mobile — clique fecha -->
-<div id="sidebar-backdrop" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:89;" role="presentation"></div>
+<div id="sidebar-backdrop" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:89;"></div>
 
 <div class="sidebar" id="sidebar">
   <div class="sidebar-head">
     <div class="sidebar-title">Gestão EPP</div>
     <div id="sidebar-nav-btns">
-      <button data-mod="home"        data-sortkey="home"        class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:rgba(0,168,107,.15);color:#6ee7b7;border-color:rgba(0,168,107,.3);">🏠 Página Inicial</button>
-      <button data-mod="repo"        data-sortkey="repo"        class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:rgba(225,29,72,.12);color:#fda4af;border-color:rgba(225,29,72,.3);">📚 Documentos e Manuais</button>
-      <button data-mod="drops"       data-sortkey="drops"       class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">💧 Drops de Conhecimento</button>
-      <button data-mod="audit"       data-sortkey="audit"       class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:rgba(220,38,38,.12);color:#fca5a5;border-color:rgba(220,38,38,.3);">🔍 Auditoria de Processos</button>
-      <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.3);">🏢 Gestão EPP</button>
-      <button data-mod="bi"          data-sortkey="bi"          class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:rgba(234,179,8,.12);color:#fde047;border-color:rgba(234,179,8,.25);">📊 Cadeia de Valor e Mapa Estratégico</button>
-      <button data-mod="quadro"      data-sortkey="quadro"      class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.25);">🗒 Quadro de Esboço</button>
-      <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
-      <button data-mod="simulator"   data-sortkey="simulator"   class="sidebar-pat-btn" onclick="closeSidebar();showSimulatorModule();" style="margin-top:4px;background:rgba(6,95,70,.12);color:#6ee7b7;border-color:rgba(6,95,70,.28);">🧪 Simulador de Processos</button>
-      <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:rgba(232,160,32,.12);color:#fcd34d;border-color:rgba(232,160,32,.3);">📈 Indicadores CAGE</button>
-      <button data-mod="organograma" data-sortkey="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:rgba(99,102,241,.12);color:#c7d2fe;border-color:rgba(99,102,241,.3);">🏛 Organograma CAGE</button>
+      <button data-mod="home"        data-sortkey="home"        class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:#047857;color:#fff;border-color:#03543f;">🏠 Página Inicial</button>
+      <button data-mod="repo"        data-sortkey="repo"        class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:#b91c1c;color:#fff;border-color:#7f1d1d;">📚 Documentos e Manuais</button>
+      <button data-mod="drops"       data-sortkey="drops"       class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:#0369a1;color:#fff;border-color:#0c4a6e;">💧 Drops de Conhecimento</button>
+      <button data-mod="audit"       data-sortkey="audit"       class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:#991b1b;color:#fff;border-color:#7f1d1d;">🔍 Auditoria de Processos</button>
+      <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:#1e40af;color:#fff;border-color:#1e3a8a;">🏢 Gestão EPP</button>
+      <button data-mod="bi"          data-sortkey="bi"          class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:#b45309;color:#fff;border-color:#78350f;">📊 Cadeia de Valor e Mapa Estratégico</button>
+      <button data-mod="quadro"      data-sortkey="quadro"      class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:#065f46;color:#fff;border-color:#064e3b;">🗒 Quadro de Esboço</button>
+      <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:#3730a3;color:#fff;border-color:#312e81;">🏛 Organograma CAGE</button>
+      <button data-mod="simulator"   data-sortkey="simulator"   class="sidebar-pat-btn" onclick="closeSidebar();showSimulatorModule();" style="margin-top:4px;background:#065f46;color:#fff;border-color:#047857;">🧪 Simulador de Processos</button>
+      <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:#eab308;color:#1e293b;border-color:#b45309;">📈 Indicadores CAGE</button>
+      <button data-mod="organograma" data-sortkey="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:#312e81;color:#fff;border-color:#3730a3;">🏛 Organograma CAGE</button>
       <button data-mod="cockpit"     data-sortkey="cockpit"     class="sidebar-pat-btn" onclick="closeSidebar();showCockpitModule();" style="margin-top:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">🎯 Cockpit de Gestão</button>
     </div>
   </div>
@@ -1516,22 +1506,22 @@
 <!-- NAV TABS -->
 <nav class="nav-tabs">
   <div class="nav-tabs-inner" id="nav-tabs-inner">
-    <div class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🏠 Visão Geral</div>
-    <div class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⚙️ Fluxo</div>
-    <div class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">👥 Responsabilidades</div>
-    <div class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📊 Indicadores</div>
-    <div class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">❓ FAQ</div>
-    <div class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📜 Normas &amp; Revisões</div>
-    <div class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⚠️ Riscos</div>
-    <div class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">✅ Plano de Ação</div>
-    <div class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🤝 Reuniões</div>
-    <div class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📋 Acompanhamento</div>
-    <div class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">☑️ Checklists</div>
-    <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🖼 Imagem BPMN</div>
-    <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🎨 Desenhar Fluxo</div>
-    <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📊 Maturidade</div>
-    <div class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🤖 Análise Inteligente</div>
-    <div class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📄 Relatório IA</div>
+    <div class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)">🏠 Visão Geral</div>
+    <div class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)">⚙️ Fluxo</div>
+    <div class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)">👥 Responsabilidades</div>
+    <div class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)">📊 Indicadores</div>
+    <div class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)">❓ FAQ</div>
+    <div class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)">📜 Normas &amp; Revisões</div>
+    <div class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)">⚠️ Riscos</div>
+    <div class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)">✅ Plano de Ação</div>
+    <div class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)">🤝 Reuniões</div>
+    <div class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)">📋 Acompanhamento</div>
+    <div class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)">☑️ Checklists</div>
+    <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
+    <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
+    <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)">📊 Maturidade</div>
+    <div class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
+    <div class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
   </div>
 </nav>
 
@@ -1560,7 +1550,7 @@
     </div>
     <!-- Logos -->
     <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
-      <div id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()">
         <img id="epp-logo-img" src="" alt="Logo EPP" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
         <div id="epp-logo-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
           <span style="font-size:22px;">🖼</span>
@@ -1568,13 +1558,13 @@
         </div>
         <div id="epp-logo-editor-hint" style="display:none;position:absolute;top:4px;right:6px;font-size:10px;color:#94a3b8;">✎</div>
       </div>
-      <div id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()">
         <img id="logo2-img" src="" alt="Segundo Logo" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
         <div id="logo2-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
           <span style="font-size:22px;">📤</span>
           <span>Segundo logo<br><span style="font-size:10px;">(clique para upload)</span></span>
         </div>
-        <div id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#94a3b8;background:#f1f5f9;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">✕</div>
+        <div id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#94a3b8;background:#f1f5f9;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo">✕</div>
         <input type="file" id="logo2-file-input" accept="image/*" style="display:none;" onchange="logo2FileSelected(this.files[0])">
       </div>
     </div>
@@ -1583,82 +1573,82 @@
   <!-- ══ MÓDULOS ══ -->
   <div id="home-block-processos" style="display:block;margin-bottom:40px;">
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
-      <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
         <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Procedimentos Operacionais</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Procedimentos Operacionais</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
         <div class="home-card-footer" id="home-pops-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
         <div class="home-card-icon" style="background:#f5f3ff;color:#8b5cf6;">🏛</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Arquitetura de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Arquitetura de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
         <div class="home-card-footer" id="home-arq-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
         <div class="home-card-icon" style="background:#fffbeb;color:#f59e0b;">📊</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Cadeia de Valor e Mapa Estratégico</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Cadeia de Valor e Mapa Estratégico</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
         <div class="home-card-footer">Imagens configuráveis</div>
       </div>
-      <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
         <div class="home-card-icon" style="background:#fff1f2;color:#dc2626;">🔍</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Auditoria de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Auditoria de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
         <div class="home-card-footer" id="home-audit-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
         <div class="home-card-icon" style="background:#fffbeb;color:#e8a020;">📈</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Indicadores CAGE</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Indicadores CAGE</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
         <div class="home-card-icon" style="background:#eef2ff;color:#6366f1;">🏗️</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Modelador BPMN 2.0</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Modelador BPMN 2.0</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
         <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
       </div>
-      <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
         <div class="home-card-icon" style="background:#ecfdf5;color:#10b981;">🗒</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Quadro de Esboço</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
         <div class="home-card-footer">Canvas interativo</div>
       </div>
-      <div class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;">
         <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🧪</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Simulador de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simulador de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
         <div class="home-card-footer">Motor estocástico e dashboard</div>
       </div>
-      <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
         <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Gestão EPP</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gestão EPP</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </div>
-      <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
         <div class="home-card-icon" style="background:#f8fafc;color:#64748b;">🔍</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Busca Global</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Busca Global</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
         <div class="home-card-footer">Busca em tempo real</div>
       </div>
-      <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
         <div class="home-card-icon" style="background:#fff1f2;color:#e11d48;">📚</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Documentos e Manuais</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Documentos e Manuais</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
         <div class="home-card-footer" id="home-repo-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
         <div class="home-card-icon" style="background:#f0f9ff;color:#0ea5e9;">💧</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Drops de Conhecimento</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Drops de Conhecimento</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
         <div class="home-card-footer" id="home-drops-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
         <div class="home-card-icon" style="background:#fdf2f8;color:#ec4899;">💡</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Caixinha de Ideias</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Caixinha de Ideias</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
         <div class="home-card-footer">Formulário Microsoft Forms</div>
       </div>
     </div>
@@ -2497,7 +2487,7 @@
         <button onclick="fdExportPNG()" title="Exportar PNG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">⬇ PNG</button>
         <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
         <button onclick="fdZoom(-0.15)" title="Diminuir zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">−</button>
-        <span id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">100%</span>
+        <span id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;">100%</span>
         <button onclick="fdZoom(+0.15)" title="Aumentar zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">+</button>
         <button onclick="fdSave()" title="Salvar (Ctrl+S)" style="padding:4px 9px;background:rgba(0,168,107,.3);color:#4ade80;border:1px solid rgba(0,168,107,.5);border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;">☁️ Salvar</button>
       </div>
@@ -2688,38 +2678,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- MÓDULO: ANÁLISE INTELIGENTE (Copilot)                      -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div id="ai-module" style="display:none;">
-  <div id="ai-module-inner">
-    <div class="ai-header">
-      <div class="ai-header-icon">🤖</div>
-      <div>
-        <div class="ai-header-title">Análise Inteligente do Processo</div>
-        <div class="ai-header-sub" id="ai-pop-name">Selecione um POP para analisar</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
-      <button class="ai-run-btn" id="ai-run-btn" onclick="runAiAnalysis()">✨ Analisar Fluxo com IA</button>
-      <span style="font-size:12px;color:#94a3b8;">Powered by GitHub Copilot · Análise baseada nas etapas e ações do processo</span>
-    </div>
-
-    <!-- Spinner -->
-    <div class="ai-spinner" id="ai-spinner">
-      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-        <circle cx="20" cy="20" r="16" stroke="#6366f1" stroke-width="4" stroke-dasharray="80 25" stroke-linecap="round"/>
-      </svg>
-      <div style="font-size:14px;font-weight:600;color:#6366f1;">Analisando o processo com IA…</div>
-      <div style="font-size:12px;color:#94a3b8;">Isso pode levar alguns segundos</div>
-    </div>
-
-    <!-- Resultado -->
-    <div id="ai-output"></div>
-  </div>
-</div>
-
-
 <!-- ═══════════════════════════════════════════ -->
 <!-- NOVO POP WIZARD MODAL                       -->
 <!-- ═══════════════════════════════════════════ -->
@@ -2735,12 +2693,12 @@
     <div class="npop-body">
       <div class="npop-step active" id="npop-s1">
         <div class="npop-methods" style="display:block;">
-          <div class="npop-method selected" id="npop-m-manual" onclick="selectNpopMethod('manual')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          <div class="npop-method selected" id="npop-m-manual" onclick="selectNpopMethod('manual')">
             <div class="npop-method-icon">✍️</div>
             <div class="npop-method-name">Preenchimento Manual</div>
             <div class="npop-method-desc">Preencha os campos do mapeamento diretamente no sistema.</div>
           </div>
-          <div class="npop-method" id="npop-m-workflow" onclick="selectNpopMethod('workflow')" style="margin-top:8px;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          <div class="npop-method" id="npop-m-workflow" onclick="selectNpopMethod('workflow')" style="margin-top:8px;">
             <div class="npop-method-icon">📝</div>
             <div class="npop-method-name">Importar por POP Word</div>
             <div class="npop-method-desc">Envie o POP em Word e clique em <strong>Criar mapeamento</strong> para abrir o formulário de revisão e edição.</div>
@@ -2750,7 +2708,7 @@
               onclick="document.getElementById('npop-file-input').click()"
               ondragover="event.preventDefault();this.classList.add('dragover')"
               ondragleave="this.classList.remove('dragover')"
-              ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+              ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])">
               <div class="npop-upload-icon">📄</div>
               <div class="npop-upload-title">Clique ou arraste o POP Word aqui</div>
               <div class="npop-upload-hint">Apenas .doc e .docx</div>
@@ -3072,7 +3030,7 @@
           onmouseover="this.style.borderColor='#e11d48';this.style.background='#fff1f2'"
           onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'"
           ondragover="event.preventDefault();this.style.borderColor='#e11d48'"
-          ondrop="repoHandleDrop(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          ondrop="repoHandleDrop(event)">
           <div style="font-size:32px;margin-bottom:8px;">📁</div>
           <div style="font-size:14px;font-weight:600;color:#1B3022;margin-bottom:4px;">Arraste o arquivo ou clique para selecionar</div>
           <div style="font-size:12px;color:#94a3b8;">PDF, Word, PowerPoint, BPMN, JPG, PNG</div>
@@ -3184,7 +3142,7 @@
 </div>
 
 <!-- DROPS: lightbox para imagem de capa -->
-<div id="drops-lightbox" onclick="dropsCloseLightbox()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;" role="presentation">
+<div id="drops-lightbox" onclick="dropsCloseLightbox()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;">
   <img id="drops-lightbox-img" src="" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
 </div>
 
@@ -4189,7 +4147,7 @@
 
     <!-- Painel de configurações do indicador (override manual) -->
     <div id="indcage-cfg-panel" class="indcage-cfg-panel" style="display:none;">
-      <div class="indcage-cfg-header" onclick="indcageCfgToggle()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+      <div class="indcage-cfg-header" onclick="indcageCfgToggle()">
         <span class="indcage-cfg-title">⚙️ Configurações do Indicador</span>
         <span id="indcage-cfg-chevron" style="font-size:12px;color:#1e3a7a;transition:transform .2s;">▼</span>
       </div>
@@ -4613,7 +4571,7 @@ function harvestEditables() {
     if(!m) return;
     const [, p, field] = m;
     if(!DATA[p]?.meta) return;
-    const val = parseFloat(el.textContent?.trim()) || 0;
+    const val = Number.parseFloat(el.textContent?.trim()) || 0;
     const keyMap = {'metric-vol-pre':'volPre','metric-vol-pos':'volPos','metric-ciclo-pre':'cicloPre','metric-ciclo-pos':'cicloPos'};
     if(keyMap[field]) DATA[p].meta[keyMap[field]] = val;
   });
@@ -4621,9 +4579,9 @@ function harvestEditables() {
   // Capturar texto das ações (data-ai) que são persistidos via blur events
   document.querySelectorAll('[data-ai][data-sp]').forEach(el => {
     const pp = el.dataset.sp;
-    const si = parseInt(el.dataset.si);
-    const ai = parseInt(el.dataset.ai);
-    if(!pp || isNaN(si) || isNaN(ai) || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
+    const si = Number.parseInt(el.dataset.si);
+    const ai = Number.parseInt(el.dataset.ai);
+    if(!pp || Number.isNaN(si) || Number.isNaN(ai) || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
     const step = DATA[pp].steps[si];
     const isTb = el.dataset.tobe === 'true';
     if(isTb) {
@@ -5005,7 +4963,7 @@ let _undoShadow    = null; // state captured AFTER the last change — pushed on
 const _UNDO_MAX = 40;
 
 function _snapshotData() {
-  return JSON.parse(JSON.stringify(DATA));
+  return structuredClone(DATA);
 }
 
 function _takeEditSnapshot() {
@@ -5087,13 +5045,23 @@ function renderTracker(p) {
   el.innerHTML = '';
   DATA[p].steps.forEach((s,i) => {
     const dot = document.createElement('div');
-    dot.className = 'step-dot'+(i===cur?' active':i<cur?' done':'');
+    if (i === cur) {
+      dot.className = 'step-dot active';
+    } else if (i < cur) {
+      dot.className = 'step-dot done';
+    } else {
+      dot.className = 'step-dot';
+    }
     dot.innerHTML = `<div class="step-dot-circle">${i<cur?'✓':i+1}</div><div class="step-dot-label">${escapeHtml(resolveStep(s, flowMode).title)}</div>`;
     dot.onclick = () => { DATA[p].currentStep=i; renderStep(p,i); };
     el.appendChild(dot);
     if(i<DATA[p].steps.length-1){
       const line = document.createElement('div');
-      line.className = 'step-line'+(i<cur?' done':'');
+      if (i < cur) {
+        line.className = 'step-line done';
+      } else {
+        line.className = 'step-line';
+      }
       el.appendChild(line);
     }
   });
@@ -5829,7 +5797,15 @@ function setFlowMode(mode) {
   // Update all toggle buttons in DOM
   document.querySelectorAll('.flow-mode-btn[data-mode]').forEach(btn => {
     const m = btn.dataset.mode;
-    btn.className = 'flow-mode-btn' + (m === mode ? (mode === 'asis' ? ' active-asis' : ' active-tobe') : '');
+    if (m === mode) {
+      if (mode === 'asis') {
+        btn.className = 'flow-mode-btn active-asis';
+      } else {
+        btn.className = 'flow-mode-btn active-tobe';
+      }
+    } else {
+      btn.className = 'flow-mode-btn';
+    }
   });
   const p = popPrefix(currentPop);
   if(DATA[p] && Array.isArray(DATA[p].steps) && DATA[p].steps.length > 0) {
@@ -5976,7 +5952,14 @@ function renderRoles(p) {
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:5px;">${g.isResp ? '★ ' : ''}${g.stepTitle}</div>
         ${g.actions.length ? `<ul class="role-duties" style="margin:0;">
           ${g.actions.map(a => {
-            const ico = a.type==='decisao' ? '◇' : a.type==='evento' ? '○' : '▸';
+            let ico;
+            if (a.type === 'decisao') {
+              ico = '◇';
+            } else if (a.type === 'evento') {
+              ico = '○';
+            } else {
+              ico = '▸';
+            }
             return `<li style="align-items:flex-start;gap:6px;">
               <span style="font-size:11px;color:var(--text-muted);flex-shrink:0;margin-top:1px;">${ico}</span>
               <span style="flex:1;font-size:12px;">${a.text||''}</span>
@@ -6022,13 +6005,24 @@ function _fmtNumSimple(v) {
 }
 
 function _pctColorClass(pct) {
-  if(pct === null || pct === undefined) return '';
-  return pct >= 100 ? 'pct-verde' : pct >= 80 ? 'pct-amarelo' : 'pct-vermelho';
-}
+  if (pct === null || pct === undefined) return '';
+  if (pct >= 100) {
+    return 'pct-verde';
+  } else if (pct >= 80) {
+    return 'pct-amarelo';
+  } else {
+    return 'pct-vermelho';
+  }
 
 function _pctStyle(pct) {
-  if(pct === null || pct === undefined) return '';
-  return pct >= 100 ? 'color:#16a34a;' : pct >= 80 ? 'color:#ca8a04;' : 'color:#dc2626;';
+  if (pct === null || pct === undefined) return '';
+  if (pct >= 100) {
+    return 'color:#16a34a;';
+  } else if (pct >= 80) {
+    return 'color:#ca8a04;';
+  } else {
+    return 'color:#dc2626;';
+  }
 }
 
 function _buildSisplanTableRow(r) {
@@ -6281,7 +6275,7 @@ function renderSisplanPickerList() {
     return;
   }
   list.innerHTML = filtered.map(ind => `
-    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
         <div style="flex:1;">
           <div style="font-size:11px;font-weight:700;color:#607070;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">${ind.codigo||'—'} · ${ind.divisao||''}</div>
@@ -6329,7 +6323,7 @@ function renderFaq(p) {
         <div style="display:flex;align-items:center;gap:6px;">
           <button class="edit-rm-btn" onclick="openFaqModal('${p}',${i})" title="Editar">✏️</button>
           <button class="edit-rm-btn" onclick="rmFaq('${p}',${i})">✕</button>
-          <span class="faq-chevron" onclick="toggleFaq('${p}',${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⌄</span>
+          <span class="faq-chevron" onclick="toggleFaq('${p}',${i})">⌄</span>
         </div>
       </div>
       <div class="faq-a">
@@ -6395,7 +6389,14 @@ async function _generateFaqIAWithMode(p, mode) {
     // Riscos
     const risksText = (D.risks||[]).length
       ? (D.risks||[]).map(r => {
-          const nivel = r.score >= 16 ? 'Alto' : r.score >= 8 ? 'Médio' : 'Baixo';
+          let nivel;
+          if (r.score >= 16) {
+            nivel = 'Alto';
+          } else if (r.score >= 8) {
+            nivel = 'Médio';
+          } else {
+            nivel = 'Baixo';
+          }
           const partes = [`[${nivel}] ${r.title||''}`];
           if(r.desc)    partes.push(`Descrição: ${r.desc}`);
           if(r.causa)   partes.push(`Causa: ${r.causa}`);
@@ -7590,7 +7591,7 @@ function mountNewPopTab(key, label, silent=false) {
         <div class="pop-banner-meta">
           <span class="rev-badge" id="${key}-rev-badge">Rev. 0 · ${today}</span>
           <div class="version-badge-wrap" style="margin-top:4px;">
-            <span class="ver-badge" id="${key}-ver-badge" onclick="openVersionSelector('${key}',this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">v1</span>
+            <span class="ver-badge" id="${key}-ver-badge" onclick="openVersionSelector('${key}',this)">v1</span>
           </div>
         </div>
       </div>
@@ -9458,7 +9459,7 @@ function _renderCfgCardEquipeCompetencias(title, desc) {
       const active = selected.includes(sk);
       const eq = equipe.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const s  = sk.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      return `<span onclick="toggleEquipeSkill('${eq}','${s}','${tipo}')" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#1B3022;color:white;border:1px solid #1B3022;' : 'background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;'}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${sk}</span>`;
+      return `<span onclick="toggleEquipeSkill('${eq}','${s}','${tipo}')" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#1B3022;color:white;border:1px solid #1B3022;' : 'background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;'}">${sk}</span>`;
     }).join('');
   }
 
@@ -9527,12 +9528,12 @@ function _renderCfgCardAptCatalog(title, desc) {
 
     return `<div style="border:1px solid #e2e8f0;border-radius:9px;margin-bottom:8px;overflow:hidden;">
       <div style="display:grid;grid-template-columns:70px 120px 70px 1fr auto;gap:8px;align-items:center;padding:8px 12px;background:#f8fafc;cursor:pointer;"
-           onclick="cfgAptToggle(${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+           onclick="cfgAptToggle(${i})">
         <span style="font-size:11px;font-family:monospace;color:#64748b;font-weight:600;">${a.id}</span>
         <span style="font-size:12px;color:#475569;">${a.categoria||'—'}</span>
         <span style="font-size:11px;font-weight:700;color:${critColor};">${a.criticidade||'—'}</span>
         <span style="font-size:13px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(a.apontamento||'').replace(/"/g,'&quot;')}">${a.apontamento||'—'}</span>
-        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
           <button onclick="cfgAptToggle(${i})" style="background:none;border:none;cursor:pointer;color:#1B3022;font-size:14px;padding:2px 6px;" title="Editar">✏️</button>
           <button onclick="cfgAptDel(${i})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px;padding:2px 6px;" title="Excluir">🗑</button>
         </div>
@@ -10290,7 +10291,7 @@ function renderOrganograma() {
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;min-width:130px;">
       <div id="org-unit-${area}" data-org-unit="${area}" onclick="orgClickUnit('${area}')"
         style="background:#e8a020;color:#1B3022;border-radius:10px;padding:11px 20px;text-align:center;width:100%;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(232,160,32,.3);box-sizing:border-box;cursor:pointer;transition:all .15s;user-select:none;"
-        title="Clique para ver os processos desta unidade" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${area}</div>
+        title="Clique para ver os processos desta unidade">${area}</div>
       ${teams.length ? `<div style="width:2px;height:14px;background:#cbd5e1;"></div><div style="display:flex;flex-direction:column;gap:5px;align-items:stretch;width:100%;">${teamsHtml}</div>` : ''}
     </div>`;
   }).join('');
@@ -10392,7 +10393,7 @@ function orgRenderUnitPanel(area) {
       return `
         <div onclick="arqShowProcessDetail(${idx})"
           style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;margin-bottom:4px;border:1px solid #e2e8f0;cursor:pointer;background:white;transition:background .12s;"
-          onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='white'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='white'">
           <span style="background:${nat.bg};color:${nat.color};font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;flex-shrink:0;white-space:nowrap;">${r.natureza||''}</span>
           <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:600;color:#1B3022;">${r.processo}</div>
@@ -10779,7 +10780,7 @@ function renderPatCards() {
     const linkedPlan = item.tipo === 'Auditoria'
       ? (DATA.audits?.plans||[]).find(p => p.patId === item.id) : null;
     const auditVinc = linkedPlan
-      ? `<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;" onclick="event.stopPropagation();showAuditModule();setTimeout(()= role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">auditOpenPlan('${linkedPlan.id}'),200)" title="Abrir pasta do plano de auditoria">📋 Auditoria: ${linkedPlan.processoNome||linkedPlan.objetivo||'Ver plano'} · <span style="background:#${AUDIT_STATUS_BG[linkedPlan.status]||'F3F4F6'};color:${AUDIT_STATUS_COL[linkedPlan.status]||'#6B7280'};border-radius:6px;padding:1px 6px;">${AUDIT_STATUS_LABEL[linkedPlan.status]||linkedPlan.status}</span></span>`
+      ? `<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;" onclick="event.stopPropagation();showAuditModule();setTimeout(()=>auditOpenPlan('${linkedPlan.id}'),200)" title="Abrir pasta do plano de auditoria">📋 Auditoria: ${linkedPlan.processoNome||linkedPlan.objetivo||'Ver plano'} · <span style="background:#${AUDIT_STATUS_BG[linkedPlan.status]||'F3F4F6'};color:${AUDIT_STATUS_COL[linkedPlan.status]||'#6B7280'};border-radius:6px;padding:1px 6px;">${AUDIT_STATUS_LABEL[linkedPlan.status]||linkedPlan.status}</span></span>`
       : '';
     return `
     <div class="pat-card">
@@ -11850,83 +11851,17 @@ async function _resolveFreshAccessToken() {
 let supaClient = null;
 let currentUser = null;
 
-async function callGeminiProxy(prompt, image = null, options = {}) {
-  const payload = {
-    prompt: String(prompt || '').slice(0, 24000),
-    image: image || undefined,
-    maxTokens: options.maxTokens || undefined,
-  };
-
-  const apiBase = String(API_URL || '').replace(/\/$/, '');
-  const endpointCandidates = [
-    `${apiBase}/ai`,
-    'http://127.0.0.1:3000/ai',
-    'http://localhost:3000/ai',
-    `${apiBase}/api/ai`,
-    '/api/ai',
-    'http://127.0.0.1:3000/api/ai',
-    'http://localhost:3000/api/ai',
-  ];
-
-  const uniqueEndpoints = [...new Set(endpointCandidates.filter(Boolean))];
-  let lastErr = null;
-  let saw503 = false;
-  let definitiveErr = null;
-
-  for (const endpoint of uniqueEndpoints) {
-    try {
-      const resp = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!resp.ok) {
-        if (resp.status === 503) saw503 = true;
-        const err = await resp.json().catch(() => ({}));
-        const msg = String(err.error || err.message || '').trim();
-        lastErr = new Error(msg || `Erro na IA (${resp.status}) em ${endpoint}`);
-
-        if (resp.status === 404 || resp.status === 405) {
-          continue;
-        }
-
-        if (resp.status === 503 && /nao configurada|não configurada|api[_\s-]?key/i.test(msg)) {
-          definitiveErr = lastErr;
-          break;
-        }
-
-        if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) {
-          definitiveErr = lastErr;
-          break;
-        }
-        continue;
-      }
-
-      const data = await resp.json();
-      if (!data.text) {
-        lastErr = new Error('Resposta vazia da IA');
-        continue;
-      }
-      return data.text;
-    } catch (e) {
-      lastErr = e;
-    }
-  }
-
-  if (definitiveErr) throw definitiveErr;
-  if (saw503) {
-    throw new Error('IA temporariamente indisponível (503). Verifique se o backend local de IA está ativo e tente novamente.');
-  }
-  throw new Error(lastErr?.message || 'Falha ao chamar a IA.');
+// ── Stubs para funções Gemini removidas ──────────────
+async function callGeminiProxy() {
+  throw new Error('Funções de IA (Gemini) foram removidas do sistema. Configure um backend de IA alternativo (GitHub Copilot) e defina a variável API_URL.');
 }
 
-async function callGemini(prompt) {
-  return callGeminiProxy(prompt, null);
+async function callGemini() {
+  return callGeminiProxy();
 }
 
-async function callGeminiVision(prompt, base64, mimeType) {
-  return callGeminiProxy(prompt, { data: base64, mimeType });
+async function callGeminiVision() {
+  return callGeminiProxy();
 }
 
 // ── MODO LOCAL: login automático ──────────────
@@ -12532,20 +12467,20 @@ function runSearch(raw) {
     return `<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:10px 16px 4px;">${label}</div>` +
       items.map(r => {
         if(r.type === 'faq') return `
-          <div class="search-result-item" onclick="goToFaq('${r.key}', ${r.idx})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          <div class="search-result-item" onclick="goToFaq('${r.key}', ${r.idx})">
             <div class="search-result-pop">📋 ${r.popName} · FAQ</div>
             <div class="search-result-q">${highlight(r.faq.q, q)}</div>
             ${r.faq.a ? `<div class="search-result-a">${highlight(r.faq.a.substring(0,200)+(r.faq.a.length>200?'…':''), q)}</div>` : ''}
           </div>`;
         if(r.type === 'norma') return `
-          <div class="search-result-item" onclick="goToNorma('${r.key}', ${r.idx})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          <div class="search-result-item" onclick="goToNorma('${r.key}', ${r.idx})">
             <div class="search-result-pop">📜 ${r.popName} · Normas & Revisões</div>
             <div class="search-result-q">${highlight(r.norma.code||'', q)}</div>
             ${r.norma.name ? `<div class="search-result-a">${highlight(r.norma.name, q)}</div>` : ''}
             ${r.norma.url ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:4px;">🔗 ${r.norma.url}</div>` : ''}
           </div>`;
         if(r.type === 'repo_faq') return `
-          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-faq="true" onclick="openRepoDocViewer(this.dataset.docId,true)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-faq="true" onclick="openRepoDocViewer(this.dataset.docId,true)">
             <div class="search-result-pop">📚 ${r.doc.title} · FAQ do Manual</div>
             <div class="search-result-q">${highlight(r.faq.q, q)}</div>
             ${r.faq.a ? `<div class="search-result-a">${highlight(r.faq.a.substring(0,240)+(r.faq.a.length>240?'…':''), q)}</div>` : ''}
@@ -12555,7 +12490,7 @@ function runSearch(raw) {
           const inDesc  = (r.doc.desc||'').toLowerCase().includes(lower);
           const inContent = !inTitle && !inDesc && (r.doc.textContent||'').toLowerCase().includes(lower);
           return `
-          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-in-content="${inContent ? 'true' : 'false'}" onclick="this.dataset.inContent==='true' ? openRepoDocViewer(this.dataset.docId) : goToRepoDoc(this.dataset.docId)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-in-content="${inContent ? 'true' : 'false'}" onclick="this.dataset.inContent==='true' ? openRepoDocViewer(this.dataset.docId) : goToRepoDoc(this.dataset.docId)">
             <div class="search-result-pop">📚 Documentos & Manuais · ${r.doc.cat||'Documento'}</div>
             <div class="search-result-q">${highlight(r.doc.title||'', q)}</div>
             ${r.doc.desc ? `<div class="search-result-a">${highlight(r.doc.desc.substring(0,180)+(r.doc.desc.length>180?'…':''), q)}</div>` : ''}
@@ -14396,7 +14331,7 @@ function renderFicha(p) {
       matBadgeHtml = `
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);">
           <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;">Maturidade</div>
-          <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
             <div style="text-align:center;flex-shrink:0;">
               <div style="font-size:30px;font-weight:900;color:${matFinal.levelColor};line-height:1;">${matFinal.final}</div>
               <div style="font-size:9px;color:#94a3b8;line-height:1.2;">/ 100</div>
@@ -14587,7 +14522,7 @@ function _renderFichaProgressHtml(p) {
     const sep = i < etapas.length - 1 ? 'border-bottom:1px solid var(--cage-border);' : '';
 
     return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;${sep}">
-      <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${checkSvg}</div>
+      <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}">${checkSvg}</div>
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;flex-wrap:wrap;">
           <span style="${labelStyle}">${e.label}</span>${naBtn}
@@ -14950,7 +14885,7 @@ function openVersionSelector(p, badgeEl) {
 
   panel.innerHTML = allVersions.map(item => {
     const isActive = item.v === viewing;
-    return `<div class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+    return `<div class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();">
       <div>
         <div>${item.isCurrent ? '✏️' : '📄'} <strong>v${item.v}</strong>${item.isCurrent ? ' <span style="font-size:10px;color:#059669;">(atual)</span>' : ''}</div>
         <div class="vs-meta">${item.date}${item.note ? ' · ' + item.note : ''}</div>
@@ -14958,7 +14893,7 @@ function openVersionSelector(p, badgeEl) {
     </div>`;
   }).join('') +
   (editMode && !d._viewingVersion || d._viewingVersion === cur ?
-    `<div class="vs-item vs-new" onclick="openNewVersionModal();this.closest('.version-selector-panel').remove();" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">＋ Nova Versão</div>` : '');
+    `<div class="vs-item vs-new" onclick="openNewVersionModal();this.closest('.version-selector-panel').remove();">＋ Nova Versão</div>` : '');
 
   badgeEl.closest('.version-badge-wrap').appendChild(panel);
   // Fechar ao clicar fora
@@ -16026,7 +15961,7 @@ function arqShowProcessDetail(idx) {
     let fluxoSection = '';
     if(fluxoUrl) {
       fluxoSection = `<div style="margin-top:4px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;max-height:180px;text-align:center;background:#f8fafc;cursor:zoom-in;position:relative;"
-          onclick="arqOpenFluxoLightbox('${fluxoUrl}')" title="Clique para ampliar" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          onclick="arqOpenFluxoLightbox('${fluxoUrl}')" title="Clique para ampliar">
         <img src="${fluxoUrl}" style="max-width:100%;max-height:180px;object-fit:contain;" alt="Fluxograma">
         <div style="position:absolute;bottom:4px;right:6px;font-size:10px;background:rgba(0,0,0,.45);color:white;border-radius:4px;padding:2px 6px;">🔍 ampliar</div>
       </div>`;
@@ -16433,7 +16368,7 @@ function showPopGallery() {
           ${canDelete ? `<button onclick="event.stopPropagation();popDeleteWork('${k}')"
             style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 5px;border-radius:4px;"
             onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
-          <div onclick="switchPop('${k}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+          <div onclick="switchPop('${k}')">
             <div style="font-size:28px;margin-bottom:10px;">📄</div>
             <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:6px;">${name}</div>
             ${macro ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macro}</div>` : ''}
@@ -16522,10 +16457,10 @@ function renderPopsGrid() {
               style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 4px;border-radius:4px;z-index:1;"
               onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-right:${canDelete?'20px':'0'};">
-              <div style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;" onclick="hideHome();switchPop('${p.key}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${meta.name || p.label}</div>
+              <div style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;" onclick="hideHome();switchPop('${p.key}')">${meta.name || p.label}</div>
               ${sc ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};white-space:nowrap;flex-shrink:0;">${stLabel}</span>` : ''}
             </div>
-            <div onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+            <div onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;">
             ${macroMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macroMeta}</div>` : ''}
             ${processoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Processo:</span> ${processoMeta}</div>` : ''}
             ${subprocessoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Subprocesso:</span> ${subprocessoMeta}</div>` : ''}
@@ -17651,7 +17586,7 @@ function npopRenderAtores(selectedArr, isCreateForm) {
   const selected = new Set(selectedArr || []);
   wrap.innerHTML = atores.map(a => {
     const on = selected.has(a);
-    return `<span data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${escapeHtml(a)}</span>`;
+    return `<span data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${escapeHtml(a)}</span>`;
   }).join('');
   if(hidden) hidden.value = [...selected].join(',');
 }
@@ -18165,7 +18100,7 @@ function dropsRender() {
     const pub = new Date(d.publishedAt);
     const dateLabel = pub.toLocaleDateString('pt-BR', {month:'long', year:'numeric', timeZone:'UTC'});
     const coverHtml = d.coverUrl
-      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><img src="${escapeHtml(d.coverUrl)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
+      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)"><img src="${escapeHtml(d.coverUrl)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
       : `<div style="height:80px;background:linear-gradient(135deg,#1B3022,#003366);display:flex;align-items:center;justify-content:center;font-size:36px;">💧</div>`;
     return `
     <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
@@ -25289,7 +25224,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
 
 
 <!-- BUSCA GLOBAL -->
-<div class="search-modal-overlay" id="search-overlay" onclick="closeSearchIfOutside(event)" role="presentation">
+<div class="search-modal-overlay" id="search-overlay" onclick="closeSearchIfOutside(event)">
   <div class="search-modal">
     <div class="search-modal-head">
       <span>🔍</span>
@@ -25329,7 +25264,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5;">
           Restaura os dados a partir de um arquivo de backup gerado anteriormente. <strong>Atenção: substituirá todos os dados atuais.</strong>
         </div>
-        <div class="backup-zone" onclick="document.getElementById('backup-file-input').click()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="backup-zone" onclick="document.getElementById('backup-file-input').click()">
           <input type="file" id="backup-file-input" accept=".json" onchange="previewBackupFile(this)">
           <div class="backup-zone-icon">📂</div>
           <div class="backup-zone-label">Clique para selecionar o arquivo .json</div>
@@ -25761,9 +25696,9 @@ if ('serviceWorker' in navigator) {
       .catch(e => { console.warn('[siga] service worker unregister', e); });
   } else {
     navigator.serviceWorker.register('/sw.js?v=' + SW_VERSION).then(reg => {
-    // Sem onupdatefound/reload: o SW já é network-first para HTML,
-    // então o conteúdo mais recente é sempre servido da rede.
-    // O reload forçado causava interrupção do loadFromCloud/saveToCloud a cada F5.
+      // Sem onupdatefound/reload: o SW já é network-first para HTML,
+      // então o conteúdo mais recente é sempre servido da rede.
+      // O reload forçado causava interrupção do loadFromCloud/saveToCloud a cada F5.
     }).catch(e => { console.warn('[siga] service worker registration', e); });
   }
 }
