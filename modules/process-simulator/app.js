@@ -2714,38 +2714,53 @@ function _drawSetupEdge(svg, edge, from, to, happyPathNodes) {
   svg.appendChild(line);
 }
 
-function _drawSetupNodeShape(g, node, selectedIndex, isAllowed) {
-  const isSelected = selectedIndex >= 0;
-  if (node.type === 'task') {
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', String(node.x - 52));
-    rect.setAttribute('y', String(node.y - 22));
-    rect.setAttribute('width', '104');
-    rect.setAttribute('height', '44');
-    rect.setAttribute('rx', '10');
-    rect.setAttribute('fill', '#edf3fb');
-    rect.setAttribute('stroke', isSelected ? '#0b84f3' : '#2a4d69');
-    rect.setAttribute('stroke-width', isSelected ? '3' : '2');
-    g.appendChild(rect);
-  } else if (node.type === 'gateway') {
-    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    poly.setAttribute('points', `${node.x},${node.y - 28} ${node.x + 34},${node.y} ${node.x},${node.y + 28} ${node.x - 34},${node.y}`);
-    poly.setAttribute('fill', '#fff7e8');
-    poly.setAttribute('stroke', isSelected ? '#0b84f3' : '#b9770e');
-    poly.setAttribute('stroke-width', isSelected ? '3' : '2');
-    g.appendChild(poly);
-  } else {
-    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    c.setAttribute('cx', String(node.x));
-    c.setAttribute('cy', String(node.y));
-    c.setAttribute('r', '22');
-    c.setAttribute('fill', node.type === 'start' ? '#e8f7ef' : '#fdecec');
-    c.setAttribute('stroke', isSelected ? '#0b84f3' : (node.type === 'start' ? '#1b8a5a' : '#c0392b'));
-    c.setAttribute('stroke-width', isSelected ? '4' : (node.type === 'end' ? '3' : '2'));
-    g.appendChild(c);
-  }
+// ── helpers: formas SVG para o canvas de setup (S3776 — Cognitive Complexity) ─
+function _drawSetupTaskShape(g, node, isSelected) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const rect = document.createElementNS(ns, 'rect');
+  rect.setAttribute('x', String(node.x - 52));
+  rect.setAttribute('y', String(node.y - 22));
+  rect.setAttribute('width', '104');
+  rect.setAttribute('height', '44');
+  rect.setAttribute('rx', '10');
+  rect.setAttribute('fill', '#edf3fb');
+  rect.setAttribute('stroke', isSelected ? '#0b84f3' : '#2a4d69');
+  rect.setAttribute('stroke-width', isSelected ? '3' : '2');
+  g.appendChild(rect);
 }
 
+function _drawSetupGatewayShape(g, node, isSelected) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const poly = document.createElementNS(ns, 'polygon');
+  poly.setAttribute('points', `${node.x},${node.y - 28} ${node.x + 34},${node.y} ${node.x},${node.y + 28} ${node.x - 34},${node.y}`);
+  poly.setAttribute('fill', '#fff7e8');
+  poly.setAttribute('stroke', isSelected ? '#0b84f3' : '#b9770e');
+  poly.setAttribute('stroke-width', isSelected ? '3' : '2');
+  g.appendChild(poly);
+}
+
+function _drawSetupCircleShape(g, node, isSelected) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const isStart = node.type === 'start';
+  const strokeBase = isStart ? '#1b8a5a' : '#c0392b';
+  const strokeWidthBase = node.type === 'end' ? '3' : '2';
+  const c = document.createElementNS(ns, 'circle');
+  c.setAttribute('cx', String(node.x));
+  c.setAttribute('cy', String(node.y));
+  c.setAttribute('r', '22');
+  c.setAttribute('fill', isStart ? '#e8f7ef' : '#fdecec');
+  c.setAttribute('stroke', isSelected ? '#0b84f3' : strokeBase);
+  c.setAttribute('stroke-width', isSelected ? '4' : strokeWidthBase);
+  g.appendChild(c);
+}
+
+const _SETUP_NODE_SHAPE_DRAWERS = { task: _drawSetupTaskShape, gateway: _drawSetupGatewayShape };
+
+function _drawSetupNodeShape(g, node, selectedIndex) {
+  const isSelected = selectedIndex >= 0;
+  const draw = _SETUP_NODE_SHAPE_DRAWERS[node.type] || _drawSetupCircleShape;
+  draw(g, node, isSelected);
+}
 function drawSetupPathCanvas() {
   const svg = $('setupPathCanvas');
   if (!svg || !graph) return;
@@ -2911,84 +2926,91 @@ function _drawEdgeWithLabel(svg, edge, from, to) {
   }
 }
 
-function _drawNodeShape(g, node, isSelected) {
-  if (node.type === 'task') {
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', String(node.x - 55));
-    rect.setAttribute('y', String(node.y - 24));
-    rect.setAttribute('width', '110');
-    rect.setAttribute('height', '48');
-    rect.setAttribute('rx', '10');
-    rect.setAttribute('fill', node.automated ? '#e8f7ef' : '#edf3fb');
-    rect.setAttribute('stroke', node.automated ? '#1b8a5a' : '#2a4d69');
-    if (isSelected) {
-      rect.setAttribute('stroke', '#0b84f3');
-      rect.setAttribute('stroke-width', '3');
-    }
-    g.appendChild(rect);
-  } else if (node.type === 'timer') {
-    const cOuter = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    cOuter.setAttribute('cx', String(node.x));
-    cOuter.setAttribute('cy', String(node.y));
-    cOuter.setAttribute('r', '26');
-    cOuter.setAttribute('fill', '#fef9e7');
-    cOuter.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
-    cOuter.setAttribute('stroke-width', isSelected ? '4' : '2.5');
-    g.appendChild(cOuter);
-    const cInner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    cInner.setAttribute('cx', String(node.x));
-    cInner.setAttribute('cy', String(node.y));
-    cInner.setAttribute('r', '20');
-    cInner.setAttribute('fill', 'none');
-    cInner.setAttribute('stroke', isSelected ? '#0b84f3' : '#d4ac0d');
-    cInner.setAttribute('stroke-width', '1.5');
-    g.appendChild(cInner);
-    const clock = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    clock.textContent = '⏱';
-    clock.setAttribute('x', String(node.x));
-    clock.setAttribute('y', String(node.y - 8));
-    clock.setAttribute('font-size', '14');
-    clock.setAttribute('text-anchor', 'middle');
-    g.appendChild(clock);
-    const utLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    utLabel.textContent = node.timerUT > 0 ? `${node.timerUT} UT` : '? UT';
-    utLabel.setAttribute('x', String(node.x));
-    utLabel.setAttribute('y', String(node.y + 10));
-    utLabel.setAttribute('font-size', '9');
-    utLabel.setAttribute('text-anchor', 'middle');
-    utLabel.setAttribute('fill', '#b7950b');
-    g.appendChild(utLabel);
-  } else if (node.type === 'gateway') {
-    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    poly.setAttribute('points', `${node.x},${node.y - 30} ${node.x + 38},${node.y} ${node.x},${node.y + 30} ${node.x - 38},${node.y}`);
-    poly.setAttribute('fill', '#fff7e8');
-    poly.setAttribute('stroke', '#b9770e');
-    poly.style.cursor = 'pointer';
-    poly.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      if (!happyPathMarking.active) openGatewayEditor(node.id);
-    });
-    if (isSelected) {
-      poly.setAttribute('stroke', '#0b84f3');
-      poly.setAttribute('stroke-width', '3');
-    }
-    g.appendChild(poly);
-  } else {
-    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    c.setAttribute('cx', String(node.x));
-    c.setAttribute('cy', String(node.y));
-    c.setAttribute('r', '24');
-    c.setAttribute('fill', node.type === 'start' ? '#e8f7ef' : '#fdecec');
-    c.setAttribute('stroke', node.type === 'start' ? '#1b8a5a' : '#c0392b');
-    c.setAttribute('stroke-width', node.type === 'end' ? '3' : '2');
-    if (isSelected) {
-      c.setAttribute('stroke', '#0b84f3');
-      c.setAttribute('stroke-width', '4');
-    }
-    g.appendChild(c);
-  }
+// ── helpers: formas SVG para o canvas principal (S3776 — Cognitive Complexity) ─
+function _drawNodeTaskShape(g, node, isSelected) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const fill       = node.automated ? '#e8f7ef' : '#edf3fb';
+  const strokeBase = node.automated ? '#1b8a5a' : '#2a4d69';
+  const stroke     = isSelected ? '#0b84f3' : strokeBase;
+  const rect = document.createElementNS(ns, 'rect');
+  rect.setAttribute('x', String(node.x - 55));
+  rect.setAttribute('y', String(node.y - 24));
+  rect.setAttribute('width', '110');
+  rect.setAttribute('height', '48');
+  rect.setAttribute('rx', '10');
+  rect.setAttribute('fill', fill);
+  rect.setAttribute('stroke', stroke);
+  if (isSelected) rect.setAttribute('stroke-width', '3');
+  g.appendChild(rect);
 }
 
+function _drawNodeTimerShape(g, node, isSelected) {
+  const ns             = 'http://www.w3.org/2000/svg';
+  const stroke         = isSelected ? '#0b84f3' : '#d4ac0d';
+  const strokeWOuter   = isSelected ? '4' : '2.5';
+  const timerText      = node.timerUT > 0 ? `${node.timerUT} UT` : '? UT';
+  const cOuter = document.createElementNS(ns, 'circle');
+  cOuter.setAttribute('cx', String(node.x)); cOuter.setAttribute('cy', String(node.y));
+  cOuter.setAttribute('r', '26'); cOuter.setAttribute('fill', '#fef9e7');
+  cOuter.setAttribute('stroke', stroke); cOuter.setAttribute('stroke-width', strokeWOuter);
+  g.appendChild(cOuter);
+  const cInner = document.createElementNS(ns, 'circle');
+  cInner.setAttribute('cx', String(node.x)); cInner.setAttribute('cy', String(node.y));
+  cInner.setAttribute('r', '20'); cInner.setAttribute('fill', 'none');
+  cInner.setAttribute('stroke', stroke); cInner.setAttribute('stroke-width', '1.5');
+  g.appendChild(cInner);
+  const clock = document.createElementNS(ns, 'text');
+  clock.textContent = '⏱';
+  clock.setAttribute('x', String(node.x)); clock.setAttribute('y', String(node.y - 8));
+  clock.setAttribute('font-size', '14'); clock.setAttribute('text-anchor', 'middle');
+  g.appendChild(clock);
+  const utLabel = document.createElementNS(ns, 'text');
+  utLabel.textContent = timerText;
+  utLabel.setAttribute('x', String(node.x)); utLabel.setAttribute('y', String(node.y + 10));
+  utLabel.setAttribute('font-size', '9'); utLabel.setAttribute('text-anchor', 'middle');
+  utLabel.setAttribute('fill', '#b7950b');
+  g.appendChild(utLabel);
+}
+
+function _drawNodeGatewayShape(g, node, isSelected) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const poly = document.createElementNS(ns, 'polygon');
+  poly.setAttribute('points', `${node.x},${node.y - 30} ${node.x + 38},${node.y} ${node.x},${node.y + 30} ${node.x - 38},${node.y}`);
+  poly.setAttribute('fill', '#fff7e8');
+  poly.setAttribute('stroke', '#b9770e');
+  poly.style.cursor = 'pointer';
+  poly.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    if (!happyPathMarking.active) openGatewayEditor(node.id);
+  });
+  if (isSelected) { poly.setAttribute('stroke', '#0b84f3'); poly.setAttribute('stroke-width', '3'); }
+  g.appendChild(poly);
+}
+
+function _drawNodeCircleShape(g, node, isSelected) {
+  const ns             = 'http://www.w3.org/2000/svg';
+  const isStart        = node.type === 'start';
+  const fill           = isStart ? '#e8f7ef' : '#fdecec';
+  const strokeBase     = isStart ? '#1b8a5a' : '#c0392b';
+  const strokeWBase    = node.type === 'end' ? '3' : '2';
+  const c = document.createElementNS(ns, 'circle');
+  c.setAttribute('cx', String(node.x)); c.setAttribute('cy', String(node.y));
+  c.setAttribute('r', '24'); c.setAttribute('fill', fill);
+  c.setAttribute('stroke', isSelected ? '#0b84f3' : strokeBase);
+  c.setAttribute('stroke-width', isSelected ? '4' : strokeWBase);
+  g.appendChild(c);
+}
+
+const _NODE_SHAPE_DRAWERS = {
+  task:    _drawNodeTaskShape,
+  timer:   _drawNodeTimerShape,
+  gateway: _drawNodeGatewayShape,
+};
+
+function _drawNodeShape(g, node, isSelected) {
+  const draw = _NODE_SHAPE_DRAWERS[node.type] || _drawNodeCircleShape;
+  draw(g, node, isSelected);
+}
 function _drawNodeText(g, node, isSelected, selectedIndex) {
   const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   txt.textContent = node.label;
