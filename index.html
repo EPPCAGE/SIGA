@@ -4557,7 +4557,7 @@ function saveToStorage() {
   }
 }
 
-function loadFromStorage() { return false; } // dados vêm exclusivamente do Supabase
+function loadFromStorage() {} // dados vêm exclusivamente do Supabase
 
 // ── harvestEditables — lookup tables e helpers (evita if/else-if longas) ──────
 const _META_FIELD_MAP = {
@@ -10053,7 +10053,7 @@ function getAlertSubscribers(tipoAlerta) {
 }
 
 async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
-  if (!toEmail || !subject || !htmlBody) return false;
+  if (!toEmail || !subject || !htmlBody) throw new Error('sendAlertEmail: parâmetros obrigatórios ausentes');
   // Email sending not yet implemented — stub for future backend integration
   void toNome;
   throw new Error('sendAlertEmail: envio de e-mail ainda não implementado (integração futura com backend)');
