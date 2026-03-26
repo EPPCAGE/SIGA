@@ -1564,7 +1564,7 @@
           <span style="font-size:22px;">📤</span>
           <span>Segundo logo<br><span style="font-size:10px;">(clique para upload)</span></span>
         </div>
-        <div id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#94a3b8;background:#f1f5f9;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo">✕</div>
+        <div id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#333;background:#fff;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo" tabindex="0" aria-label="Remover logo" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();logo2Remove();}">✕</div>
         <input type="file" id="logo2-file-input" accept="image/*" style="display:none;" onchange="logo2FileSelected(this.files[0])">
       </div>
     </div>
@@ -1574,43 +1574,43 @@
   <div id="home-block-processos" style="display:block;margin-bottom:40px;">
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
       <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
-        <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Procedimentos Operacionais</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
+        <div class="home-card-icon" style="background:#f0faf5;color:#14532d;">📋</div>
+        <div class="home-card-title" contenteditable="false" tabindex="0" role="button" aria-label="Procedimentos Operacionais (clique para acessar)" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation(); else this.parentElement.click();" onkeydown="if((event.key==='Enter'||event.key===' ')&&!document.body.classList.contains('edit-mode')){event.preventDefault();this.parentElement.click();}" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Procedimentos Operacionais</div>
+        <div class="home-card-desc" contenteditable="false" tabindex="0" role="region" aria-label="Descrição: Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas." onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation();" onkeydown="if((event.key==='Enter'||event.key===' ')&&!document.body.classList.contains('edit-mode')){event.preventDefault();this.parentElement.click();}" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
         <div class="home-card-footer" id="home-pops-count">—</div>
       </div>
       <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
-        <div class="home-card-icon" style="background:#f5f3ff;color:#8b5cf6;">🏛</div>
+        <div class="home-card-icon" style="background:#f5f3ff;color:#4c1d95;">🏛</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Arquitetura de Processos</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
         <div class="home-card-footer" id="home-arq-count">—</div>
       </div>
       <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
-        <div class="home-card-icon" style="background:#fffbeb;color:#f59e0b;">📊</div>
+        <div class="home-card-icon" style="background:#fffbeb;color:#b45309;">📊</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Cadeia de Valor e Mapa Estratégico</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
         <div class="home-card-footer">Imagens configuráveis</div>
       </div>
       <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
-        <div class="home-card-icon" style="background:#fff1f2;color:#dc2626;">🔍</div>
+        <div class="home-card-icon" style="background:#fff1f2;color:#7f1d1d;">🔍</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Auditoria de Processos</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
         <div class="home-card-footer" id="home-audit-count">—</div>
       </div>
       <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
-        <div class="home-card-icon" style="background:#fffbeb;color:#e8a020;">📈</div>
+        <div class="home-card-icon" style="background:#fffbeb;color:#92400e;">📈</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Indicadores CAGE</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
       </div>
       <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
-        <div class="home-card-icon" style="background:#eef2ff;color:#6366f1;">🏗️</div>
+        <div class="home-card-icon" style="background:#eef2ff;color:#1e40af;">🏗️</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Modelador BPMN 2.0</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
         <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
       </div>
       <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
-        <div class="home-card-icon" style="background:#ecfdf5;color:#10b981;">🗒</div>
+        <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🗒</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
         <div class="home-card-footer">Canvas interativo</div>
@@ -1622,31 +1622,31 @@
         <div class="home-card-footer">Motor estocástico e dashboard</div>
       </div>
       <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
-        <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
+        <div class="home-card-icon" style="background:#eff6ff;color:#1e3a8a;">🏢</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gestão EPP</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </div>
       <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
-        <div class="home-card-icon" style="background:#f8fafc;color:#64748b;">🔍</div>
+        <div class="home-card-icon" style="background:#f8fafc;color:#334155;">🔍</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Busca Global</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
         <div class="home-card-footer">Busca em tempo real</div>
       </div>
       <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
-        <div class="home-card-icon" style="background:#fff1f2;color:#e11d48;">📚</div>
+        <div class="home-card-icon" style="background:#fff1f2;color:#831843;">📚</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Documentos e Manuais</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
         <div class="home-card-footer" id="home-repo-count">—</div>
       </div>
       <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
-        <div class="home-card-icon" style="background:#f0f9ff;color:#0ea5e9;">💧</div>
+        <div class="home-card-icon" style="background:#f0f9ff;color:#0369a1;">💧</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Drops de Conhecimento</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
         <div class="home-card-footer" id="home-drops-count">—</div>
       </div>
       <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
-        <div class="home-card-icon" style="background:#fdf2f8;color:#ec4899;">💡</div>
+        <div class="home-card-icon" style="background:#fdf2f8;color:#a21caf;">💡</div>
         <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Caixinha de Ideias</div>
         <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
         <div class="home-card-footer">Formulário Microsoft Forms</div>
