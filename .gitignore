@@ -4,6 +4,7 @@ node_modules/
 .env
 coverage/
 junit.xml
+.scannerwork/
 
 # Dados locais e backups — não versionar (podem conter dados reais)
 data/local-data.json
