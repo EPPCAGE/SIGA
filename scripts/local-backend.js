@@ -70,7 +70,13 @@ function ensureDataFile() {
 function readRecord() {
   ensureDataFile();
   const raw = fs.readFileSync(DATA_FILE, 'utf8');
-  const parsed = JSON.parse(raw);
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (_e) {
+    console.warn(`[siga-local-backend] arquivo de dados corrompido em ${DATA_FILE} — retornando registro vazio`);
+    parsed = {};
+  }
 
   return {
     id: 1,
@@ -570,9 +576,9 @@ async function callAiOnce(parsed, model) {
     parts.push({ inline_data: { mime_type: input.image.mimeType, data: input.image.data } });
   }
 
-  const aiResp = await fetch(`${AI_API_URL}?key=${encodeURIComponent(AI_KEY)}`, {
+  const aiResp = await fetch(AI_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': AI_KEY },
     body: JSON.stringify({
       contents: [{ role: 'user', parts }],
       generationConfig: {
@@ -763,20 +769,30 @@ async function _handleRequest(req, res, url) {
   }
   if (req.method === 'POST' && url.pathname === '/data') {
     const body = await collectRequestBody(req);
-    const next = _buildDataRecord(body ? JSON.parse(body) : {}, readRecord());
+    let bodyParsed;
+    try { bodyParsed = body ? JSON.parse(body) : {}; } catch (_e) {
+      sendJson(req, res, 400, { ok: false, error: 'Body invalido: JSON malformado' }); return;
+    }
+    const next = _buildDataRecord(bodyParsed, readRecord());
     writeRecord(next);
     sendJson(req, res, 200, { ok: true, row: next }); return;
   }
   if (req.method === 'POST' && url.pathname === '/ai') {
     const body = await collectRequestBody(req);
-    const parsed = body ? JSON.parse(body) : {};
+    let parsed;
+    try { parsed = body ? JSON.parse(body) : {}; } catch (_e) {
+      sendJson(req, res, 400, { ok: false, error: 'Body invalido: JSON malformado' }); return;
+    }
     const result = await callAiWithFallback(parsed, String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase());
     sendJson(req, res, 200, { ok: true, text: result.text, providerUsed: result.providerUsed, modelUsed: result.modelUsed || null, fallbackFrom: result.fallbackFrom || null, fallbackFromModel: result.fallbackFromModel || null, fallbackReason: result.fallbackReason || null });
     return;
   }
   if (req.method === 'POST' && url.pathname === '/parse-xlsx') {
     const body = await collectRequestBody(req);
-    const parsed = body ? JSON.parse(body) : {};
+    let parsed;
+    try { parsed = body ? JSON.parse(body) : {}; } catch (_e) {
+      sendJson(req, res, 400, { ok: false, error: 'Body invalido: JSON malformado' }); return;
+    }
     const data = typeof parsed?.data === 'string' ? parsed.data : '';
     if (!data) {
       sendJson(req, res, 400, { ok: false, error: 'Campo obrigatorio: data (base64 do xlsx)' });
