@@ -1426,7 +1426,7 @@
         </div>
       </div>
       <div class="header-divider-line"></div>
-      <button type="button" class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início"><strong>SIGA</strong></button>
+      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início"><strong>SIGA</strong></div>
     </div>
     <div class="header-meta">
       <button onclick="showHome()" title="Voltar à página inicial" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.45);background:none;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.1);transition:color .2s,border-color .2s;white-space:nowrap;" onmouseover="this.style.color='rgba(255,255,255,.85)';this.style.borderColor='rgba(255,255,255,.25)'" onmouseout="this.style.color='rgba(255,255,255,.45)';this.style.borderColor='rgba(255,255,255,.1)'">
@@ -1471,7 +1471,7 @@
 
 <!-- SIDEBAR -->
 <!-- Backdrop escuro ao abrir sidebar no mobile — clique fecha -->
-<button type="button" id="sidebar-backdrop" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:89;"></button>
+<div id="sidebar-backdrop" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:89;"></div>
 
 <div class="sidebar" id="sidebar">
   <div class="sidebar-head">
@@ -1506,22 +1506,22 @@
 <!-- NAV TABS -->
 <nav class="nav-tabs">
   <div class="nav-tabs-inner" id="nav-tabs-inner">
-    <button type="button" class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)">🏠 Visão Geral</button>
-    <button type="button" class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)">⚙️ Fluxo</button>
-    <button type="button" class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)">👥 Responsabilidades</button>
-    <button type="button" class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)">📊 Indicadores</button>
-    <button type="button" class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)">❓ FAQ</button>
-    <button type="button" class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)">📜 Normas &amp; Revisões</button>
-    <button type="button" class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)">⚠️ Riscos</button>
-    <button type="button" class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)">✅ Plano de Ação</button>
-    <button type="button" class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)">🤝 Reuniões</button>
-    <button type="button" class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)">📋 Acompanhamento</button>
-    <button type="button" class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)">☑️ Checklists</button>
-    <button type="button" class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</button>
-    <button type="button" class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</button>
-    <button type="button" class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)">📊 Maturidade</button>
-    <button type="button" class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</button>
-    <button type="button" class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</button>
+    <div class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)">🏠 Visão Geral</div>
+    <div class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)">⚙️ Fluxo</div>
+    <div class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)">👥 Responsabilidades</div>
+    <div class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)">📊 Indicadores</div>
+    <div class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)">❓ FAQ</div>
+    <div class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)">📜 Normas &amp; Revisões</div>
+    <div class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)">⚠️ Riscos</div>
+    <div class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)">✅ Plano de Ação</div>
+    <div class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)">🤝 Reuniões</div>
+    <div class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)">📋 Acompanhamento</div>
+    <div class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)">☑️ Checklists</div>
+    <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
+    <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
+    <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)">📊 Maturidade</div>
+    <div class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
+    <div class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
   </div>
 </nav>
 
@@ -1550,7 +1550,7 @@
     </div>
     <!-- Logos -->
     <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
-      <button type="button" id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()">
+      <div id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()">
         <img id="epp-logo-img" src="" alt="Logo EPP" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
         <div id="epp-logo-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
           <span style="font-size:22px;">🖼</span>
@@ -1558,13 +1558,13 @@
         </div>
         <div id="epp-logo-editor-hint" style="display:none;position:absolute;top:4px;right:6px;font-size:10px;color:#94a3b8;">✎</div>
       </div>
-      <button type="button" id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()">
+      <div id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()">
         <img id="logo2-img" src="" alt="Segundo Logo" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
         <div id="logo2-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
           <span style="font-size:22px;">📤</span>
           <span>Segundo logo<br><span style="font-size:10px;">(clique para upload)</span></span>
         </div>
-        <button type="button" id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#333;background:#fff;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo" aria-label="Remover logo">✕</button>
+        <div id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#333;background:#fff;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo" tabindex="0" aria-label="Remover logo" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();logo2Remove();}">✕</div>
         <input type="file" id="logo2-file-input" accept="image/*" style="display:none;" onchange="logo2FileSelected(this.files[0])">
       </div>
     </div>
@@ -1573,84 +1573,84 @@
   <!-- ══ MÓDULOS ══ -->
   <div id="home-block-processos" style="display:block;margin-bottom:40px;">
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
-      <button type="button" class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
+      <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
         <div class="home-card-icon" style="background:#f0faf5;color:#14532d;">📋</div>
-        <button type="button" class="home-card-title" contenteditable="false" aria-label="Procedimentos Operacionais (clique para acessar)" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation(); else this.parentElement.click();" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Procedimentos Operacionais</button>
-        <button type="button" class="home-card-desc" contenteditable="false" aria-label="Descrição: Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas." onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation();" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</button>
+        <div class="home-card-title" contenteditable="false" tabindex="0" role="button" aria-label="Procedimentos Operacionais (clique para acessar)" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation(); else this.parentElement.click();" onkeydown="if((event.key==='Enter'||event.key===' ')&&!document.body.classList.contains('edit-mode')){event.preventDefault();this.parentElement.click();}" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Procedimentos Operacionais</div>
+        <div class="home-card-desc" contenteditable="false" tabindex="0" role="region" aria-label="Descrição: Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas." onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation();" onkeydown="if((event.key==='Enter'||event.key===' ')&&!document.body.classList.contains('edit-mode')){event.preventDefault();this.parentElement.click();}" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
         <div class="home-card-footer" id="home-pops-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
+      </div>
+      <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
         <div class="home-card-icon" style="background:#f5f3ff;color:#4c1d95;">🏛</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Arquitetura de Processos</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Arquitetura de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
         <div class="home-card-footer" id="home-arq-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
+      </div>
+      <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
         <div class="home-card-icon" style="background:#fffbeb;color:#b45309;">📊</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Cadeia de Valor e Mapa Estratégico</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Cadeia de Valor e Mapa Estratégico</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
         <div class="home-card-footer">Imagens configuráveis</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
+      </div>
+      <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
         <div class="home-card-icon" style="background:#fff1f2;color:#7f1d1d;">🔍</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Auditoria de Processos</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Auditoria de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
         <div class="home-card-footer" id="home-audit-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
+      </div>
+      <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
         <div class="home-card-icon" style="background:#fffbeb;color:#92400e;">📈</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Indicadores CAGE</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Indicadores CAGE</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
+      </div>
+      <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
         <div class="home-card-icon" style="background:#eef2ff;color:#1e40af;">🏗️</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Modelador BPMN 2.0</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Modelador BPMN 2.0</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
         <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
+      </div>
+      <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
         <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🗒</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
         <div class="home-card-footer">Canvas interativo</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;">
+      </div>
+      <div class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;">
         <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🧪</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simulador de Processos</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simulador de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
         <div class="home-card-footer">Motor estocástico e dashboard</div>
-      </button>
-      <button type="button" class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
+      </div>
+      <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
         <div class="home-card-icon" style="background:#eff6ff;color:#1e3a8a;">🏢</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gestão EPP</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gestão EPP</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
+      </div>
+      <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
         <div class="home-card-icon" style="background:#f8fafc;color:#334155;">🔍</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Busca Global</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Busca Global</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
         <div class="home-card-footer">Busca em tempo real</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
+      </div>
+      <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
         <div class="home-card-icon" style="background:#fff1f2;color:#831843;">📚</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Documentos e Manuais</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Documentos e Manuais</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
         <div class="home-card-footer" id="home-repo-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
+      </div>
+      <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
         <div class="home-card-icon" style="background:#f0f9ff;color:#0369a1;">💧</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Drops de Conhecimento</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Drops de Conhecimento</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
         <div class="home-card-footer" id="home-drops-count">—</div>
-      </button>
-      <button type="button" class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
+      </div>
+      <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
         <div class="home-card-icon" style="background:#fdf2f8;color:#a21caf;">💡</div>
-        <button type="button" class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Caixinha de Ideias</button>
-        <section class="home-card-desc" contenteditable="false" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</section>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Caixinha de Ideias</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
         <div class="home-card-footer">Formulário Microsoft Forms</div>
-      </button>
+      </div>
     </div>
   </div>
 
@@ -2487,7 +2487,7 @@
         <button onclick="fdExportPNG()" title="Exportar PNG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">⬇ PNG</button>
         <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
         <button onclick="fdZoom(-0.15)" title="Diminuir zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">−</button>
-        <button type="button" id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;background:none;border:none;padding:0;">100%</button>
+        <span id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;">100%</span>
         <button onclick="fdZoom(+0.15)" title="Aumentar zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">+</button>
         <button onclick="fdSave()" title="Salvar (Ctrl+S)" style="padding:4px 9px;background:rgba(0,168,107,.3);color:#4ade80;border:1px solid rgba(0,168,107,.5);border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;">☁️ Salvar</button>
       </div>
@@ -2693,12 +2693,12 @@
     <div class="npop-body">
       <div class="npop-step active" id="npop-s1">
         <div class="npop-methods" style="display:block;">
-          <button type="button" class="npop-method selected" id="npop-m-manual" onclick="selectNpopMethod('manual')">
+          <div class="npop-method selected" id="npop-m-manual" onclick="selectNpopMethod('manual')">
             <div class="npop-method-icon">✍️</div>
             <div class="npop-method-name">Preenchimento Manual</div>
             <div class="npop-method-desc">Preencha os campos do mapeamento diretamente no sistema.</div>
           </div>
-          <button type="button" class="npop-method" id="npop-m-workflow" onclick="selectNpopMethod('workflow')" style="margin-top:8px;">
+          <div class="npop-method" id="npop-m-workflow" onclick="selectNpopMethod('workflow')" style="margin-top:8px;">
             <div class="npop-method-icon">📝</div>
             <div class="npop-method-name">Importar por POP Word</div>
             <div class="npop-method-desc">Envie o POP em Word e clique em <strong>Criar mapeamento</strong> para abrir o formulário de revisão e edição.</div>
@@ -3025,10 +3025,10 @@
       </div>
       <div>
         <label for="repo-file-input" style="font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;display:block;margin-bottom:6px;">Arquivo</label>
-        <button type="button" id="repo-drop-zone" onclick="document.getElementById('repo-file-input').click()"
+        <div id="repo-drop-zone" onclick="document.getElementById('repo-file-input').click()"
           style="border:2px dashed #e2e8f0;border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;background:#f8fafc;transition:all .2s;"
           onmouseover="this.style.borderColor='#e11d48';this.style.background='#fff1f2'"
-          onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
+          onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'"
           ondragover="event.preventDefault();this.style.borderColor='#e11d48'"
           ondrop="repoHandleDrop(event)">
           <div style="font-size:32px;margin-bottom:8px;">📁</div>
@@ -3142,7 +3142,7 @@
 </div>
 
 <!-- DROPS: lightbox para imagem de capa -->
-<div id="drops-lightbox" role="button" tabindex="0" onclick="dropsCloseLightbox()" onkeydown="if(event.key==='Enter'||event.key===' '){dropsCloseLightbox()}" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;">
+<div id="drops-lightbox" onclick="dropsCloseLightbox()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;">
   <img id="drops-lightbox-img" src="" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
 </div>
 
@@ -4147,7 +4147,7 @@
 
     <!-- Painel de configurações do indicador (override manual) -->
     <div id="indcage-cfg-panel" class="indcage-cfg-panel" style="display:none;">
-      <button type="button" class="indcage-cfg-header" onclick="indcageCfgToggle()" style="background:none;border:none;padding:0;width:100%;text-align:left;">
+      <div class="indcage-cfg-header" onclick="indcageCfgToggle()">
         <span class="indcage-cfg-title">⚙️ Configurações do Indicador</span>
         <span id="indcage-cfg-chevron" style="font-size:12px;color:#1e3a7a;transition:transform .2s;">▼</span>
       </div>
@@ -6275,7 +6275,7 @@ function renderSisplanPickerList() {
     return;
   }
   list.innerHTML = filtered.map(ind => `
-    <button type="button" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;width:100%;text-align:left;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')">
+    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
         <div style="flex:1;">
           <div style="font-size:11px;font-weight:700;color:#607070;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">${ind.codigo||'—'} · ${ind.divisao||''}</div>
@@ -14331,7 +14331,7 @@ function renderFicha(p) {
       matBadgeHtml = `
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);">
           <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;">Maturidade</div>
-          <button type="button" style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;width:100%;text-align:left;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
+          <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
             <div style="text-align:center;flex-shrink:0;">
               <div style="font-size:30px;font-weight:900;color:${matFinal.levelColor};line-height:1;">${matFinal.final}</div>
               <div style="font-size:9px;color:#94a3b8;line-height:1.2;">/ 100</div>
@@ -14885,7 +14885,7 @@ function openVersionSelector(p, badgeEl) {
 
   panel.innerHTML = allVersions.map(item => {
     const isActive = item.v === viewing;
-    return `<button type="button" class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();" style="width:100%;text-align:left;background:none;border:none;padding:0;">
+    return `<div class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();">
       <div>
         <div>${item.isCurrent ? '✏️' : '📄'} <strong>v${item.v}</strong>${item.isCurrent ? ' <span style="font-size:10px;color:#059669;">(atual)</span>' : ''}</div>
         <div class="vs-meta">${item.date}${item.note ? ' · ' + item.note : ''}</div>
@@ -16457,10 +16457,10 @@ function renderPopsGrid() {
               style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 4px;border-radius:4px;z-index:1;"
               onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-right:${canDelete?'20px':'0'};">
-              <button type="button" style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;background:none;border:none;padding:0;" onclick="hideHome();switchPop('${p.key}')">${meta.name || p.label}</button>
+              <div style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;" onclick="hideHome();switchPop('${p.key}')">${meta.name || p.label}</div>
               ${sc ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};white-space:nowrap;flex-shrink:0;">${stLabel}</span>` : ''}
             </div>
-            <button type="button" onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;background:none;border:none;padding:0;width:100%;text-align:left;">
+            <div onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;">
             ${macroMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macroMeta}</div>` : ''}
             ${processoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Processo:</span> ${processoMeta}</div>` : ''}
             ${subprocessoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Subprocesso:</span> ${subprocessoMeta}</div>` : ''}
@@ -17586,7 +17586,7 @@ function npopRenderAtores(selectedArr, isCreateForm) {
   const selected = new Set(selectedArr || []);
   wrap.innerHTML = atores.map(a => {
     const on = selected.has(a);
-    return `<button type="button" data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${escapeHtml(a)}</button>`;
+    return `<span data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${escapeHtml(a)}</span>`;
   }).join('');
   if(hidden) hidden.value = [...selected].join(',');
 }
@@ -25224,7 +25224,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
 
 
 <!-- BUSCA GLOBAL -->
-<div class="search-modal-overlay" id="search-overlay" role="dialog" tabindex="-1" onclick="closeSearchIfOutside(event)">
+<div class="search-modal-overlay" id="search-overlay" onclick="closeSearchIfOutside(event)">
   <div class="search-modal">
     <div class="search-modal-head">
       <span>🔍</span>
@@ -25264,7 +25264,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5;">
           Restaura os dados a partir de um arquivo de backup gerado anteriormente. <strong>Atenção: substituirá todos os dados atuais.</strong>
         </div>
-        <button type="button" class="backup-zone" onclick="document.getElementById('backup-file-input').click()" style="width:100%;background:none;border:none;padding:0;text-align:left;">
+        <div class="backup-zone" onclick="document.getElementById('backup-file-input').click()">
           <input type="file" id="backup-file-input" accept=".json" onchange="previewBackupFile(this)">
           <div class="backup-zone-icon">📂</div>
           <div class="backup-zone-label">Clique para selecionar o arquivo .json</div>
@@ -25701,7 +25701,7 @@ if ('serviceWorker' in navigator) {
       // O reload forçado causava interrupção do loadFromCloud/saveToCloud a cada F5.
     }).catch(e => { console.warn('[siga] service worker registration', e); });
   }
-// Removido fechamento extra de chave para corrigir erro de sintaxe
+}
 </script>
 </body>
 </html>
