@@ -548,7 +548,7 @@ function renderAutomationConfirm() {
 
 function syncConfirmedAutoFromUi() {
   const boxes = document.querySelectorAll('input[data-auto-node]');
-  if (!boxes.length) return;
+  if (boxes.length === 0) return;
 
   const next = new Set();
   boxes.forEach((el) => {
@@ -1028,10 +1028,12 @@ function _sec0UpdateTable() {
   if (!tbody) return;
 
   tbody.innerHTML = _sec0Filtered.slice(0, 100).map((p, i) => {
-    const isLinked = _linkedProcess
-      && _linkedProcess.processo      === p.processo
+    const isLinked = Boolean(
+      _linkedProcess
+      && _linkedProcess.processo === p.processo
       && _linkedProcess.macroprocesso === p.macroprocesso
-      && (_linkedProcess.subprocesso || '') === (p.subprocesso || '');
+      && (_linkedProcess.subprocesso || '') === (p.subprocesso || '')
+    );
     return `<tr class="sec0-row${isLinked ? ' sec0-row-selected' : ''}" data-sec0-idx="${i}" role="button" tabindex="0" aria-label="Vincular processo ${escapeHtml(p.processo || 'sem nome')}">
       <td class="sec0-td-macro">${escapeHtml(p.macroprocesso || '')}</td>
       <td class="sec0-td-proc"><strong>${escapeHtml(p.processo || '')}</strong>${p.subprocesso ? `<br><small class="sec0-sub">${escapeHtml(p.subprocesso)}</small>` : ''}</td>
@@ -1615,7 +1617,7 @@ function saveSetupAutomationSelection() {
     });
 
     const selectedAuto = new Set(
-      Array.from(matrixAutoInputs)
+      [...matrixAutoInputs]
         .filter((i) => i.checked)
         .map((i) => String(i.dataset.taskAutomated || ''))
         .filter(Boolean)
@@ -1626,7 +1628,7 @@ function saveSetupAutomationSelection() {
     }
 
     const selectedPotential = new Set(
-      Array.from(matrixPotentialInputs)
+      [...matrixPotentialInputs]
         .filter((i) => i.checked)
         .map((i) => String(i.dataset.taskPotential || ''))
         .filter(Boolean)
@@ -1642,7 +1644,7 @@ function saveSetupAutomationSelection() {
   }
 
   const selected = new Set(
-    Array.from(document.querySelectorAll('input[data-setup-auto-node]:checked'))
+    [...document.querySelectorAll('input[data-setup-auto-node]:checked')]
       .map((i) => String(i.dataset.setupAutoNode || ''))
       .filter(Boolean)
   );
@@ -1690,7 +1692,8 @@ function completeSetup() {
     const reason = !s.graphOk && s.graphIssues.length
       ? ` Motivo: ${escapeHtml(s.graphIssues[0])}`
       : '';
-    $('validationBox').innerHTML = `<span class="badge error">setup</span> Finalize os itens pendentes no popup para iniciar a simulacao.${reason}`;
+    const safeReason = (reason || '').replace(/[<>]/g, m => m === '<' ? '&lt;' : '&gt;');
+    $('validationBox').innerHTML = `<span class="badge error">setup</span> Finalize os itens pendentes no popup para iniciar a simulacao.${safeReason}`;
     return;
   }
   setupCompleted = true;
@@ -2493,7 +2496,8 @@ function parseEditorGraph() {
     return true;
   } catch (e) {
     /* exibe mensagem de erro na interface */
-    $('validationBox').innerHTML = `<span class="badge error">erro</span> JSON invalido: ${e.message}`;
+    const safeMsg = (e.message || '').replace(/[<>]/g, m => m === '<' ? '&lt;' : '&gt;');
+    $('validationBox').innerHTML = `<span class="badge error">erro</span> JSON invalido: ${safeMsg}`;
     return false;
   }
 }
@@ -3482,7 +3486,8 @@ function playSimulation() {
       parseHappyPathRequired();
     } catch (e) {
       /* exibe mensagem de erro na interface */
-      $('validationBox').innerHTML = `<span class="badge error">ideal</span> ${e.message}`;
+        const safeMsg = (e.message || '').replace(/[<>]/g, m => m === '<' ? '&lt;' : '&gt;');
+      $('validationBox').innerHTML = `<span class="badge error">ideal</span> ${safeMsg}`;
       return;
     }
   }
