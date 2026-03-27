@@ -9402,6 +9402,18 @@ function renderConfigPanel() {
   const grid = panel.querySelector('#epp-config-tables-grid');
   if(!grid) return;
   grid.innerHTML = _CFG_TABLES.map(t => _renderCfgCard(t)).join('');
+  
+  // ── Event delegation para skill-chips (sugestões de competências) ──
+  grid.addEventListener('click', (ev) => {
+    const chip = ev.target.closest('.skill-chip[data-skill-chip]');
+    if(!chip) return;
+    const equipe = chip.dataset.equipe;
+    const skill = chip.dataset.skill;
+    const tipo = chip.dataset.tipo;
+    if(equipe && skill && tipo) {
+      toggleEquipeSkill(equipe, skill, tipo);
+    }
+  });
 }
 
 function _renderCfgCard({key, title, desc, typed=false}) {
@@ -9561,9 +9573,8 @@ function _renderCfgCardEquipeCompetencias(title, desc) {
     if(!all.length) return '<span style="color:#94a3b8;font-size:11px;">—</span>';
     return all.map(sk => {
       const active = selected.includes(sk);
-      const eq = equipe.replaceAll('\\','\\\\').replaceAll("'" ,"\\'");
-      const s  = sk.replaceAll('\\','\\\\').replaceAll("'","\\'");
-      return `<span onclick="toggleEquipeSkill('${eq}','${s}','${tipo}')" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#1B3022;color:white;border:1px solid #1B3022;' : 'background:#334155;color:#64748b;border:1px solid #e2e8f0;'}">${sk}</span>`;
+      const chipId = 'skill-' + Math.random().toString(36).substr(2, 9);
+      return `<span class="skill-chip" data-skill-chip="${chipId}" data-equipe="${escapeHtml(equipe)}" data-skill="${escapeHtml(sk)}" data-tipo="${tipo}" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#1B3022;color:white;border:1px solid #1B3022;' : 'background:#334155;color:#64748b;border:1px solid #e2e8f0;'}">${sk}</span>`;
     }).join('');
   }
 
