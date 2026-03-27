@@ -6785,7 +6785,7 @@ function showBpmnError(msg) {
   document.getElementById('bpmn-loading').style.display = 'none';
   const errEl = document.getElementById('bpmn-error');
   errEl.style.display = 'flex';
-  document.getElementById('bpmn-error-msg').innerHTML = msg;
+  document.getElementById('bpmn-error-msg').innerHTML = escapeHtml(msg);
 }
 
 function resetBpmn() {
@@ -6926,12 +6926,12 @@ function _populateNpopPrimarySelects() {
   if(macroSel) {
     const source = arqGetData ? arqGetData() : CAGE_PROCESSOS;
     const macros = [...new Set(source.map(r => r.macroprocesso).filter(Boolean))].sort();
-    macroSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>' + macros.map(m => `<option value="${m}">${m}</option>`).join('');
+    macroSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>' + macros.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
   }
   const tipoSel = document.getElementById('nf-tipo');
   if(tipoSel) {
     const tipos = getConfig('tipoTrabalho');
-    tipoSel.innerHTML = '<option value="">Selecione...</option>' + tipos.map(t => `<option value="${t}">${t}</option>`).join('');
+    tipoSel.innerHTML = '<option value="">Selecione...</option>' + tipos.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   }
 }
 
@@ -7572,10 +7572,10 @@ function openNpopOrderModal(parsed, onDone) {
     return `
       <div class="ord-step-item" data-step-index="${si}" style="border:1px solid #dbeafe;background:#f8fbff;border-radius:10px;padding:10px;">
         <div class="ord-step-handle" style="cursor:grab;user-select:none;display:flex;align-items:center;gap:8px;font-weight:700;color:#1B3022;margin-bottom:8px;">
-          <span>↕</span><span>Etapa ${si+1}: ${s.title || 'Sem titulo'}</span>
+          <span>↕</span><span>Etapa ${si+1}: ${escapeHtml(s.title || 'Sem titulo')}</span>
         </div>
         <div class="ord-actions" data-step-index="${si}" style="display:flex;flex-direction:column;gap:6px;">
-          ${actions.map((a, ai) => `<div class="ord-action-item" data-action-index="${ai}" style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:7px 9px;cursor:grab;font-size:12px;color:#334155;"><span style="opacity:.7;margin-right:6px;">↕</span>${(typeof a === 'string' ? a : (a?.text || 'Acao sem texto'))}</div>`).join('')}
+          ${actions.map((a, ai) => `<div class="ord-action-item" data-action-index="${ai}" style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:7px 9px;cursor:grab;font-size:12px;color:#334155;"><span style="opacity:.7;margin-right:6px;">↕</span>${escapeHtml(typeof a === 'string' ? a : (a?.text || 'Acao sem texto'))}</div>`).join('')}
         </div>
       </div>`;
   }).join('');
@@ -9404,7 +9404,12 @@ function renderConfigPanel() {
   grid.innerHTML = _CFG_TABLES.map(t => _renderCfgCard(t)).join('');
   
   // ── Event delegation para skill-chips (sugestões de competências) ──
-  grid.addEventListener('click', (ev) => {
+  // Remove listeners antigos (clonando para remove duplicatas)
+  const gridClone = grid.cloneNode(true);
+  grid.parentNode.replaceChild(gridClone, grid);
+  const newGrid = panel.querySelector('#epp-config-tables-grid');
+  
+  newGrid.addEventListener('click', (ev) => {
     const chip = ev.target.closest('.skill-chip[data-skill-chip]');
     if(!chip) return;
     const equipe = chip.dataset.equipe;
@@ -12620,9 +12625,11 @@ function clearSearch() {
 }
 
 function highlight(text, query) {
-  if(!query || !text) return text || '';
+  if(!query || !text) return escapeHtml(text || '');
+  // Escape text first to prevent XSS
+  const escapedText = escapeHtml(text);
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  return text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
+  return escapedText.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
 }
 
 function runSearch(raw) {
@@ -12824,8 +12831,8 @@ function openRepoDocViewer(id, showFaqs) {
       <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#2563eb;margin-bottom:12px;">💬 FAQs geradas por IA</div>
       ${doc.faqs.map((f,i) => `
         <div style="margin-bottom:14px;padding:12px 14px;background:#f8fafc;border-radius:8px;border-left:3px solid #2563eb;">
-          <div style="font-size:13px;font-weight:700;color:#1B3022;margin-bottom:4px;">${i+1}. ${q ? highlight(f.q, q) : f.q}</div>
-          <div style="font-size:13px;color:#374151;line-height:1.7;">${q ? highlight(f.a, q) : f.a}</div>
+          <div style="font-size:13px;font-weight:700;color:#1B3022;margin-bottom:4px;">${i+1}. ${q ? highlight(f.q, q) : escapeHtml(f.q || '')}</div>
+          <div style="font-size:13px;color:#374151;line-height:1.7;">${q ? highlight(f.a, q) : escapeHtml(f.a || '')}</div>
         </div>`).join('')}
     </div>` : '';
 
@@ -12851,7 +12858,7 @@ function openRepoDocViewer(id, showFaqs) {
       // Barra de navegação entre ocorrências
       nav.style.display = 'flex';
       nav.innerHTML = `
-        <span style="font-size:12px;color:#374151;">🔍 <strong>${total}</strong> ocorrência${total!==1?'s':''} de "<em>${q}</em>"</span>
+        <span style="font-size:12px;color:#374151;">🔍 <strong>${total}</strong> ocorrência${total!==1?'s':''} de "<em>${escapeHtml(q)}</em>"</span>
         <button onclick="repoViewerNav(-1)" style="background:none;border:1px solid #e2e8f0;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:12px;">↑ Anterior</button>
         <button onclick="repoViewerNav(1)"  style="background:none;border:1px solid #e2e8f0;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:12px;">↓ Próxima</button>
         <span id="repo-viewer-nav-pos" style="font-size:12px;color:#64748b;"></span>`;
@@ -15700,7 +15707,7 @@ function arqInit() {
   // Populate macro filter and form select
   const filterMacro = document.getElementById('arq-filter-macro');
   const macroFormSel = document.getElementById('arq-f-macro');
-  const macroOpts = getMacroprocessos().map(m => `<option value="${m}">${m}</option>`).join('');
+  const macroOpts = getMacroprocessos().map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
   filterMacro.innerHTML = '<option value="">Todos</option>' + macroOpts;
   if(macroFormSel && macroFormSel.tagName === 'SELECT') {
     macroFormSel.innerHTML = '<option value="">Selecione o macroprocesso...</option>' + macroOpts;
@@ -19391,7 +19398,7 @@ function auditOpenPlanModal(id) {
   sel.innerHTML = '<option value="">— Selecione o processo —</option>' +
     popKeys.map(k => {
       const n = DATA[k]?.meta?.name || k;
-      return '<option value="'+k+'"'+(plan?.processo===k?' selected':'')+'>'+n+'</option>';
+      return '<option value="'+escapeHtml(k)+'"'+(plan?.processo===k?' selected':'')+'>' + escapeHtml(n) + '</option>';
     }).join('');
   // Popula unidade a partir das roles do processo selecionado, depois restaura valor salvo
   auditPlanProcessoChange();
@@ -19415,7 +19422,7 @@ function auditOpenPlanModal(id) {
   const patSel = document.getElementById('ap-pat-vinc');
   const patAudits = (DATA.pat||[]).filter(p => p.tipo === 'Auditoria');
   patSel.innerHTML = '<option value="">— Nenhum —</option>' +
-    patAudits.map(p => `<option value="${p.id}"${plan?.patId===p.id?' selected':''}>${p.titulo||p.id}</option>`).join('');
+    patAudits.map(p => `<option value="${escapeHtml(p.id)}"${plan?.patId===p.id?' selected':''}>${escapeHtml(p.titulo||p.id)}</option>`).join('');
   document.getElementById('audit-plan-modal-title').textContent = id ? '✏️ Editar Plano' : '📋 Novo Plano de Auditoria';
   document.getElementById('ap-delete-btn').style.display = id ? 'inline-block' : 'none';
   document.getElementById('audit-plan-modal').style.display='flex';
@@ -19427,7 +19434,7 @@ function auditPlanProcessoChange() {
   const saved = sel.value;
   const equipes = getConfig('equipes');
   sel.innerHTML = '<option value="">— Selecione a equipe —</option>' +
-    equipes.map(e => { const esc = e.replace(/"/g,'&quot;'); return `<option value="${esc}"${saved===e?' selected':''}>${esc}</option>`; }).join('');
+    equipes.map(e => `<option value="${escapeHtml(e)}"${saved===e?' selected':''}>${escapeHtml(e)}</option>`).join('');
 }
 
 function auditNcPlanChange() {
@@ -19447,7 +19454,7 @@ function auditNcPlanChange() {
     etapaSel.innerHTML = '<option value="">— Selecione a etapa —</option>' +
       steps.map((s, i) => {
         const label = s.title || ('Etapa ' + (i + 1));
-        return `<option value="${label}"${savedEtapa===label?' selected':''}>${label}</option>`;
+        return `<option value="${escapeHtml(label)}"${savedEtapa===label?' selected':''}>${escapeHtml(label)}</option>`;
       }).join('');
   } else {
     etapaSel.innerHTML = '<option value="">' + (pKey ? '— Processo sem etapas mapeadas —' : '— Selecione um plano para carregar as etapas —') + '</option>';
@@ -19565,7 +19572,7 @@ function auditOpenExecModal(id) {
   const planSel = document.getElementById('ae-plan');
   const _execPreselect = exec?.planId || (!id && _auditCurrentPlanId) || '';
   planSel.innerHTML = '<option value="">— Selecione o plano —</option>' +
-    DATA.audits.plans.map(p=>'<option value="'+p.id+'"'+(_execPreselect===p.id?' selected':'')+'>'+( p.processoNome||p.objetivo)+'</option>').join('');
+    DATA.audits.plans.map(p=>'<option value="'+escapeHtml(p.id)+'"'+(_execPreselect===p.id?' selected':'')+'>'+ escapeHtml(p.processoNome||p.objetivo)+'</option>').join('');
   document.getElementById('ae-data').value    = exec?.dataExecucao || '';
   document.getElementById('ae-status').value  = exec?.status       || 'em_andamento';
   document.getElementById('ae-obs').value     = exec?.observacoes  || '';
