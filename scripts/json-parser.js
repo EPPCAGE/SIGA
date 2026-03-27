@@ -55,26 +55,28 @@ function truncateRepairJson(str) {
 function parseAiJson(text) {
   let clean = String(text || '').trim();
   clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  let lastError = null;
 
   const m = clean.match(/\{[\s\S]*/);
   if (m) clean = m[0];
 
   try {
     return JSON.parse(clean);
-  } catch (_e1) {
-    // Keep trying with fallbacks below.
+  } catch (parseError) {
+    lastError = parseError;
   }
 
   try {
     return JSON.parse(repairJsonString(clean));
-  } catch (_e2) {
-    // Keep trying with truncation repair below.
+  } catch (repairError) {
+    lastError = repairError;
   }
 
   try {
     return JSON.parse(truncateRepairJson(clean));
-  } catch (e) {
-    throw new Error(`Falha em todos os mecanismos de reparo JSON: ${e.message}`);
+  } catch (truncateError) {
+    lastError = truncateError;
+    throw new Error(`Falha em todos os mecanismos de reparo JSON: ${lastError.message}`);
   }
 }
 

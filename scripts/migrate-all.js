@@ -1,5 +1,5 @@
-const { spawnSync } = require('child_process');
-const path = require('path');
+const { spawnSync } = require('node:child_process');
+const path = require('node:path');
 
 function runStep(label, command, args) {
   console.log(`\n[${label}] Iniciando: ${command} ${args.join(' ')}`);
@@ -31,7 +31,7 @@ function main() {
   ]);
 
   runStep('migrate-workspace', 'node', [
-    path.join('scripts', 'migrate-workspace-ndjson.js'),
+    path.join('scripts', 'migrate-workspace-ndjson.mjs'),
     `--input=${workspaceNdjson}`,
     `--apply=${isDryRun ? 'false' : 'true'}`,
   ]);
