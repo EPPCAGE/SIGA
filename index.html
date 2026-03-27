@@ -147,18 +147,18 @@
   .header-divider-line{width:1px;height:36px;background:rgba(255,255,255,.18);flex-shrink:0;}
   .cage-banner-brand{display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .cage-banner-shield{display:flex;align-items:center;flex-shrink:0;}
-
+  .cage-banner-text{}
   .cage-banner-text .cage-banner-title{font-weight:700;font-size:14px;color:white;letter-spacing:.3px;line-height:1.15;display:block;}
   .cage-banner-text .cage-banner-sub{font-size:10px;color:rgba(255,255,255,.55);line-height:1.2;white-space:nowrap;display:block;}
   .cage-official-logo{height:42px;max-width:170px;object-fit:contain;flex-shrink:0;filter:brightness(0) invert(1);}
   .header-title{font-size:12px;font-weight:500;line-height:1.3;opacity:.8;}
   .header-title strong{display:block;font-size:14px;font-weight:600;opacity:1;}
   .header-meta{display:flex;align-items:center;gap:8px;}
-  .edit-toggle{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;background:#000;color:#fff;transition:all .2s;}
-  .edit-toggle:hover{background:#222;}
+  .edit-toggle{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);color:white;transition:all .2s;}
+  .edit-toggle:hover{background:rgba(255,255,255,.22);}
   .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
-  .badge-green{background:#000;color:#fff;border:1px solid #022c22;}
-  .badge-blue{background:#000;color:#fff;border:1px solid #1e293b;}
+  .badge-green{background:rgba(0,168,107,.2);color:#4ade80;border:1px solid rgba(0,168,107,.3);}
+  .badge-blue{background:rgba(96,165,250,.15);color:#93c5fd;border:1px solid rgba(96,165,250,.2);}
 
   /* POP SWITCHER */
   .pop-switcher{background:var(--cage-blue);border-top:1px solid rgba(255,255,255,.06);padding:0 32px;}
@@ -166,7 +166,7 @@
   .pop-switcher-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em;margin-right:14px;white-space:nowrap;}
   .pop-tab{padding:7px 18px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.55);transition:all .2s;border:1.5px solid transparent;white-space:nowrap;margin-right:6px;}
   .pop-tab:hover{color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.2);}
-  .pop-tab.active{color:#fff;border-color:var(--pop-color);background:#000;}
+  .pop-tab.active{color:white;border-color:var(--pop-color);background:rgba(255,255,255,.08);}
   .pop-tab.pop-novo.active{--pop-color:var(--design-accent);}
   .pop-tab.pop-novo{color:rgba(255,255,255,.7);}
 
@@ -175,10 +175,10 @@
   .nav-tabs-inner{max-width:1300px;margin:0 auto;padding:0 32px;display:flex;gap:2px;overflow-x:auto;}
   .nav-tab{padding:10px 18px;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
   .nav-tab:hover{color:rgba(255,255,255,.85);}
-  .nav-tab.active{color:white;border-bottom-color:var(--current-pop-color, #00633b);}
+  .nav-tab.active{color:white;border-bottom-color:var(--current-pop-color, #00a86b);}
   body.edit-mode .nav-tab.active{border-bottom-color:var(--edit-color);}
 
-  .main{max-width:1300px;margin:0 auto;padding:32px;transition:none;}
+  .main{max-width:1300px;margin:0 auto;padding:32px;}
   .pop-content{display:none;}.pop-content.active{display:block;}
   .section{display:none;}.section.active{display:block;}
 
@@ -236,9 +236,9 @@
   .step-info p{font-size:13px;opacity:.75;}
   .step-panel-body{padding:24px;}
   .resp-tag{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:16px;}
-  .resp-green{background:#000;color:#fff;border:1px solid #022c22;}
-  .resp-blue{background:#000;color:#fff;border:1px solid #1e293b;}
-  .resp-gold{background:#FFD600;color:#000;border:1px solid #b45309;}
+  .resp-green{background:rgba(0,168,107,.1);color:#00875a;border:1px solid rgba(0,168,107,.2);}
+  .resp-blue{background:rgba(0,51,102,.1);color:var(--cage-mid);border:1px solid rgba(0,51,102,.2);}
+  .resp-gold{background:rgba(232,160,32,.1);color:#c07c10;border:1px solid rgba(232,160,32,.2);}
   .step-actions{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
 
   /* ── DRAG AND DROP (actions) ─────────────────── */
@@ -258,7 +258,7 @@
   .branch-label{font-size:12px;font-weight:700;color:var(--design-accent-hover);flex:1;min-width:40px;outline:none;}
   .branch-label[contenteditable]:empty::before{content:'Rótulo…';color:var(--design-accent);opacity:.6;}
   .rm-branch-btn{display:none;padding:1px 5px;font-size:10px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;border-radius:4px;flex-shrink:0;}
-  .rm-branch-btn:hover{background:#fee2e2;color:#b91c1c;}
+  .rm-branch-btn:hover{background:#fee2e2;color:#ef4444;}
   body.edit-mode .rm-branch-btn{display:inline-flex;}
   .branch-actions{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px;}
   .branch-action-item{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;background:white;border-radius:4px;border-left:2px solid var(--cage-accent);}
@@ -287,7 +287,7 @@
   /* action type modal */
   .action-type-modal{display:none;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center;background:rgba(0,0,0,.45);}
   .action-type-modal.open{display:flex;}
-  .action-type-box{background:white;border-radius:var(--radius);padding:28px 28px 22px;width:460px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow-y:auto;max-height:90vh;}
+  .action-type-box{background:white;border-radius:var(--radius);padding:28px 28px 22px;width:460px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.2);}
   .action-type-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--cage-blue);margin-bottom:4px;}
   .action-type-sub{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
   .action-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
@@ -318,7 +318,7 @@
   .act-move-step-wrap{margin-top:4px;padding-top:12px;border-top:1px solid var(--cage-border);}
   .act-move-step-wrap label{font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;}
   .act-move-step-row{display:flex;gap:8px;align-items:center;}
-  /* removed duplicate .action-type-box */
+  .action-type-box{overflow-y:auto;max-height:90vh;}
   .decision-box{background:#FFFBF0;border:1.5px solid var(--design-accent);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
   .decision-box .dicon{font-size:18px;flex-shrink:0;}
   .decision-text{font-size:13px;color:var(--design-accent-active);line-height:1.5;}
@@ -327,7 +327,7 @@
   .btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
   .btn-primary{background:var(--cage-accent);color:white;}.btn-primary:hover{background:var(--cage-mid);}
   .btn-outline{background:white;color:var(--cage-accent);border:1.5px solid var(--cage-border);}.btn-outline:hover{border-color:var(--cage-accent);}
-  .btn-warn{background:#000;color:#FFD600;}.btn-warn:hover{background:#222;color:#FFD600;}
+  .btn-warn{background:#f59e0b;color:white;}.btn-warn:hover{background:#d97706;}
   .btn-success{background:#1B6B2E;color:white;}.btn-success:hover{background:#155a26;}
   .btn:disabled{opacity:.4;cursor:not-allowed;}
 
@@ -336,7 +336,7 @@
   .flow-mode-toggle{display:inline-flex;align-items:center;border:1.5px solid var(--cage-border);border-radius:10px;overflow:hidden;background:white;box-shadow:var(--shadow-sm);}
   .flow-mode-btn{padding:7px 16px;font-size:12px;font-weight:700;border:none;background:transparent;cursor:pointer;transition:all .2s;color:var(--text-muted);letter-spacing:.2px;white-space:nowrap;}
   .flow-mode-btn.active-asis{background:var(--cage-blue);color:white;}
-  .flow-mode-btn.active-tobe{background:#000;color:#FFD600;}
+  .flow-mode-btn.active-tobe{background:#059669;color:white;}
   /* TO BE step panel */
   .step-panel.tobe-mode .step-panel-head{background:linear-gradient(135deg,#064e3b,#059669);}
   body.edit-mode .step-panel.tobe-mode .step-panel-head{background:linear-gradient(135deg,#064e3b,#059669);}
@@ -358,9 +358,9 @@
   .sdf-col{display:flex;flex-direction:column;gap:3px;}
   .sdf-tag{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:.4px;}
   .sdf-tag.asis{background:rgba(27,48,34,.1);color:var(--cage-blue);}
-  .sdf-tag.tobe{background:#000;color:#FFD600;}
+  .sdf-tag.tobe{background:rgba(5,150,105,.12);color:#059669;}
   .sdf-val{font-size:12.5px;color:var(--text-secondary);background:var(--cage-light);border-radius:6px;padding:7px 10px;min-height:34px;line-height:1.45;word-break:break-word;}
-  .sdf-val.tobe-val{background:#dcf4e3;border:1px solid #bbf7d0;}
+  .sdf-val.tobe-val{background:#f0fdf4;border:1px solid #bbf7d0;}
   .sdf-val.improv-val{background:#fff8e6;border:1px solid #fcd34d;}
   .sdf-val[contenteditable="true"]{outline:2px dashed var(--edit-border);cursor:text;}
   .sdf-val[contenteditable="true"]:focus{outline:2px solid var(--edit-color);background:white;}
@@ -377,7 +377,7 @@
   .role-duties{padding:0 20px 16px;list-style:none;display:flex;flex-direction:column;gap:6px;}
   .role-duties li{font-size:13px;color:var(--text-secondary);display:flex;gap:8px;align-items:flex-start;}
   .role-duties li::before{content:'›';color:var(--cage-accent);font-weight:700;flex-shrink:0;}
-  .role-green .role-card-head{background:#e0f5ed;}.role-green .role-avatar{background:rgba(0,168,107,.15);}
+  .role-green .role-card-head{background:#f0faf5;}.role-green .role-avatar{background:rgba(0,168,107,.15);}
   .role-blue .role-card-head{background:#f0f5ff;}.role-blue .role-avatar{background:rgba(0,51,102,.12);}
   .role-gold .role-card-head{background:#fffbf0;}.role-gold .role-avatar{background:rgba(232,160,32,.15);}
   .role-purple .role-card-head{background:#faf0ff;}.role-purple .role-avatar{background:rgba(147,51,234,.12);}
@@ -492,7 +492,7 @@
   .delay-1{animation-delay:.08s;}.delay-2{animation-delay:.16s;}
 
   @media(max-width:768px){
-    /* removed duplicate .main padding:16px; (conflicts with main definition above) */
+    .main{padding:16px;}
     .overview-grid,.two-col,.role-grid,.indicator-grid,.sigla-grid{grid-template-columns:repeat(2,1fr);}
     .overview-grid .metric-card:last-child{grid-column:1/-1;}
     .pop-switcher{padding:0 16px;}
@@ -508,7 +508,7 @@
   /* Upload area */
   .bpmn-upload-area{padding:40px 0;}
   .bpmn-upload-inner{border:2px dashed var(--cage-border);border-radius:var(--radius);background:white;padding:48px 32px;text-align:center;transition:all .25s;cursor:default;}
-  .bpmn-upload-inner.dragover{border-color:var(--cage-accent);background:#e0f5ed;box-shadow:0 0 0 4px rgba(0,168,107,.1);}
+  .bpmn-upload-inner.dragover{border-color:var(--cage-accent);background:#f0faf5;box-shadow:0 0 0 4px rgba(0,168,107,.1);}
   .bpmn-upload-icon{font-size:48px;margin-bottom:16px;line-height:1;}
   .bpmn-upload-title{font-family:'DM Serif Display',serif;font-size:22px;color:var(--cage-blue);margin-bottom:6px;}
   .bpmn-upload-sub{font-size:14px;color:var(--text-secondary);}
@@ -521,10 +521,10 @@
   .bpmn-file-icon{font-size:16px;}
   .bpmn-file-name{font-size:13px;font-weight:600;color:white;font-family:'JetBrains Mono',monospace;}
   .bpmn-toolbar-actions{display:flex;align-items:center;gap:6px;}
-  .bpmn-tool-btn{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#1e293b;transition:all .15s;white-space:nowrap;}
+  .bpmn-tool-btn{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:white;transition:all .15s;white-space:nowrap;}
   .bpmn-tool-btn:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.4);}
-  .bpmn-tool-danger{border-color:#000;background:#000;color:#FFD600;}
-  .bpmn-tool-danger:hover{background:#222;}
+  .bpmn-tool-danger{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.15);color:#fca5a5;}
+  .bpmn-tool-danger:hover{background:rgba(239,68,68,.3);}
   .bpmn-zoom-label{font-size:12px;color:rgba(255,255,255,.7);min-width:40px;text-align:center;font-family:'JetBrains Mono',monospace;}
   .bpmn-divider{width:1px;height:20px;background:rgba(255,255,255,.2);margin:0 4px;}
 
@@ -567,19 +567,19 @@
   .npop-methods{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px;}
   .npop-method{border:2px solid var(--cage-border);border-radius:12px;padding:20px 18px;cursor:pointer;transition:all .2s;text-align:center;}
   .npop-method:hover,.npop-method.selected{border-color:var(--cage-mid);box-shadow:0 4px 16px rgba(27,48,34,.12);}
-  .npop-method.selected{border-color:var(--cage-accent);background:#e0f5ed;}
+  .npop-method.selected{border-color:var(--cage-accent);background:#f0faf5;}
   .npop-method-icon{font-size:32px;margin-bottom:10px;}
   .npop-method-name{font-size:14px;font-weight:700;color:var(--cage-blue);margin-bottom:4px;}
   .npop-method-desc{font-size:12px;color:var(--text-muted);line-height:1.4;}
 
   /* Upload zone inside modal */
   .npop-upload-zone{border:2px dashed var(--cage-border);border-radius:10px;padding:32px 20px;text-align:center;background:var(--cage-light);margin:16px 0;transition:all .2s;cursor:pointer;}
-  .npop-upload-zone.dragover{border-color:var(--cage-accent);background:#e0f5ed;}
+  .npop-upload-zone.dragover{border-color:var(--cage-accent);background:#f0faf5;}
   .npop-upload-zone:hover{border-color:var(--cage-mid);}
   .npop-upload-icon{font-size:36px;margin-bottom:10px;}
   .npop-upload-title{font-size:14px;font-weight:600;color:var(--cage-blue);margin-bottom:4px;}
   .npop-upload-hint{font-size:11.5px;color:var(--text-muted);}
-  .npop-file-chosen{display:none;align-items:center;gap:10px;padding:12px 16px;background:#e0f5ed;border:1px solid #a7f3d0;border-radius:8px;margin:12px 0;}
+  .npop-file-chosen{display:none;align-items:center;gap:10px;padding:12px 16px;background:#f0faf5;border:1px solid #a7f3d0;border-radius:8px;margin:12px 0;}
   .npop-file-chosen.show{display:flex;}
 
   /* Manual form */
@@ -604,7 +604,7 @@
   .risk-matrix{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
   .risk-card{border-radius:10px;padding:14px 16px;border-left:4px solid;position:relative;}
   .risk-card.risco{border-left-color:#ef4444;background:#fff5f5;}
-  .risk-card.oportunidade{border-left-color:#10b981;background:#e0f5ed;}
+  .risk-card.oportunidade{border-left-color:#10b981;background:#f0faf5;}
   .risk-score{font-size:22px;font-weight:800;font-family:"JetBrains Mono",monospace;}
   .risk-score.critico{color:#7c1d1d;} .risk-score.alto{color:#dc2626;} .risk-score.medio{color:#f59e0b;} .risk-score.baixo{color:#16a34a;}
   .risk-level-badge{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;opacity:.85;}
@@ -618,9 +618,9 @@
   .treat-badge{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;background:var(--cage-light);color:var(--cage-blue);}
 
   /* ── VERSIONAMENTO ───────────────────────── */
-  .ver-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;font-family:"JetBrains Mono",monospace;background:#000;color:#FFD600;border:1px solid #FFD600;cursor:pointer;transition:background .15s;}
-  .ver-badge:hover{background:#222;}
-  .ver-badge.viewing-old{background:#FFD600;color:#000;border-color:#b45309;}
+  .ver-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;font-family:"JetBrains Mono",monospace;background:rgba(0,168,107,.15);color:#00a86b;border:1px solid rgba(0,168,107,.25);cursor:pointer;transition:background .15s;}
+  .ver-badge:hover{background:rgba(0,168,107,.28);}
+  .ver-badge.viewing-old{background:rgba(245,158,11,.15);color:#d97706;border-color:rgba(245,158,11,.3);}
   .version-bar{position:sticky;top:0;z-index:30;padding:6px 20px;font-size:12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(0,0,0,.06);}
   .version-ro-bar{background:linear-gradient(135deg,#fef3c7,#fffbeb);color:#92400e;}
   .version-inherit-bar{background:linear-gradient(135deg,#e0f2fe,#f0f9ff);color:#0369a1;}
@@ -709,7 +709,7 @@
   .auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--cage-border);}
   .auth-email-row{display:flex;gap:8px;}
   .auth-status{font-size:12px;color:var(--text-muted);margin-top:12px;min-height:18px;}
-  .user-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border-radius:20px;padding:4px 12px 4px 4px;font-size:12px;color:#1e293b;}
+  .user-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border-radius:20px;padding:4px 12px 4px 4px;font-size:12px;color:white;}
   .user-avatar{width:26px;height:26px;border-radius:50%;background:var(--cage-accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;}
   .sync-indicator{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:4px;}
   .sync-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;}
@@ -724,7 +724,7 @@
   .backup-modal-body { display:flex; flex-direction:column; gap:16px; }
   .backup-zone { border:2px dashed var(--cage-border); border-radius:10px; padding:24px;
     text-align:center; cursor:pointer; transition:all .2s; background:var(--cage-light); }
-  .backup-zone:hover { border-color:var(--cage-accent); background:#e0f5ed; }
+  .backup-zone:hover { border-color:var(--cage-accent); background:#f0faf5; }
   .backup-zone input[type=file] { display:none; }
   .backup-zone-icon { font-size:32px; margin-bottom:8px; }
   .backup-zone-label { font-size:14px; font-weight:600; color:var(--cage-blue); margin-bottom:4px; }
@@ -738,13 +738,13 @@
   /* ── QUADRO DE ESBOÇO (Excalidraw) ───────────────────────── */
   #quadro-module { display:none; }
   .quadro-toolbar { background:var(--cage-blue); padding:10px 20px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-bottom:2px solid var(--cage-accent); }
-  .q-btn { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08); color:#1e293b; transition:all .15s; white-space:nowrap; }
-  .q-btn:hover { background:rgba(255,255,255,.18); color:#1e293b; }
+  .q-btn { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08); color:rgba(255,255,255,.8); transition:all .15s; white-space:nowrap; }
+  .q-btn:hover { background:rgba(255,255,255,.18); color:white; }
 
   /* ── BUSCA GLOBAL ────────────────────────────────────────── */
   .search-input-wrap { position:relative; display:flex; align-items:center; }
   .search-input { background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.15);
-    border-radius:20px; color:white; background:#000; font-size:12px; padding:6px 14px 6px 32px;
+    border-radius:20px; color:white; font-size:12px; padding:6px 14px 6px 32px;
     width:180px; outline:none; transition:all .2s; font-family:inherit; }
   .search-input::placeholder { color:rgba(255,255,255,.4); }
   .search-input:focus { background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.4); width:240px; }
@@ -789,6 +789,14 @@
   .pat-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
   .pat-kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:20px; }
   .pat-kpi-card { background:white; border-radius:10px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .pat-filter-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .pat-filter-btn { padding:6px 16px; border-radius:20px; border:1.5px solid var(--cage-border); background:white; font-size:12px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:all .15s; }
+  .pat-filter-btn:hover { border-color:var(--cage-accent); color:var(--cage-accent); }
+  .pat-filter-btn.active { background:var(--cage-blue); border-color:var(--cage-blue); color:white; }
+  .pat-card { background:white; border-radius:12px; padding:18px 20px; margin-bottom:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); border:1px solid var(--cage-border); transition:box-shadow .2s; }
+  .pat-card:hover { box-shadow:0 4px 20px rgba(0,0,0,.12); }
+  .pat-card-head { display:flex; align-items:flex-start; gap:12px; margin-bottom:10px; }
+  .pat-card-meta { display:flex; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--text-muted); margin-bottom:10px; }
   .pat-progress-row { display:flex; align-items:center; gap:10px; }
   .pat-progress-bar-bg { flex:1; height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; }
   .pat-progress-bar-fill { height:100%; border-radius:3px; transition:width .4s; }
@@ -822,8 +830,8 @@
   .sidebar-toggle.shifted{left:260px;}
   .sidebar-head{padding:16px 16px 10px;border-bottom:1px solid rgba(255,255,255,.08);}
   .sidebar-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:10px;}
-  .sidebar-new-btn{width:100%;padding:8px 12px;background:#FFD600;color:#000;border:1.5px solid #b45309;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
-  .sidebar-new-btn:hover{background:#ffe066;}
+  .sidebar-new-btn{width:100%;padding:8px 12px;background:rgba(251,191,36,.15);color:#fcd34d;border:1.5px solid rgba(251,191,36,.3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
+  .sidebar-new-btn:hover{background:rgba(251,191,36,.25);}
   .sidebar-pat-btn{width:100%;margin-top:6px;padding:8px 12px;background:rgba(0,51,102,.25);color:#a8c4e8;border:1.5px solid rgba(0,51,102,.4);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;}
   .sidebar-pat-btn:hover{background:rgba(0,51,102,.40);}
   .sidebar-list{flex:1;overflow-y:auto;padding:8px 0;}
@@ -835,19 +843,21 @@
   .sidebar-macro-label{display:flex;align-items:center;gap:6px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);margin-top:4px;}
   .sidebar-macro-label:first-child{border-top:none;margin-top:0;}
   .sidebar-macro-icon{font-size:12px;}
-  .sidebar-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:12px;font-weight:500;color:#fff;cursor:pointer;border-left:3px solid transparent;transition:all .15s;background:#222;}
-  .sidebar-item:hover{background:#000;color:#FFD600;}
-  .sidebar-item.active{background:#FFD600;color:#000;border-left-color:var(--cage-accent);}
+  .sidebar-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:12px;font-weight:500;color:rgba(255,255,255,.6);cursor:pointer;border-left:3px solid transparent;transition:all .15s;}
+  .sidebar-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);}
+  .sidebar-item.active{background:rgba(255,255,255,.1);color:white;border-left-color:var(--cage-accent);}
   .sidebar-item-icon{font-size:14px;flex-shrink:0;}
   .sidebar-item-name{flex:1;line-height:1.3;}
-  .sidebar-item-badge{font-size:9px;padding:1px 5px;border-radius:8px;background:#000;color:#FFD600;}
+  .sidebar-item-badge{font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);}
 
   /* ── SIDEBAR is always overlay — never pushes content ──────────── */
-  /* removed duplicate .main transition:none; */
+  .main{transition:none;}
 
   /* ── PLANO DE TRABALHO ────────────────────────── */
-  /* removed duplicate .pat-module and .pat-module.active */
-  /* removed duplicate .pat-header-row and .pat-kpi-row */
+  .pat-module{display:none;}
+  .pat-module.active{display:block;}
+  .pat-header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+  .pat-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
   .pat-kpi{background:white;border-radius:10px;padding:16px 18px;border-left:4px solid;box-shadow:0 1px 4px rgba(27,48,34,.07);}
   .pat-kpi.total{border-left-color:var(--cage-blue);}
   .pat-kpi.andamento{border-left-color:#3b82f6;}
@@ -931,11 +941,11 @@
   .audit-badge-planejada{background:#eff6ff;color:#1d4ed8;}
   .audit-badge-em_execucao{background:#fef9c3;color:#a16207;}
   .audit-badge-concluida{background:#dcfce7;color:#15803d;}
-  .audit-badge-cancelada{background:#f1f5f9;color:#334155;}
-  .audit-badge-aberta{background:#fee2e2;color:#b91c1c;}
+  .audit-badge-cancelada{background:#f1f5f9;color:#94a3b8;}
+  .audit-badge-aberta{background:#fee2e2;color:#dc2626;}
   .audit-badge-em_tratamento{background:#fef9c3;color:#a16207;}
   .audit-badge-fechada{background:#dcfce7;color:#15803d;}
-  .audit-badge-pendente{background:#f1f5f9;color:#334155;}
+  .audit-badge-pendente{background:#f1f5f9;color:#64748b;}
   .audit-badge-em_andamento{background:#fef9c3;color:#a16207;}
   .audit-nc-filter{padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600;border:1.5px solid #e2e8f0;background:white;cursor:pointer;color:#64748b;transition:all .15s;}
   .audit-nc-filter.active{background:#1B3022;color:white;border-color:#1B3022;}
@@ -1174,7 +1184,7 @@
 /* ── Flow Designer: modo texto/Mermaid ────────────────────────── */
 #fd-left-panel { width:260px; flex-shrink:0; display:flex; flex-direction:column; border-right:1px solid var(--cage-border); transition:width .2s; }
 #fd-left-panel.collapsed { width:0 !important; overflow:hidden; border-right:none; }
-#fd-collapse-btn { padding:4px 8px; background:#000; color:#FFD600; border:1px solid #FFD600; border-radius:5px; font-size:11px; cursor:pointer; flex-shrink:0; }
+#fd-collapse-btn { padding:4px 8px; background:rgba(255,255,255,.1); color:white; border:1px solid rgba(255,255,255,.2); border-radius:5px; font-size:11px; cursor:pointer; flex-shrink:0; }
 /* ── Flow Designer: BPMN 2.0 (bpmn-js) ───────────────────────── */
 #fd-module { background:#f0f2f7; }
 #fd-mode-bar { display:flex; gap:0; background:#0d2e52; border-bottom:1px solid rgba(255,255,255,.1); padding:0 14px; }
@@ -1206,7 +1216,7 @@
   .indcage-card-codigo { font-size:11px; font-weight:700; color:#607070; text-transform:uppercase; letter-spacing:.06em; }
   .indcage-card-titulo { font-size:14px; font-weight:600; color:var(--cage-blue); line-height:1.35; margin-top:2px; }
   .indcage-card-nivel { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-top:6px; }
-  .nivel-atividade { background:#dcf4e3; color:#15803d; border:1px solid #bbf7d0; }
+  .nivel-atividade { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
   .nivel-processo { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
   .nivel-macroprocesso { background:#fdf4ff; color:#7e22ce; border:1px solid #e9d5ff; }
   .nivel-acao { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
@@ -1270,7 +1280,7 @@
   .pct-verde { background:#dcfce7; color:#15803d; }
   .pct-amarelo { background:#fef9c3; color:#a16207; }
   .pct-vermelho { background:#fee2e2; color:#b91c1c; }
-  .pct-cinza { background:#f1f5f9; color:#334155; }
+  .pct-cinza { background:#f1f5f9; color:#64748b; }
 
   /* Indicator CAGE modal */
   #indcage-modal .gmod-body { display:flex; flex-direction:column; gap:14px; }
@@ -1290,7 +1300,7 @@
   .indrel-item-meta { font-size:11px; color:#64748b; margin-top:3px; display:flex; gap:12px; flex-wrap:wrap; }
   .indrel-item-meta span { display:flex; align-items:center; gap:3px; }
   .indrel-has-data { background:#dcfce7; color:#15803d; font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; flex-shrink:0; }
-  .indrel-no-data { background:#f1f5f9; color:#334155; font-size:10px; font-weight:600; padding:2px 7px; border-radius:6px; flex-shrink:0; }
+  .indrel-no-data { background:#f1f5f9; color:#94a3b8; font-size:10px; font-weight:600; padding:2px 7px; border-radius:6px; flex-shrink:0; }
 
   /* ── ANÁLISE INTELIGENTE ── */
   #ai-module { padding: 32px 32px 60px; max-width: 960px; margin: 0 auto; box-sizing: border-box; }
@@ -1298,7 +1308,7 @@
   .ai-header-icon { width:52px; height:52px; border-radius:14px; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
   .ai-header-title { font-family:'DM Serif Display',serif; font-size:22px; color:#1B3022; margin:0 0 4px; }
   .ai-header-sub { font-size:13px; color:#64748b; }
-  .ai-run-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 22px; background:#000; color:#FFD600; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
+  .ai-run-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 22px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
   .ai-run-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(99,102,241,.35); }
   .ai-run-btn:disabled { opacity:.55; cursor:not-allowed; transform:none; }
   .ai-spinner { display:none; flex-direction:column; align-items:center; gap:16px; padding:48px 0; color:#6366f1; }
@@ -1309,7 +1319,7 @@
   .ai-card { border-radius:12px; border:1.5px solid; padding:18px; }
   .ai-card-title { font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; display:flex; align-items:center; gap:7px; }
   .ai-card-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
-  .ai-card-list li { font-size:13px; color:#FFD600; line-height:1.5; padding:8px 10px; border-radius:7px; background:#000; }
+  .ai-card-list li { font-size:13px; color:#1e293b; line-height:1.5; padding:8px 10px; border-radius:7px; background:rgba(0,0,0,.04); }
   .ai-card-list li::before { content:"•"; margin-right:6px; font-weight:900; }
   .ai-card-empty { font-size:12px; color:#94a3b8; font-style:italic; }
   .ai-card.gargalos   { border-color:#fca5a5; background:#fff5f5; } .ai-card.gargalos   .ai-card-title { color:#dc2626; }
@@ -1317,7 +1327,7 @@
   .ai-card.retrabalhos { border-color:#93c5fd; background:#eff6ff; } .ai-card.retrabalhos .ai-card-title { color:#2563eb; }
   .ai-card.pontos-cegos { border-color:#c4b5fd; background:#f5f3ff; } .ai-card.pontos-cegos .ai-card-title { color:#7c3aed; }
   .ai-card.riscos      { border-color:#f87171; background:#fef2f2; } .ai-card.riscos      .ai-card-title { color:#b91c1c; }
-  .ai-card.oportunidades { border-color:#6ee7b7; background:#dcf4e3; } .ai-card.oportunidades .ai-card-title { color:#059669; }
+  .ai-card.oportunidades { border-color:#6ee7b7; background:#f0fdf4; } .ai-card.oportunidades .ai-card-title { color:#059669; }
   .ai-summary { background:linear-gradient(135deg,#eef2ff,#f5f3ff); border-radius:12px; padding:18px 20px; margin-top:20px; font-size:13px; color:#1e293b; line-height:1.7; border:1.5px solid #c4b5fd; }
   .ai-summary strong { color:#6366f1; }
   .ai-no-data { text-align:center; padding:48px 0; color:#94a3b8; font-size:14px; }
@@ -1426,7 +1436,7 @@
         </div>
       </div>
       <div class="header-divider-line"></div>
-      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início"><strong>SIGA</strong></div>
+      <div class="header-title" onclick="showHome()" style="cursor:pointer;" title="Ir para o início" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><strong>SIGA</strong></div>
     </div>
     <div class="header-meta">
       <button onclick="showHome()" title="Voltar à página inicial" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.45);background:none;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.1);transition:color .2s,border-color .2s;white-space:nowrap;" onmouseover="this.style.color='rgba(255,255,255,.85)';this.style.borderColor='rgba(255,255,255,.25)'" onmouseout="this.style.color='rgba(255,255,255,.45)';this.style.borderColor='rgba(255,255,255,.1)'">
@@ -1471,23 +1481,23 @@
 
 <!-- SIDEBAR -->
 <!-- Backdrop escuro ao abrir sidebar no mobile — clique fecha -->
-<div id="sidebar-backdrop" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:89;"></div>
+<div id="sidebar-backdrop" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:89;" role="presentation"></div>
 
 <div class="sidebar" id="sidebar">
   <div class="sidebar-head">
     <div class="sidebar-title">Gestão EPP</div>
     <div id="sidebar-nav-btns">
-      <button data-mod="home"        data-sortkey="home"        class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:#047857;color:#fff;border-color:#03543f;">🏠 Página Inicial</button>
-      <button data-mod="repo"        data-sortkey="repo"        class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:#b91c1c;color:#fff;border-color:#7f1d1d;">📚 Documentos e Manuais</button>
-      <button data-mod="drops"       data-sortkey="drops"       class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:#0369a1;color:#fff;border-color:#0c4a6e;">💧 Drops de Conhecimento</button>
-      <button data-mod="audit"       data-sortkey="audit"       class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:#991b1b;color:#fff;border-color:#7f1d1d;">🔍 Auditoria de Processos</button>
-      <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:#1e40af;color:#fff;border-color:#1e3a8a;">🏢 Gestão EPP</button>
-      <button data-mod="bi"          data-sortkey="bi"          class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:#b45309;color:#fff;border-color:#78350f;">📊 Cadeia de Valor e Mapa Estratégico</button>
-      <button data-mod="quadro"      data-sortkey="quadro"      class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:#065f46;color:#fff;border-color:#064e3b;">🗒 Quadro de Esboço</button>
-      <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:#3730a3;color:#fff;border-color:#312e81;">🏛 Organograma CAGE</button>
-      <button data-mod="simulator"   data-sortkey="simulator"   class="sidebar-pat-btn" onclick="closeSidebar();showSimulatorModule();" style="margin-top:4px;background:#065f46;color:#fff;border-color:#047857;">🧪 Simulador de Processos</button>
-      <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:#eab308;color:#1e293b;border-color:#b45309;">📈 Indicadores CAGE</button>
-      <button data-mod="organograma" data-sortkey="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:#312e81;color:#fff;border-color:#3730a3;">🏛 Organograma CAGE</button>
+      <button data-mod="home"        data-sortkey="home"        class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:rgba(0,168,107,.15);color:#6ee7b7;border-color:rgba(0,168,107,.3);">🏠 Página Inicial</button>
+      <button data-mod="repo"        data-sortkey="repo"        class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:rgba(225,29,72,.12);color:#fda4af;border-color:rgba(225,29,72,.3);">📚 Documentos e Manuais</button>
+      <button data-mod="drops"       data-sortkey="drops"       class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">💧 Drops de Conhecimento</button>
+      <button data-mod="audit"       data-sortkey="audit"       class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:rgba(220,38,38,.12);color:#fca5a5;border-color:rgba(220,38,38,.3);">🔍 Auditoria de Processos</button>
+      <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.3);">🏢 Gestão EPP</button>
+      <button data-mod="bi"          data-sortkey="bi"          class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-top:4px;background:rgba(234,179,8,.12);color:#fde047;border-color:rgba(234,179,8,.25);">📊 Cadeia de Valor e Mapa Estratégico</button>
+      <button data-mod="quadro"      data-sortkey="quadro"      class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:rgba(16,185,129,.12);color:#6ee7b7;border-color:rgba(16,185,129,.25);">🗒 Quadro de Esboço</button>
+      <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25);">🏛 Arquitetura de Processos</button>
+      <button data-mod="simulator"   data-sortkey="simulator"   class="sidebar-pat-btn" onclick="closeSidebar();showSimulatorModule();" style="margin-top:4px;background:rgba(6,95,70,.12);color:#6ee7b7;border-color:rgba(6,95,70,.28);">🧪 Simulador de Processos</button>
+      <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:rgba(232,160,32,.12);color:#fcd34d;border-color:rgba(232,160,32,.3);">📈 Indicadores CAGE</button>
+      <button data-mod="organograma" data-sortkey="organograma" class="sidebar-pat-btn" onclick="closeSidebar();showOrganogramaModule();" style="margin-top:4px;background:rgba(99,102,241,.12);color:#c7d2fe;border-color:rgba(99,102,241,.3);">🏛 Organograma CAGE</button>
       <button data-mod="cockpit"     data-sortkey="cockpit"     class="sidebar-pat-btn" onclick="closeSidebar();showCockpitModule();" style="margin-top:4px;background:rgba(14,165,233,.12);color:#7dd3fc;border-color:rgba(14,165,233,.3);">🎯 Cockpit de Gestão</button>
     </div>
   </div>
@@ -1506,22 +1516,22 @@
 <!-- NAV TABS -->
 <nav class="nav-tabs">
   <div class="nav-tabs-inner" id="nav-tabs-inner">
-    <div class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)">🏠 Visão Geral</div>
-    <div class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)">⚙️ Fluxo</div>
-    <div class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)">👥 Responsabilidades</div>
-    <div class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)">📊 Indicadores</div>
-    <div class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)">❓ FAQ</div>
-    <div class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)">📜 Normas &amp; Revisões</div>
-    <div class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)">⚠️ Riscos</div>
-    <div class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)">✅ Plano de Ação</div>
-    <div class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)">🤝 Reuniões</div>
-    <div class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)">📋 Acompanhamento</div>
-    <div class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)">☑️ Checklists</div>
-    <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn">🖼 Imagem BPMN</div>
-    <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd">🎨 Desenhar Fluxo</div>
-    <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)">📊 Maturidade</div>
-    <div class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai">🤖 Análise Inteligente</div>
-    <div class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio">📄 Relatório IA</div>
+    <div class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🏠 Visão Geral</div>
+    <div class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⚙️ Fluxo</div>
+    <div class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">👥 Responsabilidades</div>
+    <div class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📊 Indicadores</div>
+    <div class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">❓ FAQ</div>
+    <div class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📜 Normas &amp; Revisões</div>
+    <div class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⚠️ Riscos</div>
+    <div class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">✅ Plano de Ação</div>
+    <div class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🤝 Reuniões</div>
+    <div class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📋 Acompanhamento</div>
+    <div class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">☑️ Checklists</div>
+    <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🖼 Imagem BPMN</div>
+    <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🎨 Desenhar Fluxo</div>
+    <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📊 Maturidade</div>
+    <div class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🤖 Análise Inteligente</div>
+    <div class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📄 Relatório IA</div>
   </div>
 </nav>
 
@@ -1550,7 +1560,7 @@
     </div>
     <!-- Logos -->
     <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
-      <div id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()">
+      <div id="epp-logo-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para configurar o logo" onclick="eppLogoClick()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <img id="epp-logo-img" src="" alt="Logo EPP" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
         <div id="epp-logo-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
           <span style="font-size:22px;">🖼</span>
@@ -1558,13 +1568,13 @@
         </div>
         <div id="epp-logo-editor-hint" style="display:none;position:absolute;top:4px;right:6px;font-size:10px;color:#94a3b8;">✎</div>
       </div>
-      <div id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()">
+      <div id="logo2-block" style="display:flex;align-items:center;background:white;border-radius:14px;padding:10px 16px;box-shadow:0 2px 12px rgba(0,0,0,.07);cursor:pointer;position:relative;" title="Clique para fazer upload do segundo logo" onclick="logo2Click()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <img id="logo2-img" src="" alt="Segundo Logo" style="max-height:60px;max-width:220px;object-fit:contain;display:none;">
         <div id="logo2-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px;color:#94a3b8;font-size:12px;text-align:center;gap:4px;">
           <span style="font-size:22px;">📤</span>
           <span>Segundo logo<br><span style="font-size:10px;">(clique para upload)</span></span>
         </div>
-        <div id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#333;background:#fff;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo" tabindex="0" aria-label="Remover logo" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();logo2Remove();}">✕</div>
+        <div id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#94a3b8;background:#f1f5f9;border-radius:4px;padding:1px 5px;cursor:pointer;" title="Remover logo" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">✕</div>
         <input type="file" id="logo2-file-input" accept="image/*" style="display:none;" onchange="logo2FileSelected(this.files[0])">
       </div>
     </div>
@@ -1573,82 +1583,82 @@
   <!-- ══ MÓDULOS ══ -->
   <div id="home-block-processos" style="display:block;margin-bottom:40px;">
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
-      <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;">
-        <div class="home-card-icon" style="background:#e0f5ed;color:#14532d;">📋</div>
-        <div class="home-card-title" contenteditable="false" tabindex="0" role="button" aria-label="Procedimentos Operacionais (clique para acessar)" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation(); else this.parentElement.click();" onkeydown="if((event.key==='Enter'||event.key===' ')&&!document.body.classList.contains('edit-mode')){event.preventDefault();this.parentElement.click();}" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Procedimentos Operacionais</div>
-        <div class="home-card-desc" contenteditable="false" tabindex="0" role="region" aria-label="Descrição: Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas." onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation();" onkeydown="if((event.key==='Enter'||event.key===' ')&&!document.body.classList.contains('edit-mode')){event.preventDefault();this.parentElement.click();}" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
+      <div class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#f0faf5;color:#00a86b;">📋</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Procedimentos Operacionais</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
         <div class="home-card-footer" id="home-pops-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;">
-        <div class="home-card-icon" style="background:#f5f3ff;color:#4c1d95;">🏛</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Arquitetura de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
+      <div class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#f5f3ff;color:#8b5cf6;">🏛</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Arquitetura de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
         <div class="home-card-footer" id="home-arq-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;">
-        <div class="home-card-icon" style="background:#fffbeb;color:#b45309;">📊</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Cadeia de Valor e Mapa Estratégico</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
+      <div class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#fffbeb;color:#f59e0b;">📊</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Cadeia de Valor e Mapa Estratégico</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
         <div class="home-card-footer">Imagens configuráveis</div>
       </div>
-      <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;">
-        <div class="home-card-icon" style="background:#fff1f2;color:#7f1d1d;">🔍</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Auditoria de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
+      <div class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#fff1f2;color:#dc2626;">🔍</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Auditoria de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
         <div class="home-card-footer" id="home-audit-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;">
-        <div class="home-card-icon" style="background:#fffbeb;color:#92400e;">📈</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Indicadores CAGE</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
+      <div class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#fffbeb;color:#e8a020;">📈</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Indicadores CAGE</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;">
-        <div class="home-card-icon" style="background:#eef2ff;color:#1e40af;">🏗️</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Modelador BPMN 2.0</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
+      <div class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#eef2ff;color:#6366f1;">🏗️</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Modelador BPMN 2.0</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
         <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
       </div>
-      <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;">
-        <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🗒</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Quadro de Esboço</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
+      <div class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#ecfdf5;color:#10b981;">🗒</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Quadro de Esboço</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
         <div class="home-card-footer">Canvas interativo</div>
       </div>
-      <div class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;">
+      <div class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <div class="home-card-icon" style="background:#ecfdf5;color:#065f46;">🧪</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simulador de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Simulador de Processos</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
         <div class="home-card-footer">Motor estocástico e dashboard</div>
       </div>
-      <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;">
-        <div class="home-card-icon" style="background:#eff6ff;color:#1e3a8a;">🏢</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Gestão EPP</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
+      <div class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#eff6ff;color:#3b82f6;">🏢</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Gestão EPP</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </div>
-      <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;">
-        <div class="home-card-icon" style="background:#f8fafc;color:#334155;">🔍</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Busca Global</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
+      <div class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#f8fafc;color:#64748b;">🔍</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Busca Global</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
         <div class="home-card-footer">Busca em tempo real</div>
       </div>
-      <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;">
-        <div class="home-card-icon" style="background:#fff1f2;color:#831843;">📚</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Documentos e Manuais</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
+      <div class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#fff1f2;color:#e11d48;">📚</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Documentos e Manuais</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
         <div class="home-card-footer" id="home-repo-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;">
-        <div class="home-card-icon" style="background:#f0f9ff;color:#0369a1;">💧</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Drops de Conhecimento</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
+      <div class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#f0f9ff;color:#0ea5e9;">💧</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Drops de Conhecimento</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
         <div class="home-card-footer" id="home-drops-count">—</div>
       </div>
-      <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;">
-        <div class="home-card-icon" style="background:#fdf2f8;color:#a21caf;">💡</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Caixinha de Ideias</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
+      <div class="home-card" data-sortkey="ideias" onclick="window.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
+        <div class="home-card-icon" style="background:#fdf2f8;color:#ec4899;">💡</div>
+        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Caixinha de Ideias</div>
+        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
         <div class="home-card-footer">Formulário Microsoft Forms</div>
       </div>
     </div>
@@ -2487,7 +2497,7 @@
         <button onclick="fdExportPNG()" title="Exportar PNG" style="padding:4px 9px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:11px;cursor:pointer;">⬇ PNG</button>
         <div style="width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 2px;"></div>
         <button onclick="fdZoom(-0.15)" title="Diminuir zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">−</button>
-        <span id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;">100%</span>
+        <span id="fd-zoom-label" onclick="fdZoom(0)" title="Clique para resetar zoom" style="font-size:11px;color:rgba(255,255,255,.7);min-width:34px;text-align:center;cursor:pointer;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">100%</span>
         <button onclick="fdZoom(+0.15)" title="Aumentar zoom" style="padding:4px 8px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2);border-radius:5px;font-size:14px;cursor:pointer;line-height:1;">+</button>
         <button onclick="fdSave()" title="Salvar (Ctrl+S)" style="padding:4px 9px;background:rgba(0,168,107,.3);color:#4ade80;border:1px solid rgba(0,168,107,.5);border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;margin-left:auto;">☁️ Salvar</button>
       </div>
@@ -2678,6 +2688,38 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MÓDULO: ANÁLISE INTELIGENTE (Copilot)                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="ai-module" style="display:none;">
+  <div id="ai-module-inner">
+    <div class="ai-header">
+      <div class="ai-header-icon">🤖</div>
+      <div>
+        <div class="ai-header-title">Análise Inteligente do Processo</div>
+        <div class="ai-header-sub" id="ai-pop-name">Selecione um POP para analisar</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="ai-run-btn" id="ai-run-btn" onclick="runAiAnalysis()">✨ Analisar Fluxo com IA</button>
+      <span style="font-size:12px;color:#94a3b8;">Powered by GitHub Copilot · Análise baseada nas etapas e ações do processo</span>
+    </div>
+
+    <!-- Spinner -->
+    <div class="ai-spinner" id="ai-spinner">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="16" stroke="#6366f1" stroke-width="4" stroke-dasharray="80 25" stroke-linecap="round"/>
+      </svg>
+      <div style="font-size:14px;font-weight:600;color:#6366f1;">Analisando o processo com IA…</div>
+      <div style="font-size:12px;color:#94a3b8;">Isso pode levar alguns segundos</div>
+    </div>
+
+    <!-- Resultado -->
+    <div id="ai-output"></div>
+  </div>
+</div>
+
+
 <!-- ═══════════════════════════════════════════ -->
 <!-- NOVO POP WIZARD MODAL                       -->
 <!-- ═══════════════════════════════════════════ -->
@@ -2693,12 +2735,12 @@
     <div class="npop-body">
       <div class="npop-step active" id="npop-s1">
         <div class="npop-methods" style="display:block;">
-          <div class="npop-method selected" id="npop-m-manual" onclick="selectNpopMethod('manual')">
+          <div class="npop-method selected" id="npop-m-manual" onclick="selectNpopMethod('manual')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="npop-method-icon">✍️</div>
             <div class="npop-method-name">Preenchimento Manual</div>
             <div class="npop-method-desc">Preencha os campos do mapeamento diretamente no sistema.</div>
           </div>
-          <div class="npop-method" id="npop-m-workflow" onclick="selectNpopMethod('workflow')" style="margin-top:8px;">
+          <div class="npop-method" id="npop-m-workflow" onclick="selectNpopMethod('workflow')" style="margin-top:8px;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="npop-method-icon">📝</div>
             <div class="npop-method-name">Importar por POP Word</div>
             <div class="npop-method-desc">Envie o POP em Word e clique em <strong>Criar mapeamento</strong> para abrir o formulário de revisão e edição.</div>
@@ -2708,7 +2750,7 @@
               onclick="document.getElementById('npop-file-input').click()"
               ondragover="event.preventDefault();this.classList.add('dragover')"
               ondragleave="this.classList.remove('dragover')"
-              ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])">
+              ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0])setNpopFile(event.dataTransfer.files[0])" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
               <div class="npop-upload-icon">📄</div>
               <div class="npop-upload-title">Clique ou arraste o POP Word aqui</div>
               <div class="npop-upload-hint">Apenas .doc e .docx</div>
@@ -3030,13 +3072,13 @@
           onmouseover="this.style.borderColor='#e11d48';this.style.background='#fff1f2'"
           onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'"
           ondragover="event.preventDefault();this.style.borderColor='#e11d48'"
-          ondrop="repoHandleDrop(event)">
+          ondrop="repoHandleDrop(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
           <div style="font-size:32px;margin-bottom:8px;">📁</div>
           <div style="font-size:14px;font-weight:600;color:#1B3022;margin-bottom:4px;">Arraste o arquivo ou clique para selecionar</div>
           <div style="font-size:12px;color:#94a3b8;">PDF, Word, PowerPoint, BPMN, JPG, PNG</div>
         </div>
         <input type="file" id="repo-file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.bpmn,.jpg,.jpeg,.png,.gif,.webp" style="display:none" onchange="repoFileSelected(this.files[0])">
-        <div id="repo-file-chosen" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:#e0f5ed;border:1px solid #a7f3d0;border-radius:8px;margin-top:8px;">
+        <div id="repo-file-chosen" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:#f0faf5;border:1px solid #a7f3d0;border-radius:8px;margin-top:8px;">
           <span id="repo-file-icon" style="font-size:20px;">📄</span>
           <span id="repo-file-name" style="font-size:13px;font-weight:600;color:#1B3022;flex:1;"></span>
           <span id="repo-file-size" style="font-size:11px;color:#64748b;"></span>
@@ -3142,7 +3184,7 @@
 </div>
 
 <!-- DROPS: lightbox para imagem de capa -->
-<div id="drops-lightbox" onclick="dropsCloseLightbox()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;">
+<div id="drops-lightbox" onclick="dropsCloseLightbox()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;" role="presentation">
   <img id="drops-lightbox-img" src="" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
 </div>
 
@@ -3505,7 +3547,7 @@
       </div>
 
       <!-- RECOMENDAÇÕES -->
-      <div style="border:1px solid #bbf7d0;border-radius:10px;padding:14px;background:#dcf4e3;">
+      <div style="border:1px solid #bbf7d0;border-radius:10px;padding:14px;background:#f0fdf4;">
         <label for="nc-rec-input" style="font-weight:700;color:#15803d;font-size:13px;display:block;margin-bottom:10px;">💡 Recomendações</label>
         <div id="nc-rec-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;min-height:32px;"></div>
         <div style="display:flex;gap:8px;">
@@ -4147,7 +4189,7 @@
 
     <!-- Painel de configurações do indicador (override manual) -->
     <div id="indcage-cfg-panel" class="indcage-cfg-panel" style="display:none;">
-      <div class="indcage-cfg-header" onclick="indcageCfgToggle()">
+      <div class="indcage-cfg-header" onclick="indcageCfgToggle()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <span class="indcage-cfg-title">⚙️ Configurações do Indicador</span>
         <span id="indcage-cfg-chevron" style="font-size:12px;color:#1e3a7a;transition:transform .2s;">▼</span>
       </div>
@@ -4515,25 +4557,7 @@ function saveToStorage() {
   }
 }
 
-function loadFromStorage() {} // dados vêm exclusivamente do Supabase
-
-// ── harvestEditables — lookup tables e helpers (evita if/else-if longas) ──────
-const _META_FIELD_MAP = {
-  obj:'desc', proc_desc:'desc', entrada_resumo:'input', proc_input:'input',
-  saida_resumo:'output', proc_output:'output', el_nome:'elaborado',
-  proc_elaborado:'elaborado', proc_revisado:'revisado', proc_name:'name', proc_macro:'macro',
-};
-const _STEP_DIRECT_FIELDS = new Set([
-  'title','subtitle','responsible','note','duracao',
-  'sistemas','documentos','pontosMelhoria','observacoes',
-]);
-function _applyRoleField(roles, rMatch, val) {
-  const ri = parseInt(rMatch[1]), type = rMatch[2], di = parseInt(rMatch[3]);
-  if(!roles[ri]) return;
-  if(type === 'n') roles[ri].name = val;
-  else if(type === 't') roles[ri].title = val;
-  else if(type === 'd' && !isNaN(di)) roles[ri].duties[di] = val;
-}
+function loadFromStorage() { return false; } // dados vêm exclusivamente do Supabase
 
 function harvestEditables() {
   // Read contenteditable fields back into DATA
@@ -4541,28 +4565,50 @@ function harvestEditables() {
     const [p, field] = el.dataset.key.split(':');
     if(!p || !field || !DATA[p]) return;
     const val = el.innerText?.trim() || el.textContent?.trim() || '';
+    // Map known fields to DATA structure
     const meta = DATA[p].meta || (DATA[p].meta = {});
-    if(_META_FIELD_MAP[field]) meta[_META_FIELD_MAP[field]] = val;
+    if(field === 'obj' || field === 'proc_desc') meta.desc = val;
+    else if(field === 'entrada_resumo' || field === 'proc_input') meta.input = val;
+    else if(field === 'saida_resumo' || field === 'proc_output') meta.output = val;
+    else if(field === 'el_nome' || field === 'proc_elaborado') meta.elaborado = val;
+    else if(field === 'proc_revisado') meta.revisado = val;
+    else if(field === 'proc_name') meta.name = val;
+    else if(field === 'proc_macro') meta.macro = val;
+    // Roles
     const rMatch = field.match(/^r(\d+)([ntd])(\d*)$/);
-    if(rMatch && DATA[p].roles) _applyRoleField(DATA[p].roles, rMatch, val);
+    if(rMatch && DATA[p].roles) {
+      const ri = parseInt(rMatch[1]), type = rMatch[2], di = parseInt(rMatch[3]);
+      if(DATA[p].roles[ri]) {
+        if(type === 'n') DATA[p].roles[ri].name = val;
+        else if(type === 't') DATA[p].roles[ri].title = val;
+        else if(type === 'd' && !isNaN(di)) DATA[p].roles[ri].duties[di] = val;
+      }
+    }
   });
 
   // Capturar campos de etapas (data-sf) que são persistidos via blur events
   document.querySelectorAll('[data-sf]').forEach(el => {
-    const pp = el.dataset.sp, si = parseInt(el.dataset.si), sf = el.dataset.sf;
+    const pp = el.dataset.sp;
+    const si = parseInt(el.dataset.si);
+    const sf = el.dataset.sf;
     if(!pp || isNaN(si) || !sf || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
     const val = el.innerText?.replace(/^👤\s*/, '').trim() || '';
     const step = DATA[pp].steps[si];
     if(sf.startsWith('tobe_')) {
       if(!step.tobe) step.tobe = {};
       step.tobe[sf.slice(5)] = val;
-    } else if(_STEP_DIRECT_FIELDS.has(sf)) {
-      step[sf] = val;
-    } else if(sf === 'dlabel' && step.decision) {
-      step.decision.label = val;
-    } else if(sf === 'dtext' && step.decision) {
-      step.decision.text = val;
     }
+    else if(sf === 'title')       step.title = val;
+    else if(sf === 'subtitle')    step.subtitle = val;
+    else if(sf === 'responsible') step.responsible = val;
+    else if(sf === 'note')        step.note = val;
+    else if(sf === 'duracao')         step.duracao = val;
+    else if(sf === 'sistemas')        step.sistemas = val;
+    else if(sf === 'documentos')      step.documentos = val;
+    else if(sf === 'pontosMelhoria')  step.pontosMelhoria = val;
+    else if(sf === 'observacoes')     step.observacoes = val;
+    else if(sf === 'dlabel' && step.decision) step.decision.label = val;
+    else if(sf === 'dtext'  && step.decision) step.decision.text  = val;
   });
 
   // Capturar métricas de volume/ciclo
@@ -4571,7 +4617,7 @@ function harvestEditables() {
     if(!m) return;
     const [, p, field] = m;
     if(!DATA[p]?.meta) return;
-    const val = Number.parseFloat(el.textContent?.trim()) || 0;
+    const val = parseFloat(el.textContent?.trim()) || 0;
     const keyMap = {'metric-vol-pre':'volPre','metric-vol-pos':'volPos','metric-ciclo-pre':'cicloPre','metric-ciclo-pos':'cicloPos'};
     if(keyMap[field]) DATA[p].meta[keyMap[field]] = val;
   });
@@ -4579,9 +4625,9 @@ function harvestEditables() {
   // Capturar texto das ações (data-ai) que são persistidos via blur events
   document.querySelectorAll('[data-ai][data-sp]').forEach(el => {
     const pp = el.dataset.sp;
-    const si = Number.parseInt(el.dataset.si);
-    const ai = Number.parseInt(el.dataset.ai);
-    if(!pp || Number.isNaN(si) || Number.isNaN(ai) || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
+    const si = parseInt(el.dataset.si);
+    const ai = parseInt(el.dataset.ai);
+    if(!pp || isNaN(si) || isNaN(ai) || !DATA[pp] || !DATA[pp].steps || !DATA[pp].steps[si]) return;
     const step = DATA[pp].steps[si];
     const isTb = el.dataset.tobe === 'true';
     if(isTb) {
@@ -4675,45 +4721,26 @@ function popDomId(pop) {
   return pop;
 }
 
-// ── switchPop helpers ─────────────────────────────────────────────────────────
-/** Restaura a versão atual do pop anterior caso estivesse em modo de visualização histórica. */
-function _restorePrevPopVersion() {
+function switchPop(pop, tabEl) {
+  _navPush();
+  // Esconder galeria se estiver ativa
+  const gal = document.getElementById('pop-gallery-panel');
+  if(gal) gal.classList.remove('active');
+  // Se estava visualizando versão antiga do pop anterior, restaurar versão atual antes de trocar
   try {
     const prevPrefix = popPrefix(currentPop);
     const prevD = DATA[prevPrefix];
-    if(!prevD || !prevD._viewingVersion) return;
-    const curSnap = prevD._viewBuf;
-    if(curSnap) {
-      VERSIONABLE_FIELDS.forEach(f => { if(curSnap[f] !== undefined) prevD[f] = curSnap[f]; });
-      delete prevD._viewBuf;
+    if(prevD && prevD._viewingVersion) {
+      const curSnap = prevD._viewBuf;
+      if(curSnap) { VERSIONABLE_FIELDS.forEach(f => { if(curSnap[f] !== undefined) prevD[f] = curSnap[f]; }); delete prevD._viewBuf; }
+      delete prevD._viewingVersion;
+      renderVersionBadge(prevPrefix);
     }
-    delete prevD._viewingVersion;
-    renderVersionBadge(prevPrefix);
   } catch(e) { console.warn('[siga]', e); }
-}
-
-/** Dispara todos os renders necessários após a troca de pop. */
-function _renderAfterSwitch(prefix) {
-  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
-  if(currentSection === 'maturidade') try { matRender(prefix); } catch(e) { console.warn('[siga]', e); }
-  _syncNovaVersaoBtn();
-  try { renderFicha(prefix); }       catch(e) { console.warn('[siga]', e); }
-  try { renderSipoc(prefix); }       catch(e) { console.warn('[siga]', e); }
-  try { renderFlowPreview(prefix); } catch(e) { console.warn('[siga]', e); }
-}
-
-function switchPop(pop, tabEl) {
-  _navPush();
-  _restorePrevPopVersion();
-
   const key    = popKey(pop);
   const domId  = popDomId(pop);
   const prefix = popPrefix(pop);
   currentPop = key;
-
-  // Esconder galeria se estiver ativa
-  const gal = document.getElementById('pop-gallery-panel');
-  if(gal) gal.classList.remove('active');
 
   // Garantir que nav-tabs e barra de processo fiquem visíveis ao entrar num POP
   const _navTabs = document.querySelector('.nav-tabs');
@@ -4735,7 +4762,7 @@ function switchPop(pop, tabEl) {
   const target = document.getElementById(prefix + '-visao-geral');
   if(target) target.classList.add('active');
 
-  // Fechar módulos BI / PAT ao trocar de POP
+  // Close BI / PAT modules when switching pops
   const _biMod = document.getElementById('bi-module');
   if(_biMod) _biMod.style.display = 'none';
   const _patMod = document.getElementById('pat-module');
@@ -4745,37 +4772,25 @@ function switchPop(pop, tabEl) {
   const labelEl = document.getElementById('current-pop-label');
   if(labelEl) {
     const names = { d:'Tratar Denuncias', r:'Tratar Representacoes' };
-    labelEl.textContent = names[key] || DATA[key]?.meta?.name || key;
+    labelEl.textContent = names[key] || (DATA[key] && DATA[key].meta && DATA[key].meta.name) || key;
   }
 
   if(editMode) enableEditables(true);
-  _renderAfterSwitch(prefix);
+  try { renderVersionBadge(popPrefix(currentPop)); _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
+  if(currentSection === 'maturidade')   try { matRender(prefix); } catch(e) { console.warn('[siga]', e); }
+  _syncNovaVersaoBtn();
+  try { renderFicha(prefix); }       catch(e) { console.warn('[siga]', e); }
+  try { renderSipoc(prefix); }       catch(e) { console.warn('[siga]', e); }
+  try { renderFlowPreview(prefix); } catch(e) { console.warn('[siga]', e); }
 }
 
 // ═══ NAV ══════════════════════════════════════
-/** Renderiza a aba de maturidade e mostra erro no corpo caso falhe. */
-function _renderMaturidade(prefix) {
-  try {
-    matRender(prefix);
-  } catch(e) {
-    const c = document.getElementById(prefix + '-maturidade-body');
-    if(!c) return;
-    const errorEl = document.createElement('p');
-    errorEl.style.color   = 'red';
-    errorEl.style.padding = '20px';
-    errorEl.textContent   = 'Erro ao renderizar: ' + e.message;
-    c.innerHTML = '';
-    c.appendChild(errorEl);
-  }
-}
-
 function showSection(id, tab, silent) {
   currentSection = id;
-  // Esconder BPMN e módulos IA se estiverem visíveis — usa filter para evitar if dentro de lambda
-  ['bpmn-module','fd-module','ai-module','ai-relatorio-module']
-    .map(mid => document.getElementById(mid))
-    .filter(Boolean)
-    .forEach(el => { el.style.display = 'none'; });
+  // Esconder BPMN e módulos IA se estiverem visíveis (voltando de outra aba)
+  ['bpmn-module','fd-module','ai-module','ai-relatorio-module'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
 
   // Garantir que o pop atual está ativo
   document.querySelectorAll('.pop-content').forEach(p => p.classList.remove('active'));
@@ -4790,9 +4805,9 @@ function showSection(id, tab, silent) {
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
   }
-  if(id === 'fluxo')      renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
-  if(id === 'checklists') try { renderChecklists(popPrefix(currentPop)); } catch(e) { console.warn('[siga]', e); }
-  if(id === 'maturidade') _renderMaturidade(popPrefix(currentPop));
+  if(id === 'fluxo')       renderStep(popPrefix(currentPop), DATA[popPrefix(currentPop)].currentStep);
+  if(id === 'checklists')  try { renderChecklists(popPrefix(currentPop)); } catch(e) { console.warn('[siga]', e); }
+  if(id === 'maturidade')  { try { matRender(popPrefix(currentPop)); } catch(e) { const c = document.getElementById(popPrefix(currentPop)+'-maturidade-body'); if(c) { const errorEl = document.createElement('p'); errorEl.style.color = 'red'; errorEl.style.padding = '20px'; errorEl.textContent = 'Erro ao renderizar: ' + e.message; c.innerHTML = ''; c.appendChild(errorEl); } } }
   if(!silent && editMode) enableEditables(true);
   try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
 }
@@ -4801,20 +4816,6 @@ function showSection(id, tab, silent) {
 function _syncNovaVersaoBtn() {
   const btn = document.getElementById('nova-versao-btn');
   if(btn) btn.style.display = currentPop ? '' : 'none';
-}
-
-/** Notifica o usuário sobre a mudança de modo edição (apenas quando não forçado). */
-function _notifyEditModeChange(forceState) {
-  if(forceState !== undefined) return;
-  if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar', 'warn');
-  else showToast('Modo visualização ativo');
-}
-
-/** Auto-salva ao sair do modo edição se houver alterações pendentes. */
-function _autoSaveOnExitEdit() {
-  if(editMode || !currentUser || !window._appInitialized) return;
-  const unsavedDot = document.getElementById('unsaved-dot');
-  if(unsavedDot && unsavedDot.style.display === 'inline-block') saveToCloud();
 }
 
 function toggleEditMode(forceState) {
@@ -4839,10 +4840,21 @@ function toggleEditMode(forceState) {
   if(editMode) { _takeEditSnapshot(); }
   else { _undoStack = []; _undoShadow = null; _updateUndoBtn(); }
   try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
+  // Persistir estado do modo edição entre recarregamentos
   try { localStorage.setItem('gestpop_editMode', editMode ? '1' : '0'); } catch(e) { console.warn('[siga]', e); }
   try { _dndInit(editMode); } catch(e) { console.warn('[siga]', e); }
-  _notifyEditModeChange(forceState);
-  _autoSaveOnExitEdit();
+  /* notifica o usuario do erro */
+  if(forceState === undefined) {
+    if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar','warn');
+    else showToast('Modo visualização ativo');
+  }
+  // Ao sair do modo edição, salvar se houver alterações pendentes
+  if(!editMode && currentUser && window._appInitialized) {
+    const unsavedDot = document.getElementById('unsaved-dot');
+    if(unsavedDot && unsavedDot.style.display === 'inline-block') {
+      saveToCloud();
+    }
+  }
   _syncNovaVersaoBtn();
 }
 
@@ -4963,7 +4975,7 @@ let _undoShadow    = null; // state captured AFTER the last change — pushed on
 const _UNDO_MAX = 40;
 
 function _snapshotData() {
-  return structuredClone(DATA);
+  return JSON.parse(JSON.stringify(DATA));
 }
 
 function _takeEditSnapshot() {
@@ -5010,16 +5022,6 @@ function markChanged(quick=false, explicit=false) {
   }, quick ? 1500 : 3000);
 }
 
-/** Re-renderiza o POP atual após uma operação de undo. */
-function _rerenderCurrentPop() {
-  if(!currentPop) return;
-  const p = popPrefix(currentPop);
-  if(!DATA[p]) return;
-  try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) { console.warn('[siga]', e); }
-  try { renderTracker(p); } catch(e) { console.warn('[siga]', e); }
-  try { renderMetrics(p); } catch(e) { console.warn('[siga]', e); }
-}
-
 function undoLastChange() {
   if(!_undoStack.length) { showToast('Nada para desfazer.', 'warn'); return; }
   const prev = _undoStack.pop();
@@ -5027,12 +5029,20 @@ function undoLastChange() {
   const prevKeys = new Set(Object.keys(prev));
   Object.keys(DATA).forEach(k => { if(!prevKeys.has(k)) delete DATA[k]; });
   Object.assign(DATA, prev);
+  // Update shadow to current restored state
   try { _undoShadow = _snapshotData(); } catch(e) { console.warn('[siga]', e); }
   _updateUndoBtn();
-  _rerenderCurrentPop();
-  const n     = _undoStack.length;
-  const label = n === 1 ? 'passo' : 'passos';
-  const undoMsg = n > 0 ? `↩ Desfeito. Mais ${n} ${label} disponíveis.` : '↩ Desfeito. Estado inicial restaurado.';
+  // Re-render current POP if open
+  if(currentPop) {
+    const p = popPrefix(currentPop);
+    if(DATA[p]) {
+      try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) { console.warn('[siga]', e); }
+      try { renderTracker(p); } catch(e) { console.warn('[siga]', e); }
+      try { renderMetrics(p); } catch(e) { console.warn('[siga]', e); }
+    }
+  }
+  const n = _undoStack.length;
+  const undoMsg = n > 0 ? `↩ Desfeito. Mais ${n} ${n === 1 ? 'passo' : 'passos'} disponíveis.` : '↩ Desfeito. Estado inicial restaurado.';
   showToast(undoMsg, 'success');
   document.getElementById('unsaved-dot').style.display = n > 0 ? 'inline-block' : 'none';
 }
@@ -5045,23 +5055,13 @@ function renderTracker(p) {
   el.innerHTML = '';
   DATA[p].steps.forEach((s,i) => {
     const dot = document.createElement('div');
-    if (i === cur) {
-      dot.className = 'step-dot active';
-    } else if (i < cur) {
-      dot.className = 'step-dot done';
-    } else {
-      dot.className = 'step-dot';
-    }
+    dot.className = 'step-dot'+(i===cur?' active':i<cur?' done':'');
     dot.innerHTML = `<div class="step-dot-circle">${i<cur?'✓':i+1}</div><div class="step-dot-label">${escapeHtml(resolveStep(s, flowMode).title)}</div>`;
     dot.onclick = () => { DATA[p].currentStep=i; renderStep(p,i); };
     el.appendChild(dot);
     if(i<DATA[p].steps.length-1){
       const line = document.createElement('div');
-      if (i < cur) {
-        line.className = 'step-line done';
-      } else {
-        line.className = 'step-line';
-      }
+      line.className = 'step-line'+(i<cur?' done':'');
       el.appendChild(line);
     }
   });
@@ -5118,35 +5118,17 @@ function _sanitizeStep(s) {
   };
 }
 
-/** Garante que todos os campos array obrigatórios de um POP existam. */
-function _ensurePopArrays(d) {
-  if(!Array.isArray(d.steps))          d.steps = [];
-  if(!Array.isArray(d.roles))          d.roles = [];
-  if(!Array.isArray(d.indicators))     d.indicators = [];
-  if(!Array.isArray(d.faqs))           d.faqs = [];
-  if(Array.isArray(d.faq) && !d.faqs.length) { d.faqs = d.faq; } // migrar campo antigo
-  delete d.faq;
-  if(!Array.isArray(d.normas))         d.normas = [];
-  if(!Array.isArray(d.revisions))      d.revisions = [];
-  if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
-  if(!Array.isArray(d.checklists))     d.checklists = [];
-}
-
-/** Garante que todos os campos escalares obrigatórios de um POP existam. */
-function _ensurePopMeta(d) {
-  if(!d.ficha)          d.ficha = {};
-  if(!d.meta)           d.meta  = {};
-  if(!d.versionNum)     d.versionNum = 1;
-  if(!d.etapasProgress) d.etapasProgress = {};
-  if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
-  if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
-  if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
-}
-
 function sanitizePop(p) {
   const d = DATA[p];
   if(!d) return;
-  _ensurePopArrays(d);
+  if(!Array.isArray(d.steps))      d.steps = [];
+  if(!Array.isArray(d.roles))      d.roles = [];
+  if(!Array.isArray(d.indicators)) d.indicators = [];
+  if(!Array.isArray(d.faqs))       d.faqs = [];
+  if(Array.isArray(d.faq) && !d.faqs.length) { d.faqs = d.faq; } // migrar campo antigo
+  delete d.faq;
+  if(!Array.isArray(d.normas))     d.normas = [];
+  if(!Array.isArray(d.revisions))  d.revisions = [];
   d.revisions = d.revisions.map((r,i) => ({
     num:    r?.num    ?? (i+1),
     date:   r?.date   || '',
@@ -5157,9 +5139,23 @@ function sanitizePop(p) {
     const today = new Date().toLocaleDateString('pt-BR');
     d.revisions = [{ num:0, date: today, desc:'Versão inicial', author:'CAGE-RS' }];
   }
-  _ensurePopMeta(d);
+  if(!d.ficha)                     d.ficha = {};
+  if(!d.meta)                      d.meta = {};
+  if(!d.versionNum)                d.versionNum = 1;
+  if(!Array.isArray(d.versionHistory)) d.versionHistory = [];
+  if(!Array.isArray(d.checklists))     d.checklists = [];
+  if(!d.etapasProgress)                d.etapasProgress = {};
+  if(d.meta.statusMap    === undefined) d.meta.statusMap    = '';
+  if(d.meta.dataPrevista === undefined) d.meta.dataPrevista = '';
+  if(d.meta.dataEfetiva  === undefined) d.meta.dataEfetiva  = '';
+  // Sanitizar steps
   d.steps = d.steps.map(s => _sanitizeStep(s));
-  d.roles  = d.roles.map(r => ({ ...r, duties: Array.isArray(r?.duties) ? r.duties : [] }));
+  // Sanitizar roles
+  d.roles = d.roles.map(r => ({
+    ...r,
+    duties: Array.isArray(r?.duties) ? r.duties : []
+  }));
+  // Corrigir currentStep fora do range
   if(typeof d.currentStep !== 'number') d.currentStep = 0;
   if(d.steps.length > 0 && d.currentStep >= d.steps.length) d.currentStep = 0;
 }
@@ -5463,99 +5459,90 @@ function buildNestedBranchesHTML(p, si, ai, bi, bai, branches, em) {
   return `<div class="decision-branches nested">${branchItems}</div>`;
 }
 
-/**
- * Resolve todos os valores de exibição de uma etapa (AS IS vs TO BE).
- * Centraliza as dezenas de ternários condicionais e alivia renderStep.
- */
-function _resolveStepDisplay(s, tb, isTobe, em, i, stepsLen) {
-  return {
-    title:        isTobe ? (tb.title      || s.title)      : s.title,
-    subtitle:     isTobe ? (tb.subtitle   || s.subtitle || '') : (s.subtitle || ''),
-    resp:         isTobe ? (tb.responsible || s.responsible) : s.responsible,
-    respClass:    isTobe ? (tb.respClass   || s.respClass)   : s.respClass,
-    note:         isTobe ? (tb.note        || s.note || '')  : (s.note || ''),
-    titleSf:      isTobe ? 'tobe_title'       : 'title',
-    subtitleSf:   isTobe ? 'tobe_subtitle'    : 'subtitle',
-    respSf:       isTobe ? 'tobe_responsible' : 'responsible',
-    noteSf:       isTobe ? 'tobe_note'        : 'note',
-    actions:      isTobe ? (tb.actions || []) : (s.actions || []),
-    panelClass:   isTobe ? ' tobe-mode'       : '',
-    modeBadge:    isTobe
-      ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📋 TO BE</span>`
-      : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📌 AS IS</span>`,
-    ce:           em ? 'contenteditable="true"' : '',
-    actListClass: em ? 'edit-mode-list' : '',
-    prevDisabled: i === 0          ? 'disabled' : '',
-    nextDisabled: i === stepsLen-1 ? 'disabled' : '',
-  };
-}
-
-/** Atualiza os controles de navegação da barra inferior da etapa. */
-function _updateStepNavButtons(p, i) {
-  const _stepPos = document.getElementById(p+'-step-pos');
-  const _btnPrev = document.getElementById(p+'-btn-prev');
-  const _btnNext = document.getElementById(p+'-btn-next');
-  if(_stepPos) _stepPos.textContent = `Etapa ${i+1} de ${DATA[p].steps.length}`;
-  if(_btnPrev) _btnPrev.disabled = i === 0;
-  if(_btnNext) _btnNext.textContent = i === DATA[p].steps.length-1 ? '✅ Concluído' : 'Próximo →';
-}
-
 function renderStep(p, i) {
-  if(!DATA[p] || !Array.isArray(DATA[p].steps)) return;
-  if(!DATA[p].steps[i]) return;
+  if(!DATA[p] || !Array.isArray(DATA[p].steps) || !DATA[p].steps[i]) {
+    return;
+  }
   const s = DATA[p].steps[i];
   if(!s.tobe) s.tobe = {};
+  const tb = s.tobe;
+  const em = editMode;
+  const ce = em ? 'contenteditable="true"' : '';
   const isTobe = flowMode === 'tobe';
-  const em     = editMode;
-  const d      = _resolveStepDisplay(s, s.tobe, isTobe, em, i, DATA[p].steps.length);
 
-  const actHTML = d.actions.map((a, ai) => _buildStepActionHTML(p, i, ai, a, isTobe, em)).join('');
+  // Display values: TO BE falls back to AS IS if TO BE field is empty
+  const dispTitle     = isTobe ? (tb.title      || s.title)      : s.title;
+  const dispSubtitle  = isTobe ? (tb.subtitle    !== undefined && tb.subtitle !== '' ? tb.subtitle : (s.subtitle||'')) : (s.subtitle||'');
+  const dispResp      = isTobe ? (tb.responsible || s.responsible) : s.responsible;
+  const dispRespClass = isTobe ? (tb.respClass   || s.respClass)   : s.respClass;
+  const dispNote      = isTobe ? (tb.note        || s.note || '')  : (s.note || '');
+
+  const titleSf    = isTobe ? 'tobe_title'       : 'title';
+  const subtitleSf = isTobe ? 'tobe_subtitle'    : 'subtitle';
+  const respSf     = isTobe ? 'tobe_responsible' : 'responsible';
+  const noteSf     = isTobe ? 'tobe_note'        : 'note';
+
+  // AS IS and TO BE have independent action lists
+  const currentActions = isTobe ? (tb.actions || []) : (s.actions || []);
+  const actHTML = currentActions.map((a, ai) => _buildStepActionHTML(p, i, ai, a, isTobe, em)).join('');
   const decHTML = s.decision ? `
     <div class="decision-box"><span class="dicon">⚡</span><div class="dtext">
-      <strong ${d.ce} data-sp="${p}" data-si="${i}" data-sf="dlabel">${s.decision.label}:</strong><br>
-      <span ${d.ce} data-sp="${p}" data-si="${i}" data-sf="dtext">${s.decision.text}</span>
+      <strong ${ce} data-sp="${p}" data-si="${i}" data-sf="dlabel">${s.decision.label}:</strong><br>
+      <span ${ce} data-sp="${p}" data-si="${i}" data-sf="dtext">${s.decision.text}</span>
     </div></div>` : '';
-  const noteHTML = d.note ? `
+  const noteHTML = dispNote ? `
     <div class="note-box"><span>💬</span>
-      <span ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.noteSf}">${d.note}</span>
+      <span ${ce} data-sp="${p}" data-si="${i}" data-sf="${noteSf}">${dispNote}</span>
     </div>` : '';
-  const copyBtn = isTobe
-    ? `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowTobeToAsis('${p}')" title="Copiar todas as etapas do TO BE para o AS IS">⎘ Copiar TO BE → AS IS</button>`
-    : `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}')" title="Copiar todas as etapas do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>`;
-  const flowLabel = isTobe ? 'TO BE' : 'AS IS';
+
+  // Mode badge shown in step header
+  const modeBadge = isTobe
+    ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📋 TO BE</span>`
+    : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px;flex-shrink:0;">📌 AS IS</span>`;
+
+
 
   const container = document.getElementById(p+'-step-panel');
-  if(!container) return;
+  if(!container) { return; }
   container.innerHTML = `
-    <div class="step-panel${d.panelClass}">
+    <div class="step-panel${isTobe ? ' tobe-mode' : ''}">
       <div class="step-panel-head">
         <div class="step-number">${i+1}</div>
         <div class="step-info" style="flex:1;">
-          <h3 ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.titleSf}">${d.title}</h3>
-          <p ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.subtitleSf}">${d.subtitle}</p>
+          <h3 ${ce} data-sp="${p}" data-si="${i}" data-sf="${titleSf}">${dispTitle}</h3>
+          <p ${ce} data-sp="${p}" data-si="${i}" data-sf="${subtitleSf}">${dispSubtitle}</p>
         </div>
-        ${d.modeBadge}
-        <button class="move-step-btn" onclick="moveStep('${p}',${i},-1)" title="Mover etapa para cima" ${d.prevDisabled}>↑</button>
-        <button class="move-step-btn" onclick="moveStep('${p}',${i},1)" title="Mover etapa para baixo" ${d.nextDisabled}>↓</button>
+        ${modeBadge}
+        <button class="move-step-btn" onclick="moveStep('${p}',${i},-1)" title="Mover etapa para cima" ${i===0?'disabled':''}>↑</button>
+        <button class="move-step-btn" onclick="moveStep('${p}',${i},1)" title="Mover etapa para baixo" ${i===DATA[p].steps.length-1?'disabled':''}>↓</button>
         <button class="rm-step-btn" onclick="rmStep('${p}',${i})" title="Apagar esta etapa">🗑 Apagar etapa</button>
       </div>
       <div class="step-panel-body">
-        <div class="resp-tag ${d.respClass}" ${d.ce} data-sp="${p}" data-si="${i}" data-sf="${d.respSf}">👤 ${d.resp}</div>
-        <ul class="step-actions ${d.actListClass}" id="${p}-actions-list-${i}">${actHTML}</ul>
+        <div class="resp-tag ${dispRespClass}" ${ce} data-sp="${p}" data-si="${i}" data-sf="${respSf}">👤 ${dispResp}</div>
+        <ul class="step-actions ${em ? 'edit-mode-list' : ''}" id="${p}-actions-list-${i}">${actHTML}</ul>
         <div class="step-flow-actions">
           <button class="edit-add-btn" onclick="addStepAction('${p}',${i})">+ Ação</button>
-          <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}')" title="Limpar o fluxo ${flowLabel} inteiro (todas as etapas)">🗑 Limpar todo ${flowLabel}</button>
-          ${copyBtn}
+          <button class="clear-flow-btn edit-add-btn" onclick="clearCurrentFlow('${p}')" title="Limpar o fluxo ${isTobe ? 'TO BE' : 'AS IS'} inteiro (todas as etapas)">🗑 Limpar todo ${isTobe ? 'TO BE' : 'AS IS'}</button>
+          ${isTobe
+            ? `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowTobeToAsis('${p}')" title="Copiar todas as etapas do TO BE para o AS IS">⎘ Copiar TO BE → AS IS</button>`
+            : `<button class="copy-flow-btn edit-add-btn" onclick="copyFlowAsIsToTobe('${p}')" title="Copiar todas as etapas do AS IS para o TO BE">⎘ Copiar AS IS → TO BE</button>`
+          }
         </div>
         ${decHTML}${noteHTML}
       </div>
     </div>`;
-  if(editMode) _wireStepDnD(p, i, container);
+  // ── Wire interactions ─────────────────────────
+  if(editMode) { _wireStepDnD(p, i, container); }
   _wireStepFieldBlur(p, i, container);
   _wireStepActionBlur(p, i, container);
   _wireStepBranchBlurs(p, i, container);
   renderTracker(p);
-  _updateStepNavButtons(p, i);
+  const _stepPos  = document.getElementById(p+'-step-pos');
+  const _btnPrev  = document.getElementById(p+'-btn-prev');
+  const _btnNext  = document.getElementById(p+'-btn-next');
+  if(_stepPos) _stepPos.textContent = `Etapa ${i+1} de ${DATA[p].steps.length}`;
+  if(_btnPrev) _btnPrev.disabled = i===0;
+  if(_btnNext) _btnNext.textContent = i===DATA[p].steps.length-1 ? '✅ Concluído' : 'Próximo →';
 }
 
 function toggleAutomatico(p, si, ai) {
@@ -5797,15 +5784,7 @@ function setFlowMode(mode) {
   // Update all toggle buttons in DOM
   document.querySelectorAll('.flow-mode-btn[data-mode]').forEach(btn => {
     const m = btn.dataset.mode;
-    if (m === mode) {
-      if (mode === 'asis') {
-        btn.className = 'flow-mode-btn active-asis';
-      } else {
-        btn.className = 'flow-mode-btn active-tobe';
-      }
-    } else {
-      btn.className = 'flow-mode-btn';
-    }
+    btn.className = 'flow-mode-btn' + (m === mode ? (mode === 'asis' ? ' active-asis' : ' active-tobe') : '');
   });
   const p = popPrefix(currentPop);
   if(DATA[p] && Array.isArray(DATA[p].steps) && DATA[p].steps.length > 0) {
@@ -5952,14 +5931,7 @@ function renderRoles(p) {
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:5px;">${g.isResp ? '★ ' : ''}${g.stepTitle}</div>
         ${g.actions.length ? `<ul class="role-duties" style="margin:0;">
           ${g.actions.map(a => {
-            let ico;
-            if (a.type === 'decisao') {
-              ico = '◇';
-            } else if (a.type === 'evento') {
-              ico = '○';
-            } else {
-              ico = '▸';
-            }
+            const ico = a.type==='decisao' ? '◇' : a.type==='evento' ? '○' : '▸';
             return `<li style="align-items:flex-start;gap:6px;">
               <span style="font-size:11px;color:var(--text-muted);flex-shrink:0;margin-top:1px;">${ico}</span>
               <span style="flex:1;font-size:12px;">${a.text||''}</span>
@@ -6005,24 +5977,13 @@ function _fmtNumSimple(v) {
 }
 
 function _pctColorClass(pct) {
-  if (pct === null || pct === undefined) return '';
-  if (pct >= 100) {
-    return 'pct-verde';
-  } else if (pct >= 80) {
-    return 'pct-amarelo';
-  } else {
-    return 'pct-vermelho';
-  }
+  if(pct === null || pct === undefined) return '';
+  return pct >= 100 ? 'pct-verde' : pct >= 80 ? 'pct-amarelo' : 'pct-vermelho';
+}
 
 function _pctStyle(pct) {
-  if (pct === null || pct === undefined) return '';
-  if (pct >= 100) {
-    return 'color:#16a34a;';
-  } else if (pct >= 80) {
-    return 'color:#ca8a04;';
-  } else {
-    return 'color:#dc2626;';
-  }
+  if(pct === null || pct === undefined) return '';
+  return pct >= 100 ? 'color:#16a34a;' : pct >= 80 ? 'color:#ca8a04;' : 'color:#dc2626;';
 }
 
 function _buildSisplanTableRow(r) {
@@ -6275,7 +6236,7 @@ function renderSisplanPickerList() {
     return;
   }
   list.innerHTML = filtered.map(ind => `
-    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')">
+    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
         <div style="flex:1;">
           <div style="font-size:11px;font-weight:700;color:#607070;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">${ind.codigo||'—'} · ${ind.divisao||''}</div>
@@ -6323,7 +6284,7 @@ function renderFaq(p) {
         <div style="display:flex;align-items:center;gap:6px;">
           <button class="edit-rm-btn" onclick="openFaqModal('${p}',${i})" title="Editar">✏️</button>
           <button class="edit-rm-btn" onclick="rmFaq('${p}',${i})">✕</button>
-          <span class="faq-chevron" onclick="toggleFaq('${p}',${i})">⌄</span>
+          <span class="faq-chevron" onclick="toggleFaq('${p}',${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⌄</span>
         </div>
       </div>
       <div class="faq-a">
@@ -6389,14 +6350,7 @@ async function _generateFaqIAWithMode(p, mode) {
     // Riscos
     const risksText = (D.risks||[]).length
       ? (D.risks||[]).map(r => {
-          let nivel;
-          if (r.score >= 16) {
-            nivel = 'Alto';
-          } else if (r.score >= 8) {
-            nivel = 'Médio';
-          } else {
-            nivel = 'Baixo';
-          }
+          const nivel = r.score >= 16 ? 'Alto' : r.score >= 8 ? 'Médio' : 'Baixo';
           const partes = [`[${nivel}] ${r.title||''}`];
           if(r.desc)    partes.push(`Descrição: ${r.desc}`);
           if(r.causa)   partes.push(`Causa: ${r.causa}`);
@@ -7253,6 +7207,64 @@ function setImportTarget(target) {
   }
 }
 
+async function _npopLoadWordStage1(npopFile, npopPopFile) {
+  if(!npopFile) { showToast('Selecione um POP em Word (.docx) antes de continuar.', 'warn'); return false; }
+  if(!_npopIsAllowedWorkflowFile(npopFile)) { showToast('Formato inválido. Use apenas arquivos .docx (Word moderno).', 'warn'); return false; }
+  try {
+    showToast('🔄 Carregando e extraindo informações do arquivo...', 'info');
+    const extracted = await _npopExtractWordParsed(npopFile);
+    if(npopPopFile) {
+      try {
+        showToast('📎 Complementando metadados com POP...', 'info');
+        const popBasic = await _npopExtractBasicFromPopFile(npopPopFile);
+        _npopMergeBasicInfoFromPop(extracted, popBasic);
+      } catch(popErr) {
+        showToast('⚠️ Não foi possível complementar via POP: ' + popErr.message, 'warn');
+      }
+    }
+    const setVal = function(id, value) { const el = document.getElementById(id); if(el) el.value = value || ''; };
+    setVal('nf-processo', extracted.nome || extracted.processo || '');
+    setVal('nf-macro', extracted.macro || '');
+    setVal('nf-subprocesso', extracted.subprocesso || '');
+    setVal('nf-unidade', extracted.unidade || '');
+    setVal('nf-desc', extracted.desc || '');
+    setVal('nf-input', extracted.input || '');
+    setVal('nf-output', extracted.output || '');
+    setVal('nf-equipe', extracted.elaborado || '');
+    setVal('nf-fornecedores', extracted.fornecedores || '');
+    setVal('nf-clientes', extracted.clientes || '');
+    const atores = Array.isArray(extracted.atores) ? extracted.atores : [];
+    npopRenderAtores(atores, true);
+    window._npopExtractedEtapas = extracted.steps || [];
+    window._npopExtractedFull = extracted;
+    const manualForm = document.getElementById('npop-manual-form');
+    if(manualForm) manualForm.style.display = 'block';
+    const btn = document.getElementById('npop-confirm-btn');
+    if(btn) btn.textContent = 'Finalizar Mapeamento \u2192';
+    const badge = document.getElementById('npop-method-badge');
+    if(badge) badge.textContent = 'Etapa 2: revisar e editar dados extraídos';
+    showToast('✅ Dados extraídos do POP Word. Revise o formulário e clique em Finalizar Mapeamento.', 'success');
+    return true;
+  } catch (e) {
+    showToast('⚠️ Falha ao carregar POP Word: ' + e.message, 'warn');
+    return false;
+  }
+}
+
+function _npopApplyFormStage2(extracted) {
+  const v = function(id) { return document.getElementById(id)?.value?.trim() || ''; };
+  if(v('nf-processo'))    extracted.nome        = v('nf-processo');
+  if(v('nf-macro'))       extracted.macro       = v('nf-macro');
+  if(v('nf-desc'))        extracted.desc        = v('nf-desc');
+  if(v('nf-input'))       extracted.input       = v('nf-input');
+  if(v('nf-output'))      extracted.output      = v('nf-output');
+  if(v('nf-equipe'))      extracted.elaborado   = v('nf-equipe');
+  if(v('nf-subprocesso')) extracted.subprocesso = v('nf-subprocesso');
+  if(v('nf-unidade'))     extracted.unidade     = v('nf-unidade');
+  extracted.atores = (document.getElementById('nf-atores')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  openNpopOrderModal(extracted, ordered => showImportTargetModal(ordered));
+}
+
 async function confirmNovoPop() {
   if(_npopMethod === 'manual') {
     _npopCreateManualMapping();
@@ -7261,58 +7273,8 @@ async function confirmNovoPop() {
 
   // Etapa 1: carregar POP Word e abrir formulário de revisão/edição.
   if(!_npopWorkflowReady) {
-    if(!_npopFile) { showToast('Selecione um POP em Word (.docx) antes de continuar.', 'warn'); return; }
-    if(!_npopIsAllowedWorkflowFile(_npopFile)) { showToast('Formato inválido. Use apenas arquivos .docx (Word moderno).', 'warn'); return; }
-    try {
-      showToast('🔄 Carregando e extraindo informações do arquivo...', 'info');
-      const extracted = await _npopExtractWordParsed(_npopFile);
-
-      if(_npopPopFile) {
-        try {
-          showToast('📎 Complementando metadados com POP...', 'info');
-          const popBasic = await _npopExtractBasicFromPopFile(_npopPopFile);
-          _npopMergeBasicInfoFromPop(extracted, popBasic);
-        } catch(popErr) {
-          /* metadata error suppressed */
-          showToast('⚠️ Não foi possível complementar via POP: ' + popErr.message, 'warn');
-        }
-      }
-
-      const setVal = (id, value) => {
-        const el = document.getElementById(id);
-        if(el) el.value = value || '';
-      };
-      setVal('nf-processo', extracted.nome || extracted.processo || '');
-      setVal('nf-macro', extracted.macro || '');
-      setVal('nf-subprocesso', extracted.subprocesso || '');
-      setVal('nf-unidade', extracted.unidade || '');
-      setVal('nf-desc', extracted.desc || '');
-      setVal('nf-input', extracted.input || '');
-      setVal('nf-output', extracted.output || '');
-      setVal('nf-equipe', extracted.elaborado || '');
-      setVal('nf-fornecedores', extracted.fornecedores || '');
-      setVal('nf-clientes', extracted.clientes || '');
-
-      const atores = Array.isArray(extracted.atores) ? extracted.atores : [];
-      npopRenderAtores(atores, true);
-
-      window._npopExtractedEtapas = extracted.steps || [];
-      window._npopExtractedFull = extracted;
-
-      _npopWorkflowReady = true;
-      const manualForm = document.getElementById('npop-manual-form');
-      if(manualForm) manualForm.style.display = 'block';
-
-      const btn = document.getElementById('npop-confirm-btn');
-      if(btn) btn.textContent = 'Finalizar Mapeamento →';
-      const badge = document.getElementById('npop-method-badge');
-      if(badge) badge.textContent = 'Etapa 2: revisar e editar dados extraídos';
-
-      showToast('✅ Dados extraídos do POP Word. Revise o formulário e clique em Finalizar Mapeamento.', 'success');
-    } catch (e) {
-      /* notifica o usuario do erro */
-      showToast('⚠️ Falha ao carregar POP Word: ' + e.message, 'warn');
-    }
+    const ok = await _npopLoadWordStage1(_npopFile, _npopPopFile);
+    if(ok) _npopWorkflowReady = true;
     return;
   }
 
@@ -7320,17 +7282,7 @@ async function confirmNovoPop() {
   if(window._npopExtractedFull) {
     const extracted = window._npopExtractedFull;
     window._npopExtractedFull = null;
-    const v = id => document.getElementById(id)?.value?.trim() || '';
-    if(v('nf-processo'))  extracted.nome      = v('nf-processo');
-    if(v('nf-macro'))     extracted.macro     = v('nf-macro');
-    if(v('nf-desc'))      extracted.desc      = v('nf-desc');
-    if(v('nf-input'))     extracted.input     = v('nf-input');
-    if(v('nf-output'))    extracted.output    = v('nf-output');
-    if(v('nf-equipe'))    extracted.elaborado = v('nf-equipe');
-    if(v('nf-subprocesso')) extracted.subprocesso = v('nf-subprocesso');
-    if(v('nf-unidade'))   extracted.unidade   = v('nf-unidade');
-    extracted.atores = (document.getElementById('nf-atores')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
-    openNpopOrderModal(extracted, ordered => showImportTargetModal(ordered));
+    _npopApplyFormStage2(extracted);
     _npopWorkflowReady = false;
     return;
   }
@@ -7591,7 +7543,7 @@ function mountNewPopTab(key, label, silent=false) {
         <div class="pop-banner-meta">
           <span class="rev-badge" id="${key}-rev-badge">Rev. 0 · ${today}</span>
           <div class="version-badge-wrap" style="margin-top:4px;">
-            <span class="ver-badge" id="${key}-ver-badge" onclick="openVersionSelector('${key}',this)">v1</span>
+            <span class="ver-badge" id="${key}-ver-badge" onclick="openVersionSelector('${key}',this)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">v1</span>
           </div>
         </div>
       </div>
@@ -8487,6 +8439,46 @@ function selectNatureza(nat, auto) {
   if(hint) hint.style.display = auto ? 'inline' : 'none';
 }
 
+function _resolveExistingActionObj(existingActions, actAi, actBi, actBai, actNbi, actNbai) {
+  if(actBi < 0) {
+    return actionObj(existingActions[actAi] || {});
+  }
+  const _p = actionObj(existingActions[actAi] || {});
+  if(actNbi >= 0) {
+    const _s = actionObj((_p.branches?.[actBi]?.actions || [])[actBai] || {});
+    return actionObj((_s.branches?.[actNbi]?.actions || [])[actNbai] || {});
+  }
+  return actionObj((_p.branches?.[actBi]?.actions || [])[actBai] || {});
+}
+
+function _applyActionToStep(step, actionData, actIsTobe, actAi, actBi, actBai, actNbi, actNbai) {
+  if(actNbi >= 0) {
+    const actions = actIsTobe ? (step.tobe?.actions || []) : step.actions;
+    const parent = actionObj(actions[actAi]);
+    const subDec = actionObj((parent.branches[actBi]?.actions || [])[actBai] || {});
+    if(!Array.isArray(subDec.branches)) subDec.branches = [];
+    if(!subDec.branches[actNbi]) subDec.branches[actNbi] = { label: `Caminho ${actNbi+1}`, actions: [] };
+    if(!Array.isArray(subDec.branches[actNbi].actions)) subDec.branches[actNbi].actions = [];
+    subDec.branches[actNbi].actions[actNbai] = actionData;
+    parent.branches[actBi].actions[actBai] = subDec;
+    actions[actAi] = parent;
+  } else if(actBi >= 0) {
+    const actions = actIsTobe ? (step.tobe?.actions || []) : step.actions;
+    const parent = actionObj(actions[actAi]);
+    if(Array.isArray(parent.branches) && parent.branches[actBi]) {
+      if(!Array.isArray(parent.branches[actBi].actions)) parent.branches[actBi].actions = [];
+      parent.branches[actBi].actions[actBai] = actionData;
+      actions[actAi] = parent;
+    }
+  } else if(actIsTobe) {
+    if(!step.tobe) step.tobe = {};
+    if(!Array.isArray(step.tobe.actions)) step.tobe.actions = [];
+    step.tobe.actions[actAi] = actionData;
+  } else {
+    step.actions[actAi] = actionData;
+  }
+}
+
 function saveActionModal() {
   if(!isEditor) { showToast('🔒 Apenas editores podem salvar ações.', 'warn'); return; }
   const selectedBtn = document.querySelector('.action-type-btn.selected');
@@ -8514,49 +8506,12 @@ function saveActionModal() {
   // Preserve flags toggled via ícone (⚙️ automatico, 🔄 loop) — não passam pelo modal
   const step = DATA[_actP].steps[_actSi];
   const _existingActions = _actIsTobe ? (step.tobe?.actions || step.actions) : step.actions;
-  // Recuperar objeto existente para QUALQUER nível (root ou branch), preservando loop/automatico
-  let _existingObj = {};
-  if(_actBi < 0) {
-    _existingObj = actionObj(_existingActions[_actAi] || {});
-  } else if(_actNbi >= 0) {
-    const _p = actionObj(_existingActions[_actAi] || {});
-    const _s = actionObj((_p.branches?.[_actBi]?.actions || [])[_actBai] || {});
-    _existingObj = actionObj((_s.branches?.[_actNbi]?.actions || [])[_actNbai] || {});
-  } else {
-    const _p = actionObj(_existingActions[_actAi] || {});
-    _existingObj = actionObj((_p.branches?.[_actBi]?.actions || [])[_actBai] || {});
-  }
+  const _existingObj = _resolveExistingActionObj(_existingActions, _actAi, _actBi, _actBai, _actNbi, _actNbai);
   const _existingAuto = _existingObj.automatico || false;
   const _existingLoop = _existingObj.loop || false;
   const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo, automatico: _existingAuto, loop: _existingLoop };
 
-  if(_actNbi >= 0) {
-    // Saving a nested branch action (decisão dentro de caminho)
-    const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
-    const parent = actionObj(actions[_actAi]);
-    const subDec = actionObj((parent.branches[_actBi]?.actions || [])[_actBai] || {});
-    if(!Array.isArray(subDec.branches)) subDec.branches = [];
-    if(!subDec.branches[_actNbi]) subDec.branches[_actNbi] = { label: `Caminho ${_actNbi+1}`, actions: [] };
-    if(!Array.isArray(subDec.branches[_actNbi].actions)) subDec.branches[_actNbi].actions = [];
-    subDec.branches[_actNbi].actions[_actNbai] = actionData;
-    parent.branches[_actBi].actions[_actBai] = subDec;
-    actions[_actAi] = parent;
-  } else if(_actBi >= 0) {
-    // Saving a branch action
-    const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
-    const parent = actionObj(actions[_actAi]);
-    if(Array.isArray(parent.branches) && parent.branches[_actBi]) {
-      if(!Array.isArray(parent.branches[_actBi].actions)) parent.branches[_actBi].actions = [];
-      parent.branches[_actBi].actions[_actBai] = actionData;
-      actions[_actAi] = parent;
-    }
-  } else if(_actIsTobe) {
-    if(!step.tobe) step.tobe = {};
-    if(!Array.isArray(step.tobe.actions)) step.tobe.actions = [];
-    step.tobe.actions[_actAi] = actionData;
-  } else {
-    step.actions[_actAi] = actionData;
-  }
+  _applyActionToStep(step, actionData, _actIsTobe, _actAi, _actBi, _actBai, _actNbi, _actNbai);
   // Sync action text to responsible's duties list (root actions only)
   if(_actBi < 0) syncActionToRole(_actP, text, step.responsible);
   renderStep(_actP, _actSi);
@@ -9459,7 +9414,7 @@ function _renderCfgCardEquipeCompetencias(title, desc) {
       const active = selected.includes(sk);
       const eq = equipe.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const s  = sk.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      return `<span onclick="toggleEquipeSkill('${eq}','${s}','${tipo}')" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#1B3022;color:white;border:1px solid #1B3022;' : 'background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;'}">${sk}</span>`;
+      return `<span onclick="toggleEquipeSkill('${eq}','${s}','${tipo}')" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#1B3022;color:white;border:1px solid #1B3022;' : 'background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;'}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${sk}</span>`;
     }).join('');
   }
 
@@ -9528,12 +9483,12 @@ function _renderCfgCardAptCatalog(title, desc) {
 
     return `<div style="border:1px solid #e2e8f0;border-radius:9px;margin-bottom:8px;overflow:hidden;">
       <div style="display:grid;grid-template-columns:70px 120px 70px 1fr auto;gap:8px;align-items:center;padding:8px 12px;background:#f8fafc;cursor:pointer;"
-           onclick="cfgAptToggle(${i})">
+           onclick="cfgAptToggle(${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <span style="font-size:11px;font-family:monospace;color:#64748b;font-weight:600;">${a.id}</span>
         <span style="font-size:12px;color:#475569;">${a.categoria||'—'}</span>
         <span style="font-size:11px;font-weight:700;color:${critColor};">${a.criticidade||'—'}</span>
         <span style="font-size:13px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(a.apontamento||'').replace(/"/g,'&quot;')}">${a.apontamento||'—'}</span>
-        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
+        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
           <button onclick="cfgAptToggle(${i})" style="background:none;border:none;cursor:pointer;color:#1B3022;font-size:14px;padding:2px 6px;" title="Editar">✏️</button>
           <button onclick="cfgAptDel(${i})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px;padding:2px 6px;" title="Excluir">🗑</button>
         </div>
@@ -10054,10 +10009,10 @@ function getAlertSubscribers(tipoAlerta) {
 }
 
 async function sendAlertEmail(toEmail, toNome, subject, htmlBody) {
-  if (!toEmail || !subject || !htmlBody) throw new Error('sendAlertEmail: parâmetros obrigatórios ausentes');
+  if(!toEmail || !subject || !htmlBody) return false;
   // Email sending not yet implemented — stub for future backend integration
   void toNome;
-  throw new Error('sendAlertEmail: envio de e-mail ainda não implementado (integração futura com backend)');
+  return false;
 }
 
 function _buildAlertHtml(tipo, popName, popKey, extra) {
@@ -10122,15 +10077,11 @@ async function checkMapeamentoMilestones() {
       const dataEfetivaFmt = efetiva.toLocaleDateString('pt-BR');
       for(const {nome, email} of subs) {
         const label = months === 6 ? '6 meses' : '12 meses';
-        try {
-          await sendAlertEmail(
-            email, nome,
-            `[EPP/CAGE-RS] ${label} desde conclusão: ${popName}`,
-            _buildAlertHtml(tipo, popName, pk, {dataEfetiva: dataEfetivaFmt})
-          );
-        } catch(e) {
-          console.warn('[siga] sendAlertEmail (mapeamento):', e.message);
-        }
+        await sendAlertEmail(
+          email, nome,
+          `[EPP/CAGE-RS] ${label} desde conclusão: ${popName}`,
+          _buildAlertHtml(tipo, popName, pk, {dataEfetiva: dataEfetivaFmt})
+        );
       }
       sent[alKey] = today.toISOString().slice(0,10);
       changed = true;
@@ -10140,6 +10091,52 @@ async function checkMapeamentoMilestones() {
 }
 
 // ── Plano de ação email alerts ───────────────────────────────────────────────
+async function _checkActionDeadline(act, pk, popName, today, in7, sent) {
+  if(!act.prazo || act.status === 'concluido') return false;
+  const d = new Date(act.prazo + 'T00:00:00');
+  if(isNaN(d)) return false;
+  let changed = false;
+  if(d < today) {
+    const alKey = `plano_acao_vencido_${pk}_${act.prazo}`;
+    if(!sent[alKey]) {
+      const subs = getAlertSubscribers('plano_acao_vencido');
+      let enviado = false;
+      for(const {nome, email} of subs) {
+        const ok = await sendAlertEmail(
+          email, nome,
+          `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
+          _buildAlertHtml('plano_acao_vencido', popName, pk, {
+            desc: act.desc, resp: act.resp,
+            prazo: d.toLocaleDateString('pt-BR'),
+          })
+        );
+        if(ok) enviado = true;
+      }
+      if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
+    }
+  } else if(d <= in7) {
+    const dias  = Math.round((d - today) / 86400000);
+    const alKey = `plano_acao_7d_${pk}_${act.prazo}`;
+    if(!sent[alKey]) {
+      const subs = getAlertSubscribers('plano_acao_7d');
+      let enviado = false;
+      for(const {nome, email} of subs) {
+        const ok = await sendAlertEmail(
+          email, nome,
+          `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
+          _buildAlertHtml('plano_acao_7d', popName, pk, {
+            desc: act.desc, resp: act.resp,
+            prazo: d.toLocaleDateString('pt-BR'), dias,
+          })
+        );
+        if(ok) enviado = true;
+      }
+      if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
+    }
+  }
+  return changed;
+}
+
 async function checkActionsDeadlinesEmail() {
   const today  = new Date(); today.setHours(0,0,0,0);
   const in7    = new Date(today); in7.setDate(in7.getDate() + 7);
@@ -10153,62 +10150,9 @@ async function checkActionsDeadlinesEmail() {
     const pop = DATA[pk];
     if(!pop || !Array.isArray(pop.actions_plan)) continue;
     const popName = pop.meta?.name || pk;
-
     for(const act of pop.actions_plan) {
-      if(!act.prazo || act.status === 'concluido') continue;
-      const d = new Date(act.prazo + 'T00:00:00');
-      if(isNaN(d)) continue;
-
-      if(d < today) {
-        const alKey = `plano_acao_vencido_${pk}_${act.prazo}`;
-        if(!sent[alKey]) {
-          const subs = getAlertSubscribers('plano_acao_vencido');
-          /* log suppressed */
-          let enviado = false;
-          for(const {nome, email} of subs) {
-            try {
-              const ok = await sendAlertEmail(
-                email, nome,
-                `[EPP/CAGE-RS] Ação vencida: "${act.desc||''}" — ${popName}`,
-                _buildAlertHtml('plano_acao_vencido', popName, pk, {
-                  desc: act.desc, resp: act.resp,
-                  prazo: d.toLocaleDateString('pt-BR'),
-                })
-              );
-              if(ok) enviado = true;
-            } catch(e) {
-              console.warn('[siga] sendAlertEmail (ação vencida):', e.message);
-            }
-          }
-          if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
-    /* alert log suppressed */
-        }
-      } else if(d <= in7) {
-        const dias   = Math.round((d - today) / 86400000);
-        const alKey  = `plano_acao_7d_${pk}_${act.prazo}`;
-        if(!sent[alKey]) {
-          const subs = getAlertSubscribers('plano_acao_7d');
-          /* log suppressed */
-          let enviado = false;
-          for(const {nome, email} of subs) {
-            try {
-              const ok = await sendAlertEmail(
-                email, nome,
-                `[EPP/CAGE-RS] Ação vence em ${dias===0?'hoje':dias+' dia(s)'}: "${act.desc||''}" — ${popName}`,
-                _buildAlertHtml('plano_acao_7d', popName, pk, {
-                  desc: act.desc, resp: act.resp,
-                  prazo: d.toLocaleDateString('pt-BR'), dias,
-                })
-              );
-              if(ok) enviado = true;
-            } catch(e) {
-              console.warn('[siga] sendAlertEmail (ação 7d):', e.message);
-            }
-          }
-          if(enviado) { sent[alKey] = today.toISOString().slice(0,10); changed = true; }
-    /* alert log suppressed */
-        }
-      }
+      const c = await _checkActionDeadline(act, pk, popName, today, in7, sent);
+      if(c) changed = true;
     }
   }
   if(changed) { try { saveToCloud(); } catch(e) { console.warn('[siga]', e); } }
@@ -10291,7 +10235,7 @@ function renderOrganograma() {
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;min-width:130px;">
       <div id="org-unit-${area}" data-org-unit="${area}" onclick="orgClickUnit('${area}')"
         style="background:#e8a020;color:#1B3022;border-radius:10px;padding:11px 20px;text-align:center;width:100%;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(232,160,32,.3);box-sizing:border-box;cursor:pointer;transition:all .15s;user-select:none;"
-        title="Clique para ver os processos desta unidade">${area}</div>
+        title="Clique para ver os processos desta unidade" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${area}</div>
       ${teams.length ? `<div style="width:2px;height:14px;background:#cbd5e1;"></div><div style="display:flex;flex-direction:column;gap:5px;align-items:stretch;width:100%;">${teamsHtml}</div>` : ''}
     </div>`;
   }).join('');
@@ -10393,7 +10337,7 @@ function orgRenderUnitPanel(area) {
       return `
         <div onclick="arqShowProcessDetail(${idx})"
           style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;margin-bottom:4px;border:1px solid #e2e8f0;cursor:pointer;background:white;transition:background .12s;"
-          onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='white'">
+          onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='white'" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
           <span style="background:${nat.bg};color:${nat.color};font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;flex-shrink:0;white-space:nowrap;">${r.natureza||''}</span>
           <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:600;color:#1B3022;">${r.processo}</div>
@@ -10592,7 +10536,7 @@ function checkActionsDeadlines() {
 
   soonActs.slice(0,3).forEach(act => {
     const el = document.createElement('div');
-    el.style.cssText = 'background:#dcf4e3;border:1.5px solid #86efac;border-radius:12px;padding:12px 14px;box-shadow:0 4px 16px rgba(22,163,74,.1);';
+    el.style.cssText = 'background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 14px;box-shadow:0 4px 16px rgba(22,163,74,.1);';
     el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <div style="font-size:11px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:.05em;">⚙️ Vence em ${act.dias===0?'hoje':act.dias+' dia'+(act.dias>1?'s':'')} · ${act.popName}</div>
@@ -10780,7 +10724,7 @@ function renderPatCards() {
     const linkedPlan = item.tipo === 'Auditoria'
       ? (DATA.audits?.plans||[]).find(p => p.patId === item.id) : null;
     const auditVinc = linkedPlan
-      ? `<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;" onclick="event.stopPropagation();showAuditModule();setTimeout(()=>auditOpenPlan('${linkedPlan.id}'),200)" title="Abrir pasta do plano de auditoria">📋 Auditoria: ${linkedPlan.processoNome||linkedPlan.objetivo||'Ver plano'} · <span style="background:#${AUDIT_STATUS_BG[linkedPlan.status]||'F3F4F6'};color:${AUDIT_STATUS_COL[linkedPlan.status]||'#6B7280'};border-radius:6px;padding:1px 6px;">${AUDIT_STATUS_LABEL[linkedPlan.status]||linkedPlan.status}</span></span>`
+      ? `<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;" onclick="event.stopPropagation();showAuditModule();setTimeout(()= role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">auditOpenPlan('${linkedPlan.id}'),200)" title="Abrir pasta do plano de auditoria">📋 Auditoria: ${linkedPlan.processoNome||linkedPlan.objetivo||'Ver plano'} · <span style="background:#${AUDIT_STATUS_BG[linkedPlan.status]||'F3F4F6'};color:${AUDIT_STATUS_COL[linkedPlan.status]||'#6B7280'};border-radius:6px;padding:1px 6px;">${AUDIT_STATUS_LABEL[linkedPlan.status]||linkedPlan.status}</span></span>`
       : '';
     return `
     <div class="pat-card">
@@ -11307,6 +11251,66 @@ function _normalizeUnidades() {
   return changed;
 }
 
+async function _fetchMergeNewPopsFromServer(apiUrl, dirtyPops) {
+  try {
+    const serverRes = await fetch(apiUrl + '/data');
+    if(!serverRes.ok) return;
+    const serverRow = await serverRes.json();
+    if(!serverRow?.data?.newPops) return;
+    serverRow.data.newPops.forEach(function(item) {
+      const key = item.key;
+      const pd = item.data;
+      if(!key?.startsWith('pop_') || !pd || typeof pd !== 'object') return;
+      if(dirtyPops.has(key)) return;
+      DATA[key] = pd;
+      try { sanitizePop(key); } catch(e) { console.warn('[siga]', e); }
+      if(!document.getElementById('pop-' + key)) {
+        try { if(typeof mountNewPopTab === 'function') mountNewPopTab(key, pd.meta?.name || 'Processo', true); } catch(e) { console.warn('[siga]', e); }
+      }
+    });
+  } catch(e) {
+    /* fetch-merge error suppressed */
+  }
+}
+
+function _buildSavePayload(DATA, REPO_DOCS, DROPS) {
+  const INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores','homeCards','aptCatalog','quadro']);
+  const newPopKeys = Object.keys(DATA).filter(k => !INTERNAL_KEYS.has(k));
+  function _stripTransient(obj) {
+    if(!obj || typeof obj !== 'object') return obj;
+    const out = {};
+    for(const k of Object.keys(obj)) { if(!k.startsWith('_')) out[k] = obj[k]; }
+    return out;
+  }
+  const logo2Url = (DATA._logo2Url && DATA._logo2Url.length < 300000) ? DATA._logo2Url : null;
+  const cadeiaImg = DATA._cadeiaValorImg
+    ? (DATA._cadeiaValorImg.startsWith('http') ? DATA._cadeiaValorImg : (DATA._cadeiaValorImg.length < 300000 ? DATA._cadeiaValorImg : null))
+    : null;
+  const mapaImg = DATA._mapaEstrategicoImg
+    ? (DATA._mapaEstrategicoImg.startsWith('http') ? DATA._mapaEstrategicoImg : (DATA._mapaEstrategicoImg.length < 300000 ? DATA._mapaEstrategicoImg : null))
+    : null;
+  return {
+    d:                  _stripTransient(DATA.d),
+    r:                  _stripTransient(DATA.r),
+    pat:                DATA.pat || [],
+    audits:             DATA.audits || { plans:[], executions:[], nonconformities:[], actions:[] },
+    arqOverrides:       DATA._arqOverrides || null,
+    logoUrl:            DATA._logoUrl || null,
+    logo2Url:           logo2Url,
+    cadeiaValorImg:     cadeiaImg,
+    mapaEstrategicoImg: mapaImg,
+    newPops:            newPopKeys.map(k => ({ key: k, data: _stripTransient(DATA[k]) })),
+    repoDocs:           REPO_DOCS || [],
+    drops:              DROPS     || [],
+    indicadoresCage:    DATA.indicadoresCage || { indicadores: [], resultados: [] },
+    patrocinadores:     DATA.patrocinadores  || null,
+    config:             DATA.config          || null,
+    aptCatalog:         Array.isArray(DATA.aptCatalog) && DATA.aptCatalog.length > 0 ? DATA.aptCatalog : null,
+    quadro:             DATA.quadro          || null,
+    homeCards:          DATA.homeCards && Object.keys(DATA.homeCards).length > 0 ? DATA.homeCards : null,
+  };
+}
+
 async function saveToCloud(attempt=1) {
   /* saveToCloud attempt log suppressed */
   if(!isEditor) { /* saveToCloud blocked */ showToast('Sem permissão para salvar.','warn'); return; }
@@ -11415,6 +11419,67 @@ async function saveToCloud(attempt=1) {
   }
 }
 
+function _loadFromCloud_processNewPop(key, pd) {
+  if(!pd || typeof pd !== 'object' || Array.isArray(pd)) return;
+  if(!key.startsWith('pop_')) return;
+  DATA[key] = pd;
+  sanitizePop(key);
+  if(!document.getElementById('pop-' + key)) {
+    mountNewPopTab(key, pd.meta?.name || 'POP', true);
+  }
+  try { loadAcomp(key); } catch(e) { console.warn('[siga]', e); }
+  try { renderVersionBadge(key); } catch(e) { console.warn('[siga]', e); }
+  try { renderFicha(key); }       catch(e) { console.warn('[siga]', e); }
+  try { renderSipoc(key); }       catch(e) { console.warn('[siga]', e); }
+  try { renderFlowPreview(key); } catch(e) { console.warn('[siga]', e); }
+}
+
+function _loadFromCloud_renderPop(p) {
+  try {
+    sanitizePop(p);
+    const steps = DATA[p].steps;
+    if(!steps.length) return;
+    renderStep(p, DATA[p].currentStep);
+    renderRoles(p); renderIndicators(p);
+    try { renderFaq(p); }      catch(e) { console.warn('[siga]', e); }
+    try { renderNormas(p); }   catch(e) { console.warn('[siga]', e); }
+    try { renderRevisions(p); } catch(e) { console.warn('[siga]', e); }
+    try { renderSiglas(p); }    catch(e) { console.warn('[siga]', e); }
+    try { renderMetrics(p); }   catch(e) { console.warn('[siga]', e); }
+    try { renderFicha(p); }     catch(e) { console.warn('[siga]', e); }
+    try { renderSipoc(p); }     catch(e) { console.warn('[siga]', e); }
+    try { renderFlowPreview(p); } catch(e) { console.warn('[siga]', e); }
+    try { loadAcomp(p); }       catch(e) { console.warn('[siga]', e); }
+    try { renderVersionBadge(p); } catch(e) { console.warn('[siga]', e); }
+  } catch(e) { console.warn('[siga]', e); }
+}
+
+function _loadFromCloud_renderPopEmpty(p) {
+  try {
+    sanitizePop(p);
+    if(Array.isArray(DATA[p]?.steps) && DATA[p].steps.length > 0) {
+      renderStep(p, DATA[p].currentStep);
+    }
+    renderRoles(p);
+    renderIndicators(p);
+    loadAcomp(p);
+  } catch(e) { console.warn('[siga]', e); }
+}
+
+function _loadFromCloud_checkDeadlines() {
+  if(!_deadlineAlertsShown) {
+    _deadlineAlertsShown = true;
+    setTimeout(() => {
+      patCheckDeadlines();
+      checkActionsDeadlines();
+      if(isEditor) {
+        checkMapeamentoMilestones().catch(e => { console.warn('[siga] checkMapeamentoMilestones', e); });
+        checkActionsDeadlinesEmail().catch(e => { console.warn('[siga] checkActionsDeadlinesEmail', e); });
+      }
+    }, 800);
+  }
+}
+
 async function loadFromCloud() {
   if(!currentUser) { /* loadFromCloud blocked */ return; }
   setSyncStatus('syncing');
@@ -11434,18 +11499,7 @@ async function loadFromCloud() {
       const chip = document.getElementById('last-save-chip');
       if(chip) chip.textContent = 'Sem dados salvos';
       // Renderizar mesmo sem dados do cloud para evitar tela em branco
-      ['d','r'].forEach(p => {
-        try {
-          sanitizePop(p);
-          if(Array.isArray(DATA[p]?.steps) && DATA[p].steps.length > 0) {
-            renderStep(p, DATA[p].currentStep);
-          }
-          renderRoles(p);
-          renderIndicators(p);
-          loadAcomp(p);
-        } catch(e) { console.warn('[siga]', e); }
-      /* tratamento de erro */
-      });
+      ['d','r'].forEach(p => { _loadFromCloud_renderPopEmpty(p); });
       const homePage = document.getElementById('home-page');
       if(homePage && homePage.style.display !== 'none') homeRefresh();
       return;
@@ -11494,41 +11548,11 @@ async function loadFromCloud() {
     }
     if(payload.newPops?.length) {
       payload.newPops.forEach(({ key, data: pd }) => {
-        // Only process real POP objects (key must start with pop_ and pd must be a plain object)
-        if(!pd || typeof pd !== 'object' || Array.isArray(pd)) return;
-        if(!key.startsWith('pop_')) return;
-        DATA[key] = pd;
-        sanitizePop(key); // garante estrutura completa antes de montar
-        if(!document.getElementById('pop-' + key)) {
-          mountNewPopTab(key, pd.meta?.name || 'POP', true);
-        }
-        try { loadAcomp(key); } catch(e) { console.warn('[siga]', e); }
-        try { renderVersionBadge(key); } catch(e) { console.warn('[siga]', e); }
-        try { renderFicha(key); }       catch(e) { console.warn('[siga]', e); }
-        try { renderSipoc(key); }       catch(e) { console.warn('[siga]', e); }
-        try { renderFlowPreview(key); } catch(e) { console.warn('[siga]', e); }
+        _loadFromCloud_processNewPop(key, pd);
       });
     }
 
-    ['d','r'].forEach(p => {
-      try {
-        sanitizePop(p);
-        const steps = DATA[p].steps;
-        if(!steps.length) return;
-        renderStep(p, DATA[p].currentStep);
-        renderRoles(p); renderIndicators(p);
-        try { renderFaq(p); } catch(e) { console.warn('[siga]', e); }
-        try { renderNormas(p); } catch(e) { console.warn('[siga]', e); }
-        try { renderRevisions(p); } catch(e) { console.warn('[siga]', e); }
-        try { renderSiglas(p); }    catch(e) { console.warn('[siga]', e); }
-        try { renderMetrics(p); }   catch(e) { console.warn('[siga]', e); }
-        try { renderFicha(p); }     catch(e) { console.warn('[siga]', e); }
-        try { renderSipoc(p); }     catch(e) { console.warn('[siga]', e); }
-        try { renderFlowPreview(p); } catch(e) { console.warn('[siga]', e); }
-        try { loadAcomp(p); }       catch(e) { console.warn('[siga]', e); }
-        try { renderVersionBadge(p); } catch(e) { console.warn('[siga]', e); }
-      } catch(e) { console.warn('[siga]', e); }
-    });
+    ['d','r'].forEach(p => { _loadFromCloud_renderPop(p); });
 
     renderSidebar();
     if(typeof arqSyncFromPops === 'function') arqSyncFromPops();
@@ -11536,18 +11560,7 @@ async function loadFromCloud() {
     if(homePage && homePage.style.display !== 'none') homeRefresh();
     // Atualizar status automaticamente baseado nas datas
     checkAllAutoStatus();
-    if(!_deadlineAlertsShown) {
-      _deadlineAlertsShown = true;
-      setTimeout(() => {
-        patCheckDeadlines();
-        checkActionsDeadlines();
-        // Email alerts (fire-and-forget — only sends if configured)
-        if(isEditor) {
-          checkMapeamentoMilestones().catch(e => { console.warn('[siga] checkMapeamentoMilestones', e); });
-          checkActionsDeadlinesEmail().catch(e => { console.warn('[siga] checkActionsDeadlinesEmail', e); });
-        }
-      }, 800);
-    }
+    _loadFromCloud_checkDeadlines();
 
     setSyncStatus('synced');
     _lastLoadedAt = Date.now(); // registrar momento do carregamento para controle de re-sync
@@ -11720,7 +11733,7 @@ async function loadEditorList() {
     const canManage = isAdmin && !isSelf;
     const role = e.is_admin ? 'admin' : (e.role || 'editor');
     const roleLabel = { admin:'Admin', editor:'Editor', viewer:'Visualizador' };
-    const roleBg    = { admin:'#fef9c3', editor:'#dbeafe', viewer:'#dcf4e3' };
+    const roleBg    = { admin:'#fef9c3', editor:'#dbeafe', viewer:'#f0fdf4' };
     const roleColor = { admin:'#854d0e', editor:'#1e40af', viewer:'#166534' };
     return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:8px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
@@ -11731,7 +11744,7 @@ async function loadEditorList() {
         <span style="background:${roleBg[role]};color:${roleColor[role]};border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap;">${roleLabel[role]}</span>
       </div>
       ${canManage ? `<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
-        <button data-email="${escapeHtml(e.email)}" data-role="viewer" onclick="setEditorRole(this.dataset.email,this.dataset.role)" ${role==='viewer'?'disabled style="opacity:.4;cursor:default;"':''} style="flex:1;background:#dcf4e3;color:#166534;border:1px solid #bbf7d0;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">👁 Visualizador</button>
+        <button data-email="${escapeHtml(e.email)}" data-role="viewer" onclick="setEditorRole(this.dataset.email,this.dataset.role)" ${role==='viewer'?'disabled style="opacity:.4;cursor:default;"':''} style="flex:1;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">👁 Visualizador</button>
         <button data-email="${escapeHtml(e.email)}" data-role="editor" onclick="setEditorRole(this.dataset.email,this.dataset.role)" ${role==='editor'?'disabled style="opacity:.4;cursor:default;"':''} style="flex:1;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">✏️ Editor</button>
         <button data-email="${escapeHtml(e.email)}" data-role="admin"  onclick="setEditorRole(this.dataset.email,this.dataset.role)" ${role==='admin' ?'disabled style="opacity:.4;cursor:default;"':''} style="flex:1;background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">⭐ Admin</button>
         <button data-email="${escapeHtml(e.email)}" onclick="removeEditor(this.dataset.email)" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:7px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;">✕ Remover</button>
@@ -11851,17 +11864,83 @@ async function _resolveFreshAccessToken() {
 let supaClient = null;
 let currentUser = null;
 
-// ── Stubs para funções Gemini removidas ──────────────
-async function callGeminiProxy() {
-  throw new Error('Funções de IA (Gemini) foram removidas do sistema. Configure um backend de IA alternativo (GitHub Copilot) e defina a variável API_URL.');
+async function callGeminiProxy(prompt, image = null, options = {}) {
+  const payload = {
+    prompt: String(prompt || '').slice(0, 24000),
+    image: image || undefined,
+    maxTokens: options.maxTokens || undefined,
+  };
+
+  const apiBase = String(API_URL || '').replace(/\/$/, '');
+  const endpointCandidates = [
+    `${apiBase}/ai`,
+    'http://127.0.0.1:3000/ai',
+    'http://localhost:3000/ai',
+    `${apiBase}/api/ai`,
+    '/api/ai',
+    'http://127.0.0.1:3000/api/ai',
+    'http://localhost:3000/api/ai',
+  ];
+
+  const uniqueEndpoints = [...new Set(endpointCandidates.filter(Boolean))];
+  let lastErr = null;
+  let saw503 = false;
+  let definitiveErr = null;
+
+  for (const endpoint of uniqueEndpoints) {
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!resp.ok) {
+        if (resp.status === 503) saw503 = true;
+        const err = await resp.json().catch(() => ({}));
+        const msg = String(err.error || err.message || '').trim();
+        lastErr = new Error(msg || `Erro na IA (${resp.status}) em ${endpoint}`);
+
+        if (resp.status === 404 || resp.status === 405) {
+          continue;
+        }
+
+        if (resp.status === 503 && /nao configurada|não configurada|api[_\s-]?key/i.test(msg)) {
+          definitiveErr = lastErr;
+          break;
+        }
+
+        if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) {
+          definitiveErr = lastErr;
+          break;
+        }
+        continue;
+      }
+
+      const data = await resp.json();
+      if (!data.text) {
+        lastErr = new Error('Resposta vazia da IA');
+        continue;
+      }
+      return data.text;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  if (definitiveErr) throw definitiveErr;
+  if (saw503) {
+    throw new Error('IA temporariamente indisponível (503). Verifique se o backend local de IA está ativo e tente novamente.');
+  }
+  throw new Error(lastErr?.message || 'Falha ao chamar a IA.');
 }
 
-async function callGemini() {
-  return callGeminiProxy();
+async function callGemini(prompt) {
+  return callGeminiProxy(prompt, null);
 }
 
-async function callGeminiVision() {
-  return callGeminiProxy();
+async function callGeminiVision(prompt, base64, mimeType) {
+  return callGeminiProxy(prompt, { data: base64, mimeType });
 }
 
 // ── MODO LOCAL: login automático ──────────────
@@ -12467,20 +12546,20 @@ function runSearch(raw) {
     return `<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:10px 16px 4px;">${label}</div>` +
       items.map(r => {
         if(r.type === 'faq') return `
-          <div class="search-result-item" onclick="goToFaq('${r.key}', ${r.idx})">
+          <div class="search-result-item" onclick="goToFaq('${r.key}', ${r.idx})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="search-result-pop">📋 ${r.popName} · FAQ</div>
             <div class="search-result-q">${highlight(r.faq.q, q)}</div>
             ${r.faq.a ? `<div class="search-result-a">${highlight(r.faq.a.substring(0,200)+(r.faq.a.length>200?'…':''), q)}</div>` : ''}
           </div>`;
         if(r.type === 'norma') return `
-          <div class="search-result-item" onclick="goToNorma('${r.key}', ${r.idx})">
+          <div class="search-result-item" onclick="goToNorma('${r.key}', ${r.idx})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="search-result-pop">📜 ${r.popName} · Normas & Revisões</div>
             <div class="search-result-q">${highlight(r.norma.code||'', q)}</div>
             ${r.norma.name ? `<div class="search-result-a">${highlight(r.norma.name, q)}</div>` : ''}
             ${r.norma.url ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:4px;">🔗 ${r.norma.url}</div>` : ''}
           </div>`;
         if(r.type === 'repo_faq') return `
-          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-faq="true" onclick="openRepoDocViewer(this.dataset.docId,true)">
+          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-faq="true" onclick="openRepoDocViewer(this.dataset.docId,true)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="search-result-pop">📚 ${r.doc.title} · FAQ do Manual</div>
             <div class="search-result-q">${highlight(r.faq.q, q)}</div>
             ${r.faq.a ? `<div class="search-result-a">${highlight(r.faq.a.substring(0,240)+(r.faq.a.length>240?'…':''), q)}</div>` : ''}
@@ -12490,11 +12569,11 @@ function runSearch(raw) {
           const inDesc  = (r.doc.desc||'').toLowerCase().includes(lower);
           const inContent = !inTitle && !inDesc && (r.doc.textContent||'').toLowerCase().includes(lower);
           return `
-          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-in-content="${inContent ? 'true' : 'false'}" onclick="this.dataset.inContent==='true' ? openRepoDocViewer(this.dataset.docId) : goToRepoDoc(this.dataset.docId)">
+          <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-in-content="${inContent ? 'true' : 'false'}" onclick="this.dataset.inContent==='true' ? openRepoDocViewer(this.dataset.docId) : goToRepoDoc(this.dataset.docId)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div class="search-result-pop">📚 Documentos & Manuais · ${r.doc.cat||'Documento'}</div>
             <div class="search-result-q">${highlight(r.doc.title||'', q)}</div>
             ${r.doc.desc ? `<div class="search-result-a">${highlight(r.doc.desc.substring(0,180)+(r.doc.desc.length>180?'…':''), q)}</div>` : ''}
-            ${inContent ? `<div style="font-size:11px;color:#374151;background:#dcf4e3;border-left:3px solid #00a86b;border-radius:0 4px 4px 0;padding:4px 8px;margin-top:4px;line-height:1.6;">🔍 Clique para ver o trecho completo no documento</div>` : ''}
+            ${inContent ? `<div style="font-size:11px;color:#374151;background:#f0fdf4;border-left:3px solid #00a86b;border-radius:0 4px 4px 0;padding:4px 8px;margin-top:4px;line-height:1.6;">🔍 Clique para ver o trecho completo no documento</div>` : ''}
             <div style="font-size:11px;color:var(--cage-accent);margin-top:4px;">
               ${r.doc.fileName ? `📎 ${highlight(r.doc.fileName, q)}` : ''}
               ${r.doc.fileUrl ? ` · <a href="${r.doc.fileUrl}" target="_blank" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">Abrir arquivo</a>` : ''}
@@ -12552,7 +12631,7 @@ function openRepoDocViewer(id, showFaqs) {
     <div style="flex:1;min-width:0;">
       <div style="font-weight:800;font-size:17px;color:#1B3022;line-height:1.3;">${doc.title}</div>
       <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-        <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#00a86b;color:#ffffff;font-weight:600;">${doc.cat}</span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#f0faf5;color:#00a86b;font-weight:600;">${doc.cat}</span>
         ${doc.version ? `<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#f1f5f9;color:#64748b;">${doc.version}</span>` : ''}
         <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#fef2f2;color:#e11d48;">${(doc.fileType||'').toUpperCase()}</span>
       </div>
@@ -13328,6 +13407,55 @@ async function eppExportStatusReportConfirm() {
   if(btnTop) { btnTop.textContent = '📊 Exportar Status Report'; btnTop.disabled = false; }
 }
 
+function _srChartToBase64(codigo, chartType, resultados) {
+  return new Promise(resolve => {
+    const cfg = (typeof _getOverride === 'function') ? _getOverride(codigo) : {};
+    const all = resultados.filter(r => r.codigo === codigo).sort((a,b) => (a.periodo||'').localeCompare(b.periodo||''));
+    if(all.length === 0) return resolve(null);
+    const canvas = document.createElement('canvas');
+    canvas.width = 900; canvas.height = 380;
+    canvas.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
+    document.body.appendChild(canvas);
+
+    const hasPercentage = cfg.tipo !== 'numero' && cfg.tipo !== 'moeda' &&
+      all.some(r => r.pctRealizado !== null && r.pctRealizado !== undefined && r.pctRealizado !== 0);
+    const periodoLbl = p => { if(!p) return ''; const [y,m]=p.split('-'); return m&&y ? new Date(parseInt(y),parseInt(m)-1,1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}) : p; };
+    const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replace('.',','); };
+
+    let chartCfg;
+    if(chartType==='yoy' && hasPercentage) {
+      const byYearMonth = {};
+      all.forEach(r => { if(!r.periodo) return; const [yr,mo]=r.periodo.split('-'); if(!yr||!mo) return; if(!byYearMonth[yr]) byYearMonth[yr]={}; byYearMonth[yr][mo]=r.pctRealizado; });
+      const years = Object.keys(byYearMonth).sort().slice(-3);
+      const months = [...new Set(all.map(r=>r.periodo?.slice(5,7)).filter(Boolean))].sort();
+      const monthLabels = months.map(m => { const d=new Date(2000,parseInt(m)-1,1); return d.toLocaleString('pt-BR',{month:'short'}); });
+      const palette = ['#1B3022','#00a86b','#e8a020'];
+      chartCfg = { type:'bar', data:{ labels:monthLabels, datasets:years.map((yr,yi)=>({ label:yr, data:months.map(m=>byYearMonth[yr]?.[m]??null), backgroundColor:palette[yi]+'cc', borderColor:palette[yi], borderWidth:1.5, borderRadius:4 })) }, options:{ responsive:false, animation:false, plugins:{ legend:{ labels:{ font:{size:13} } }, tooltip:{enabled:false} }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+'%', font:{size:12} } }, x:{ ticks:{ font:{size:12} } } } } };
+    } else if(hasPercentage) {
+      const last18 = all.slice(-18);
+      const pctClass = (v, c) => { const thr = c?.pctVerde||90; return v>=thr?'verde':v>=(c?.pctAmarelo||70)?'amarelo':'vermelho'; };
+      chartCfg = { type:'bar', data:{ labels:last18.map(r=>periodoLbl(r.periodo)), datasets:[{ label:'% Realizado', data:last18.map(r=>r.pctRealizado), backgroundColor:last18.map(r=>{ const cl=pctClass(r.pctRealizado,cfg); return cl==='verde'?'rgba(22,163,74,.8)':cl==='amarelo'?'rgba(234,179,8,.8)':'rgba(220,38,38,.8)'; }), borderRadius:4, order:2 }, { label:'% Índice (meta)', data:last18.map(()=>100), type:'line', borderColor:'#1B3022', backgroundColor:'rgba(27,48,34,.08)', borderWidth:2.5, pointRadius:3, tension:.3, fill:false, order:1 }] }, options:{ responsive:false, animation:false, plugins:{ legend:{ labels:{ font:{size:13} } }, tooltip:{enabled:false} }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+'%', font:{size:12} } }, x:{ ticks:{ font:{size:10}, maxRotation:45 } } } } };
+    } else {
+      const last18 = all.slice(-18);
+      const realizadoAbs = last18.map(r=>r.realizado!==undefined?r.realizado:null);
+      let metaAbs = last18.map(r=>r.meta!==undefined?r.meta:null);
+      const hasMeta = metaAbs.some(m=>m!==null&&m!==0);
+      if(!hasMeta) { const last12=all.slice(-12).filter(r=>r.realizado!==null&&r.realizado!==undefined&&r.realizado!==0); if(last12.length>0) { const med=last12.reduce((s,r)=>s+r.realizado,0)/last12.length; metaAbs=last18.map(()=>med); } }
+      if(cfg.metaRef!==null&&cfg.metaRef!==undefined) metaAbs=last18.map(()=>cfg.metaRef);
+      const bgColors=realizadoAbs.map((v,i)=>{ if(v===null)return'#cbd5e1'; const m=metaAbs[i]; if(!m)return'rgba(27,48,34,.7)'; const r=v/m*100; return r>=90?'rgba(22,163,74,.8)':r>=70?'rgba(234,179,8,.8)':'rgba(220,38,38,.8)'; });
+      chartCfg = { type:'bar', data:{ labels:last18.map(r=>periodoLbl(r.periodo)), datasets:[{ label:'Realizado', data:realizadoAbs, backgroundColor:bgColors, borderRadius:4, order:2 },{ label:'Meta', data:metaAbs, type:'line', borderColor:'#1B3022', backgroundColor:'rgba(27,48,34,.08)', borderWidth:2.5, pointRadius:3, tension:.3, fill:false, order:1 }] }, options:{ responsive:false, animation:false, plugins:{ legend:{ labels:{ font:{size:13} } }, tooltip:{enabled:false} }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmtN(v), font:{size:12} } }, x:{ ticks:{ font:{size:10}, maxRotation:45 } } } } };
+    }
+
+    const chart = new Chart(canvas, chartCfg);
+    setTimeout(() => {
+      const dataUrl = canvas.toDataURL('image/png');
+      chart.destroy();
+      document.body.removeChild(canvas);
+      resolve(dataUrl);
+    }, 100);
+  });
+}
+
 async function _buildEppStatusReport(opts = {}) {
   const { trimestre, ano, subtitulo: subtituloOpt, usarIA = true, selectedCodigos = [] } = opts;
   const pres = new PptxGenJS();
@@ -13977,54 +14105,6 @@ async function _buildEppStatusReport(opts = {}) {
     const allInds = (typeof getAllIndicators === 'function') ? getAllIndicators() : [];
     const resultados = (DATA.indicadoresCage?.resultados) || [];
 
-    // helper: renderiza gráfico em canvas offscreen → base64
-    const _srChartToBase64 = (codigo, chartType) => new Promise(resolve => {
-      const cfg = (typeof _getOverride === 'function') ? _getOverride(codigo) : {};
-      const all = resultados.filter(r => r.codigo === codigo).sort((a,b) => (a.periodo||'').localeCompare(b.periodo||''));
-      if(all.length === 0) return resolve(null);
-      const canvas = document.createElement('canvas');
-      canvas.width = 900; canvas.height = 380;
-      canvas.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
-      document.body.appendChild(canvas);
-
-      const hasPercentage = cfg.tipo !== 'numero' && cfg.tipo !== 'moeda' &&
-        all.some(r => r.pctRealizado !== null && r.pctRealizado !== undefined && r.pctRealizado !== 0);
-      const periodoLbl = p => { if(!p) return ''; const [y,m]=p.split('-'); return m&&y ? new Date(parseInt(y),parseInt(m)-1,1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}) : p; };
-      const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replace('.',','); };
-
-      let chartCfg;
-      if(chartType==='yoy' && hasPercentage) {
-        const byYearMonth = {};
-        all.forEach(r => { if(!r.periodo) return; const [yr,mo]=r.periodo.split('-'); if(!yr||!mo) return; if(!byYearMonth[yr]) byYearMonth[yr]={}; byYearMonth[yr][mo]=r.pctRealizado; });
-        const years = Object.keys(byYearMonth).sort().slice(-3);
-        const months = [...new Set(all.map(r=>r.periodo?.slice(5,7)).filter(Boolean))].sort();
-        const monthLabels = months.map(m => { const d=new Date(2000,parseInt(m)-1,1); return d.toLocaleString('pt-BR',{month:'short'}); });
-        const palette = ['#1B3022','#00a86b','#e8a020'];
-        chartCfg = { type:'bar', data:{ labels:monthLabels, datasets:years.map((yr,yi)=>({ label:yr, data:months.map(m=>byYearMonth[yr]?.[m]??null), backgroundColor:palette[yi]+'cc', borderColor:palette[yi], borderWidth:1.5, borderRadius:4 })) }, options:{ responsive:false, animation:false, plugins:{ legend:{ labels:{ font:{size:13} } }, tooltip:{enabled:false} }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+'%', font:{size:12} } }, x:{ ticks:{ font:{size:12} } } } } };
-      } else if(hasPercentage) {
-        const last18 = all.slice(-18);
-        const pctClass = (v, c) => { const thr = c?.pctVerde||90; return v>=thr?'verde':v>=(c?.pctAmarelo||70)?'amarelo':'vermelho'; };
-        chartCfg = { type:'bar', data:{ labels:last18.map(r=>periodoLbl(r.periodo)), datasets:[{ label:'% Realizado', data:last18.map(r=>r.pctRealizado), backgroundColor:last18.map(r=>{ const cl=pctClass(r.pctRealizado,cfg); return cl==='verde'?'rgba(22,163,74,.8)':cl==='amarelo'?'rgba(234,179,8,.8)':'rgba(220,38,38,.8)'; }), borderRadius:4, order:2 }, { label:'% Índice (meta)', data:last18.map(()=>100), type:'line', borderColor:'#1B3022', backgroundColor:'rgba(27,48,34,.08)', borderWidth:2.5, pointRadius:3, tension:.3, fill:false, order:1 }] }, options:{ responsive:false, animation:false, plugins:{ legend:{ labels:{ font:{size:13} } }, tooltip:{enabled:false} }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>v+'%', font:{size:12} } }, x:{ ticks:{ font:{size:10}, maxRotation:45 } } } } };
-      } else {
-        const last18 = all.slice(-18);
-        const realizadoAbs = last18.map(r=>r.realizado!==undefined?r.realizado:null);
-        let metaAbs = last18.map(r=>r.meta!==undefined?r.meta:null);
-        const hasMeta = metaAbs.some(m=>m!==null&&m!==0);
-        if(!hasMeta) { const last12=all.slice(-12).filter(r=>r.realizado!==null&&r.realizado!==undefined&&r.realizado!==0); if(last12.length>0) { const med=last12.reduce((s,r)=>s+r.realizado,0)/last12.length; metaAbs=last18.map(()=>med); } }
-        if(cfg.metaRef!==null&&cfg.metaRef!==undefined) metaAbs=last18.map(()=>cfg.metaRef);
-        const bgColors=realizadoAbs.map((v,i)=>{ if(v===null)return'#cbd5e1'; const m=metaAbs[i]; if(!m)return'rgba(27,48,34,.7)'; const r=v/m*100; return r>=90?'rgba(22,163,74,.8)':r>=70?'rgba(234,179,8,.8)':'rgba(220,38,38,.8)'; });
-        chartCfg = { type:'bar', data:{ labels:last18.map(r=>periodoLbl(r.periodo)), datasets:[{ label:'Realizado', data:realizadoAbs, backgroundColor:bgColors, borderRadius:4, order:2 },{ label:'Meta', data:metaAbs, type:'line', borderColor:'#1B3022', backgroundColor:'rgba(27,48,34,.08)', borderWidth:2.5, pointRadius:3, tension:.3, fill:false, order:1 }] }, options:{ responsive:false, animation:false, plugins:{ legend:{ labels:{ font:{size:13} } }, tooltip:{enabled:false} }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmtN(v), font:{size:12} } }, x:{ ticks:{ font:{size:10}, maxRotation:45 } } } } };
-      }
-
-      const chart = new Chart(canvas, chartCfg);
-      setTimeout(() => {
-        const dataUrl = canvas.toDataURL('image/png');
-        chart.destroy();
-        document.body.removeChild(canvas);
-        resolve(dataUrl);
-      }, 100);
-    });
-
     for(let idx=0; idx<selectedCodigos.length; idx++) {
       const codigo = selectedCodigos[idx];
       const ind = allInds.find(i => i.codigo === codigo);
@@ -14056,7 +14136,7 @@ async function _buildEppStatusReport(opts = {}) {
         sInd.addText(val,{x:1.4,y:ry,w:fichaW-1.25,h:rowH,fontSize:9,color:'1E293B',valign:'middle',wrap:true});
       });
 
-      const imgB64 = await _srChartToBase64(codigo, 'evo');
+      const imgB64 = await _srChartToBase64(codigo, 'evo', resultados);
       if(imgB64) {
         sInd.addImage({data:imgB64,x:3.85,y:0.9,w:5.95,h:3.1});
         sInd.addText('Evolução dos Resultados',{x:3.85,y:4.0,w:5.95,h:0.28,fontSize:9,italic:true,color:CI.muted,align:'center'});
@@ -14097,7 +14177,7 @@ async function _buildEppStatusReport(opts = {}) {
       const hasPercentage = cfg.tipo!=='numero' && cfg.tipo!=='moeda' &&
         resDoInd.some(r=>r.pctRealizado!==null&&r.pctRealizado!==undefined&&r.pctRealizado!==0);
       if(hasPercentage && resDoInd.length>0) {
-        const imgYoy = await _srChartToBase64(codigo, 'yoy');
+        const imgYoy = await _srChartToBase64(codigo, 'yoy', resultados);
         if(imgYoy) {
           const sYoy = pres.addSlide();
           addIndHdr(sYoy, tituloInd + ' — Comparativo Anual (YoY)', `Indicadores · ${idx+1}/${selectedCodigos.length}`);
@@ -14193,7 +14273,7 @@ function renderSipoc(p) {
   const cols = [
     {key:'fornecedores', label:'Fornecedores', color:'#3b82f6', bg:'#eff6ff', icon:'📦'},
     {key:'entradas',     label:'Entradas',     color:'#8b5cf6', bg:'#f5f3ff', icon:'➡️'},
-    {key:'processo',     label:'Processo',     color:'#059669', bg:'#dcf4e3', icon:'⚙️'},
+    {key:'processo',     label:'Processo',     color:'#059669', bg:'#f0fdf4', icon:'⚙️'},
     {key:'saidas',       label:'Saídas',       color:'#f59e0b', bg:'#fffbeb', icon:'📤'},
     {key:'clientes',     label:'Clientes',     color:'#ef4444', bg:'#fef2f2', icon:'👥'},
   ];
@@ -14250,7 +14330,7 @@ function renderFicha(p) {
   const statusColors = {
     planejado:    { bg:'#f0f9ff', color:'#0369a1', border:'#bae6fd' },
     em_andamento: { bg:'#fffbeb', color:'#b45309', border:'#fde68a' },
-    concluido:    { bg:'#dcf4e3', color:'#15803d', border:'#bbf7d0' },
+    concluido:    { bg:'#f0fdf4', color:'#15803d', border:'#bbf7d0' },
     atrasado:     { bg:'#fff1f2', color:'#be123c', border:'#fecdd3' },
     suspenso:     { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe' },
   };
@@ -14331,7 +14411,7 @@ function renderFicha(p) {
       matBadgeHtml = `
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);">
           <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;">Maturidade</div>
-          <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
+          <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div style="text-align:center;flex-shrink:0;">
               <div style="font-size:30px;font-weight:900;color:${matFinal.levelColor};line-height:1;">${matFinal.final}</div>
               <div style="font-size:9px;color:#94a3b8;line-height:1.2;">/ 100</div>
@@ -14522,7 +14602,7 @@ function _renderFichaProgressHtml(p) {
     const sep = i < etapas.length - 1 ? 'border-bottom:1px solid var(--cage-border);' : '';
 
     return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;${sep}">
-      <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}">${checkSvg}</div>
+      <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${checkSvg}</div>
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;flex-wrap:wrap;">
           <span style="${labelStyle}">${e.label}</span>${naBtn}
@@ -14885,7 +14965,7 @@ function openVersionSelector(p, badgeEl) {
 
   panel.innerHTML = allVersions.map(item => {
     const isActive = item.v === viewing;
-    return `<div class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();">
+    return `<div class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
       <div>
         <div>${item.isCurrent ? '✏️' : '📄'} <strong>v${item.v}</strong>${item.isCurrent ? ' <span style="font-size:10px;color:#059669;">(atual)</span>' : ''}</div>
         <div class="vs-meta">${item.date}${item.note ? ' · ' + item.note : ''}</div>
@@ -14893,7 +14973,7 @@ function openVersionSelector(p, badgeEl) {
     </div>`;
   }).join('') +
   (editMode && !d._viewingVersion || d._viewingVersion === cur ?
-    `<div class="vs-item vs-new" onclick="openNewVersionModal();this.closest('.version-selector-panel').remove();">＋ Nova Versão</div>` : '');
+    `<div class="vs-item vs-new" onclick="openNewVersionModal();this.closest('.version-selector-panel').remove();" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">＋ Nova Versão</div>` : '');
 
   badgeEl.closest('.version-badge-wrap').appendChild(panel);
   // Fechar ao clicar fora
@@ -15961,7 +16041,7 @@ function arqShowProcessDetail(idx) {
     let fluxoSection = '';
     if(fluxoUrl) {
       fluxoSection = `<div style="margin-top:4px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;max-height:180px;text-align:center;background:#f8fafc;cursor:zoom-in;position:relative;"
-          onclick="arqOpenFluxoLightbox('${fluxoUrl}')" title="Clique para ampliar">
+          onclick="arqOpenFluxoLightbox('${fluxoUrl}')" title="Clique para ampliar" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <img src="${fluxoUrl}" style="max-width:100%;max-height:180px;object-fit:contain;" alt="Fluxograma">
         <div style="position:absolute;bottom:4px;right:6px;font-size:10px;background:rgba(0,0,0,.45);color:white;border-radius:4px;padding:2px 6px;">🔍 ampliar</div>
       </div>`;
@@ -16368,7 +16448,7 @@ function showPopGallery() {
           ${canDelete ? `<button onclick="event.stopPropagation();popDeleteWork('${k}')"
             style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 5px;border-radius:4px;"
             onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
-          <div onclick="switchPop('${k}')">
+          <div onclick="switchPop('${k}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             <div style="font-size:28px;margin-bottom:10px;">📄</div>
             <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:6px;">${name}</div>
             ${macro ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macro}</div>` : ''}
@@ -16394,7 +16474,7 @@ function renderPopsGrid() {
   const statusColors = {
     planejado:    { bg:'#f0f9ff', color:'#0369a1', border:'#bae6fd' },
     em_andamento: { bg:'#fffbeb', color:'#b45309', border:'#fde68a' },
-    concluido:    { bg:'#dcf4e3', color:'#15803d', border:'#bbf7d0' },
+    concluido:    { bg:'#f0fdf4', color:'#15803d', border:'#bbf7d0' },
     atrasado:     { bg:'#fff1f2', color:'#be123c', border:'#fecdd3' },
     suspenso:     { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe' },
   };
@@ -16457,10 +16537,10 @@ function renderPopsGrid() {
               style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 4px;border-radius:4px;z-index:1;"
               onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-right:${canDelete?'20px':'0'};">
-              <div style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;" onclick="hideHome();switchPop('${p.key}')">${meta.name || p.label}</div>
+              <div style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;" onclick="hideHome();switchPop('${p.key}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${meta.name || p.label}</div>
               ${sc ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};white-space:nowrap;flex-shrink:0;">${stLabel}</span>` : ''}
             </div>
-            <div onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;">
+            <div onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
             ${macroMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macroMeta}</div>` : ''}
             ${processoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Processo:</span> ${processoMeta}</div>` : ''}
             ${subprocessoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Subprocesso:</span> ${subprocessoMeta}</div>` : ''}
@@ -17586,7 +17666,7 @@ function npopRenderAtores(selectedArr, isCreateForm) {
   const selected = new Set(selectedArr || []);
   wrap.innerHTML = atores.map(a => {
     const on = selected.has(a);
-    return `<span data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};">${escapeHtml(a)}</span>`;
+    return `<span data-ator="${escapeHtml(a)}" data-is-create="${isCreateForm ? 'true' : 'false'}" onclick="npopToggleAtor(this,this.dataset.ator,this.dataset.isCreate==='true')" style="cursor:pointer;padding:3px 10px;border-radius:12px;font-size:12px;border:1px solid ${on?'#1a56db':'#d1d5db'};background:${on?'#e8f0fe':'#fff'};color:${on?'#1a56db':'#374151'};" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">${escapeHtml(a)}</span>`;
   }).join('');
   if(hidden) hidden.value = [...selected].join(',');
 }
@@ -17879,7 +17959,7 @@ function repoRender() {
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;font-size:14px;color:#1B3022;line-height:1.3;word-break:break-word;">${d.title}</div>
           <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
-            <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#00a86b;color:#ffffff;font-weight:600;">${d.cat}</span>
+            <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#f0faf5;color:#00a86b;font-weight:600;">${d.cat}</span>
             ${d.version ? `<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#f1f5f9;color:#64748b;">${d.version}</span>` : ''}
             <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#fef2f2;color:#e11d48;">${(d.fileType||'outro').toUpperCase()}</span>
           </div>
@@ -17893,7 +17973,7 @@ function repoRender() {
           && !d.title.toLowerCase().includes(sq.toLowerCase())
           && !(d.desc||'').toLowerCase().includes(sq.toLowerCase());
         if(!inContent) return '';
-        return `<div style="font-size:11px;color:#374151;background:#dcf4e3;border-left:3px solid #00a86b;border-radius:0 6px 6px 0;padding:6px 10px;line-height:1.6;">🔍 Encontrado no conteúdo: ${repoGetExcerpt(d.textContent, sq)}</div>`;
+        return `<div style="font-size:11px;color:#374151;background:#f0fdf4;border-left:3px solid #00a86b;border-radius:0 6px 6px 0;padding:6px 10px;line-height:1.6;">🔍 Encontrado no conteúdo: ${repoGetExcerpt(d.textContent, sq)}</div>`;
       })()}
       ${(d.faqs && d.faqs.length > 0) ? `
       <details style="margin-top:4px;">
@@ -18100,7 +18180,7 @@ function dropsRender() {
     const pub = new Date(d.publishedAt);
     const dateLabel = pub.toLocaleDateString('pt-BR', {month:'long', year:'numeric', timeZone:'UTC'});
     const coverHtml = d.coverUrl
-      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)"><img src="${escapeHtml(d.coverUrl)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
+      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"><img src="${escapeHtml(d.coverUrl)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
       : `<div style="height:80px;background:linear-gradient(135deg,#1B3022,#003366);display:flex;align-items:center;justify-content:center;font-size:36px;">💧</div>`;
     return `
     <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
@@ -19831,7 +19911,7 @@ function auditRenderHeatmap() {
     byProc[proc][etapa].total++;
   });
 
-  const heatColor = n => n === 0 ? '#dcf4e3' : n <= 2 ? '#fef9c3' : n <= 4 ? '#fed7aa' : '#fecaca';
+  const heatColor = n => n === 0 ? '#f0fdf4' : n <= 2 ? '#fef9c3' : n <= 4 ? '#fed7aa' : '#fecaca';
   const heatBorder = n => n === 0 ? '#86efac' : n <= 2 ? '#fde047' : n <= 4 ? '#fb923c' : '#f87171';
   const heatText = n => n === 0 ? '#15803d' : n <= 2 ? '#854d0e' : n <= 4 ? '#9a3412' : '#991b1b';
 
@@ -19913,7 +19993,7 @@ function exportFluxoWord(p) {
           ${s.responsible ? `<div style="margin-left:auto;font-size:9pt;background:rgba(255,255,255,.15);padding:2px 10px;border-radius:12px;white-space:nowrap;">👤 ${s.responsible}</div>` : ''}
         </div>
         ${actRows ? `<table style="width:100%;border-collapse:collapse;">${actRows}</table>` : '<p style="padding:8px 14px;color:#94a3b8;font-size:9pt;margin:0;">Sem ações cadastradas.</p>'}
-        ${s.note ? `<div style="padding:6px 14px;background:#dcf4e3;border-top:1px solid #bbf7d0;font-size:9pt;color:#065f46;">💬 ${s.note}</div>` : ''}
+        ${s.note ? `<div style="padding:6px 14px;background:#f0fdf4;border-top:1px solid #bbf7d0;font-size:9pt;color:#065f46;">💬 ${s.note}</div>` : ''}
       </div>`;
     }).join('');
   }
@@ -21079,7 +21159,7 @@ function statusModalAutoFill() {
 
     el.innerHTML =
       // Resumo geral
-      `<div style="display:flex;align-items:center;gap:14px;padding:10px 14px;background:#dcf4e3;border-radius:10px;border:1px solid #bbf7d0;margin-bottom:4px;">
+      `<div style="display:flex;align-items:center;gap:14px;padding:10px 14px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;margin-bottom:4px;">
         <div style="font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.05em;">Total geral</div>
         <div style="flex:1;background:#e2e8f0;border-radius:4px;height:8px;overflow:hidden;">
           <div style="height:100%;background:#15803d;border-radius:4px;width:${pctGeral}%;transition:width .4s;"></div>
@@ -24451,7 +24531,7 @@ function matRender(p) {
       ${MAT_QUESTIONS.map((q, i) => {
         const cur = activeAnswers[i];
         return `
-          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${cur !== null ? '#dcf4e3' : '#f8fafc'};border-radius:8px;margin-bottom:8px;border:1px solid ${cur !== null ? '#bbf7d0' : '#f1f5f9'};flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${cur !== null ? '#f0fdf4' : '#f8fafc'};border-radius:8px;margin-bottom:8px;border:1px solid ${cur !== null ? '#bbf7d0' : '#f1f5f9'};flex-wrap:wrap;">
             <div style="min-width:22px;font-size:12px;font-weight:800;color:#94a3b8;">${i+1}</div>
             <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}${q.inverted ? ' <span style="font-size:10px;color:#6366f1;font-weight:600;">(invertida)</span>' : ''}</div>
             <div style="display:flex;gap:6px;flex-shrink:0;">
@@ -25224,7 +25304,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
 
 
 <!-- BUSCA GLOBAL -->
-<div class="search-modal-overlay" id="search-overlay" onclick="closeSearchIfOutside(event)">
+<div class="search-modal-overlay" id="search-overlay" onclick="closeSearchIfOutside(event)" role="presentation">
   <div class="search-modal">
     <div class="search-modal-head">
       <span>🔍</span>
@@ -25264,7 +25344,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5;">
           Restaura os dados a partir de um arquivo de backup gerado anteriormente. <strong>Atenção: substituirá todos os dados atuais.</strong>
         </div>
-        <div class="backup-zone" onclick="document.getElementById('backup-file-input').click()">
+        <div class="backup-zone" onclick="document.getElementById('backup-file-input').click()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
           <input type="file" id="backup-file-input" accept=".json" onchange="previewBackupFile(this)">
           <div class="backup-zone-icon">📂</div>
           <div class="backup-zone-label">Clique para selecionar o arquivo .json</div>
@@ -25696,9 +25776,9 @@ if ('serviceWorker' in navigator) {
       .catch(e => { console.warn('[siga] service worker unregister', e); });
   } else {
     navigator.serviceWorker.register('/sw.js?v=' + SW_VERSION).then(reg => {
-      // Sem onupdatefound/reload: o SW já é network-first para HTML,
-      // então o conteúdo mais recente é sempre servido da rede.
-      // O reload forçado causava interrupção do loadFromCloud/saveToCloud a cada F5.
+    // Sem onupdatefound/reload: o SW já é network-first para HTML,
+    // então o conteúdo mais recente é sempre servido da rede.
+    // O reload forçado causava interrupção do loadFromCloud/saveToCloud a cada F5.
     }).catch(e => { console.warn('[siga] service worker registration', e); });
   }
 }
