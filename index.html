@@ -18077,9 +18077,12 @@ async function repoGenerateFaqsFromPdf(id) {
       r.onerror = rej;
       r.readAsDataURL(blob);
     });
-    const mimeType = 'application/pdf';
-    const prompt = `Você é um especialista em processos e gestão pública. Analise o documento PDF completo enviado e gere entre 5 e 10 perguntas frequentes (FAQ) realistas que usuários, servidores ou gestores fariam sobre este documento.\n\nRegras:\n- Leia o documento INTEIRO antes de gerar as perguntas\n- As perguntas devem ser práticas e relevantes ao conteúdo real do documento\n- As respostas devem ser claras, objetivas e baseadas apenas no conteúdo do documento\n- Nunca invente informações que não estejam no documento\n\nRetorne APENAS JSON puro (sem markdown, sem \`\`\`):\n[{"q":"pergunta","a":"resposta"},...]`;
-    const text = await callGeminiProxy(prompt, { data: base64, mimeType });
+    
+    // PDFs não são suportados por Vision API - usar apenas modelo de texto
+    const prompt = `Você é um especialista em processos e gestão pública. Analise o documento PDF enviado (em base64) e gere entre 5 e 10 perguntas frequentes (FAQ) realistas que usuários, servidores ou gestores fariam sobre este documento.\n\nDocumento PDF (base64):\n${base64}\n\nRegras:\n- Leia o documento INTEIRO antes de gerar as perguntas\n- As perguntas devem ser práticas e relevantes ao conteúdo real do documento\n- As respostas devem ser claras, objetivas e baseadas apenas no conteúdo do documento\n- Nunca invente informações que não estejam no documento\n\nRetorne APENAS JSON puro (sem markdown, sem \`\`\`):\n[{"q":"pergunta","a":"resposta"},...]`;
+    
+    // Enviar apenas com prompt (sem image), deixando o modelo processar o base64 no texto
+    const text = await callGeminiProxy(prompt);
     let clean = text.trim();
     const jsonMatch = _extractOuterJsonArray(clean);
     if(jsonMatch) clean = jsonMatch;
