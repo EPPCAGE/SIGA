@@ -25058,7 +25058,29 @@ Gere uma análise estruturada com exatamente estas seções:
 ### 5. Top 3 Recomendações
 (Ações práticas e específicas para elevar o nível de maturidade)
 
-Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas as observações nos dados fornecidos.`;
+async function analisar() {
+  try {
+    const prompt = `
+## TAREFA
+Gere uma análise estruturada com exatamente estas seções:
+
+### 1. Diagnóstico Geral
+(2-3 frases resumindo o estado atual do processo)
+
+### 2. Pontos Críticos
+(Liste os 3 principais problemas identificados nos dados)
+
+### 3. Insights Cruzados
+(Combine os índices para gerar observações não óbvias. Exemplos de padrões: baixa maturidade + alto risco = prioridade máxima; boa equipe + alta burocracia = processo engessado mas equipe adaptada; alta complexidade + poucos atores = gargalo de conhecimento; muitos loops + burocracia alta = fluxo ineficiente; alta complexidade + baixa digitalização = processo complexo sem automação = alto risco operacional latente; baixa digitalização + burocracia alta = aprovações manuais que poderiam ser sistematizadas)
+
+### 4. Prioridade de Intervenção
+(Urgente / Moderada / Baixa — com justificativa baseada nos dados)
+
+### 5. Top 3 Recomendações
+(Ações práticas e específicas para elevar o nível de maturidade)
+
+Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas as observações nos dados fornecidos.
+`;
 
     const text = await callGemini(prompt);
     mat.geminiAnalysis = text;
@@ -25072,9 +25094,9 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         .replace(/^## (.*$)/gm, '<div style="font-size:15px;font-weight:800;color:#1B3022;margin:16px 0 6px;">$1</div>')
         .replace(/\n/g, '<br>')
     }</div>`;
-  } catch(e) {
-    /* exibe mensagem de erro na interface */
-    resultDiv.innerHTML = `<span style="color:#ef4444;">Erro: ${escapeHtml(e.message)}</span>`;
+
+  } catch (e) {
+    resultDiv.innerHTML = `<span style="color:#ef4444;">Erro: ${escapeHtml(e?.message || e)}</span>`;
   } finally {
     btn.disabled    = false;
     btn.textContent = '✨ Analisar com IA';
