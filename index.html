@@ -11852,12 +11852,12 @@ let supaClient = null;
 let currentUser = null;
 
 // ── Stubs para funções Gemini removidas ──────────────
-async function callGeminiProxy(prompt) {
+async function callGeminiProxy() {
   throw new Error('Funções de IA (Gemini) foram removidas do sistema. Configure um backend de IA alternativo (GitHub Copilot) e defina a variável API_URL.');
 }
 
-async function callGemini(prompt) {
-  return callGeminiProxy(prompt);
+async function callGemini() {
+  return callGeminiProxy();
 }
 
 async function callGeminiVision() {
