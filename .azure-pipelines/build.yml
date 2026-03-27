@@ -89,6 +89,9 @@ steps:
   - task: AdvancedSecurity-Dependency-Scanning@1
     displayName: "🛡️ GHAS - Scanning"
 
+  - task: AdvancedSecurity-Codeql-Analyze@1
+    displayName: "🛡️GHAS - Analyze"
+
   - task: AdvancedSecurity-Publish@1
     displayName: "🛡️ GHAS - Publish"
 
