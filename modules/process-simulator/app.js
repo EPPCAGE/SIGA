@@ -1,21 +1,55 @@
-import {
-  normalizeGraph,
-  validateProbabilities,
-  validateGraphIntegrity,
-  calculateTEPAndIP,
-  calculatePathTime,
-  simulate100Tokens,
-  calculateComplexity,
-  gatewayNodes,
-  outgoing,
-  applyGatewayProbabilities,
-  simulateRoi,
-  RULES,
-} from './engine.js';
-import { scanSuggestions, markAutomation, setLoopProbability } from './assistant.js';
-import { extractTopologyFromImage, extractTopologyFromSpreadsheetFile, extractTopologyFromWorkflowFile } from './cv.js';
+console.log('[Simulator] app.js carregando...');
+
+// Importações ES6 - com tratamento de erro
+let normalizeGraph, validateProbabilities, validateGraphIntegrity, calculateTEPAndIP, calculatePathTime, simulate100Tokens, calculateComplexity, gatewayNodes, outgoing, applyGatewayProbabilities, simulateRoi, RULES;
+let scanSuggestions, markAutomation, setLoopProbability;
+let extractTopologyFromImage, extractTopologyFromSpreadsheetFile, extractTopologyFromWorkflowFile;
+
+try {
+  const [engineModule, assistantModule, cvModule] = await Promise.all([
+    import('./engine.js'),
+    import('./assistant.js'),
+    import('./cv.js'),
+  ]);
+
+  normalizeGraph = engineModule.normalizeGraph;
+  validateProbabilities = engineModule.validateProbabilities;
+  validateGraphIntegrity = engineModule.validateGraphIntegrity;
+  calculateTEPAndIP = engineModule.calculateTEPAndIP;
+  calculatePathTime = engineModule.calculatePathTime;
+  simulate100Tokens = engineModule.simulate100Tokens;
+  calculateComplexity = engineModule.calculateComplexity;
+  gatewayNodes = engineModule.gatewayNodes;
+  outgoing = engineModule.outgoing;
+  applyGatewayProbabilities = engineModule.applyGatewayProbabilities;
+  simulateRoi = engineModule.simulateRoi;
+  RULES = engineModule.RULES;
+  console.log('[Simulator] engine.js importado');
+
+  scanSuggestions = assistantModule.scanSuggestions;
+  markAutomation = assistantModule.markAutomation;
+  setLoopProbability = assistantModule.setLoopProbability;
+  console.log('[Simulator] assistant.js importado');
+
+  extractTopologyFromImage = cvModule.extractTopologyFromImage;
+  extractTopologyFromSpreadsheetFile = cvModule.extractTopologyFromSpreadsheetFile;
+  extractTopologyFromWorkflowFile = cvModule.extractTopologyFromWorkflowFile;
+  console.log('[Simulator] cv.js importado');
+} catch (e) {
+  console.error('[Simulator] Falha ao importar módulos do simulador:', e);
+}
 
 const $ = (id) => document.getElementById(id);
+
+function isActivationKey(event) {
+  return event.key === 'Enter' || event.key === ' ';
+}
+
+function handleKeyboardActivation(event, action) {
+  if (!isActivationKey(event)) return;
+  event.preventDefault();
+  action();
+}
 
 // ═══ SECURITY: XSS PROTECTION ═══════════════════════════════════════
 // Escape HTML to prevent XSS attacks when using innerHTML
@@ -514,7 +548,7 @@ function renderAutomationConfirm() {
 
 function syncConfirmedAutoFromUi() {
   const boxes = document.querySelectorAll('input[data-auto-node]');
-  if (!boxes.length) return;
+  if (boxes.length === 0) return;
 
   const next = new Set();
   boxes.forEach((el) => {
@@ -529,7 +563,7 @@ function syncConfirmedAutoFromUi() {
       .filter((n) => n.type === 'task' && n.automated)
       .map((n) => String(n.id || ''))
   );
-  for (const id of [...next]) {
+  for (const id of next) {
     if (automatedSet.has(id)) next.delete(id);
   }
 
@@ -730,7 +764,7 @@ function syncActorAssignmentsFromWizard() {
     const nodeId = el.dataset.actorNode;
     const actor = String(el.value || '').trim();
     const node = nodeMap.get(nodeId);
-    if (!node || node.type !== 'task') return;
+    if (node?.type !== 'task') return;
     node.executor = actor;
     node.lane = actor;
   });
@@ -799,7 +833,7 @@ function saveSetupTaskMatrixFromForm() {
     const nodeId = el.dataset.taskActor;
     const actor = String(el.value || '').trim();
     const node = nodeMap.get(nodeId);
-    if (!node || node.type !== 'task') return;
+    if (node?.type !== 'task') return;
     node.executor = actor;
     node.lane = actor;
   });
@@ -808,7 +842,7 @@ function saveSetupTaskMatrixFromForm() {
     const nodeId = el.dataset.taskComplexity;
     const comp = String(el.value || '').trim();
     const node = nodeMap.get(nodeId);
-    if (!node || node.type !== 'task') return;
+    if (node?.type !== 'task') return;
     node.complexity = comp || null;
   });
   // Salva perfis de raia (data-lane-profile)
@@ -834,8 +868,12 @@ function renderSetupLaneProfiles() {
   }
   const focused = document.activeElement;
   const focusedLane = focused?.closest('[data-lane-profile]')?.dataset.laneProfile;
-  const focusedField = focused?.dataset.lpTeam !== undefined ? 'team'
-    : focused?.dataset.lpOrg !== undefined ? 'org' : null;
+  let focusedField = null;
+  if (focused?.dataset.lpTeam !== undefined) {
+    focusedField = 'team';
+  } else if (focused?.dataset.lpOrg !== undefined) {
+    focusedField = 'org';
+  }
 
   const rows = lanes.map((lane) => {
     const profile = graph.lanes?.[lane] || {};
@@ -917,21 +955,8 @@ function collectSetupStatus() {
   status.graphIssues = [...integ.errors, ...probs];
   status.handoffOk = isHandoffReadyLocal();
 
-  try {
-    parseHappyPathRequired();
-    status.happyPathOk = true;
-  } catch (e) {
-    /* preserva estado de erro para inspecao */
-    status.happyPathOk = false;
-  }
-
-  try {
-    parseLeadTimeInformedRequired();
-    status.leadTimeOk = true;
-  } catch (e) {
-    /* preserva estado de erro para inspecao */
-    status.leadTimeOk = false;
-  }
+  status.happyPathOk = isHappyPathConfigured();
+  status.leadTimeOk = isLeadTimeConfigured();
 
   return status;
 }
@@ -942,6 +967,44 @@ function requestProcessListFromSiga() {
   try {
     globalThis.parent.postMessage({ type: 'SIMULATOR_REQUEST_PROCESS_LIST' }, globalThis.location.origin);
   } catch (e) { console.warn('[simulator] postMessage para parent (standalone)', e); }
+}
+
+function gatewaySumColor(sum) {
+  if (Math.abs(sum - 100) < 0.5) return '#2e7d4f';
+  if (sum > 100) return '#c0392b';
+  return '#8a6d3b';
+}
+
+function gatewaySumLabel(sum) {
+  if (Math.abs(sum - 100) <= 0.5) return ' ✓';
+  if (sum > 100) return ' ⚠ excede 100%';
+  return ' ⚠ abaixo de 100%';
+}
+
+function gatewayProbabilityColor(pct) {
+  if (pct >= 70) return '#2e7d4f';
+  if (pct >= 30) return '#8a6d3b';
+  return '#8f3d3a';
+}
+
+function isHappyPathConfigured() {
+  try {
+    parseHappyPathRequired();
+    return true;
+  } catch (e) {
+    console.debug('[simulator] happy path pendente:', e);
+    return false;
+  }
+}
+
+function isLeadTimeConfigured() {
+  try {
+    parseLeadTimeInformedRequired();
+    return true;
+  } catch (e) {
+    console.debug('[simulator] lead time pendente:', e);
+    return false;
+  }
 }
 
 // Cache das linhas filtradas para o handler de clique (evita closure stale)
@@ -965,11 +1028,13 @@ function _sec0UpdateTable() {
   if (!tbody) return;
 
   tbody.innerHTML = _sec0Filtered.slice(0, 100).map((p, i) => {
-    const isLinked = _linkedProcess
-      && _linkedProcess.processo      === p.processo
+    const isLinked = Boolean(
+      _linkedProcess
+      && _linkedProcess.processo === p.processo
       && _linkedProcess.macroprocesso === p.macroprocesso
-      && (_linkedProcess.subprocesso || '') === (p.subprocesso || '');
-    return `<tr class="sec0-row${isLinked ? ' sec0-row-selected' : ''}" data-sec0-idx="${i}">
+      && (_linkedProcess.subprocesso || '') === (p.subprocesso || '')
+    );
+    return `<tr class="sec0-row${isLinked ? ' sec0-row-selected' : ''}" data-sec0-idx="${i}" role="button" tabindex="0" aria-label="Vincular processo ${escapeHtml(p.processo || 'sem nome')}">
       <td class="sec0-td-macro">${escapeHtml(p.macroprocesso || '')}</td>
       <td class="sec0-td-proc"><strong>${escapeHtml(p.processo || '')}</strong>${p.subprocesso ? `<br><small class="sec0-sub">${escapeHtml(p.subprocesso)}</small>` : ''}</td>
       <td class="sec0-td-nat">${escapeHtml(p.natureza || '')}</td>
@@ -994,7 +1059,7 @@ function renderSetupSection0() {
   const list = _sigaProcessList || [];
 
   // ── Modo sem lista (standalone) ──────────────────────────────────
-  if (!list.length) {
+  if (list.length === 0) {
     // Só reconstrói se ainda não estiver no modo manual (evita perder foco)
     if (!box.querySelector('#linkedProcessName')) {
       box.innerHTML = `
@@ -1067,6 +1132,11 @@ function renderSetupSection0() {
       _sec0UpdateTable();   // atualiza highlight sem recriar o input
       _sec0RefreshBadge();
       renderSetupChecklist();
+    });
+    $('sec0Tbody')?.addEventListener('keydown', (ev) => {
+      const tr = ev.target.closest('tr[data-sec0-idx]');
+      if (!tr) return;
+      handleKeyboardActivation(ev, () => tr.click());
     });
   }
 
@@ -1211,7 +1281,7 @@ function renderSetupGatewayEditor() {
       // Rótulo do caminho: prioriza label da aresta, depois label do nó destino
       const edgeLabel = e.label ? escapeHtml(e.label) : escapeHtml(targetLabel);
       const pct = Number(e.probability || 0);
-      const barColor = pct >= 70 ? '#2e7d4f' : pct >= 30 ? '#8a6d3b' : '#8f3d3a';
+      const barColor = gatewayProbabilityColor(pct);
       return `
       <label class="field gw-path-row" style="margin-bottom:6px;">
         <span class="gw-path-label">
@@ -1294,7 +1364,7 @@ function renderSidebarGatewayEditor() {
   const html = gateways.map((gw) => {
     const outs = outgoing(graph, gw.id);
     const sum = outs.reduce((a, e) => a + Number(e.probability || 0), 0);
-    const sumColor = Math.abs(sum - 100) < 0.5 ? '#2e7d4f' : sum > 100 ? '#c0392b' : '#8a6d3b';
+    const sumColor = gatewaySumColor(sum);
     const rows = outs.map((e) => {
       const targetNode = nodeById(e.to);
       const targetLabel = targetNode?.label || targetNode?.id || e.to;
@@ -1315,7 +1385,7 @@ function renderSidebarGatewayEditor() {
         <button class="sgw-auto-btn" data-sgw-auto="${escapeHtml(gw.id)}" type="button">⚖ Auto</button>
       </div>
       ${rows}
-      <div class="sgw-sum" data-sgw-sum="${escapeHtml(gw.id)}" style="color:${sumColor};">Soma: ${sum.toFixed(0)}%${Math.abs(sum - 100) > 0.5 ? (sum > 100 ? ' ⚠ excede 100%' : ' ⚠ abaixo de 100%') : ' ✓'}</div>
+      <div class="sgw-sum" data-sgw-sum="${escapeHtml(gw.id)}" style="color:${sumColor};">Soma: ${sum.toFixed(0)}%${gatewaySumLabel(sum)}</div>
     </div>`;
   }).join('');
 
@@ -1340,9 +1410,9 @@ function _refreshSidebarGwValues() {
     const gwId = el.dataset.sgwSum;
     const outs = outgoing(graph, gwId);
     const sum = outs.reduce((a, e) => a + Number(e.probability || 0), 0);
-    const sumColor = Math.abs(sum - 100) < 0.5 ? '#2e7d4f' : sum > 100 ? '#c0392b' : '#8a6d3b';
+    const sumColor = gatewaySumColor(sum);
     el.style.color = sumColor;
-    el.textContent = `Soma: ${sum.toFixed(0)}%${Math.abs(sum - 100) > 0.5 ? (sum > 100 ? ' ⚠ excede 100%' : ' ⚠ abaixo de 100%') : ' ✓'}`;
+    el.textContent = `Soma: ${sum.toFixed(0)}%${gatewaySumLabel(sum)}`;
   });
 }
 
@@ -1353,7 +1423,7 @@ function _onSidebarGwInput(ev) {
   const gwId = inp.dataset.sgwId;
 
   // Cap: prevent sum > 100%
-  const allInputs = Array.from(document.querySelectorAll(`input[data-sgw-id="${CSS.escape(gwId)}"]`));
+  const allInputs = [...document.querySelectorAll(`input[data-sgw-id="${CSS.escape(gwId)}"]`)];
   const sumOthers = allInputs
     .filter((i) => i !== inp)
     .reduce((a, i) => a + Math.max(0, Number(i.value || 0)), 0);
@@ -1370,9 +1440,9 @@ function _onSidebarGwInput(ev) {
   const sumEl = document.querySelector(`[data-sgw-sum="${CSS.escape(gwId)}"]`);
   if (sumEl) {
     const sum = Object.values(probs).reduce((a, v) => a + v, 0);
-    const sumColor = Math.abs(sum - 100) < 0.5 ? '#2e7d4f' : sum > 100 ? '#c0392b' : '#8a6d3b';
+    const sumColor = gatewaySumColor(sum);
     sumEl.style.color = sumColor;
-    sumEl.textContent = `Soma: ${sum.toFixed(0)}%${Math.abs(sum - 100) > 0.5 ? (sum > 100 ? ' ⚠ excede 100%' : ' ⚠ abaixo de 100%') : ' ✓'}`;
+    sumEl.textContent = `Soma: ${sum.toFixed(0)}%${gatewaySumLabel(sum)}`;
   }
 }
 
@@ -1547,7 +1617,7 @@ function saveSetupAutomationSelection() {
     });
 
     const selectedAuto = new Set(
-      Array.from(matrixAutoInputs)
+      [...matrixAutoInputs]
         .filter((i) => i.checked)
         .map((i) => String(i.dataset.taskAutomated || ''))
         .filter(Boolean)
@@ -1558,14 +1628,14 @@ function saveSetupAutomationSelection() {
     }
 
     const selectedPotential = new Set(
-      Array.from(matrixPotentialInputs)
+      [...matrixPotentialInputs]
         .filter((i) => i.checked)
         .map((i) => String(i.dataset.taskPotential || ''))
         .filter(Boolean)
     );
 
     // Regra de exclusao mutua: automatica e automatizavel nao coexistem na mesma atividade.
-    for (const id of [...selectedPotential]) {
+    for (const id of selectedPotential) {
       if (selectedAuto.has(id)) selectedPotential.delete(id);
     }
     confirmedAutoNodes = selectedPotential;
@@ -1574,7 +1644,7 @@ function saveSetupAutomationSelection() {
   }
 
   const selected = new Set(
-    Array.from(document.querySelectorAll('input[data-setup-auto-node]:checked'))
+    [...document.querySelectorAll('input[data-setup-auto-node]:checked')]
       .map((i) => String(i.dataset.setupAutoNode || ''))
       .filter(Boolean)
   );
@@ -1622,7 +1692,8 @@ function completeSetup() {
     const reason = !s.graphOk && s.graphIssues.length
       ? ` Motivo: ${escapeHtml(s.graphIssues[0])}`
       : '';
-    $('validationBox').innerHTML = `<span class="badge error">setup</span> Finalize os itens pendentes no popup para iniciar a simulacao.${reason}`;
+    const safeReason = (reason || '').replace(/[<>]/g, m => m === '<' ? '&lt;' : '&gt;');
+    $('validationBox').innerHTML = `<span class="badge error">setup</span> Finalize os itens pendentes no popup para iniciar a simulacao.${safeReason}`;
     return;
   }
   setupCompleted = true;
@@ -1967,7 +2038,7 @@ function renderExecutiveKpis(metrics, base) {
     ? _resultCard('⚙', 'T.P.E. — Tempo de Processamento Estimado', _fmtMin(metrics.processingTimeInformed), 'sem filas/gaveta · declarado pelo executor', 'Tempo estimado para executar o processo sem tempos de fila ou espera passiva. Base para o cálculo do Tempo de Gaveta.', 'T.P.E. < T.P. — a diferença é o tempo desperdiçado em fila.')
     : '';
 
-  const gavetaCard = metrics.tempoGaveta !== null ? _buildGavetaCard(metrics) : '';
+  const gavetaCard = metrics.tempoGaveta === null ? '' : _buildGavetaCard(metrics);
 
   const topDisp = metrics.top > 0 ? fmtK(metrics.top) : '—';
   const topAutoDisp = metrics.topAuto > 0 ? fmtK(metrics.topAuto) : '—';
@@ -1975,9 +2046,10 @@ function renderExecutiveKpis(metrics, base) {
   const autoCard = _buildAutoCard(metrics, hasAuto, topAutoDisp, subSuffix);
 
   const liveUT = Number(liveSimulationStatus.avgLeadTime || 0);
-  const liveTerDisp = liveUT > 0
-    ? (hasK ? _fmtMin(liveUT * metrics.kFactor) : `${liveUT.toFixed(1)} UT`)
-    : '—';
+  let liveTerDisp = '—';
+  if (liveUT > 0) {
+    liveTerDisp = hasK ? _fmtMin(liveUT * metrics.kFactor) : `${liveUT.toFixed(1)} UT`;
+  }
   const liveLineK = `<div class="mblock-live">
     Bolinhas finalizadas: <strong id="liveTokensFinished">${liveSimulationStatus.finished}/${liveSimulationStatus.total}</strong> &nbsp;|
     T.E.R. médio ao vivo: <strong id="liveLeadAvg">${liveTerDisp}</strong>
@@ -2106,7 +2178,7 @@ function renderFrictionChart(metrics) {
   if (!box) return;
 
   const ranking = (metrics?.ranking || []).slice(0, 8);
-  if (!ranking.length) { box.innerHTML = '<p style="color:#8898aa;">Sem atritos relevantes detectados.</p>'; return; }
+  if (ranking.length === 0) { box.innerHTML = '<p style="color:#8898aa;">Sem atritos relevantes detectados.</p>'; return; }
 
   const friction = frictionTotalsByType(ranking);
   const totalFr = Math.max(0.001, friction.handoff + friction.gateway + friction.loop);
@@ -2157,8 +2229,12 @@ function _buildP2Friction(topFriction) {
   if (!topFriction) {
     return 'Nenhum atrito dominante identificado no processo atual. O fluxo apresenta baixa concentração de gargalos.';
   }
-  const tipoLabel = topFriction.type === 'handoff' ? 'Handoff'
-    : topFriction.type === 'gateway' ? 'Gateway de Decisão' : 'Loop de Retrabalho';
+  let tipoLabel = 'Loop de Retrabalho';
+  if (topFriction.type === 'handoff') {
+    tipoLabel = 'Handoff';
+  } else if (topFriction.type === 'gateway') {
+    tipoLabel = 'Gateway de Decisão';
+  }
   const keyLabel = topFriction.key.replaceAll('->', ' → ');
   const totalUT = topFriction.total.toFixed(1);
   if (topFriction.type === 'handoff') {
@@ -2171,8 +2247,7 @@ function _buildP2Friction(topFriction) {
 }
 
 function _buildP3Automation(nodes, metrics) {
-  const manualTasks = (nodes || []).filter((n) => n.type === 'task' && !n.automated);
-  const topManual = manualTasks[0];
+  const topManual = (nodes || []).find((n) => n.type === 'task' && !n.automated);
   if (!topManual) {
     return 'Todas as tarefas já estão automatizadas ou não há candidatos identificados para automação no cenário atual.';
   }
@@ -2421,7 +2496,8 @@ function parseEditorGraph() {
     return true;
   } catch (e) {
     /* exibe mensagem de erro na interface */
-    $('validationBox').innerHTML = `<span class="badge error">erro</span> JSON invalido: ${e.message}`;
+    const safeMsg = (e.message || '').replace(/[<>]/g, m => m === '<' ? '&lt;' : '&gt;');
+    $('validationBox').innerHTML = `<span class="badge error">erro</span> JSON invalido: ${safeMsg}`;
     return false;
   }
 }
@@ -2792,7 +2868,13 @@ function drawSetupPathCanvas() {
     const isAllowed = allowed.has(node.id);
     g.style.cursor = isAllowed ? 'pointer' : 'not-allowed';
     g.style.opacity = isAllowed || isSelected ? '1' : '0.36';
+    g.setAttribute('role', 'button');
+    g.setAttribute('tabindex', isAllowed ? '0' : '-1');
+    g.setAttribute('aria-label', `Selecionar no ${node.label || node.id}`);
     g.addEventListener('click', () => onSetupPathNodeClick(node.id));
+    g.addEventListener('keydown', (event) => {
+      handleKeyboardActivation(event, () => onSetupPathNodeClick(node.id));
+    });
 
     _drawSetupNodeShape(g, node, selectedIndex, isAllowed);
 
@@ -2978,10 +3060,19 @@ function _drawNodeGatewayShape(g, node, isSelected) {
   poly.setAttribute('points', `${node.x},${node.y - 30} ${node.x + 38},${node.y} ${node.x},${node.y + 30} ${node.x - 38},${node.y}`);
   poly.setAttribute('fill', '#fff7e8');
   poly.setAttribute('stroke', '#b9770e');
+  poly.setAttribute('role', 'button');
+  poly.setAttribute('tabindex', happyPathMarking.active ? '-1' : '0');
+  poly.setAttribute('aria-label', `Abrir configuracao do gateway ${node.label || node.id}`);
   poly.style.cursor = 'pointer';
   poly.addEventListener('click', (ev) => {
     ev.stopPropagation();
     if (!happyPathMarking.active) openGatewayEditor(node.id);
+  });
+  poly.addEventListener('keydown', (ev) => {
+    handleKeyboardActivation(ev, () => {
+      ev.stopPropagation();
+      if (!happyPathMarking.active) openGatewayEditor(node.id);
+    });
   });
   if (isSelected) { poly.setAttribute('stroke', '#0b84f3'); poly.setAttribute('stroke-width', '3'); }
   g.appendChild(poly);
@@ -3068,7 +3159,13 @@ function drawGraph() {
     const canPick = !happyPathMarking.active || allowed.has(node.id) || isSelected;
     g.style.cursor = happyPathMarking.active ? (canPick ? 'pointer' : 'not-allowed') : 'default';
     g.style.opacity = canPick ? '1' : '0.42';
+    g.setAttribute('role', 'button');
+    g.setAttribute('tabindex', canPick ? '0' : '-1');
+    g.setAttribute('aria-label', `Selecionar no ${node.label || node.id}`);
     g.addEventListener('click', () => onNodeClickedForHappyPath(node.id));
+    g.addEventListener('keydown', (event) => {
+      handleKeyboardActivation(event, () => onNodeClickedForHappyPath(node.id));
+    });
 
     _drawNodeShape(g, node, isSelected);
     _drawNodeText(g, node, isSelected, selectedIndex);
@@ -3389,7 +3486,8 @@ function playSimulation() {
       parseHappyPathRequired();
     } catch (e) {
       /* exibe mensagem de erro na interface */
-      $('validationBox').innerHTML = `<span class="badge error">ideal</span> ${e.message}`;
+        const safeMsg = (e.message || '').replace(/[<>]/g, m => m === '<' ? '&lt;' : '&gt;');
+      $('validationBox').innerHTML = `<span class="badge error">ideal</span> ${safeMsg}`;
       return;
     }
   }
@@ -3839,6 +3937,28 @@ function startImportMode() {
   }, 200);
 }
 
+// ════════════════════════════════════════════════════════════
+// IMMEDIATE GLOBAL SCOPE EXPOSURE - Key Handler Functions
+// Estas funções DEVEM estar globalmente acessíveis para os
+// onclick handlers no HTML funcionar em contexto de iframe
+// ════════════════════════════════════════════════════════════
+if (typeof window !== 'undefined') {
+  window.showBpmnEditor = showBpmnEditor;
+  window.startImportMode = startImportMode;
+  window.hideEntryChoice = hideEntryChoice;
+  window.showEntryChoice = showEntryChoice;
+  window.hideBpmnEditor = hideBpmnEditor;
+  console.log('[Simulator] ✓ Funções expostas em window logo após definição');
+}
+if (typeof globalThis !== 'undefined') {
+  globalThis.showBpmnEditor = showBpmnEditor;
+  globalThis.startImportMode = startImportMode;
+  globalThis.hideEntryChoice = hideEntryChoice;
+  globalThis.showEntryChoice = showEntryChoice;
+  globalThis.hideBpmnEditor = hideBpmnEditor;
+  console.log('[Simulator] ✓ Funções expostas em globalThis logo após definição');
+}
+
 // Extrai a topologia do editor BPMN e aplica ao simulador
 async function applyFromBpmnEditor() {
   const btn = $('btnBpmnApply');
@@ -4067,13 +4187,30 @@ function wireEvents() {
   }
 
   // ── Entry Choice ─────────────────────────────────────────────────
-  $('btnChoiceDrawBpmn')?.addEventListener('click', showBpmnEditor);
-  $('btnChoiceImport')?.addEventListener('click', startImportMode);
-  $('btnChoiceSkip')?.addEventListener('click', () => {
-    hideEntryChoice();
-    // carrega o exemplo padrão e vai direto para o workspace
-    loadSample();
-  });
+  const btnDraw = $('btnChoiceDrawBpmn');
+  if (btnDraw) {
+    btnDraw.addEventListener('click', showBpmnEditor);
+    btnDraw.onclick = showBpmnEditor;
+  }
+  
+  const btnImport = $('btnChoiceImport');
+  if (btnImport) {
+    btnImport.addEventListener('click', startImportMode);
+    btnImport.onclick = startImportMode;
+  }
+  
+  const btnSkip = $('btnChoiceSkip');
+  if (btnSkip) {
+    btnSkip.addEventListener('click', () => {
+      hideEntryChoice();
+      // carrega o exemplo padrão e vai direto para o workspace
+      loadSample();
+    });
+    btnSkip.onclick = () => {
+      hideEntryChoice();
+      loadSample();
+    };
+  }
 
   // ── BPMN Editor Toolbar ──────────────────────────────────────────
   $('btnBpmnApply')?.addEventListener('click', applyFromBpmnEditor);
@@ -4206,15 +4343,97 @@ globalThis.addEventListener('message', (ev) => {
 $('btnSaveToSiga')?.addEventListener('click', saveToSIGA);
 
 try {
+  console.log('[Simulator] Iniciando wireEvents...');
   wireEvents();
+  console.log('[Simulator] wireEvents concluído');
+  
   wireGlobalFallbackClicks();
+  console.log('[Simulator] wireGlobalFallbackClicks concluído');
+  
   $('btnViewDashboard')?.classList.remove('hidden');
   loadSample();          // carrega exemplo no background (JSON visível mas tela coberta)
+  console.log('[Simulator] Chamando showEntryChoice...');
   showEntryChoice();     // primeiro passo: overlay de escolha de entrada
+  
+  // Debug: verificar se botões foram registrados
+  const btnDraw = $('btnChoiceDrawBpmn');
+  const btnImport = $('btnChoiceImport');
+  console.log('[Simulator] btnChoiceDrawBpmn:', btnDraw ? 'EXISTE' : 'NÃO EXISTE');
+  console.log('[Simulator] btnChoiceDrawBpmn.onclick:', btnDraw?.onclick ? 'REGISTRADO' : 'NÃO REGISTRADO');
+  console.log('[Simulator] btnChoiceImport:', btnImport ? 'EXISTE' : 'NÃO EXISTE');
+  console.log('[Simulator] btnChoiceImport.onclick:', btnImport?.onclick ? 'REGISTRADO' : 'NÃO REGISTRADO');
+  
+  console.log('[Simulator] showEntryChoice concluído - inicialização completa');
 } catch (e) {
   /* exibe mensagem de erro na interface */
+  console.error('[Simulator] ERRO CRÍTICO:', e);
   const out = $('cvOutput');
-  if (out) out.textContent = `Falha ao inicializar interface: ${e.message}`;
+  if (out) out.textContent = `Falha ao inicializar interface: ${e.message}\n\nStack: ${e.stack}`;
   const v = $('validationBox');
   if (v) v.textContent = `Falha ao inicializar interface: ${e.message}`;
+} finally {
+  // ── SEMPRE expor funções no escopo global, mesmo com erro ──────────
+  console.log('[Simulator] FINALMENTE: Expondo funções no globalThis');
+  
+  globalThis.showBpmnEditor = showBpmnEditor;
+  globalThis.startImportMode = startImportMode;
+  globalThis.hideBpmnEditor = hideBpmnEditor;
+  globalThis.hideEntryChoice = hideEntryChoice;
+  globalThis.showEntryChoice = showEntryChoice;
+  globalThis.loadSample = loadSample || function() { console.warn('loadSample não está disponível'); };
+  
+  // Também expor em window para garantir acessibilidade
+  window.showBpmnEditor = showBpmnEditor;
+  window.startImportMode = startImportMode;
+  
+  console.log('[Simulator] ✓ Funções expostas no globalThis e window:', {
+    showBpmnEditor: typeof globalThis.showBpmnEditor,
+    startImportMode: typeof globalThis.startImportMode,
+  });
 }
+
+// ════════════════════════════════════════════════════════════
+// ─── EXPLICIT GLOBAL EXPOSURE (Fallback) ───────────────────
+// Garante que os handlers e funções principais estejam sempre
+// acessíveis ao onclick inline do HTML, mesmo se finally falhar
+// ════════════════════════════════════════════════════════════
+(function() {
+  try {
+    if (typeof showBpmnEditor !== 'undefined') {
+      globalThis.showBpmnEditor = showBpmnEditor;
+      window.showBpmnEditor = showBpmnEditor;
+    }
+    if (typeof startImportMode !== 'undefined') {
+      globalThis.startImportMode = startImportMode;
+      window.startImportMode = startImportMode;
+    }
+    if (typeof hideEntryChoice !== 'undefined') {
+      globalThis.hideEntryChoice = hideEntryChoice;
+      window.hideEntryChoice = hideEntryChoice;
+    }
+    if (typeof showEntryChoice !== 'undefined') {
+      globalThis.showEntryChoice = showEntryChoice;
+      window.showEntryChoice = showEntryChoice;
+    }
+    if (typeof hideBpmnEditor !== 'undefined') {
+      globalThis.hideBpmnEditor = hideBpmnEditor;
+      window.hideBpmnEditor = hideBpmnEditor;
+    }
+    if (typeof loadSample !== 'undefined') {
+      globalThis.loadSample = loadSample;
+      window.loadSample = loadSample;
+    }
+    
+    console.log('[Simulator] ✓✓ FALLBACK: Funções re-expostas em globalThis/window');
+    console.log('[Simulator] Available functions:', {
+      showBpmnEditor: typeof globalThis.showBpmnEditor,
+      startImportMode: typeof globalThis.startImportMode,
+      hideEntryChoice: typeof globalThis.hideEntryChoice,
+      showEntryChoice: typeof globalThis.showEntryChoice,
+      hideBpmnEditor: typeof globalThis.hideBpmnEditor,
+      loadSample: typeof globalThis.loadSample,
+    });
+  } catch (fallbackErr) {
+    console.error('[Simulator] FALLBACK exposure failed:', fallbackErr);
+  }
+})();

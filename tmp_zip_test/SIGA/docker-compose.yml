@@ -1,0 +1,43 @@
+services:
+  backend:
+    build:
+      context: ./docker/backend
+      dockerfile: Dockerfile
+    container_name: siga-backend
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      # Caminho dentro do container — mapeado para ./data no host via volume abaixo.
+      # Em desenvolvimento local (sem Docker): padrão é <raiz>/backups/local-data.json
+      SIGA_DATA_FILE: /data/local-data.json
+      SIGA_MAX_BODY_BYTES: 52428800
+      # ── IA / Azure OpenAI (GPT-5.1) ──────────────────────────────────
+      # Defina as variáveis abaixo no arquivo .env do servidor (nunca aqui).
+      # O Docker Compose lê o .env automaticamente.
+      SIGA_AI_PROVIDER: ${SIGA_AI_PROVIDER:-azure}
+      SIGA_AZURE_ENDPOINT: ${SIGA_AZURE_ENDPOINT:-https://projeto-gesproc-cage.cognitiveservices.azure.com}
+      SIGA_AZURE_DEPLOYMENT: ${SIGA_AZURE_DEPLOYMENT:-gpt-5.1-chat}
+      SIGA_AZURE_API_VERSION: ${SIGA_AZURE_API_VERSION:-2024-12-01-preview}
+      SIGA_AZURE_API_KEY: ${SIGA_AZURE_API_KEY}
+      # ── IA / GitHub Copilot (fallback) ───────────────────────────────
+      # SIGA_AI_TOKEN: ${SIGA_AI_TOKEN}
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./docker/frontend
+      dockerfile: Dockerfile
+    container_name: siga-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+    restart: unless-stopped

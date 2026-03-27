@@ -145,7 +145,7 @@ async function main() {
     output,
     summary,
     missingFiles,
-    note: 'gestpop_workspace e migrado por scripts especificos: workspace-csv-stream + migrate-workspace-ndjson',
+    note: 'gestpop_workspace e migrado por scripts especificos: workspace-csv-stream + migrate-workspace-ndjson.mjs',
   };
 
   writeJsonAtomic(output, payload);

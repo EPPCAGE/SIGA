@@ -73,7 +73,7 @@ export function validateProbabilities(graph) {
 
   for (const [nodeId, edges] of outMap.entries()) {
     const node = nodeMap.get(nodeId);
-    if (!node || node.type !== 'gateway') continue;
+    if (node?.type !== 'gateway') continue;
     if (!edges.length) {
       errors.push(`Gateway ${node.label || node.id} sem saidas.`);
       continue;
@@ -100,7 +100,10 @@ function validateNodeConnectivity(graph, nodeMap, outMap, inMap, errors, warning
 function validateEdgeRefs(graph, nodeMap, errors) {
   for (const edge of graph.edges || []) {
     const missingRef = !nodeMap.has(edge.from) || !nodeMap.has(edge.to);
-    if (missingRef) errors.push(`Aresta ${edge.id || `${edge.from}->${edge.to}`} referencia no inexistente.`);
+    if (missingRef) {
+      const edgeLabel = edge.id || `${edge.from}->${edge.to}`;
+      errors.push(`Aresta ${edgeLabel} referencia no inexistente.`);
+    }
   }
 }
 
@@ -146,7 +149,7 @@ export function validateGraphIntegrity(graph) {
 }
 
 function isManualTask(node) {
-  return node && node.type === 'task' && !node.automated;
+  return node?.type === 'task' && !node.automated;
 }
 
 function laneIdOf(node) {
@@ -210,7 +213,7 @@ function pickEdge(edges) {
   const total = edges.reduce((a, e) => a + Number(e.probability || 0), 0);
   if (!total) return edges[0];
 
-  const roll = Math.random() * total;
+  const roll = randomUnit() * total;
   let acc = 0;
   for (const e of edges) {
     acc += Number(e.probability || 0);
@@ -231,13 +234,23 @@ function pickWeighted(weighted, edges) {
   const total = weighted.reduce((a, i) => a + i.w, 0);
   if (!total) return pickEdge(edges);
 
-  const roll = Math.random() * total;
+  const roll = randomUnit() * total;
   let acc = 0;
   for (const item of weighted) {
     acc += item.w;
     if (roll <= acc) return item.edge;
   }
   return weighted.at(-1).edge;
+}
+
+function randomUnit() {
+  if (!globalThis.crypto?.getRandomValues) {
+    throw new Error('Secure randomness unavailable in this environment.');
+  }
+
+  const values = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(values);
+  return values[0] / 0x100000000;
 }
 
 function pickEdgeWithLoopExitBoost(edges, visitCountOnCurrentNode) {
@@ -345,7 +358,7 @@ function runSinglePath(graph, opts = {}) {
   return {
     time,
     path,
-    reachedEnd: current && current.type === 'end',
+    reachedEnd: current?.type === 'end',
     finalNode: current,
     friction,
   };
@@ -367,8 +380,7 @@ export function calculatePathTime(graph, pathNodeIds, useIdeal = false) {
   const state = { manualCount: 0 };
   let total = 0;
 
-  for (let i = 0; i < pathNodeIds.length; i += 1) {
-    const id = pathNodeIds[i];
+  for (const id of pathNodeIds) {
     const node = nodeMap.get(id);
     if (!node) {
       throw new Error(`No inexistente no caminho feliz: ${id}`);

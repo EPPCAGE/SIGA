@@ -1,8 +1,17 @@
-try { require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') }); } catch (_) { /* dotenv ausente em producao — vars vem do ambiente */ }
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+const path = require('node:path');
+const http = require('node:http');
+const fs = require('node:fs');
 const ExcelJS = require('exceljs');
+
+function loadDotenvIfAvailable() {
+  try {
+    require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+  } catch (dotenvError) {
+    if (dotenvError?.code !== 'MODULE_NOT_FOUND') throw dotenvError;
+  }
+}
+
+loadDotenvIfAvailable();
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -58,8 +67,8 @@ function ensureDataFile() {
   };
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2), { encoding: 'utf8', flag: 'wx' });
-  } catch (e) {
-    if (e.code !== 'EEXIST') throw e;
+  } catch (writeError) {
+    if (writeError.code !== 'EEXIST') throw writeError;
     // File already exists — that's fine
   }
 }
@@ -70,8 +79,8 @@ function readRecord() {
   let parsed;
   try {
     parsed = JSON.parse(raw);
-  } catch (_e) {
-    console.warn(`[siga-local-backend] arquivo de dados corrompido em ${DATA_FILE} — retornando registro vazio`);
+  } catch (parseError) {
+    console.warn(`[siga-local-backend] arquivo de dados corrompido em ${DATA_FILE} ??? retornando registro vazio (${parseError.message})`);
     parsed = {};
   }
 
@@ -118,7 +127,7 @@ function normalizeCell(v) {
 function sanitizeNodeId(text, fallback) {
   const s = normalizeCell(text);
   if (!s) return fallback;
-  const id = s.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/g, '');
+  const id = s.toLowerCase().replaceAll(/\s+/g, '_').replaceAll(/[^a-z0-9_-]/g, '');
   return id || fallback;
 }
 
@@ -154,7 +163,7 @@ function findColumnIdx(headers, candidates) {
 function tokenizePt(text) {
   return normalizeCell(text)
     .toLowerCase()
-    .replace(/[.,;:!?()\[\]{}"']/g, ' ')
+    .replaceAll(/[.,;:!?(){}[\]"']/g, ' ')
     .split(/\s+/)
     .filter(Boolean);
 }
@@ -228,7 +237,9 @@ function inferNodeTypeFromPhrase(text) {
   if (isDecisionPhrase(s)) return 'gateway';
   if (isPastPerfectLike(s)) {
     const k = inferEventKind(s);
-    return k === 'start' ? 'start' : (k === 'end' ? 'end' : 'task');
+    if (k === 'start') return 'start';
+    if (k === 'end') return 'end';
+    return 'task';
   }
 
   if (/\b(inicio|start)\b/.test(lc)) return 'start';
@@ -307,8 +318,9 @@ function _xlsxNormalizeProbabilities(edges) {
 }
 
 /** Processa uma linha de dados: cria nó, registra ator e adiciona aresta. */
-function _xlsxHandleDataRow(row, i, dataRows, actionIdx, nextIdx, actorIdx, probIdx,
-                             nodeByLabel, nodes, usedIds, actorByAction, edges, seqCounter) {
+function _xlsxHandleDataRow(row, i, dataRows, columns, graphState) {
+  const { actionIdx, nextIdx, actorIdx, probIdx } = columns;
+  const { nodeByLabel, nodes, usedIds, actorByAction, edges, seqCounter } = graphState;
   const cells = row.map(normalizeCell).filter(Boolean);
   let action = actionIdx >= 0 ? normalizeCell(row[actionIdx]) : '';
   let actor  = actorIdx  >= 0 ? normalizeCell(row[actorIdx])  : '';
@@ -320,7 +332,7 @@ function _xlsxHandleDataRow(row, i, dataRows, actionIdx, nextIdx, actorIdx, prob
   const to = nextIdx >= 0 ? normalizeCell(row[nextIdx]) : '';
   if (to) {
     const toNode = _xlsxEnsureNode(to, nodeByLabel, nodes, usedIds);
-    const p = probIdx >= 0 ? Number(String(row[probIdx]).replace(',', '.')) : NaN;
+    const p = probIdx >= 0 ? Number(String(row[probIdx]).replace(',', '.')) : Number.NaN;
     edges.push({ id: `e${edges.length + 1}`, from: actionNode.id, to: toNode.id,
       probability: Number.isFinite(p) && p > 0 ? p : 100, isLoopReturn: false, isErrorPath: false });
     return;
@@ -338,9 +350,10 @@ function _xlsxHandleDataRow(row, i, dataRows, actionIdx, nextIdx, actorIdx, prob
 function _xlsxBuildGraph(dataRows, actionIdx, nextIdx, actorIdx, probIdx) {
   const nodeByLabel = new Map(), nodes = [], usedIds = new Set();
   const actorByAction = new Map(), edges = [], seqCounter = { n: 0 };
+  const columns = { actionIdx, nextIdx, actorIdx, probIdx };
+  const graphState = { nodeByLabel, nodes, usedIds, actorByAction, edges, seqCounter };
   for (let i = 0; i < dataRows.length; i += 1)
-    _xlsxHandleDataRow(dataRows[i] || [], i, dataRows, actionIdx, nextIdx, actorIdx, probIdx,
-                       nodeByLabel, nodes, usedIds, actorByAction, edges, seqCounter);
+    _xlsxHandleDataRow(dataRows[i] || [], i, dataRows, columns, graphState);
   const tail = dataRows.slice(Math.max(0, dataRows.length - 20));
   for (const row of tail) {
     const vals = row.map(normalizeCell).filter(Boolean);
@@ -445,7 +458,8 @@ function getMammoth() {
   try {
     _mammoth = require('mammoth');
     return _mammoth;
-  } catch (_e) {
+  } catch (moduleError) {
+    if (moduleError?.code !== 'MODULE_NOT_FOUND') throw moduleError;
     const err = new Error('Dependencia ausente para DOCX: instale "mammoth" (npm install mammoth).');
     err.statusCode = 500;
     throw err;
@@ -628,8 +642,8 @@ async function _parseRequestBody(req, res) {
   const body = await collectRequestBody(req);
   try {
     return body ? JSON.parse(body) : {};
-  } catch (_e) {
-    sendJson(req, res, 400, { ok: false, error: 'Body invalido: JSON malformado' });
+  } catch (parseError) {
+    sendJson(req, res, 400, { ok: false, error: `Body invalido: JSON malformado (${parseError.message})` });
     return null;
   }
 }
@@ -698,7 +712,8 @@ async function _handleRequest(req, res, url) {
 }
 const server = http.createServer(async (req, res) => {
   try {
-    const url = new URL(req.url, `http://${req.headers.host || `${HOST}:${PORT}`}`);
+    const requestHost = req.headers.host || `${HOST}:${PORT}`;
+    const url = new URL(req.url, `http://${requestHost}`);
     await _handleRequest(req, res, url);
   } catch (error) {
     const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
@@ -709,8 +724,8 @@ const server = http.createServer(async (req, res) => {
 // Verifica dependências opcionais no startup para evitar falhas silenciosas em runtime.
 function checkOptionalDeps() {
   const missing = [];
-  try { require('mammoth'); } catch (_) { missing.push('mammoth (DOCX parser)'); }
-  try { require('exceljs'); } catch (_) { missing.push('exceljs (XLSX parser)'); }
+  try { require('mammoth'); } catch (mammothError) { if (mammothError?.code !== 'MODULE_NOT_FOUND') throw mammothError; missing.push('mammoth (DOCX parser)'); }
+  try { require('exceljs'); } catch (excelError) { if (excelError?.code !== 'MODULE_NOT_FOUND') throw excelError; missing.push('exceljs (XLSX parser)'); }
   if (missing.length) {
     console.warn(`[siga-local-backend] AVISO: dependencias ausentes — execute "npm install":`);
     for (const dep of missing) console.warn(`  • ${dep}`);
@@ -718,7 +733,8 @@ function checkOptionalDeps() {
 }
 
 server.listen(PORT, HOST, () => {
-  console.log(`[siga-local-backend] running at http://${HOST}:${PORT}`);
-  console.log(`[siga-local-backend] data file: ${DATA_FILE}`);
+  console.info(`[siga-local-backend] running at http://${HOST}:${PORT}`);
+  console.info(`[siga-local-backend] data file: ${DATA_FILE}`);
   checkOptionalDeps();
 });
+

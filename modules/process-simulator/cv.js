@@ -513,7 +513,8 @@ function extractJson(text) {
   for (const c of candidates) {
     try {
       return JSON.parse(c);
-    } catch (e) {
+    } catch (parseCandidateError) {
+      void parseCandidateError;
       // try next candidate
     }
   }
@@ -726,7 +727,8 @@ async function readResponseBodySafe(resp) {
   const raw = await resp.text();
   try {
     return { raw, json: JSON.parse(raw) };
-  } catch (e) {
+  } catch (responseParseError) {
+    void responseParseError;
     return { raw, json: null };
   }
 }
@@ -836,7 +838,8 @@ async function _attemptExtraction(endpoint, payload, base64, mimeType, retriedFo
     try {
       const actorPayload = await enrichActorsViaAi(endpoint, graph, { data: base64, mimeType });
       graph = mergeActorData(graph, actorPayload);
-    } catch (e) {
+    } catch (actorEnrichmentError) {
+      void actorEnrichmentError;
       // Optional enrichment should not block extraction flow.
     }
   }
@@ -893,8 +896,8 @@ export async function extractTopologyFromImage(file, aiEndpoint = '/api/ai') {
           return { ...attempt.result, imageDataUrl: dataUrl };
         }
       }
-    } catch (e) {
-      lastError = e;
+    } catch (endpointError) {
+      lastError = endpointError;
     }
   }
 
@@ -936,8 +939,8 @@ export async function extractTopologyFromSpreadsheetFile(file) {
       const graph = normalizeExtractedGraph(payload.graph);
       const notes = String(payload.notes || 'Importacao local de XLSX concluida.');
       return { graph, rawText: notes, endpointUsed: endpoint, imageDataUrl: '' };
-    } catch (e) {
-      lastLocalError = e;
+    } catch (localParserError) {
+      lastLocalError = localParserError;
     }
   }
 

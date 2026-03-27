@@ -6,7 +6,7 @@
   "scripts": {
     "local-backend": "node scripts/local-backend.js",
     "local-frontend": "npx http-server . -p 5173 -c-1",
-    "migrate-workspace": "node scripts/migrate-workspace-ndjson.js",
+    "migrate-workspace": "node scripts/migrate-workspace-ndjson.mjs",
     "workspace-csv-stream": "node scripts/workspace-csv-stream.js",
     "migrate-csv-tables": "node scripts/migrate-csv-tables.js",
     "migrate-all": "node scripts/migrate-all.js",
