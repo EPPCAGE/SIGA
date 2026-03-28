@@ -9404,12 +9404,15 @@ function renderConfigPanel() {
   grid.innerHTML = _CFG_TABLES.map(t => _renderCfgCard(t)).join('');
   
   // ── Event delegation para skill-chips (sugestões de competências) ──
-  // Remove listeners antigos (clonando para remove duplicatas)
-  const gridClone = grid.cloneNode(true);
-  grid.parentNode.replaceChild(gridClone, grid);
-  const newGrid = panel.querySelector('#epp-config-tables-grid');
+  // Usar delegação de eventos no panel (pai) para evitar duplicatas
+  // Remove listener antigo se existir (detectado por data-chip-listener)
+  if(panel.dataset.chipListener === 'true') {
+    // Listener já foi adicionado, não adicionar novamente
+    return;
+  }
   
-  newGrid.addEventListener('click', (ev) => {
+  panel.dataset.chipListener = 'true';
+  panel.addEventListener('click', (ev) => {
     const chip = ev.target.closest('.skill-chip[data-skill-chip]');
     if(!chip) return;
     const equipe = chip.dataset.equipe;
@@ -18091,11 +18094,26 @@ async function repoGenerateFaqsFromPdf(id) {
     // Enviar apenas com prompt (sem image), deixando o modelo processar o base64 no texto
     const text = await callGeminiProxy(prompt);
     let clean = text.trim();
+    
+    // Tentar extrair JSON array: primeiro tira backticks, depois procura por [ e ]
+    clean = clean.replaceAll('```json','').replaceAll('```','').trim();
     const jsonMatch = _extractOuterJsonArray(clean);
-    if(jsonMatch) clean = jsonMatch;
-    else clean = clean.replaceAll('```json','').replaceAll('```', '').trim();
+    if(jsonMatch) {
+      clean = jsonMatch;
+    } else {
+      // Se não encontrou [ e ], tentar encontrar apenas o texto entre [ e ]
+      // Procurar por padrão de array JSON mesmo que haja lixo antes
+      const arrayPattern = /\[\s*\{[\s\S]*\}\s*\]/;
+      const match = text.match(arrayPattern);
+      if(match) {
+        clean = match[0];
+      } else {
+        throw new Error('Nenhum JSON array encontrado na resposta do modelo');
+      }
+    }
+    
     const faqs = JSON.parse(clean);
-    if(!Array.isArray(faqs) || faqs.length === 0) throw new Error('Formato inválido');
+    if(!Array.isArray(faqs) || faqs.length === 0) throw new Error('Formato de resposta inválido');
     d.faqs = faqs.filter(f => f.q && f.a);
     repoRender();
     saveToCloud();
