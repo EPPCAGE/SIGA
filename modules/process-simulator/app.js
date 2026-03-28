@@ -1,6 +1,6 @@
-console.log('[Simulator] app.js carregando...');
+﻿console.log('[Simulator] app.js carregando...');
 
-// Importações ES6 - com tratamento de erro
+// Importacoes ES6 - com tratamento de erro
 let normalizeGraph, validateProbabilities, validateGraphIntegrity, calculateTEPAndIP, calculatePathTime, simulate100Tokens, calculateComplexity, gatewayNodes, outgoing, applyGatewayProbabilities, simulateRoi, RULES;
 let scanSuggestions, markAutomation, setLoopProbability;
 let extractTopologyFromImage, extractTopologyFromSpreadsheetFile, extractTopologyFromWorkflowFile;
@@ -36,7 +36,7 @@ try {
   extractTopologyFromWorkflowFile = cvModule.extractTopologyFromWorkflowFile;
   console.log('[Simulator] cv.js importado');
 } catch (e) {
-  console.error('[Simulator] Falha ao importar módulos do simulador:', e);
+  console.error('[Simulator] Falha ao importar modulos do simulador:', e);
 }
 
 const $ = (id) => document.getElementById(id);
@@ -51,7 +51,7 @@ function handleKeyboardActivation(event, action) {
   action();
 }
 
-// ═══ SECURITY: XSS PROTECTION ═══════════════════════════════════════
+// SECURITY: XSS PROTECTION
 // Escape HTML to prevent XSS attacks when using innerHTML
 function escapeHtml(str) {
   if (typeof str !== 'string') {
@@ -69,20 +69,30 @@ function setHTMLSafe(element, html) {
   element.innerHTML = html;
 }
 
+function hasElement(selector, root) {
+  return Boolean(root?.querySelector(selector));
+}
+
+function escapeAngleBrackets(value) {
+  return String(value || '').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
 let graph = null;
 let simRuns = [];
 let animFrame = null;
 let running = false;
 let extractedGraph = null;
+let simulationMode = 'real';
+let sourceDiagramDataUrl = '';
 const loopCounters = new Map();
 let happyPathMarking = {
   active: false,
   nodes: [],
 };
-let simulationMode = 'real';
+// Processo vinculado (selecionado na Secao 0 do setup)
 let confirmedAutoNodes = new Set();
 let setupCompleted = false;
-let sourceDiagramDataUrl = '';
+// Ultimas metricas de simulacao calculadas (para incluir no save)
 let animationLastTickMs = 0;
 let simulationClockMs = 0;
 let actorAliasById = new Map();
@@ -93,18 +103,18 @@ let liveSimulationStatus = {
   avgLeadTime: 0,
 };
 
-// Processo vinculado (selecionado na Seção 0 do setup)
+// Processo vinculado (selecionado na Secao 0 do setup)
 let _linkedProcess = null; // { macroprocesso, processo, subprocesso, area, natureza }
 // Lista de processos recebida do pai SIGA via postMessage
 let _sigaProcessList = null;
-// Últimas métricas de simulação calculadas (para incluir no save)
+// Ultimas metricas de simulacao calculadas (para incluir no save)
 let _lastSimMetrics = null;
 
 const TOKEN_COUNT = 100;
 const TOKEN_LAUNCH_GAP_MS = 500;
-
-// TER calculado a partir das partículas animadas (100 runs).
-// Quando disponível, tem precedência sobre os 3500 do motor
+// Valores padrao dos pesos (espelho de RULES para reset)
+// TER calculado a partir das particulas animadas (100 runs).
+// Quando disponivel, tem precedencia sobre os 3500 do motor
 // para garantir que o contador ao vivo e o dashboard mostrem o mesmo valor.
 let _animatedTer = null;
 
@@ -683,7 +693,7 @@ function handoffTypeOptions() {
     { v: '', t: 'Selecione' },
     { v: 'same_team', t: 'Mesma equipe' },
     { v: 'different_team', t: 'Outra equipe' },
-    { v: 'different_org', t: 'Outro órgão' },
+    { v: 'different_org', t: 'Outro orgao' },
   ];
 }
 
@@ -710,23 +720,23 @@ function renderHandoffWizard() {
     return;
   }
 
-  // Reaplica classificação automática com os dados atuais
+  // Reaplica classificacao automatica com os dados atuais
   autoApplyHandoffRulesFromLanes();
 
   const pairs = crossLaneTransitions();
 
   if (!pairs.length) {
-    box.innerHTML = '<div class="box" style="color:#2e7d4f;">✅ Nenhuma transição entre raias detectada. Não há handoffs neste processo.</div>';
+    box.innerHTML = '<div class="box" style="color:#2e7d4f;">Nenhuma transicao entre raias detectada. Nao ha handoffs neste processo.</div>';
     return;
   }
 
   const typeInfo = {
     same_team:     { label: 'Mesma equipe',            penalty: '+10 UT', color: '#2e7d4f', bg: '#f0faf4' },
-    different_team:{ label: 'Outra equipe (mesmo órgão)', penalty: '+20 UT', color: '#8a6d3b', bg: '#fffbf0' },
-    different_org: { label: 'Outro órgão',             penalty: '+40 UT', color: '#8f3d3a', bg: '#fff5f5' },
+    different_team:{ label: 'Outra equipe (mesmo orgao)', penalty: '+20 UT', color: '#8a6d3b', bg: '#fffbf0' },
+    different_org: { label: 'Outro orgao',             penalty: '+40 UT', color: '#8f3d3a', bg: '#fff5f5' },
   };
 
-  // Verifica se todas as raias têm perfil preenchido
+  // Verifica se todas as raias tem perfil preenchido
   const missingProfiles = pairs.filter((p) => {
     const fl = graph.lanes?.[p.fromLane] || {};
     const tl = graph.lanes?.[p.toLane]   || {};
@@ -735,11 +745,11 @@ function renderHandoffWizard() {
 
   const warning = missingProfiles.length
     ? `<div class="box" style="background:#fffbf0;border-color:#d9a72a;color:#7a5c1e;margin-bottom:8px;">
-        ⚠ <strong>${missingProfiles.length} handoff(s)</strong> com perfil de raia incompleto na Seção 2.
-        Classificados como "Mesma equipe" por padrão. Complete Equipe e Órgão para maior precisão.
+        <strong>${missingProfiles.length} handoff(s)</strong> com perfil de raia incompleto na Secao 2.
+        Classificados como "Mesma equipe" por padrao. Complete Equipe e Orgao para maior precisao.
        </div>`
     : `<div class="box" style="background:#f0faf4;border-color:#2e7d4f;color:#1a5c38;margin-bottom:8px;">
-        ✅ Todos os handoffs classificados com base nos perfis das raias.
+        Todos os handoffs classificados com base nos perfis das raias.
        </div>`;
 
   const rows = pairs.map((p) => {
@@ -747,7 +757,7 @@ function renderHandoffWizard() {
     const info = typeInfo[rule] || typeInfo.same_team;
     return `<div class="handoff-auto-row" style="background:${info.bg};">
       <span class="haw-from">${escapeHtml(p.fromName)}</span>
-      <span class="haw-arrow">→</span>
+      <span class="haw-arrow">-&gt;</span>
       <span class="haw-to">${escapeHtml(p.toName)}</span>
       <span class="haw-badge" style="color:${info.color};border-color:${info.color}44;">${info.label}</span>
       <span class="haw-penalty" style="color:${info.color};">${info.penalty}</span>
@@ -791,7 +801,7 @@ function saveHandoffRulesFromWizard() {
 }
 
 // Classifica automaticamente o tipo de handoff entre duas raias
-// baseado nos perfis (equipe/órgão) armazenados em graph.lanes
+// baseado nos perfis (equipe/Ã³rgÃ£o) armazenados em graph.lanes
 function autoClassifyHandoff(fromLane, toLane) {
   const fm = graph.lanes?.[fromLane] || {};
   const tm = graph.lanes?.[toLane] || {};
@@ -814,9 +824,9 @@ function autoApplyHandoffRulesFromLanes() {
   }
 }
 
-// Salva atores + perfis de raia da Seção 2 para o graph
-// Atribui complexidade padrão às tarefas que ainda não têm uma definida:
-// primeira tarefa manual → 'alta' (20 UT); demais → 'media' (10 UT).
+// Salva atores + perfis de raia da SeÃ§Ã£o 2 para o graph
+// Atribui complexidade padrÃ£o Ã s tarefas que ainda nÃ£o tÃªm uma definida:
+// primeira tarefa manual â†’ 'alta' (20 UT); demais â†’ 'media' (10 UT).
 function autoAssignComplexityDefaults() {
   if (!graph) return;
   const tasks = (graph.nodes || []).filter((n) => n.type === 'task' && !n.automated);
@@ -857,7 +867,7 @@ function saveSetupTaskMatrixFromForm() {
   $('graphJson').value = JSON.stringify(graph, null, 2);
 }
 
-// Renderiza apenas a sub-seção "Perfil das Raias" (não reconstrói o task matrix)
+// Renderiza apenas a sub-secao "Perfil das Raias" (nao reconstrui o task matrix)
 function renderSetupLaneProfiles() {
   const box = $('setupLaneProfiles');
   if (!box || !graph) return;
@@ -881,7 +891,7 @@ function renderSetupLaneProfiles() {
     return `<div class="lp-row" data-lane-profile="${escapeHtml(lane)}">
       <span class="lp-raia" title="${escapeHtml(lane)}">${escapeHtml(displayName)}</span>
       <input type="text" data-lp-team placeholder="Equipe (ex: Protocolo)" value="${escapeHtml(profile.team || '')}" />
-      <input type="text" data-lp-org  placeholder="Órgão (ex: SEFAZ)"    value="${escapeHtml(profile.org  || '')}" />
+      <input type="text" data-lp-org  placeholder="Orgao (ex: SEFAZ)"    value="${escapeHtml(profile.org  || '')}" />
     </div>`;
   }).join('');
 
@@ -889,11 +899,11 @@ function renderSetupLaneProfiles() {
     <div class="lp-head">
       <span>Raia / Ator</span>
       <span>Equipe</span>
-      <span>Órgão / Unidade</span>
+      <span>Orgao / Unidade</span>
     </div>
     ${rows}`;
 
-  // Restaura foco se estava num campo desta seção
+  // Restaura foco se estava num campo desta secao
   if (focusedLane && focusedField) {
     const newRow = box.querySelector(`[data-lane-profile="${CSS.escape(focusedLane)}"]`);
     if (newRow) {
@@ -924,12 +934,12 @@ function syncMainInputsToSetup() {
 function isHandoffReadyLocal() {
   if (!graph) return false;
   const transitions = crossLaneTransitions();
-  if (!transitions.length) return true; // Sem transições = sem handoffs = OK
+  if (!transitions.length) return true; // Sem transicoes = sem handoffs = OK
 
-  // Auto-aplica se ainda não aplicado
+  // Auto-aplica se ainda nao aplicado
   autoApplyHandoffRulesFromLanes();
 
-  // Verifica se todas as transições têm uma regra definida
+  // Verifica se todas as transicoes tem uma regra definida
   for (const t of transitions) {
     const v = String(graph?.handoffRules?.[t.key] || '');
     if (!['same_team', 'different_team', 'different_org'].includes(v)) return false;
@@ -961,7 +971,7 @@ function collectSetupStatus() {
   return status;
 }
 
-// ─── Seção 0: Escolha do Processo (Arquitetura de Processos) ──────────────────
+// Secao 0: Escolha do Processo (Arquitetura de Processos)
 
 function requestProcessListFromSiga() {
   try {
@@ -976,9 +986,9 @@ function gatewaySumColor(sum) {
 }
 
 function gatewaySumLabel(sum) {
-  if (Math.abs(sum - 100) <= 0.5) return ' ✓';
-  if (sum > 100) return ' ⚠ excede 100%';
-  return ' ⚠ abaixo de 100%';
+  if (Math.abs(sum - 100) <= 0.5) return ' ok';
+  if (sum > 100) return ' acima de 100%';
+  return ' abaixo de 100%';
 }
 
 function gatewayProbabilityColor(pct) {
@@ -1013,7 +1023,7 @@ let _sidebarGwInputHandler = null;
 let _sidebarGwClickHandler = null;
 let _sidebarGwVersion = '';
 
-// Atualiza APENAS o <tbody> e o contador — nunca toca no <input>, preservando o foco
+// Atualiza APENAS o <tbody> e o contador - nunca toca no <input>, preservando o foco
 function _sec0UpdateTable() {
   const list = _sigaProcessList || [];
   const search = ($('sec0Search')?.value || '').toLowerCase().trim();
@@ -1050,7 +1060,7 @@ function _sec0UpdateTable() {
   }
 }
 
-// Reconstrói a ESTRUTURA (badge + campo de busca + tabela shell).
+// Reconstrui a ESTRUTURA (badge + campo de busca + tabela shell).
 // Chamado apenas quando os dados mudam (_sigaProcessList ou _linkedProcess).
 function renderSetupSection0() {
   const box = $('setupSection0');
@@ -1058,10 +1068,13 @@ function renderSetupSection0() {
 
   const list = _sigaProcessList || [];
 
-  // ── Modo sem lista (standalone) ──────────────────────────────────
+  // Modo sem lista (standalone)
   if (list.length === 0) {
-    // Só reconstrói se ainda não estiver no modo manual (evita perder foco)
-    if (!box.querySelector('#linkedProcessName')) {
+    // So reconstrui se ainda nao estiver no modo manual (evita perder foco)
+    if (hasElement('#linkedProcessName', box)) {
+      // Ja existe - so atualiza o badge
+      _sec0RefreshBadge();
+    } else {
       box.innerHTML = `
         <div id="sec0Badge"></div>
         <div class="sec0-manual-form">
@@ -1071,12 +1084,12 @@ function renderSetupSection0() {
               style="flex:2;min-width:160px;" value="${escapeHtml(_linkedProcess?.processo||'')}" />
             <input id="linkedMacroName"     type="text" placeholder="Macroprocesso"
               style="flex:1;min-width:120px;" value="${escapeHtml(_linkedProcess?.macroprocesso||'')}" />
-            <input id="linkedProcessArea"   type="text" placeholder="Área/Setor"
+            <input id="linkedProcessArea"   type="text" placeholder="Area/Setor"
               style="flex:1;min-width:120px;" value="${escapeHtml(_linkedProcess?.area||'')}" />
             <button id="btnLinkProcessManual" type="button">Vincular</button>
           </div>
           <p style="font-size:12px;color:#3d546d;margin:8px 0 0;">
-            Lista de processos não disponível (simulador fora do SIGA). Preencha manualmente.
+            Lista de processos nao disponivel (simulador fora do SIGA). Preencha manualmente.
           </p>
         </div>`;
 
@@ -1091,20 +1104,17 @@ function renderSetupSection0() {
         _sec0RefreshBadge();
         renderSetupChecklist();
       });
-    } else {
-      // Já existe — só atualiza o badge
-      _sec0RefreshBadge();
     }
     return;
   }
 
-  // ── Modo com lista (dentro do SIGA) ──────────────────────────────
-  // Só cria a estrutura uma vez; nas chamadas seguintes apenas atualiza badge + tabela
+  // Modo com lista (dentro do SIGA)
+  // So cria a estrutura uma vez; nas chamadas seguintes apenas atualiza badge + tabela
   if (!box.querySelector('#sec0Search')) {
     box.innerHTML = `
       <div id="sec0Badge"></div>
       <div style="margin:10px 0 8px;display:flex;gap:8px;align-items:center;">
-        <input id="sec0Search" type="text" placeholder="🔍 Buscar processo…"
+        <input id="sec0Search" type="text" placeholder="Buscar processo..."
           autocomplete="off" spellcheck="false"
           style="flex:1;background:#ffffff;color:#0d2236;border:1.5px solid rgba(60,110,180,0.45);
                  border-radius:8px;padding:8px 12px;font-size:13px;outline:none;" />
@@ -1113,13 +1123,13 @@ function renderSetupSection0() {
       <div class="sec0-table-wrap">
         <table class="sec0-table">
           <thead><tr>
-            <th>Macroprocesso</th><th>Processo</th><th>Natureza</th><th>Área</th>
+            <th>Macroprocesso</th><th>Processo</th><th>Natureza</th><th>Area</th>
           </tr></thead>
           <tbody id="sec0Tbody"></tbody>
         </table>
       </div>`;
 
-    // Wiring feito UMA ÚNICA VEZ — nunca mais destrói o input
+    // Wiring feito UMA UNICA VEZ - nunca mais destroi o input
     $('sec0Search')?.addEventListener('input', _sec0UpdateTable);
 
     // Clique nas linhas via event delegation no tbody
@@ -1145,14 +1155,14 @@ function renderSetupSection0() {
   _sec0UpdateTable();
 }
 
-// Atualiza apenas o badge de processo vinculado (não toca no input)
+// Atualiza apenas o badge de processo vinculado (nao toca no input)
 function _sec0RefreshBadge() {
   const badge = $('sec0Badge');
   if (!badge) return;
   if (_linkedProcess?.processo) {
     badge.innerHTML = `
       <div class="linked-process-badge">
-        ✅ <strong>${escapeHtml(_linkedProcess.processo)}</strong>
+        <strong>${escapeHtml(_linkedProcess.processo)}</strong>
         <span>${escapeHtml(_linkedProcess.macroprocesso || '')}</span>
         <button id="btnClearLinkedProcess" type="button">Alterar</button>
       </div>`;
@@ -1199,10 +1209,10 @@ function renderSetupTaskMatrix() {
   autoAssignComplexityDefaults();
 
   const COMP_LABELS = {
-    baixa:   { label: '⬇ Baixa',   ut: 5,  color: '#2e7d4f', bg: '#e8f5ee' },
-    media:   { label: '▶ Média',   ut: 10, color: '#8a6d3b', bg: '#fff8e8' },
-    alta:    { label: '⬆ Alta',    ut: 20, color: '#c06000', bg: '#fff3e0' },
-    extrema: { label: '🔴 Extrema', ut: 40, color: '#8f3d3a', bg: '#fde8e8' },
+    baixa:   { label: 'Baixa',   ut: 5,  color: '#2e7d4f', bg: '#e8f5ee' },
+    media:   { label: 'Media',   ut: 10, color: '#8a6d3b', bg: '#fff8e8' },
+    alta:    { label: 'Alta',    ut: 20, color: '#c06000', bg: '#fff3e0' },
+    extrema: { label: 'Extrema', ut: 40, color: '#8f3d3a', bg: '#fde8e8' },
   };
 
   const suggestedSet = new Set(suggestedAutomationNodeIds());
@@ -1218,10 +1228,10 @@ function renderSetupTaskMatrix() {
     // Complexidade: desabilitada para tarefas automatizadas
     const comp = t.complexity || (idx === 0 ? 'alta' : 'media');
     const compSelect = t.automated
-      ? `<span class="comp-badge" style="background:#e0e8e0;color:#4a7060;">⚙ Auto — ${RULES.automated} UT</span>`
+      ? `<span class="comp-badge" style="background:#e0e8e0;color:#4a7060;">Auto - ${RULES.automated} UT</span>`
       : `<select class="comp-select comp-${comp}" data-task-complexity="${escapeHtml(t.id)}" title="Complexidade da atividade">
           ${Object.entries(COMP_LABELS).map(([k, v]) =>
-            `<option value="${k}" ${comp === k ? 'selected' : ''}>${v.label} — ${v.ut} UT</option>`
+            `<option value="${k}" ${comp === k ? 'selected' : ''}>${v.label} - ${v.ut} UT</option>`
           ).join('')}
         </select>`;
 
@@ -1246,12 +1256,12 @@ function renderSetupTaskMatrix() {
     <div class="task-matrix-body">${rows}</div>
     <div class="box" style="margin-top:8px;font-size:12px;">
       <strong>Complexidade</strong> define o custo base de cada atividade manual:
-      Baixa 5 UT · Média 10 UT · Alta 20 UT · Extrema 40 UT.
-      Isso impacta diretamente o T.E.R. e a velocidade das partículas na simulação.
+      Baixa 5 UT - Media 10 UT - Alta 20 UT - Extrema 40 UT.
+      Isso impacta diretamente o T.E.R. e a velocidade das particulas na simulacao.
     </div>
     <div class="lp-section">
-      <div class="lp-title">Perfil das Raias — Equipe e Órgão</div>
-      <div class="box lp-hint">Informe a equipe e o órgão de cada ator para que o sistema classifique os handoffs automaticamente. Raias com o mesmo órgão e equipe = sem atrito extra.</div>
+      <div class="lp-title">Perfil das Raias - Equipe e Orgao</div>
+      <div class="box lp-hint">Informe a equipe e o orgao de cada ator para que o sistema classifique os handoffs automaticamente. Raias com o mesmo orgao e equipe = sem atrito extra.</div>
       <div id="setupLaneProfiles"></div>
     </div>`;
   renderSetupLaneProfiles();
@@ -1278,14 +1288,14 @@ function renderSetupGatewayEditor() {
     const rows = outs.map((e) => {
       const targetNode = nodeById(e.to);
       const targetLabel = targetNode?.label || targetNode?.id || e.to;
-      // Rótulo do caminho: prioriza label da aresta, depois label do nó destino
+      // RÃ³tulo do caminho: prioriza label da aresta, depois label do nÃ³ destino
       const edgeLabel = e.label ? escapeHtml(e.label) : escapeHtml(targetLabel);
       const pct = Number(e.probability || 0);
       const barColor = gatewayProbabilityColor(pct);
       return `
       <label class="field gw-path-row" style="margin-bottom:6px;">
         <span class="gw-path-label">
-          <span class="gw-path-arrow">→</span> ${edgeLabel}
+          <span class="gw-path-arrow">â†’</span> ${edgeLabel}
           <span class="gw-path-target" style="color:#9fb0c5;font-size:11px;">(${escapeHtml(targetLabel)})</span>
         </span>
         <div style="display:flex;gap:6px;align-items:center;">
@@ -1329,9 +1339,9 @@ function applySetupGatewayEdits() {
   refreshAll();
 }
 
-// ═══════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SIDEBAR GATEWAY PROBABILITY EDITOR
-// ═══════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function renderSidebarGatewayEditor() {
   const box = $('sidebarGatewayBox');
@@ -1371,7 +1381,7 @@ function renderSidebarGatewayEditor() {
       const edgeLabel = e.label ? escapeHtml(e.label) : escapeHtml(targetLabel);
       const pct = Number(e.probability || 0);
       return `<div class="sgw-row">
-        <span class="sgw-label">→ ${edgeLabel}</span>
+        <span class="sgw-label">â†’ ${edgeLabel}</span>
         <div class="sgw-input-wrap">
           <input type="number" min="0" max="100" step="1" class="sgw-input"
             data-sgw-id="${escapeHtml(gw.id)}" data-sgw-edge="${escapeHtml(e.id)}" value="${pct}" />
@@ -1381,8 +1391,8 @@ function renderSidebarGatewayEditor() {
     }).join('');
     return `<div class="sgw-gateway" data-sgw-gw="${escapeHtml(gw.id)}">
       <div class="sgw-gw-header">
-        <span class="sgw-gw-name">◆ ${escapeHtml(gw.label || gw.id)}</span>
-        <button class="sgw-auto-btn" data-sgw-auto="${escapeHtml(gw.id)}" type="button">⚖ Auto</button>
+        <span class="sgw-gw-name">â—† ${escapeHtml(gw.label || gw.id)}</span>
+        <button class="sgw-auto-btn" data-sgw-auto="${escapeHtml(gw.id)}" type="button">âš– Auto</button>
       </div>
       ${rows}
       <div class="sgw-sum" data-sgw-sum="${escapeHtml(gw.id)}" style="color:${sumColor};">Soma: ${sum.toFixed(0)}%${gatewaySumLabel(sum)}</div>
@@ -1430,13 +1440,13 @@ function _onSidebarGwInput(ev) {
   const maxAllowed = Math.max(0, 100 - sumOthers);
   if (Number(inp.value) > maxAllowed) inp.value = String(maxAllowed);
 
-  // Apply to graph silently (no refreshAll — avoids losing focus)
+  // Apply to graph silently (no refreshAll â€” avoids losing focus)
   const probs = {};
   allInputs.forEach((i) => { probs[i.dataset.sgwEdge] = Math.max(0, Number(i.value || 0)); });
   graph = applyGatewayProbabilities(graph, gwId, probs);
   if ($('graphJson')) $('graphJson').value = JSON.stringify(graph, null, 2);
 
-  // Only update sum display — no full re-render
+  // Only update sum display â€” no full re-render
   const sumEl = document.querySelector(`[data-sgw-sum="${CSS.escape(gwId)}"]`);
   if (sumEl) {
     const sum = Object.values(probs).reduce((a, v) => a + v, 0);
@@ -1502,9 +1512,9 @@ function renderSetupLoopEditor() {
         return `
         <div class="loop-row">
           <div class="loop-row-info">
-            <span class="loop-gw-name">🔀 ${escapeHtml(from?.label || e.from)}</span>
-            <span class="loop-arrow">→ retorna para →</span>
-            <span class="loop-target-name">📋 ${escapeHtml(to?.label || e.to)}</span>
+            <span class="loop-gw-name">Loop ${escapeHtml(from?.label || e.from)}</span>
+            <span class="loop-arrow">-&gt; retorna para -&gt;</span>
+            <span class="loop-target-name">Destino ${escapeHtml(to?.label || e.to)}</span>
           </div>
           <div class="loop-row-controls">
             <label style="font-size:12px;">Prob. loop
@@ -1514,7 +1524,7 @@ function renderSetupLoopEditor() {
                 style="width:72px;" />%
             </label>
             <span class="loop-sum-hint" style="font-size:11px;color:#9fb0c5;">
-              Soma saídas: ${sum.toFixed(0)}%
+              Soma saidas: ${sum.toFixed(0)}%
             </span>
             <button type="button" data-loop-remove-edge="${e.id}">Remover</button>
           </div>
@@ -1524,16 +1534,16 @@ function renderSetupLoopEditor() {
 
   box.innerHTML = `
     <div class="box" style="margin-bottom:10px;font-size:13px;">
-      Defina o <strong>gateway de decisão</strong> onde pode ocorrer o retrabalho e a <strong>ação de retorno</strong>.
-      A probabilidade do loop será integrada automaticamente com as probabilidades do gateway selecionado.
+      Defina o <strong>gateway de decisao</strong> onde pode ocorrer o retrabalho e a <strong>acao de retorno</strong>.
+      A probabilidade do loop sera integrada automaticamente com as probabilidades do gateway selecionado.
     </div>
     <div class="loop-form">
       <label class="field" style="flex:1;min-width:180px;">
-        <span>Gateway de origem (decisão de retrabalho)</span>
+        <span>Gateway de origem (decisao de retrabalho)</span>
         <select id="setupLoopFrom">${gwOptions}</select>
       </label>
       <label class="field" style="flex:1;min-width:180px;">
-        <span>Ação de retorno (para onde volta)</span>
+        <span>Acao de retorno (para onde volta)</span>
         <select id="setupLoopTo">${nodeOptions}</select>
       </label>
       <label class="field" style="width:120px;">
@@ -1658,7 +1668,7 @@ function saveSetupAutomationSelection() {
 
 function openSetupModal() {
   syncMainInputsToSetup();
-  // Auto-iguala probabilidades de gateways que ainda não têm distribuição válida
+  // Auto-iguala probabilidades de gateways que ainda nÃ£o tÃªm distribuiÃ§Ã£o vÃ¡lida
   if (graph) autoFixGatewayProbabilitiesInGraph();
   if (graph) autoApplyHandoffRulesFromLanes();
   $('setupModal')?.classList.remove('hidden');
@@ -1692,7 +1702,7 @@ function completeSetup() {
     const reason = !s.graphOk && s.graphIssues.length
       ? ` Motivo: ${escapeHtml(s.graphIssues[0])}`
       : '';
-    const safeReason = (reason || '').replace(/[<>]/g, m => m === '<' ? '&lt;' : '&gt;');
+    const safeReason = escapeAngleBrackets(reason || '');
     $('validationBox').innerHTML = `<span class="badge error">setup</span> Finalize os itens pendentes no popup para iniciar a simulacao.${safeReason}`;
     return;
   }
@@ -1707,7 +1717,7 @@ function revealDashboard() {
   const section = $('dashboardSection');
   if (!section) return;
   section.classList.remove('hidden');
-  // Garante que o dashboard usa o TER das partículas animadas (_animatedTer)
+  // Garante que o dashboard usa o TER das partÃ­culas animadas (_animatedTer)
   if (graph) updateDashboard();
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1911,7 +1921,7 @@ function _phBar(value) {
 }
 
 function _metricCell(label, value, unit, note) {
-  const disp = Number.isFinite(Number(value)) ? `${Number(value).toFixed(2)}<span class="mcell-unit">${unit}</span>` : `<span class="mcell-na">—</span>`;
+  const disp = Number.isFinite(Number(value)) ? `${Number(value).toFixed(2)}<span class="mcell-unit">${unit}</span>` : `<span class="mcell-na">â€”</span>`;
   return `<div class="mcell">
     <div class="mcell-label">${label}</div>
     <div class="mcell-value">${disp}</div>
@@ -1923,7 +1933,7 @@ function _phillipCell(label, value, note) {
   const color = Number.isFinite(Number(value)) ? severityColorFromValue(value) : '#8898aa';
   const disp = Number.isFinite(Number(value))
     ? `${Number(value).toFixed(1)}<span class="mcell-unit">%</span>`
-    : `<span class="mcell-na">—</span>`;
+    : `<span class="mcell-na">â€”</span>`;
   return `<div class="mcell mcell-phillip">
     <div class="mcell-label">${label}</div>
     <div class="mcell-value" style="color:${color};">${disp}</div>
@@ -1934,11 +1944,11 @@ function _phillipCell(label, value, note) {
 }
 
 function _fmtUT(v) {
-  return Number.isFinite(Number(v)) ? `${Number(v).toFixed(1)} UT` : '—';
+  return Number.isFinite(Number(v)) ? `${Number(v).toFixed(1)} UT` : 'â€”';
 }
 
 function _fmtMin(v) {
-  if (!Number.isFinite(Number(v))) return '—';
+  if (!Number.isFinite(Number(v))) return 'â€”';
   const mins = Number(v);
   if (mins >= 60) return `${(mins / 60).toFixed(1)} h`;
   return `${mins.toFixed(0)} min`;
@@ -1962,12 +1972,12 @@ function _ipCard(ip) {
   const gauge = `<div class="rc-gauge"><div class="rc-gauge-fill" style="width:${pctVal.toFixed(1)}%;background:${color};"></div></div>`;
   const badge = `<span class="ph-badge" style="background:${color}22;color:${color};border:1px solid ${color}55;">${s.label}</span>`;
   return `<div class="result-card rc-ip">
-    <div class="rc-icon">📐</div>
-    <div class="rc-title">I.P. — Índice de Phillip</div>
-    <div class="rc-value" style="color:${color};">${Number.isFinite(Number(ip)) ? `${pctVal.toFixed(1)}%` : '—'}</div>
+    <div class="rc-icon">IP</div>
+    <div class="rc-title">I.P. - Indice de Phillip</div>
+    <div class="rc-value" style="color:${color};">${Number.isFinite(Number(ip)) ? `${pctVal.toFixed(1)}%` : '-'}</div>
     ${gauge}${badge}
-    <div class="rc-definition">O percentual de aproveitamento do esforço. Mede quanto do T.E.R. é transformado em valor pelo T.O.P.</div>
-    <div class="rc-audit">"A nota de saúde do seu fluxo de trabalho."</div>
+    <div class="rc-definition">O percentual de aproveitamento do esforco. Mede quanto do T.E.R. e transformado em valor pelo T.O.P.</div>
+    <div class="rc-audit">"A nota de saude do seu fluxo de trabalho."</div>
   </div>`;
 }
 
@@ -1976,23 +1986,43 @@ function _buildGavetaCard(metrics) {
   const gavetaPct = metrics.tempoGaveta !== null && hasInformed && metrics.leadTimeInformed > 0
     ? ((metrics.tempoGaveta / metrics.leadTimeInformed) * 100).toFixed(1)
     : null;
+  const gavetaSubtitle = gavetaPct === null ? '' : `${gavetaPct}% do T.P.`;
+  const gavetaAudit = metrics.tempoGaveta > 0
+    ? 'Foco de gestao: reduzir o tempo de gaveta e o maior alavancador de eficiencia operacional.'
+    : 'Processo sem tempo de gaveta identificado.';
+  const gavetaTone = metrics.tempoGaveta > 0 ? 'rc-gaveta-warn' : '';
   return _resultCard(
-    '🕰️',
-    'T.Gaveta — Tempo de Fila / Espera Passiva',
+    'Fila',
+    'T.Gaveta - Tempo de Fila / Espera Passiva',
     _fmtMin(metrics.tempoGaveta),
-    `${gavetaPct !== null ? gavetaPct + '% do T.P.' : ''} · T.P. − T.P.E.`,
-    'Tempo em que o processo fica parado na fila, gaveta ou aguardando decisão — sem nenhuma execução ativa.',
-    metrics.tempoGaveta > 0
-      ? 'Foco de gestão: reduzir o tempo de gaveta é o maior alavancador de eficiência operacional.'
-      : 'Processo sem tempo de gaveta identificado.',
-    metrics.tempoGaveta > 0 ? 'rc-gaveta-warn' : ''
+    `${gavetaSubtitle} - T.P. - T.P.E.`,
+    'Tempo em que o processo fica parado na fila, gaveta ou aguardando decisao - sem nenhuma execucao ativa.',
+    gavetaAudit,
+    gavetaTone
   );
 }
 
 function _buildAutoCard(metrics, hasAuto, topAutoDisp, subSuffix) {
-  if (!hasAuto) return '';
+  if (hasAuto !== true) return '';
   const gainPct = (metrics.top > 0 ? ((metrics.top - metrics.topAuto) / metrics.top * 100) : 0).toFixed(1);
-  return _resultCard('⚙️', 'T.O.P. Auto', topAutoDisp, 'caminho feliz com automações' + subSuffix, 'T.O.P. projetado após confirmação das automações marcadas no cenário To-Be.', `Ganho potencial: ${gainPct}% de redução no T.O.P.`, 'rc-auto');
+  return _resultCard('Auto', 'T.O.P. Auto', topAutoDisp, 'caminho feliz com automacoes' + subSuffix, 'T.O.P. projetado apos confirmacao das automacoes marcadas no cenario To-Be.', `Ganho potencial: ${gainPct}% de reducao no T.O.P.`, 'rc-auto');
+}
+
+function buildCalibrationLeadInfo(metrics) {
+  if (Number.isFinite(metrics.ipLeadInformedVsIdeal)) {
+    return `Lead time ideal = 100%; lead informado proporcional = ${metrics.ipLeadInformedVsIdeal.toFixed(2)}%.`;
+  }
+  return 'Lead time informado nao preenchido (opcional); calculos usam o tempo padrao do motor (primeira atividade 10 min, demais 5 min, etc).';
+}
+
+function formatOptionalMinutes(value) {
+  if (!Number.isFinite(value)) return '-- (opcional nao informado)';
+  return `${value.toFixed(2)} min`;
+}
+
+function formatOptionalPercent(value) {
+  if (!Number.isFinite(value)) return '-- (opcional nao informado)';
+  return `${value.toFixed(2)}%`;
 }
 
 function renderExecutiveKpis(metrics, base) {
@@ -2001,7 +2031,7 @@ function renderExecutiveKpis(metrics, base) {
 
   const liveLine = `<div class="mblock-live">
     Bolinhas finalizadas: <strong id="liveTokensFinished">${liveSimulationStatus.finished}/${liveSimulationStatus.total}</strong> &nbsp;|
-    T.E.R. médio ao vivo: <strong id="liveLeadAvg">${Number(liveSimulationStatus.avgLeadTime || 0).toFixed(1)} UT</strong>
+    T.E.R. medio ao vivo: <strong id="liveLeadAvg">${Number(liveSimulationStatus.avgLeadTime || 0).toFixed(1)} UT</strong>
   </div>`;
 
   if (!metrics) {
@@ -2010,8 +2040,8 @@ function renderExecutiveKpis(metrics, base) {
     box.className = 'kpi kpi-executive';
     box.innerHTML = `
       <div class="results-grid-partial">
-        ${_resultCard('⚡', 'T.O.P. — Tempo Ótimo', '—', 'informe o caminho feliz', 'A régua de ouro da eficiência. Tempo sem burocracias, esperas ou erros.', 'Se este processo fosse 100% fluido e sem interrupções, este seria o esforço real.')}
-        ${_resultCard('📊', 'T.E.R. — Tempo de Execução Realista', terVal > 0 ? _fmtUT(terVal) : '—', 'com todo o atrito do processo', 'O termômetro da realidade. Média do tempo das 100 partículas com todos os atritos.', 'Este é o custo atual do desenho do processo considerando o atrito administrativo.')}
+        ${_resultCard('TOP', 'T.O.P. - Tempo Otimo', '-', 'informe o caminho feliz', 'A regua de ouro da eficiencia. Tempo sem burocracias, esperas ou erros.', 'Se este processo fosse 100% fluido e sem interrupcoes, este seria o esforco real.')}
+        ${_resultCard('TER', 'T.E.R. - Tempo de Execucao Realista', terVal > 0 ? _fmtUT(terVal) : '-', 'com todo o atrito do processo', 'O termometro da realidade. Media do tempo das 100 particulas com todos os atritos.', 'Este e o custo atual do desenho do processo considerando o atrito administrativo.')}
         ${_ipCard(null)}
       </div>
       ${liveLine}`;
@@ -2023,48 +2053,48 @@ function renderExecutiveKpis(metrics, base) {
 
   const hasK = metrics.kFactor !== null;
   const fmtK  = (ut) => hasK ? _fmtMin(ut * metrics.kFactor) : _fmtUT(ut);
-  const subSuffix = hasK ? ' · tempo real' : '';
+  const subSuffix = hasK ? ' - tempo real' : '';
 
   const kLine = hasK
-    ? `<div class="rc-kfactor">Conversão: 1 UT = ${metrics.kFactor.toFixed(2)} min reais — T.O.P., T.E.R. e T.O.P.Auto exibidos em tempo real</div>`
+    ? `<div class="rc-kfactor">Conversao: 1 UT = ${metrics.kFactor.toFixed(2)} min reais - T.O.P., T.E.R. e T.O.P.Auto exibidos em tempo real</div>`
     : '';
 
   const tpCard = hasInformed
-    ? _resultCard('💬', 'T.P. — Tempo de Percepção', _fmtMin(metrics.leadTimeInformed), 'lead time total · declarado pelo executor', 'O tempo de calendário (Lead Time). É o que o cidadão sente na ponta — do insumo ao produto final, incluindo filas e gavetas.', 'Informe também o T.P.E. para calcular o Tempo de Gaveta.')
+    ? _resultCard('TP', 'T.P. - Tempo de Percepcao', _fmtMin(metrics.leadTimeInformed), 'lead time total - declarado pelo executor', 'O tempo de calendario (Lead Time). E o que o cidadao sente na ponta - do insumo ao produto final, incluindo filas e gavetas.', 'Informe tambem o T.P.E. para calcular o Tempo de Gaveta.')
     : '';
 
   const hasTPE = Number.isFinite(metrics.processingTimeInformed) && metrics.processingTimeInformed > 0;
   const tpeCard = hasTPE
-    ? _resultCard('⚙', 'T.P.E. — Tempo de Processamento Estimado', _fmtMin(metrics.processingTimeInformed), 'sem filas/gaveta · declarado pelo executor', 'Tempo estimado para executar o processo sem tempos de fila ou espera passiva. Base para o cálculo do Tempo de Gaveta.', 'T.P.E. < T.P. — a diferença é o tempo desperdiçado em fila.')
+    ? _resultCard('TPE', 'T.P.E. - Tempo de Processamento Estimado', _fmtMin(metrics.processingTimeInformed), 'sem filas/gaveta - declarado pelo executor', 'Tempo estimado para executar o processo sem tempos de fila ou espera passiva. Base para o calculo do Tempo de Gaveta.', 'T.P.E. < T.P. - a diferenca e o tempo desperdicado em fila.')
     : '';
 
   const gavetaCard = metrics.tempoGaveta === null ? '' : _buildGavetaCard(metrics);
 
-  const topDisp = metrics.top > 0 ? fmtK(metrics.top) : '—';
-  const topAutoDisp = metrics.topAuto > 0 ? fmtK(metrics.topAuto) : '—';
+  const topDisp = metrics.top > 0 ? fmtK(metrics.top) : '-';
+  const topAutoDisp = metrics.topAuto > 0 ? fmtK(metrics.topAuto) : '-';
 
   const autoCard = _buildAutoCard(metrics, hasAuto, topAutoDisp, subSuffix);
 
   const liveUT = Number(liveSimulationStatus.avgLeadTime || 0);
-  let liveTerDisp = '—';
+  let liveTerDisp = '-';
   if (liveUT > 0) {
     liveTerDisp = hasK ? _fmtMin(liveUT * metrics.kFactor) : `${liveUT.toFixed(1)} UT`;
   }
   const liveLineK = `<div class="mblock-live">
     Bolinhas finalizadas: <strong id="liveTokensFinished">${liveSimulationStatus.finished}/${liveSimulationStatus.total}</strong> &nbsp;|
-    T.E.R. médio ao vivo: <strong id="liveLeadAvg">${liveTerDisp}</strong>
+    T.E.R. medio ao vivo: <strong id="liveLeadAvg">${liveTerDisp}</strong>
   </div>`;
 
   box.className = 'kpi kpi-executive';
   box.innerHTML = `
     <div class="results-grid">
-      ${_resultCard('⚡', 'T.O.P. — Tempo Ótimo de Processamento', topDisp, 'caminho feliz, sem atritos' + subSuffix, 'A régua de ouro da eficiência. Representa o tempo estritamente necessário para a execução das tarefas, removendo todas as burocracias, esperas e erros.', 'Se este processo fosse 100% fluido e sem interrupções, este seria o esforço real.')}
-      ${_resultCard('📊', 'T.E.R. — Tempo de Execução Realista', fmtK(metrics.ter), 'média das 100 partículas' + subSuffix, 'O termômetro da realidade. É a média do tempo gasto pelas 100 partículas, contabilizando penalidades de handoffs, gateways e a probabilidade de retrabalho (loops).', 'Este é o custo atual do desenho do processo considerando o atrito administrativo.')}
+      ${_resultCard('TOP', 'T.O.P. - Tempo Otimo de Processamento', topDisp, 'caminho feliz, sem atritos' + subSuffix, 'A regua de ouro da eficiencia. Representa o tempo estritamente necessario para a execucao das tarefas, removendo todas as burocracias, esperas e erros.', 'Se este processo fosse 100% fluido e sem interrupcoes, este seria o esforco real.')}
+      ${_resultCard('TER', 'T.E.R. - Tempo de Execucao Realista', fmtK(metrics.ter), 'media das 100 particulas' + subSuffix, 'O termometro da realidade. E a media do tempo gasto pelas 100 particulas, contabilizando penalidades de handoffs, gateways e a probabilidade de retrabalho (loops).', 'Este e o custo atual do desenho do processo considerando o atrito administrativo.')}
       ${tpCard}
       ${tpeCard}
       ${gavetaCard}
       ${_ipCard(metrics.ipRealVsIdeal)}
-      ${_resultCard('🔀', 'Complexidade', String(metrics.complexidade), 'caminhos possíveis no processo', 'Quantidade de trajetos distintos que uma partícula pode percorrer do início ao fim, considerando todos os gateways e eventos de fim.', 'Quanto maior, mais variável é o comportamento do processo em campo.')}
+      ${_resultCard('Comp', 'Complexidade', String(metrics.complexidade), 'caminhos possiveis no processo', 'Quantidade de trajetos distintos que uma particula pode percorrer do inicio ao fim, considerando todos os gateways e eventos de fim.', 'Quanto maior, mais variavel e o comportamento do processo em campo.')}
       ${autoCard}
     </div>
     ${kLine}
@@ -2085,7 +2115,7 @@ function refreshLiveSimulationStatus(tokens) {
 
   liveSimulationStatus = { finished, total, avgLeadTime: avgLead };
 
-  const terText = avgLead > 0 ? `${avgLead.toFixed(1)} UT` : '—';
+  const terText = avgLead > 0 ? `${avgLead.toFixed(1)} UT` : 'â€”';
 
   // Update controls row counters
   const elFinished = $('liveTokensFinished');
@@ -2185,8 +2215,8 @@ function renderFrictionChart(metrics) {
 
   // Bloco de resumo por tipo (grafico de barras agregado)
   const typeColors = { handoff: '#c0392b', gateway: '#d1a321', loop: '#f39c12', timer: '#f1c40f' };
-  const typeLabels = { handoff: 'Esforço de Handoff', gateway: 'Custo de Decisão (Gateways)', loop: 'Custo de Retrabalho (Loops)', timer: 'Espera de Timer (Semáforo)' };
-  const typeIcons  = { handoff: '🔁', gateway: '⚖️', loop: '🔄', timer: '⏱' };
+  const typeLabels = { handoff: 'Esforco de Handoff', gateway: 'Custo de Decisao (Gateways)', loop: 'Custo de Retrabalho (Loops)', timer: 'Espera de Timer (Semaforo)' };
+  const typeIcons  = { handoff: 'H', gateway: 'G', loop: 'L', timer: 'T' };
 
   const summaryBars = ['handoff', 'gateway', 'loop', 'timer'].map((t) => {
     const val = friction[t];
@@ -2206,7 +2236,7 @@ function renderFrictionChart(metrics) {
   const detailBars = ranking.map((item) => {
     const pctW = ((item.total / maxVal) * 100).toFixed(1);
     const color = typeColors[item.type] || '#8898aa';
-    const key = item.key.replaceAll('->', ' → ');
+    const key = item.key.replaceAll('->', ' -> ');
     return `<div class="fc-row fc-row-sm">
       <div class="fc-label fc-label-sm">${key}</div>
       <div class="fc-bar-wrap">
@@ -2218,7 +2248,7 @@ function renderFrictionChart(metrics) {
 
   box.innerHTML = `
     <div class="friction-chart">
-      <div class="fc-section-title">Decomposição do Atrito — Onde o tempo "foge"</div>
+      <div class="fc-section-title">Decomposicao do Atrito - Onde o tempo "foge"</div>
       <div class="fc-summary">${summaryBars}</div>
       <div class="fc-section-title" style="margin-top:12px;">Top ${ranking.length} Itens Individuais</div>
       <div class="fc-details">${detailBars}</div>
@@ -2226,37 +2256,38 @@ function renderFrictionChart(metrics) {
 }
 
 function _buildP2Friction(topFriction) {
-  if (!topFriction) {
-    return 'Nenhum atrito dominante identificado no processo atual. O fluxo apresenta baixa concentração de gargalos.';
+  if (topFriction) {
+    let tipoLabel = 'Loop de Retrabalho';
+    if (topFriction.type === 'handoff') {
+      tipoLabel = 'Handoff';
+    } else if (topFriction.type === 'gateway') {
+      tipoLabel = 'Gateway de Decisao';
+    }
+    const keyLabel = topFriction.key.replaceAll('->', ' -> ');
+    const totalUT = topFriction.total.toFixed(1);
+    if (topFriction.type === 'handoff') {
+      return `A maior perda de tempo detectada foi no <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> ao fluxo. Recomenda-se unificar estas etapas ou automatizar a transferencia de dados para reduzir este impacto.`;
+    }
+    if (topFriction.type === 'gateway') {
+      return `O maior ponto de atrito detectado e o <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> em decisoes repetidas. Recomenda-se simplificar os criterios de aprovacao ou antecipar as validacoes no fluxo.`;
+    }
+    return `O maior consumo de atrito esta no <strong>${tipoLabel} na tarefa ${keyLabel}</strong>, acumulando <strong>${totalUT} UT</strong>. Recomenda-se revisar os criterios de entrada e qualidade de dados antes do ponto de retorno.`;
   }
-  let tipoLabel = 'Loop de Retrabalho';
-  if (topFriction.type === 'handoff') {
-    tipoLabel = 'Handoff';
-  } else if (topFriction.type === 'gateway') {
-    tipoLabel = 'Gateway de Decisão';
-  }
-  const keyLabel = topFriction.key.replaceAll('->', ' → ');
-  const totalUT = topFriction.total.toFixed(1);
-  if (topFriction.type === 'handoff') {
-    return `A maior perda de tempo detectada foi no <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> ao fluxo. Recomenda-se unificar estas etapas ou automatizar a transferência de dados para reduzir este impacto.`;
-  }
-  if (topFriction.type === 'gateway') {
-    return `O maior ponto de atrito detectado é o <strong>${tipoLabel} ${keyLabel}</strong>, que acumula <strong>${totalUT} UT</strong> em decisões repetidas. Recomenda-se simplificar os critérios de aprovação ou antecipar as validações no fluxo.`;
-  }
-  return `O maior consumo de atrito está no <strong>${tipoLabel} na tarefa ${keyLabel}</strong>, acumulando <strong>${totalUT} UT</strong>. Recomenda-se revisar os critérios de entrada e qualidade de dados antes do ponto de retorno.`;
+  return 'Nenhum atrito dominante identificado no processo atual. O fluxo apresenta baixa concentracao de gargalos.';
 }
 
 function _buildP3Automation(nodes, metrics) {
   const topManual = (nodes || []).find((n) => n.type === 'task' && !n.automated);
-  if (!topManual) {
-    return 'Todas as tarefas já estão automatizadas ou não há candidatos identificados para automação no cenário atual.';
+  if (topManual) {
+    const gainUT = (RULES.nextManual - RULES.automated).toFixed(1);
+    const gainPct = metrics.top > 0 ? ((gainUT / metrics.top) * 100).toFixed(1) : '0';
+    let gainMin = '';
+    if (metrics.kFactor !== null) {
+      gainMin = ` (economia de aprox. ${(gainUT * metrics.kFactor).toFixed(0)} min reais por execucao)`;
+    }
+    return `Caso a atividade <strong>"${escapeHtml(topManual.label)}"</strong> seja automatizada (reduzindo de ${RULES.nextManual} para ${RULES.automated} UT), o T.O.P. cairia em aprox. <strong>${gainPct}%</strong>${gainMin}. Recomenda-se priorizar tarefas repetitivas e de alto volume para maximizar o retorno.`;
   }
-  const gainUT = (RULES.nextManual - RULES.automated).toFixed(1);
-  const gainPct = metrics.top > 0 ? ((gainUT / metrics.top) * 100).toFixed(1) : '0';
-  const gainMin = metrics.kFactor !== null
-    ? ` (economia de aprox. ${(gainUT * metrics.kFactor).toFixed(0)} min reais por execução)`
-    : '';
-  return `Caso a atividade <strong>"${escapeHtml(topManual.label)}"</strong> seja automatizada (reduzindo de ${RULES.nextManual} para ${RULES.automated} UT), o T.O.P. cairia em aprox. <strong>${gainPct}%</strong>${gainMin}. Recomenda-se priorizar tarefas repetitivas e de alto volume para maximizar o retorno.`;
+  return 'Todas as tarefas ja estao automatizadas ou nao ha candidatos identificados para automacao no cenario atual.';
 }
 
 function _buildP4Gaveta(metrics) {
@@ -2266,12 +2297,12 @@ function _buildP4Gaveta(metrics) {
     const gaveta = Number(metrics.tempoGaveta);
     const gavetaPct = tp > 0 ? ((gaveta / tp) * 100).toFixed(1) : '0';
     const gavetaFmt = _fmtMin(gaveta);
-    return `O executor informou T.P. de <strong>${_fmtMin(tp)}</strong> e T.P.E. de <strong>${_fmtMin(tpe)}</strong>. Isso revela que <strong>${gavetaPct}%</strong> do tempo total (<strong>${gavetaFmt}</strong>) é gasto em espera passiva — filas, gavetas e aguardo de decisão — sem execução ativa. O foco da gestão deve ser a redução do Tempo de Gaveta.`;
+    return `O executor informou T.P. de <strong>${_fmtMin(tp)}</strong> e T.P.E. de <strong>${_fmtMin(tpe)}</strong>. Isso revela que <strong>${gavetaPct}%</strong> do tempo total (<strong>${gavetaFmt}</strong>) e gasto em espera passiva - filas, gavetas e aguardo de decisao - sem execucao ativa. O foco da gestao deve ser a reducao do Tempo de Gaveta.`;
   }
   if (Number.isFinite(metrics.leadTimeInformed)) {
-    return 'T.P. informado. Informe também o <strong>T.P.E. (Tempo de Processamento Estimado)</strong> para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
+    return 'T.P. informado. Informe tambem o <strong>T.P.E. (Tempo de Processamento Estimado)</strong> para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
   }
-  return 'Informe o <strong>T.P.</strong> (Tempo de Percepção) e o <strong>T.P.E.</strong> (Tempo de Processamento Estimado) para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
+  return 'Informe o <strong>T.P.</strong> (Tempo de Percepcao) e o <strong>T.P.E.</strong> (Tempo de Processamento Estimado) para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
 }
 
 function renderAutomaticInterpretation(metrics, base) {
@@ -2280,8 +2311,8 @@ function renderAutomaticInterpretation(metrics, base) {
 
   if (!metrics) {
     box.innerHTML = `<div class="veredito-parcial">
-      <p><strong>Leitura parcial:</strong> informe o caminho feliz e o T.P. (Tempo de Percepção) do executor para liberar o diagnóstico completo.</p>
-      <p>Enquanto isso, use o gráfico de atrito abaixo para identificar os maiores gargalos do processo atual.</p>
+      <p><strong>Leitura parcial:</strong> informe o caminho feliz e o T.P. (Tempo de Percepcao) do executor para liberar o diagnostico completo.</p>
+      <p>Enquanto isso, use o grafico de atrito abaixo para identificar os maiores gargalos do processo atual.</p>
     </div>`;
     return;
   }
@@ -2289,7 +2320,7 @@ function renderAutomaticInterpretation(metrics, base) {
   const ip = Number(metrics.ipRealVsIdeal || 0);
   const horasPerdidas = ((100 - ip) / 100 * 10).toFixed(1);
 
-  const p1 = `O processo apresenta um I.P. de <strong>${ip.toFixed(1)}%</strong>. Isso indica que, para cada 10 horas de trabalho, cerca de <strong>${horasPerdidas} horas</strong> são consumidas por atividades que não agregam valor direto, como recontextualização e trocas de setor.`;
+  const p1 = `O processo apresenta um I.P. de <strong>${ip.toFixed(1)}%</strong>. Isso indica que, para cada 10 horas de trabalho, cerca de <strong>${horasPerdidas} horas</strong> sao consumidas por atividades que nao agregam valor direto, como recontextualizacao e trocas de setor.`;
   const p2 = _buildP2Friction((metrics.ranking || [])[0]);
   const p3 = _buildP3Automation(graph?.nodes, metrics);
   const p4 = _buildP4Gaveta(metrics);
@@ -2321,26 +2352,26 @@ function computeScenarioMetrics() {
   const autoGraph = buildAutoScenarioGraph();
   const autoBase = calculateTEPAndIP(autoGraph, 3500);
 
-  // Usa o TER das 100 partículas animadas quando disponível,
-  // assim o dashboard e o contador ao vivo mostram o mesmo número.
+  // Usa o TER das 100 partÃ­culas animadas quando disponÃ­vel,
+  // assim o dashboard e o contador ao vivo mostram o mesmo nÃºmero.
   const ter = (_animatedTer !== null && _animatedTer > 0) ? _animatedTer : base.tepReal;
   const terAuto = autoBase.tepReal;
 
   // T.O.P. = caminho feliz sem atrito.
-  // Nunca lança exceção — falha no happy path mostra "—" no card sem derrubar os demais.
+  // Nunca lanÃ§a exceÃ§Ã£o â€” falha no happy path mostra "â€”" no card sem derrubar os demais.
   let top = 0;
   try {
     const t = calculatePathTime(graph, path, true);
     if (t > 0) top = t;
-  } catch (_) { console.warn('[simulator] path inválido, TOP = 0', _); }
+  } catch (_) { console.warn('[simulator] path invÃ¡lido, TOP = 0', _); }
 
-  // T.O.P. Auto = cenário com automações.
-  // Fallback para top quando não calculável.
+  // T.O.P. Auto = cenÃ¡rio com automaÃ§Ãµes.
+  // Fallback para top quando nÃ£o calculÃ¡vel.
   let topAuto = top;
   try {
     const ta = calculatePathTime(autoGraph, path, true);
     if (ta > 0) topAuto = ta;
-  } catch (_) { console.warn('[simulator] automação path inválido', _); }
+  } catch (_) { console.warn('[simulator] automaÃ§Ã£o path invÃ¡lido', _); }
 
   // Conversao K: 1 UT = quantos minutos reais (usando T.P. como ancora)
   // K = T.P. (min) / T.E.R. (UT)
@@ -2348,8 +2379,8 @@ function computeScenarioMetrics() {
     ? leadTimeInformed / ter
     : null;
 
-  // Tempo de Gaveta = T.P. − T.P.E.  (fila + espera passiva)
-  // Só calculável quando ambos os campos estão preenchidos pelo executor
+  // Tempo de Gaveta = T.P. âˆ’ T.P.E.  (fila + espera passiva)
+  // SÃ³ calculÃ¡vel quando ambos os campos estÃ£o preenchidos pelo executor
   const tempoGaveta = (
     Number.isFinite(leadTimeInformed) && leadTimeInformed > 0 &&
     Number.isFinite(processingTimeInformed) && processingTimeInformed > 0
@@ -2442,13 +2473,13 @@ function renderHandoffSetup() {
         <label class="field" style="margin:0;"><span>Raia</span><input value="${escapeHtml(lane)}" disabled></label>
         <label class="field" style="margin:0;"><span>Equipe</span><input data-field="team" value="${escapeHtml(profile.team || '')}" placeholder="Ex: Protocolo"></label>
         <label class="field" style="margin:0;"><span>Setor</span><input data-field="sector" value="${escapeHtml(profile.sector || '')}" placeholder="Ex: Atendimento"></label>
-        <label class="field" style="margin:0;"><span>Órgão</span><input data-field="org" value="${escapeHtml(profile.org || '')}" placeholder="Ex: SEFAZ"></label>
+        <label class="field" style="margin:0;"><span>Orgao</span><input data-field="org" value="${escapeHtml(profile.org || '')}" placeholder="Ex: SEFAZ"></label>
       </div>`;
   }).join('');
 
   box.innerHTML = `
     <div style="font-size:12px;margin-bottom:8px;">
-      Regra usada: troca de raia = handoff. Mesma equipe +10 UT, outra equipe (mesmo órgão) +20 UT, outro órgão +40 UT.
+      Regra usada: troca de raia = handoff. Mesma equipe +10 UT, outra equipe (mesmo orgao) +20 UT, outro orgao +40 UT.
     </div>
     ${rows}
     <button id="btnSaveHandoffRows" type="button">Salvar Cadastro de Raias</button>
@@ -2465,7 +2496,7 @@ function renderHandoffSetup() {
 function ensureHandoffReady() {
   if (!graph) return false;
   if (!isHandoffReadyLocal()) {
-    $('validationBox').innerHTML = '<span class="badge error">handoff</span> Confirme na seção 2 do popup se cada handoff é de mesma equipe, outra equipe ou outro órgão.';
+    $('validationBox').innerHTML = '<span class="badge error">handoff</span> Confirme na secao 2 do popup se cada handoff e de mesma equipe, outra equipe ou outro orgao.';
     renderHandoffSetup();
     return false;
   }
@@ -2496,7 +2527,7 @@ function parseEditorGraph() {
     return true;
   } catch (e) {
     /* exibe mensagem de erro na interface */
-    const safeMsg = (e.message || '').replace(/[<>]/g, m => m === '<' ? '&lt;' : '&gt;');
+    const safeMsg = escapeAngleBrackets(e.message || '');
     $('validationBox').innerHTML = `<span class="badge error">erro</span> JSON invalido: ${safeMsg}`;
     return false;
   }
@@ -2736,7 +2767,7 @@ function onSetupPathNodeClick(nodeId) {
   const allowed = allowedNextNodeIds();
 
   if (!allowed.has(nodeId)) {
-    if (!selected.length) {
+      if (selected.length === 0) {
       const starts = [...allowed].map((id) => nodeName(id)).join(', ');
       setHappyPathHint(`Comece pelo no inicial do processo: ${starts || 'inicio nao identificado'}.`);
     } else {
@@ -2790,7 +2821,7 @@ function _drawSetupEdge(svg, edge, from, to, happyPathNodes) {
   svg.appendChild(line);
 }
 
-// ── helpers: formas SVG para o canvas de setup (S3776 — Cognitive Complexity) ─
+// â”€â”€ helpers: formas SVG para o canvas de setup (S3776 â€” Cognitive Complexity) â”€
 function _drawSetupTaskShape(g, node, isSelected) {
   const ns = 'http://www.w3.org/2000/svg';
   const rect = document.createElementNS(ns, 'rect');
@@ -2940,7 +2971,7 @@ function onNodeClickedForHappyPath(nodeId) {
   const allowed = allowedNextNodeIds();
 
   if (!allowed.has(nodeId)) {
-    if (!selected.length) {
+      if (selected.length === 0) {
       const starts = [...allowed].map((id) => nodeName(id)).join(', ');
       setHappyPathHint(`Comece pelo no inicial do processo: ${starts || 'inicio nao identificado'}.`);
     } else {
@@ -2983,7 +3014,13 @@ function _drawEdgeWithLabel(svg, edge, from, to) {
   line.setAttribute('y1', String(from.y));
   line.setAttribute('x2', String(to.x));
   line.setAttribute('y2', String(to.y));
-  line.setAttribute('stroke', edge.isLoopReturn ? '#f39c12' : edge.isErrorPath ? '#c0392b' : '#5d6d7e');
+  let edgeStroke = '#5d6d7e';
+  if (edge.isLoopReturn) {
+    edgeStroke = '#f39c12';
+  } else if (edge.isErrorPath) {
+    edgeStroke = '#c0392b';
+  }
+  line.setAttribute('stroke', edgeStroke);
   line.setAttribute('stroke-width', '2.2');
   if (happyPathMarking.active) {
     for (let i = 0; i < happyPathMarking.nodes.length - 1; i += 1) {
@@ -3008,7 +3045,7 @@ function _drawEdgeWithLabel(svg, edge, from, to) {
   }
 }
 
-// ── helpers: formas SVG para o canvas principal (S3776 — Cognitive Complexity) ─
+// â”€â”€ helpers: formas SVG para o canvas principal (S3776 â€” Cognitive Complexity) â”€
 function _drawNodeTaskShape(g, node, isSelected) {
   const ns = 'http://www.w3.org/2000/svg';
   const fill       = node.automated ? '#e8f7ef' : '#edf3fb';
@@ -3042,7 +3079,7 @@ function _drawNodeTimerShape(g, node, isSelected) {
   cInner.setAttribute('stroke', stroke); cInner.setAttribute('stroke-width', '1.5');
   g.appendChild(cInner);
   const clock = document.createElementNS(ns, 'text');
-  clock.textContent = '⏱';
+  clock.textContent = 'â±';
   clock.setAttribute('x', String(node.x)); clock.setAttribute('y', String(node.y - 8));
   clock.setAttribute('font-size', '14'); clock.setAttribute('text-anchor', 'middle');
   g.appendChild(clock);
@@ -3157,7 +3194,11 @@ function drawGraph() {
     const selectedIndex = happyPathMarking.nodes.indexOf(node.id);
     const isSelected = selectedIndex >= 0;
     const canPick = !happyPathMarking.active || allowed.has(node.id) || isSelected;
-    g.style.cursor = happyPathMarking.active ? (canPick ? 'pointer' : 'not-allowed') : 'default';
+    let cursor = 'default';
+    if (happyPathMarking.active) {
+      cursor = canPick ? 'pointer' : 'not-allowed';
+    }
+    g.style.cursor = cursor;
     g.style.opacity = canPick ? '1' : '0.42';
     g.setAttribute('role', 'button');
     g.setAttribute('tabindex', canPick ? '0' : '-1');
@@ -3175,7 +3216,7 @@ function drawGraph() {
 }
 
 function openGatewayEditor(gatewayId) {
-  // Gateway clicked on canvas — highlight its section in the sidebar accordion
+  // Gateway clicked on canvas â€” highlight its section in the sidebar accordion
   const acc = $('accordionGatewayProbs');
   if (acc && !acc.open) acc.open = true;
   // Scroll the gateway's section into view in the sidebar
@@ -3217,7 +3258,7 @@ function updateDashboard() {
 
   $('calibrationResult').textContent = [
     `Estimado: TEP ideal = 100%; TEP real proporcional = ${metrics.ipRealVsIdeal.toFixed(2)}%.`,
-    `Informado executor: ${Number.isFinite(metrics.ipLeadInformedVsIdeal) ? `Lead time ideal = 100%; lead informado proporcional = ${metrics.ipLeadInformedVsIdeal.toFixed(2)}%.` : 'Lead time informado nao preenchido (opcional); calculos usam o tempo padrao do motor (primeira atividade 10 min, demais 5 min, etc).'},`,
+    `Informado executor: ${buildCalibrationLeadInfo(metrics)}`,
     `Automacao: ideal auto vs ideal = ${metrics.ipAutoVsIdeal.toFixed(2)}%.`,
     `Semaforos -> padrao: ${semaphoreForPhillip('standard', metrics.ipRealVsIdeal).label}; informado: ${semaphoreForPhillip('informed', metrics.ipLeadInformedVsIdeal).label}; automacao: ${semaphoreForPhillip('automation', metrics.ipAutoVsIdeal).label}.`,
     `Lead time ideal e calculado no caminho feliz informado, sem punicoes (handoff/gateway/loop).`,
@@ -3240,9 +3281,9 @@ function applyCalibration() {
     $('calibrationResult').textContent = [
       `Estimado -> TEP real: ${metrics.tepReal.toFixed(2)} min | TEP ideal: ${metrics.tepIdeal.toFixed(2)} min (100%)`,
       `Estimado -> TEP real proporcional: ${metrics.ipRealVsIdeal.toFixed(2)}%`,
-      `Informado executor -> Lead time informado: ${Number.isFinite(metrics.leadTimeInformed) ? `${metrics.leadTimeInformed.toFixed(2)} min` : '-- (opcional nao informado)'}`,
+      `Informado executor -> Lead time informado: ${formatOptionalMinutes(metrics.leadTimeInformed)}`,
       `Informado executor -> Lead time ideal (100%): ${metrics.leadIdeal.toFixed(2)} min`,
-      `Informado executor -> Proporcional: ${Number.isFinite(metrics.ipLeadInformedVsIdeal) ? `${metrics.ipLeadInformedVsIdeal.toFixed(2)}%` : '-- (opcional nao informado)'}`,
+      `Informado executor -> Proporcional: ${formatOptionalPercent(metrics.ipLeadInformedVsIdeal)}`,
       `TEP ideal auto: ${metrics.tepIdealAuto.toFixed(2)} min (100% na escala auto)`,
       `Comparativo ideal auto vs ideal: ${metrics.ipAutoVsIdeal.toFixed(2)}%`,
       `Semaforos -> padrao: ${semaphoreForPhillip('standard', metrics.ipRealVsIdeal).label}; informado: ${semaphoreForPhillip('informed', metrics.ipLeadInformedVsIdeal).label}; automacao: ${semaphoreForPhillip('automation', metrics.ipAutoVsIdeal).label}.`,
@@ -3390,7 +3431,7 @@ function _classifyToken(t, edge, to, fromNode) {
     return { color: '#c0392b', speedFactor: 1 };
   }
   if (isLoopRepeatPass) {
-    return { color: '#f39c12', speedFactor: 3.0 };
+    return { color: '#f39c12', speedFactor: 3 };
   }
   if (to?.type === 'timer') {
     return { color: '#f1c40f', speedFactor: 0.3 };
@@ -3479,14 +3520,14 @@ function playSimulation() {
   if (!ensureHandoffReady()) return;
   simulationMode = $('simMode')?.value || 'real';
   syncConfirmedAutoFromUi();
-  _animatedTer = null; // limpa TER anterior; será recalculado ao fim desta rodada
+  _animatedTer = null; // limpa TER anterior; serÃ¡ recalculado ao fim desta rodada
 
   if (simulationMode !== 'real') {
     try {
       parseHappyPathRequired();
     } catch (e) {
       /* exibe mensagem de erro na interface */
-        const safeMsg = (e.message || '').replace(/[<>]/g, m => m === '<' ? '&lt;' : '&gt;');
+      const safeMsg = escapeAngleBrackets(e.message || '');
       $('validationBox').innerHTML = `<span class="badge error">ideal</span> ${safeMsg}`;
       return;
     }
@@ -3792,15 +3833,15 @@ function renderTimerSetup() {
     return;
   }
   box.innerHTML = `
-    <h3>⏱ Eventos Timer — Defina as UTs de Espera</h3>
+    <h3>Eventos Timer - Defina as UTs de Espera</h3>
     <div class="box" style="font-size:12px;margin-bottom:8px;">
-      O fluxo contém <strong>${timers.length}</strong> evento(s) timer (semáforo vermelho).
+      O fluxo contem <strong>${timers.length}</strong> evento(s) timer (semaforo vermelho).
       Informe quantas <strong>UT</strong> cada timer deve aguardar antes de liberar o fluxo.
-      <br>Exemplo: aguardar aprovação externa = 40 UT, aguardar prazo regulatório = 80 UT.
+      <br>Exemplo: aguardar aprovacao externa = 40 UT, aguardar prazo regulatorio = 80 UT.
     </div>
     ${timers.map((n) => `
       <label class="field" style="display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center;">
-        <span>⏱ <strong>${n.label}</strong></span>
+        <span><strong>${n.label}</strong></span>
         <input type="number" min="0" step="0.5" value="${n.timerUT || 0}"
                data-timer-id="${n.id}" placeholder="UT" />
       </label>`).join('')}
@@ -3814,7 +3855,7 @@ function renderTimerSetup() {
       if (node) node.timerUT = Math.max(0, Number(input.value) || 0);
     });
     $('graphJson').value = JSON.stringify(graph, null, 2);
-    $('timerSaveMsg').textContent = 'UTs salvas. O simulador usará esses valores.';
+    $('timerSaveMsg').textContent = 'UTs salvas. O simulador usara esses valores.';
     drawGraph();
   });
 }
@@ -3852,9 +3893,9 @@ function refreshAll() {
   renderSidebarGatewayEditor();
 }
 
-// ═══════════════════════════════════════════════════════════════════
+// ============================================================================
 // BPMN 2.0 EDITOR INTEGRADO
-// ═══════════════════════════════════════════════════════════════════
+// ============================================================================
 
 let _bpmnModeler = null;
 
@@ -3865,7 +3906,7 @@ const DEFAULT_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
                   id="Definitions_1"
                   targetNamespace="http://bpmn.io/schema/bpmn">
   <bpmn:process id="Process_1" name="Processo" isExecutable="false">
-    <bpmn:startEvent id="StartEvent_1" name="Início"/>
+    <bpmn:startEvent id="StartEvent_1" name="Inicio"/>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
@@ -3881,11 +3922,11 @@ function initBpmnModeler() {
   if (_bpmnModeler) return;
   const BpmnJS = globalThis.BpmnJS;
   if (!BpmnJS) {
-    console.error('[SimBPMN] BpmnJS não encontrado. Verifique o CDN.');
+    console.error('[SimBPMN] BpmnJS nao encontrado. Verifique o CDN.');
     return;
   }
   const container = $('bpmnContainer');
-  if (!container) { console.error('[SimBPMN] #bpmnContainer não encontrado.'); return; }
+  if (!container) { console.error('[SimBPMN] #bpmnContainer nao encontrado.'); return; }
   _bpmnModeler = new BpmnJS({ container, keyboard: { bindTo: globalThis } });
 }
 
@@ -3895,12 +3936,12 @@ async function loadDefaultBpmn() {
     await _bpmnModeler.importXML(DEFAULT_BPMN);
     _bpmnModeler.get('canvas').zoom('fit-viewport');
   } catch (e) {
-    /* erro nao-fatal — registra aviso */
-    console.warn('[SimBPMN] Erro ao carregar diagrama padrão:', e.message);
+    /* erro nao-fatal - registra aviso */
+    console.warn('[SimBPMN] Erro ao carregar diagrama padrao:', e.message);
   }
 }
 
-// Mostra o overlay de escolha de entrada (chamado na inicialização)
+// Mostra o overlay de escolha de entrada (chamado na inicializaÃ§Ã£o)
 function showEntryChoice() {
   const overlay = $('entryChoiceOverlay');
   if (overlay) overlay.classList.remove('hidden');
@@ -3926,29 +3967,29 @@ function hideBpmnEditor() {
   if (panel) panel.classList.add('hidden');
 }
 
-// Modo importação: fecha overlay e abre o setup modal na seção 1 (arquivo)
+// Modo importaÃ§Ã£o: fecha overlay e abre o setup modal na seÃ§Ã£o 1 (arquivo)
 function startImportMode() {
   hideEntryChoice();
   openSetupModal();
-  // Rola até a seção 1 para deixar o fileInput em evidência
+  // Rola atÃ© a seÃ§Ã£o 1 para deixar o fileInput em evidÃªncia
   setTimeout(() => {
     const fileInput = $('fileInput');
     if (fileInput) fileInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 200);
 }
 
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // IMMEDIATE GLOBAL SCOPE EXPOSURE - Key Handler Functions
-// Estas funções DEVEM estar globalmente acessíveis para os
+// Estas funÃ§Ãµes DEVEM estar globalmente acessÃ­veis para os
 // onclick handlers no HTML funcionar em contexto de iframe
-// ════════════════════════════════════════════════════════════
-if (typeof window !== 'undefined') {
-  window.showBpmnEditor = showBpmnEditor;
-  window.startImportMode = startImportMode;
-  window.hideEntryChoice = hideEntryChoice;
-  window.showEntryChoice = showEntryChoice;
-  window.hideBpmnEditor = hideBpmnEditor;
-  console.log('[Simulator] ✓ Funções expostas em window logo após definição');
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+if (typeof globalThis !== 'undefined' && globalThis.window) {
+  globalThis.showBpmnEditor = showBpmnEditor;
+  globalThis.startImportMode = startImportMode;
+  globalThis.hideEntryChoice = hideEntryChoice;
+  globalThis.showEntryChoice = showEntryChoice;
+  globalThis.hideBpmnEditor = hideBpmnEditor;
+  console.log('[Simulator] âœ“ FunÃ§Ãµes expostas em window logo apÃ³s definiÃ§Ã£o');
 }
 if (typeof globalThis !== 'undefined') {
   globalThis.showBpmnEditor = showBpmnEditor;
@@ -3956,40 +3997,40 @@ if (typeof globalThis !== 'undefined') {
   globalThis.hideEntryChoice = hideEntryChoice;
   globalThis.showEntryChoice = showEntryChoice;
   globalThis.hideBpmnEditor = hideBpmnEditor;
-  console.log('[Simulator] ✓ Funções expostas em globalThis logo após definição');
+  console.log('[Simulator] âœ“ FunÃ§Ãµes expostas em globalThis logo apÃ³s definiÃ§Ã£o');
 }
 
 // Extrai a topologia do editor BPMN e aplica ao simulador
 async function applyFromBpmnEditor() {
   const btn = $('btnBpmnApply');
   if (!_bpmnModeler) {
-    alert('Editor BPMN não inicializado.');
+    alert('Editor BPMN nÃ£o inicializado.');
     return;
   }
-  if (btn) { btn.disabled = true; btn.textContent = 'Processando…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Processandoâ€¦'; }
   try {
     const { xml } = await _bpmnModeler.saveXML({ format: true });
-    // Cria um File virtual para reusar o pipeline de extração de cv.js
+    // Cria um File virtual para reusar o pipeline de extraÃ§Ã£o de cv.js
     const file = new File([xml], 'diagrama.bpmn', { type: 'application/xml' });
     const extraction = await extractTopologyFromWorkflowFile(file);
     const { graph: g } = extraction;
-    if (!g || !g.nodes || g.nodes.length === 0) {
-      alert('Nenhuma topologia extraída do diagrama.\nAdicione atividades ao processo antes de aplicar.');
+    if (!Array.isArray(g?.nodes) || g.nodes.length === 0) {
+      alert('Nenhuma topologia extraÃ­da do diagrama.\nAdicione atividades ao processo antes de aplicar.');
       return;
     }
     extractedGraph = normalizeGraph(g);
-    // Fecha o editor e abre o setup modal para preencher os detalhes (Seção 2 em diante)
+    // Fecha o editor e abre o setup modal para preencher os detalhes (SeÃ§Ã£o 2 em diante)
     hideBpmnEditor();
     applyExtracted();
     openSetupModal();
     const out = $('cvOutput');
-    if (out) out.textContent = `Topologia extraída do Editor BPMN: ${g.nodes.length} nó(s), ${(g.edges || []).length} aresta(s).`;
+    if (out) out.textContent = `Topologia extraÃ­da do Editor BPMN: ${g.nodes.length} nÃ³(s), ${(g.edges || []).length} aresta(s).`;
   } catch (e) {
     /* notifica o usuario do erro */
     console.error('[SimBPMN] applyFromBpmnEditor:', e);
     alert('Erro ao extrair topologia: ' + e.message);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '▶ Aplicar ao Simulador'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'â–¶ Aplicar ao Simulador'; }
   }
 }
 
@@ -4035,8 +4076,8 @@ function wireEvents() {
     renderSetupChecklist();
   });
   $('btnEditSetup')?.addEventListener('click', () => {
-    if (parseEditorGraph()) openSetupModal();
-    else openSetupModal();
+    parseEditorGraph();
+    openSetupModal();
   });
   $('simMode')?.addEventListener('change', () => {
     simulationMode = $('simMode').value;
@@ -4046,8 +4087,8 @@ function wireEvents() {
     updateDashboard();
   });
   $('happyPath')?.addEventListener('input', renderSetupChecklist);
-  // NOTA: leadTimeInformed usa 'change' (ao sair do campo), NÃO 'input',
-  // para evitar bloquear a digitação com cálculos síncronos pesados.
+  // NOTA: leadTimeInformed usa 'change' (ao sair do campo), NÃƒO 'input',
+  // para evitar bloquear a digitaÃ§Ã£o com cÃ¡lculos sÃ­ncronos pesados.
   $('setupHappyPath')?.addEventListener('input', () => {
     syncSetupInputsToMain();
     renderSetupChecklist();
@@ -4056,16 +4097,17 @@ function wireEvents() {
     syncSetupInputsToMain();
     renderSetupChecklist();
   });
-  // handoffWizard agora é apenas exibição — sem interação do usuário
-  // (handoffs são classificados automaticamente com base nos perfis das raias)
+  // handoffWizard agora Ã© apenas exibiÃ§Ã£o â€” sem interaÃ§Ã£o do usuÃ¡rio
+  // (handoffs sÃ£o classificados automaticamente com base nos perfis das raias)
   $('setupGatewayEditor')?.addEventListener('click', (ev) => {
     const target = ev.target;
-    if (!target || !target.id) return;
-    if (target.id === 'btnSetupApplyGateway') {
+    const targetId = target?.id;
+    if (!targetId) return;
+    if (targetId === 'btnSetupApplyGateway') {
       applySetupGatewayEdits();
       return;
     }
-    if (target.id === 'btnSetupAutoGateway') {
+    if (targetId === 'btnSetupAutoGateway') {
       autoFixGatewayProbabilitiesInGraph();
       $('graphJson').value = JSON.stringify(graph, null, 2);
       refreshAll();
@@ -4084,7 +4126,7 @@ function wireEvents() {
       if (graph) updateDashboard();
       return;
     }
-    // Checkbox de automação: trata interdependência e faz refresh completo
+    // Checkbox de automaÃ§Ã£o: trata interdependÃªncia e faz refresh completo
     if (t.matches('input[data-task-automated], input[data-task-potential]')) {
       document.querySelectorAll('input[data-task-automated]').forEach((autoEl) => {
         const id = String(autoEl.dataset.taskAutomated || '');
@@ -4114,7 +4156,7 @@ function wireEvents() {
     }
   }, true); // capture=true para capturar blur
 
-  // Perfis de raia (equipe/órgão): auto-aplica handoffs em tempo real
+  // Perfis de raia (equipe/Ã³rgÃ£o): auto-aplica handoffs em tempo real
   $('setupTaskMatrix')?.addEventListener('input', (ev) => {
     const t = ev.target;
     if (t.matches('[data-lp-team], [data-lp-org]')) {
@@ -4163,7 +4205,7 @@ function wireEvents() {
   $('btnResetRules')?.addEventListener('click', () => { resetRulesToDefaults(); applyCalibration(); });
   $('btnSimulateRoi')?.addEventListener('click', runRoi);
 
-  // ── T.P. e T.P.E.: recalcular automaticamente ao alterar valor ou unidade ──
+  // â”€â”€ T.P. e T.P.E.: recalcular automaticamente ao alterar valor ou unidade â”€â”€
   $('leadTimeInformed')?.addEventListener('change',       () => { if (graph) updateDashboard(); });
   $('tpUnit')?.addEventListener('change',                 () => { if (graph) updateDashboard(); });
   $('processingTimeInformed')?.addEventListener('change', () => { if (graph) updateDashboard(); });
@@ -4186,7 +4228,7 @@ function wireEvents() {
     btnApply.onclick = applyExtracted;
   }
 
-  // ── Entry Choice ─────────────────────────────────────────────────
+  // â”€â”€ Entry Choice â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const btnDraw = $('btnChoiceDrawBpmn');
   if (btnDraw) {
     btnDraw.addEventListener('click', showBpmnEditor);
@@ -4203,7 +4245,7 @@ function wireEvents() {
   if (btnSkip) {
     btnSkip.addEventListener('click', () => {
       hideEntryChoice();
-      // carrega o exemplo padrão e vai direto para o workspace
+      // carrega o exemplo padrÃ£o e vai direto para o workspace
       loadSample();
     });
     btnSkip.onclick = () => {
@@ -4212,7 +4254,7 @@ function wireEvents() {
     };
   }
 
-  // ── BPMN Editor Toolbar ──────────────────────────────────────────
+  // â”€â”€ BPMN Editor Toolbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   $('btnBpmnApply')?.addEventListener('click', applyFromBpmnEditor);
   $('btnBpmnBack')?.addEventListener('click', () => { hideBpmnEditor(); showEntryChoice(); });
   $('btnBpmnFit')?.addEventListener('click', () => {
@@ -4231,9 +4273,10 @@ function wireEvents() {
 function wireGlobalFallbackClicks() {
   document.addEventListener('click', (ev) => {
     const t = ev.target;
-    if (!t || !t.id) return;
+    const targetId = t?.id;
+    if (!targetId) return;
 
-    if (t.id === 'btnExtractVision') {
+    if (targetId === 'btnExtractVision') {
       const out = $('cvOutput');
       if (out && !out.textContent.trim()) {
         out.textContent = 'Clique detectado em Extrair Topologia via IA.';
@@ -4242,7 +4285,7 @@ function wireGlobalFallbackClicks() {
   });
 }
 
-// ─── SIGA Bridge (postMessage) ─────────────────────────────────
+// â”€â”€â”€ SIGA Bridge (postMessage) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Allows the parent SIGA frame to push a saved graph into the simulator
 // and receive back the current graph when the user saves.
 
@@ -4251,14 +4294,14 @@ let _sigaPopKey = null; // key of the POP opened from SIGA (e.g. "d" or "pop_abc
 function saveToSIGA() {
   if (!graph) { alert('Nenhum grafo carregado para salvar.'); return; }
   const btn = $('btnSaveToSiga');
-  if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvandoâ€¦'; }
   try {
-    // Tenta capturar métricas atuais; falha silenciosamente se não for possível
+    // Tenta capturar mÃ©tricas atuais; falha silenciosamente se nÃ£o for possÃ­vel
     let simResults = _lastSimMetrics;
     if (!simResults) {
       try { simResults = computeScenarioMetrics(); _lastSimMetrics = simResults; } catch (_) { console.warn('[simulator]', _); }
     }
-    // Payload simplificado para serialização (remove estruturas grandes como ranking completo)
+    // Payload simplificado para serializaÃ§Ã£o (remove estruturas grandes como ranking completo)
     const simSummary = simResults ? {
       ter:       simResults.ter,
       top:       simResults.top,
@@ -4285,12 +4328,12 @@ function saveToSIGA() {
       globalThis.location.origin
     );
     if (btn) {
-      btn.textContent = '✅ Salvo no SIGA';
-      setTimeout(() => { btn.disabled = false; btn.textContent = '💾 Salvar no SIGA'; }, 2000);
+      btn.textContent = 'âœ… Salvo no SIGA';
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'ðŸ’¾ Salvar no SIGA'; }, 2000);
     }
   } catch (e) {
-    /* erro nao-fatal — registra aviso */
-    if (btn) { btn.disabled = false; btn.textContent = '💾 Salvar no SIGA'; }
+    /* erro nao-fatal â€” registra aviso */
+    if (btn) { btn.disabled = false; btn.textContent = 'ðŸ’¾ Salvar no SIGA'; }
     console.warn('[Simulator] saveToSIGA falhou:', e);
   }
 }
@@ -4299,10 +4342,10 @@ function _handleMsgLoadGraph(ev, msg) {
   const { graph: g, popName, popKey } = msg.payload || {};
   _sigaPopKey = popKey || null;
   const titleEl = document.querySelector('.topbar h1');
-  if (titleEl && popName) titleEl.textContent = `Simulador — ${popName}`;
+  if (titleEl && popName) titleEl.textContent = `Simulador â€” ${popName}`;
   const saveBtn = $('btnSaveToSiga');
   if (saveBtn) saveBtn.style.display = popKey ? 'inline-flex' : 'none';
-  if (g && g.nodes && g.edges) {
+  if (Array.isArray(g?.nodes) && Array.isArray(g?.edges)) {
     graph = normalizeGraph(g);
     normalizeActorCodesInGraph();
     $('graphJson').value = JSON.stringify(graph, null, 2);
@@ -4339,92 +4382,82 @@ globalThis.addEventListener('message', (ev) => {
   }
 });
 
-// ── Wire save button ────────────────────────────────────────
+// â”€â”€ Wire save button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 $('btnSaveToSiga')?.addEventListener('click', saveToSIGA);
 
 try {
   console.log('[Simulator] Iniciando wireEvents...');
   wireEvents();
-  console.log('[Simulator] wireEvents concluído');
+  console.log('[Simulator] wireEvents concluÃ­do');
   
   wireGlobalFallbackClicks();
-  console.log('[Simulator] wireGlobalFallbackClicks concluído');
+  console.log('[Simulator] wireGlobalFallbackClicks concluÃ­do');
   
   $('btnViewDashboard')?.classList.remove('hidden');
-  loadSample();          // carrega exemplo no background (JSON visível mas tela coberta)
+  loadSample();          // carrega exemplo no background (JSON visÃ­vel mas tela coberta)
   console.log('[Simulator] Chamando showEntryChoice...');
   showEntryChoice();     // primeiro passo: overlay de escolha de entrada
   
-  // Debug: verificar se botões foram registrados
+  // Debug: verificar se botÃµes foram registrados
   const btnDraw = $('btnChoiceDrawBpmn');
   const btnImport = $('btnChoiceImport');
-  console.log('[Simulator] btnChoiceDrawBpmn:', btnDraw ? 'EXISTE' : 'NÃO EXISTE');
-  console.log('[Simulator] btnChoiceDrawBpmn.onclick:', btnDraw?.onclick ? 'REGISTRADO' : 'NÃO REGISTRADO');
-  console.log('[Simulator] btnChoiceImport:', btnImport ? 'EXISTE' : 'NÃO EXISTE');
-  console.log('[Simulator] btnChoiceImport.onclick:', btnImport?.onclick ? 'REGISTRADO' : 'NÃO REGISTRADO');
+  console.log('[Simulator] btnChoiceDrawBpmn:', btnDraw ? 'EXISTE' : 'NÃƒO EXISTE');
+  console.log('[Simulator] btnChoiceDrawBpmn.onclick:', btnDraw?.onclick ? 'REGISTRADO' : 'NÃƒO REGISTRADO');
+  console.log('[Simulator] btnChoiceImport:', btnImport ? 'EXISTE' : 'NÃƒO EXISTE');
+  console.log('[Simulator] btnChoiceImport.onclick:', btnImport?.onclick ? 'REGISTRADO' : 'NÃƒO REGISTRADO');
   
-  console.log('[Simulator] showEntryChoice concluído - inicialização completa');
+  console.log('[Simulator] showEntryChoice concluÃ­do - inicializaÃ§Ã£o completa');
 } catch (e) {
   /* exibe mensagem de erro na interface */
-  console.error('[Simulator] ERRO CRÍTICO:', e);
+  console.error('[Simulator] ERRO CRÃTICO:', e);
   const out = $('cvOutput');
   if (out) out.textContent = `Falha ao inicializar interface: ${e.message}\n\nStack: ${e.stack}`;
   const v = $('validationBox');
   if (v) v.textContent = `Falha ao inicializar interface: ${e.message}`;
 } finally {
-  // ── SEMPRE expor funções no escopo global, mesmo com erro ──────────
-  console.log('[Simulator] FINALMENTE: Expondo funções no globalThis');
+  // â”€â”€ SEMPRE expor funÃ§Ãµes no escopo global, mesmo com erro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  console.log('[Simulator] FINALMENTE: Expondo funÃ§Ãµes no globalThis');
   
   globalThis.showBpmnEditor = showBpmnEditor;
   globalThis.startImportMode = startImportMode;
   globalThis.hideBpmnEditor = hideBpmnEditor;
   globalThis.hideEntryChoice = hideEntryChoice;
   globalThis.showEntryChoice = showEntryChoice;
-  globalThis.loadSample = loadSample || function() { console.warn('loadSample não está disponível'); };
+  globalThis.loadSample = loadSample || function() { console.warn('loadSample nÃ£o estÃ¡ disponÃ­vel'); };
   
-  // Também expor em window para garantir acessibilidade
-  window.showBpmnEditor = showBpmnEditor;
-  window.startImportMode = startImportMode;
-  
-  console.log('[Simulator] ✓ Funções expostas no globalThis e window:', {
+  console.log('[Simulator] Funcoes expostas no globalThis:', {
     showBpmnEditor: typeof globalThis.showBpmnEditor,
     startImportMode: typeof globalThis.startImportMode,
   });
 }
 
-// ════════════════════════════════════════════════════════════
-// ─── EXPLICIT GLOBAL EXPOSURE (Fallback) ───────────────────
-// Garante que os handlers e funções principais estejam sempre
-// acessíveis ao onclick inline do HTML, mesmo se finally falhar
-// ════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â”€â”€â”€ EXPLICIT GLOBAL EXPOSURE (Fallback) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Garante que os handlers e funÃ§Ãµes principais estejam sempre
+// acessÃ­veis ao onclick inline do HTML, mesmo se finally falhar
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 (function() {
   try {
-    if (typeof showBpmnEditor !== 'undefined') {
+    if (showBpmnEditor !== undefined) {
       globalThis.showBpmnEditor = showBpmnEditor;
-      window.showBpmnEditor = showBpmnEditor;
     }
-    if (typeof startImportMode !== 'undefined') {
+    if (startImportMode !== undefined) {
       globalThis.startImportMode = startImportMode;
-      window.startImportMode = startImportMode;
     }
-    if (typeof hideEntryChoice !== 'undefined') {
+    if (hideEntryChoice !== undefined) {
       globalThis.hideEntryChoice = hideEntryChoice;
-      window.hideEntryChoice = hideEntryChoice;
     }
-    if (typeof showEntryChoice !== 'undefined') {
+    if (showEntryChoice !== undefined) {
       globalThis.showEntryChoice = showEntryChoice;
-      window.showEntryChoice = showEntryChoice;
     }
-    if (typeof hideBpmnEditor !== 'undefined') {
+    if (hideBpmnEditor !== undefined) {
       globalThis.hideBpmnEditor = hideBpmnEditor;
-      window.hideBpmnEditor = hideBpmnEditor;
     }
-    if (typeof loadSample !== 'undefined') {
+    if (loadSample !== undefined) {
       globalThis.loadSample = loadSample;
-      window.loadSample = loadSample;
     }
     
-    console.log('[Simulator] ✓✓ FALLBACK: Funções re-expostas em globalThis/window');
+    console.log('[Simulator] âœ“âœ“ FALLBACK: FunÃ§Ãµes re-expostas em globalThis/window');
     console.log('[Simulator] Available functions:', {
       showBpmnEditor: typeof globalThis.showBpmnEditor,
       startImportMode: typeof globalThis.startImportMode,

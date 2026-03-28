@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
@@ -13,9 +13,9 @@
 </head>
 <body>
   <header class="topbar">
-    <h1>Simulador de Processos — Sistema Phillip</h1>
-    <p>T.O.P. · T.E.R. · Índice de Phillip · Simulação Estocástica (100 partículas)</p>
-    <button id="btnSaveToSiga" type="button" style="display:none;margin-left:auto;padding:6px 14px;background:#3C6E71;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;gap:6px;align-items:center;">💾 Salvar no SIGA</button>
+    <h1>Simulador de Processos - Sistema Phillip</h1>
+    <p>T.O.P. - T.E.R. - Indice de Phillip - Simulacao Estocastica (100 particulas)</p>
+    <button id="btnSaveToSiga" type="button" style="display:none;margin-left:auto;padding:6px 14px;background:#3C6E71;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;gap:6px;align-items:center;">Salvar no SIGA</button>
   </header>
 
   <main class="workspace">
@@ -33,22 +33,22 @@
 
       <h2>Cadastro de Handoff</h2>
       <div class="box">
-        Antes da simulacao, informe para cada <strong>raia</strong> a equipe/setor/órgão.
-        O atrito é calculado apenas quando houver troca de raia.
+        Antes da simulacao, informe para cada <strong>raia</strong> a equipe/setor/orgao.
+        O atrito e calculado apenas quando houver troca de raia.
       </div>
       <div class="row">
         <button id="btnSetupHandoff" type="button">Configurar Raias</button>
       </div>
       <div id="handoffSetup" class="box"></div>
 
-      <!-- Assistente Consultivo removido a pedido do usuário -->
+      <!-- Assistente Consultivo removido a pedido do usuario -->
       <div id="suggestions" style="display:none;"></div>
 
       <h2>Cenario</h2>
       <div class="row">
         <button id="btnEditSetup" type="button">Editar Formulario Inicial</button>
       </div>
-      <!-- Campos mantidos ocultos — usados internamente pelo motor -->
+      <!-- Campos mantidos ocultos - usados internamente pelo motor -->
       <select id="simMode" style="display:none;">
         <option value="real">Real (atual)</option>
         <option value="ideal">Ideal (sem punicoes)</option>
@@ -61,14 +61,14 @@
       <h2>Confirmacao de Automacao (Cenario To-Be)</h2>
       <div id="autoConfirmBox"></div>
 
-      <!-- PAINEL DE CONTROLE DA SIMULACAO — Accordions -->
+      <!-- PAINEL DE CONTROLE DA SIMULACAO - Accordions -->
       <h2>Painel de Controle</h2>
 
       <details class="accordion" open>
-        <summary>⏱ Tempo e Escala</summary>
+        <summary>Tempo e Escala</summary>
         <div class="accordion-body">
           <label class="field">
-            <span>T.P. — Tempo de Percepção (opcional)</span>
+            <span>T.P. - Tempo de Percepcao (opcional)</span>
             <div style="display:flex;gap:6px;">
               <input id="leadTimeInformed" type="number" min="0" step="0.1" placeholder="Ex: 240" style="flex:1;" />
               <select id="tpUnit" style="width:90px;">
@@ -77,10 +77,10 @@
                 <option value="dias">Dias</option>
               </select>
             </div>
-            <small>Lead time total sentido pelo executor — do insumo ao produto final, incluindo filas e gavetas.</small>
+            <small>Lead time total sentido pelo executor - do insumo ao produto final, incluindo filas e gavetas.</small>
           </label>
           <label class="field">
-            <span>T.P.E. — Tempo de Processamento Estimado (opcional)</span>
+            <span>T.P.E. - Tempo de Processamento Estimado (opcional)</span>
             <div style="display:flex;gap:6px;">
               <input id="processingTimeInformed" type="number" min="0" step="0.1" placeholder="Ex: 120" style="flex:1;" />
               <select id="tpeUnit" style="width:90px;">
@@ -89,36 +89,36 @@
                 <option value="dias">Dias</option>
               </select>
             </div>
-            <small>Tempo sem filas/gaveta, estimado pelo executor. <strong>T.Gaveta = T.P. − T.P.E.</strong></small>
+            <small>Tempo sem filas/gaveta, estimado pelo executor. <strong>T.Gaveta = T.P. - T.P.E.</strong></small>
           </label>
-          <label>Velocidade da Simulação
+          <label>Velocidade da Simulacao
             <input id="speed" type="range" min="0.5" max="10" value="1" step="0.1" />
           </label>
         </div>
       </details>
 
       <details class="accordion">
-        <summary>⚖️ Pesos e Penalidades (UT)</summary>
+        <summary>Pesos e Penalidades (UT)</summary>
         <div class="accordion-body">
-          <label class="field"><span>1ª Atividade Manual — Setup (UT)</span>
+          <label class="field"><span>1a Atividade Manual - Setup (UT)</span>
             <input id="weight_firstManual" type="number" min="0" step="0.5" value="20" /></label>
           <label class="field"><span>Atividades Manuais Seguintes (UT)</span>
             <input id="weight_nextManual" type="number" min="0" step="0.5" value="10" /></label>
           <label class="field"><span>Tarefa Automatizada / RPA (UT)</span>
             <input id="weight_automated" type="number" min="0" step="0.1" value="0.5" /></label>
-          <label class="field"><span>Gateway — Decisão (UT)</span>
+          <label class="field"><span>Gateway - Decisao (UT)</span>
             <input id="weight_gatewayPenalty" type="number" min="0" step="0.5" value="2.5" /></label>
-          <label class="field"><span>Handoff — Mesma Equipe (UT)</span>
+          <label class="field"><span>Handoff - Mesma Equipe (UT)</span>
             <input id="weight_handoffSameSector" type="number" min="0" step="1" value="10" /></label>
-          <label class="field"><span>Handoff — Outra Equipe (Mesmo Órgão) (UT)</span>
+          <label class="field"><span>Handoff - Outra Equipe (Mesmo Orgao) (UT)</span>
             <input id="weight_handoffDiffSector" type="number" min="0" step="1" value="20" /></label>
-          <label class="field"><span>Handoff — Outro Órgão (+40 UT)</span>
+          <label class="field"><span>Handoff - Outro Orgao (+40 UT)</span>
             <input id="weight_handoffDiffOrg" type="number" min="0" step="1" value="40" /></label>
         </div>
       </details>
 
       <details class="accordion" id="accordionGatewayProbs">
-        <summary>🎲 Probabilidades de Gateways</summary>
+        <summary>Probabilidades de Gateways</summary>
         <div class="accordion-body">
           <div class="box" style="font-size:12px;">Ajuste as probabilidades de cada caminho. A soma por gateway deve ser exatamente 100%.</div>
           <div id="sidebarGatewayBox"></div>
@@ -127,8 +127,8 @@
 
       <!-- Botoes de acao -->
       <div class="row" style="margin-top:8px;">
-        <button id="btnApplyCalibration" type="button">▶ Recalcular / Play</button>
-        <button id="btnResetRules" type="button">↺ Resetar Padrões</button>
+        <button id="btnApplyCalibration" type="button">Recalcular / Play</button>
+        <button id="btnResetRules" type="button">Resetar Padroes</button>
       </div>
       <div id="calibrationResult" class="box"></div>
     </aside>
@@ -139,19 +139,19 @@
         <svg id="simCanvas" viewBox="0 0 1200 700" aria-label="Canvas de simulacao"></svg>
         <div id="simLivePanel" class="sim-live-panel hidden">
           <span id="simLiveCounter" class="slp-counter">0/100</span>
-          <span class="slp-label"> concluídas</span>
+          <span class="slp-label"> concluidas</span>
           <span class="slp-sep">·</span>
-          <span class="slp-label">T.E.R. médio:</span>
-          <span id="simLiveTer" class="slp-ter">—</span>
+          <span class="slp-label">T.E.R. medio:</span>
+          <span id="simLiveTer" class="slp-ter">-</span>
         </div>
       </div>
       <div class="row controls">
-        <button id="btnPlay" type="button">▶ Play 100 Partículas</button>
-        <button id="btnStop" type="button">⏹ Parar</button>
-        <button id="btnViewDashboard" type="button">📊 Ver Resultados</button>
+        <button id="btnPlay" type="button">Play 100 Particulas</button>
+        <button id="btnStop" type="button">Parar</button>
+        <button id="btnViewDashboard" type="button">Ver Resultados</button>
         <span class="token-counter">
-          🔵 <span id="liveTokensFinished">0/100</span> concluídas
-          &nbsp;·&nbsp; T.E.R. médio: <span id="liveLeadAvg">—</span>
+          <span id="liveTokensFinished">0/100</span> concluidas
+          &nbsp;·&nbsp; T.E.R. medio: <span id="liveLeadAvg">-</span>
         </span>
       </div>
       <!-- gatewayEditor moved to sidebar -->
@@ -161,16 +161,16 @@
   <section id="dashboardSection" class="panel dashboard hidden">
     <h2>Painel de Resultados</h2>
 
-    <h3>Bloco 1 — Cards de Definição e Resultado</h3>
+    <h3>Bloco 1 - Cards de Definicao e Resultado</h3>
     <div id="kpi" class="kpi"></div>
 
-    <h3>Bloco 2 — Decomposição do Atrito (Onde o tempo "foge")</h3>
+    <h3>Bloco 2 - Decomposicao do Atrito (Onde o tempo "foge")</h3>
     <div id="frictionRanking"></div>
 
-    <h3>Bloco 3 — Veredito do Auditor</h3>
+    <h3>Bloco 3 - Veredito do Auditor</h3>
     <div id="insightInterpretation" class="veredito-box"></div>
 
-    <!-- Índices Detalhados e ROI de Loop removidos a pedido do usuário -->
+    <!-- Indices Detalhados e ROI de Loop removidos a pedido do usuario -->
     <div id="insightKpi" style="display:none;"></div>
     <select id="roiGateway" style="display:none;"></select>
     <input id="roiCurrent" type="number" style="display:none;" value="30" />
@@ -200,38 +200,38 @@
     <pre id="reportBox" class="codebox"></pre>
   </section>
 
-  <!-- ═══ OVERLAY DE ENTRADA ═══════════════════════════════════════ -->
+  <!-- OVERLAY DE ENTRADA -->
   <div id="entryChoiceOverlay" class="entry-choice-overlay" role="dialog" aria-modal="true" aria-labelledby="entryChoiceTitle">
     <div class="entry-choice-dialog">
-      <h2 id="entryChoiceTitle">Como deseja começar?</h2>
-      <p>Escolha como o processo será modelado antes de simular.</p>
+      <h2 id="entryChoiceTitle">Como deseja comecar?</h2>
+      <p>Escolha como o processo sera modelado antes de simular.</p>
       <div class="entry-choice-cards">
         <button id="btnChoiceDrawBpmn" class="entry-card" type="button" onclick="if(window.showBpmnEditor) { window.showBpmnEditor(); } else { console.error('[Simulator] showBpmnEditor not on window'); alert('showBpmnEditor not available'); }">
-          <span class="entry-card-icon">✏️</span>
+          <span class="entry-card-icon" aria-hidden="true">✏️</span>
           <span class="entry-card-title">Desenhar o Processo</span>
           <span class="entry-card-sub">Editor BPMN 2.0 integrado</span>
         </button>
         <button id="btnChoiceImport" class="entry-card" type="button" onclick="if(window.startImportMode) { window.startImportMode(); } else { console.error('[Simulator] startImportMode not on window'); alert('startImportMode not available'); }">
-          <span class="entry-card-icon">📂</span>
+          <span class="entry-card-icon" aria-hidden="true">📥</span>
           <span class="entry-card-title">Importar Arquivo</span>
           <span class="entry-card-sub">XPDL, BPMN, XML do Bizagi</span>
         </button>
       </div>
-      <p class="entry-skip"><button id="btnChoiceSkip" type="button">Pular — usar JSON / exemplo</button></p>
+      <p class="entry-skip"><button id="btnChoiceSkip" type="button">Pular - usar JSON / exemplo</button></p>
     </div>
   </div>
 
-  <!-- ═══ PAINEL DO EDITOR BPMN ════════════════════════════════════ -->
+  <!-- PAINEL DO EDITOR BPMN -->
   <div id="bpmnEditorPanel" class="bpmn-editor-panel hidden" role="region" aria-labelledby="bpmnEditorTitle">
     <div class="bpmn-editor-toolbar">
-      <span id="bpmnEditorTitle" class="bpmn-editor-title">✏️ Editor BPMN 2.0</span>
+      <span id="bpmnEditorTitle" class="bpmn-editor-title">Editor BPMN 2.0</span>
       <div class="bpmn-editor-actions">
-        <button id="btnBpmnUndo"   type="button">↩ Desfazer</button>
-        <button id="btnBpmnRedo"   type="button">↪ Refazer</button>
-        <button id="btnBpmnFit"    type="button">⊡ Ajustar</button>
-        <button id="btnBpmnExport" type="button">⬇ Exportar .bpmn</button>
-        <button id="btnBpmnApply"  class="bpmn-btn-primary" type="button">▶ Aplicar ao Simulador</button>
-        <button id="btnBpmnBack"   type="button">✕ Voltar</button>
+        <button id="btnBpmnUndo"   type="button">Desfazer</button>
+        <button id="btnBpmnRedo"   type="button">Refazer</button>
+        <button id="btnBpmnFit"    type="button">Ajustar</button>
+        <button id="btnBpmnExport" type="button">Exportar .bpmn</button>
+        <button id="btnBpmnApply"  class="bpmn-btn-primary" type="button">Aplicar ao Simulador</button>
+        <button id="btnBpmnBack"   type="button">Voltar</button>
       </div>
     </div>
     <div id="bpmnContainer" class="bpmn-container"></div>
@@ -242,7 +242,7 @@
       <h2 id="setupModalTitle">Preparar Simulacao</h2>
       <p>Identifique o processo e preencha as informacoes minimas para iniciar com seguranca.</p>
 
-      <!-- SEÇÃO 0 ─ Processo da Arquitetura -->
+      <!-- SECAO 0 - Processo da Arquitetura -->
       <div class="setup-step">
         <h3>Secao 0 - Identificacao do Processo</h3>
         <div class="box">Escolha qual processo da Arquitetura de Processos esta sendo simulado. Esse vinculo permite salvar os resultados diretamente no cadastro do processo.</div>
@@ -264,13 +264,13 @@
 
       <div class="setup-step">
         <h3>Secao 2 - Matriz de Atividades e Perfil das Raias</h3>
-        <div class="box">Defina o ator/raia de cada atividade e informe a equipe e o órgão de cada raia. O sistema classificará os handoffs automaticamente.</div>
+        <div class="box">Defina o ator/raia de cada atividade e informe a equipe e o orgao de cada raia. O sistema classificara os handoffs automaticamente.</div>
         <div id="setupTaskMatrix" class="box"></div>
       </div>
 
       <div class="setup-step">
         <h3>Secao 3 - Handoffs Detectados Automaticamente</h3>
-        <div class="box">Com base nos perfis das raias da Seção 2, o sistema detecta e classifica cada handoff. Nenhuma ação é necessária aqui — apenas revise.</div>
+        <div class="box">Com base nos perfis das raias da Secao 2, o sistema detecta e classifica cada handoff. Nenhuma acao e necessaria aqui - apenas revise.</div>
         <div id="handoffWizard" class="box"></div>
       </div>
 
@@ -288,14 +288,14 @@
           <input id="setupHappyPath" type="text" readonly placeholder="Caminho selecionado por cliques" />
         </div>
         <label class="field">
-          <span>T.P. — Tempo de Percepção (min) — opcional</span>
+          <span>T.P. - Tempo de Percepcao (min) - opcional</span>
           <input id="setupLeadTime" type="number" min="0" step="0.1" placeholder="Opcional" />
           <small>Lead time total do processo (com filas/gaveta).</small>
         </label>
         <label class="field">
-          <span>T.P.E. — Tempo de Processamento Estimado (min) — opcional</span>
+          <span>T.P.E. - Tempo de Processamento Estimado (min) - opcional</span>
           <input id="setupProcessingTime" type="number" min="0" step="0.1" placeholder="Opcional" />
-          <small>Tempo sem filas/gaveta. T.Gaveta = T.P. − T.P.E.</small>
+          <small>Tempo sem filas/gaveta. T.Gaveta = T.P. - T.P.E.</small>
         </label>
       </div>
 
@@ -305,7 +305,7 @@
         <div id="setupGatewayEditor" class="box"></div>
       </div>
 
-      <!-- Seção 6 removida (Automações consolidadas na Seção 2) -->
+      <!-- Secao 6 removida (Automacoes consolidadas na Secao 2) -->
       <div id="setupAutomationEditor" style="display:none;"></div>
 
       <div class="setup-step">
