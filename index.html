@@ -7437,6 +7437,63 @@ function _extractOuterJsonArray(text) {
   return start !== -1 && end > start ? source.slice(start, end + 1) : null;
 }
 
+function _extractFaqJsonArray(rawText) {
+  const text = String(rawText || '').trim();
+  
+  // Estratégia 1: Remover markdown code fences
+  let clean = text.replaceAll('```json', '').replaceAll('```', '').replaceAll('~~~json', '').replaceAll('~~~', '').trim();
+  
+  // Estratégia 2: Remover comentários em português comum
+  clean = clean.replace(/\/\/.*?(\n|$)/g, '\n'); // Comentários //
+  clean = clean.replace(/\/\*[\s\S]*?\*\//g, '');  // Comentários /* */
+  
+  // Estratégia 3: Tentar extrair JSON array completo
+  let jsonStr = _extractOuterJsonArray(clean);
+  if(jsonStr) {
+    try {
+      JSON.parse(jsonStr);
+      return jsonStr;
+    } catch(e) {
+      // Continuar tentando outras estratégias
+    }
+  }
+  
+  // Estratégia 4: Procurar por padrão [{ ... }] mais flexível
+  const patterns = [
+    /\[\s*\{[\s\S]*?\}\s*\]/,                    // [{ ... }]
+    /\[\s*\{\s*"q"[\s\S]*?\}\s*\]/,             // [{"q"...}]
+    /\[[\s\S]*?\]/,                              // [... qualquer coisa ...]
+  ];
+  
+  for(const pattern of patterns) {
+    const match = clean.match(pattern);
+    if(match) {
+      try {
+        JSON.parse(match[0]);
+        return match[0];
+      } catch(e) {
+        // Continuar tentando próximo padrão
+      }
+    }
+  }
+  
+  // Estratégia 5: Se tudo falhar, procurar por objetos individuais e montar array
+  // Procurar por padrão {"q":"...","a":"..."}
+  const objectPattern = /\{\s*"q"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*,\s*"a"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*\}/gi;
+  const matches = [...clean.matchAll(objectPattern)];
+  
+  if(matches.length > 0) {
+    const faqs = matches.map(m => ({
+      q: m[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\'),
+      a: m[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+    }));
+    return JSON.stringify(faqs);
+  }
+  
+  // Se nenhuma estratégia funcionou, retornar null
+  return null;
+}
+
 function _extractOuterJsonObject(text) {
   const source = String(text || '');
   const start = source.indexOf('{');
@@ -9404,12 +9461,15 @@ function renderConfigPanel() {
   grid.innerHTML = _CFG_TABLES.map(t => _renderCfgCard(t)).join('');
   
   // ── Event delegation para skill-chips (sugestões de competências) ──
-  // Remove listeners antigos (clonando para remove duplicatas)
-  const gridClone = grid.cloneNode(true);
-  grid.parentNode.replaceChild(gridClone, grid);
-  const newGrid = panel.querySelector('#epp-config-tables-grid');
+  // Usar delegação de eventos no panel (pai) para evitar duplicatas
+  // Remove listener antigo se existir (detectado por data-chip-listener)
+  if(panel.dataset.chipListener === 'true') {
+    // Listener já foi adicionado, não adicionar novamente
+    return;
+  }
   
-  newGrid.addEventListener('click', (ev) => {
+  panel.dataset.chipListener = 'true';
+  panel.addEventListener('click', (ev) => {
     const chip = ev.target.closest('.skill-chip[data-skill-chip]');
     if(!chip) return;
     const equipe = chip.dataset.equipe;
@@ -18090,13 +18150,23 @@ async function repoGenerateFaqsFromPdf(id) {
     
     // Enviar apenas com prompt (sem image), deixando o modelo processar o base64 no texto
     const text = await callGeminiProxy(prompt);
-    let clean = text.trim();
-    const jsonMatch = _extractOuterJsonArray(clean);
-    if(jsonMatch) clean = jsonMatch;
-    else clean = clean.replaceAll('```json','').replaceAll('```', '').trim();
-    const faqs = JSON.parse(clean);
-    if(!Array.isArray(faqs) || faqs.length === 0) throw new Error('Formato inválido');
+    
+    // Usar função robusta para extração de FAQ JSON
+    const jsonStr = _extractFaqJsonArray(text);
+    if(!jsonStr) {
+      throw new Error('Modelo não retornou JSON válido. Verifique se o PDF tem conteúdo legível');
+    }
+    
+    const faqs = JSON.parse(jsonStr);
+    if(!Array.isArray(faqs) || faqs.length === 0) {
+      throw new Error('Nenhuma FAQ gerada. Tente com um documento com mais conteúdo');
+    }
+    
     d.faqs = faqs.filter(f => f.q && f.a);
+    if(d.faqs.length === 0) {
+      throw new Error('As FAQs geradas estão vazias');
+    }
+    
     repoRender();
     saveToCloud();
     showToast(`✅ ${d.faqs.length} FAQs geradas com sucesso!`, 'success');
