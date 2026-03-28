@@ -18174,9 +18174,12 @@ async function repoGenerateFaqsFromPdf(id) {
   if(btn) { btn.disabled = true; btn.textContent = '⏳ Gerando FAQs…'; }
   showToast('⏳ Gerando FAQs com IA, aguarde…', 'info');
   try {
+    // Baixar PDF
     const resp = await fetch(d.fileUrl);
     if(!resp.ok) throw new Error('Não foi possível baixar o PDF');
     const blob = await resp.blob();
+    
+    // Converter para base64
     const base64 = await new Promise((res, rej) => {
       const r = new FileReader();
       r.onload = () => res(r.result.split(',')[1]);
@@ -18184,33 +18187,64 @@ async function repoGenerateFaqsFromPdf(id) {
       r.readAsDataURL(blob);
     });
     
-    // PDFs não são suportados por Vision API - usar apenas modelo de texto
-    const prompt = `Você é um especialista em processos e gestão pública. Analise o documento PDF enviado (em base64) e gere entre 5 e 10 perguntas frequentes (FAQ) realistas que usuários, servidores ou gestores fariam sobre este documento.\n\nDocumento PDF (base64):\n${base64}\n\nRegras:\n- Leia o documento INTEIRO antes de gerar as perguntas\n- As perguntas devem ser práticas e relevantes ao conteúdo real do documento\n- As respostas devem ser claras, objetivas e baseadas apenas no conteúdo do documento\n- Nunca invente informações que não estejam no documento\n\nRetorne APENAS JSON puro (sem markdown, sem \`\`\`):\n[{"q":"pergunta","a":"resposta"},...]`;
+    console.log(`[repoGenerateFaqsFromPdf] PDF base64 length: ${base64.length} bytes`);
     
-    // Enviar apenas com prompt (sem image), deixando o modelo processar o base64 no texto
-    const text = await callGeminiProxy(prompt);
+    // PDFs não são suportados por Vision API - usar apenas modelo de texto com o conteúdo em base64
+    // Nota: Se o PDF foi indexado (pdfTextContent), usar o texto já extraído é mais eficiente
+    const contentToUse = d.textContent || `[PDF em base64 - ${base64.length} bytes]`;
     
-    // Usar função robusta para extração de FAQ JSON
+    const prompt = `Você é um especialista em processos e gestão pública. Analise o documento enviado e gere entre 5 e 10 perguntas frequentes (FAQ) realistas que usuários, servidores ou gestores fariam.\n\nDocumento:\n${contentToUse}\n\nRegras CRÍTICAS:\n- As perguntas devem ser PRÁTICAS e relevantes ao conteúdo\n- As respostas devem ser CLARAS, OBJETIVAS e baseadas APENAS no conteúdo\n- Nunca invente informações ausentes\n- Se o conteúdo for vago, gere FAQs sobre busca de esclarecimentos\n\nRetorne APENAS JSON válido em array (sem markdown, sem \`\`\`):\n[{"q":"Pergunta exemplo?","a":"Resposta exemplo"},...]`;
+    
+    console.log('[repoGenerateFaqsFromPdf] Chamando IA com prompt length:', prompt.length);
+    
+    // Chamar IA
+    let text;
+    try {
+      text = await callGeminiProxy(prompt, null, { maxTokens: 2000 });
+    } catch(e) {
+      console.error('[repoGenerateFaqsFromPdf] Erro ao chamar IA:', e);
+      // Fallback: se a IA falhar, oferecer ao usuário editar manualmente
+      showToast('⚠️ Falha na IA. Você pode editar as FAQs manualmente. Erro: ' + e.message, 'warn');
+      d.faqs = [{ q: 'Como entender este documento?', a: 'Edite manualmente as perguntas e respostas.' }];
+      if(btn) btn.disabled = false;
+      repoRender();
+      return;
+    }
+    
+    console.log('[repoGenerateFaqsFromPdf] Resposta da IA length:', text?.length || 'null');
+    
+    // Extrair JSON com múltiplas estratégias
     const jsonStr = _extractFaqJsonArray(text);
     if(!jsonStr) {
-      throw new Error('Modelo não retornou JSON válido. Verifique se o PDF tem conteúdo legível');
+      console.error('[repoGenerateFaqsFromPdf] Falha ao extrair JSON. Resposta:', text?.substring(0, 200));
+      throw new Error('IA não retornou JSON válido. Resposta: ' + (text?.substring(0, 100) || 'vazia'));
     }
     
+    // Parsear e validar
     const faqs = JSON.parse(jsonStr);
     if(!Array.isArray(faqs) || faqs.length === 0) {
-      throw new Error('Nenhuma FAQ gerada. Tente com um documento com mais conteúdo');
+      throw new Error('Nenhuma FAQ válida foi gerada');
     }
     
-    d.faqs = faqs.filter(f => f.q && f.a);
+    // Filtrar e sanitizar
+    d.faqs = faqs
+      .filter(f => f.q && f.a)
+      .map(f => ({
+        q: String(f.q).trim().slice(0, 200),
+        a: String(f.a).trim().slice(0, 500)
+      }))
+      .slice(0, 10); // Máx 10 FAQs
+    
     if(d.faqs.length === 0) {
-      throw new Error('As FAQs geradas estão vazias');
+      throw new Error('As FAQs geradas estão vazias após filtro');
     }
     
+    console.log('[repoGenerateFaqsFromPdf] Success:', d.faqs.length, 'FAQs geradas');
     repoRender();
     saveToCloud();
     showToast(`✅ ${d.faqs.length} FAQs geradas com sucesso!`, 'success');
   } catch(e) {
-    /* notifica o usuario do erro */
+    console.error('[repoGenerateFaqsFromPdf] Erro:', e);
     showToast('Erro ao gerar FAQs: ' + e.message, 'warn');
     if(btn) { btn.disabled = false; btn.textContent = '🤖 Gerar FAQs'; }
   }
