@@ -13,3 +13,11 @@ backups/*.ndjson
 backups/*.csv
 backups/migration/
 siga-images.tar
+
+# Test and refactoring files — não versionar
+*.refatorado.js
+*.refatorado.html
+*.sonar-*.html
+test-*.html
+verify-*.js
+tmp_zip_test*/
