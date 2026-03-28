@@ -1366,6 +1366,14 @@
   .rel-doc.rel-editing:focus { outline:none; }
   .rel-print-btn.edit-active { background:#dbeafe !important; color:#1e40af !important; }
   @media(max-width:700px){ .rel-doc { padding:24px 16px; } }
+  
+  /* Interactive button hover effects */
+  .btn-hover-fade { transition:opacity .15s; }
+  .btn-hover-fade:hover { opacity:.85; }
+  .btn-hover-header { transition:color .2s, border-color .2s; }
+  .btn-hover-header:hover { color:rgba(255,255,255,.85) !important; border-color:rgba(255,255,255,.65) !important; }
+  .btn-hover-shadow { transition:box-shadow .2s; }
+  .btn-hover-shadow:hover { box-shadow:0 4px 16px rgba(0,0,0,.15) !important; }
 </style>
 </head>
 <body>
@@ -1414,7 +1422,7 @@
       <button class="header-title" onclick="showHome()" title="Ir para o início" style="background:none;border:none;cursor:pointer;"><strong>SIGA</strong></button>
     </div>
     <div class="header-meta">
-      <button onclick="showHome()" title="Voltar à página inicial" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.90);background:none;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.90);transition:color .2s,border-color .2s;white-space:nowrap;" onmouseover="this.style.color='rgba(255,255,255,.85)';this.style.borderColor='rgba(255,255,255,.65)'" onmouseout="this.style.color='rgba(255,255,255,.90)';this.style.borderColor='rgba(255,255,255,.90)'">
+      <button onclick="showHome()" title="Voltar à página inicial" class="btn-hover-header" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.90);background:none;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.90);white-space:nowrap;">
         🏠 Início
       </button>
       <div class="sync-indicator" id="sync-indicator" style="display:none;">
@@ -1491,22 +1499,22 @@
 <!-- NAV TABS -->
 <nav class="nav-tabs">
   <div class="nav-tabs-inner" id="nav-tabs-inner">
-    <div class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🏠 Visão Geral</div>
-    <div class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⚙️ Fluxo</div>
-    <div class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">👥 Responsabilidades</div>
-    <div class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📊 Indicadores</div>
-    <div class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">❓ FAQ</div>
-    <div class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📜 Normas &amp; Revisões</div>
-    <div class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">⚠️ Riscos</div>
-    <div class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">✅ Plano de Ação</div>
-    <div class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🤝 Reuniões</div>
-    <div class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📋 Acompanhamento</div>
-    <div class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">☑️ Checklists</div>
-    <div class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🖼 Imagem BPMN</div>
-    <div class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🎨 Desenhar Fluxo</div>
-    <div class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📊 Maturidade</div>
-    <div class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">🤖 Análise Inteligente</div>
-    <div class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio" role="tab" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">📄 Relatório IA</div>
+    <button class="nav-tab active" data-sortkey="visao-geral" onclick="showSection('visao-geral',this)" role="tab">🏠 Visão Geral</button>
+    <button class="nav-tab" data-sortkey="fluxo" onclick="showSection('fluxo',this)" role="tab">⚙️ Fluxo</button>
+    <button class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)" role="tab">👥 Responsabilidades</button>
+    <button class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)" role="tab">📊 Indicadores</button>
+    <button class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)" role="tab">❓ FAQ</button>
+    <button class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)" role="tab">📜 Normas & Revisões</button>
+    <button class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)" role="tab">⚠️ Riscos</button>
+    <button class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)" role="tab">✅ Plano de Ação</button>
+    <button class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)" role="tab">🤝 Reuniões</button>
+    <button class="nav-tab" data-sortkey="acompanhamento" onclick="showSection('acompanhamento',this)" role="tab">📋 Acompanhamento</button>
+    <button class="nav-tab" data-sortkey="checklists" onclick="showSection('checklists',this)" role="tab">☑️ Checklists</button>
+    <button class="nav-tab nav-tab-bpmn" data-sortkey="bpmn-img" onclick="showBpmn(this)" id="tab-bpmn" role="tab">🖼 Imagem BPMN</button>
+    <button class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd" role="tab">🎨 Desenhar Fluxo</button>
+    <button class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)" role="tab">📊 Maturidade</button>
+    <button class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai" role="tab">🤖 Análise Inteligente</button>
+    <button class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio" role="tab">📄 Relatório IA</button>
   </div>
 </nav>
 
@@ -2444,8 +2452,8 @@
   D --> F[Assinar e Arquivar]
   F --> G([Fim])"></textarea>
       <div style="padding:10px 12px;border-top:1px solid var(--cage-border);background:#f8fafc;display:flex;flex-direction:column;gap:6px;">
-        <button onclick="fdGenerateWithAI()" style="padding:9px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🤖 Gerar com IA</button>
-        <button onclick="fdRenderMermaid()" style="padding:9px;background:var(--cage-accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">▶ Renderizar</button>
+        <button onclick="fdGenerateWithAI()" class="btn-hover-fade" style="padding:9px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">🤖 Gerar com IA</button>
+        <button onclick="fdRenderMermaid()" class="btn-hover-fade" style="padding:9px;background:var(--cage-accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">▶ Renderizar</button>
         <div style="font-size:10px;color:var(--text-muted);line-height:1.5;"><strong>Dica:</strong> A IA lê os passos do processo e gera o diagrama automaticamente.</div>
       </div>
     </div>
@@ -2623,7 +2631,7 @@
 
     <!-- Dados Quantitativos (opcional) -->
     <div class="rel-quant-box">
-      <button class="rel-quant-toggle" onclick="(function(b){const d=document.getElementById('rel-quant-body'),open=d.style.display!=='grid';d.style.display=open?'grid':'none';b.querySelector('.rq-arrow').textContent=open?'▲':'▼';})(this)">
+      <button class="rel-quant-toggle" onclick="toggleRelQuantBody(this)">
         📊 Dados Quantitativos <span style="font-weight:400;color:#64748b;">— volumetria e tempo (opcional, enriquece o relatório)</span>
         <span class="rq-arrow" style="margin-left:auto;font-size:11px;">▼</span>
       </button>
@@ -10758,7 +10766,9 @@ function _markPatAlertsAsShownForUser() {
       const dateStr = k.split('_').pop();
       try {
         if(new Date(dateStr) < sevenDaysAgo) localStorage.removeItem(k);
-      } catch(e) {}
+      } catch(e) {
+        // Intentional: invalid date format, skip removal
+      }
     }
   }
 }
@@ -16562,7 +16572,7 @@ function arqShowProcessDetail(idx) {
           <div style="font-size:20px;margin-bottom:6px;">🎨</div>
           Diagrama Excalidraw salvo — abra o <strong>Fluxo</strong> para visualizar e editar.</div>`;
       } else if(popData.flowDiagram.mermaid && window.mermaid) {
-        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{}); } catch(e) { console.warn('[siga]', e); }
+        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{ /* Intentional: suppress mermaid render errors */ }); } catch(e) { console.warn('[siga]', e); }
       }
     }
   }
@@ -17381,6 +17391,13 @@ function showAiRelatorio(tab) {
     document.getElementById('rel-output').innerHTML = '';
   }
   mod._lastPop = p;
+}
+
+function toggleRelQuantBody(btn) {
+  const d = document.getElementById('rel-quant-body');
+  const open = d.style.display !== 'grid';
+  d.style.display = open ? 'grid' : 'none';
+  btn.querySelector('.rq-arrow').textContent = open ? '▲' : '▼';
 }
 
 function saveRelQuant() {
@@ -19488,13 +19505,13 @@ function _ncFilterCatalog() {
   const critColor = {Alta:'#dc2626', Média:'#d97706', Media:'#d97706', Baixa:'#16a34a'};
   list.innerHTML = filtered.map(a => {
     const sel = _ncSelectedAptIds.includes(a.id);
-    return '<div onclick="_ncToggleApt(\''+a.id+'\')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;background:'+(sel?'#fee2e2':'#fff')+';border:1px solid '+(sel?'#fca5a5':'#e2e8f0')+';" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<button onclick="_ncToggleApt(\''+a.id+'\')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;background:'+(sel?'#fee2e2':'#fff')+';border:1px solid '+(sel?'#fca5a5':'#e2e8f0')+';border:none;font-family:inherit;font-size:inherit;text-align:left;" role="button">'+
       '<input type="checkbox" '+(sel?'checked':'')+' onclick="event.stopPropagation();_ncToggleApt(\''+a.id+'\')" style="cursor:pointer;accent-color:#991b1b;width:15px;height:15px;flex-shrink:0;">'+
       '<div style="flex:1;min-width:0;">'+
         '<div style="font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+a.apontamento+'</div>'+
         '<div style="font-size:11px;color:#64748b;">'+(a.categoria||'')+(a.criticidade?' · <span style="color:'+(critColor[a.criticidade]||'#64748b')+'">'+a.criticidade+'</span>':'')+' · <span style="color:#94a3b8;">'+a.id+'</span></div>'+
       '</div>'+
-    '</div>';
+    '</button>';
   }).join('');
 }
 
@@ -19710,7 +19727,7 @@ function auditRenderPlans() {
     const patBadge  = patItem
       ? '<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap;">📅 PTA: '+patItem.titulo+'</span>'
       : '';
-    return '<div class="audit-card" onclick="auditOpenPlan(\''+p.id+'\')" style="cursor:pointer;" title="Abrir pasta do plano" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<button class="audit-card" onclick="auditOpenPlan(\''+p.id+'\')" style="cursor:pointer;border:none;font-family:inherit;font-size:inherit;text-align:left;background:inherit;" title="Abrir pasta do plano" role="button">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
         '<div class="audit-card-title">📁 '+(p.processoNome||p.processo||'(sem processo)')+'</div>'+
         _auditBadge(p.status||'planejada')+
@@ -19729,7 +19746,7 @@ function auditRenderPlans() {
           '<span>⚠️ '+ncCount+' NC(s)</span>'+
         '</div>'+
         '<span style="font-size:11px;color:#2563eb;font-weight:600;">Abrir pasta →</span>'+
-      '</div></div>';
+      '</div></button>';
   }).join('');
 }
 
@@ -19893,7 +19910,7 @@ function auditRenderExec() {
     const total = (e.checklist||[]).length;
     const conf  = (e.checklist||[]).filter(c=>c.conformidade==='conforme').length;
     const nc    = (e.checklist||[]).filter(c=>c.conformidade==='nao_conforme').length;
-    return '<div class="audit-card" style="border-left-color:#003366;" onclick="auditOpenExecModal(\''+e.id+'\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<button class="audit-card" style="border-left-color:#003366;border:none;font-family:inherit;font-size:inherit;text-align:left;background:inherit;" onclick="auditOpenExecModal(\''+e.id+'\')" role="button">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
         '<div class="audit-card-title">▶ '+(plan?.processoNome||plan?.objetivo||'Execução')+'</div>'+
         _auditBadge(e.status||'em_andamento')+
@@ -19905,7 +19922,7 @@ function auditRenderExec() {
       '</div>'+
       (e.observacoes ? '<div style="font-size:12px;color:#64748b;margin-top:6px;">'+e.observacoes+'</div>' : '')+
       (e.amostra ? '<div style="font-size:11px;color:#2563eb;background:#eff6ff;border-radius:6px;padding:5px 9px;margin-top:6px;white-space:pre-wrap;font-family:monospace;">📂 Amostra: '+e.amostra+'</div>' : '')+
-      '</div>';
+      '</button>';
   }).join('');
 }
 
@@ -20139,7 +20156,7 @@ function auditRenderNc() {
       return a ? '<span style="background:#fee2e2;color:#991b1b;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;">'+a.id+'</span>' : '';
     }).join(' ');
     const recCount = (nc.recomendacoes||[]).length;
-    return '<div class="audit-card audit-nc-'+(nc.gravidade||'leve')+'" onclick="auditOpenNcModal(\''+nc.id+'\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<button class="audit-card audit-nc-'+(nc.gravidade||'leve')+'" onclick="auditOpenNcModal(\''+nc.id+'\')" style="border:none;font-family:inherit;font-size:inherit;text-align:left;background:inherit;cursor:pointer;" role="button">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'+
         '<div class="audit-card-title">⚠️ '+(nc.processo||'Processo não informado')+(nc.etapa?' — '+nc.etapa:'')+' </div>'+
         '<div style="display:flex;gap:6px;">'+_auditGravBadge(nc.gravidade||'leve')+' '+_auditBadge(nc.status||'aberta')+'</div>'+
@@ -20151,7 +20168,7 @@ function auditRenderNc() {
         '<span>👤 '+(nc.responsavel||'—')+'</span>'+
         (recCount?'<span style="color:#15803d;">💡 '+recCount+' recomendação(ões)</span>':'')+
         (hasAction?'<span style="color:#15803d;">✅ Com ação</span>':'<span style="color:#dc2626;">⚡ Sem ação</span>')+
-      '</div></div>';
+      '</div></button>';
   }).join('');
 }
 
@@ -20248,7 +20265,7 @@ function auditRenderActions() {
   list.innerHTML = acts.map(a => {
     const nc = DATA.audits.nonconformities.find(n=>n.id===a.ncId);
     const overdue = a.prazo && a.status!=='concluida' && a.status!=='cancelada' && new Date(a.prazo+'T23:59:59') < new Date();
-    return '<div class="audit-card" style="border-left-color:'+(overdue?'#dc2626':'#065f46')+'" onclick="auditOpenActionModal(\''+a.id+'\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<button class="audit-card" style="border-left-color:'+(overdue?'#dc2626':'#065f46')+';border:none;font-family:inherit;font-size:inherit;text-align:left;background:inherit;cursor:pointer;" onclick="auditOpenActionModal(\''+a.id+'\')" role="button">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'+
         '<div class="audit-card-title">✅ '+(a.acao||'(sem descrição)')+'</div>'+
         _auditBadge(a.status||'pendente')+
@@ -20259,7 +20276,7 @@ function auditRenderActions() {
         '<span>📅 Prazo: '+_fmtDate(a.prazo)+'</span>'+
         (a.setor?'<span>🏢 '+a.setor+'</span>':'')+
         (overdue?'<span style="color:#dc2626;font-weight:700;">⏰ Vencida</span>':'')+
-      '</div></div>';
+      '</div></button>';
   }).join('');
 }
 
