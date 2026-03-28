@@ -6048,7 +6048,7 @@ function _buildSisplanTableRow(r) {
     <td>${_periodoLabelSimple(r.periodo)}</td>
     <td>${_fmtNumSimple(r.realizado)}</td>
     <td>${_fmtNumSimple(r.meta)}</td>
-    <td style="${_pctStyle(pctRealizacao)}font-weight:600;">${pctRealizacao === null ? '---' : _fmtNumSimple(pctRealizacao)+'%'}</td>
+    <td style="${_pctStyle(rp)}font-weight:600;">${rp === null ? '---' : _fmtNumSimple(rp)+'%'}</td>
   </tr>`;
 }
 
@@ -18295,41 +18295,31 @@ async function repoGenerateFaqsFromPdf(id) {
     }
     
     // PROMPT ESTRUTURADO para garantir leitura completa E resposta JSON pura
-    const prompt = `[SISTEMA] Você é um especialista em análise de documentos. Sua ÚNICA tarefa é gerar JSON.
+    const prompt = `TAREFA: Você DEVE ler o documento abaixo e GERAR uma lista de 8-12 perguntas e respostas (FAQ) sobre esse documento.
 
-[DOCUMENTO PARA ANÁLISE]
+DOCUMENTO:
 ${indexInfo}${selectedChunks}
 
-[INSTRUÇÕES CRÍTICAS - SIGA EXATAMENTE]
+INSTRUÇÕES OBRIGATÓRIAS:
+1. Leia TODO o conteúdo do documento acima
+2. Extraia 8-12 perguntas que usuários fariam sobre esse conteúdo
+3. Para cada pergunta, extraia a resposta DIRETAMENTE do documento (não invente)
+4. Cubra: definições, processos, casos especiais, aplicação prática
 
-PASSO 1: Leia TODO o conteúdo acima
-  - Identifique os 8-12 tópicos MAIS IMPORTANTES
-  - Encontre informações que usuários querem saber
-  - Anote pontos confusos ou frequentes dúvidas
-
-PASSO 2: Gere EXATAMENTE 8-12 perguntas/respostas que cubram:
-  - Conceitos principais e definições
-  - Processos e procedimentos
-  - Casos especiais e exceções
-  - Aplicação prática
-
-PASSO 3: Formule as respostas com texto DO DOCUMENTO
-
-[FORMATO DE RESPOSTA - OBRIGATÓRIO]
-
-RESPONDA APENAS COM JSON VÁLIDO (SEM NADA MAIS):
+EXEMPLO DE FORMATO CORRETO:
 [
-  {"q":"Pergunta","a":"Resposta do documento"},
-  {"q":"Pergunta","a":"Resposta do documento"}
+  {"q":"O que é isto?","a":"Segundo o documento, isto é..."},
+  {"q":"Como usar?","a":"O documento descreve que..."}
 ]
 
-⚠️ IMPORTANTE:
-- Retorne APENAS o array JSON [{ ... }]
-- NÃO adicione markdown, código block, ou texto extra
-- NÃO invente informações
-- NUNCA escreva explicações antes ou depois do JSON
-- Se não conseguir extrair FAQs, retorne: []
-`;
+⚠️ OBRIGAÇÕES:
+- Responda APENAS com o array JSON [...]
+- NÃO escreva nada mais (nem explicação, nem markdown, nem código block)
+- Se o documento não tiver conteúdo suficiente, retorne: []
+- NUNCA retorne mensagens de erro
+- Comece IMEDIATAMENTE com [ e termine com ]
+
+COMECE AGORA COM O JSON:`;
 
     console.log('[repoGenerateFaqsFromPdf] Prompt size:', prompt.length, 'bytes | Enviando para IA…');
     
