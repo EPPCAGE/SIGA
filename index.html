@@ -18313,29 +18313,56 @@ async function repoGenerateFaqsFromPdf(id) {
     
     if(contentToAnalyze.length > 50000) {
       console.log('[repoGenerateFaqsFromPdf] Documento > 50KB, indexando…');
-      const indexed = indexDocumentForFaq(contentToAnalyze, 15);
-      if(indexed) {
-        indexInfo = `\n\n=== ÍNDICE DO DOCUMENTO (${indexed.totalChunks} seções) ===\n${indexed.index}\n`;
-        // Usar primeiros 5 chunks como foco
-        selectedChunks = indexed.chunks
-          .slice(0, 5)
+      const indexed = indexDocumentForFaq(contentToAnalyze, 20);
+      if(indexed && indexed.chunks.length > 0) {
+        indexInfo = `\n\n=== ÍNDICE DO DOCUMENTO (${indexed.totalChunks} seções) ===\n${indexed.index}\n\nNOTA: Este é um documento LONGO. Você DEVE gerar FAQs que cubram TODA a extensão do documento, não apenas as primeiras seções abaixo.\n`;
+        
+        // Estratégia de distribuição inteligente: pegar primeiro, meio e fim do documento
+        // Isso garante que as FAQs cubram todo o documento longo
+        const chunks = indexed.chunks;
+        let selectedIndices = [];
+        
+        if(chunks.length <= 8) {
+          // Documento pequeno: usar todos os chunks
+          selectedIndices = chunks.map((_, i) => i);
+        } else {
+          // Documento grande: distribuir ao longo do documento
+          const step = Math.floor(chunks.length / 8); // Pegar ~8 chunks distribuídos
+          for(let i = 0; i < chunks.length; i += step) {
+            selectedIndices.push(i);
+          }
+          // Garantir que o último chunk está incluído
+          if(selectedIndices[selectedIndices.length - 1] !== chunks.length - 1) {
+            selectedIndices.push(chunks.length - 1);
+          }
+        }
+        
+        selectedChunks = selectedIndices
+          .map(idx => chunks[idx])
           .map(c => `[SEÇÃO ${c.id}: ${c.title}]\n${c.content}`)
           .join('\n\n---\n\n');
-        console.log('[repoGenerateFaqsFromPdf] Usando', indexed.chunks.slice(0, 5).length, 'chunks principais para análise');
+        
+        console.log('[repoGenerateFaqsFromPdf] Total chunks:', chunks.length, '| Usando distribuídos:', selectedIndices.length);
       }
     }
     
     // PROMPT ESTRUTURADO para garantir leitura completa E resposta JSON pura
-    const prompt = `TAREFA: Você DEVE ler o documento abaixo e GERAR uma lista de 8-12 perguntas e respostas (FAQ) sobre esse documento.
+    const prompt = `TAREFA CRÍTICA: Você DEVE gerar FAQs que cobrem TODAS as seções do documento, não apenas as mostradas aqui.
 
 DOCUMENTO:
 ${indexInfo}${selectedChunks}
 
 INSTRUÇÕES OBRIGATÓRIAS:
-1. Leia TODO o conteúdo do documento acima
-2. Extraia 8-12 perguntas que usuários fariam sobre esse conteúdo
-3. Para cada pergunta, extraia a resposta DIRETAMENTE do documento (não invente)
-4. Cubra: definições, processos, casos especiais, aplicação prática
+1. Leia TODOS os trechos acima (represente SEÇÕES DIFERENTES do documento)
+2. Use o ÍNDICE como guia para lembrar de TODA a estrutura do documento
+3. Gere 10-15 perguntas/respostas que cobrem:
+   - Conceitos e compreensão geral (tópicos transversais do documento todo)
+   - Seções/capítulos DIFERENTES (não foque em apenas uma seção)
+   - Processos, procedimentos e aplicações práticas
+   - Casos especiais, exceções e variações
+   - Informações de INÍCIO, MEIO e FIM do documento (não apenas primeiras páginas)
+4. RESOLVA este conflito: Se uma seção foi mostrada acima, use dela. Se uma seção está apenas no ÍNDICE, use seu conhecimento prévio para gerar pergunta relevante sobre ela.
+5. As respostas devem ser TEXTUAIS quando possível, citando o documento
 
 EXEMPLO DE FORMATO CORRETO:
 [

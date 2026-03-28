@@ -4836,16 +4836,49 @@ function _saveIfUnsaved() {
   const unsavedDot = document.getElementById('unsaved-dot');
   if(unsavedDot && unsavedDot.style.display === 'inline-block') { saveToCloud(); }
 }
+function _canActivateEditMode(forceState) {
+  if(isEditor) return true;
+  return forceState !== undefined && forceState !== true;
+}
+
+function _resolveEditModeState(forceState) {
+  return forceState !== undefined ? forceState : !editMode;
+}
+
+function _toggleEditFaqButtons() {
+  document.querySelectorAll('[id$="-add-faq"]').forEach(el => {
+    el.style.display = editMode ? 'inline-flex' : 'none';
+  });
+}
+
+function _updateEditModeUI() {
+  _updateEditModeUI();
+  document.getElementById('edit-toggle').textContent = editMode ? 'ðŸ‘ VisualizaÃ§Ã£o' : 'âœï¸ Modo EdiÃ§Ã£o';
+  _toggleEditFaqButtons();
+}
+
+function _runEditModeSideEffects() {
+  _runEditModeSideEffects();
+}
+
+function _notifyEditModeChange(forceState) {
+  if(forceState !== undefined) return;
+  if(editMode) {
+    showToast('âœï¸ Modo EdiÃ§Ã£o ativo â€” arraste para reorganizar, clique para editar','warn');
+    return;
+  }
+  showToast('Modo visualizaÃ§Ã£o ativo');
+}
+
 function toggleEditMode(forceState) {
-  if(!isEditor && (forceState === undefined || forceState === true)) {
+  if(!_canActivateEditMode(forceState)) {
     showToast('🔒 Apenas editores podem ativar o modo de edição.', 'warn');
     return;
   }
-  editMode = forceState !== undefined ? forceState : !editMode;
-  document.body.classList.toggle('edit-mode', editMode);
+  editMode = _resolveEditModeState(forceState);
+  _updateEditModeUI();
   document.getElementById('edit-toggle').textContent = editMode ? '👁 Visualização' : '✏️ Modo Edição';
   enableEditables(editMode);
-  document.querySelectorAll('[id$="-add-faq"]').forEach(el => { el.style.display = editMode ? 'inline-flex' : 'none'; });
   _updateMetricsOnToggle();
   _handleEditModeSnapshot(editMode);
   try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
