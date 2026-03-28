@@ -23946,7 +23946,8 @@ function arqCompRenderSection(idx) {
 
     const tagsHtml = suggestions.map(sug => {
       const on = selected.includes(sug);
-      return `<button onclick="arqCompToggle(${idx},'${cat.key}',${JSON.stringify(sug)})"
+      const safeSug = btoa(encodeURIComponent(sug));
+      return `<button class="arq-comp-toggle" data-idx="${idx}" data-cat="${cat.key}" data-val="${safeSug}"
         style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${on?'#6366f1':'#e2e8f0'};
                background:${on?'#6366f1':'#f8fafc'};color:${on?'#fff':'#475569'};font-weight:${on?'700':'400'};
                margin:3px;transition:all .15s;">${on?'✓ ':''} ${sug}</button>`;
@@ -23955,8 +23956,8 @@ function arqCompRenderSection(idx) {
     const selectedHtml = selected.length
       ? selected.map((v, i) => `
           <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f0f4ff;border-radius:7px;margin-bottom:4px;">
-            <span style="flex:1;font-size:13px;color:#1e293b;">${v}</span>
-            ${em ? `<button onclick="arqCompRemove(${idx},'${cat.key}',${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;" title="Remover">✕</button>` : ''}
+            <span style="flex:1;font-size:13px;color:#1e293b;">${v.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}</span>
+            ${em ? `<button class="arq-comp-remove" data-idx="${idx}" data-cat="${cat.key}" data-item="${i}" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;" title="Remover">✕</button>` : ''}
           </div>`).join('')
       : '<div style="color:#94a3b8;font-size:12px;padding:6px 0;">Nenhuma competência selecionada.</div>';
 
@@ -23975,8 +23976,8 @@ function arqCompRenderSection(idx) {
           <input id="arq-comp-custom-${idx}-${cat.key}" class="modal-input" type="text"
             placeholder="Adicionar competência não listada..."
             style="flex:1;font-size:12px;"
-            onkeydown="if(event.key==='Enter') arqCompAddCustom(${idx},'${cat.key}')">
-          <button onclick="arqCompAddCustom(${idx},'${cat.key}')" class="btn btn-primary" style="font-size:12px;padding:5px 12px;">＋</button>
+            onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v){arqCompAddCustom(${idx},'${cat.key}');this.value='';}}">
+          <button class="arq-comp-custom" data-idx="${idx}" data-cat="${cat.key}" class="btn btn-primary" style="font-size:12px;padding:5px 12px;">＋</button>
         </div>` : ''}
       </div>`;
   }).join('');
@@ -23986,6 +23987,42 @@ function arqCompRenderSection(idx) {
       Selecione as competências exigidas dos executores deste processo. As sugestões vêm das listas em Gestão do Sistema.
     </div>
     ${catHtml}`;
+
+  // Remove old listener if exists
+  const oldHandler = container._arqCompHandler;
+  if(oldHandler) {
+    container.removeEventListener('click', oldHandler);
+    container._arqCompHandler = null;
+  }
+
+  // Add new delegated listener
+  const handler = (ev) => {
+    try {
+      const btn = ev.target.closest('button');
+      if(!btn) return;
+
+      if(btn.classList.contains('arq-comp-toggle')) {
+        const i = parseInt(btn.dataset.idx);
+        const c = btn.dataset.cat;
+        const v = decodeURIComponent(atob(btn.dataset.val));
+        arqCompToggle(i, c, v);
+      } else if(btn.classList.contains('arq-comp-remove')) {
+        const i = parseInt(btn.dataset.idx);
+        const c = btn.dataset.cat;
+        const ci = parseInt(btn.dataset.item);
+        arqCompRemove(i, c, ci);
+      } else if(btn.classList.contains('arq-comp-custom')) {
+        const i = parseInt(btn.dataset.idx);
+        const c = btn.dataset.cat;
+        arqCompAddCustom(i, c);
+      }
+    } catch(e) {
+      console.error('arqCompRenderSection click handler:', e);
+    }
+  };
+
+  container.addEventListener('click', handler);
+  container._arqCompHandler = handler;
 }
 
 // ═══════════════════════════════════════════════════════════════════
