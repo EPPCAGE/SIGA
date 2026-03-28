@@ -1388,7 +1388,19 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   transform: translateY(-2px);
 }
 
-.entry-card-icon { font-size: 36px; line-height: 1; }
+.entry-card-icon {
+  width: 68px;
+  height: 68px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  font-size: 34px;
+  line-height: 1;
+  background: linear-gradient(145deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 100%);
+  border: 1px solid rgba(173, 223, 188, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
 
 .entry-card-title {
   font-size: 15px;

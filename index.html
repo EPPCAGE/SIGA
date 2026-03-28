@@ -147,8 +147,8 @@
   .cage-banner-text .cage-banner-title{font-weight:700;font-size:14px;color:white;letter-spacing:.3px;line-height:1.15;display:block;}
   .cage-banner-text .cage-banner-sub{font-size:10px;color:rgba(255,255,255,.55);line-height:1.2;white-space:nowrap;display:block;}
   .cage-official-logo{height:42px;max-width:170px;object-fit:contain;flex-shrink:0;filter:brightness(0) invert(1);}
-  .header-title{font-size:12px;font-weight:500;line-height:1.3;opacity:.8;}
-  .header-title strong{display:block;font-size:14px;font-weight:600;opacity:1;}
+  .header-title{font-size:12px;font-weight:500;line-height:1.3;opacity:1;color:white;}
+  .header-title strong{display:block;font-size:14px;font-weight:700;opacity:1;color:white;}
   .header-meta{display:flex;align-items:center;gap:8px;}
   .edit-toggle{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;background:#047857;color:white;transition:all .2s;}
   .edit-toggle:hover{background:rgba(255,255,255,.22);}
@@ -167,11 +167,14 @@
   .pop-tab.pop-novo{color:rgba(255,255,255,.7);}
 
   /* NAV TABS */
-  .nav-tabs{background:linear-gradient(180deg,#2A5154 0%,var(--design-header) 100%);border-top:1px solid rgba(255,255,255,.08);transition:background .3s;}
-  .nav-tabs-inner{max-width:1300px;margin:0 auto;padding:0 32px;display:flex;gap:2px;overflow-x:auto;}
-  .nav-tab{padding:10px 18px;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
-  .nav-tab:hover{color:rgba(255,255,255,.85);}
-  .nav-tab.active{color:white;border-bottom-color:var(--current-pop-color, #00a86b);}
+  .nav-tabs{background:linear-gradient(180deg,#183c36 0%,#102d29 100%);border-top:1px solid rgba(255,255,255,.08);transition:background .3s;}
+  .nav-tabs-inner{max-width:1300px;margin:0 auto;padding:0 32px;display:flex;gap:4px;overflow-x:auto;}
+  .nav-tab,
+  button.nav-tab{padding:10px 18px;font-size:13px;font-weight:600;color:#f3f7f5;cursor:pointer;border:1px solid rgba(255,255,255,.08);border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:6px;background:#143a34;background-image:none;border-radius:0;box-shadow:inset 0 -1px 0 rgba(255,255,255,.04);appearance:none;-webkit-appearance:none;-moz-appearance:none;}
+  .nav-tab:hover,
+  button.nav-tab:hover{background:#1b4a42;color:#ffffff;}
+  .nav-tab.active,
+  button.nav-tab.active{background:#0f2c27;color:#ffffff;border-bottom-color:#2bd38b;box-shadow:inset 0 0 0 1px rgba(43,211,139,.18);}
   body.edit-mode .nav-tab.active{border-bottom-color:var(--edit-color);}
 
   .main{max-width:1300px;margin:0 auto;padding:32px;}
@@ -958,6 +961,10 @@
     /* Verde Profundo em todos os módulos — sobrescreve inline styles */
     border-top: 4px solid #1B3022 !important;
   }
+  button.home-card{
+    padding: 24px 28px 22px !important;
+    text-align: left !important;
+  }
   .home-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(27,48,34,.55); }
   .home-card-icon {
     width: 48px; height: 48px; border-radius: 12px;
@@ -966,9 +973,9 @@
     background: #e3ede5 !important;
     color: #1B3022 !important;
   }
-  .home-card-title { font-size: 13px; font-weight: 700; color: #1B3022; }
-  .home-card-desc { font-size: 11px; color: #1e293b; line-height: 1.5; flex: 1; }
-  .home-card-footer { font-size: 12px; color: #94a3b8; font-weight: 500; margin-top: 4px; }
+  .home-card-title { font-size: 13px; font-weight: 700; color: #1B3022; margin-top: 14px; padding-left: 2px; padding-right: 8px; }
+  .home-card-desc { font-size: 11px; color: #1e293b; line-height: 1.6; flex: 1; margin-top: 8px; padding-left: 2px; padding-right: 10px; }
+  .home-card-footer { font-size: 12px; color: #000000; font-weight: 600; margin-top: 16px; padding-left: 2px; padding-right: 10px; }
   .home-card-editor-badge { color: #1B3022; font-weight: 600; }
   #home-stats > div { background: white; border-radius: 8px; padding: 7px 10px; box-shadow: 0 2px 6px rgba(0,0,0,.06); flex: 1 1 0; min-width: 0; }
 
@@ -992,6 +999,57 @@
   /* Nav tabs */
   .nav-tabs-inner { padding: 0 4px; gap: 0; overflow-x: auto; }
   .nav-tab { font-size: 11px; padding: 9px 8px; white-space: nowrap; }
+
+  /* Contraste reforcado das abas principais */
+  .nav-tabs{
+    background:linear-gradient(180deg,#183c36 0%,#102d29 100%)!important;
+  }
+  .nav-tab{
+    background:#143a34!important;
+    color:#f3f7f5!important;
+    background-image:none!important;
+    border:1px solid rgba(255,255,255,.08)!important;
+    border-bottom:3px solid transparent!important;
+    border-radius:0!important;
+    box-shadow:inset 0 -1px 0 rgba(255,255,255,.04);
+    appearance:none!important;
+    -webkit-appearance:none!important;
+    -moz-appearance:none!important;
+  }
+  button.nav-tab{
+    background:#143a34!important;
+    color:#f3f7f5!important;
+    background-image:none!important;
+    border:1px solid rgba(255,255,255,.08)!important;
+    border-bottom:3px solid transparent!important;
+    border-radius:0!important;
+    appearance:none!important;
+    -webkit-appearance:none!important;
+    -moz-appearance:none!important;
+  }
+  .nav-tab:hover{
+    background:#1b4a42!important;
+    color:#ffffff!important;
+  }
+  button.nav-tab:hover{
+    background:#1b4a42!important;
+    color:#ffffff!important;
+  }
+  .nav-tab.active{
+    background:#0f2c27!important;
+    color:#ffffff!important;
+    border-bottom-color:#2bd38b!important;
+    box-shadow:inset 0 0 0 1px rgba(43,211,139,.18);
+  }
+  button.nav-tab.active{
+    background:#0f2c27!important;
+    color:#ffffff!important;
+    border-bottom-color:#2bd38b!important;
+  }
+  .nav-tab:focus-visible{
+    outline:2px solid #d7fbe8!important;
+    outline-offset:-2px;
+  }
 
   /* Main content — padding-left maior para não esconder atrás do toggle (32px fixo) */
   .main { padding: 10px 10px 40px 44px; }
@@ -1018,9 +1076,11 @@
   }
   #home-pops-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
   .home-card { padding: 12px !important; }
+  button.home-card { padding: 14px 16px 16px !important; }
   .home-card-icon { width: 40px !important; height: 40px !important; font-size: 18px !important; }
   .home-card-title { font-size: 13px !important; }
   .home-card-desc { font-size: 11px !important; color: #1e293b !important; }
+  .home-card-footer { color: #000000 !important; }
 
   /* Módulos */
   #repo-module, #drops-module, #arq-module, #pat-module {
@@ -1419,10 +1479,10 @@
         </div>
       </div>
       <div class="header-divider-line"></div>
-      <button class="header-title" onclick="showHome()" title="Ir para o início" style="background:none;border:none;cursor:pointer;"><strong>SIGA</strong></button>
+      <button class="header-title" id="header-home-title-btn" title="Ir para o início" style="background:none;border:none;cursor:pointer;"><strong>SIGA</strong></button>
     </div>
     <div class="header-meta">
-      <button onclick="showHome()" title="Voltar à página inicial" class="btn-hover-header" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.90);background:none;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.90);white-space:nowrap;">
+      <button id="header-home-btn" title="Voltar à página inicial" class="btn-hover-header" style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:rgba(255,255,255,.90);background:none;cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.90);white-space:nowrap;">
         🏠 Início
       </button>
       <div class="sync-indicator" id="sync-indicator" style="display:none;">
@@ -1432,13 +1492,13 @@
       <div class="user-chip" id="user-chip" style="display:none;">
         <div class="user-avatar" id="user-avatar">?</div>
         <span id="user-name">...</span>
-        <button onclick="signOut()" style="background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:11px;padding:0 0 0 4px;" title="Sair">✕</button>
+        <button id="user-signout-btn" style="background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:11px;padding:0 0 0 4px;" title="Sair">✕</button>
       </div>
       <div class="search-input-wrap">
         <span class="search-icon">🔍</span>
         <input class="search-input" id="global-search-input" placeholder="Buscar (FAQs, Normas, Manuais)..."
-          onfocus="openSearchModal()" oninput="runSearch(this.value)" autocomplete="off">
-        <button class="search-clear" id="search-clear-btn" onclick="clearSearch()">✕</button>
+          autocomplete="off">
+        <button class="search-clear" id="search-clear-btn">✕</button>
       </div>
       <button class="edit-toggle" id="new-pop-btn" onclick="openNovoPop()" style="display:none;" title="Criar novo mapeamento">＋ Novo Mapeamento</button>
       <button id="backup-btn" class="edit-toggle" onclick="openBackupModal()" title="Exportar/Importar backup dos dados">💾 Backup</button>
@@ -1539,7 +1599,7 @@
     <div>
       <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#00a86b;margin-bottom:6px;">CAGE-RS · Contadoria e Auditoria-Geral do Estado</div>
       <div style="font-family:'DM Serif Display',serif;font-size:34px;color:#1B3022;line-height:1.15;">SIGA</div>
-      <div style="font-size:15px;color:#64748b;margin-top:4px;font-weight:500;">Sistema Integrado de Gestão de Atividades da CAGE</div>
+      <div style="font-size:15px;color:#64748b;margin-top:4px;font-weight:500;">Sistema Integrado de Gestão Estratégica Alinhada</div>
     </div>
     <!-- Logos -->
     <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
@@ -1568,80 +1628,80 @@
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
       <button class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">📋</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Procedimentos Operacionais</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
+        <div class="home-card-title" contenteditable="false">Procedimentos Operacionais</div>
+        <div class="home-card-desc" contenteditable="false">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
         <div class="home-card-footer" id="home-pops-count">—</div>
       </button>
       <button class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🏛</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Arquitetura de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
+        <div class="home-card-title" contenteditable="false">Arquitetura de Processos</div>
+        <div class="home-card-desc" contenteditable="false">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
         <div class="home-card-footer" id="home-arq-count">—</div>
       </button>
       <button class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">📊</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Cadeia de Valor e Mapa Estratégico</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
+        <div class="home-card-title" contenteditable="false">Cadeia de Valor e Mapa Estratégico</div>
+        <div class="home-card-desc" contenteditable="false">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
         <div class="home-card-footer">Imagens configuráveis</div>
       </button>
       <button class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">🔍</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Auditoria de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
+        <div class="home-card-icon" style="background:#047857;color:white;">&#128737;&#65039;</div>
+        <div class="home-card-title" contenteditable="false">Auditoria de Processos</div>
+        <div class="home-card-desc" contenteditable="false">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
         <div class="home-card-footer" id="home-audit-count">—</div>
       </button>
       <button class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">📈</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Indicadores CAGE</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
+        <div class="home-card-title" contenteditable="false">Indicadores CAGE</div>
+        <div class="home-card-desc" contenteditable="false">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
       </button>
       <button class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🏗️</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Modelador BPMN 2.0</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
+        <div class="home-card-title" contenteditable="false">Modelador BPMN 2.0</div>
+        <div class="home-card-desc" contenteditable="false">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
         <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
       </button>
       <button class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🗒</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Quadro de Esboço</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
+        <div class="home-card-title" contenteditable="false">Quadro de Esboço</div>
+        <div class="home-card-desc" contenteditable="false">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
         <div class="home-card-footer">Canvas interativo</div>
       </button>
       <button class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🧪</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Simulador de Processos</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
+        <div class="home-card-title" contenteditable="false">Simulador de Processos</div>
+        <div class="home-card-desc" contenteditable="false">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
         <div class="home-card-footer">Motor estocástico e dashboard</div>
       </button>
       <button class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🏢</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Gestão EPP</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
+        <div class="home-card-title" contenteditable="false">Gestão EPP</div>
+        <div class="home-card-desc" contenteditable="false">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </button>
       <button class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🔍</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Busca Global</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
+        <div class="home-card-title" contenteditable="false">Busca Global</div>
+        <div class="home-card-desc" contenteditable="false">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
         <div class="home-card-footer">Busca em tempo real</div>
       </button>
       <button class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">📚</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Documentos e Manuais</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
+        <div class="home-card-title" contenteditable="false">Documentos e Manuais</div>
+        <div class="home-card-desc" contenteditable="false">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
         <div class="home-card-footer" id="home-repo-count">—</div>
       </button>
       <button class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">💧</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Drops de Conhecimento</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
+        <div class="home-card-title" contenteditable="false">Drops de Conhecimento</div>
+        <div class="home-card-desc" contenteditable="false">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
         <div class="home-card-footer" id="home-drops-count">—</div>
       </button>
       <button class="home-card" data-sortkey="ideias" onclick="globalThis.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#831843;color:white;">💡</div>
-        <div class="home-card-title" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Caixinha de Ideias</div>
-        <div class="home-card-desc" contenteditable="false" onclick="if(document.body.classList.contains('edit-mode'))event.stopPropagation()" onblur="if(document.body.classList.contains('edit-mode')){harvestEditables();saveToCloud();}" onkeydown="if(event.key==='Enter'||event.key==='Tab')this.blur()">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
+        <div class="home-card-title" contenteditable="false">Caixinha de Ideias</div>
+        <div class="home-card-desc" contenteditable="false">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
         <div class="home-card-footer">Formulário Microsoft Forms</div>
       </button>
     </div>
@@ -1662,14 +1722,14 @@
 <div class="gmod-overlay" id="status-report-modal" style="display:none;">
   <div class="gmod-box" style="max-width:720px;max-height:90vh;display:flex;flex-direction:column;">
     <div class="gmod-head">
-      <span>📊 Exportar Status Report Executivo</span>
-      <button class="gmod-close" onclick="document.getElementById('status-report-modal').style.display='none'">✕</button>
+      <span>&#128202; Exportar Status Report Executivo</span>
+      <button class="gmod-close" onclick="document.getElementById('status-report-modal').style.display='none'">&#10005;</button>
     </div>
     <div class="gmod-body" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px;">
 
       <!-- Configurações gerais -->
       <div>
-        <div style="font-size:13px;font-weight:700;color:#1B3022;margin-bottom:10px;">⚙️ Configurações do Relatório</div>
+        <div style="font-size:13px;font-weight:700;color:#1B3022;margin-bottom:10px;">&#9881;&#65039; Configura&ccedil;&otilde;es do Relat&oacute;rio</div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
           <div class="indrel-config-field">
             <label for="sr-trimestre" class="indcage-filter-label">Trimestre</label>
@@ -1685,8 +1745,8 @@
             <input type="number" id="sr-ano" class="indcage-filter-select" value="2026" min="2020" max="2035" style="width:110px;">
           </div>
           <div class="indrel-config-field" style="flex:1;min-width:200px;">
-            <label for="sr-subtitulo" class="indcage-filter-label">Subtítulo / Órgão</label>
-            <input type="text" id="sr-subtitulo" class="indcage-filter-select" placeholder="Ex: CAGE-RS — Escritório de Processos" style="width:100%;">
+            <label for="sr-subtitulo" class="indcage-filter-label">Subt&iacute;tulo / &Oacute;rg&atilde;o</label>
+            <input type="text" id="sr-subtitulo" class="indcage-filter-select" placeholder="Ex: CAGE-RS &mdash; Escrit&oacute;rio de Processos" style="width:100%;">
           </div>
         </div>
       </div>
@@ -1695,21 +1755,21 @@
       <div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
           <div>
-            <div style="font-size:13px;font-weight:700;color:#1B3022;">📈 Indicadores para incluir no relatório</div>
-            <div style="font-size:11px;color:#64748b;margin-top:2px;">Opcional — deixe todos desmarcados para gerar apenas o relatório de projetos</div>
+            <div style="font-size:13px;font-weight:700;color:#1B3022;">&#128200; Indicadores para incluir no relat&oacute;rio</div>
+            <div style="font-size:11px;color:#64748b;margin-top:2px;">Opcional &mdash; deixe todos desmarcados para gerar apenas o relat&oacute;rio de projetos</div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <label for="sr-usar-ia" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1e3a7a;font-weight:600;cursor:pointer;white-space:nowrap;">
               <input type="checkbox" id="sr-usar-ia" checked style="accent-color:#1B3022;width:15px;height:15px;">
-              🤖 Análise IA
+              &#129302; An&aacute;lise IA
             </label>
-            <button class="btn btn-outline" onclick="srSelTodos()" style="font-size:11px;padding:4px 10px;">✓ Todos</button>
-            <button class="btn btn-outline" onclick="srDeselTodos()" style="font-size:11px;padding:4px 10px;">✗ Nenhum</button>
+            <button class="btn btn-outline" onclick="srSelTodos()" style="font-size:11px;padding:4px 10px;">&#10003; Todos</button>
+            <button class="btn btn-outline" onclick="srDeselTodos()" style="font-size:11px;padding:4px 10px;">&#10007; Nenhum</button>
           </div>
         </div>
         <div id="sr-ind-list" class="indrel-list" style="max-height:260px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:8px;"></div>
         <div id="sr-ind-empty" style="display:none;text-align:center;padding:24px;color:#94a3b8;font-size:13px;">
-          Nenhum indicador cadastrado. Cadastre no módulo <strong>Indicadores CAGE</strong>.
+          Nenhum indicador cadastrado. Cadastre no m&oacute;dulo <strong>Indicadores CAGE</strong>.
         </div>
       </div>
     </div>
@@ -1717,7 +1777,7 @@
     <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #e2e8f0;background:#f8fafc;border-radius:0 0 12px 12px;">
       <button class="btn btn-outline" onclick="document.getElementById('status-report-modal').style.display='none'">Cancelar</button>
       <button class="btn btn-primary" id="sr-gerar-btn" onclick="eppExportStatusReportConfirm()" style="background:#00a86b;border-color:#00a86b;padding:8px 22px;">
-        📊 Gerar Status Report
+        &#128202; Gerar Status Report
       </button>
     </div>
   </div>
@@ -1730,21 +1790,21 @@
   <div style="max-width:1100px;margin:0 auto;padding:16px 32px 0;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
       <div>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:#1B3022;margin:0 0 2px;">🏢 Gestão EPP</h2>
-        <div style="font-size:12px;color:#64748b;">CAGE-RS · Plano Anual de Trabalho e Dashboard de Desempenho</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:#1B3022;margin:0 0 2px;">&#127970; Gest&atilde;o EPP</h2>
+        <div style="font-size:12px;color:#64748b;">CAGE-RS &middot; Plano Anual de Trabalho e Dashboard de Desempenho</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button id="epp-report-btn" onclick="eppExportStatusReport()" class="btn btn-primary" style="font-size:12px;padding:6px 14px;background:#00a86b;border-color:#00a86b;">📊 Exportar Status Report</button>
-        <button class="btn btn-outline" onclick="showHome()" style="font-size:12px;padding:6px 14px;">← Início</button>
+        <button id="epp-report-btn" onclick="eppExportStatusReport()" class="btn btn-primary" style="font-size:12px;padding:6px 14px;background:#00a86b;border-color:#00a86b;">&#128202; Exportar Status Report</button>
+<button class="btn btn-outline" data-show-home="true" style="font-size:12px;padding:6px 14px;">&#8592; In&iacute;cio</button>
       </div>
     </div>
     <div style="display:flex;gap:0;">
-      <button class="epp-tab active" data-tab="pat"    onclick="eppTab('pat',this)">📅 Plano Anual de Trabalho</button>
-      <button class="epp-tab"        data-tab="dash"   onclick="eppTab('dash',this)">📊 Dashboard EPP</button>
-      <button class="epp-tab"        data-tab="config" onclick="eppTab('config',this)">⚙️ Tabelas de Referência</button>
-      <button class="epp-tab"        data-tab="users"  onclick="eppTab('users',this)">👥 Usuários</button>
-      <button class="epp-tab"        data-tab="params" onclick="eppTab('params',this)">🛠 Parâmetros Globais</button>
-      <button class="epp-tab"        data-tab="monitoring" onclick="eppTab('monitoring',this)" id="epp-tab-monitoring">📋 Monitoramento</button>
+      <button class="epp-tab active" data-tab="pat"    onclick="eppTab('pat',this)">&#128197; Plano Anual de Trabalho</button>
+      <button class="epp-tab"        data-tab="dash"   onclick="eppTab('dash',this)">&#128202; Dashboard EPP</button>
+      <button class="epp-tab"        data-tab="config" onclick="eppTab('config',this)">&#9881;&#65039; Tabelas de Refer&ecirc;ncia</button>
+      <button class="epp-tab"        data-tab="users"  onclick="eppTab('users',this)">&#128101; Usu&aacute;rios</button>
+      <button class="epp-tab"        data-tab="params" onclick="eppTab('params',this)">&#128736; Par&acirc;metros Globais</button>
+      <button class="epp-tab"        data-tab="monitoring" onclick="eppTab('monitoring',this)" id="epp-tab-monitoring">&#128203; Monitoramento</button>
     </div>
   </div>
 </div>
@@ -1753,46 +1813,46 @@
 <div id="epp-dash-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
   <!-- Block 1: Impacto Gerado -->
   <div class="epp-dash-section">
-    <div class="epp-dash-section-title">💡 Impacto Gerado</div>
+    <div class="epp-dash-section-title">&#128161; Impacto Gerado</div>
     <div class="epp-kpi-grid" style="margin-bottom:20px;">
       <div class="epp-kpi-card" style="border-left-color:#00a86b;">
-        <div class="epp-kpi-value" id="epp-kpi-horas-total">—</div>
+        <div class="epp-kpi-value" id="epp-kpi-horas-total">&mdash;</div>
         <div class="epp-kpi-label">Horas economizadas / ano</div>
         <div class="epp-kpi-sub">Soma de todos os processos redesenhados</div>
       </div>
       <div class="epp-kpi-card" style="border-left-color:#1B3022;">
-        <div class="epp-kpi-value" id="epp-kpi-procs-redesenhados">—</div>
+        <div class="epp-kpi-value" id="epp-kpi-procs-redesenhados">&mdash;</div>
         <div class="epp-kpi-label">Processos com ganho calculado</div>
-        <div class="epp-kpi-sub">Com métricas de volume e ciclo preenchidas</div>
+        <div class="epp-kpi-sub">Com m&eacute;tricas de volume e ciclo preenchidas</div>
       </div>
       <div class="epp-kpi-card" style="border-left-color:#8b5cf6;">
-        <div class="epp-kpi-value" id="epp-kpi-valor-eco">—</div>
-        <div class="epp-kpi-label">Valor economizado / mês</div>
+        <div class="epp-kpi-value" id="epp-kpi-valor-eco">&mdash;</div>
+        <div class="epp-kpi-label">Valor economizado / m&ecirc;s</div>
         <div class="epp-kpi-sub" id="epp-kpi-valor-sub">
-          <span id="epp-valor-hora-display">Valor/hora não definido</span>
+          <span id="epp-valor-hora-display">Valor/hora n&atilde;o definido</span>
           <span id="epp-valor-hora-edit-btn" style="display:none;">
-            &nbsp;·&nbsp;<button onclick="eppSetValorHora()" style="color:#8b5cf6;font-weight:600;text-decoration:none;background:none;border:none;padding:0;cursor:pointer;font-size:inherit;">✏️ definir</button>
+            &nbsp;&middot;&nbsp;<button onclick="eppSetValorHora()" style="color:#8b5cf6;font-weight:600;text-decoration:none;background:none;border:none;padding:0;cursor:pointer;font-size:inherit;">&#9998;&#65039; definir</button>
           </span>
         </div>
       </div>
     </div>
     <div id="epp-horas-detail" style="display:none;">
       <table class="epp-horas-table">
-        <thead><tr><th>Processo</th><th>Vol./mês (antes→depois)</th><th>Ciclo h (antes→depois)</th><th>Economia/mês</th><th>Economia/ano</th></tr></thead>
+        <thead><tr><th>Processo</th><th>Vol./m&ecirc;s (antes&rarr;depois)</th><th>Ciclo h (antes&rarr;depois)</th><th>Economia/m&ecirc;s</th><th>Economia/ano</th></tr></thead>
         <tbody id="epp-horas-tbody"></tbody>
       </table>
     </div>
-    <button id="epp-horas-toggle" onclick="eppToggleHorasDetail()" style="background:none;border:none;color:#1B3022;font-size:12px;font-weight:600;cursor:pointer;padding:0;margin-top:6px;">▼ Ver detalhes por processo</button>
+    <button id="epp-horas-toggle" onclick="eppToggleHorasDetail()" style="background:none;border:none;color:#1B3022;font-size:12px;font-weight:600;cursor:pointer;padding:0;margin-top:6px;">&#9660; Ver detalhes por processo</button>
   </div>
 
   <!-- Block 2: Cobertura da Arquitetura -->
   <div class="epp-dash-section">
-    <div class="epp-dash-section-title">🗺 Cobertura da Arquitetura de Processos</div>
+    <div class="epp-dash-section-title">&#128506; Cobertura da Arquitetura de Processos</div>
     <div style="display:flex;align-items:center;gap:24px;margin-bottom:16px;flex-wrap:wrap;">
       <div style="text-align:center;">
-        <div style="font-size:44px;font-weight:800;color:#8b5cf6;font-family:'JetBrains Mono',monospace;" id="epp-pct-mapeado">—%</div>
+        <div style="font-size:44px;font-weight:800;color:#8b5cf6;font-family:'JetBrains Mono',monospace;" id="epp-pct-mapeado">&mdash;%</div>
         <div style="font-size:12px;color:#64748b;font-weight:600;">da arquitetura mapeada</div>
-        <div style="font-size:11px;color:#94a3b8;" id="epp-mapeado-label">— de — processos</div>
+        <div style="font-size:11px;color:#94a3b8;" id="epp-mapeado-label">&mdash; de &mdash; processos</div>
       </div>
       <div style="flex:1;min-width:200px;">
         <div class="epp-prog-bar" style="height:14px;">
@@ -1806,52 +1866,52 @@
 
   <!-- Block 2b: Cobertura por Objetivo Estratégico -->
   <div class="epp-dash-section">
-    <div class="epp-dash-section-title">🎯 Cobertura por Objetivo Estratégico</div>
+    <div class="epp-dash-section-title">&#127919; Cobertura por Objetivo Estrat&eacute;gico</div>
     <div id="epp-obj-list"></div>
   </div>
 
   <!-- Block 3: Performance do EPP -->
   <div class="epp-dash-section">
-    <div class="epp-dash-section-title">⚡ Performance do Gestão EPP</div>
+    <div class="epp-dash-section-title">&#9889; Performance do Gest&atilde;o EPP</div>
     <div class="epp-kpi-grid">
       <div class="epp-kpi-card" style="border-left-color:#3b82f6;">
-        <div class="epp-kpi-value" id="epp-kpi-prazo">—</div>
-        <div class="epp-kpi-label">Dias — prazo médio de entrega</div>
-        <div class="epp-kpi-sub">Média entre data início e fim (atividades concluídas)</div>
+        <div class="epp-kpi-value" id="epp-kpi-prazo">&mdash;</div>
+        <div class="epp-kpi-label">Dias &mdash; prazo m&eacute;dio de entrega</div>
+        <div class="epp-kpi-sub">M&eacute;dia entre data in&iacute;cio e fim (atividades conclu&iacute;das)</div>
       </div>
       <div class="epp-kpi-card" style="border-left-color:#00a86b;">
-        <div class="epp-kpi-value" id="epp-kpi-ontime">—</div>
+        <div class="epp-kpi-value" id="epp-kpi-ontime">&mdash;</div>
         <div class="epp-kpi-label">Taxa de cumprimento de prazo</div>
-        <div class="epp-kpi-sub">% entregas concluídas (não marcadas como atrasadas)</div>
+        <div class="epp-kpi-sub">% entregas conclu&iacute;das (n&atilde;o marcadas como atrasadas)</div>
       </div>
       <div class="epp-kpi-card" style="border-left-color:#f59e0b;">
-        <div class="epp-kpi-value" id="epp-kpi-entrtri">—</div>
+        <div class="epp-kpi-value" id="epp-kpi-entrtri">&mdash;</div>
         <div class="epp-kpi-label">Entregas no trimestre atual</div>
-        <div class="epp-kpi-sub" id="epp-kpi-entrtri-label">—</div>
+        <div class="epp-kpi-sub" id="epp-kpi-entrtri-label">&mdash;</div>
       </div>
       <div class="epp-kpi-card" style="border-left-color:#1B3022;">
-        <div class="epp-kpi-value" id="epp-kpi-total-ativ">—</div>
+        <div class="epp-kpi-value" id="epp-kpi-total-ativ">&mdash;</div>
         <div class="epp-kpi-label">Total de atividades no PAT</div>
-        <div class="epp-kpi-sub">Planejadas + em andamento + concluídas</div>
+        <div class="epp-kpi-sub">Planejadas + em andamento + conclu&iacute;das</div>
       </div>
     </div>
   </div>
 
   <!-- Block 3b: Mapeamentos do trimestre -->
   <div class="epp-dash-section">
-    <div class="epp-dash-section-title">🗂 Mapeamentos — Desempenho do Trimestre</div>
-    <div style="font-size:12px;color:#64748b;margin-bottom:14px;" id="epp-map-tri-label">—</div>
+    <div class="epp-dash-section-title">&#128450; Mapeamentos &mdash; Desempenho do Trimestre</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:14px;" id="epp-map-tri-label">&mdash;</div>
     <div class="epp-kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;" id="epp-map-stats-grid"></div>
   </div>
 
   <!-- Block 4: Execução do PAT -->
   <div class="epp-dash-section">
-    <div class="epp-dash-section-title">📅 Execução do Plano Anual de Trabalho</div>
+    <div class="epp-dash-section-title">&#128197; Execu&ccedil;&atilde;o do Plano Anual de Trabalho</div>
     <div style="display:flex;align-items:center;gap:24px;margin-bottom:20px;flex-wrap:wrap;">
       <div style="text-align:center;">
-        <div style="font-size:44px;font-weight:800;color:#3b82f6;font-family:'JetBrains Mono',monospace;" id="epp-pct-pat">—%</div>
+        <div style="font-size:44px;font-weight:800;color:#3b82f6;font-family:'JetBrains Mono',monospace;" id="epp-pct-pat">&mdash;%</div>
         <div style="font-size:12px;color:#64748b;font-weight:600;">do PAT realizado</div>
-        <div style="font-size:11px;color:#94a3b8;" id="epp-pat-label">— de — atividades concluídas</div>
+        <div style="font-size:11px;color:#94a3b8;" id="epp-pat-label">&mdash; de &mdash; atividades conclu&iacute;das</div>
       </div>
       <div style="flex:1;min-width:200px;">
         <div class="epp-prog-bar" style="height:14px;">
@@ -1860,7 +1920,7 @@
       </div>
     </div>
     <!-- Por trimestre -->
-    <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;">Entregas por trimestre — <span id="epp-ano-label"></span></div>
+    <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;">Entregas por trimestre &mdash; <span id="epp-ano-label"></span></div>
     <div class="epp-tri-grid" id="epp-tri-grid"></div>
     <!-- Por tipo -->
     <div style="font-size:12px;font-weight:700;color:#64748b;margin:16px 0 10px;text-transform:uppercase;letter-spacing:.04em;">Status atual do PAT</div>
@@ -1869,7 +1929,7 @@
 
   <!-- Block 5: Rankings de Maturidade -->
   <div class="epp-dash-section">
-    <div class="epp-dash-section-title">🏆 Rankings de Processos Mapeados</div>
+    <div class="epp-dash-section-title">&#127942; Rankings de Processos Mapeados</div>
     <div id="epp-ranking-tabs" style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;"></div>
     <div id="epp-ranking-body"></div>
   </div>
@@ -1878,8 +1938,8 @@
 <!-- EPP: Config panel (shown when config tab is active) -->
 <div id="epp-config-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
   <div style="margin-bottom:20px;">
-    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">⚙️ Tabelas de Referência</h3>
-    <p style="font-size:13px;color:#64748b;margin:0;">Gerencie as listas de opções usadas nos formulários do sistema. As alterações são salvas automaticamente e refletem imediatamente nos formulários.</p>
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">&#9881;&#65039; Tabelas de Refer&ecirc;ncia</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Gerencie as listas de op&ccedil;&otilde;es usadas nos formul&aacute;rios do sistema. As altera&ccedil;&otilde;es s&atilde;o salvas automaticamente e refletem imediatamente nos formul&aacute;rios.</p>
   </div>
   <div id="epp-config-tables-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
     <!-- Preenchido por renderConfigPanel() -->
@@ -1889,22 +1949,22 @@
 <!-- EPP: Users panel (shown when users tab is active) -->
 <div id="epp-users-panel" style="display:none;max-width:760px;margin:0 auto;padding:24px 32px 80px;">
   <div style="margin-bottom:20px;">
-    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">👥 Controle de Usuários</h3>
-    <p style="font-size:13px;color:#64748b;margin:0;">Gerencie usuários, perfis de acesso e solicitações de entrada no sistema.</p>
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">&#128101; Controle de Usu&aacute;rios</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Gerencie usu&aacute;rios, perfis de acesso e solicita&ccedil;&otilde;es de entrada no sistema.</p>
   </div>
   <!-- Sub-tabs -->
   <div style="display:flex;gap:0;border-bottom:2px solid var(--cage-border);margin-bottom:16px;">
     <button id="epp-utab-editors"  onclick="eppSwitchUsersTab('editors')"
       style="padding:8px 20px;border:none;background:none;font-weight:700;font-size:13px;color:var(--cage-blue);border-bottom:3px solid var(--cage-blue);cursor:pointer;">
-      👤 Editores
+      &#128100; Editores
     </button>
     <button id="epp-utab-requests" onclick="eppSwitchUsersTab('requests')"
       style="padding:8px 20px;border:none;background:none;font-weight:600;font-size:13px;color:var(--text-muted);cursor:pointer;">
-      📨 Solicitações <span id="epp-u-req-badge" style="display:none;background:#e11d48;color:white;border-radius:20px;padding:1px 6px;font-size:10px;margin-left:2px;">0</span>
+      &#128232; Solicita&ccedil;&otilde;es <span id="epp-u-req-badge" style="display:none;background:#e11d48;color:white;border-radius:20px;padding:1px 6px;font-size:10px;margin-left:2px;">0</span>
     </button>
     <button id="epp-utab-history"  onclick="eppSwitchUsersTab('history')"
       style="padding:8px 20px;border:none;background:none;font-weight:600;font-size:13px;color:var(--text-muted);cursor:pointer;">
-      🕐 Histórico
+      &#128336; Hist&oacute;rico
     </button>
   </div>
   <!-- Editores -->
@@ -1918,7 +1978,7 @@
         </div>
         <div>
           <label for="epp-u-new-name" class="gmod-label">Nome</label>
-          <input class="modal-input" id="epp-u-new-name" type="text" placeholder="Nome do usuário">
+          <input class="modal-input" id="epp-u-new-name" type="text" placeholder="Nome do usu&aacute;rio">
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -1936,7 +1996,7 @@
       </div>
     </div>
     <div id="epp-u-add-btn-row">
-      <button class="btn btn-primary" style="font-size:12px;width:100%;" onclick="showAddEditor()">＋ Adicionar Usuário</button>
+      <button class="btn btn-primary" style="font-size:12px;width:100%;" onclick="showAddEditor()">&#65291; Adicionar Usu&aacute;rio</button>
     </div>
   </div>
   <!-- Solicitações -->
@@ -1952,20 +2012,20 @@
 <!-- EPP: Params panel (shown when params tab is active) -->
 <div id="epp-params-panel" style="display:none;max-width:900px;margin:0 auto;padding:24px 32px 80px;">
   <div style="margin-bottom:20px;">
-    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">🛠 Parâmetros Globais</h3>
-    <p style="font-size:13px;color:#64748b;margin:0;">Configure a identidade visual, cores, módulos e botões de navegação do sistema. As alterações são aplicadas imediatamente.</p>
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">&#128736; Par&acirc;metros Globais</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Configure a identidade visual, cores, m&oacute;dulos e bot&otilde;es de navega&ccedil;&atilde;o do sistema. As altera&ccedil;&otilde;es s&atilde;o aplicadas imediatamente.</p>
   </div>
 
   <!-- Identidade -->
   <div class="card fade-up" style="margin-bottom:20px;">
-    <div class="card-header"><span class="card-title">🏷 Identidade do Sistema</span></div>
+    <div class="card-header"><span class="card-title">&#127991; Identidade do Sistema</span></div>
     <div class="card-body" style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div>
         <label for="gp-nome-sistema" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Nome do Sistema</label>
         <input class="modal-input" id="gp-nome-sistema" type="text" placeholder="SIGA" oninput="saveGlobalParam('nomeSistema',this.value);applyGlobalParams()">
       </div>
       <div>
-        <label for="gp-subtitulo" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Subtítulo Institucional</label>
+        <label for="gp-subtitulo" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Subt&iacute;tulo Institucional</label>
         <input class="modal-input" id="gp-subtitulo" type="text" placeholder="Contadoria e Auditoria-Geral do Estado" oninput="saveGlobalParam('subtitulo',this.value);applyGlobalParams()">
       </div>
     </div>
@@ -1973,27 +2033,27 @@
 
   <!-- Logo da Barra Superior -->
   <div class="card fade-up" style="margin-bottom:20px;">
-    <div class="card-header"><span class="card-title">🏷 Logo da Barra Superior</span></div>
+    <div class="card-header"><span class="card-title">&#127991; Logo da Barra Superior</span></div>
     <div class="card-body" style="padding:20px;display:flex;gap:20px;align-items:flex-start;">
       <div style="flex:1;">
         <label for="gp-logo-barra-url" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">URL da Imagem</label>
         <input class="modal-input" id="gp-logo-barra-url" type="url" placeholder="https://..." oninput="saveGlobalParam('logoHeaderUrl',this.value);applyHeaderBtnColors();_gpLogoBarraPreview(this.value)">
         <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Aparece no canto esquerdo da barra superior em formato triangular alargado. Deixe vazio para usar o ícone padrão.</div>
       </div>
-      <div id="gp-logo-barra-preview" style="width:120px;height:44px;border:2px dashed var(--cage-border);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;color:var(--text-muted);background:var(--cage-light);">🖼</div>
+      <div id="gp-logo-barra-preview" style="width:120px;height:44px;border:2px dashed var(--cage-border);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;color:var(--text-muted);background:var(--cage-light);">&#128444;</div>
     </div>
   </div>
 
   <!-- Logotipo -->
   <div class="card fade-up" style="margin-bottom:20px;">
-    <div class="card-header"><span class="card-title">🖼 Logotipo (Página Inicial)</span></div>
+    <div class="card-header"><span class="card-title">&#128444; Logotipo (P&aacute;gina Inicial)</span></div>
     <div class="card-body" style="padding:20px;display:flex;gap:20px;align-items:flex-start;">
       <div style="flex:1;">
         <label for="gp-logo-url" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">URL da Imagem</label>
         <input class="modal-input" id="gp-logo-url" type="url" placeholder="https://..." oninput="saveGlobalParam('logoUrl',this.value);gpUpdateLogoPreview();applyGlobalParams()">
         <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Cole a URL de uma imagem PNG/SVG. Aparece no bloco de logo da página inicial.</div>
       </div>
-      <div id="gp-logo-preview" style="width:80px;height:80px;border:2px dashed var(--cage-border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:24px;color:var(--text-muted);">🖼</div>
+      <div id="gp-logo-preview" style="width:80px;height:80px;border:2px dashed var(--cage-border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:24px;color:var(--text-muted);">&#128444;</div>
     </div>
   </div>
 
@@ -2002,7 +2062,7 @@
 
   <!-- Módulos -->
   <div class="card fade-up" style="margin-bottom:20px;">
-    <div class="card-header"><span class="card-title">📱 Módulos — Visibilidade e Ordem</span></div>
+    <div class="card-header"><span class="card-title">&#128241; M&oacute;dulos &mdash; Visibilidade e Ordem</span></div>
     <div class="card-body" style="padding:16px;" id="gp-modules-list">
       <!-- rendered by eppRenderParams() -->
     </div>
@@ -2010,7 +2070,7 @@
 
   <!-- Botões da barra superior -->
   <div class="card fade-up">
-    <div class="card-header"><span class="card-title">🔘 Botões da Barra Superior</span></div>
+    <div class="card-header"><span class="card-title">&#128280; Bot&otilde;es da Barra Superior</span></div>
     <div class="card-body" style="padding:16px;" id="gp-header-btns-list">
       <!-- rendered by eppRenderParams() -->
     </div>
@@ -2020,21 +2080,21 @@
 <!-- EPP: Monitoring panel -->
 <div id="epp-monitoring-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
   <div style="margin-bottom:16px;">
-    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">📋 Monitoramento do Sistema</h3>
-    <p style="font-size:13px;color:#64748b;margin:0;">Usuários online, logs de alterações e relatórios de acesso.</p>
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">&#128203; Monitoramento do Sistema</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Usu&aacute;rios online, logs de altera&ccedil;&otilde;es e relat&oacute;rios de acesso.</p>
   </div>
   <!-- Sub-tabs -->
   <div style="display:flex;gap:0;border-bottom:2px solid var(--cage-border);margin-bottom:20px;">
-    <button class="mon-sub-btn active" id="mon-sub-online"  onclick="eppMonTab('online',this)">🟢 Online Agora</button>
-    <button class="mon-sub-btn"        id="mon-sub-changes" onclick="eppMonTab('changes',this)">🔄 Logs de Alterações</button>
-    <button class="mon-sub-btn"        id="mon-sub-access"  onclick="eppMonTab('access',this)">🔐 Relatório de Acesso</button>
+    <button class="mon-sub-btn active" id="mon-sub-online"  onclick="eppMonTab('online',this)">&#128994; Online Agora</button>
+    <button class="mon-sub-btn"        id="mon-sub-changes" onclick="eppMonTab('changes',this)">&#128260; Logs de Altera&ccedil;&otilde;es</button>
+    <button class="mon-sub-btn"        id="mon-sub-access"  onclick="eppMonTab('access',this)">&#128272; Relat&oacute;rio de Acesso</button>
   </div>
 
   <!-- Online Now -->
   <div id="mon-panel-online">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <span style="font-size:12px;color:var(--text-muted);">Usuários com atividade nos últimos 5 minutos</span>
-      <button class="btn btn-outline" style="font-size:11px;padding:4px 12px;" onclick="eppLoadOnlineUsers()">↺ Atualizar</button>
+      <button class="btn btn-outline" style="font-size:11px;padding:4px 12px;" onclick="eppLoadOnlineUsers()">&#8635; Atualizar</button>
     </div>
     <div id="mon-online-list"><div class="mon-empty">Carregando...</div></div>
   </div>
@@ -2043,7 +2103,7 @@
   <div id="mon-panel-changes" style="display:none;">
     <div class="mon-filter-row">
       <input type="text" id="mon-changes-search" placeholder="Filtrar por usuário ou ação..." oninput="eppFilterChangeLogs()" style="flex:1;min-width:180px;">
-      <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="eppLoadChangeLogs(true)">↺ Recarregar</button>
+      <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="eppLoadChangeLogs(true)">&#8635; Recarregar</button>
     </div>
     <div style="overflow-x:auto;">
       <table class="mon-log-table">
@@ -2063,7 +2123,7 @@
         <option value="login">Login</option>
         <option value="logout">Logout</option>
       </select>
-      <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="eppLoadAccessLogs(true)">↺ Recarregar</button>
+      <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="eppLoadAccessLogs(true)">&#8635; Recarregar</button>
     </div>
     <div style="overflow-x:auto;">
       <table class="mon-log-table">
@@ -2081,12 +2141,12 @@
 <div id="pat-module" class="pat-module" style="display:none;">
   <div class="pat-header-row">
     <div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">📅 Plano de Trabalho — Gestão EPP</h2>
-      <div style="font-size:13px;color:var(--text-muted);">Gestão EPP — Visível apenas para editores</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">&#128197; Plano de Trabalho &mdash; Gest&atilde;o EPP</h2>
+      <div style="font-size:13px;color:var(--text-muted);">Gest&atilde;o EPP &mdash; Vis&iacute;vel apenas para editores</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <button class="btn btn-primary" onclick="openPatModal()" style="font-size:13px;">＋ Nova Atividade</button>
-      <button class="btn btn-outline" onclick="showPatModule(false)" style="font-size:13px;">✕ Fechar</button>
+      <button class="btn btn-primary" onclick="openPatModal()" style="font-size:13px;">&#65291; Nova Atividade</button>
+      <button class="btn btn-outline" onclick="showPatModule(false)" style="font-size:13px;">&#10005; Fechar</button>
     </div>
   </div>
 
@@ -2136,13 +2196,13 @@
   <div id="pat-cards"></div>
 </div>
 
-<!-- BI MODULE — Cadeia de Valor e Mapa Estratégico CAGE -->
+<!-- BI MODULE - Cadeia de Valor e Mapa Estrategico CAGE -->
 <div id="bi-module" style="display:none;">
   <div style="padding:28px 32px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
       <div>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">📊 Cadeia de Valor e Mapa Estratégico CAGE</h2>
-        <div style="font-size:13px;color:var(--text-muted);">CAGE-RS — Indicadores e Processos Institucionais</div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">&#128202; Cadeia de Valor e Mapa Estrat&eacute;gico CAGE</h2>
+        <div style="font-size:13px;color:var(--text-muted);">CAGE-RS &mdash; Indicadores e Processos Institucionais</div>
       </div>
       <button class="btn btn-outline" onclick="showBiModule(false)" style="font-size:13px;">✕ Fechar painel</button>
     </div>
@@ -2230,7 +2290,7 @@
     <button class="q-btn editor-only" onclick="quadroSaveCloud()" title="Salvar quadro na nuvem (preserva entre sessões)">☁️ Salvar</button>
     <button class="q-btn" onclick="showQuadroModule(false)" title="Fechar">✕ Fechar</button>
   </div>
-  <iframe id="excalidraw-frame"
+  <iframe id="excalidraw-frame" title="Quadro de esboço colaborativo"
     src="https://excalidraw.com?embed=1"
     style="flex:1;width:100%;border:none;display:block;"
     allow="clipboard-read; clipboard-write"
@@ -2333,11 +2393,11 @@
       <div class="gmod-row">
         <div>
           <label for="pat-meta" class="gmod-label">Meta <span style="font-weight:400;color:var(--text-muted);">(facultativo)</span></label>
-          <input class="modal-input" id="pat-meta" type="number" min="0" placeholder="Ex: 10" oninput="patCalcProgresso()">
+          <input class="modal-input" id="pat-meta" type="number" min="0" placeholder="Ex: 10" data-pat-progress="true">
         </div>
         <div>
           <label for="pat-qtd" class="gmod-label">Quantidade realizada <span style="font-weight:400;color:var(--text-muted);">(facultativo)</span></label>
-          <input class="modal-input" id="pat-qtd" type="number" min="0" placeholder="Ex: 7" oninput="patCalcProgresso()">
+          <input class="modal-input" id="pat-qtd" type="number" min="0" placeholder="Ex: 7" data-pat-progress="true">
         </div>
       </div>
       <div id="pat-meta-preview" style="display:none;font-size:12px;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:6px 10px;margin-top:-6px;">
@@ -2514,10 +2574,10 @@
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
     <div>
       <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#0ea5e9;margin-bottom:4px;">CAGE-RS · Gestão EPP</div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:28px;color:#1B3022;margin:0;line-height:1.2;">🎯 Cockpit de Gestão</h2>
-      <div style="font-size:13px;color:#64748b;margin-top:4px;">Visão estratégica em tempo real</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:28px;color:#1B3022;margin:0;line-height:1.2;">&#127919; Cockpit de Gest&atilde;o</h2>
+      <div style="font-size:13px;color:#64748b;margin-top:4px;">Vis&atilde;o estrat&eacute;gica em tempo real</div>
     </div>
-    <button onclick="showHome()" style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:7px 16px;font-size:12px;color:#64748b;cursor:pointer;">← Página Inicial</button>
+<button data-show-home="true" style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:7px 16px;font-size:12px;color:#64748b;cursor:pointer;">← Página Inicial</button>
   </div>
 
   <!-- Stats Row (mesmos indicadores da home) -->
@@ -2567,7 +2627,7 @@
   <!-- Distribuição de POPs -->
   <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-      <div style="font-size:13px;font-weight:800;color:#1B3022;text-transform:uppercase;letter-spacing:.05em;">📊 Distribuição de POPs</div>
+      <div style="font-size:13px;font-weight:800;color:#1B3022;text-transform:uppercase;letter-spacing:.05em;">&#128202; Distribui&ccedil;&atilde;o de POPs</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;" id="cockpit-dist-filters">
         <button onclick="cockpitDistBy('macro')" data-dist="macro" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #047857;background:#047857;color:#fff;">Macroprocesso</button>
         <button onclick="cockpitDistBy('patrocinador')" data-dist="patrocinador" style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;background:#f8fafc;color:#334155;">Patrocinador</button>
@@ -2971,7 +3031,7 @@
       <div style="font-size:13px;color:#64748b;">Repositório de documentos do Escritório de Processos</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-outline" onclick="showHome()" style="font-size:13px;">← Início</button>
+<button class="btn btn-outline" data-show-home="true" style="font-size:13px;">← Início</button>
       <button class="btn btn-primary editor-only" onclick="repoOpenUpload()" style="font-size:13px;background:#e11d48;border-color:#e11d48;">＋ Adicionar Documento</button>
     </div>
   </div>
@@ -3083,7 +3143,7 @@
       <div style="font-size:13px;color:#64748b;">Publicações mensais do Escritório de Processos · CAGE-RS</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-outline" onclick="showHome()" style="font-size:13px;">← Início</button>
+<button class="btn btn-outline" data-show-home="true" style="font-size:13px;">← Início</button>
       <button class="btn btn-primary editor-only" onclick="dropsOpenNew()" style="font-size:13px;background:#047857;border-color:#0ea5e9;">＋ Novo Drop</button>
     </div>
   </div>
@@ -3144,7 +3204,7 @@
           <input type="file" id="drop-cover-file" accept="image/*" style="display:none" onchange="dropCoverSelected(this.files[0])">
         </div>
         <div id="drop-cover-preview" style="display:none;margin-top:8px;border-radius:8px;overflow:hidden;max-height:120px;">
-          <img id="drop-cover-img" src="" style="width:100%;max-height:120px;object-fit:cover;">
+          <img id="drop-cover-img" src="" alt="Capa do drop" style="width:100%;max-height:120px;object-fit:cover;">
         </div>
       </div>
     </div>
@@ -3160,7 +3220,7 @@
 
 <!-- DROPS: lightbox para imagem de capa -->
 <div id="drops-lightbox" onclick="dropsCloseLightbox()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;" role="presentation">
-  <img id="drops-lightbox-img" src="" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
+  <img id="drops-lightbox-img" src="" alt="Imagem ampliada do drop" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -3175,7 +3235,7 @@
       <div style="font-size:13px;color:#64748b;">Planejamento, execução e gestão de não conformidades · CAGE-RS</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <button class="btn btn-outline" onclick="showHome()" style="font-size:13px;">← Início</button>
+<button class="btn btn-outline" data-show-home="true" style="font-size:13px;">← Início</button>
       <button id="audit-new-btn" class="btn btn-primary audit-edit-only" onclick="auditOpenPlanModal()" style="font-size:13px;">＋ Novo Plano</button>
     </div>
   </div>
@@ -3225,7 +3285,7 @@
         <div style="font-size:14px;font-weight:600;color:#1B3022;">Execução de Auditorias</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn btn-outline" onclick="auditExportRelatorioFinal(_auditCurrentPlanId)" style="font-size:12px;color:#1e40af;border-color:#bfdbfe;">📄 Exportar Relatório Final</button>
-          <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Nova Execução</button>
+          <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">&#65291; Nova Execu&ccedil;&atilde;o</button>
         </div>
       </div>
       <div id="audit-exec-list"></div>
@@ -3260,7 +3320,7 @@
     <div id="audit-tab-actions" class="audit-tab-panel" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
         <div style="font-size:14px;font-weight:600;color:#1B3022;">Plano de Ação — Correções</div>
-        <button class="btn btn-primary audit-edit-only" onclick="auditOpenActionModal()" style="font-size:12px;background:#1B3022;border-color:#1B3022;">＋ Nova Ação</button>
+        <button class="btn btn-primary audit-edit-only" onclick="auditOpenActionModal()" style="font-size:12px;background:#1B3022;border-color:#1B3022;">&#65291; Nova A&ccedil;&atilde;o</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
         <button class="audit-nc-filter active" data-g="" onclick="auditFilterAction('',this)">Todas</button>
@@ -3396,7 +3456,7 @@
 <div id="audit-exec-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
   <div style="background:white;border-radius:16px;width:1000px;max-width:97vw;max-height:95vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.65);">
     <div style="background:#003366;border-radius:16px 16px 0 0;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;" id="audit-exec-modal-title">▶ Execução de Auditoria</h3>
+      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;" id="audit-exec-modal-title">&#9654; Execu&ccedil;&atilde;o de Auditoria</h3>
       <button onclick="auditCloseExecModal()" style="background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:20px;">✕</button>
     </div>
     <div style="padding:24px;display:flex;flex-direction:column;gap:14px;">
@@ -3457,7 +3517,7 @@
 <div id="audit-nc-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
   <div style="background:white;border-radius:16px;width:720px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.65);">
     <div style="background:#991b1b;border-radius:16px 16px 0 0;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;" id="audit-nc-modal-title">⚠️ Registrar Não Conformidade</h3>
+      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin:0;" id="audit-nc-modal-title">&#9888;&#65039; Registrar N&atilde;o Conformidade</h3>
       <button onclick="auditCloseNcModal()" style="background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:20px;">✕</button>
     </div>
     <div style="padding:24px;display:flex;flex-direction:column;gap:16px;">
@@ -3465,7 +3525,7 @@
       <!-- CATÁLOGO DE APONTAMENTOS -->
       <div style="border:1px solid #fca5a5;border-radius:10px;padding:14px;background:#fff7f7;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <label for="nc-cat-search" style="font-weight:700;color:#991b1b;font-size:13px;">📋 Apontamentos Padrão <span id="nc-cat-count" style="font-weight:400;color:#64748b;"></span></label>
+          <label for="nc-cat-search" style="font-weight:700;color:#991b1b;font-size:13px;">&#128203; Apontamentos Padr&atilde;o <span id="nc-cat-count" style="font-weight:400;color:#64748b;"></span></label>
           <button onclick="_ncNewCatalogItem()" style="font-size:11px;background:#991b1b;color:white;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;">➕ Novo apontamento</button>
         </div>
         <input id="nc-cat-search" type="text" placeholder="Buscar por apontamento ou categoria..." oninput="_ncFilterCatalog()" style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;margin-bottom:8px;box-sizing:border-box;">
@@ -4042,7 +4102,7 @@
         <div style="font-size:12px;color:#64748b;">CAGE-RS · Gestão de Indicadores de Desempenho</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button class="btn btn-outline" onclick="showHome()" style="font-size:12px;padding:6px 14px;">← Início</button>
+<button class="btn btn-outline" data-show-home="true" style="font-size:12px;padding:6px 14px;">← Início</button>
       </div>
     </div>
     <div class="indcage-tabs">
@@ -5061,9 +5121,9 @@ function _rerenderUndoCurrentPop() {
 }
 
 function _getUndoToastMessage(count) {
-  if(count <= 0) return 'â†© Desfeito. Estado inicial restaurado.';
+  if(count <= 0) return '? Desfeito. Estado inicial restaurado.';
   const stepWord = count === 1 ? 'passo' : 'passos';
-  return `â†© Desfeito. Mais ${count} ${stepWord} disponÃ­veis.`;
+  return `? Desfeito. Mais ${count} ${stepWord} dispon?veis.`;
 }
 
 function renderTracker(p) {
@@ -6916,7 +6976,7 @@ let _npopWorkflowReady = false;
 
 function _ensureNpopAuthorName() {
   if(currentUserName || localStorage.getItem('cage_nome_usuario')) return;
-  const nome = globalThis.prompt('Qual Ã© o seu nome? (serÃ¡ registrado como elaborador dos mapeamentos)');
+  const nome = globalThis.prompt('Qual ? o seu nome? (ser? registrado como elaborador dos mapeamentos)');
   if(nome?.trim()) localStorage.setItem('cage_nome_usuario', nome.trim());
 }
 
@@ -6961,15 +7021,15 @@ function _syncNpopMethodUi(m) {
   if(btn) {
     btn.style.display = '';
     btn.textContent = m === 'manual'
-      ? 'Iniciar Mapeamento â†’'
-      : (_npopWorkflowReady ? 'Finalizar Mapeamento â†’' : 'Criar Mapeamento â†’');
+      ? 'Iniciar Mapeamento ?'
+      : (_npopWorkflowReady ? 'Finalizar Mapeamento ?' : 'Criar Mapeamento ?');
   }
 
   const badge = document.getElementById('npop-method-badge');
   if(badge) {
     badge.textContent = m === 'manual'
       ? 'Modo manual'
-      : (_npopWorkflowReady ? 'Etapa 2: revisar e editar dados extraÃ­dos' : 'Etapa 1: carregar POP Word');
+      : (_npopWorkflowReady ? 'Etapa 2: revisar e editar dados extra?dos' : 'Etapa 1: carregar POP Word');
   }
 }
 
@@ -9336,7 +9396,7 @@ function applyHeaderBtnColors() {
   if(logoDiv) {
     if(gp.logoHeaderUrl) {
       logoDiv.style.cssText = 'width:auto;max-width:140px;height:48px;background:transparent;border-radius:0;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);overflow:hidden;flex-shrink:0;padding:0;';
-      logoDiv.innerHTML = `<img src="${escapeHtml(gp.logoHeaderUrl)}" style="height:48px;width:auto;max-width:140px;object-fit:contain;display:block;" onerror="this.style.display='none'">`;
+      logoDiv.innerHTML = `<img src="${escapeHtml(gp.logoHeaderUrl)}" alt="Logo da barra superior" style="height:48px;width:auto;max-width:140px;object-fit:contain;display:block;" onerror="this.style.display='none'">`;
     } else {
       logoDiv.style.cssText = '';
       const bg    = gp.logoHeaderBg    || '#1B3022';
@@ -9351,7 +9411,7 @@ function _gpLogoBarraPreview(url) {
   const el = document.getElementById('gp-logo-barra-preview');
   if(!el) return;
   if(url) {
-    el.innerHTML = `<img src="${escapeHtml(url)}" style="height:44px;width:auto;max-width:116px;object-fit:contain;display:block;" onerror="this.innerHTML='❌'">`;
+    el.innerHTML = `<img src="${escapeHtml(url)}" alt="Pré-visualização do logo da barra superior" style="height:44px;width:auto;max-width:116px;object-fit:contain;display:block;" onerror="this.innerHTML='❌'">`;
   } else {
     el.innerHTML = '🖼';
   }
@@ -9376,7 +9436,7 @@ function gpUpdateLogoPreview() {
   const preview = document.getElementById('gp-logo-preview');
   if(!preview) return;
   if(url) {
-    preview.innerHTML = `<img src="${escapeHtml(url)}" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentElement.innerHTML='❌'">`;
+    preview.innerHTML = `<img src="${escapeHtml(url)}" alt="Pré-visualização do logotipo" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentElement.innerHTML='❌'">`;
   } else {
     preview.innerHTML = '🖼';
   }
@@ -9711,10 +9771,10 @@ function _renderCfgCardEquipeUnidade(title, desc) {
       <datalist id="cfg-eu-area-list">${areaOpts}</datalist>
       <input id="cfg-new-eu-equipe" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;"
         list="cfg-eu-equipe-list" placeholder="Equipe..." autocomplete="off"
-        onkeydown="if(event.key==='Enter') configAddEquipeUnidade()">
+        data-enter-action="configAddEquipeUnidade">
       <input id="cfg-new-eu-unidade" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;"
         list="cfg-eu-area-list" placeholder="Unidade..." autocomplete="off"
-        onkeydown="if(event.key==='Enter') configAddEquipeUnidade()">
+        data-enter-action="configAddEquipeUnidade">
       <button onclick="configAddEquipeUnidade()" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
     </div>
   </div>`;
@@ -9842,7 +9902,7 @@ function _renderCfgCardAptCatalog(title, desc) {
         <span style="font-size:12px;color:#475569;">${a.categoria||'—'}</span>
         <span style="font-size:11px;font-weight:700;color:${critColor};">${a.criticidade||'—'}</span>
         <span style="font-size:13px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(a.apontamento||'').replaceAll('"','&quot;')}">${a.apontamento||'—'}</span>
-        <div style="display:flex;gap:4px;" onclick="event.stopPropagation()">
+        <div style="display:flex;gap:4px;" data-stop-propagation="true">
           <button onclick="cfgAptToggle(${i})" style="background:none;border:none;cursor:pointer;color:#1B3022;font-size:14px;padding:2px 6px;" title="Editar">✏️</button>
           <button onclick="cfgAptDel(${i})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px;padding:2px 6px;" title="Excluir">🗑</button>
         </div>
@@ -9998,9 +10058,9 @@ function _renderCfgCardServidor(title, desc) {
     <div id="cfg-list-servidoresEPP">${rows || empty}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px;align-items:center;">
       <input id="cfg-new-srv-nome" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" placeholder="Nome do servidor"
-        onkeydown="if(event.key==='Enter') configAddServidor()">
+        data-enter-action="configAddServidor">
       <input id="cfg-new-srv-email" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" type="email" placeholder="e-mail (opcional)"
-        onkeydown="if(event.key==='Enter') configAddServidor()">
+        data-enter-action="configAddServidor">
       <button onclick="configAddServidor()" class="btn btn-primary" style="font-size:12px;padding:6px 12px;">＋</button>
     </div>
   </div>`;
@@ -10048,9 +10108,9 @@ function _renderCfgCardNatureza(title, desc) {
     <div id="cfg-list-naturezaAtividade">${rows || empty}</div>
     <div style="display:grid;grid-template-columns:56px 1fr 52px 52px auto;gap:8px;margin-top:10px;align-items:center;">
       <input id="cfg-new-nat-icon"  class="modal-input" style="margin:0;font-size:13px;padding:5px 6px;text-align:center;" placeholder="▶"
-        onkeydown="if(event.key==='Enter') configAddNatureza()">
+        data-enter-action="configAddNatureza">
       <input id="cfg-new-nat-label" class="modal-input" style="margin:0;font-size:13px;padding:5px 8px;" placeholder="Nome da natureza..."
-        onkeydown="if(event.key==='Enter') configAddNatureza()">
+        data-enter-action="configAddNatureza">
       <input id="cfg-new-nat-bg"    type="color" value="#e2e8f0" title="Cor de fundo"
         style="width:36px;height:34px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;padding:1px;margin:0 auto;display:block;">
       <input id="cfg-new-nat-color" type="color" value="#334155" title="Cor do texto"
@@ -12511,7 +12571,7 @@ function showUserUI(user) {
   const img = user.user_metadata?.avatar_url;
   if(img) {
     const av = document.getElementById('user-avatar');
-    av.innerHTML = `<img src="${escapeHtml(img)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">`;
+    av.innerHTML = `<img src="${escapeHtml(img)}" alt="Avatar do usuário" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">`;
   }
 }
 
@@ -12535,6 +12595,9 @@ function setSyncStatus(status) {
 
 // Init on load
 document.addEventListener('DOMContentLoaded', () => {
+  _bindHeaderActions();
+  _bindHomeCardEditables();
+  _bindDeclarativeActions();
   initSupabase().catch(e => {
     try {
       document.getElementById('auth-status').textContent = '⚠️ Erro ao inicializar: ' + e.message;
@@ -12854,6 +12917,74 @@ function clearSearch() {
   runSearch('');
 }
 
+function _bindHeaderActions() {
+  document.getElementById('header-home-title-btn')?.addEventListener('click', showHome);
+  document.getElementById('header-home-btn')?.addEventListener('click', showHome);
+  document.getElementById('user-signout-btn')?.addEventListener('click', signOut);
+  document.getElementById('search-clear-btn')?.addEventListener('click', clearSearch);
+  document.getElementById('global-search-input')?.addEventListener('focus', openSearchModal);
+  document.getElementById('global-search-input')?.addEventListener('input', e => runSearch(e.target.value));
+}
+
+function _bindClickAction(selector, handler) {
+  document.querySelectorAll(selector).forEach(el => el.addEventListener('click', handler));
+}
+
+function _bindInputAction(selector, handler) {
+  document.querySelectorAll(selector).forEach(el => el.addEventListener('input', handler));
+}
+
+function _bindChangeAction(selector, handler) {
+  document.querySelectorAll(selector).forEach(el => el.addEventListener('change', handler));
+}
+
+function _stopEventPropagation(e) {
+  e.stopPropagation();
+}
+
+function _isHomeCardEditable(el) {
+  return el?.matches('.home-card-title, .home-card-desc');
+}
+
+function _handleHomeCardEditableClick(e) {
+  if(document.body.classList.contains('edit-mode') && _isHomeCardEditable(e.target)) e.stopPropagation();
+}
+
+function _handleHomeCardEditableBlur(e) {
+  if(!document.body.classList.contains('edit-mode') || !_isHomeCardEditable(e.target)) return;
+  harvestEditables();
+  saveToCloud();
+}
+
+function _handleHomeCardEditableKeydown(e) {
+  if(!_isHomeCardEditable(e.target) || (e.key !== 'Enter' && e.key !== 'Tab')) return;
+  e.preventDefault();
+  e.target.blur();
+}
+
+function _bindHomeCardEditables() {
+  document.querySelectorAll('.home-card-title, .home-card-desc').forEach(el => {
+    el.addEventListener('click', _handleHomeCardEditableClick);
+    el.addEventListener('blur', _handleHomeCardEditableBlur);
+    el.addEventListener('keydown', _handleHomeCardEditableKeydown);
+  });
+}
+
+function _bindDeclarativeActions() {
+  _bindClickAction('[data-show-home="true"]', showHome);
+  _bindClickAction('[data-stop-propagation="true"]', _stopEventPropagation);
+  _bindInputAction('[data-pat-progress="true"]', patCalcProgresso);
+  _bindInputAction('[data-arq-filter-trigger="true"]', arqApplyFilter);
+  _bindChangeAction('[data-arq-filter-trigger="true"]', arqApplyFilter);
+  document.querySelectorAll('[data-enter-action]').forEach(el => {
+    el.addEventListener('keydown', e => {
+      if(e.key !== 'Enter') return;
+      e.preventDefault();
+      globalThis[e.target.dataset.enterAction]?.();
+    });
+  });
+}
+
 function highlight(text, query) {
   if(!query || !text) return escapeHtml(text || '');
   // Escape text first to prevent XSS
@@ -12984,7 +13115,7 @@ function runSearch(raw) {
             ${inContent ? `<div style="font-size:11px;color:#374151;background:#f0fdf4;border-left:3px solid #00a86b;border-radius:0 4px 4px 0;padding:4px 8px;margin-top:4px;line-height:1.6;">🔍 Clique para ver o trecho completo no documento</div>` : ''}
             <div style="font-size:11px;color:var(--cage-accent);margin-top:4px;">
               ${r.doc.fileName ? `📎 ${highlight(r.doc.fileName, q)}` : ''}
-              ${r.doc.fileUrl ? ` · <a href="${r.doc.fileUrl}" target="_blank" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline;">Abrir arquivo</a>` : ''}
+${r.doc.fileUrl ? ` · <a href="${r.doc.fileUrl}" target="_blank" data-stop-propagation="true" style="color:inherit;text-decoration:underline;">Abrir arquivo</a>` : ''}
             </div>
           </div>`;
         }
@@ -16103,17 +16234,17 @@ function arqRenderTable(filtered, all) {
         <span style="background:${nat.bg};color:${nat.color};font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;">${r.natureza||''}</span>
       </td>
       <td style="padding:10px 16px;color:#64748b;font-size:12px;">${r.area||''}</td>
-      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()">
+      <td style="padding:10px 16px;text-align:center;" data-stop-propagation="true">
         <button onclick="arqToggleCritico(${realIdx})"
           style="background:${critBg};color:${critColor};border:none;cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;transition:all .2s;"
           title="Clique para alternar">${critLabel}</button>
       </td>
-      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()">
+      <td style="padding:10px 16px;text-align:center;" data-stop-propagation="true">
         <button onclick="arqToggleMapeado(${realIdx})"
           style="background:${toggleBg};color:${toggleColor};border:none;cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;transition:all .2s;"
           title="Clique para alternar">${toggleLabel}</button>
       </td>
-      <td style="padding:10px 16px;text-align:center;" onclick="event.stopPropagation()">
+      <td style="padding:10px 16px;text-align:center;" data-stop-propagation="true">
         ${isEditor && !mapped ? `<button onclick="arqAbrirMapeamento(${realIdx})" style="background:#dcfce7;color:#166534;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Iniciar mapeamento deste processo">📝 Mapear</button>` : ''}
         ${isEditor ? `<button onclick="arqShowForm(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Editar">✏️</button>` : ''}
         ${isEditor ? `<button onclick="arqDelete(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Excluir">🗑</button>` : ''}
@@ -16589,7 +16720,7 @@ function arqOpenFluxoLightbox(url) {
     lb = document.createElement('div');
     lb.id = 'arq-fluxo-lightbox';
     lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
-    lb.innerHTML = `<img id="arq-fluxo-lb-img" style="max-width:94vw;max-height:92vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.6);">
+    lb.innerHTML = `<img id="arq-fluxo-lb-img" alt="Fluxo ampliado" style="max-width:94vw;max-height:92vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.6);">
       <button onclick="document.getElementById('arq-fluxo-lightbox').style.display='none'" style="position:absolute;top:16px;right:20px;background:rgba(255,255,255,.75);border:none;color:white;font-size:24px;cursor:pointer;border-radius:50%;width:40px;height:40px;line-height:40px;text-align:center;">✕</button>`;
     lb.addEventListener('click', e => { if(e.target === lb) lb.style.display='none'; });
     document.body.appendChild(lb);
@@ -18723,7 +18854,7 @@ function dropsRender() {
     const pub = new Date(d.publishedAt);
     const dateLabel = pub.toLocaleDateString('pt-BR', {month:'long', year:'numeric', timeZone:'UTC'});
     const coverHtml = d.coverUrl
-      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)"><img src="${escapeHtml(d.coverUrl)}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
+      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)"><img src="${escapeHtml(d.coverUrl)}" alt="Capa do drop ${escapeHtml(d.title || '')}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
       : `<div style="height:80px;background:linear-gradient(135deg,#1B3022,#003366);display:flex;align-items:center;justify-content:center;font-size:36px;">💧</div>`;
     return `
     <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,.90)'" onmouseout="this.style.boxShadow='none'">
@@ -25958,13 +26089,13 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
     <div style="background:white;border-radius:12px;padding:16px 20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
       <div style="flex:1;min-width:160px;">
         <label for="arq-filter-macro" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Macroprocesso</label>
-        <select id="arq-filter-macro" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
+        <select id="arq-filter-macro" data-arq-filter-trigger="true" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
           <option value="">Todos</option>
         </select>
       </div>
       <div style="flex:1;min-width:160px;">
         <label for="arq-filter-natureza" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Natureza</label>
-        <select id="arq-filter-natureza" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
+        <select id="arq-filter-natureza" data-arq-filter-trigger="true" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
           <option value="">Todas</option>
           <option>FINALÍSTICO</option>
           <option>APOIO</option>
@@ -25973,25 +26104,25 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       </div>
       <div style="flex:1;min-width:160px;">
         <label for="arq-filter-area" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Área</label>
-        <select id="arq-filter-area" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
+        <select id="arq-filter-area" data-arq-filter-trigger="true" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
           <option value="">Todas</option>
         </select>
       </div>
       <div style="flex:1;min-width:160px;">
         <label for="arq-filter-gerente" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Gerente</label>
-        <select id="arq-filter-gerente" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
+        <select id="arq-filter-gerente" data-arq-filter-trigger="true" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
           <option value="">Todos</option>
         </select>
       </div>
       <div style="flex:2;min-width:200px;">
         <label for="arq-filter-obj" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Objetivo Estratégico</label>
-        <select id="arq-filter-obj" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
+        <select id="arq-filter-obj" data-arq-filter-trigger="true" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
           <option value="">Todos</option>
         </select>
       </div>
       <div style="flex:0 0 140px;">
         <label for="arq-filter-critico" style="font-size:12px;font-weight:600;color:#dc2626;display:block;margin-bottom:4px;">Crítico?</label>
-        <select id="arq-filter-critico" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
+        <select id="arq-filter-critico" data-arq-filter-trigger="true" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
           <option value="">Todos</option>
           <option value="sim">⚠️ Sim</option>
           <option value="nao">○ Não</option>
@@ -25999,7 +26130,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       </div>
       <div style="flex:0 0 140px;">
         <label for="arq-filter-mapeado" style="font-size:12px;font-weight:600;color:#00a86b;display:block;margin-bottom:4px;">Mapeado?</label>
-        <select id="arq-filter-mapeado" onchange="arqApplyFilter()" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
+        <select id="arq-filter-mapeado" data-arq-filter-trigger="true" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
           <option value="">Todos</option>
           <option value="sim">✅ Sim</option>
           <option value="nao">○ Não</option>
@@ -26007,7 +26138,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       </div>
       <div style="flex:2;min-width:180px;">
         <label for="arq-filter-search" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Buscar</label>
-        <input id="arq-filter-search" oninput="arqApplyFilter()" placeholder="Digite para filtrar processos..." style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
+        <input id="arq-filter-search" data-arq-filter-trigger="true" placeholder="Digite para filtrar processos..." style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;box-sizing:border-box;">
       </div>
       <button class="btn btn-outline" onclick="arqClearFilter()" style="font-size:12px;padding:8px 14px;">Limpar</button>
     </div>

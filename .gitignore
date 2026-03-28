@@ -11,6 +11,7 @@ data/local-data.json
 backups/*.json
 backups/*.ndjson
 backups/*.csv
+backups/*.html
 backups/migration/
 siga-images.tar
 
@@ -21,3 +22,11 @@ siga-images.tar
 test-*.html
 verify-*.js
 tmp_zip_test*/
+tmp-*.js
+tmp-*.ps1
+tmp-*.log
+tmp-*.html
+frontend.*.log
+backend.*.log
+.tmp/
+.tmp-index-sonar-inline.js

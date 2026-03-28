@@ -33,14 +33,38 @@ const ALLOWED_ORIGINS = (process.env.SIGA_ALLOWED_ORIGIN
   ? process.env.SIGA_ALLOWED_ORIGIN.split(',').map((s) => s.trim()).filter(Boolean)
   : DEFAULT_ALLOWED_ORIGINS);
 
+const WRITE_ROUTES = new Set([
+  'POST /data',
+  'POST /ai',
+  'POST /parse-xlsx'
+]);
+
+const ADMIN_TOKEN = String(process.env.SIGA_ADMIN_TOKEN || '').trim();
+
+function readAdminToken(req) {
+  const bearer = String(req.headers.authorization || '').trim();
+  if (bearer.toLowerCase().startsWith('bearer ')) return bearer.slice(7).trim();
+  return String(req.headers['x-siga-admin-token'] || '').trim();
+}
+
+function isLoopbackRequest(req) {
+  const remote = String(req.socket?.remoteAddress || '');
+  return remote === '127.0.0.1' || remote === '::1' || remote === '::ffff:127.0.0.1';
+}
+
+function isAuthorizedWriteRequest(req) {
+  if (!ADMIN_TOKEN) return isLoopbackRequest(req);
+  return readAdminToken(req) === ADMIN_TOKEN;
+}
+
 function corsHeadersFor(req) {
   const origin = req.headers.origin || '';
   const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-SIGA-Admin-Token',
     'Vary': 'Origin'
   };
 }
@@ -655,7 +679,8 @@ async function _routeOptions(req, res) {
 async function _routeGetHealth(req, res) {
   sendJson(req, res, 200, {
     ok: true, service: 'siga-local-backend',
-    dataFile: DATA_FILE, aiProvider: process.env.SIGA_AI_PROVIDER || 'ai',
+    aiProvider: process.env.SIGA_AI_PROVIDER || 'ai',
+    hasAdminToken: Boolean(ADMIN_TOKEN),
   });
 }
 
@@ -704,10 +729,22 @@ const _ROUTE_MAP = new Map([
   ['POST /parse-xlsx', _routePostParseXlsx],
 ]);
 
+function _ensureAuthorizedRoute(req, res, routeKey) {
+  if (!WRITE_ROUTES.has(routeKey)) return true;
+  if (isAuthorizedWriteRequest(req)) return true;
+  sendJson(req, res, 403, { ok: false, error: 'Forbidden' });
+  return false;
+}
+
 async function _handleRequest(req, res, url) {
   if (req.method === 'OPTIONS') { await _routeOptions(req, res); return; }
-  const handler = _ROUTE_MAP.get(`${req.method} ${url.pathname}`);
-  if (handler) { await handler(req, res); return; }
+  const routeKey = `${req.method} ${url.pathname}`;
+  const handler = _ROUTE_MAP.get(routeKey);
+  if (handler) {
+    if (!_ensureAuthorizedRoute(req, res, routeKey)) return;
+    await handler(req, res);
+    return;
+  }
   sendJson(req, res, 404, { ok: false, error: 'Not found' });
 }
 const server = http.createServer(async (req, res) => {
