@@ -1004,7 +1004,7 @@
   .nav-tabs{
     background:linear-gradient(180deg,#183c36 0%,#102d29 100%)!important;
   }
-  .nav-tab{
+  .nav-tabs .nav-tab{
     background:#143a34!important;
     color:#f3f7f5!important;
     background-image:none!important;
@@ -1016,7 +1016,7 @@
     -webkit-appearance:none!important;
     -moz-appearance:none!important;
   }
-  button.nav-tab{
+  .nav-tabs button.nav-tab{
     background:#143a34!important;
     color:#f3f7f5!important;
     background-image:none!important;
@@ -3220,7 +3220,7 @@
 
 <!-- DROPS: lightbox para imagem de capa -->
 <div id="drops-lightbox" onclick="dropsCloseLightbox()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;" role="presentation">
-  <img id="drops-lightbox-img" src="" alt="Imagem ampliada do drop" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
+  <img id="drops-lightbox-img" src="" alt="Drop ampliado" style="max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6);">
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -12150,8 +12150,8 @@ async function loadRequestsList() {
   if(!data?.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px 0;">Nenhuma solicitação.</div>'; return; }
   el.innerHTML = data.map(r => {
     const isPending = r.status === 'pendente';
-    const statusColor = r.status === 'aprovado' ? '#16a34a' : r.status === 'rejeitado' ? '#dc2626' : '#d97706';
-    const statusLabel = r.status === 'aprovado' ? 'Aprovado' : r.status === 'rejeitado' ? 'Rejeitado' : 'Pendente';
+    const statusColor = getAccessRequestStatusColor(r.status);
+    const statusLabel = getAccessRequestStatusLabel(r.status);
     return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <div>
@@ -12970,6 +12970,18 @@ function _bindHomeCardEditables() {
   });
 }
 
+function getAccessRequestStatusColor(status) {
+  if(status === 'aprovado') return '#16a34a';
+  if(status === 'rejeitado') return '#dc2626';
+  return '#d97706';
+}
+
+function getAccessRequestStatusLabel(status) {
+  if(status === 'aprovado') return 'Aprovado';
+  if(status === 'rejeitado') return 'Rejeitado';
+  return 'Pendente';
+}
+
 function _bindDeclarativeActions() {
   _bindClickAction('[data-show-home="true"]', showHome);
   _bindClickAction('[data-stop-propagation="true"]', _stopEventPropagation);
@@ -13610,7 +13622,10 @@ async function buildPptx(D, _popKey) {
       const col = ri%cols, row = Math.floor(ri/cols);
       const x = 0.3+col*(cardW+0.2), y = 1.1+row*2.1;
       const ac = r.type==='risco' ? 'EF4444' : '10B981';
-      const sc = r.score>=15 ? '7C1D1D' : r.score>=8 ? 'DC2626' : r.score>=4 ? 'F59E0B' : '16A34A';
+      let sc = '16A34A';
+      if(r.score >= 15) sc = '7C1D1D';
+      else if(r.score >= 8) sc = 'DC2626';
+      else if(r.score >= 4) sc = 'F59E0B';
       s.addShape(pres.ShapeType.rect, { x, y, w:cardW, h:1.9, fill:{ color:C.white }, shadow:mks() });
       s.addShape(pres.ShapeType.rect, { x, y, w:0.08, h:1.9, fill:{ color:ac } });
       s.addText(r.type==='risco'?'⚠️ Risco':'✅ Oportunidade', { x:x+0.15, y:y+0.08, w:cardW-0.4, h:0.28, fontSize:9, color:ac, bold:true, margin:0 });
