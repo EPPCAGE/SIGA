@@ -77,6 +77,15 @@ function escapeAngleBrackets(value) {
   return String(value || '').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
+function setValidationMessage(badgeClass, badgeText, message) {
+  const box = $('validationBox');
+  if (!box) return;
+  const badge = document.createElement('span');
+  badge.className = `badge ${badgeClass}`;
+  badge.textContent = badgeText;
+  box.replaceChildren(badge, document.createTextNode(` ${String(message || '')}`));
+}
+
 let graph = null;
 let simRuns = [];
 let animFrame = null;
@@ -1699,16 +1708,13 @@ function completeSetup() {
   const s = collectSetupStatus();
   const ready = s.graphOk && s.handoffOk && s.happyPathOk;
   if (!ready) {
-    const reason = !s.graphOk && s.graphIssues.length
-      ? ` Motivo: ${escapeHtml(s.graphIssues[0])}`
-      : '';
-    const safeReason = escapeAngleBrackets(reason || '');
-    $('validationBox').innerHTML = `<span class="badge error">setup</span> Finalize os itens pendentes no popup para iniciar a simulacao.${safeReason}`;
+    const reason = !s.graphOk && s.graphIssues.length ? ` Motivo: ${s.graphIssues[0]}` : '';
+    setValidationMessage('error', 'setup', `Finalize os itens pendentes no popup para iniciar a simulacao.${reason}`);
     return;
   }
   setupCompleted = true;
   if (fixedGateways > 0) {
-    $('validationBox').innerHTML = `<span class="badge auto">gateway</span> ${fixedGateways} gateway(s) foram auto-corrigidos para fechar em 100%.`;
+    setValidationMessage('auto', 'gateway', `${fixedGateways} gateway(s) foram auto-corrigidos para fechar em 100%.`);
   }
   closeSetupModal();
 }
@@ -2526,9 +2532,7 @@ function parseEditorGraph() {
     autoAssignComplexityDefaults(); // garante defaults de complexidade
     return true;
   } catch (e) {
-    /* exibe mensagem de erro na interface */
-    const safeMsg = escapeAngleBrackets(e.message || '');
-    $('validationBox').innerHTML = `<span class="badge error">erro</span> JSON invalido: ${safeMsg}`;
+    setValidationMessage('error', 'erro', `JSON invalido: ${e.message || ''}`);
     return false;
   }
 }
@@ -3513,7 +3517,7 @@ function playSimulation() {
   if (!setupCompleted || !readyNow) {
     setupCompleted = false;
     openSetupModal();
-    $('validationBox').innerHTML = '<span class="badge error">setup</span> Conclua o popup de preparacao antes de simular.';
+    setValidationMessage('error', 'setup', 'Conclua o popup de preparacao antes de simular.');
     return;
   }
   if (!validateAndShow()) return;
@@ -3526,9 +3530,7 @@ function playSimulation() {
     try {
       parseHappyPathRequired();
     } catch (e) {
-      /* exibe mensagem de erro na interface */
-      const safeMsg = escapeAngleBrackets(e.message || '');
-      $('validationBox').innerHTML = `<span class="badge error">ideal</span> ${safeMsg}`;
+      setValidationMessage('error', 'ideal', e.message || '');
       return;
     }
   }
