@@ -7477,7 +7477,22 @@ function _extractFaqJsonArray(rawText) {
     }
   }
   
-  // Estratégia 5: Se tudo falhar, procurar por objetos individuais e montar array
+  // Estratégia 5: Procurar AGRESSIVAMENTE por primeiro [ e último ]
+  // Ignora completamente narrative/preamble
+  const firstBracket = clean.indexOf('[');
+  const lastBracket = clean.lastIndexOf(']');
+  if(firstBracket !== -1 && lastBracket > firstBracket) {
+    const potentialJson = clean.slice(firstBracket, lastBracket + 1);
+    try {
+      JSON.parse(potentialJson);
+      console.log('[_extractFaqJsonArray] Estratégia 5 (brackets agressivo) funcionou');
+      return potentialJson;
+    } catch(e) {
+      // Continuar
+    }
+  }
+  
+  // Estratégia 6: Se tudo falhar, procurar por objetos individuais e montar array
   // Procurar por padrão {"q":"...","a":"..."}
   const objectPattern = /\{\s*"q"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*,\s*"a"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*\}/gi;
   const matches = [...clean.matchAll(objectPattern)];
@@ -7487,10 +7502,12 @@ function _extractFaqJsonArray(rawText) {
       q: m[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\'),
       a: m[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\')
     }));
+    console.log('[_extractFaqJsonArray] Estratégia 6 (objetos individuais) funcionou:', faqs.length);
     return JSON.stringify(faqs);
   }
   
   // Se nenhuma estratégia funcionou, retornar null
+  console.warn('[_extractFaqJsonArray] Todas as estratégias falharam. Text length:', text.length);
   return null;
 }
 
@@ -7499,6 +7516,65 @@ function _extractOuterJsonObject(text) {
   const start = source.indexOf('{');
   const end = source.lastIndexOf('}');
   return start !== -1 && end > start ? source.slice(start, end + 1) : null;
+}
+
+function indexDocumentForFaq(content, maxChunks = 20) {
+  const text = String(content || '').trim();
+  if (text.length === 0) return null;
+  
+  // Dividir por quebras duplas (parágrafos) ou quebras simples
+  const lines = text.split('\n');
+  const chunks = [];
+  let currentChunk = [];
+  let chunkCount = 0;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Se quebra dupla ou chegou ao limite de linhas, finalizar chunk
+    if ((line.trim() === '' && currentChunk.length > 0) || currentChunk.length >= 100) {
+      const chunkText = currentChunk.join('\n').trim();
+      if (chunkText.length > 50) {
+        // Extrair título (primeira linha ou primeira linha longa)
+        const title = currentChunk
+          .find(l => l.trim().length > 10)?.substring(0, 50) || `Seção ${chunkCount + 1}`;
+        const summary = chunkText.substring(0, 150);
+        chunks.push({
+          id: chunkCount,
+          title: title,
+          content: chunkText,
+          summary: summary
+        });
+        chunkCount++;
+        if (chunkCount >= maxChunks) break;
+      }
+      currentChunk = [];
+    } else if (line.trim().length > 0) {
+      currentChunk.push(line);
+    }
+  }
+  
+  // Finalizar último chunk
+  if (currentChunk.length > 0) {
+    const chunkText = currentChunk.join('\n').trim();
+    if (chunkText.length > 50) {
+      const title = currentChunk
+        .find(l => l.trim().length > 10)?.substring(0, 50) || `Seção ${chunkCount + 1}`;
+      const summary = chunkText.substring(0, 150);
+      chunks.push({
+        id: chunkCount,
+        title: title,
+        content: chunkText,
+        summary: summary
+      });
+    }
+  }
+  
+  // Criar índice resumido
+  const index = chunks.map(c => `[Seção ${c.id}] ${c.title}`).join('\n');
+  
+  console.log('[indexDocumentForFaq] Documento indexado em', chunks.length, 'chunks');
+  return { chunks, index, totalChunks: chunks.length };
 }
 
 function _stripMarkdownCodeFence(text) {
@@ -18200,41 +18276,59 @@ async function repoGenerateFaqsFromPdf(id) {
       contentToAnalyze = `[PDF Document - Base64: ${base64.length} bytes]\n\nConteúdo:\n${base64.substring(0, 100000)}`; // Limitar preview
     }
     
-    // PROMPT ESTRUTURADO para garantir leitura completa
-    const prompt = `TAREFA CRÍTICA: Você é um especialista em processos e documentação. Sua tarefa é LER O DOCUMENTO TODO (não apenas primeira seção) e gerar FAQs.
+    // Se documento for longo, indexar primeiro
+    let indexInfo = '';
+    let selectedChunks = contentToAnalyze;
+    
+    if(contentToAnalyze.length > 50000) {
+      console.log('[repoGenerateFaqsFromPdf] Documento > 50KB, indexando…');
+      const indexed = indexDocumentForFaq(contentToAnalyze, 15);
+      if(indexed) {
+        indexInfo = `\n\n=== ÍNDICE DO DOCUMENTO (${indexed.totalChunks} seções) ===\n${indexed.index}\n`;
+        // Usar primeiros 5 chunks como foco
+        selectedChunks = indexed.chunks
+          .slice(0, 5)
+          .map(c => `[SEÇÃO ${c.id}: ${c.title}]\n${c.content}`)
+          .join('\n\n---\n\n');
+        console.log('[repoGenerateFaqsFromPdf] Usando', indexed.chunks.slice(0, 5).length, 'chunks principais para análise');
+      }
+    }
+    
+    // PROMPT ESTRUTURADO para garantir leitura completa E resposta JSON pura
+    const prompt = `[SISTEMA] Você é um especialista em análise de documentos. Sua ÚNICA tarefa é gerar JSON.
 
-DOCUMENTO COMPLETO A ANALISAR:
-${contentToAnalyze}
+[DOCUMENTO PARA ANÁLISE]
+${indexInfo}${selectedChunks}
 
-==================== INSTRUÇÕES OBRIGATÓRIAS ====================
+[INSTRUÇÕES CRÍTICAS - SIGA EXATAMENTE]
 
-PASSO 1: Leia TODO o documento acima linha por linha. Não ignore seções.
-  - Identifique TODOS os tópicos principais
-  - Anote pontos importantes de cada SEÇÃO/CAPÍTULO
-  - Localize informações que usuários frequentemente perguntam
+PASSO 1: Leia TODO o conteúdo acima
+  - Identifique os 8-12 tópicos MAIS IMPORTANTES
+  - Encontre informações que usuários querem saber
+  - Anote pontos confusos ou frequentes dúvidas
 
-PASSO 2: Depois de ler TUDO, gere 8-12 perguntas reais que cobrem:
-  - Entendimento geral do documento (perguntas de visão geral)
-  - Detalhes de cada SEÇÃO/CAPÍTULO (perguntas específicas)
-  - Aplicação prática (como usar/aplicar as informações)
-  - Exceções e casos especiais mencionados no documento
+PASSO 2: Gere EXATAMENTE 8-12 perguntas/respostas que cubram:
+  - Conceitos principais e definições
+  - Processos e procedimentos
+  - Casos especiais e exceções
+  - Aplicação prática
 
-PASSO 3: Garanta que as respostas são TEXTUAIS (citam diretamente do documento)
+PASSO 3: Formule as respostas com texto DO DOCUMENTO
 
-==================== FORMATO DE SAÍDA ====================
+[FORMATO DE RESPOSTA - OBRIGATÓRIO]
 
-Retorne APENAS JSON válido (sem markdown, sem código block):
+RESPONDA APENAS COM JSON VÁLIDO (SEM NADA MAIS):
 [
-  {"q":"Pergunta 1?","a":"Resposta baseada no documento"},
-  {"q":"Pergunta 2?","a":"Outra resposta do documento"},
-  ...
+  {"q":"Pergunta","a":"Resposta do documento"},
+  {"q":"Pergunta","a":"Resposta do documento"}
 ]
 
-Regras CRÍTICAS:
-✓ Nunca invente informações ausentes no documento
-✓ Cite seções/páginas quando possível
-✓ Faça perguntas sobre TODA extensão do documento, não apenas primeira parte
-✓ Priorize perguntas que cobrem múltiplas seções
+⚠️ IMPORTANTE:
+- Retorne APENAS o array JSON [{ ... }]
+- NÃO adicione markdown, código block, ou texto extra
+- NÃO invente informações
+- NUNCA escreva explicações antes ou depois do JSON
+- Se não conseguir extrair FAQs, retorne: []
 `;
 
     console.log('[repoGenerateFaqsFromPdf] Prompt size:', prompt.length, 'bytes | Enviando para IA…');
