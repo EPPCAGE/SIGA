@@ -2623,7 +2623,7 @@
 
     <!-- Dados Quantitativos (opcional) -->
     <div class="rel-quant-box">
-      <button class="rel-quant-toggle" onclick="(function(b){const d=document.getElementById('rel-quant-body'),open=d.style.display!=='grid';d.style.display=open?'grid':'none';b.querySelector('.rq-arrow').textContent=open?'▲':'▼';})(this)">
+      <button class="rel-quant-toggle" type="button" onclick="toggleRelQuantBody(this)">
         📊 Dados Quantitativos <span style="font-weight:400;color:#64748b;">— volumetria e tempo (opcional, enriquece o relatório)</span>
         <span class="rq-arrow" style="margin-left:auto;font-size:11px;">▼</span>
       </button>
@@ -4852,22 +4852,27 @@ function _toggleEditFaqButtons() {
 }
 
 function _updateEditModeUI() {
-  _updateEditModeUI();
-  document.getElementById('edit-toggle').textContent = editMode ? 'ðŸ‘ VisualizaÃ§Ã£o' : 'âœï¸ Modo EdiÃ§Ã£o';
+  document.body.classList.toggle('edit-mode', editMode);
+  document.getElementById('edit-toggle').textContent = editMode ? 'Modo Visualizacao' : 'Modo Edicao';
+  enableEditables(editMode);
   _toggleEditFaqButtons();
 }
 
 function _runEditModeSideEffects() {
-  _runEditModeSideEffects();
+  _updateMetricsOnToggle();
+  _handleEditModeSnapshot(editMode);
+  try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
+  _persistEditMode(editMode);
+  try { _dndInit(editMode); } catch(e) { console.warn('[siga]', e); }
 }
 
 function _notifyEditModeChange(forceState) {
   if(forceState !== undefined) return;
   if(editMode) {
-    showToast('âœï¸ Modo EdiÃ§Ã£o ativo â€” arraste para reorganizar, clique para editar','warn');
+    showToast('Modo de edicao ativo. Arraste para reorganizar e clique para editar.','warn');
     return;
   }
-  showToast('Modo visualizaÃ§Ã£o ativo');
+  showToast('Modo visualizacao ativo');
 }
 
 function toggleEditMode(forceState) {
@@ -4877,17 +4882,8 @@ function toggleEditMode(forceState) {
   }
   editMode = _resolveEditModeState(forceState);
   _updateEditModeUI();
-  document.getElementById('edit-toggle').textContent = editMode ? '👁 Visualização' : '✏️ Modo Edição';
-  enableEditables(editMode);
-  _updateMetricsOnToggle();
-  _handleEditModeSnapshot(editMode);
-  try { _updateVersionBars(); } catch(e) { console.warn('[siga]', e); }
-  _persistEditMode(editMode);
-  try { _dndInit(editMode); } catch(e) { console.warn('[siga]', e); }
-  if(forceState === undefined) {
-    if(editMode) showToast('✏️ Modo Edição ativo — arraste para reorganizar, clique para editar','warn');
-    else showToast('Modo visualização ativo');
-  }
+  _runEditModeSideEffects();
+  _notifyEditModeChange(forceState);
   _saveIfUnsaved();
   _syncNovaVersaoBtn();
 }
@@ -5059,13 +5055,22 @@ function markChanged(quick=false, explicit=false) {
 
 function undoLastChange() {
   if(!_undoStack.length) { showToast('Nada para desfazer.', 'warn'); return; }
-  const prev = _undoStack.pop();
-  _restoreUndoSnapshot(prev);
+  const previousState = _undoStack.pop();
+  _restoreUndoSnapshot(previousState);
+  _refreshUndoState();
+}
+
+function _refreshUndoState() {
+  const pendingChanges = _undoStack.length;
   _updateUndoBtn();
   _rerenderUndoCurrentPop();
-  const n = _undoStack.length;
-  showToast(_getUndoToastMessage(n), 'success');
-  document.getElementById('unsaved-dot').style.display = n > 0 ? 'inline-block' : 'none';
+  showToast(_getUndoToastMessage(pendingChanges), 'success');
+  _updateUndoUnsavedDot(pendingChanges);
+}
+
+function _updateUndoUnsavedDot(pendingChanges) {
+  document.getElementById('unsaved-dot').style.display =
+    pendingChanges > 0 ? 'inline-block' : 'none';
 }
 
 // ═══ STEPS ════════════════════════════════════
@@ -17415,6 +17420,13 @@ function saveRelQuant() {
   markChanged(true);
 }
 
+function toggleRelQuantBody(button) {
+  const body = document.getElementById('rel-quant-body');
+  const isOpen = body.style.display !== 'grid';
+  body.style.display = isOpen ? 'grid' : 'none';
+  button.querySelector('.rq-arrow').textContent = isOpen ? '▲' : '▼';
+}
+
 async function runAiRelatorio() {
   const p   = popPrefix(currentPop);
   const pop = DATA[p];
@@ -19480,13 +19492,13 @@ function _ncFilterCatalog() {
   const critColor = {Alta:'#dc2626', Média:'#d97706', Media:'#d97706', Baixa:'#16a34a'};
   list.innerHTML = filtered.map(a => {
     const sel = _ncSelectedAptIds.includes(a.id);
-    return '<div onclick="_ncToggleApt(\''+a.id+'\')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;background:'+(sel?'#fee2e2':'#fff')+';border:1px solid '+(sel?'#fca5a5':'#e2e8f0')+';" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<button type="button" onclick="_ncToggleApt(\''+a.id+'\')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;background:'+(sel?'#fee2e2':'#fff')+';border:1px solid '+(sel?'#fca5a5':'#e2e8f0')+';width:100%;text-align:left;">'+
       '<input type="checkbox" '+(sel?'checked':'')+' onclick="event.stopPropagation();_ncToggleApt(\''+a.id+'\')" style="cursor:pointer;accent-color:#991b1b;width:15px;height:15px;flex-shrink:0;">'+
       '<div style="flex:1;min-width:0;">'+
         '<div style="font-size:12px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+a.apontamento+'</div>'+
         '<div style="font-size:11px;color:#64748b;">'+(a.categoria||'')+(a.criticidade?' · <span style="color:'+(critColor[a.criticidade]||'#64748b')+'">'+a.criticidade+'</span>':'')+' · <span style="color:#94a3b8;">'+a.id+'</span></div>'+
       '</div>'+
-    '</div>';
+    '</button>';
   }).join('');
 }
 
@@ -19702,7 +19714,7 @@ function auditRenderPlans() {
     const patBadge  = patItem
       ? '<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap;">📅 PTA: '+patItem.titulo+'</span>'
       : '';
-    return '<div class="audit-card" onclick="auditOpenPlan(\''+p.id+'\')" style="cursor:pointer;" title="Abrir pasta do plano" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<button type="button" class="audit-card" onclick="auditOpenPlan(\''+p.id+'\')" style="cursor:pointer;width:100%;text-align:left;" title="Abrir pasta do plano">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
         '<div class="audit-card-title">📁 '+(p.processoNome||p.processo||'(sem processo)')+'</div>'+
         _auditBadge(p.status||'planejada')+
@@ -19885,7 +19897,7 @@ function auditRenderExec() {
     const total = (e.checklist||[]).length;
     const conf  = (e.checklist||[]).filter(c=>c.conformidade==='conforme').length;
     const nc    = (e.checklist||[]).filter(c=>c.conformidade==='nao_conforme').length;
-    return '<div class="audit-card" style="border-left-color:#003366;" onclick="auditOpenExecModal(\''+e.id+'\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \')this.click()">'+
+    return '<button type="button" class="audit-card" style="border-left-color:#003366;width:100%;text-align:left;" onclick="auditOpenExecModal(\''+e.id+'\')">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
         '<div class="audit-card-title">▶ '+(plan?.processoNome||plan?.objetivo||'Execução')+'</div>'+
         _auditBadge(e.status||'em_andamento')+
@@ -19897,7 +19909,7 @@ function auditRenderExec() {
       '</div>'+
       (e.observacoes ? '<div style="font-size:12px;color:#64748b;margin-top:6px;">'+e.observacoes+'</div>' : '')+
       (e.amostra ? '<div style="font-size:11px;color:#2563eb;background:#eff6ff;border-radius:6px;padding:5px 9px;margin-top:6px;white-space:pre-wrap;font-family:monospace;">📂 Amostra: '+e.amostra+'</div>' : '')+
-      '</div>';
+    '</button>';
   }).join('');
 }
 

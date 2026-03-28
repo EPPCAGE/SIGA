@@ -7442,41 +7442,55 @@ function _extractFaqJsonArray(rawText) {
   
   // Estratégia 0: PRIMEIRO, tentar extrair FAQs em formato NARRATIVO
   // Padrão: "1. Pergunta?\nResposta\n2. Próxima?"
-  // Remove tudo antes do primeiro número e extrai pares pergunta/resposta
+  // Simplificado para evitar ReDoS
   const narrativeStart = text.search(/\n\s*\d+\.\s+/);
   const narrativeSection = narrativeStart !== -1 ? text.substring(narrativeStart) : text;
   
-  // Padrão: número ponto espaço pergunta questionmark newline resposta
-  const narrativePattern = /\n\s*(\d+)\.\s+([^\n]+\?)\s*\n((?:(?!\n\s*\d+\.)[^\n])*(?:\n(?!\s*\d+\.)[^\n])*)*/gi;
-  const narrativeMatches = [...narrativeSection.matchAll(narrativePattern)];
+  // Padrão simplificado: captura pergunta e resposta até próxima pergunta numerada
+  const lines = narrativeSection.split('\n');
+  const faqs = [];
+  let currentQ = null;
+  let currentA = [];
   
-  if(narrativeMatches.length > 0) {
-    const faqs = narrativeMatches
-      .map(m => {
-        const q = m[2]?.trim();
-        const a = m[3]
-          ?.split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0)
-          .join(' ')
-          .trim();
-        return (q && a && a.length > 5) ? { q, a } : null;
-      })
-      .filter(Boolean)
-      .slice(0, 15);
+  for(let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const numMatch = line.match(/^(\d+)\.\s+(.+\?)\s*$/);
     
-    if(faqs.length > 0) {
-      console.log('[_extractFaqJsonArray] Estratégia 0 (formato narrativo) funcionou:', faqs.length, 'FAQs extraídas');
-      return JSON.stringify(faqs);
+    if(numMatch) {
+      // Nova pergunta encontrada
+      if(currentQ && currentA.length > 0) {
+        const answer = currentA.join(' ').trim();
+        if(answer.length > 5) {
+          faqs.push({ q: currentQ, a: answer });
+        }
+      }
+      currentQ = numMatch[2];
+      currentA = [];
+    } else if(currentQ && line.length > 0) {
+      // Continuação da resposta
+      currentA.push(line);
     }
+  }
+  
+  // Adicionar última pergunta/resposta
+  if(currentQ && currentA.length > 0) {
+    const answer = currentA.join(' ').trim();
+    if(answer.length > 5) {
+      faqs.push({ q: currentQ, a: answer });
+    }
+  }
+  
+  if(faqs.length > 0) {
+    console.log('[_extractFaqJsonArray] Estratégia 0 (formato narrativo) funcionou:', faqs.length, 'FAQs extraídas');
+    return JSON.stringify(faqs.slice(0, 15));
   }
   
   // Estratégia 1: Remover markdown code fences
   let clean = text.replaceAll('```json', '').replaceAll('```', '').replaceAll('~~~json', '').replaceAll('~~~', '').trim();
   
   // Estratégia 2: Remover comentários em português comum
-  clean = clean.replace(/\/\/.*?(\n|$)/g, '\n'); // Comentários //
-  clean = clean.replace(/\/\*[\s\S]*?\*\//g, '');  // Comentários /* */
+  clean = clean.replaceAll('//', '\n'); // Comentários //
+  clean = clean.replaceAll('/*', '').replaceAll('*/', '');  // Comentários /* */
   
   // Estratégia 3: Tentar extrair JSON array completo
   let jsonStr = _extractOuterJsonArray(clean);
@@ -7485,7 +7499,7 @@ function _extractFaqJsonArray(rawText) {
       JSON.parse(jsonStr);
       return jsonStr;
     } catch(e) {
-      // Continuar tentando outras estratégias
+      console.debug('[_extractFaqJsonArray] Estratégia 3 (JSON array) falhou:', e.message);
     }
   }
   
@@ -7503,7 +7517,7 @@ function _extractFaqJsonArray(rawText) {
         JSON.parse(match[0]);
         return match[0];
       } catch(e) {
-        // Continuar tentando próximo padrão
+        console.debug('[_extractFaqJsonArray] Estratégia 4 (padrão flexível) falhou:', e.message);
       }
     }
   }
@@ -7519,7 +7533,7 @@ function _extractFaqJsonArray(rawText) {
       console.log('[_extractFaqJsonArray] Estratégia 5 (brackets agressivo) funcionou');
       return potentialJson;
     } catch(e) {
-      // Continuar
+      console.debug('[_extractFaqJsonArray] Estratégia 5 (brackets) falhou:', e.message);
     }
   }
   
