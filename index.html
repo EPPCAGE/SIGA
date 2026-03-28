@@ -23977,7 +23977,7 @@ function arqCompRenderSection(idx) {
             placeholder="Adicionar competência não listada..."
             style="flex:1;font-size:12px;"
             onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v){arqCompAddCustom(${idx},'${cat.key}');this.value='';}}">
-          <button class="arq-comp-custom" data-idx="${idx}" data-cat="${cat.key}" class="btn btn-primary" style="font-size:12px;padding:5px 12px;">＋</button>
+          <button class="arq-comp-custom btn btn-primary" data-idx="${idx}" data-cat="${cat.key}" style="font-size:12px;padding:5px 12px;">＋</button>
         </div>` : ''}
       </div>`;
   }).join('');
