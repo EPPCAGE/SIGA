@@ -10617,9 +10617,37 @@ let _deadlineAlertsShown = false; // garante exibição única por sessão
 let _patTipoFilter = '';
 let _patEditIdx = null;
 
+// Helper: Verificar se alertas já foram mostrados para este usuário
+function _havePatAlertsBeenShownToUser() {
+  const userId = currentUserName || localStorage.getItem('cage_nome_usuario') || 'anonimo';
+  const key = `siga_pat_alerts_shown_${userId}_${new Date().toISOString().split('T')[0]}`; // Por dia
+  return localStorage.getItem(key) === 'true';
+}
+
+function _markPatAlertsAsShownForUser() {
+  const userId = currentUserName || localStorage.getItem('cage_nome_usuario') || 'anonimo';
+  const key = `siga_pat_alerts_shown_${userId}_${new Date().toISOString().split('T')[0]}`; // Por dia
+  localStorage.setItem(key, 'true');
+  // Limpar flags antigos (mais de 7 dias)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  for(let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if(k && k.startsWith('siga_pat_alerts_shown_')) {
+      const dateStr = k.split('_').pop();
+      try {
+        if(new Date(dateStr) < sevenDaysAgo) localStorage.removeItem(k);
+      } catch(e) {}
+    }
+  }
+}
+
 function patCheckDeadlines() {
   // Alertas visuais apenas para editores e admins
   if(!isEditor && !isAdmin) return;
+  
+  // Verificar se já foi mostrado para este usuário
+  if(_havePatAlertsBeenShownToUser()) return;
 
   const patItems = Array.isArray(DATA.pat) ? DATA.pat : [];
   if(!patItems.length) return;
@@ -10652,6 +10680,9 @@ function patCheckDeadlines() {
   if(patChanged) { markChanged(); }
 
   if(!overdue.length && !urgente.length && !soon.length) return;
+  
+  // Marcar como mostrado para este usuário
+  _markPatAlertsAsShownForUser();
 
   // Criar ou atualizar banner de alertas
   let banner = document.getElementById('pat-deadline-banner');
@@ -10715,6 +10746,11 @@ function patCheckDeadlines() {
 
 // ── Verificar prazos do Plano de Ação dos mapeamentos ───────────────────────
 function checkActionsDeadlines() {
+  // Verificar se já foi mostrado para este usuário
+  const userId = currentUserName || localStorage.getItem('cage_nome_usuario') || 'anonimo';
+  const actionKey = `siga_actions_alerts_shown_${userId}_${new Date().toISOString().split('T')[0]}`; // Por dia
+  if(localStorage.getItem(actionKey) === 'true') return;
+  
   const today = new Date(); today.setHours(0,0,0,0);
   const in7   = new Date(today); in7.setDate(in7.getDate() + 7);
   const popKeys = ['d','r',...Object.keys(DATA).filter(k=>k.startsWith('pop_'))];
@@ -10748,6 +10784,9 @@ function checkActionsDeadlines() {
   // Banners de alerta apenas para editores e admins
   if(!isEditor && !isAdmin) return;
   if(!overdueActs.length && !soonActs.length) return;
+  
+  // Marcar como mostrado para este usuário
+  localStorage.setItem(actionKey, 'true');
 
   // Banner de alertas de plano de ação
   let banner = document.getElementById('actions-deadline-banner');
