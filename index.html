@@ -5975,7 +5975,7 @@ function renderRoles(p) {
 
     const bodyHtml = groups.map(g => `
       <div style="margin:0 20px 10px;">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:5px;">${g.isResp ? '★ ' : ''}${g.stepTitle}</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:5px;">${g.isResp ? '★ ' : ''}${escapeHtml(g.stepTitle)}</div>
         ${g.actions.length ? `<ul class="role-duties" style="margin:0;">
           ${g.actions.map(a => {
             const _getTypeIcon = (type) => {
@@ -5986,7 +5986,7 @@ function renderRoles(p) {
             const ico = _getTypeIcon(a.type);
             return `<li style="align-items:flex-start;gap:6px;">
               <span style="font-size:11px;color:var(--text-muted);flex-shrink:0;margin-top:1px;">${ico}</span>
-              <span style="flex:1;font-size:12px;">${a.text||''}</span>
+              <span style="flex:1;font-size:12px;">${escapeHtml(a.text||'')}</span>
             </li>`;
           }).join('')}
         </ul>` : `<div style="font-size:11px;color:var(--text-muted);padding-left:4px;font-style:italic;">Responsável pela etapa</div>`}
@@ -6048,7 +6048,7 @@ function _buildSisplanTableRow(r) {
     <td>${_periodoLabelSimple(r.periodo)}</td>
     <td>${_fmtNumSimple(r.realizado)}</td>
     <td>${_fmtNumSimple(r.meta)}</td>
-    <td style="${_pctStyle(pctRealizacao)}font-weight:600;">${pctRealizacao === null ? '---' : _fmtNumSimple(pctRealizacao)+'%'}</td>
+    <td style="${_pctStyle(rp)}font-weight:600;">${rp === null ? '---' : _fmtNumSimple(rp)+'%'}</td>
   </tr>`;
 }
 
@@ -6163,33 +6163,33 @@ function _buildIndicatorCardHtml(ind, p, i) {
   const tagClass = ind.tag==='time' ? 'ind-tag-time' : 'ind-tag-perc';
   const tagLabel = ind.tag==='time' ? '⏱ Tempo' : '% Percentual';
   const meta = ind.meta
-    ? `<span class="ind-meta-pill">🎯 Meta: <strong>${ind.meta}</strong></span>`
+    ? `<span class="ind-meta-pill">🎯 Meta: <strong>${escapeHtml(ind.meta)}</strong></span>`
     : `<span class="ind-meta-pill" style="color:#fbbf24;">🎯 Meta não definida</span>`;
   return `
   <div class="indicator-card">
     <div class="ind-card-top">
       <div class="ind-icon">${ind.icon}</div>
-      <span class="ind-title">${ind.title}</span>
-      <span class="ind-desc">${ind.desc}</span>
+      <span class="ind-title">${escapeHtml(ind.title)}</span>
+      <span class="ind-desc">${escapeHtml(ind.desc)}</span>
       <span class="ind-tag ${tagClass}">${tagLabel}</span>
     </div>
     <div class="ind-card-details">
       <div class="ind-detail-row">
         <span class="ind-detail-label">📐 Fórmula de Cálculo</span>
-        <div class="ind-formula-box">${ind.formula||'<em style="color:var(--text-muted)">Não definida</em>'}</div>
+        <div class="ind-formula-box">${escapeHtml(ind.formula||'Não definida')}</div>
       </div>
       <div class="ind-detail-row">
         <span class="ind-detail-label">🗂 Fonte dos Dados</span>
-        <span class="ind-detail-value">${ind.fonte||'—'}</span>
+        <span class="ind-detail-value">${escapeHtml(ind.fonte||'—')}</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="ind-detail-row">
           <span class="ind-detail-label">🔁 Periodicidade</span>
-          <span class="ind-detail-value">${ind.periodicidade||'—'}</span>
+          <span class="ind-detail-value">${escapeHtml(ind.periodicidade||'—')}</span>
         </div>
         <div class="ind-detail-row">
           <span class="ind-detail-label">👤 Responsável</span>
-          <span class="ind-detail-value">${ind.responsavel||'—'}</span>
+          <span class="ind-detail-value">${escapeHtml(ind.responsavel||'—')}</span>
         </div>
       </div>
     </div>
@@ -6344,7 +6344,7 @@ function renderFaq(p) {
   _faqEl.innerHTML = DATA[p].faqs.map((f,i)=>`
     <div class="faq-item ${f.pending ? '' : 'open'}" id="${p}-faq-${i}">
       <div class="faq-q">
-        <span class="faq-q-text" contenteditable="false" data-key="${p}:fq${i}">${i+1}. ${f.q}</span>
+        <span class="faq-q-text" contenteditable="false" data-key="${p}:fq${i}">${i+1}. ${escapeHtml(f.q)}</span>
         <div style="display:flex;align-items:center;gap:6px;">
           <button class="edit-rm-btn" onclick="openFaqModal('${p}',${i})" title="Editar">✏️</button>
           <button class="edit-rm-btn" onclick="rmFaq('${p}',${i})">✕</button>
@@ -6354,7 +6354,7 @@ function renderFaq(p) {
       <div class="faq-a">
         ${f.pending
           ? `<span class="faq-pending">⚠️ Resposta pendente de definição no POP</span>`
-          : `<span contenteditable="false" data-key="${p}:fa${i}">${f.a}</span>`}
+          : `<span contenteditable="false" data-key="${p}:fa${i}">${escapeHtml(f.a)}</span>`}
       </div>
     </div>`).join('');
   if(editMode) enableEditables(true);
@@ -6465,8 +6465,8 @@ function renderNormas(p) {
   _normEl.innerHTML = DATA[p].normas.map((n,i)=>{
     const hasUrl = n.url && n.url.trim();
     const codeEl = hasUrl
-      ? `<a href="${n.url}" target="_blank" rel="noopener" class="norm-code norm-link" title="Abrir norma">${n.code} 🔗</a>`
-      : `<div class="norm-code" contenteditable="false" data-key="${p}:nc${i}">${n.code}</div>`;
+      ? `<a href="${escapeHtml(n.url)}" target="_blank" rel="noopener" class="norm-code norm-link" title="Abrir norma">${escapeHtml(n.code)} 🔗</a>`
+      : `<div class="norm-code" contenteditable="false" data-key="${p}:nc${i}">${escapeHtml(n.code)}</div>`;
     const editBtn = `<button class="edit-rm-btn" onclick="openNormaModal('${p}',${i})" title="Editar">✏️</button>`;
     const rmBtn   = `<button class="edit-rm-btn" onclick="rmNorma('${p}',${i})">✕</button>`;
     return `
@@ -6474,8 +6474,8 @@ function renderNormas(p) {
       <div class="norm-icon-el">${n.icon||'📄'}</div>
       <div style="flex:1;min-width:0;">
         ${codeEl}
-        <div class="norm-name" contenteditable="false" data-key="${p}:nn${i}">${n.name}</div>
-        ${hasUrl ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.url}</div>` : ''}
+        <div class="norm-name" contenteditable="false" data-key="${p}:nn${i}">${escapeHtml(n.name)}</div>
+        ${hasUrl ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(n.url)}</div>` : ''}
       </div>
       <div style="display:flex;gap:4px;">${editBtn}${rmBtn}</div>
     </div>`;
@@ -7440,12 +7440,57 @@ function _extractOuterJsonArray(text) {
 function _extractFaqJsonArray(rawText) {
   const text = String(rawText || '').trim();
   
+  // Estratégia 0: PRIMEIRO, tentar extrair FAQs em formato NARRATIVO
+  // Padrão: "1. Pergunta?\nResposta\n2. Próxima?"
+  // Simplificado para evitar ReDoS
+  const narrativeStart = text.search(/\n\s*\d+\.\s+/);
+  const narrativeSection = narrativeStart !== -1 ? text.substring(narrativeStart) : text;
+  
+  // Padrão simplificado: captura pergunta e resposta até próxima pergunta numerada
+  const lines = narrativeSection.split('\n');
+  const faqs = [];
+  let currentQ = null;
+  let currentA = [];
+  
+  for(let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const numMatch = line.match(/^(\d+)\.\s+(.+\?)\s*$/);
+    
+    if(numMatch) {
+      // Nova pergunta encontrada
+      if(currentQ && currentA.length > 0) {
+        const answer = currentA.join(' ').trim();
+        if(answer.length > 5) {
+          faqs.push({ q: currentQ, a: answer });
+        }
+      }
+      currentQ = numMatch[2];
+      currentA = [];
+    } else if(currentQ && line.length > 0) {
+      // Continuação da resposta
+      currentA.push(line);
+    }
+  }
+  
+  // Adicionar última pergunta/resposta
+  if(currentQ && currentA.length > 0) {
+    const answer = currentA.join(' ').trim();
+    if(answer.length > 5) {
+      faqs.push({ q: currentQ, a: answer });
+    }
+  }
+  
+  if(faqs.length > 0) {
+    console.log('[_extractFaqJsonArray] Estratégia 0 (formato narrativo) funcionou:', faqs.length, 'FAQs extraídas');
+    return JSON.stringify(faqs.slice(0, 15));
+  }
+  
   // Estratégia 1: Remover markdown code fences
   let clean = text.replaceAll('```json', '').replaceAll('```', '').replaceAll('~~~json', '').replaceAll('~~~', '').trim();
   
   // Estratégia 2: Remover comentários em português comum
-  clean = clean.replace(/\/\/.*?(\n|$)/g, '\n'); // Comentários //
-  clean = clean.replace(/\/\*[\s\S]*?\*\//g, '');  // Comentários /* */
+  clean = clean.replaceAll('//', '\n'); // Comentários //
+  clean = clean.replaceAll('/*', '').replaceAll('*/', '');  // Comentários /* */
   
   // Estratégia 3: Tentar extrair JSON array completo
   let jsonStr = _extractOuterJsonArray(clean);
@@ -7454,7 +7499,7 @@ function _extractFaqJsonArray(rawText) {
       JSON.parse(jsonStr);
       return jsonStr;
     } catch(e) {
-      // Continuar tentando outras estratégias
+      console.debug('[_extractFaqJsonArray] Estratégia 3 (JSON array) falhou:', e.message);
     }
   }
   
@@ -7472,12 +7517,27 @@ function _extractFaqJsonArray(rawText) {
         JSON.parse(match[0]);
         return match[0];
       } catch(e) {
-        // Continuar tentando próximo padrão
+        console.debug('[_extractFaqJsonArray] Estratégia 4 (padrão flexível) falhou:', e.message);
       }
     }
   }
   
-  // Estratégia 5: Se tudo falhar, procurar por objetos individuais e montar array
+  // Estratégia 5: Procurar AGRESSIVAMENTE por primeiro [ e último ]
+  // Ignora completamente narrative/preamble
+  const firstBracket = clean.indexOf('[');
+  const lastBracket = clean.lastIndexOf(']');
+  if(firstBracket !== -1 && lastBracket > firstBracket) {
+    const potentialJson = clean.slice(firstBracket, lastBracket + 1);
+    try {
+      JSON.parse(potentialJson);
+      console.log('[_extractFaqJsonArray] Estratégia 5 (brackets agressivo) funcionou');
+      return potentialJson;
+    } catch(e) {
+      console.debug('[_extractFaqJsonArray] Estratégia 5 (brackets) falhou:', e.message);
+    }
+  }
+  
+  // Estratégia 6: Se tudo falhar, procurar por objetos individuais e montar array
   // Procurar por padrão {"q":"...","a":"..."}
   const objectPattern = /\{\s*"q"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*,\s*"a"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*\}/gi;
   const matches = [...clean.matchAll(objectPattern)];
@@ -7487,10 +7547,12 @@ function _extractFaqJsonArray(rawText) {
       q: m[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\'),
       a: m[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\')
     }));
+    console.log('[_extractFaqJsonArray] Estratégia 6 (objetos individuais) funcionou:', faqs.length);
     return JSON.stringify(faqs);
   }
   
   // Se nenhuma estratégia funcionou, retornar null
+  console.warn('[_extractFaqJsonArray] Todas as estratégias falharam. Text length:', text.length);
   return null;
 }
 
@@ -7499,6 +7561,65 @@ function _extractOuterJsonObject(text) {
   const start = source.indexOf('{');
   const end = source.lastIndexOf('}');
   return start !== -1 && end > start ? source.slice(start, end + 1) : null;
+}
+
+function indexDocumentForFaq(content, maxChunks = 20) {
+  const text = String(content || '').trim();
+  if (text.length === 0) return null;
+  
+  // Dividir por quebras duplas (parágrafos) ou quebras simples
+  const lines = text.split('\n');
+  const chunks = [];
+  let currentChunk = [];
+  let chunkCount = 0;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Se quebra dupla ou chegou ao limite de linhas, finalizar chunk
+    if ((line.trim() === '' && currentChunk.length > 0) || currentChunk.length >= 100) {
+      const chunkText = currentChunk.join('\n').trim();
+      if (chunkText.length > 50) {
+        // Extrair título (primeira linha ou primeira linha longa)
+        const title = currentChunk
+          .find(l => l.trim().length > 10)?.substring(0, 50) || `Seção ${chunkCount + 1}`;
+        const summary = chunkText.substring(0, 150);
+        chunks.push({
+          id: chunkCount,
+          title: title,
+          content: chunkText,
+          summary: summary
+        });
+        chunkCount++;
+        if (chunkCount >= maxChunks) break;
+      }
+      currentChunk = [];
+    } else if (line.trim().length > 0) {
+      currentChunk.push(line);
+    }
+  }
+  
+  // Finalizar último chunk
+  if (currentChunk.length > 0) {
+    const chunkText = currentChunk.join('\n').trim();
+    if (chunkText.length > 50) {
+      const title = currentChunk
+        .find(l => l.trim().length > 10)?.substring(0, 50) || `Seção ${chunkCount + 1}`;
+      const summary = chunkText.substring(0, 150);
+      chunks.push({
+        id: chunkCount,
+        title: title,
+        content: chunkText,
+        summary: summary
+      });
+    }
+  }
+  
+  // Criar índice resumido
+  const index = chunks.map(c => `[Seção ${c.id}] ${c.title}`).join('\n');
+  
+  console.log('[indexDocumentForFaq] Documento indexado em', chunks.length, 'chunks');
+  return { chunks, index, totalChunks: chunks.length };
 }
 
 function _stripMarkdownCodeFence(text) {
@@ -10617,9 +10738,37 @@ let _deadlineAlertsShown = false; // garante exibição única por sessão
 let _patTipoFilter = '';
 let _patEditIdx = null;
 
+// Helper: Verificar se alertas já foram mostrados para este usuário
+function _havePatAlertsBeenShownToUser() {
+  const userId = currentUserName || localStorage.getItem('cage_nome_usuario') || 'anonimo';
+  const key = `siga_pat_alerts_shown_${userId}_${new Date().toISOString().split('T')[0]}`; // Por dia
+  return localStorage.getItem(key) === 'true';
+}
+
+function _markPatAlertsAsShownForUser() {
+  const userId = currentUserName || localStorage.getItem('cage_nome_usuario') || 'anonimo';
+  const key = `siga_pat_alerts_shown_${userId}_${new Date().toISOString().split('T')[0]}`; // Por dia
+  localStorage.setItem(key, 'true');
+  // Limpar flags antigos (mais de 7 dias)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  for(let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if(k && k.startsWith('siga_pat_alerts_shown_')) {
+      const dateStr = k.split('_').pop();
+      try {
+        if(new Date(dateStr) < sevenDaysAgo) localStorage.removeItem(k);
+      } catch(e) {}
+    }
+  }
+}
+
 function patCheckDeadlines() {
   // Alertas visuais apenas para editores e admins
   if(!isEditor && !isAdmin) return;
+  
+  // Verificar se já foi mostrado para este usuário
+  if(_havePatAlertsBeenShownToUser()) return;
 
   const patItems = Array.isArray(DATA.pat) ? DATA.pat : [];
   if(!patItems.length) return;
@@ -10652,6 +10801,9 @@ function patCheckDeadlines() {
   if(patChanged) { markChanged(); }
 
   if(!overdue.length && !urgente.length && !soon.length) return;
+  
+  // Marcar como mostrado para este usuário
+  _markPatAlertsAsShownForUser();
 
   // Criar ou atualizar banner de alertas
   let banner = document.getElementById('pat-deadline-banner');
@@ -10715,6 +10867,11 @@ function patCheckDeadlines() {
 
 // ── Verificar prazos do Plano de Ação dos mapeamentos ───────────────────────
 function checkActionsDeadlines() {
+  // Verificar se já foi mostrado para este usuário
+  const userId = currentUserName || localStorage.getItem('cage_nome_usuario') || 'anonimo';
+  const actionKey = `siga_actions_alerts_shown_${userId}_${new Date().toISOString().split('T')[0]}`; // Por dia
+  if(localStorage.getItem(actionKey) === 'true') return;
+  
   const today = new Date(); today.setHours(0,0,0,0);
   const in7   = new Date(today); in7.setDate(in7.getDate() + 7);
   const popKeys = ['d','r',...Object.keys(DATA).filter(k=>k.startsWith('pop_'))];
@@ -10748,6 +10905,9 @@ function checkActionsDeadlines() {
   // Banners de alerta apenas para editores e admins
   if(!isEditor && !isAdmin) return;
   if(!overdueActs.length && !soonActs.length) return;
+  
+  // Marcar como mostrado para este usuário
+  localStorage.setItem(actionKey, 'true');
 
   // Banner de alertas de plano de ação
   let banner = document.getElementById('actions-deadline-banner');
@@ -18133,46 +18293,161 @@ async function repoGenerateFaqsFromPdf(id) {
   if(!d || !d.fileUrl) return;
   const btn = document.getElementById('repo-faq-btn-' + id);
   if(btn) { btn.disabled = true; btn.textContent = '⏳ Gerando FAQs…'; }
-  showToast('⏳ Gerando FAQs com IA, aguarde…', 'info');
+  showToast('⏳ Gerando FAQs com IA, aguarde (documentos longos podem levar mais tempo)…', 'info');
   try {
-    const resp = await fetch(d.fileUrl);
-    if(!resp.ok) throw new Error('Não foi possível baixar o PDF');
-    const blob = await resp.blob();
-    const base64 = await new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(r.result.split(',')[1]);
-      r.onerror = rej;
-      r.readAsDataURL(blob);
-    });
+    let contentToAnalyze = '';
     
-    // PDFs não são suportados por Vision API - usar apenas modelo de texto
-    const prompt = `Você é um especialista em processos e gestão pública. Analise o documento PDF enviado (em base64) e gere entre 5 e 10 perguntas frequentes (FAQ) realistas que usuários, servidores ou gestores fariam sobre este documento.\n\nDocumento PDF (base64):\n${base64}\n\nRegras:\n- Leia o documento INTEIRO antes de gerar as perguntas\n- As perguntas devem ser práticas e relevantes ao conteúdo real do documento\n- As respostas devem ser claras, objetivas e baseadas apenas no conteúdo do documento\n- Nunca invente informações que não estejam no documento\n\nRetorne APENAS JSON puro (sem markdown, sem \`\`\`):\n[{"q":"pergunta","a":"resposta"},...]`;
+    // PRIORIDADE 1: Usar textContent já indexado (mais eficiente)
+    if(d.textContent && d.textContent.trim().length > 100) {
+      console.log('[repoGenerateFaqsFromPdf] Usando textContent indexado:', d.textContent.length, 'bytes');
+      contentToAnalyze = d.textContent;
+    } else {
+      // PRIORIDADE 2: Baixar e converter PDF para base64
+      console.log('[repoGenerateFaqsFromPdf] Baixando PDF para análise…');
+      const resp = await fetch(d.fileUrl);
+      if(!resp.ok) throw new Error('Não foi possível baixar o PDF');
+      const blob = await resp.blob();
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(blob);
+      });
+      
+      console.log('[repoGenerateFaqsFromPdf] PDF base64 length:', base64.length, 'bytes');
+      if(base64.length > 5000000) {
+        throw new Error('PDF muito grande (>5MB). Tente indexar o documento primeiro: clique em "Indexar".');
+      }
+      contentToAnalyze = `[PDF Document - Base64: ${base64.length} bytes]\n\nConteúdo:\n${base64.substring(0, 100000)}`; // Limitar preview
+    }
     
-    // Enviar apenas com prompt (sem image), deixando o modelo processar o base64 no texto
-    const text = await callGeminiProxy(prompt);
+    // Se documento for longo, indexar primeiro
+    let indexInfo = '';
+    let selectedChunks = contentToAnalyze;
     
-    // Usar função robusta para extração de FAQ JSON
+    if(contentToAnalyze.length > 50000) {
+      console.log('[repoGenerateFaqsFromPdf] Documento > 50KB, indexando…');
+      const indexed = indexDocumentForFaq(contentToAnalyze, 20);
+      if(indexed && indexed.chunks.length > 0) {
+        indexInfo = `\n\n=== ÍNDICE DO DOCUMENTO (${indexed.totalChunks} seções) ===\n${indexed.index}\n\nNOTA: Este é um documento LONGO. Você DEVE gerar FAQs que cubram TODA a extensão do documento, não apenas as primeiras seções abaixo.\n`;
+        
+        // Estratégia de distribuição inteligente: pegar primeiro, meio e fim do documento
+        // Isso garante que as FAQs cubram todo o documento longo
+        const chunks = indexed.chunks;
+        let selectedIndices = [];
+        
+        if(chunks.length <= 8) {
+          // Documento pequeno: usar todos os chunks
+          selectedIndices = chunks.map((_, i) => i);
+        } else {
+          // Documento grande: distribuir ao longo do documento
+          const step = Math.floor(chunks.length / 8); // Pegar ~8 chunks distribuídos
+          for(let i = 0; i < chunks.length; i += step) {
+            selectedIndices.push(i);
+          }
+          // Garantir que o último chunk está incluído
+          if(selectedIndices[selectedIndices.length - 1] !== chunks.length - 1) {
+            selectedIndices.push(chunks.length - 1);
+          }
+        }
+        
+        selectedChunks = selectedIndices
+          .map(idx => chunks[idx])
+          .map(c => `[SEÇÃO ${c.id}: ${c.title}]\n${c.content}`)
+          .join('\n\n---\n\n');
+        
+        console.log('[repoGenerateFaqsFromPdf] Total chunks:', chunks.length, '| Usando distribuídos:', selectedIndices.length);
+      }
+    }
+    
+    // PROMPT ESTRUTURADO para garantir leitura completa E resposta JSON pura
+    const prompt = `TAREFA CRÍTICA: Você DEVE gerar FAQs que cobrem TODAS as seções do documento, não apenas as mostradas aqui.
+
+DOCUMENTO:
+${indexInfo}${selectedChunks}
+
+INSTRUÇÕES OBRIGATÓRIAS:
+1. Leia TODOS os trechos acima (represente SEÇÕES DIFERENTES do documento)
+2. Use o ÍNDICE como guia para lembrar de TODA a estrutura do documento
+3. Gere 10-15 perguntas/respostas que cobrem:
+   - Conceitos e compreensão geral (tópicos transversais do documento todo)
+   - Seções/capítulos DIFERENTES (não foque em apenas uma seção)
+   - Processos, procedimentos e aplicações práticas
+   - Casos especiais, exceções e variações
+   - Informações de INÍCIO, MEIO e FIM do documento (não apenas primeiras páginas)
+4. RESOLVA este conflito: Se uma seção foi mostrada acima, use dela. Se uma seção está apenas no ÍNDICE, use seu conhecimento prévio para gerar pergunta relevante sobre ela.
+5. As respostas devem ser TEXTUAIS quando possível, citando o documento
+
+EXEMPLO DE FORMATO CORRETO:
+[
+  {"q":"O que é isto?","a":"Segundo o documento, isto é..."},
+  {"q":"Como usar?","a":"O documento descreve que..."}
+]
+
+⚠️ OBRIGAÇÕES:
+- Responda APENAS com o array JSON [...]
+- NÃO escreva nada mais (nem explicação, nem markdown, nem código block)
+- Se o documento não tiver conteúdo suficiente, retorne: []
+- NUNCA retorne mensagens de erro
+- Comece IMEDIATAMENTE com [ e termine com ]
+
+COMECE AGORA COM O JSON:`;
+
+    console.log('[repoGenerateFaqsFromPdf] Prompt size:', prompt.length, 'bytes | Enviando para IA…');
+    
+    // Chamar IA com timeout estendido para documentos longos
+    let text;
+    try {
+      text = await callGeminiProxy(prompt, null, { maxTokens: 3000 });
+    } catch(e) {
+      console.error('[repoGenerateFaqsFromPdf] Erro ao chamar IA:', e.message);
+      // Se falhar por tamanho, sugerir indexação
+      if(e.message.includes('large') || e.message.includes('limit') || e.message.includes('quota')) {
+        showToast('⚠️ Documento muito grande para análise direta. Clique em "Indexar" primeiro para processar o conteúdo de forma eficiente.', 'warn');
+      } else {
+        showToast('⚠️ Falha na IA: ' + e.message + '. Você pode editar as FAQs manualmente.', 'warn');
+      }
+      d.faqs = [{ q: 'Como entender este documento?', a: 'Edite as perguntas e respostas manualmente ou use "Indexar" para documentos longos.' }];
+      if(btn) btn.disabled = false;
+      repoRender();
+      return;
+    }
+    
+    console.log('[repoGenerateFaqsFromPdf] Resposta da IA recebida:', text?.length, 'bytes');
+    
+    // Extrair JSON com múltiplas estratégias
     const jsonStr = _extractFaqJsonArray(text);
     if(!jsonStr) {
-      throw new Error('Modelo não retornou JSON válido. Verifique se o PDF tem conteúdo legível');
+      console.error('[repoGenerateFaqsFromPdf] JSON parsing failed. Response preview:', text?.substring(0, 300));
+      throw new Error('IA não retornou JSON válido. Verifique se o documento tem conteúdo legível. Resposta: ' + (text?.substring(0, 80) || 'vazia'));
     }
     
+    // Parsear e validar
     const faqs = JSON.parse(jsonStr);
     if(!Array.isArray(faqs) || faqs.length === 0) {
-      throw new Error('Nenhuma FAQ gerada. Tente com um documento com mais conteúdo');
+      throw new Error('Nenhuma FAQ válida foi gerada. O documento pode estar corrompido ou vazio.');
     }
     
-    d.faqs = faqs.filter(f => f.q && f.a);
+    // Filtrar, sanitizar e limpar
+    d.faqs = faqs
+      .filter(f => f.q && f.a && String(f.q).trim().length > 3 && String(f.a).trim().length > 5)
+      .map(f => ({
+        q: String(f.q).trim().replace(/^[0-9]+\.\s*/, '').slice(0, 250), // Remove numeração
+        a: String(f.a).trim().slice(0, 1000) // Limpar resposta longa
+      }))
+      .slice(0, 15); // Máx 15 FAQs
+    
     if(d.faqs.length === 0) {
-      throw new Error('As FAQs geradas estão vazias');
+      throw new Error('Nenhuma FAQ válida após filtro. Tente usar "Indexar" para documentos complexos.');
     }
     
+    console.log('[repoGenerateFaqsFromPdf] ✅ Success:', d.faqs.length, 'FAQs geradas cobrindo o documento inteiro');
     repoRender();
     saveToCloud();
-    showToast(`✅ ${d.faqs.length} FAQs geradas com sucesso!`, 'success');
+    showToast(`✅ ${d.faqs.length} FAQs geradas com sucesso! Todas cobrindo múltiplas seções do documento.`, 'success');
   } catch(e) {
-    /* notifica o usuario do erro */
-    showToast('Erro ao gerar FAQs: ' + e.message, 'warn');
+    console.error('[repoGenerateFaqsFromPdf] Error chain:', e);
+    showToast('❌ Erro ao gerar FAQs: ' + e.message, 'warn');
     if(btn) { btn.disabled = false; btn.textContent = '🤖 Gerar FAQs'; }
   }
 }
@@ -23946,7 +24221,8 @@ function arqCompRenderSection(idx) {
 
     const tagsHtml = suggestions.map(sug => {
       const on = selected.includes(sug);
-      return `<button onclick="arqCompToggle(${idx},'${cat.key}',${JSON.stringify(sug)})"
+      const safeSug = btoa(encodeURIComponent(sug));
+      return `<button class="arq-comp-toggle" data-idx="${idx}" data-cat="${cat.key}" data-val="${safeSug}"
         style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${on?'#6366f1':'#e2e8f0'};
                background:${on?'#6366f1':'#f8fafc'};color:${on?'#fff':'#475569'};font-weight:${on?'700':'400'};
                margin:3px;transition:all .15s;">${on?'✓ ':''} ${sug}</button>`;
@@ -23955,8 +24231,8 @@ function arqCompRenderSection(idx) {
     const selectedHtml = selected.length
       ? selected.map((v, i) => `
           <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f0f4ff;border-radius:7px;margin-bottom:4px;">
-            <span style="flex:1;font-size:13px;color:#1e293b;">${v}</span>
-            ${em ? `<button onclick="arqCompRemove(${idx},'${cat.key}',${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;" title="Remover">✕</button>` : ''}
+            <span style="flex:1;font-size:13px;color:#1e293b;">${v.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}</span>
+            ${em ? `<button class="arq-comp-remove" data-idx="${idx}" data-cat="${cat.key}" data-item="${i}" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;" title="Remover">✕</button>` : ''}
           </div>`).join('')
       : '<div style="color:#94a3b8;font-size:12px;padding:6px 0;">Nenhuma competência selecionada.</div>';
 
@@ -23975,8 +24251,8 @@ function arqCompRenderSection(idx) {
           <input id="arq-comp-custom-${idx}-${cat.key}" class="modal-input" type="text"
             placeholder="Adicionar competência não listada..."
             style="flex:1;font-size:12px;"
-            onkeydown="if(event.key==='Enter') arqCompAddCustom(${idx},'${cat.key}')">
-          <button onclick="arqCompAddCustom(${idx},'${cat.key}')" class="btn btn-primary" style="font-size:12px;padding:5px 12px;">＋</button>
+            onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v){arqCompAddCustom(${idx},'${cat.key}');this.value='';}}">
+          <button class="arq-comp-custom btn btn-primary" data-idx="${idx}" data-cat="${cat.key}" style="font-size:12px;padding:5px 12px;">＋</button>
         </div>` : ''}
       </div>`;
   }).join('');
@@ -23986,6 +24262,42 @@ function arqCompRenderSection(idx) {
       Selecione as competências exigidas dos executores deste processo. As sugestões vêm das listas em Gestão do Sistema.
     </div>
     ${catHtml}`;
+
+  // Remove old listener if exists
+  const oldHandler = container._arqCompHandler;
+  if(oldHandler) {
+    container.removeEventListener('click', oldHandler);
+    container._arqCompHandler = null;
+  }
+
+  // Add new delegated listener
+  const handler = (ev) => {
+    try {
+      const btn = ev.target.closest('button');
+      if(!btn) return;
+
+      if(btn.classList.contains('arq-comp-toggle')) {
+        const i = parseInt(btn.dataset.idx);
+        const c = btn.dataset.cat;
+        const v = decodeURIComponent(atob(btn.dataset.val));
+        arqCompToggle(i, c, v);
+      } else if(btn.classList.contains('arq-comp-remove')) {
+        const i = parseInt(btn.dataset.idx);
+        const c = btn.dataset.cat;
+        const ci = parseInt(btn.dataset.item);
+        arqCompRemove(i, c, ci);
+      } else if(btn.classList.contains('arq-comp-custom')) {
+        const i = parseInt(btn.dataset.idx);
+        const c = btn.dataset.cat;
+        arqCompAddCustom(i, c);
+      }
+    } catch(e) {
+      console.error('arqCompRenderSection click handler:', e);
+    }
+  };
+
+  container.addEventListener('click', handler);
+  container._arqCompHandler = handler;
 }
 
 // ═══════════════════════════════════════════════════════════════════
