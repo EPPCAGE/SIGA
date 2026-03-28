@@ -19545,6 +19545,20 @@ const _RANKING_TABS = [
   { key:'digital',    label:'Digitalização',        desc:'% atividades com sistema/automação — maior = melhor', dir: -1 },
 ];
 
+function _eppRankingBarColor(isOverhead, val, color) {
+  if(!isOverhead) return color;
+  if(val <= 20) return '#22c55e';
+  if(val <= 35) return '#eab308';
+  return '#ef4444';
+}
+
+function _eppRankingSubLabel(isOverhead, activeKey, item) {
+  if(isOverhead) return item.overheadLabel || '';
+  if(activeKey === 'risco') return item.riscoLabel || '';
+  if(activeKey === 'maturidade') return item.matLevel || '';
+  return '';
+}
+
 function eppRenderRanking(activeKey) {
   const tabs   = document.getElementById('epp-ranking-tabs');
   const body   = document.getElementById('epp-ranking-body');
@@ -19577,8 +19591,8 @@ function eppRenderRanking(activeKey) {
       const color = it[activeKey + 'Color'] || '#6366f1';
       const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="color:#94a3b8;font-weight:700;font-size:12px;">${i+1}</span>`;
       const barW  = isOverhead ? Math.min(val, 100) : Math.min(val, 100);
-      const barCol = isOverhead ? (val <= 20 ? '#22c55e' : val <= 35 ? '#eab308' : '#ef4444') : color;
-      const sub   = isOverhead ? (it.overheadLabel||'') : activeKey === 'risco' ? (it.riscoLabel||'') : activeKey === 'maturidade' ? (it.matLevel||'') : '';
+      const barCol = _eppRankingBarColor(isOverhead, val, color);
+      const sub   = _eppRankingSubLabel(isOverhead, activeKey, it);
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;">
         <div style="width:28px;text-align:center;flex-shrink:0;">${medal}</div>
         <div style="flex:1;min-width:0;">
