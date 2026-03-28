@@ -5975,7 +5975,7 @@ function renderRoles(p) {
 
     const bodyHtml = groups.map(g => `
       <div style="margin:0 20px 10px;">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:5px;">${g.isResp ? '★ ' : ''}${g.stepTitle}</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:5px;">${g.isResp ? '★ ' : ''}${escapeHtml(g.stepTitle)}</div>
         ${g.actions.length ? `<ul class="role-duties" style="margin:0;">
           ${g.actions.map(a => {
             const _getTypeIcon = (type) => {
@@ -5986,7 +5986,7 @@ function renderRoles(p) {
             const ico = _getTypeIcon(a.type);
             return `<li style="align-items:flex-start;gap:6px;">
               <span style="font-size:11px;color:var(--text-muted);flex-shrink:0;margin-top:1px;">${ico}</span>
-              <span style="flex:1;font-size:12px;">${a.text||''}</span>
+              <span style="flex:1;font-size:12px;">${escapeHtml(a.text||'')}</span>
             </li>`;
           }).join('')}
         </ul>` : `<div style="font-size:11px;color:var(--text-muted);padding-left:4px;font-style:italic;">Responsável pela etapa</div>`}
@@ -6163,33 +6163,33 @@ function _buildIndicatorCardHtml(ind, p, i) {
   const tagClass = ind.tag==='time' ? 'ind-tag-time' : 'ind-tag-perc';
   const tagLabel = ind.tag==='time' ? '⏱ Tempo' : '% Percentual';
   const meta = ind.meta
-    ? `<span class="ind-meta-pill">🎯 Meta: <strong>${ind.meta}</strong></span>`
+    ? `<span class="ind-meta-pill">🎯 Meta: <strong>${escapeHtml(ind.meta)}</strong></span>`
     : `<span class="ind-meta-pill" style="color:#fbbf24;">🎯 Meta não definida</span>`;
   return `
   <div class="indicator-card">
     <div class="ind-card-top">
       <div class="ind-icon">${ind.icon}</div>
-      <span class="ind-title">${ind.title}</span>
-      <span class="ind-desc">${ind.desc}</span>
+      <span class="ind-title">${escapeHtml(ind.title)}</span>
+      <span class="ind-desc">${escapeHtml(ind.desc)}</span>
       <span class="ind-tag ${tagClass}">${tagLabel}</span>
     </div>
     <div class="ind-card-details">
       <div class="ind-detail-row">
         <span class="ind-detail-label">📐 Fórmula de Cálculo</span>
-        <div class="ind-formula-box">${ind.formula||'<em style="color:var(--text-muted)">Não definida</em>'}</div>
+        <div class="ind-formula-box">${escapeHtml(ind.formula||'Não definida')}</div>
       </div>
       <div class="ind-detail-row">
         <span class="ind-detail-label">🗂 Fonte dos Dados</span>
-        <span class="ind-detail-value">${ind.fonte||'—'}</span>
+        <span class="ind-detail-value">${escapeHtml(ind.fonte||'—')}</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="ind-detail-row">
           <span class="ind-detail-label">🔁 Periodicidade</span>
-          <span class="ind-detail-value">${ind.periodicidade||'—'}</span>
+          <span class="ind-detail-value">${escapeHtml(ind.periodicidade||'—')}</span>
         </div>
         <div class="ind-detail-row">
           <span class="ind-detail-label">👤 Responsável</span>
-          <span class="ind-detail-value">${ind.responsavel||'—'}</span>
+          <span class="ind-detail-value">${escapeHtml(ind.responsavel||'—')}</span>
         </div>
       </div>
     </div>
@@ -6344,7 +6344,7 @@ function renderFaq(p) {
   _faqEl.innerHTML = DATA[p].faqs.map((f,i)=>`
     <div class="faq-item ${f.pending ? '' : 'open'}" id="${p}-faq-${i}">
       <div class="faq-q">
-        <span class="faq-q-text" contenteditable="false" data-key="${p}:fq${i}">${i+1}. ${f.q}</span>
+        <span class="faq-q-text" contenteditable="false" data-key="${p}:fq${i}">${i+1}. ${escapeHtml(f.q)}</span>
         <div style="display:flex;align-items:center;gap:6px;">
           <button class="edit-rm-btn" onclick="openFaqModal('${p}',${i})" title="Editar">✏️</button>
           <button class="edit-rm-btn" onclick="rmFaq('${p}',${i})">✕</button>
@@ -6354,7 +6354,7 @@ function renderFaq(p) {
       <div class="faq-a">
         ${f.pending
           ? `<span class="faq-pending">⚠️ Resposta pendente de definição no POP</span>`
-          : `<span contenteditable="false" data-key="${p}:fa${i}">${f.a}</span>`}
+          : `<span contenteditable="false" data-key="${p}:fa${i}">${escapeHtml(f.a)}</span>`}
       </div>
     </div>`).join('');
   if(editMode) enableEditables(true);
@@ -6465,8 +6465,8 @@ function renderNormas(p) {
   _normEl.innerHTML = DATA[p].normas.map((n,i)=>{
     const hasUrl = n.url && n.url.trim();
     const codeEl = hasUrl
-      ? `<a href="${n.url}" target="_blank" rel="noopener" class="norm-code norm-link" title="Abrir norma">${n.code} 🔗</a>`
-      : `<div class="norm-code" contenteditable="false" data-key="${p}:nc${i}">${n.code}</div>`;
+      ? `<a href="${escapeHtml(n.url)}" target="_blank" rel="noopener" class="norm-code norm-link" title="Abrir norma">${escapeHtml(n.code)} 🔗</a>`
+      : `<div class="norm-code" contenteditable="false" data-key="${p}:nc${i}">${escapeHtml(n.code)}</div>`;
     const editBtn = `<button class="edit-rm-btn" onclick="openNormaModal('${p}',${i})" title="Editar">✏️</button>`;
     const rmBtn   = `<button class="edit-rm-btn" onclick="rmNorma('${p}',${i})">✕</button>`;
     return `
@@ -6474,8 +6474,8 @@ function renderNormas(p) {
       <div class="norm-icon-el">${n.icon||'📄'}</div>
       <div style="flex:1;min-width:0;">
         ${codeEl}
-        <div class="norm-name" contenteditable="false" data-key="${p}:nn${i}">${n.name}</div>
-        ${hasUrl ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.url}</div>` : ''}
+        <div class="norm-name" contenteditable="false" data-key="${p}:nn${i}">${escapeHtml(n.name)}</div>
+        ${hasUrl ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(n.url)}</div>` : ''}
       </div>
       <div style="display:flex;gap:4px;">${editBtn}${rmBtn}</div>
     </div>`;
