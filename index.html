@@ -14865,32 +14865,13 @@ async function _buildEppStatusReport(opts = {}) {
       }
 
       if(resDesc.length>0) {
-        const last6=resDesc.slice(0,6).reverse();
-        const unidade=cfg?.unidade||'';
-        const tblY=4.35, colW=[1.5,1.2,1.2,1.1,4.8];
-        const hdrs=['Período','Realizado','Meta','% Realiz.','Análise'];
-        let cx=0.2;
-        hdrs.forEach((h,ci)=>{
-          sInd.addShape(pres.ShapeType.rect,{x:cx,y:tblY,w:colW[ci],h:0.3,fill:{color:CI.navy}});
-          sInd.addText(h,{x:cx+0.03,y:tblY,w:colW[ci]-0.06,h:0.3,fontSize:8.5,bold:true,color:CI.white,valign:'middle',align:ci>0&&ci<4?'center':'left'});
-          cx+=colW[ci];
-        });
-        last6.forEach((r,ri)=>{
-          const ry=tblY+0.3+ri*0.28, bg=ri%2===0?'F8FAFC':'FFFFFF';
-          cx=0.2;
-          const cells=[
-            periodoLbl(r.periodo),
-            r.realizado!==null&&r.realizado!==undefined ? fmtN(r.realizado)+(unidade?' '+unidade:'') : '—',
-            r.meta!==null&&r.meta!==undefined ? fmtN(r.meta)+(unidade?' '+unidade:'') : '—',
-            r.pctRealizado!==null&&r.pctRealizado!==undefined ? fmtN(r.pctRealizado)+'%' : '—',
-            r.analise||'—',
-          ];
-          cells.forEach((cell,ci)=>{
-            sInd.addShape(pres.ShapeType.rect,{x:cx,y:ry,w:colW[ci],h:0.28,fill:{color:bg},line:{color:'E2E8F0',pt:0.5}});
-            sInd.addText(cell,{x:cx+0.03,y:ry,w:colW[ci]-0.06,h:0.28,fontSize:8,color:'1E293B',valign:'middle',align:ci>0&&ci<4?'center':'left',wrap:false});
-            cx+=colW[ci];
-          });
-        });
+        const last6 = resDesc.slice(0,6).reverse();
+        const unidade = cfg?.unidade || '';
+        const tblY = 4.35;
+        const colW = [1.5,1.2,1.2,1.1,4.8];
+        const hdrs = ['Período','Realizado','Meta','% Realiz.','Análise'];
+        _srAddIndicatorHeaderCells(sInd, pres, tblY, colW, hdrs);
+        _srAddIndicatorRows(sInd, pres, last6, unidade, tblY, colW);
       }
 
       // Slide YoY (se aplicável)
@@ -14930,6 +14911,55 @@ async function _buildEppStatusReport(opts = {}) {
   const fname = `StatusReport_EPP_${trNomes[qCur-1]}_${year}.pptx`;
   await pres.writeFile({ fileName: fname });
   showToast('✅ Status Report exportado: ' + fname, 'success');
+}
+
+function _srIndicatorTableAlign(index) {
+  return index > 0 && index < 4 ? 'center' : 'left';
+}
+
+function _srIndicatorValueCell(value, unidade) {
+  return value !== null && value !== undefined ? fmtN(value) + (unidade ? ' ' + unidade : '') : '—';
+}
+
+function _srIndicatorPctCell(value) {
+  return value !== null && value !== undefined ? fmtN(value) + '%' : '—';
+}
+
+function _srIndicatorRowCells(r, unidade) {
+  return [
+    periodoLbl(r.periodo),
+    _srIndicatorValueCell(r.realizado, unidade),
+    _srIndicatorValueCell(r.meta, unidade),
+    _srIndicatorPctCell(r.pctRealizado),
+    r.analise || '—',
+  ];
+}
+
+function _srAddIndicatorHeaderCells(sInd, pres, tblY, colW, hdrs) {
+  let cx = 0.2;
+  hdrs.forEach((h, ci) => {
+    sInd.addShape(pres.ShapeType.rect,{x:cx,y:tblY,w:colW[ci],h:0.3,fill:{color:CI.navy}});
+    sInd.addText(h,{x:cx+0.03,y:tblY,w:colW[ci]-0.06,h:0.3,fontSize:8.5,bold:true,color:CI.white,valign:'middle',align:_srIndicatorTableAlign(ci)});
+    cx += colW[ci];
+  });
+}
+
+function _srAddIndicatorDataCells(sInd, pres, ry, colW, bg, cells) {
+  let cx = 0.2;
+  cells.forEach((cell, ci) => {
+    sInd.addShape(pres.ShapeType.rect,{x:cx,y:ry,w:colW[ci],h:0.28,fill:{color:bg},line:{color:'E2E8F0',pt:0.5}});
+    sInd.addText(cell,{x:cx+0.03,y:ry,w:colW[ci]-0.06,h:0.28,fontSize:8,color:'1E293B',valign:'middle',align:_srIndicatorTableAlign(ci),wrap:false});
+    cx += colW[ci];
+  });
+}
+
+function _srAddIndicatorRows(sInd, pres, rows, unidade, tblY, colW) {
+  rows.forEach((r, ri) => {
+    const ry = tblY + 0.3 + ri * 0.28;
+    const bg = ri % 2 === 0 ? 'F8FAFC' : 'FFFFFF';
+    const cells = _srIndicatorRowCells(r, unidade);
+    _srAddIndicatorDataCells(sInd, pres, ry, colW, bg, cells);
+  });
 }
 
 // ═══ MÉTRICAS VOLUME/CICLO ════════════════════════════
@@ -14972,20 +15002,6 @@ function renderMetrics(p) {
   calcHorasEcon(p);
   renderBanner(p);
   _toggleOverviewGrid(p, m);
-  return;
-  const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val || '—'; };
-  setVal(p + '-metric-vol-pre',   m.volPre   || '—');
-  setVal(p + '-metric-vol-pos',   m.volPos   || '—');
-  setVal(p + '-metric-ciclo-pre', m.cicloPre || '—');
-  setVal(p + '-metric-ciclo-pos', m.cicloPos || '—');
-  calcHorasEcon(p);
-  renderBanner(p);
-  // Em modo visualização, ocultar o grid se todos os valores estiverem em branco
-  const grid = document.getElementById(p + '-overview-grid');
-  if(grid) {
-    const hasValues = m.volPre || m.volPos || m.cicloPre || m.cicloPos;
-    grid.style.display = (editMode || hasValues) ? '' : 'none';
-  }
 }
 
 // fim legado
@@ -15015,35 +15031,53 @@ function renderBanner(p) {
 }
 
 // ═══ SIPOC ════════════════════════════════════════════
+function _getSipocColumns() {
+  return [
+    {key:'fornecedores', label:'Fornecedores', color:'#3b82f6', bg:'#eff6ff', icon:'📦'},
+    {key:'entradas', label:'Entradas', color:'#8b5cf6', bg:'#f5f3ff', icon:'➡️'},
+    {key:'processo', label:'Processo', color:'#059669', bg:'#f0fdf4', icon:'⚙️'},
+    {key:'saidas', label:'Saídas', color:'#f59e0b', bg:'#fffbeb', icon:'📤'},
+    {key:'clientes', label:'Clientes', color:'#ef4444', bg:'#fef2f2', icon:'👥'},
+  ];
+}
+
+function _getSipocItems(sipoc, key) {
+  const v = sipoc[key];
+  if(Array.isArray(v)) return v;
+  if(typeof v === 'string') return v.split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean);
+  return [];
+}
+
+function _renderSipocBodyContent(p, sipoc, column) {
+  if(column.key === 'processo') {
+    return `<div class="sipoc-processo">${escapeHtml(sipoc.processo || DATA[p]?.meta?.name || '')}</div>`;
+  }
+  const items = _getSipocItems(sipoc, column.key);
+  if(!items.length) return '<div style="color:#94a3b8;font-size:11px;font-style:italic;">Não informado</div>';
+  return items.map(item => `<div class="sipoc-item">${escapeHtml(item)}</div>`).join('');
+}
+
+function _renderSipocColumn(p, sipoc, column) {
+  const content = _renderSipocBodyContent(p, sipoc, column);
+  return `<div class="sipoc-col" style="border-top:3px solid ${column.color};">
+    <div class="sipoc-col-head" style="background:${column.bg};color:${column.color};">${column.icon} ${column.label}</div>
+    <div class="sipoc-col-body">${content}</div>
+  </div>`;
+}
+
 function renderSipoc(p) {
   const card = document.getElementById(p + '-sipoc-card');
   if(!card) return;
   const sipoc = DATA[p]?.sipoc;
-  if(!sipoc) { card.style.display = 'none'; return; }
-  const cols = [
-    {key:'fornecedores', label:'Fornecedores', color:'#3b82f6', bg:'#eff6ff', icon:'📦'},
-    {key:'entradas',     label:'Entradas',     color:'#8b5cf6', bg:'#f5f3ff', icon:'➡️'},
-    {key:'processo',     label:'Processo',     color:'#059669', bg:'#f0fdf4', icon:'⚙️'},
-    {key:'saidas',       label:'Saídas',       color:'#f59e0b', bg:'#fffbeb', icon:'📤'},
-    {key:'clientes',     label:'Clientes',     color:'#ef4444', bg:'#fef2f2', icon:'👥'},
-  ];
-  const getItems = k => {
-    const v = sipoc[k];
-    if(Array.isArray(v)) return v;
-    if(typeof v === 'string') return v.split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean);
-    return [];
-  };
-  card.style.display = '';
+  if(!sipoc) {
+    card.style.display = 'none';
+    return;
+  }
   const body = card.querySelector('.sipoc-body');
   if(!body) return;
-  body.innerHTML = `<div class="sipoc-table">${cols.map(c => `
-    <div class="sipoc-col" style="border-top:3px solid ${c.color};">
-      <div class="sipoc-col-head" style="background:${c.bg};color:${c.color};">${c.icon} ${c.label}</div>
-      <div class="sipoc-col-body">${c.key === 'processo'
-        ? `<div class="sipoc-processo">${escapeHtml(sipoc.processo || DATA[p]?.meta?.name || '')}</div>`
-        : (getItems(c.key).map(item=>`<div class="sipoc-item">${escapeHtml(item)}</div>`).join('') || '<div style="color:#94a3b8;font-size:11px;font-style:italic;">Não informado</div>')
-      }</div>
-    </div>`).join('')}</div>`;
+  const cols = _getSipocColumns();
+  card.style.display = '';
+  body.innerHTML = `<div class="sipoc-table">${cols.map(c => _renderSipocColumn(p, sipoc, c)).join('')}</div>`;
 }
 
 // ═══ PREVIEW DO FLUXO NA VISÃO GERAL ══════════════════
@@ -15069,72 +15103,63 @@ async function renderFlowPreview(p) {
 }
 
 // ═══ FICHA TÉCNICA ════════════════════════════════════
-function renderFicha(p) {
-  const el = document.getElementById(p + '-ficha-body');
-  if(!el) return;
-  // Verificar auto-atrasado antes de renderizar
-  if(DATA[p]?.meta) checkAutoStatusAtrasado(p);
-  const m = DATA[p]?.meta || {};
-
-  // Status badge inline no topo da ficha
+function _getFichaStatusBadge(m) {
   const statusColors = {
-    planejado:    { bg:'#f0f9ff', color:'#0369a1', border:'#bae6fd' },
-    em_andamento: { bg:'#fffbeb', color:'#b45309', border:'#fde68a' },
-    concluido:    { bg:'#f0fdf4', color:'#15803d', border:'#bbf7d0' },
-    atrasado:     { bg:'#fff1f2', color:'#be123c', border:'#fecdd3' },
-    suspenso:     { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe' },
+    planejado:{ bg:'#f0f9ff', color:'#0369a1', border:'#bae6fd' },
+    em_andamento:{ bg:'#fffbeb', color:'#b45309', border:'#fde68a' },
+    concluido:{ bg:'#f0fdf4', color:'#15803d', border:'#bbf7d0' },
+    atrasado:{ bg:'#fff1f2', color:'#be123c', border:'#fecdd3' },
+    suspenso:{ bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe' },
   };
   const statusLabels = { planejado:'📋 Planejado', em_andamento:'🔄 Em Andamento', concluido:'✅ Concluído', atrasado:'⚠️ Atrasado', suspenso:'⏸ Suspenso' };
   const st = m.statusMap || '';
   const sc = statusColors[st];
-  const statusBadge = sc ? `<div style="margin-bottom:12px;"><span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};">${statusLabels[st]}</span></div>` : '';
+  return { st, html: sc ? `<div style="margin-bottom:12px;"><span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};">${statusLabels[st]}</span></div>` : '' };
+}
 
-  const fmt = d => d ? new Date(d+'T12:00').toLocaleDateString('pt-BR') : '';
-  const fields = [
-    // Identificação
-    { label:'Subprocesso',           icon:'📋', value: m.name,         group:'Identificação' },
-    { label:'Macroprocesso',         icon:'🗂', value: m.macro,        group:'Identificação' },
-    { label:'Processo Pai',          icon:'🔗', value: m.processo,     group:'Identificação' },
-    { label:'Subprocesso (Arq.)',    icon:'📂', value: m.sub,          group:'Identificação' },
-    { label:'Unidade Responsável',   icon:'🏛', value: m.unidade,           group:'Identificação' },
-    { label:'Equipe Responsável',    icon:'🫂', value: m.equipeResponsavel, group:'Identificação' },
-    { label:'Tipo de Trabalho',      icon:'🔧', value: m.tipo,              group:'Identificação' },
-    { label:'Dificuldade',           icon:'📶', value: m.dificuldade,  group:'Identificação' },
-    // Datas
-    { label:'Data de Início',        icon:'📅', value: fmt(m.dataInicio),    group:'Datas' },
-    { label:'Previsão de Entrega',   icon:'🗓', value: fmt(m.dataPrevista),  group:'Datas' },
-    { label:'Data Efetiva Entrega',  icon:'✅', value: fmt(m.dataEfetiva),   group:'Datas' },
-    // Pessoas
-    { label:'Solicitante',           icon:'📩', value: m.solicitante,  group:'Pessoas' },
-    { label:'Patrocinador',          icon:'🤝', value: m.patrocinador, group:'Pessoas' },
-    { label:'Elaborado por',         icon:'✍️', value: m.elaborado,   group:'Pessoas' },
-    { label:'Revisado por',          icon:'🔍', value: m.revisado,    group:'Pessoas' },
-    { label:'Equipe de Mapeamento',  icon:'👥', value: m.equipe,       group:'Pessoas' },
-    // Processo
-    { label:'Resultados Esperados',  icon:'🎯', value: m.resultados,   group:'Processo' },
-    { label:'Fornecedores',          icon:'📦', value: m.fornecedores, group:'Processo' },
-    { label:'Clientes / Destinatários', icon:'👤', value: m.clientes,  group:'Processo' },
-    { label:'Sistemas Utilizados',   icon:'💻', value: m.sistemas,    group:'Processo' },
+function _formatFichaFullDate(d) {
+  return d ? new Date(d+'T12:00').toLocaleDateString('pt-BR') : '';
+}
+
+function _getFichaFields(m) {
+  return [
+    { label:'Subprocesso', icon:'📋', value:m.name, group:'Identificação' },
+    { label:'Macroprocesso', icon:'🗂', value:m.macro, group:'Identificação' },
+    { label:'Processo Pai', icon:'🔗', value:m.processo, group:'Identificação' },
+    { label:'Subprocesso (Arq.)', icon:'📂', value:m.sub, group:'Identificação' },
+    { label:'Unidade Responsável', icon:'🏛', value:m.unidade, group:'Identificação' },
+    { label:'Equipe Responsável', icon:'🫂', value:m.equipeResponsavel, group:'Identificação' },
+    { label:'Tipo de Trabalho', icon:'🔧', value:m.tipo, group:'Identificação' },
+    { label:'Dificuldade', icon:'📶', value:m.dificuldade, group:'Identificação' },
+    { label:'Data de Início', icon:'📅', value:_formatFichaFullDate(m.dataInicio), group:'Datas' },
+    { label:'Previsão de Entrega', icon:'🗓', value:_formatFichaFullDate(m.dataPrevista), group:'Datas' },
+    { label:'Data Efetiva Entrega', icon:'✅', value:_formatFichaFullDate(m.dataEfetiva), group:'Datas' },
+    { label:'Solicitante', icon:'📩', value:m.solicitante, group:'Pessoas' },
+    { label:'Patrocinador', icon:'🤝', value:m.patrocinador, group:'Pessoas' },
+    { label:'Elaborado por', icon:'✍️', value:m.elaborado, group:'Pessoas' },
+    { label:'Revisado por', icon:'🔍', value:m.revisado, group:'Pessoas' },
+    { label:'Equipe de Mapeamento', icon:'👥', value:m.equipe, group:'Pessoas' },
+    { label:'Resultados Esperados', icon:'🎯', value:m.resultados, group:'Processo' },
+    { label:'Fornecedores', icon:'📦', value:m.fornecedores, group:'Processo' },
+    { label:'Clientes / Destinatários', icon:'👤', value:m.clientes, group:'Processo' },
+    { label:'Sistemas Utilizados', icon:'💻', value:m.sistemas, group:'Processo' },
   ].filter(f => f.value);
+}
 
-  const card = document.getElementById(p + '-ficha-card');
-  if(card) card.style.display = '';
-
-  if(!fields.length && !st) {
-    el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:8px 0;">Clique em <strong>✏️ Editar</strong> para preencher a ficha técnica do mapeamento.</div>';
-    return;
-  }
-
-  // Agrupar por seção
-  const groupOrder = ['Identificação','Datas','Pessoas','Processo'];
+function _groupFichaFields(fields) {
   const grouped = {};
   fields.forEach(f => {
     const g = f.group || 'Outros';
     if(!grouped[g]) grouped[g] = [];
     grouped[g].push(f);
   });
+  return grouped;
+}
 
-  const fieldHtml = groupOrder.filter(g => grouped[g]?.length).map(g => `
+function _renderFichaFieldGroups(fields) {
+  const groupOrder = ['Identificação','Datas','Pessoas','Processo'];
+  const grouped = _groupFichaFields(fields);
+  return groupOrder.filter(g => grouped[g]?.length).map(g => `
     <div style="margin-bottom:14px;">
       <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--cage-border);">${g}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
@@ -15147,62 +15172,90 @@ function renderFicha(p) {
         </div>`).join('')}
       </div>
     </div>`).join('');
+}
 
-  // ── Score de Maturidade (se calculado) ────────────────────
-  let matBadgeHtml = '';
+function _getFichaEmptyHtml() {
+  return '<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:8px 0;">Clique em <strong>✏️ Editar</strong> para preencher a ficha técnica do mapeamento.</div>';
+}
+
+function _formatFichaSnapshotDate(lastSnap) {
+  const value = Date.parse(lastSnap.date + 'T12:00:00Z');
+  return Number.isNaN(value) ? lastSnap.date : new Date(value).toLocaleDateString('pt-BR');
+}
+
+function _getFichaMaturityHtml(p) {
   try {
-    const matFinal = typeof matComputeFinal === 'function' ? matComputeFinal(p) : null;
-    if (matFinal) {
-      const lastSnap  = (DATA[p]?.maturidade?.snapshots || []).slice(-1)[0];
-      const snapInfo  = lastSnap
-        ? `<span style="font-size:10px;color:#94a3b8;margin-top:2px;">Último registro: ${(() => { try { return new Date(lastSnap.date+'T12:00:00Z').toLocaleDateString('pt-BR'); } catch(e){ return lastSnap.date; } })()}</span>`
-        /* tratamento de erro */
-        : `<span style="font-size:10px;color:#94a3b8;margin-top:2px;">Questionário respondido</span>`;
-      matBadgeHtml = `
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);">
-          <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;">Maturidade</div>
-          <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
-            <div style="text-align:center;flex-shrink:0;">
-              <div style="font-size:30px;font-weight:900;color:${matFinal.levelColor};line-height:1;">${matFinal.final}</div>
-              <div style="font-size:9px;color:#94a3b8;line-height:1.2;">/ 100</div>
-            </div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:13px;font-weight:700;color:${matFinal.levelColor};margin-bottom:4px;">${matFinal.levelIcon} ${matFinal.level}</div>
-              <div style="background:#e2e8f0;border-radius:4px;height:6px;overflow:hidden;margin-bottom:4px;">
-                <div style="height:6px;width:${matFinal.final}%;background:${matFinal.levelColor};border-radius:4px;"></div>
-              </div>
-              ${snapInfo}
-            </div>
-            <div style="font-size:10px;color:#94a3b8;flex-shrink:0;">Ver detalhes →</div>
+    const matFinal = matComputeFinal?.(p) ?? null;
+    if(!matFinal) return '';
+    const lastSnap = DATA[p]?.maturidade?.snapshots?.slice(-1)[0];
+    const snapInfo = lastSnap
+      ? `<span style="font-size:10px;color:#94a3b8;margin-top:2px;">Último registro: ${_formatFichaSnapshotDate(lastSnap)}</span>`
+      : `<span style="font-size:10px;color:#94a3b8;margin-top:2px;">Questionário respondido</span>`;
+    return `
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;">Maturidade</div>
+        <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
+          <div style="text-align:center;flex-shrink:0;">
+            <div style="font-size:30px;font-weight:900;color:${matFinal.levelColor};line-height:1;">${matFinal.final}</div>
+            <div style="font-size:9px;color:#94a3b8;line-height:1.2;">/ 100</div>
           </div>
-        </div>`;
-    }
-  } catch(e) { console.warn('[siga] matComputeFinal', e); }
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:${matFinal.levelColor};margin-bottom:4px;">${matFinal.levelIcon} ${matFinal.level}</div>
+            <div style="background:#e2e8f0;border-radius:4px;height:6px;overflow:hidden;margin-bottom:4px;">
+              <div style="height:6px;width:${matFinal.final}%;background:${matFinal.levelColor};border-radius:4px;"></div>
+            </div>
+            ${snapInfo}
+          </div>
+          <div style="font-size:10px;color:#94a3b8;flex-shrink:0;">Ver detalhes →</div>
+        </div>
+      </div>`;
+  } catch(e) {
+    console.warn('[siga] matComputeFinal', e);
+    return '';
+  }
+}
 
-  // ── Gestor e Objetivos Estratégicos (da Arquitetura) ──────────────
-  let arqInfoHtml = '';
+function _getFichaArchitectureHtml(p) {
   try {
-    const arqRec = typeof arqGetData === 'function' && typeof arqFindLinkedPop === 'function'
-      ? arqGetData().find(r => arqFindLinkedPop(r) === p)
-      : null;
-    if (arqRec) {
-      const gerenteHtml = arqRec.gerente
-        ? `<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);">Gestor do Processo</span><div style="font-size:13px;color:var(--text-primary);font-weight:500;margin-top:2px;">${arqRec.gerente}</div></div>`
-        : '';
-      const objsHtml = arqRec.objEstrategicos && arqRec.objEstrategicos.length
-        ? `<div><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);">Objetivos Estratégicos</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">${arqRec.objEstrategicos.map(o=>`<span style="background:#ede9fe;color:#5b21b6;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;">${o}</span>`).join('')}</div></div>`
-        : '';
-      if (gerenteHtml || objsHtml) {
-        arqInfoHtml = `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--cage-border);">Arquitetura</div>${gerenteHtml}${objsHtml}</div>`;
-      }
-    }
-  } catch(e) { console.warn('[siga] arqGetData', e); }
-  /* exibe mensagem de erro na interface */
+    const arqData = arqGetData?.() || [];
+    const arqRec = arqData.find(r => arqFindLinkedPop?.(r) === p);
+    if(!arqRec) return '';
+    const gerenteHtml = arqRec.gerente
+      ? `<div style="margin-bottom:8px;"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);">Gestor do Processo</span><div style="font-size:13px;color:var(--text-primary);font-weight:500;margin-top:2px;">${arqRec.gerente}</div></div>`
+      : '';
+    const objetivos = arqRec.objEstrategicos;
+    const objsHtml = objetivos?.length
+      ? `<div><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);">Objetivos Estratégicos</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">${objetivos.map(o=>`<span style="background:#ede9fe;color:#5b21b6;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;">${o}</span>`).join('')}</div></div>`
+      : '';
+    return gerenteHtml || objsHtml
+      ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--cage-border);">Arquitetura</div>${gerenteHtml}${objsHtml}</div>`
+      : '';
+  } catch(e) {
+    console.warn('[siga] arqGetData', e);
+    return '';
+  }
+}
 
-  const _progHtml = _renderFichaProgressHtml(p);
+function renderFicha(p) {
+  const el = document.getElementById(p + '-ficha-body');
+  if(!el) return;
+  if(DATA[p]?.meta) checkAutoStatusAtrasado(p);
+  const m = DATA[p]?.meta || {};
+  const statusInfo = _getFichaStatusBadge(m);
+  const fields = _getFichaFields(m);
+  const card = document.getElementById(p + '-ficha-card');
+  if(card) card.style.display = '';
+  if(!fields.length && !statusInfo.st) {
+    el.innerHTML = _getFichaEmptyHtml();
+    return;
+  }
+  const fieldHtml = _renderFichaFieldGroups(fields);
+  const arqInfoHtml = _getFichaArchitectureHtml(p);
+  const matBadgeHtml = _getFichaMaturityHtml(p);
+  const progHtml = _renderFichaProgressHtml(p);
   el.innerHTML = `<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
-    <div style="flex:1;min-width:240px;">${statusBadge}${fieldHtml}${arqInfoHtml}${matBadgeHtml}</div>
-    <div style="min-width:200px;width:240px;border-left:2px solid var(--cage-border);padding-left:20px;">${_progHtml}</div>
+    <div style="flex:1;min-width:240px;">${statusInfo.html}${fieldHtml}${arqInfoHtml}${matBadgeHtml}</div>
+    <div style="min-width:200px;width:240px;border-left:2px solid var(--cage-border);padding-left:20px;">${progHtml}</div>
   </div>`;
 }
 
@@ -15301,8 +15354,8 @@ function _getFichaProgressColor(pct) {
 
 function _formatFichaDate(str) {
   if(!str) return '';
-  try { return new Date(str+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); }
-  catch(e){ return str; }
+  const value = Date.parse(str + 'T12:00:00');
+  return Number.isNaN(value) ? str : new Date(value).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
 }
 
 function _diffFichaDays(a, b, today) {
@@ -15313,87 +15366,103 @@ function _diffFichaDays(a, b, today) {
   return d >= 0 ? d : null;
 }
 
+function _getFichaCircleStyle(isDone, isNA) {
+  if(isDone) return 'width:18px;height:18px;border-radius:50%;background:#16a34a;border:2px solid #16a34a;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;';
+  if(isNA) return 'width:18px;height:18px;border-radius:50%;background:#e2e8f0;border:2px solid #cbd5e1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;';
+  return 'width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid #cbd5e1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;';
+}
+
+function _getFichaLabelStyle(isDone, isNA, durAtiv) {
+  if(isDone) return 'font-size:12px;font-weight:600;color:#15803d;';
+  if(isNA) return 'font-size:12px;font-weight:500;color:#94a3b8;text-decoration:line-through;';
+  if(durAtiv !== null) return 'font-size:12px;font-weight:600;color:#1d4ed8;';
+  return 'font-size:12px;font-weight:500;color:var(--text-primary);';
+}
+
+function _getFichaCheckSvg(isDone) {
+  return isDone
+    ? `<svg width="9" height="9" viewBox="0 0 9 9"><polyline points="1,4.5 3.5,7 8,1.5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    : '';
+}
+
+function _getFichaDurationLabel(days) {
+  return days + (days === 1 ? ' dia' : ' dias');
+}
+
+function _getFichaSubHtml(isDone, durDone, durAtiv, st, fmtD) {
+  const subParts = [];
+  if(isDone) {
+    if(st.fim) subParts.push(fmtD(st.fim));
+    if(durDone !== null) subParts.push(_getFichaDurationLabel(durDone));
+  }
+  if(!isDone && durAtiv !== null) subParts.push('⏳ ' + _getFichaDurationLabel(durAtiv));
+  if(subParts.length === 0) return '';
+  let subColor = '#94a3b8';
+  if(isDone) subColor = '#86efac';
+  else if(durAtiv !== null) subColor = '#93c5fd';
+  return `<div style="font-size:10px;color:${subColor};margin-top:1px;">${subParts.join(' · ')}</div>`;
+}
+
+function _getFichaNaBtn(p, e, isNA) {
+  if(!e.optional) return '';
+  const title = isNA ? 'Desfazer N/A' : 'Não se aplica';
+  const bg = isNA ? '#ede9fe' : '#f1f5f9';
+  const border = isNA ? '#a78bfa' : '#e2e8f0';
+  const color = isNA ? '#7c3aed' : '#94a3b8';
+  return `<button onclick="event.stopPropagation();toggleEtapaNA('${p}','${e.id}')" title="${title}" style="margin-left:4px;background:${bg};border:1px solid ${border};color:${color};font-size:9px;padding:1px 5px;border-radius:4px;cursor:pointer;font-weight:700;line-height:1.4;">N/A</button>`;
+}
+
+function _renderFichaEtapaItem(p, e, i, etapas, ep, fmtD, diffDays) {
+  const st = ep[e.id] || {};
+  const isDone = !!st.ok;
+  const isNA = !!st.na;
+  const durDone = isDone ? diffDays(st.inicio, st.fim) : null;
+  const durAtiv = !isDone && !isNA && st.inicio ? diffDays(st.inicio, null) : null;
+  const circleStyle = _getFichaCircleStyle(isDone, isNA);
+  const labelStyle = _getFichaLabelStyle(isDone, isNA, durAtiv);
+  const checkSvg = _getFichaCheckSvg(isDone);
+  const subHtml = _getFichaSubHtml(isDone, durDone, durAtiv, st, fmtD);
+  const naBtn = _getFichaNaBtn(p, e, isNA);
+  const sep = i < etapas.length - 1 ? 'border-bottom:1px solid var(--cage-border);' : '';
+  return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;${sep}">
+    <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}">${checkSvg}</div>
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;flex-wrap:wrap;">
+        <span style="${labelStyle}">${e.label}</span>${naBtn}
+      </div>
+      ${subHtml}
+    </div>
+  </div>`;
+}
+
+function _renderFichaProgressBar(done, total, pct, barColor) {
+  return `<div style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+      <span style="font-size:11px;color:var(--text-muted);">Progresso</span>
+      <span style="font-size:14px;font-weight:800;color:${barColor};">${pct}%</span>
+    </div>
+    <div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;">
+      <div style="height:8px;width:${pct}%;background:${barColor};border-radius:6px;transition:width .5s ease;"></div>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);margin-top:3px;">${done} de ${total} etapas</div>
+  </div>`;
+}
+
 function _renderFichaProgressHtml(p) {
   const ep    = _initEtapas(p);
   const today = new Date(); today.setHours(0,0,0,0);
-
-  // "Redesenho" só aparece se o tipo de trabalho for "Redesenho" ou "Mapeamento e Redesenho"
   const etapas = _getFichaEtapas(p);
-
   const total = etapas.length;
   const done  = etapas.filter(e => ep[e.id]?.ok || ep[e.id]?.na).length;
   const pct   = total > 0 ? Math.round(done / total * 100) : 0;
   const barColor = _getFichaProgressColor(pct);
-
   const fmtD = str => _formatFichaDate(str);
   const diffDays = (a, b) => _diffFichaDays(a, b, today);
-
-  const itemsHtml = etapas.map((e, i) => {
-    const st      = ep[e.id] || {};
-    const isDone  = !!st.ok;
-    const isNA    = !!st.na;
-    const durDone = isDone ? diffDays(st.inicio, st.fim) : null;
-    const durAtiv = !isDone && !isNA && st.inicio ? diffDays(st.inicio, null) : null;
-
-    const circleStyle = isDone
-      ? 'width:18px;height:18px;border-radius:50%;background:#16a34a;border:2px solid #16a34a;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;'
-      : isNA
-        ? 'width:18px;height:18px;border-radius:50%;background:#e2e8f0;border:2px solid #cbd5e1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;'
-        : 'width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid #cbd5e1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;';
-
-    const labelStyle = isDone
-      ? 'font-size:12px;font-weight:600;color:#15803d;'
-      : isNA
-        ? 'font-size:12px;font-weight:500;color:#94a3b8;text-decoration:line-through;'
-        : durAtiv !== null
-          ? 'font-size:12px;font-weight:600;color:#1d4ed8;'
-          : 'font-size:12px;font-weight:500;color:var(--text-primary);';
-
-    const checkSvg = isDone
-      ? `<svg width="9" height="9" viewBox="0 0 9 9"><polyline points="1,4.5 3.5,7 8,1.5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-      : '';
-
-    let subParts = [];
-    if(isDone) {
-      if(st.fim) subParts.push(fmtD(st.fim));
-      if(durDone !== null) subParts.push(durDone + (durDone === 1 ? ' dia' : ' dias'));
-    } else if(durAtiv !== null) {
-      subParts.push('⏳ ' + durAtiv + (durAtiv === 1 ? ' dia' : ' dias'));
-    }
-    const subColor = isDone ? '#86efac' : durAtiv !== null ? '#93c5fd' : '#94a3b8';
-    const subHtml  = subParts.length
-      ? `<div style="font-size:10px;color:${subColor};margin-top:1px;">${subParts.join(' · ')}</div>`
-      : '';
-
-    const naBtn = e.optional
-      ? `<button onclick="event.stopPropagation();toggleEtapaNA('${p}','${e.id}')" title="${isNA?'Desfazer N/A':'Não se aplica'}" style="margin-left:4px;background:${isNA?'#ede9fe':'#f1f5f9'};border:1px solid ${isNA?'#a78bfa':'#e2e8f0'};color:${isNA?'#7c3aed':'#94a3b8'};font-size:9px;padding:1px 5px;border-radius:4px;cursor:pointer;font-weight:700;line-height:1.4;">N/A</button>`
-      : '';
-
-    const sep = i < etapas.length - 1 ? 'border-bottom:1px solid var(--cage-border);' : '';
-
-    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;${sep}">
-      <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}">${checkSvg}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="display:flex;align-items:center;flex-wrap:wrap;">
-          <span style="${labelStyle}">${e.label}</span>${naBtn}
-        </div>
-        ${subHtml}
-      </div>
-    </div>`;
-  }).join('');
-
+  const itemsHtml = etapas.map((e, i) => _renderFichaEtapaItem(p, e, i, etapas, ep, fmtD, diffDays)).join('');
+  const progressBarHtml = _renderFichaProgressBar(done, total, pct, barColor);
   return `<div>
     <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid var(--cage-border);">Evolução</div>
-    <div style="margin-bottom:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-        <span style="font-size:11px;color:var(--text-muted);">Progresso</span>
-        <span style="font-size:14px;font-weight:800;color:${barColor};">${pct}%</span>
-      </div>
-      <div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;">
-        <div style="height:8px;width:${pct}%;background:${barColor};border-radius:6px;transition:width .5s ease;"></div>
-      </div>
-      <div style="font-size:10px;color:var(--text-muted);margin-top:3px;">${done} de ${total} etapas</div>
-    </div>
+    ${progressBarHtml}
     ${itemsHtml}
   </div>`;
 }
@@ -23436,7 +23505,7 @@ Regras obrigatórias:
   function _parseNum(v) {
     if(v === null || v === undefined || v === '') return null;
     if(typeof v === 'number') return v;
-    const s = String(v).replace(',','.').replace(/[^0-9.\-]/g,'');
+    const s = String(v).replaceAll(',','.').replace(/[^0-9.\-]/g,'');
     const n = Number.parseFloat(s);
     return Number.isNaN(n) ? null : n;
   }
