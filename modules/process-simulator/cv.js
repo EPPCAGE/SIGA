@@ -513,8 +513,7 @@ function extractJson(text) {
   for (const c of candidates) {
     try {
       return JSON.parse(c);
-    } catch (parseCandidateError) {
-      void parseCandidateError;
+    } catch {
       // try next candidate
     }
   }
@@ -727,8 +726,7 @@ async function readResponseBodySafe(resp) {
   const raw = await resp.text();
   try {
     return { raw, json: JSON.parse(raw) };
-  } catch (responseParseError) {
-    void responseParseError;
+  } catch {
     return { raw, json: null };
   }
 }
@@ -810,6 +808,15 @@ async function enrichActorsViaAi(endpoint, baseGraph, image) {
   return extractJson(text);
 }
 
+async function tryEnrichActors(endpoint, graph, image) {
+  try {
+    const actorPayload = await enrichActorsViaAi(endpoint, graph, image);
+    return mergeActorData(graph, actorPayload);
+  } catch {
+    return graph;
+  }
+}
+
 async function _attemptExtraction(endpoint, payload, base64, mimeType, retriedForQuota) {
   const resp = await postWithTimeout(endpoint, payload, 45000);
   const { raw, json } = await readResponseBodySafe(resp);
@@ -835,13 +842,7 @@ async function _attemptExtraction(endpoint, payload, base64, mimeType, retriedFo
   let graph = normalizeExtractedGraph(extractJson(parsedText));
 
   if (needsActorEnrichment(graph)) {
-    try {
-      const actorPayload = await enrichActorsViaAi(endpoint, graph, { data: base64, mimeType });
-      graph = mergeActorData(graph, actorPayload);
-    } catch (actorEnrichmentError) {
-      void actorEnrichmentError;
-      // Optional enrichment should not block extraction flow.
-    }
+    graph = await tryEnrichActors(endpoint, graph, { data: base64, mimeType });
   }
 
   return { done: true, result: { graph, rawText: parsedText, endpointUsed: endpoint }, error: null };

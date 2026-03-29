@@ -169,8 +169,8 @@ body {
 
 button {
   border: 1px solid transparent;
-  background: linear-gradient(120deg, var(--primary) 0%, var(--primary-2) 100%);
-  color: #f8fbff;
+  background: linear-gradient(120deg, #0d2236 0%, #1f4d3d 100%);
+  color: #ffffff;
   border-radius: 10px;
   padding: 8px 12px;
   font-weight: 600;
@@ -359,8 +359,8 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   font-size: 12px;
   font-weight: 600;
   border: 1.5px solid rgba(180, 200, 190, 0.35);
-  background: rgba(255,255,255,0.08);
-  color: #e8f0fb;
+  background: rgba(13, 34, 54, 0.72);
+  color: #ffffff;
   cursor: pointer;
   outline: none;
   transition: border-color 0.15s, background 0.15s;
@@ -701,7 +701,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 
 .exec-mini-grid strong {
   display: block;
-  color: #f8fbff;
+  color: #0d2236;
   font-size: 18px;
 }
 
@@ -1167,7 +1167,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 }
 
 .accordion summary::-webkit-details-marker { display: none; }
-.accordion[open] summary { color: #fff; background: rgba(255,255,255,0.06); }
+.accordion[open] summary { color: #ffffff; background: rgba(13, 34, 54, 0.58); }
 
 .accordion-body {
   padding: 10px 14px 12px;
@@ -1209,18 +1209,18 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 }
 
 .rc-icon  { font-size: 22px; }
-.rc-title { font-size: 11px; font-weight: 700; color: #9fb0c5; text-transform: uppercase; letter-spacing: 0.5px; }
+.rc-title { font-size: 11px; font-weight: 700; color: #d8e5f3; text-transform: uppercase; letter-spacing: 0.5px; }
 .rc-value { font-size: 28px; font-weight: 800; color: #fff; line-height: 1.1; }
-.rc-subtitle  { font-size: 11px; color: #7a90a8; }
+.rc-subtitle  { font-size: 11px; color: #c7d7e8; }
 .rc-definition{ font-size: 11px; color: #c9d8eb; margin-top: 4px; }
-.rc-audit     { font-size: 11px; color: #7a90a8; font-style: italic; border-top: 1px solid rgba(201,214,231,0.15); padding-top: 5px; margin-top: 3px; }
+.rc-audit     { font-size: 11px; color: #c7d7e8; font-style: italic; border-top: 1px solid rgba(201,214,231,0.15); padding-top: 5px; margin-top: 3px; }
 
 .rc-gauge { height: 6px; background: rgba(255,255,255,0.12); border-radius: 3px; margin: 4px 0; overflow: hidden; }
 .rc-gauge-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
 
-.rc-kfactor { font-size: 12px; color: #23b26d; padding: 6px 12px; background: rgba(35,178,109,0.1); border-radius: 6px; margin-bottom: 4px; }
-.rc-gaveta  { font-size: 12px; color: #9fb0c5; padding: 6px 12px; background: rgba(255,255,255,0.06); border-radius: 6px; }
-.rc-gaveta-warn { color: #f39c12; background: rgba(243,156,18,0.1); }
+.rc-kfactor { font-size: 12px; color: #d5ffe7; padding: 6px 12px; background: rgba(22,163,74,0.28); border-radius: 6px; margin-bottom: 4px; }
+.rc-gaveta  { font-size: 12px; color: #e2edf8; padding: 6px 12px; background: rgba(13,34,54,0.34); border-radius: 6px; }
+.rc-gaveta-warn { color: #ffe0a6; background: rgba(180,83,9,0.34); }
 
 /* ==================== GRAFICO DE ATRITO ==================== */
 .friction-chart { display: flex; flex-direction: column; gap: 6px; }
@@ -1349,7 +1349,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 .entry-choice-dialog h2 {
   margin: 0 0 8px;
   font-size: 22px;
-  color: #eff4fb;
+  color: #ffffff;
 }
 
 .entry-choice-dialog > p {
@@ -1473,7 +1473,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   border-radius: 7px;
   border: 1px solid rgba(173, 191, 214, 0.25);
   background: rgba(255, 255, 255, 0.06);
-  color: #d0dde8;
+  color: #ffffff;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -1655,8 +1655,8 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: rgba(31, 111, 178, 0.18);
-  border: 1px solid rgba(96, 165, 250, 0.35);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(96, 165, 250, 0.45);
   border-radius: 8px;
   font-size: 13px;
   color: #0d2236;
@@ -1665,7 +1665,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 }
 
 .linked-process-badge strong { color: #0a1c2e; font-weight: 700; }
-.linked-process-badge span   { color: #3d546d; font-size: 12px; }
+.linked-process-badge span   { color: #1f3a56; font-size: 12px; }
 
 .sec0-table-wrap {
   max-height: 280px;
@@ -1714,7 +1714,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 .sec0-td-nat    { color: #3d546d !important; font-size: 11px; }
 .sec0-td-area   { color: #3d546d !important; font-size: 11px; }
 .sec0-sub       { color: #5a7a9a !important; font-size: 11px; display: block; margin-top: 2px; }
-.sec0-empty     { color: #5a7a9a !important; text-align: center; padding: 18px !important; font-style: italic; background: #ffffff !important; }
+.sec0-empty     { color: #1f3a56 !important; text-align: center; padding: 18px !important; font-style: italic; background: #ffffff !important; }
 
 /* Linha selecionada — texto branco sobre azul escuro */
 .sec0-row-selected .sec0-td-macro,
@@ -1870,7 +1870,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(201,214,231,0.25);
   border-radius: 5px;
-  color: #b8cfe8;
+  color: #ffffff;
   cursor: pointer;
 }
 
@@ -1906,7 +1906,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 .sgw-input {
   width: 64px;
   text-align: right;
-  background: rgba(255,255,255,0.08);
+  background: rgba(13, 34, 54, 0.78);
   border: 1px solid rgba(201,214,231,0.25);
   border-radius: 5px;
   color: #ffffff;
@@ -1936,7 +1936,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #c9d8eb;
+  color: #ffffff;
 }
 
 .gw-path-arrow { color: #60a5fa; font-size: 14px; }

@@ -810,7 +810,7 @@ function saveHandoffRulesFromWizard() {
 }
 
 // Classifica automaticamente o tipo de handoff entre duas raias
-// baseado nos perfis (equipe/Ã³rgÃ£o) armazenados em graph.lanes
+// baseado nos perfis (equipe/órgão) armazenados em graph.lanes
 function autoClassifyHandoff(fromLane, toLane) {
   const fm = graph.lanes?.[fromLane] || {};
   const tm = graph.lanes?.[toLane] || {};
@@ -833,9 +833,9 @@ function autoApplyHandoffRulesFromLanes() {
   }
 }
 
-// Salva atores + perfis de raia da SeÃ§Ã£o 2 para o graph
-// Atribui complexidade padrÃ£o Ã s tarefas que ainda nÃ£o tÃªm uma definida:
-// primeira tarefa manual â†’ 'alta' (20 UT); demais â†’ 'media' (10 UT).
+// Salva atores + perfis de raia da Seção 2 para o graph
+// Atribui complexidade padrão às tarefas que ainda não têm uma definida:
+// primeira tarefa manual -> 'alta' (20 UT); demais -> 'media' (10 UT).
 function autoAssignComplexityDefaults() {
   if (!graph) return;
   const tasks = (graph.nodes || []).filter((n) => n.type === 'task' && !n.automated);
@@ -1297,14 +1297,14 @@ function renderSetupGatewayEditor() {
     const rows = outs.map((e) => {
       const targetNode = nodeById(e.to);
       const targetLabel = targetNode?.label || targetNode?.id || e.to;
-      // RÃ³tulo do caminho: prioriza label da aresta, depois label do nÃ³ destino
+      // Rótulo do caminho: prioriza label da aresta, depois label do nó destino
       const edgeLabel = e.label ? escapeHtml(e.label) : escapeHtml(targetLabel);
       const pct = Number(e.probability || 0);
       const barColor = gatewayProbabilityColor(pct);
       return `
       <label class="field gw-path-row" style="margin-bottom:6px;">
         <span class="gw-path-label">
-          <span class="gw-path-arrow">â†’</span> ${edgeLabel}
+          <span class="gw-path-arrow">→</span> ${edgeLabel}
           <span class="gw-path-target" style="color:#9fb0c5;font-size:11px;">(${escapeHtml(targetLabel)})</span>
         </span>
         <div style="display:flex;gap:6px;align-items:center;">
@@ -1348,9 +1348,9 @@ function applySetupGatewayEdits() {
   refreshAll();
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════
 // SIDEBAR GATEWAY PROBABILITY EDITOR
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════
 
 function renderSidebarGatewayEditor() {
   const box = $('sidebarGatewayBox');
@@ -1390,7 +1390,7 @@ function renderSidebarGatewayEditor() {
       const edgeLabel = e.label ? escapeHtml(e.label) : escapeHtml(targetLabel);
       const pct = Number(e.probability || 0);
       return `<div class="sgw-row">
-        <span class="sgw-label">â†’ ${edgeLabel}</span>
+        <span class="sgw-label">→ ${edgeLabel}</span>
         <div class="sgw-input-wrap">
           <input type="number" min="0" max="100" step="1" class="sgw-input"
             data-sgw-id="${escapeHtml(gw.id)}" data-sgw-edge="${escapeHtml(e.id)}" value="${pct}" />
@@ -1449,13 +1449,13 @@ function _onSidebarGwInput(ev) {
   const maxAllowed = Math.max(0, 100 - sumOthers);
   if (Number(inp.value) > maxAllowed) inp.value = String(maxAllowed);
 
-  // Apply to graph silently (no refreshAll â€” avoids losing focus)
+  // Apply to graph silently (no refreshAll — avoids losing focus)
   const probs = {};
   allInputs.forEach((i) => { probs[i.dataset.sgwEdge] = Math.max(0, Number(i.value || 0)); });
   graph = applyGatewayProbabilities(graph, gwId, probs);
   if ($('graphJson')) $('graphJson').value = JSON.stringify(graph, null, 2);
 
-  // Only update sum display â€” no full re-render
+  // Only update sum display — no full re-render
   const sumEl = document.querySelector(`[data-sgw-sum="${CSS.escape(gwId)}"]`);
   if (sumEl) {
     const sum = Object.values(probs).reduce((a, v) => a + v, 0);
@@ -1677,7 +1677,7 @@ function saveSetupAutomationSelection() {
 
 function openSetupModal() {
   syncMainInputsToSetup();
-  // Auto-iguala probabilidades de gateways que ainda nÃ£o tÃªm distribuiÃ§Ã£o vÃ¡lida
+  // Auto-iguala probabilidades de gateways que ainda não têm distribuição válida
   if (graph) autoFixGatewayProbabilitiesInGraph();
   if (graph) autoApplyHandoffRulesFromLanes();
   $('setupModal')?.classList.remove('hidden');
@@ -1723,7 +1723,7 @@ function revealDashboard() {
   const section = $('dashboardSection');
   if (!section) return;
   section.classList.remove('hidden');
-  // Garante que o dashboard usa o TER das partÃ­culas animadas (_animatedTer)
+  // Garante que o dashboard usa o TER das partículas animadas (_animatedTer)
   if (graph) updateDashboard();
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1927,7 +1927,7 @@ function _phBar(value) {
 }
 
 function _metricCell(label, value, unit, note) {
-  const disp = Number.isFinite(Number(value)) ? `${Number(value).toFixed(2)}<span class="mcell-unit">${unit}</span>` : `<span class="mcell-na">â€”</span>`;
+  const disp = Number.isFinite(Number(value)) ? `${Number(value).toFixed(2)}<span class="mcell-unit">${unit}</span>` : `<span class="mcell-na">—</span>`;
   return `<div class="mcell">
     <div class="mcell-label">${label}</div>
     <div class="mcell-value">${disp}</div>
@@ -1939,7 +1939,7 @@ function _phillipCell(label, value, note) {
   const color = Number.isFinite(Number(value)) ? severityColorFromValue(value) : '#8898aa';
   const disp = Number.isFinite(Number(value))
     ? `${Number(value).toFixed(1)}<span class="mcell-unit">%</span>`
-    : `<span class="mcell-na">â€”</span>`;
+    : `<span class="mcell-na">—</span>`;
   return `<div class="mcell mcell-phillip">
     <div class="mcell-label">${label}</div>
     <div class="mcell-value" style="color:${color};">${disp}</div>
@@ -1950,11 +1950,11 @@ function _phillipCell(label, value, note) {
 }
 
 function _fmtUT(v) {
-  return Number.isFinite(Number(v)) ? `${Number(v).toFixed(1)} UT` : 'â€”';
+  return Number.isFinite(Number(v)) ? `${Number(v).toFixed(1)} UT` : '—';
 }
 
 function _fmtMin(v) {
-  if (!Number.isFinite(Number(v))) return 'â€”';
+  if (!Number.isFinite(Number(v))) return '—';
   const mins = Number(v);
   if (mins >= 60) return `${(mins / 60).toFixed(1)} h`;
   return `${mins.toFixed(0)} min`;
@@ -2121,7 +2121,7 @@ function refreshLiveSimulationStatus(tokens) {
 
   liveSimulationStatus = { finished, total, avgLeadTime: avgLead };
 
-  const terText = avgLead > 0 ? `${avgLead.toFixed(1)} UT` : 'â€”';
+  const terText = avgLead > 0 ? `${avgLead.toFixed(1)} UT` : '—';
 
   // Update controls row counters
   const elFinished = $('liveTokensFinished');
@@ -2358,26 +2358,26 @@ function computeScenarioMetrics() {
   const autoGraph = buildAutoScenarioGraph();
   const autoBase = calculateTEPAndIP(autoGraph, 3500);
 
-  // Usa o TER das 100 partÃ­culas animadas quando disponÃ­vel,
-  // assim o dashboard e o contador ao vivo mostram o mesmo nÃºmero.
+  // Usa o TER das 100 partículas animadas quando disponível,
+  // assim o dashboard e o contador ao vivo mostram o mesmo número.
   const ter = (_animatedTer !== null && _animatedTer > 0) ? _animatedTer : base.tepReal;
   const terAuto = autoBase.tepReal;
 
   // T.O.P. = caminho feliz sem atrito.
-  // Nunca lanÃ§a exceÃ§Ã£o â€” falha no happy path mostra "â€”" no card sem derrubar os demais.
+  // Nunca lança exceção — falha no happy path mostra "—" no card sem derrubar os demais.
   let top = 0;
   try {
     const t = calculatePathTime(graph, path, true);
     if (t > 0) top = t;
-  } catch (_) { console.warn('[simulator] path invÃ¡lido, TOP = 0', _); }
+  } catch (_) { console.warn('[simulator] path inválido, TOP = 0', _); }
 
-  // T.O.P. Auto = cenÃ¡rio com automaÃ§Ãµes.
-  // Fallback para top quando nÃ£o calculÃ¡vel.
+  // T.O.P. Auto = cenário com automações.
+  // Fallback para top quando não calculável.
   let topAuto = top;
   try {
     const ta = calculatePathTime(autoGraph, path, true);
     if (ta > 0) topAuto = ta;
-  } catch (_) { console.warn('[simulator] automaÃ§Ã£o path invÃ¡lido', _); }
+  } catch (_) { console.warn('[simulator] automação path inválido', _); }
 
   // Conversao K: 1 UT = quantos minutos reais (usando T.P. como ancora)
   // K = T.P. (min) / T.E.R. (UT)
@@ -2385,8 +2385,8 @@ function computeScenarioMetrics() {
     ? leadTimeInformed / ter
     : null;
 
-  // Tempo de Gaveta = T.P. âˆ’ T.P.E.  (fila + espera passiva)
-  // SÃ³ calculÃ¡vel quando ambos os campos estÃ£o preenchidos pelo executor
+  // Tempo de Gaveta = T.P. − T.P.E.  (fila + espera passiva)
+  // Só calculável quando ambos os campos estão preenchidos pelo executor
   const tempoGaveta = (
     Number.isFinite(leadTimeInformed) && leadTimeInformed > 0 &&
     Number.isFinite(processingTimeInformed) && processingTimeInformed > 0
@@ -2825,7 +2825,7 @@ function _drawSetupEdge(svg, edge, from, to, happyPathNodes) {
   svg.appendChild(line);
 }
 
-// â”€â”€ helpers: formas SVG para o canvas de setup (S3776 â€” Cognitive Complexity) â”€
+// ── helpers: formas SVG para o canvas de setup (S3776 — Cognitive Complexity) ──
 function _drawSetupTaskShape(g, node, isSelected) {
   const ns = 'http://www.w3.org/2000/svg';
   const rect = document.createElementNS(ns, 'rect');
@@ -3049,7 +3049,7 @@ function _drawEdgeWithLabel(svg, edge, from, to) {
   }
 }
 
-// â”€â”€ helpers: formas SVG para o canvas principal (S3776 â€” Cognitive Complexity) â”€
+// ── helpers: formas SVG para o canvas principal (S3776 — Cognitive Complexity) ──
 function _drawNodeTaskShape(g, node, isSelected) {
   const ns = 'http://www.w3.org/2000/svg';
   const fill       = node.automated ? '#e8f7ef' : '#edf3fb';
@@ -3220,7 +3220,7 @@ function drawGraph() {
 }
 
 function openGatewayEditor(gatewayId) {
-  // Gateway clicked on canvas â€” highlight its section in the sidebar accordion
+  // Gateway clicked on canvas — highlight its section in the sidebar accordion
   const acc = $('accordionGatewayProbs');
   if (acc && !acc.open) acc.open = true;
   // Scroll the gateway's section into view in the sidebar
@@ -3232,11 +3232,31 @@ function openGatewayEditor(gatewayId) {
   }
 }
 
+function clearSelectOptions(select) {
+  if (!select) return;
+  select.textContent = '';
+}
+
+function appendSelectOption(select, value, label) {
+  if (!select) return;
+  const option = document.createElement('option');
+  option.value = value;
+  option.textContent = label;
+  select.appendChild(option);
+}
+
+function populateSelectOptions(select, items) {
+  clearSelectOptions(select);
+  for (const item of items) {
+    appendSelectOption(select, item.value, item.label);
+  }
+}
+
 function updateDashboard() {
   if (!graph) return;
   const sel = $('roiGateway');
   const gateways = gatewayNodes(graph);
-  sel.innerHTML = gateways.map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.label || g.id)}</option>`).join('');
+  populateSelectOptions(sel, gateways.map((g) => ({ value: g.id, label: g.label || g.id })));
 
   let metrics;
   try {
@@ -3524,7 +3544,7 @@ function playSimulation() {
   if (!ensureHandoffReady()) return;
   simulationMode = $('simMode')?.value || 'real';
   syncConfirmedAutoFromUi();
-  _animatedTer = null; // limpa TER anterior; serÃ¡ recalculado ao fim desta rodada
+  _animatedTer = null; // limpa TER anterior; será recalculado ao fim desta rodada
 
   if (simulationMode !== 'real') {
     try {
@@ -3621,12 +3641,12 @@ function renderHypothesisTargets() {
 
   const items = hypothesisTargets(type);
   if (!items.length) {
-    sel.innerHTML = '<option value="">Sem alvos disponiveis</option>';
+    populateSelectOptions(sel, [{ value: '', label: 'Sem alvos disponiveis' }]);
     help.textContent = 'Nao ha itens disponiveis para este tipo no processo atual.';
     return;
   }
 
-  sel.innerHTML = items.map((it) => `<option value="${escapeHtml(it.value)}">${escapeHtml(it.label)}</option>`).join('');
+  populateSelectOptions(sel, items);
 
   if (type === 'gateway') help.textContent = 'Hipotese: retirar etapa de aprovacao (gateway).';
   else if (type === 'loop') help.textContent = 'Hipotese: remover retorno de retrabalho (loop).';
@@ -3943,7 +3963,7 @@ async function loadDefaultBpmn() {
   }
 }
 
-// Mostra o overlay de escolha de entrada (chamado na inicializaÃ§Ã£o)
+// Mostra o overlay de escolha de entrada (chamado na inicialização)
 function showEntryChoice() {
   const overlay = $('entryChoiceOverlay');
   if (overlay) overlay.classList.remove('hidden');
@@ -3969,29 +3989,29 @@ function hideBpmnEditor() {
   if (panel) panel.classList.add('hidden');
 }
 
-// Modo importaÃ§Ã£o: fecha overlay e abre o setup modal na seÃ§Ã£o 1 (arquivo)
+// Modo importação: fecha overlay e abre o setup modal na seção 1 (arquivo)
 function startImportMode() {
   hideEntryChoice();
   openSetupModal();
-  // Rola atÃ© a seÃ§Ã£o 1 para deixar o fileInput em evidÃªncia
+  // Rola até a seção 1 para deixar o fileInput em evidência
   setTimeout(() => {
     const fileInput = $('fileInput');
     if (fileInput) fileInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 200);
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════
 // IMMEDIATE GLOBAL SCOPE EXPOSURE - Key Handler Functions
-// Estas funÃ§Ãµes DEVEM estar globalmente acessÃ­veis para os
+// Estas funções DEVEM estar globalmente acessíveis para os
 // onclick handlers no HTML funcionar em contexto de iframe
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════
 if (typeof globalThis !== 'undefined' && globalThis.window) {
   globalThis.showBpmnEditor = showBpmnEditor;
   globalThis.startImportMode = startImportMode;
   globalThis.hideEntryChoice = hideEntryChoice;
   globalThis.showEntryChoice = showEntryChoice;
   globalThis.hideBpmnEditor = hideBpmnEditor;
-  console.log('[Simulator] âœ“ FunÃ§Ãµes expostas em window logo apÃ³s definiÃ§Ã£o');
+  console.log('[Simulator] ✓ Funções expostas em window logo após definição');
 }
 if (typeof globalThis !== 'undefined') {
   globalThis.showBpmnEditor = showBpmnEditor;
@@ -3999,40 +4019,40 @@ if (typeof globalThis !== 'undefined') {
   globalThis.hideEntryChoice = hideEntryChoice;
   globalThis.showEntryChoice = showEntryChoice;
   globalThis.hideBpmnEditor = hideBpmnEditor;
-  console.log('[Simulator] âœ“ FunÃ§Ãµes expostas em globalThis logo apÃ³s definiÃ§Ã£o');
+  console.log('[Simulator] ✓ Funções expostas em globalThis logo após definição');
 }
 
 // Extrai a topologia do editor BPMN e aplica ao simulador
 async function applyFromBpmnEditor() {
   const btn = $('btnBpmnApply');
   if (!_bpmnModeler) {
-    alert('Editor BPMN nÃ£o inicializado.');
+    alert('Editor BPMN não inicializado.');
     return;
   }
-  if (btn) { btn.disabled = true; btn.textContent = 'Processandoâ€¦'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Processando...'; }
   try {
     const { xml } = await _bpmnModeler.saveXML({ format: true });
-    // Cria um File virtual para reusar o pipeline de extraÃ§Ã£o de cv.js
+    // Cria um File virtual para reusar o pipeline de extração de cv.js
     const file = new File([xml], 'diagrama.bpmn', { type: 'application/xml' });
     const extraction = await extractTopologyFromWorkflowFile(file);
     const { graph: g } = extraction;
     if (!Array.isArray(g?.nodes) || g.nodes.length === 0) {
-      alert('Nenhuma topologia extraÃ­da do diagrama.\nAdicione atividades ao processo antes de aplicar.');
+      alert('Nenhuma topologia extraída do diagrama.\nAdicione atividades ao processo antes de aplicar.');
       return;
     }
     extractedGraph = normalizeGraph(g);
-    // Fecha o editor e abre o setup modal para preencher os detalhes (SeÃ§Ã£o 2 em diante)
+    // Fecha o editor e abre o setup modal para preencher os detalhes (Seção 2 em diante)
     hideBpmnEditor();
     applyExtracted();
     openSetupModal();
     const out = $('cvOutput');
-    if (out) out.textContent = `Topologia extraÃ­da do Editor BPMN: ${g.nodes.length} nÃ³(s), ${(g.edges || []).length} aresta(s).`;
+    if (out) out.textContent = `Topologia extraída do Editor BPMN: ${g.nodes.length} nó(s), ${(g.edges || []).length} aresta(s).`;
   } catch (e) {
     /* notifica o usuario do erro */
     console.error('[SimBPMN] applyFromBpmnEditor:', e);
     alert('Erro ao extrair topologia: ' + e.message);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'â–¶ Aplicar ao Simulador'; }
+    if (btn) { btn.disabled = false; btn.textContent = '▶ Aplicar ao Simulador'; }
   }
 }
 
@@ -4089,8 +4109,8 @@ function wireEvents() {
     updateDashboard();
   });
   $('happyPath')?.addEventListener('input', renderSetupChecklist);
-  // NOTA: leadTimeInformed usa 'change' (ao sair do campo), NÃƒO 'input',
-  // para evitar bloquear a digitaÃ§Ã£o com cÃ¡lculos sÃ­ncronos pesados.
+  // NOTA: leadTimeInformed usa 'change' (ao sair do campo), NÃO 'input',
+  // para evitar bloquear a digitação com cálculos síncronos pesados.
   $('setupHappyPath')?.addEventListener('input', () => {
     syncSetupInputsToMain();
     renderSetupChecklist();
@@ -4099,8 +4119,8 @@ function wireEvents() {
     syncSetupInputsToMain();
     renderSetupChecklist();
   });
-  // handoffWizard agora Ã© apenas exibiÃ§Ã£o â€” sem interaÃ§Ã£o do usuÃ¡rio
-  // (handoffs sÃ£o classificados automaticamente com base nos perfis das raias)
+  // handoffWizard agora é apenas exibição — sem interação do usuário
+  // (handoffs são classificados automaticamente com base nos perfis das raias)
   $('setupGatewayEditor')?.addEventListener('click', (ev) => {
     const target = ev.target;
     const targetId = target?.id;
@@ -4128,7 +4148,7 @@ function wireEvents() {
       if (graph) updateDashboard();
       return;
     }
-    // Checkbox de automaÃ§Ã£o: trata interdependÃªncia e faz refresh completo
+    // Checkbox de automação: trata interdependência e faz refresh completo
     if (t.matches('input[data-task-automated], input[data-task-potential]')) {
       document.querySelectorAll('input[data-task-automated]').forEach((autoEl) => {
         const id = String(autoEl.dataset.taskAutomated || '');
@@ -4158,7 +4178,7 @@ function wireEvents() {
     }
   }, true); // capture=true para capturar blur
 
-  // Perfis de raia (equipe/Ã³rgÃ£o): auto-aplica handoffs em tempo real
+  // Perfis de raia (equipe/órgão): auto-aplica handoffs em tempo real
   $('setupTaskMatrix')?.addEventListener('input', (ev) => {
     const t = ev.target;
     if (t.matches('[data-lp-team], [data-lp-org]')) {
@@ -4207,7 +4227,7 @@ function wireEvents() {
   $('btnResetRules')?.addEventListener('click', () => { resetRulesToDefaults(); applyCalibration(); });
   $('btnSimulateRoi')?.addEventListener('click', runRoi);
 
-  // â”€â”€ T.P. e T.P.E.: recalcular automaticamente ao alterar valor ou unidade â”€â”€
+  // ── T.P. e T.P.E.: recalcular automaticamente ao alterar valor ou unidade ──
   $('leadTimeInformed')?.addEventListener('change',       () => { if (graph) updateDashboard(); });
   $('tpUnit')?.addEventListener('change',                 () => { if (graph) updateDashboard(); });
   $('processingTimeInformed')?.addEventListener('change', () => { if (graph) updateDashboard(); });
@@ -4230,7 +4250,7 @@ function wireEvents() {
     btnApply.onclick = applyExtracted;
   }
 
-  // â”€â”€ Entry Choice â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Entry Choice ─────────────────────────────────────────
   const btnDraw = $('btnChoiceDrawBpmn');
   if (btnDraw) {
     btnDraw.addEventListener('click', showBpmnEditor);
@@ -4247,7 +4267,7 @@ function wireEvents() {
   if (btnSkip) {
     btnSkip.addEventListener('click', () => {
       hideEntryChoice();
-      // carrega o exemplo padrÃ£o e vai direto para o workspace
+      // carrega o exemplo padrão e vai direto para o workspace
       loadSample();
     });
     btnSkip.onclick = () => {
@@ -4256,7 +4276,7 @@ function wireEvents() {
     };
   }
 
-  // â”€â”€ BPMN Editor Toolbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── BPMN Editor Toolbar ─────────────────────────────────
   $('btnBpmnApply')?.addEventListener('click', applyFromBpmnEditor);
   $('btnBpmnBack')?.addEventListener('click', () => { hideBpmnEditor(); showEntryChoice(); });
   $('btnBpmnFit')?.addEventListener('click', () => {
@@ -4287,7 +4307,7 @@ function wireGlobalFallbackClicks() {
   });
 }
 
-// â”€â”€â”€ SIGA Bridge (postMessage) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SIGA Bridge (postMessage) ────────────────────────────
 // Allows the parent SIGA frame to push a saved graph into the simulator
 // and receive back the current graph when the user saves.
 
@@ -4296,14 +4316,14 @@ let _sigaPopKey = null; // key of the POP opened from SIGA (e.g. "d" or "pop_abc
 function saveToSIGA() {
   if (!graph) { alert('Nenhum grafo carregado para salvar.'); return; }
   const btn = $('btnSaveToSiga');
-  if (btn) { btn.disabled = true; btn.textContent = 'Salvandoâ€¦'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
   try {
-    // Tenta capturar mÃ©tricas atuais; falha silenciosamente se nÃ£o for possÃ­vel
+    // Tenta capturar métricas atuais; falha silenciosamente se não for possível
     let simResults = _lastSimMetrics;
     if (!simResults) {
       try { simResults = computeScenarioMetrics(); _lastSimMetrics = simResults; } catch (_) { console.warn('[simulator]', _); }
     }
-    // Payload simplificado para serializaÃ§Ã£o (remove estruturas grandes como ranking completo)
+    // Payload simplificado para serialização (remove estruturas grandes como ranking completo)
     const simSummary = simResults ? {
       ter:       simResults.ter,
       top:       simResults.top,
@@ -4331,11 +4351,11 @@ function saveToSIGA() {
     );
     if (btn) {
       btn.textContent = 'âœ… Salvo no SIGA';
-      setTimeout(() => { btn.disabled = false; btn.textContent = 'ðŸ’¾ Salvar no SIGA'; }, 2000);
+      setTimeout(() => { btn.disabled = false; btn.textContent = '💾 Salvar no SIGA'; }, 2000);
     }
   } catch (e) {
-    /* erro nao-fatal â€” registra aviso */
-    if (btn) { btn.disabled = false; btn.textContent = 'ðŸ’¾ Salvar no SIGA'; }
+    /* erro nao-fatal — registra aviso */
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Salvar no SIGA'; }
     console.warn('[Simulator] saveToSIGA falhou:', e);
   }
 }
@@ -4344,7 +4364,7 @@ function _handleMsgLoadGraph(ev, msg) {
   const { graph: g, popName, popKey } = msg.payload || {};
   _sigaPopKey = popKey || null;
   const titleEl = document.querySelector('.topbar h1');
-  if (titleEl && popName) titleEl.textContent = `Simulador â€” ${popName}`;
+  if (titleEl && popName) titleEl.textContent = `Simulador — ${popName}`;
   const saveBtn = $('btnSaveToSiga');
   if (saveBtn) saveBtn.style.display = popKey ? 'inline-flex' : 'none';
   if (Array.isArray(g?.nodes) && Array.isArray(g?.edges)) {
@@ -4384,48 +4404,48 @@ globalThis.addEventListener('message', (ev) => {
   }
 });
 
-// â”€â”€ Wire save button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Wire save button ──────────────────────────────────────
 $('btnSaveToSiga')?.addEventListener('click', saveToSIGA);
 
 try {
   console.log('[Simulator] Iniciando wireEvents...');
   wireEvents();
-  console.log('[Simulator] wireEvents concluÃ­do');
+  console.log('[Simulator] wireEvents concluído');
   
   wireGlobalFallbackClicks();
-  console.log('[Simulator] wireGlobalFallbackClicks concluÃ­do');
+  console.log('[Simulator] wireGlobalFallbackClicks concluído');
   
   $('btnViewDashboard')?.classList.remove('hidden');
-  loadSample();          // carrega exemplo no background (JSON visÃ­vel mas tela coberta)
+  loadSample();          // carrega exemplo no background (JSON visível mas tela coberta)
   console.log('[Simulator] Chamando showEntryChoice...');
   showEntryChoice();     // primeiro passo: overlay de escolha de entrada
   
-  // Debug: verificar se botÃµes foram registrados
+  // Debug: verificar se botões foram registrados
   const btnDraw = $('btnChoiceDrawBpmn');
   const btnImport = $('btnChoiceImport');
-  console.log('[Simulator] btnChoiceDrawBpmn:', btnDraw ? 'EXISTE' : 'NÃƒO EXISTE');
-  console.log('[Simulator] btnChoiceDrawBpmn.onclick:', btnDraw?.onclick ? 'REGISTRADO' : 'NÃƒO REGISTRADO');
-  console.log('[Simulator] btnChoiceImport:', btnImport ? 'EXISTE' : 'NÃƒO EXISTE');
-  console.log('[Simulator] btnChoiceImport.onclick:', btnImport?.onclick ? 'REGISTRADO' : 'NÃƒO REGISTRADO');
+  console.log('[Simulator] btnChoiceDrawBpmn:', btnDraw ? 'EXISTE' : 'NÃO EXISTE');
+  console.log('[Simulator] btnChoiceDrawBpmn.onclick:', btnDraw?.onclick ? 'REGISTRADO' : 'NÃO REGISTRADO');
+  console.log('[Simulator] btnChoiceImport:', btnImport ? 'EXISTE' : 'NÃO EXISTE');
+  console.log('[Simulator] btnChoiceImport.onclick:', btnImport?.onclick ? 'REGISTRADO' : 'NÃO REGISTRADO');
   
-  console.log('[Simulator] showEntryChoice concluÃ­do - inicializaÃ§Ã£o completa');
+  console.log('[Simulator] showEntryChoice concluído - inicialização completa');
 } catch (e) {
   /* exibe mensagem de erro na interface */
-  console.error('[Simulator] ERRO CRÃTICO:', e);
+  console.error('[Simulator] ERRO CRÍTICO:', e);
   const out = $('cvOutput');
   if (out) out.textContent = `Falha ao inicializar interface: ${e.message}\n\nStack: ${e.stack}`;
   const v = $('validationBox');
   if (v) v.textContent = `Falha ao inicializar interface: ${e.message}`;
 } finally {
-  // â”€â”€ SEMPRE expor funÃ§Ãµes no escopo global, mesmo com erro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  console.log('[Simulator] FINALMENTE: Expondo funÃ§Ãµes no globalThis');
+  // ── SEMPRE expor funções no escopo global, mesmo com erro ──────────
+  console.log('[Simulator] FINALMENTE: Expondo funções no globalThis');
   
   globalThis.showBpmnEditor = showBpmnEditor;
   globalThis.startImportMode = startImportMode;
   globalThis.hideBpmnEditor = hideBpmnEditor;
   globalThis.hideEntryChoice = hideEntryChoice;
   globalThis.showEntryChoice = showEntryChoice;
-  globalThis.loadSample = loadSample || function() { console.warn('loadSample nÃ£o estÃ¡ disponÃ­vel'); };
+  globalThis.loadSample = loadSample || function() { console.warn('loadSample não está disponível'); };
   
   console.log('[Simulator] Funcoes expostas no globalThis:', {
     showBpmnEditor: typeof globalThis.showBpmnEditor,
@@ -4433,11 +4453,11 @@ try {
   });
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ EXPLICIT GLOBAL EXPOSURE (Fallback) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Garante que os handlers e funÃ§Ãµes principais estejam sempre
-// acessÃ­veis ao onclick inline do HTML, mesmo se finally falhar
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════════
+// ─── EXPLICIT GLOBAL EXPOSURE (Fallback) ───────────────────
+// Garante que os handlers e funções principais estejam sempre
+// acessíveis ao onclick inline do HTML, mesmo se finally falhar
+// ════════════════════════════════════════════════════════════
 (function() {
   try {
     if (showBpmnEditor !== undefined) {
@@ -4459,7 +4479,7 @@ try {
       globalThis.loadSample = loadSample;
     }
     
-    console.log('[Simulator] âœ“âœ“ FALLBACK: FunÃ§Ãµes re-expostas em globalThis/window');
+    console.log('[Simulator] ✓✓ FALLBACK: Funções re-expostas em globalThis/window');
     console.log('[Simulator] Available functions:', {
       showBpmnEditor: typeof globalThis.showBpmnEditor,
       startImportMode: typeof globalThis.startImportMode,

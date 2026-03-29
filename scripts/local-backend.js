@@ -761,8 +761,22 @@ const server = http.createServer(async (req, res) => {
 // Verifica dependências opcionais no startup para evitar falhas silenciosas em runtime.
 function checkOptionalDeps() {
   const missing = [];
-  try { require('mammoth'); } catch (mammothError) { if (mammothError?.code !== 'MODULE_NOT_FOUND') throw mammothError; missing.push('mammoth (DOCX parser)'); }
-  try { require('exceljs'); } catch (excelError) { if (excelError?.code !== 'MODULE_NOT_FOUND') throw excelError; missing.push('exceljs (XLSX parser)'); }
+  try {
+    require('mammoth');
+  } catch (mammothError) {
+    if (mammothError?.code !== 'MODULE_NOT_FOUND') {
+      throw mammothError;
+    }
+    missing.push('mammoth (DOCX parser)');
+  }
+  try {
+    require('exceljs');
+  } catch (excelError) {
+    if (excelError?.code !== 'MODULE_NOT_FOUND') {
+      throw excelError;
+    }
+    missing.push('exceljs (XLSX parser)');
+  }
   if (missing.length) {
     console.warn(`[siga-local-backend] AVISO: dependencias ausentes — execute "npm install":`);
     for (const dep of missing) console.warn(`  • ${dep}`);

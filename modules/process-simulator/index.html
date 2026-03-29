@@ -201,7 +201,7 @@
   </section>
 
   <!-- OVERLAY DE ENTRADA -->
-  <div id="entryChoiceOverlay" class="entry-choice-overlay" role="dialog" aria-modal="true" aria-labelledby="entryChoiceTitle">
+  <dialog id="entryChoiceOverlay" class="entry-choice-overlay" aria-modal="true" aria-labelledby="entryChoiceTitle">
     <div class="entry-choice-dialog">
       <h2 id="entryChoiceTitle">Como deseja comecar?</h2>
       <p>Escolha como o processo sera modelado antes de simular.</p>
@@ -219,10 +219,10 @@
       </div>
       <p class="entry-skip"><button id="btnChoiceSkip" type="button">Pular - usar JSON / exemplo</button></p>
     </div>
-  </div>
+  </dialog>
 
   <!-- PAINEL DO EDITOR BPMN -->
-  <div id="bpmnEditorPanel" class="bpmn-editor-panel hidden" role="region" aria-labelledby="bpmnEditorTitle">
+  <section id="bpmnEditorPanel" class="bpmn-editor-panel hidden" aria-labelledby="bpmnEditorTitle">
     <div class="bpmn-editor-toolbar">
       <span id="bpmnEditorTitle" class="bpmn-editor-title">Editor BPMN 2.0</span>
       <div class="bpmn-editor-actions">
@@ -235,9 +235,9 @@
       </div>
     </div>
     <div id="bpmnContainer" class="bpmn-container"></div>
-  </div>
+  </section>
 
-  <div id="setupModal" class="setup-modal" role="dialog" aria-modal="true" aria-labelledby="setupModalTitle">
+  <dialog id="setupModal" class="setup-modal" aria-modal="true" aria-labelledby="setupModalTitle">
     <div class="setup-dialog">
       <h2 id="setupModalTitle">Preparar Simulacao</h2>
       <p>Identifique o processo e preencha as informacoes minimas para iniciar com seguranca.</p>
@@ -319,7 +319,7 @@
         <button id="btnReadyToSimulate" type="button">Concluir Preparacao</button>
       </div>
     </div>
-  </div>
+  </dialog>
 
   <script type="module" src="./app.js"></script>
 </body>
