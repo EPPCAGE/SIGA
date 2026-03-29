@@ -16,9 +16,16 @@
     { key: 'talent', label: 'Banco de Talentos' },
   ];
   const COMPETENCY_TYPES = [
-    { value: 'hard', label: 'Hard Skill' },
-    { value: 'soft', label: 'Soft Skill' },
-    { value: 'normative', label: 'Conhecimento Normativo' },
+    { value: 'hard', label: 'Hard Skills' },
+    { value: 'soft', label: 'Soft Skills' },
+    { value: 'normative', label: 'Conhecimentos Normativos' },
+  ];
+  const FIXED_TRAIL_LEVELS = [
+    'Iniciante',
+    'Básico',
+    'Intermediário',
+    'Avançado',
+    'Especialista',
   ];
   const DEFAULT_STORE = {
     people: [],
@@ -42,6 +49,8 @@
     trailId: '',
     trainingId: '',
     surveyId: '',
+    talentSearch: null,
+    talentLoading: false,
   };
 
   function byId(id) {
@@ -93,6 +102,13 @@
       .filter(Boolean);
   }
 
+  function firstFilled(row, keys) {
+    for (const key of keys) {
+      if (row && row[key] !== undefined && safeText(row[key])) return safeText(row[key]);
+    }
+    return '';
+  }
+
   function uniqueSorted(items) {
     return [...new Set(items.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }
@@ -130,6 +146,14 @@
       option.value = item;
       list.appendChild(option);
     });
+  }
+
+  async function readSheetRows(file) {
+    if (typeof XLSX === 'undefined') throw new Error('Biblioteca XLSX não carregada.');
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(sheet, { defval: '' });
   }
 
   function showInfo(message, type) {
@@ -182,6 +206,12 @@
 
   function personKey(person) {
     return `${safeText(person.name).toLowerCase()}|${safeText(person.role).toLowerCase()}`;
+  }
+
+  function personImportKey(row) {
+    const name = firstFilled(row, ['nome', 'Nome']);
+    const role = firstFilled(row, ['cargo', 'Cargo']);
+    return `${name.toLowerCase()}|${role.toLowerCase()}`;
   }
 
   function normalizeRecord(record, template) {
@@ -329,13 +359,11 @@
       id: '',
       name: '',
       objective: '',
-      levelName: '',
-      levelGoal: '',
-      levelDegree: '',
       macroprocess: '',
       division: '',
       competencies: [],
       prerequisites: [],
+      levels: FIXED_TRAIL_LEVELS.map((name) => ({ name, goal: '' })),
     };
   }
 
@@ -372,6 +400,7 @@
       ...item,
       competencies: safeArray(item.competencies),
       prerequisites: safeArray(item.prerequisites),
+      levels: safeArray(item.levels),
     }));
     getStore().trainings = trainings().map((item) => normalizeRecord(item, trainingTemplate())).map((item) => ({
       ...item,
@@ -439,7 +468,366 @@
   }
 
   function getTypeBadgeClass(type) {
-    return type === 'soft' ? 'soft' : type === 'normative' ? 'normative' : 'hard';
+    if (type === 'soft') return 'soft';
+    if (type === 'normative') return 'normative';
+    return 'hard';
+  }
+
+  function countBy(items, getter) {
+    const grouped = new Map();
+    for (const item of items) {
+      const key = safeText(getter(item));
+      if (!key) continue;
+      grouped.set(key, (grouped.get(key) || 0) + 1);
+    }
+    return [...grouped.entries()].sort((a, b) => b[1] - a[1]);
+  }
+
+  function averageOfPeople(getter) {
+    let count = 0;
+    let sum = 0;
+    for (const person of people()) {
+      const value = getter(person);
+      if (!Number.isFinite(value) || value <= 0) continue;
+      sum += value;
+      count += 1;
+    }
+    if (!count) return 0;
+    return Math.round(sum / count);
+  }
+
+  function peopleNearRetirement() {
+    let total = 0;
+    for (const item of people()) {
+      if (parseNumber(item.age) >= 55) total += 1;
+    }
+    return total;
+  }
+
+  function appendEmptyBarsMessage(bars) {
+    bars.appendChild(createNode('div', 'gc-empty', 'Sem dados suficientes para este recorte.'));
+  }
+
+  function appendBarEntries(bars, entries, total) {
+    const baseTotal = total || entries[0]?.[1] || 0;
+    for (const [label, value] of entries) {
+      fillBar(bars, label, value, baseTotal);
+    }
+  }
+
+  function createBarsPanel(title, desc, entries, total) {
+    const panel = createNode('div', 'gc-panel');
+    panel.append(createPanelHead(title, desc));
+    const bars = createNode('div', 'gc-stat-bars');
+    if (!entries.length) {
+      appendEmptyBarsMessage(bars);
+    } else {
+      appendBarEntries(bars, entries, total);
+    }
+    panel.appendChild(bars);
+    return panel;
+  }
+
+  function latestSurvey() {
+    return [...surveys()].sort((a, b) => String(b.year).localeCompare(String(a.year))).at(0) || null;
+  }
+
+  function matchesTrailProgressEntry(item, trailId, trailName) {
+    const text = safeText(item).toLowerCase();
+    return text === trailId || text === trailName || text.startsWith(`${trailId}:`) || text.startsWith(`${trailName}:`);
+  }
+
+  function findTrailProgressEntry(completedTrails, trailId, trailName) {
+    for (const item of safeArray(completedTrails)) {
+      if (matchesTrailProgressEntry(item, trailId, trailName)) return item;
+    }
+    return '';
+  }
+
+  function getTrailProgressInfo(person, trail) {
+    const name = safeText(trail?.name).toLowerCase();
+    const id = safeText(trail?.id).toLowerCase();
+    const match = findTrailProgressEntry(person?.completedTrails, id, name);
+    if (!match) return null;
+    const raw = safeText(match);
+    const level = raw.includes(':') ? safeText(raw.split(':').slice(1).join(':')) : '';
+    return { level: level || 'Em trilha' };
+  }
+
+  function trailParticipants(trail) {
+    const participants = [];
+    for (const person of people()) {
+      const progress = getTrailProgressInfo(person, trail);
+      if (!progress) continue;
+      participants.push({ person, progress });
+    }
+    return participants;
+  }
+
+  function personDisplayName(personId) {
+    const person = getPersonById(personId);
+    return person ? person.name : '';
+  }
+
+  function firstPersonInitialsParts(name) {
+    return safeText(name).split(/\s+/).filter(Boolean).slice(0, 2);
+  }
+
+  function personInitials(person) {
+    return firstPersonInitialsParts(person?.name).map((part) => part[0]?.toUpperCase() || '').join('');
+  }
+
+  function ensurePeopleFilters() {
+    const row = byId('gc-people-filter')?.closest('.gc-filter-row');
+    if (!row) return;
+    if (!byId('gc-people-filter-role')) {
+      const role = document.createElement('input');
+      role.id = 'gc-people-filter-role';
+      role.type = 'text';
+      role.placeholder = 'Filtrar por cargo';
+      role.setAttribute('list', 'gc-roles-list');
+      role.addEventListener('input', renderPeopleList);
+      row.appendChild(role);
+    }
+    if (!byId('gc-people-filter-unit')) {
+      const unit = document.createElement('input');
+      unit.id = 'gc-people-filter-unit';
+      unit.type = 'text';
+      unit.placeholder = 'Filtrar por unidade';
+      unit.setAttribute('list', 'gc-units-list');
+      unit.addEventListener('input', renderPeopleList);
+      row.appendChild(unit);
+    }
+    if (!byId('gc-people-filter-team')) {
+      const team = document.createElement('input');
+      team.id = 'gc-people-filter-team';
+      team.type = 'text';
+      team.placeholder = 'Filtrar por equipe';
+      team.setAttribute('list', 'gc-teams-list');
+      team.addEventListener('input', renderPeopleList);
+      row.appendChild(team);
+    }
+  }
+
+  function createCompetencyFilterInput(id, placeholder, listId) {
+    const input = document.createElement('input');
+    input.id = id;
+    input.type = 'text';
+    input.placeholder = placeholder;
+    if (listId) input.setAttribute('list', listId);
+    input.addEventListener('input', renderCompetencies);
+    return input;
+  }
+
+  function ensureCompetencyFilters() {
+    const list = byId('gc-competencies-list');
+    if (!list || byId('gc-competency-filters')) return;
+    const filters = createNode('div', 'gc-filter-row');
+    filters.id = 'gc-competency-filters';
+    const definitions = [
+      ['gc-competency-filter-process', 'Filtrar por processo', 'gc-process-list'],
+      ['gc-competency-filter-team', 'Filtrar por equipe', 'gc-teams-list'],
+      ['gc-competency-filter-role', 'Filtrar por cargo', 'gc-roles-list'],
+      ['gc-competency-filter-person', 'Filtrar por pessoa', ''],
+      ['gc-competency-filter-division', 'Filtrar por divisão', 'gc-units-list'],
+    ];
+    for (const [id, placeholder, listId] of definitions) {
+      filters.appendChild(createCompetencyFilterInput(id, placeholder, listId));
+    }
+    list.parentElement?.insertBefore(filters, list);
+  }
+
+  function filteredCompetencies() {
+    const processFilter = safeText(readFormValue('gc-competency-filter-process')).toLowerCase();
+    const teamFilter = safeText(readFormValue('gc-competency-filter-team')).toLowerCase();
+    const roleFilter = safeText(readFormValue('gc-competency-filter-role')).toLowerCase();
+    const personFilter = safeText(readFormValue('gc-competency-filter-person')).toLowerCase();
+    const divisionFilter = safeText(readFormValue('gc-competency-filter-division')).toLowerCase();
+    return mergedCompetencyCatalogItems().filter((item) => {
+      const personName = safeText(personDisplayName(item.personId)).toLowerCase();
+      if (processFilter && !safeText(item.process).toLowerCase().includes(processFilter)) return false;
+      if (teamFilter && !safeText(item.team).toLowerCase().includes(teamFilter)) return false;
+      if (roleFilter && !safeText(item.role).toLowerCase().includes(roleFilter)) return false;
+      if (personFilter && !personName.includes(personFilter)) return false;
+      if (divisionFilter && !safeText(item.division).toLowerCase().includes(divisionFilter)) return false;
+      return true;
+    });
+  }
+
+  function groupedCompetencies(items) {
+    const groups = new Map();
+    for (const item of items) {
+      const key = safeText(item.macroprocess) || 'Sem macroprocesso';
+      const group = groups.get(key) || [];
+      group.push(item);
+      groups.set(key, group);
+    }
+    return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
+  }
+
+  function configCompetencyEntry(type, name) {
+    return {
+      id: `cfg_${type}_${safeText(name).toLowerCase()}`,
+      name: safeText(name),
+      type,
+      macroprocess: '',
+      process: '',
+      role: '',
+      division: '',
+      team: '',
+      personId: '',
+      trailId: '',
+      trainingId: '',
+      description: '',
+    };
+  }
+
+  function configCompetencyEntries() {
+    const mapping = [
+      ['hardSkills', 'hard'],
+      ['softSkills', 'soft'],
+      ['conhecimentosNormativos', 'normative'],
+    ];
+    if (typeof getConfig !== 'function') return [];
+    const entries = [];
+    for (const [configKey, type] of mapping) {
+      for (const name of safeArray(getConfig(configKey))) {
+        entries.push(configCompetencyEntry(type, name));
+      }
+    }
+    return entries;
+  }
+
+  function mergedCompetencyCatalogItems() {
+    const merged = new Map();
+    for (const item of configCompetencyEntries()) {
+      const key = `${item.type}|${safeText(item.name).toLowerCase()}`;
+      merged.set(key, item);
+    }
+    for (const item of competencies()) {
+      const key = `${item.type}|${safeText(item.name).toLowerCase()}`;
+      const previous = merged.get(key) || {};
+      merged.set(key, { ...previous, ...item });
+    }
+    return [...merged.values()];
+  }
+
+  function trainingPeopleNames(item) {
+    return safeArray(item.personIds)
+      .map((value) => personDisplayName(value) || safeText(value))
+      .filter(Boolean);
+  }
+
+  function createTrailParticipantsPanel(item) {
+    const participants = trailParticipants(item);
+    const panel = createNode('div', 'gc-trail-side');
+    panel.append(createNode('div', 'gc-step-title', 'Pessoas na trilha'));
+    if (!participants.length) {
+      panel.append(createNode('div', 'gc-step-sub', 'Nenhuma pessoa vinculada a esta trilha ainda.'));
+      return panel;
+    }
+    participants.forEach(({ person, progress }) => {
+      const row = createNode('div', 'gc-trail-person');
+      row.append(createNode('span', 'gc-trail-initials', personInitials(person) || '??'));
+      const text = createNode('div', 'gc-trail-person-copy');
+      text.append(createNode('div', 'gc-list-title', person.name));
+      text.append(createNode('div', 'gc-list-meta', `${progress.level} • ${person.role || 'Sem cargo'}`));
+      row.appendChild(text);
+      panel.appendChild(row);
+    });
+    return panel;
+  }
+
+  function trailLevels(trail) {
+    const savedLevels = safeArray(trail?.levels).map((item) => ({
+      name: safeText(item?.name),
+      goal: safeText(item?.goal),
+    }));
+    return FIXED_TRAIL_LEVELS.map((name) => {
+      const found = savedLevels.find((item) => item.name.toLowerCase() === name.toLowerCase());
+      return { name, goal: found?.goal || '' };
+    });
+  }
+
+  function trailStepModels(trail) {
+    return trailLevels(trail).map((level, index) => ({
+      key: `level-${index}`,
+      title: level.name,
+      subtitle: level.goal || 'Objetivo não informado',
+      index,
+    }));
+  }
+
+  function stepMatchesProgress(model, progress) {
+    const progressText = safeText(progress?.level).toLowerCase();
+    if (!progressText) return model.index === 0;
+    const hints = [model.title, model.subtitle]
+      .map((value) => safeText(value).toLowerCase())
+      .filter(Boolean);
+    return hints.some((hint) => progressText.includes(hint) || hint.includes(progressText));
+  }
+
+  function createTrailLevelItem(level, index) {
+    const row = createNode('div', 'gc-trail-level-item');
+    row.dataset.levelIndex = String(index);
+    row.append(createNode('div', 'gc-trail-level-badge', level?.name || FIXED_TRAIL_LEVELS[index]));
+
+    const goalField = createNode('div', 'gc-field');
+    goalField.append(createNode('label', '', `Objetivo do nível ${level?.name || FIXED_TRAIL_LEVELS[index]}`));
+    const goalInput = document.createElement('textarea');
+    goalInput.className = 'gc-trail-level-goal';
+    goalInput.value = safeText(level?.goal);
+    goalField.appendChild(goalInput);
+    row.append(goalField);
+    return row;
+  }
+
+  function setTrailLevelsEditor(levels) {
+    const host = byId('gc-trail-levels');
+    if (!host) return;
+    host.replaceChildren();
+    const nextLevels = levels.length ? levels : FIXED_TRAIL_LEVELS.map((name) => ({ name, goal: '' }));
+    nextLevels.forEach((level, index) => host.appendChild(createTrailLevelItem(level, index)));
+  }
+
+  function readTrailLevelsEditor() {
+    return [...document.querySelectorAll('#gc-trail-levels .gc-trail-level-item')]
+      .map((row) => ({
+        name: FIXED_TRAIL_LEVELS[Number(row.dataset.levelIndex) || 0] || '',
+        goal: safeText(row.querySelector('.gc-trail-level-goal')?.value),
+      }))
+      .filter((item) => item.name || item.goal);
+  }
+
+  function ensureTrailLevelsEditor() {
+    const levelsHost = byId('gc-trail-levels');
+    if (levelsHost) return;
+    const grid = byId('gc-trail-prereq')?.closest('.gc-form-grid');
+    if (!grid) return;
+
+    ['gc-trail-level-name', 'gc-trail-level-goal', 'gc-trail-level-degree'].forEach((id) => {
+      byId(id)?.closest('.gc-field')?.remove();
+    });
+
+    const section = createNode('div', 'gc-trail-levels-shell');
+    section.id = 'gc-trail-levels-shell';
+    section.append(createNode('div', 'gc-panel-title', 'Objetivos por nível'));
+    section.append(createNode('div', 'gc-panel-desc', 'A trilha usa cinco níveis fixos: Iniciante, Básico, Intermediário, Avançado e Especialista. Preencha apenas o objetivo esperado em cada um.'));
+
+    const host = createNode('div', 'gc-trail-levels');
+    host.id = 'gc-trail-levels';
+    section.appendChild(host);
+    grid.appendChild(section);
+
+    const head = grid.closest('.gc-panel')?.querySelector('.gc-panel-head');
+    if (head) {
+      const title = head.querySelector('.gc-panel-title');
+      const desc = head.querySelector('.gc-panel-desc');
+      if (title) title.textContent = 'Cadastrar trilha';
+      if (desc) desc.textContent = 'Vincule a competências, macroprocesso e divisão, descreva os objetivos dos cinco níveis fixos e informe em que contextos a trilha é pré-requisito.';
+    }
+
+    setTrailLevelsEditor([]);
   }
 
   function removalInsight(removal) {
@@ -480,6 +868,242 @@
       person.desiredUnit,
       removal?.desiredUnit,
     ].join(' ');
+  }
+
+  function architectureEntries() {
+    if (typeof arqGetData !== 'function') return [];
+    return safeArray(arqGetData()).map((item) => ({
+      macroprocesso: safeText(item?.macroprocesso),
+      processo: safeText(item?.processo),
+      subprocesso: safeText(item?.subprocesso),
+      area: safeText(item?.area),
+      equipe: safeText(item?.equipe),
+      sigla: safeText(item?.sigla),
+      gerente: safeText(item?.gerente),
+    }));
+  }
+
+  function architectureCorpus(entry) {
+    return [
+      entry.macroprocesso,
+      entry.processo,
+      entry.subprocesso,
+      entry.area,
+      entry.equipe,
+      entry.sigla,
+      entry.gerente,
+    ].join(' ');
+  }
+
+  function relatedArchitectureEntries(queryText, roleText, prereqList) {
+    const tokens = uniqueSorted([
+      ...tokenize(queryText),
+      ...tokenize(roleText),
+      ...prereqList.flatMap((item) => tokenize(item)),
+    ]);
+    if (!tokens.length) return architectureEntries().slice(0, 8);
+    return architectureEntries()
+      .map((entry) => {
+        const corpus = tokenize(architectureCorpus(entry));
+        const score = tokens.reduce((total, token) => total + (corpus.includes(token) ? 10 : 0), 0);
+        return { entry, score };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8)
+      .map((item) => item.entry);
+  }
+
+  function architectureLinkedCompetencies(entries, roleText, prereqList) {
+    const processes = new Set(entries.map((item) => safeText(item.processo).toLowerCase()).filter(Boolean));
+    const macros = new Set(entries.map((item) => safeText(item.macroprocesso).toLowerCase()).filter(Boolean));
+    const divisions = new Set(entries.map((item) => safeText(item.area).toLowerCase()).filter(Boolean));
+    const teams = new Set(entries.map((item) => safeText(item.equipe).toLowerCase()).filter(Boolean));
+    const role = safeText(roleText).toLowerCase();
+    const required = prereqList.map((item) => item.toLowerCase());
+
+    const names = competencies()
+      .filter((item) => {
+        const process = safeText(item.process).toLowerCase();
+        const macro = safeText(item.macroprocess).toLowerCase();
+        const division = safeText(item.division).toLowerCase();
+        const team = safeText(item.team).toLowerCase();
+        const itemRole = safeText(item.role).toLowerCase();
+        if (process && processes.has(process)) return true;
+        if (macro && macros.has(macro)) return true;
+        if (division && divisions.has(division)) return true;
+        if (team && teams.has(team)) return true;
+        if (role && itemRole === role) return true;
+        return required.some((value) =>
+          safeText(item.name).toLowerCase().includes(value) ||
+          safeText(item.description).toLowerCase().includes(value),
+        );
+      })
+      .map((item) => item.name);
+
+    return uniqueSorted(names);
+  }
+
+  function buildTalentCandidate(person, roleText, prereqList, architectureCompetencies, architectureMatches) {
+    const role = safeText(roleText).toLowerCase();
+    const personRole = safeText(person.role).toLowerCase();
+    const skills = safeArray(person.competencies).map((item) => safeText(item).toLowerCase());
+    const desiredUnit = safeText(person.desiredUnit).toLowerCase();
+    const queryTokens = tokenize(readFormValue('gc-talent-query'));
+    const corpus = tokenize(personSearchCorpus(person));
+    const architectureTokens = architectureMatches.flatMap((item) => tokenize(architectureCorpus(item)));
+    let score = 0;
+    const reasons = [];
+
+    if (role && personRole === role) {
+      score += 22;
+      reasons.push(`cargo aderente: ${person.role}`);
+    }
+
+    prereqList.forEach((item) => {
+      if (skills.some((skill) => skill.includes(item.toLowerCase()))) {
+        score += 14;
+        reasons.push(`atende pré-requisito: ${item}`);
+      }
+    });
+
+    architectureCompetencies.forEach((item) => {
+      if (skills.some((skill) => skill.includes(item.toLowerCase()))) {
+        score += 10;
+        reasons.push(`competência vinculada à arquitetura: ${item}`);
+      }
+    });
+
+    queryTokens.forEach((token) => {
+      if (corpus.includes(token)) score += 6;
+      if (architectureTokens.includes(token)) score += 2;
+    });
+
+    if (queryTokens.includes('remocao') || queryTokens.includes('remoção')) {
+      if (removals().some((item) => item.personId === person.id)) {
+        score += 10;
+        reasons.push('possui pedido de remoção cadastrado');
+      }
+    }
+
+    if (desiredUnit && architectureMatches.some((item) => safeText(item.area).toLowerCase() === desiredUnit || safeText(item.equipe).toLowerCase() === desiredUnit)) {
+      score += 8;
+      reasons.push(`interesse de movimentação para ${person.desiredUnit}`);
+    }
+
+    return { person, score, reasons: uniqueSorted(reasons).slice(0, 4) };
+  }
+
+  function parseAiJson(text) {
+    const raw = safeText(text)
+      .replace(/^```json/i, '')
+      .replace(/^```/i, '')
+      .replace(/```$/i, '')
+      .trim();
+    try {
+      return JSON.parse(raw);
+    } catch (error) {
+      const start = raw.indexOf('{');
+      const end = raw.lastIndexOf('}');
+      if (start >= 0 && end > start) {
+        return JSON.parse(raw.slice(start, end + 1));
+      }
+      throw error;
+    }
+  }
+
+  async function callTalentAi(prompt) {
+    const caller = globalThis.callGeminiProxy || globalThis.callGemini;
+    if (typeof caller !== 'function') throw new Error('Serviço de IA não disponível no frontend.');
+    return caller(prompt, null, { maxTokens: 1200 });
+  }
+
+  async function interpretTalentQueryWithAi(queryText, roleText, prereqList, architectureMatches, architectureCompetencies) {
+    const peopleSummary = people().slice(0, 80).map((person) => ({
+      id: person.id,
+      nome: person.name,
+      cargo: person.role,
+      unidade: person.unit,
+      equipe: person.team,
+      competencias: safeArray(person.competencies).slice(0, 12),
+      preferencias: person.preferences,
+      remocao: person.removalInterest,
+      unidadeDesejada: person.desiredUnit,
+    }));
+    const prompt = [
+      'Você é um assistente de alocação de talentos da CAGE-RS.',
+      'Interprete a necessidade em linguagem natural e devolva somente JSON válido.',
+      'Considere o contexto de arquitetura de processos e competências vinculadas.',
+      '',
+      `Consulta do usuário: ${queryText || 'não informada'}`,
+      `Cargo informado: ${roleText || 'não informado'}`,
+      `Pré-requisitos informados: ${prereqList.join(', ') || 'não informados'}`,
+      `Arquitetura relacionada: ${JSON.stringify(architectureMatches)}`,
+      `Competências relacionadas à arquitetura: ${JSON.stringify(architectureCompetencies)}`,
+      `Candidatos possíveis: ${JSON.stringify(peopleSummary)}`,
+      '',
+      'Formato obrigatório:',
+      '{"interpreted_need":"","recommended_role":"","recommended_unit":"","recommended_team":"","recommended_competencies":[],"candidate_ids":["id1","id2"],"explanations":{"id1":"motivo"}}',
+    ].join('\n');
+    const text = await callTalentAi(prompt);
+    return parseAiJson(text);
+  }
+
+  async function runTalentSearchAi() {
+    const queryText = safeText(readFormValue('gc-talent-query'));
+    const roleText = '';
+    const prereqList = [];
+    if (!queryText) {
+      showInfo('Descreva a necessidade em linguagem natural para a busca com IA.', 'warn');
+      return;
+    }
+    state.talentLoading = true;
+    state.talentSearch = null;
+    renderTalentResults();
+    try {
+      const architectureMatches = relatedArchitectureEntries(queryText, roleText, prereqList);
+      const architectureCompetencies = architectureLinkedCompetencies(architectureMatches, roleText, prereqList);
+      let ai = null;
+      try {
+        ai = await interpretTalentQueryWithAi(queryText, roleText, prereqList, architectureMatches, architectureCompetencies);
+      } catch (error) {
+        ai = null;
+      }
+
+      const aiCandidateIds = safeArray(ai?.candidate_ids);
+      const ranked = people()
+        .map((person) => buildTalentCandidate(person, roleText || safeText(ai?.recommended_role), prereqList, architectureCompetencies, architectureMatches))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score);
+
+      const ordered = aiCandidateIds.length
+        ? aiCandidateIds
+          .map((id) => ranked.find((item) => item.person.id === id))
+          .filter(Boolean)
+          .concat(ranked.filter((item) => !aiCandidateIds.includes(item.person.id)))
+        : ranked;
+
+      state.talentSearch = {
+        interpretedNeed: safeText(ai?.interpreted_need) || queryText,
+        recommendedRole: safeText(ai?.recommended_role) || roleText,
+        recommendedUnit: safeText(ai?.recommended_unit),
+        recommendedTeam: safeText(ai?.recommended_team),
+        architectureMatches,
+        architectureCompetencies,
+        explanations: ai?.explanations && typeof ai.explanations === 'object' ? ai.explanations : {},
+        candidates: ordered.slice(0, 12),
+      };
+    } catch (error) {
+      showInfo(`Erro ao executar busca inteligente: ${error.message}`, 'warn');
+    } finally {
+      state.talentLoading = false;
+      renderTalentResults();
+    }
+  }
+
+  function handleTalentSearchInput() {
+    state.talentSearch = null;
+    renderTalentResults();
   }
 
   function talentMatches() {
@@ -1360,13 +1984,58 @@
     });
   }
 
+  function ensureTalentAiControls() {
+    const trigger = byId('gc-run-talent-search');
+    if (!trigger) return;
+    trigger.textContent = 'Buscar com IA';
+    const panel = trigger.closest('.gc-panel');
+    if (!panel || byId('gc-talent-ai-note')) return;
+    const note = createNode('div', 'gc-list-text', 'A IA interpreta o texto livre, cruza com a Arquitetura de Processos e com as competências cadastradas, e então ranqueia os candidatos.');
+    note.id = 'gc-talent-ai-note';
+    trigger.parentElement?.appendChild(note);
+  }
+
+  function renderTalentContextBox(list, search) {
+    const box = createNode('div', 'gc-list-item');
+    box.append(createNode('div', 'gc-list-title', 'Leitura da necessidade'));
+    box.append(createNode('div', 'gc-list-text', search.interpretedNeed || 'Sem interpretação disponível.'));
+    const meta = [
+      search.recommendedRole ? `Cargo sugerido: ${search.recommendedRole}` : '',
+      search.recommendedUnit ? `Unidade sugerida: ${search.recommendedUnit}` : '',
+      search.recommendedTeam ? `Equipe sugerida: ${search.recommendedTeam}` : '',
+    ].filter(Boolean).join(' • ');
+    if (meta) box.append(createNode('div', 'gc-list-meta', meta));
+    if (search.architectureMatches.length) {
+      box.append(createNode('div', 'gc-list-text', `Arquitetura relacionada: ${search.architectureMatches.map((item) => [item.processo, item.subprocesso, item.area, item.equipe].filter(Boolean).join(' / ')).join(' • ')}`));
+    }
+    if (search.architectureCompetencies.length) {
+      const badges = createNode('div', 'gc-badges');
+      search.architectureCompetencies.slice(0, 12).forEach((value) => badges.appendChild(createNode('span', 'gc-badge match', value)));
+      box.appendChild(badges);
+    }
+    list.appendChild(box);
+  }
+
   function renderTalentResults() {
+    ensureTalentAiControls();
     const list = byId('gc-talent-results');
     if (!list) return;
     list.replaceChildren();
-    const results = talentMatches();
-    if (!results.length) return list.appendChild(createNode('div', 'gc-empty', 'Digite competências, cargo, unidade desejada ou palavras-chave para sugerir candidatos.'));
-    results.forEach((item) => {
+    if (state.talentLoading) {
+      list.appendChild(createNode('div', 'gc-empty', 'Interpretando a demanda com IA e cruzando com a Arquitetura de Processos...'));
+      return;
+    }
+    const search = state.talentSearch;
+    if (!search) {
+      list.appendChild(createNode('div', 'gc-empty', 'Descreva a necessidade em linguagem natural e clique em "Buscar com IA". Exemplo: procuro auditor para atuar com balanços contábeis na divisão de contabilidade.'));
+      return;
+    }
+    renderTalentContextBox(list, search);
+    if (!search.candidates.length) {
+      list.appendChild(createNode('div', 'gc-empty', 'Nenhum candidato aderente foi encontrado para a necessidade interpretada.'));
+      return;
+    }
+    search.candidates.forEach((item) => {
       const card = createNode('div', 'gc-list-item');
       const head = createNode('div', 'gc-list-head');
       const wrap = createNode('div');
@@ -1374,6 +2043,9 @@
       wrap.append(createNode('div', 'gc-list-meta', [item.person.role, item.person.unit, item.person.team].filter(Boolean).join(' • ')));
       head.append(wrap, createNode('div', 'gc-result-score', `${item.score} pts`));
       card.appendChild(head);
+      const aiReason = safeText(search.explanations?.[item.person.id]);
+      const reason = aiReason || item.reasons.join(' • ');
+      if (reason) card.appendChild(createNode('div', 'gc-list-text', reason));
       if (item.person.preferences) card.appendChild(createNode('div', 'gc-list-text', `Preferências: ${item.person.preferences}`));
       if (item.person.competencies.length) {
         const badges = createNode('div', 'gc-badges');
@@ -1382,6 +2054,555 @@
       }
       list.appendChild(card);
     });
+  }
+
+  function ensureImportButton(hostId, buttonId, inputId, label, accept, handler) {
+    const host = byId(hostId);
+    if (!host || byId(buttonId)) return;
+    const button = createButton(label, 'btn btn-outline', () => byId(inputId)?.click());
+    const input = document.createElement('input');
+    button.id = buttonId;
+    input.id = inputId;
+    input.type = 'file';
+    input.accept = accept;
+    input.style.display = 'none';
+    input.addEventListener('change', (event) => handler(event.target.files?.[0]));
+    host.append(button, input);
+  }
+
+  function ensurePerformanceFilters() {
+    const grid = byId('gc-performance-filter-role')?.closest('.gc-form-grid');
+    if (!grid) return;
+    if (!byId('gc-performance-filter-team')) {
+      const field = createNode('div', 'gc-field');
+      field.append(createNode('label', '', 'Equipe'));
+      const input = document.createElement('input');
+      input.id = 'gc-performance-filter-team';
+      input.type = 'text';
+      input.setAttribute('list', 'gc-teams-list');
+      input.maxLength = 120;
+      input.addEventListener('input', renderPerformance);
+      field.appendChild(input);
+      grid.appendChild(field);
+    }
+    if (!byId('gc-performance-compare')) {
+      const field = createNode('div', 'gc-field');
+      field.append(createNode('label', '', 'Comparar por'));
+      const select = document.createElement('select');
+      select.id = 'gc-performance-compare';
+      [
+        ['person', 'Pessoa'],
+        ['institution', 'Instituição'],
+        ['role', 'Cargo'],
+        ['unit', 'Unidade'],
+        ['team', 'Equipe'],
+      ].forEach(([value, label]) => select.appendChild(createOption(value, label)));
+      select.addEventListener('change', renderPerformance);
+      field.appendChild(select);
+      grid.appendChild(field);
+    }
+    const actions = byId('gc-save-performance')?.parentElement;
+    if (actions) {
+      ensureImportButton(actions.id || (actions.id = 'gc-performance-actions'), 'gc-import-performance-trigger', 'gc-performance-import', 'Importar planilha', '.xlsx,.xls,.csv', importPerformanceFile);
+    }
+  }
+
+  function ensureGapImportControls() {
+    const actions = byId('gc-save-gap')?.parentElement;
+    if (actions) {
+      ensureImportButton(actions.id || (actions.id = 'gc-gap-actions'), 'gc-import-gap-trigger', 'gc-gap-import', 'Importar planilha', '.xlsx,.xls,.csv', importGapFile);
+    }
+  }
+
+  function ensureTrailFilters() {
+    const host = byId('gc-trails-list');
+    if (!host || byId('gc-trails-filters')) return;
+    const filters = createNode('div', 'gc-filter-row');
+    filters.id = 'gc-trails-filters';
+    const competency = document.createElement('input');
+    competency.id = 'gc-trail-filter-competency';
+    competency.type = 'text';
+    competency.placeholder = 'Filtrar por competência';
+    competency.setAttribute('list', 'gc-competency-suggestions');
+    competency.addEventListener('input', renderTrails);
+    const macro = document.createElement('input');
+    macro.id = 'gc-trail-filter-macro';
+    macro.type = 'text';
+    macro.placeholder = 'Filtrar por macroprocesso';
+    macro.setAttribute('list', 'gc-macro-list');
+    macro.addEventListener('input', renderTrails);
+    const division = document.createElement('input');
+    division.id = 'gc-trail-filter-division';
+    division.type = 'text';
+    division.placeholder = 'Filtrar por divisão';
+    division.setAttribute('list', 'gc-units-list');
+    division.addEventListener('input', renderTrails);
+    filters.append(competency, macro, division);
+    host.parentElement?.insertBefore(filters, host);
+  }
+
+  function findOrCreatePersonFromRow(row) {
+    const key = personImportKey(row);
+    const existing = people().find((item) => personKey(item) === key);
+    if (existing) return existing;
+    const name = firstFilled(row, ['nome', 'Nome']);
+    if (!name) return null;
+    const entryDate = firstFilled(row, ['data de entrada na CAGE', 'data de entrada', 'data', 'posse']);
+    const probation = probationInfo(entryDate);
+    const person = {
+      ...personTemplate(),
+      id: makeId('gc_person'),
+      name,
+      role: firstFilled(row, ['cargo', 'Cargo']),
+      unit: firstFilled(row, ['unidade', 'Unidade', 'divisão', 'divisao']),
+      team: firstFilled(row, ['equipe', 'Equipe']),
+      entryDate,
+      probation: probation.probation,
+      probationEnd: probation.probationEnd,
+    };
+    people().push(person);
+    return person;
+  }
+
+  async function importGapFile(file) {
+    if (!requireEditor() || !file) return;
+    try {
+      const rows = await readSheetRows(file);
+      let created = 0;
+      rows.forEach((row) => {
+        const person = findOrCreatePersonFromRow(row);
+        if (!person) return;
+        const entry = {
+          ...gapTemplate(),
+          id: makeId('gc_gap'),
+          personId: person.id,
+          unit: firstFilled(row, ['unidade', 'Unidade', 'divisão', 'divisao']) || person.unit,
+          team: firstFilled(row, ['equipe', 'Equipe']) || person.team,
+          currentCompetencies: firstFilled(row, ['competências atuais', 'competencias atuais']),
+          requiredCompetencies: firstFilled(row, ['competências necessárias', 'competencias necessarias', 'competências necessarias']),
+          observations: firstFilled(row, ['observações', 'observacoes']),
+          recommendations: firstFilled(row, ['recomendações', 'recomendacoes']),
+          actionPlan: firstFilled(row, ['plano de ação', 'plano de acao']),
+        };
+        if (!entry.currentCompetencies && !entry.requiredCompetencies) return;
+        gapAnalyses().push(entry);
+        created += 1;
+      });
+      persist(`${created} gap(s) importado(s).`);
+      renderAll();
+    } catch (error) {
+      showInfo(`Erro ao importar gaps: ${error.message}`, 'warn');
+    } finally {
+      const input = byId('gc-gap-import');
+      if (input) input.value = '';
+    }
+  }
+
+  async function importPerformanceFile(file) {
+    if (!requireEditor() || !file) return;
+    try {
+      const rows = await readSheetRows(file);
+      let created = 0;
+      rows.forEach((row) => {
+        const person = findOrCreatePersonFromRow(row);
+        const date = firstFilled(row, ['data da avaliação', 'data da avaliacao', 'data']);
+        if (!person || !date) return;
+        const entry = {
+          ...performanceTemplate(),
+          id: makeId('gc_perf'),
+          personId: person.id,
+          date,
+          method: firstFilled(row, ['método', 'metodo']),
+          objective: firstFilled(row, ['objetivo', 'Objetivo']),
+          result: firstFilled(row, ['resultado', 'Resultado']),
+          notes: firstFilled(row, ['observações', 'observacoes']),
+        };
+        performanceReviews().push(entry);
+        created += 1;
+      });
+      persist(`${created} avaliação(ões) importada(s).`);
+      renderAll();
+    } catch (error) {
+      showInfo(`Erro ao importar avaliações: ${error.message}`, 'warn');
+    } finally {
+      const input = byId('gc-performance-import');
+      if (input) input.value = '';
+    }
+  }
+
+  function renderOverview() {
+    const view = byId('gc-view-overview');
+    if (!view) return;
+    const totalPeople = people().length;
+    const unitCount = getUnits().length;
+    const roleCount = getRoles().length;
+    const avgAge = averageOfPeople((item) => parseNumber(item.age));
+    const avgTenure = averageOfPeople((item) => yearsSince(item.entryDate));
+    const retirement = peopleNearRetirement();
+    const female = people().filter((item) => safeText(item.gender).toLowerCase() === 'feminino').length;
+    const male = people().filter((item) => safeText(item.gender).toLowerCase() === 'masculino').length;
+    const survey = latestSurvey();
+    const ageBands = [
+      ['Até 29', people().filter((item) => parseNumber(item.age) <= 29).length],
+      ['30-39', people().filter((item) => parseNumber(item.age) >= 30 && parseNumber(item.age) <= 39).length],
+      ['40-49', people().filter((item) => parseNumber(item.age) >= 40 && parseNumber(item.age) <= 49).length],
+      ['50-59', people().filter((item) => parseNumber(item.age) >= 50 && parseNumber(item.age) <= 59).length],
+      ['60+', people().filter((item) => parseNumber(item.age) >= 60).length],
+    ];
+    const tenureBands = [
+      ['1-3 anos', people().filter((item) => yearsSince(item.entryDate) >= 1 && yearsSince(item.entryDate) < 3).length],
+      ['3-5 anos', people().filter((item) => yearsSince(item.entryDate) >= 3 && yearsSince(item.entryDate) < 5).length],
+      ['5-10 anos', people().filter((item) => yearsSince(item.entryDate) >= 5 && yearsSince(item.entryDate) < 10).length],
+      ['10-15 anos', people().filter((item) => yearsSince(item.entryDate) >= 10 && yearsSince(item.entryDate) < 15).length],
+      ['15+ anos', people().filter((item) => yearsSince(item.entryDate) >= 15).length],
+    ];
+    const cards = [
+      ['Total de servidores', String(totalPeople), `${unitCount} unidade(s) mapeada(s)`],
+      ['Cargos mapeados', String(roleCount), `${competencies().length} competência(s)`],
+      ['Idade média', avgAge ? `${avgAge} anos` : '—', `${retirement} em faixa de aposentadoria`],
+      ['Tempo médio na CAGE', avgTenure ? `${avgTenure} anos` : '—', `${trails().length} trilha(s) ativas`],
+    ];
+    view.replaceChildren();
+    const grid = createNode('div', 'gc-grid');
+    cards.forEach(([title, value, sub]) => {
+      const card = createNode('div', 'gc-card');
+      card.append(createNode('div', 'gc-card-title', title));
+      card.append(createNode('div', 'gc-card-value', value));
+      card.append(createNode('div', 'gc-card-sub', sub));
+      grid.appendChild(card);
+    });
+    const surveyPanel = createNode('div', 'gc-panel');
+    surveyPanel.append(createPanelHead('Pesquisa de ambiente', 'Último recorte anual cadastrado no módulo.'));
+    if (!survey) {
+      surveyPanel.appendChild(createNode('div', 'gc-empty', 'Cadastre a pesquisa anual para completar o painel.'));
+    } else {
+      const list = createNode('div', 'gc-list');
+      [['Ano', survey.year], ['Engajamento', survey.engagement], ['Liderança', survey.leadership], ['Clima', survey.climate]].forEach(([label, value]) => {
+        const item = createNode('div', 'gc-list-item');
+        item.append(createNode('div', 'gc-list-title', `${label}: ${value || '—'}`));
+        list.appendChild(item);
+      });
+      if (survey.notes) list.append(createNode('div', 'gc-list-text', survey.notes));
+      surveyPanel.appendChild(list);
+    }
+    const splitTop = createNode('div', 'gc-split');
+    splitTop.append(
+      createBarsPanel('Indicadores demográficos', 'Distribuição por gênero e idade.', [['Mulheres', female], ['Homens', male], ...ageBands], totalPeople),
+      createBarsPanel('Tempo na CAGE', 'Faixas de permanência institucional.', tenureBands, totalPeople),
+    );
+    const splitBottom = createNode('div', 'gc-split');
+    splitBottom.append(
+      createBarsPanel('Distribuição por cargo', 'Quantidade de servidores por cargo.', countBy(people(), (item) => item.role).slice(0, 8), totalPeople),
+      createBarsPanel('Distribuição por unidade', 'Quantidade de servidores por divisão/unidade.', countBy(people(), (item) => item.unit).slice(0, 8), totalPeople),
+    );
+    view.append(grid, splitTop, splitBottom, surveyPanel);
+  }
+
+  function renderPeopleList() {
+    ensurePeopleFilters();
+    const list = byId('gc-people-list');
+    if (!list) return;
+    list.replaceChildren();
+    const textFilter = safeText(readFormValue('gc-people-filter')).toLowerCase();
+    const roleFilter = safeText(readFormValue('gc-people-filter-role')).toLowerCase();
+    const unitFilter = safeText(readFormValue('gc-people-filter-unit')).toLowerCase();
+    const teamFilter = safeText(readFormValue('gc-people-filter-team')).toLowerCase();
+    const items = people().filter((item) => {
+      if (textFilter && !personSearchCorpus(item).toLowerCase().includes(textFilter)) return false;
+      if (roleFilter && !safeText(item.role).toLowerCase().includes(roleFilter)) return false;
+      if (unitFilter && !safeText(item.unit).toLowerCase().includes(unitFilter)) return false;
+      if (teamFilter && !safeText(item.team).toLowerCase().includes(teamFilter)) return false;
+      return true;
+    });
+    if (!items.length) {
+      list.appendChild(createNode('div', 'gc-empty', 'Nenhuma pessoa encontrada para os filtros informados.'));
+      return;
+    }
+    items.forEach((item) => {
+      const card = createNode('div', 'gc-list-item');
+      const head = createNode('div', 'gc-list-head');
+      const wrap = createNode('div');
+      const title = createButton(item.name, 'gc-list-title', () => populatePeopleForm(item));
+      title.classList.add('btn-link');
+      wrap.append(title, createNode('div', 'gc-list-meta', [item.role, item.unit, item.team].filter(Boolean).join(' • ')));
+      const actions = createNode('div', 'gc-actions');
+      actions.append(createButton('Editar', 'btn btn-outline', () => populatePeopleForm(item)));
+      actions.append(createButton('Remoção', 'btn btn-outline', () => populateRemovalForm({ ...removalTemplate(), personId: item.id, fromUnit: item.unit })));
+      actions.append(createButton('Excluir', 'btn btn-outline', () => removePerson(item.id)));
+      head.append(wrap, actions);
+      card.appendChild(head);
+      if (item.competencies.length) {
+        const badges = createNode('div', 'gc-badges');
+        item.competencies.slice(0, 6).forEach((value) => badges.appendChild(createNode('span', 'gc-badge', value)));
+        if (item.probation === 'Sim') badges.appendChild(createNode('span', 'gc-badge alert', `Prob. até ${item.probationEnd}`));
+        if (item.removalInterest === 'Sim' && item.desiredUnit) badges.appendChild(createNode('span', 'gc-badge match', `Interesse: ${item.desiredUnit}`));
+        card.appendChild(badges);
+      }
+      if (item.preferences) card.appendChild(createNode('div', 'gc-list-text', `Preferências: ${item.preferences}`));
+      if (item.taughtCourses) card.appendChild(createNode('div', 'gc-list-text', `Cursos ministrados: ${item.taughtCourses}`));
+      list.appendChild(card);
+    });
+  }
+
+  function renderGaps() {
+    ensureGapImportControls();
+    const list = byId('gc-gap-list');
+    if (!list) return;
+    list.replaceChildren();
+    if (!gapAnalyses().length) return list.appendChild(createNode('div', 'gc-empty', 'Nenhuma análise de gaps cadastrada.'));
+    gapAnalyses().forEach((item) => {
+      const person = getPersonById(item.personId);
+      const card = createNode('div', 'gc-list-item');
+      card.append(createNode('div', 'gc-list-title', person ? person.name : 'Pessoa não encontrada'));
+      card.append(createNode('div', 'gc-list-meta', [item.unit, item.team].filter(Boolean).join(' • ')));
+      if (item.requiredCompetencies) card.appendChild(createNode('div', 'gc-list-text', `Necessárias: ${item.requiredCompetencies}`));
+      if (item.currentCompetencies) card.appendChild(createNode('div', 'gc-list-text', `Atuais: ${item.currentCompetencies}`));
+      if (item.observations) card.appendChild(createNode('div', 'gc-list-text', `Observações: ${item.observations}`));
+      if (item.recommendations) card.appendChild(createNode('div', 'gc-list-text', `Recomendações: ${item.recommendations}`));
+      if (item.actionPlan) card.appendChild(createNode('div', 'gc-list-text', `Plano de ação: ${item.actionPlan}`));
+      const actions = createNode('div', 'gc-actions');
+      actions.append(createButton('Editar', 'btn btn-outline', () => populateGapForm(item)));
+      actions.append(createButton('Excluir', 'btn btn-outline', () => removeGap(item.id)));
+      card.appendChild(actions);
+      list.appendChild(card);
+    });
+  }
+
+  function renderPerformance() {
+    setSelectOptions('gc-performance-person', people(), 'Selecione a pessoa', (item) => ({ value: item.id, label: item.name }));
+    setSelectOptions('gc-performance-filter-person', people(), 'Todas as pessoas', (item) => ({ value: item.id, label: item.name }));
+    ensurePerformanceFilters();
+    const list = byId('gc-performance-list');
+    const chart = byId('gc-performance-chart');
+    if (!list || !chart) return;
+    list.replaceChildren();
+    chart.replaceChildren();
+    const personFilter = safeText(readFormValue('gc-performance-filter-person'));
+    const unitFilter = safeText(readFormValue('gc-performance-filter-unit')).toLowerCase();
+    const roleFilter = safeText(readFormValue('gc-performance-filter-role')).toLowerCase();
+    const teamFilter = safeText(readFormValue('gc-performance-filter-team')).toLowerCase();
+    const compareMode = safeText(readFormValue('gc-performance-compare')) || 'person';
+    const filtered = performanceReviews().filter((item) => {
+      const person = getPersonById(item.personId);
+      if (!person) return false;
+      if (personFilter && item.personId !== personFilter) return false;
+      if (unitFilter && safeText(person.unit).toLowerCase() !== unitFilter) return false;
+      if (roleFilter && safeText(person.role).toLowerCase() !== roleFilter) return false;
+      if (teamFilter && safeText(person.team).toLowerCase() !== teamFilter) return false;
+      return true;
+    });
+    if (!filtered.length) {
+      list.appendChild(createNode('div', 'gc-empty', 'Nenhuma avaliação encontrada para os filtros selecionados.'));
+      return;
+    }
+    const grouped = new Map();
+    filtered.forEach((item) => {
+      const person = getPersonById(item.personId);
+      const score = parseNumber(item.result);
+      const key = compareMode === 'institution' ? 'Instituição'
+        : compareMode === 'role' ? safeText(person?.role) || 'Sem cargo'
+        : compareMode === 'unit' ? safeText(person?.unit) || 'Sem unidade'
+        : compareMode === 'team' ? safeText(person?.team) || 'Sem equipe'
+        : safeText(person?.name) || item.personId;
+      const current = grouped.get(key) || { total: 0, count: 0 };
+      grouped.set(key, { total: current.total + score, count: current.count + 1 });
+      const card = createNode('div', 'gc-list-item');
+      card.append(createNode('div', 'gc-list-title', `${person ? person.name : 'Pessoa'} • ${item.date}`));
+      card.append(createNode('div', 'gc-list-meta', [item.method, item.objective, `Resultado ${item.result || '—'}`].filter(Boolean).join(' • ')));
+      if (item.notes) card.appendChild(createNode('div', 'gc-list-text', item.notes));
+      const actions = createNode('div', 'gc-actions');
+      actions.append(createButton('Editar', 'btn btn-outline', () => populatePerformanceForm(item)));
+      actions.append(createButton('Excluir', 'btn btn-outline', () => removePerformance(item.id)));
+      card.appendChild(actions);
+      list.appendChild(card);
+    });
+    const bars = createNode('div', 'gc-stat-bars');
+    [...grouped.entries()]
+      .map(([label, value]) => [label, value.count ? Math.round(value.total / value.count) : 0])
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([label, value], _, arr) => fillBar(bars, label, value, arr[0]?.[1] || value));
+    chart.appendChild(bars);
+  }
+
+  function renderTrails() {
+    setDataListOptions('gc-macro-list', getMacroprocesses());
+    setDataListOptions('gc-units-list', getUnits());
+    setSelectOptions('gc-training-trail', trails(), 'Trilha vinculada', (item) => ({ value: item.id, label: item.name }));
+    ensureTrailFilters();
+    ensureTrailLevelsEditor();
+    const competencyFilter = safeText(readFormValue('gc-trail-filter-competency')).toLowerCase();
+    const macroFilter = safeText(readFormValue('gc-trail-filter-macro')).toLowerCase();
+    const divisionFilter = safeText(readFormValue('gc-trail-filter-division')).toLowerCase();
+    const trailsList = byId('gc-trails-list');
+    const trainingsList = byId('gc-trainings-list');
+    if (!trailsList || !trainingsList) return;
+    trailsList.replaceChildren();
+    trainingsList.replaceChildren();
+    const filteredTrails = trails().filter((item) => {
+      if (competencyFilter && !safeArray(item.competencies).some((value) => safeText(value).toLowerCase().includes(competencyFilter))) return false;
+      if (macroFilter && !safeText(item.macroprocess).toLowerCase().includes(macroFilter)) return false;
+      if (divisionFilter && !safeText(item.division).toLowerCase().includes(divisionFilter)) return false;
+      return true;
+    });
+    if (!filteredTrails.length) trailsList.appendChild(createNode('div', 'gc-empty', 'Nenhuma trilha encontrada para os filtros atuais.'));
+    if (!trainings().length) trainingsList.appendChild(createNode('div', 'gc-empty', 'Nenhum treinamento cadastrado.'));
+    filteredTrails.forEach((item) => {
+      const card = createNode('div', 'gc-list-item');
+      card.append(createNode('div', 'gc-list-title', item.name));
+      card.append(createNode('div', 'gc-list-meta', [item.macroprocess, item.division].filter(Boolean).join(' • ')));
+      const layout = createNode('div', 'gc-trail-layout');
+      renderTrailLadder(layout, item);
+      layout.appendChild(createTrailParticipantsPanel(item));
+      card.appendChild(layout);
+      const participants = trailParticipants(item);
+      if (participants.length) {
+        const row = createNode('div', 'gc-badges');
+        participants.slice(0, 10).forEach(({ person, progress }) => {
+          row.appendChild(createNode('span', 'gc-badge match', `${personInitials(person) || '??'} • ${progress.level}`));
+        });
+        card.appendChild(row);
+      }
+      if (item.competencies.length) card.appendChild(createInlineList('Competências-chave', item.competencies));
+      if (item.prerequisites.length) card.appendChild(createInlineList('Pré-requisitos', item.prerequisites));
+      const actions = createNode('div', 'gc-actions');
+      actions.append(createButton('Editar', 'btn btn-outline', () => populateTrailForm(item)));
+      actions.append(createButton('Excluir', 'btn btn-outline', () => removeTrail(item.id)));
+      card.appendChild(actions);
+      trailsList.appendChild(card);
+    });
+    trainings().forEach((item) => {
+      const card = createNode('div', 'gc-list-item');
+      card.append(createNode('div', 'gc-list-title', item.name));
+      card.append(createNode('div', 'gc-list-meta', [item.provider, item.costType, item.deliveryMode].filter(Boolean).join(' • ')));
+      if (item.notes) card.appendChild(createNode('div', 'gc-list-text', item.notes));
+      if (item.remoteLink) {
+        const link = createNode('a', 'gc-list-text', 'Abrir link remoto');
+        link.href = item.remoteLink;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        card.appendChild(link);
+      }
+      const trail = getTrailById(item.trailId);
+      if (trail) card.appendChild(createNode('div', 'gc-list-text', `Trilha: ${trail.name}`));
+      const peopleText = trainingPeopleNames(item).join(', ');
+      if (peopleText) card.appendChild(createNode('div', 'gc-list-text', `Pessoas vinculadas: ${peopleText}`));
+      const actions = createNode('div', 'gc-actions');
+      actions.append(createButton('Editar', 'btn btn-outline', () => populateTrainingForm(item)));
+      actions.append(createButton('Excluir', 'btn btn-outline', () => removeTraining(item.id)));
+      card.appendChild(actions);
+      trainingsList.appendChild(card);
+    });
+  }
+
+  function renderCompetencies() {
+    setSelectOptions('gc-competency-type', COMPETENCY_TYPES, 'Tipo', (item) => ({ value: item.value, label: item.label }));
+    setDataListOptions('gc-macro-list', getMacroprocesses());
+    setDataListOptions('gc-process-list', getProcesses());
+    setDataListOptions('gc-roles-list', getRoles());
+    setDataListOptions('gc-units-list', getUnits());
+    setDataListOptions('gc-teams-list', getTeams());
+    setSelectOptions('gc-competency-person', people(), 'Pessoa específica', (item) => ({ value: item.id, label: item.name }));
+    setSelectOptions('gc-competency-trail', trails(), 'Trilha', (item) => ({ value: item.id, label: item.name }));
+    setSelectOptions('gc-competency-training', trainings(), 'Treinamento', (item) => ({ value: item.id, label: item.name }));
+    ensureCompetencyFilters();
+    const list = byId('gc-competencies-list');
+    if (!list) return;
+    list.replaceChildren();
+    const groups = groupedCompetencies(filteredCompetencies());
+    if (!groups.length) {
+      list.appendChild(createNode('div', 'gc-empty', 'Nenhuma competência encontrada para os filtros atuais.'));
+      return;
+    }
+    groups.forEach(([macroprocess, items]) => {
+      const panel = createNode('div', 'gc-list-item');
+      panel.append(createNode('div', 'gc-list-title', macroprocess));
+      panel.append(createNode('div', 'gc-list-meta', `${items.length} competência(s) neste agrupamento`));
+      items
+        .sort((a, b) => safeText(a.name).localeCompare(safeText(b.name), 'pt-BR'))
+        .forEach((item) => {
+          const card = createNode('div', 'gc-competency-card');
+          const head = createNode('div', 'gc-list-head');
+          const wrap = createNode('div');
+          wrap.append(createNode('div', 'gc-list-title', item.name));
+          wrap.append(createNode('div', 'gc-list-meta', [getTypeLabel(item.type), item.process, item.team, item.role, personDisplayName(item.personId), item.division].filter(Boolean).join(' • ')));
+          const badges = createNode('div', 'gc-badges');
+          badges.appendChild(createNode('span', `gc-badge ${getTypeBadgeClass(item.type)}`, getTypeLabel(item.type)));
+          if (!item.id || String(item.id).startsWith('cfg_')) {
+            badges.appendChild(createNode('span', 'gc-badge', 'Tabela base'));
+          }
+          head.append(wrap, badges);
+          card.appendChild(head);
+          if (item.description) card.appendChild(createNode('div', 'gc-list-text', item.description));
+          const actions = createNode('div', 'gc-actions');
+          actions.append(createButton('Editar', 'btn btn-outline', () => populateCompetencyForm(item)));
+          if (item.id && !String(item.id).startsWith('cfg_')) {
+            actions.append(createButton('Excluir', 'btn btn-outline', () => removeCompetency(item.id)));
+          }
+          card.appendChild(actions);
+          panel.appendChild(card);
+        });
+      list.appendChild(panel);
+    });
+  }
+
+  function renderTrailLadder(panel, trail) {
+    const ladder = createNode('div', 'gc-ladder gc-staircase');
+    const participants = trailParticipants(trail);
+    trailStepModels(trail).forEach((model) => {
+      const step = createNode('div', 'gc-step');
+      step.append(createNode('div', 'gc-step-title', model.title));
+      step.append(createNode('div', 'gc-step-sub', model.subtitle));
+      const row = createNode('div', 'gc-step-chip-row');
+      participants
+        .filter(({ progress }) => stepMatchesProgress(model, progress))
+        .slice(0, 6)
+        .forEach(({ person }) => row.appendChild(createNode('span', 'gc-step-chip', personInitials(person) || '??')));
+      if (row.childElementCount > 0) step.appendChild(row);
+      ladder.appendChild(step);
+    });
+    panel.appendChild(ladder);
+  }
+
+  function populateTrailForm(record) {
+    const item = normalizeRecord(record, trailTemplate());
+    state.trailId = item.id || '';
+    setFormValue('gc-trail-name', item.name);
+    setFormValue('gc-trail-objective', item.objective);
+    setFormValue('gc-trail-macro', item.macroprocess);
+    setFormValue('gc-trail-division', item.division);
+    setFormValue('gc-trail-competencies', safeArray(item.competencies).join(', '));
+    setFormValue('gc-trail-prereq', safeArray(item.prerequisites).join(', '));
+    ensureTrailLevelsEditor();
+    setTrailLevelsEditor(trailLevels(item));
+  }
+
+  function resetTrailForm() {
+    populateTrailForm(trailTemplate());
+  }
+
+  function saveTrail() {
+    if (!requireEditor()) return;
+    const name = safeText(readFormValue('gc-trail-name'));
+    if (!name) return showInfo('Informe o nome da trilha.', 'warn');
+    const entry = {
+      id: state.trailId || makeId('gc_trail'),
+      name,
+      objective: safeText(readFormValue('gc-trail-objective')),
+      macroprocess: safeText(readFormValue('gc-trail-macro')),
+      division: safeText(readFormValue('gc-trail-division')),
+      competencies: splitList(readFormValue('gc-trail-competencies')),
+      prerequisites: splitList(readFormValue('gc-trail-prereq')),
+      levels: readTrailLevelsEditor(),
+    };
+    if (!entry.levels.length) {
+      return showInfo('Cadastre ao menos um degrau para a trilha.', 'warn');
+    }
+    const list = trails();
+    const index = list.findIndex((item) => item.id === entry.id);
+    if (index >= 0) list[index] = entry; else list.push(entry);
+    persist(index >= 0 ? 'Trilha atualizada.' : 'Trilha cadastrada.');
+    resetTrailForm();
+    renderAll();
   }
 
   function renderHero() {
@@ -1534,7 +2755,7 @@
     viewCompetencies.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar competência</div><div class="gc-panel-desc">Vincule a processos, equipes, pessoas, trilhas e treinamentos.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-competency-name">Competência / habilidade</label><input id="gc-competency-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-competency-type">Tipo</label><select id="gc-competency-type"></select></div><div class="gc-field"><label for="gc-competency-macro">Macroprocesso</label><input id="gc-competency-macro" type="text" list="gc-macro-list" maxlength="160"></div><div class="gc-field"><label for="gc-competency-process">Processo</label><input id="gc-competency-process" type="text" list="gc-process-list" maxlength="160"></div><div class="gc-field"><label for="gc-competency-role">Cargo</label><input id="gc-competency-role" type="text" list="gc-roles-list" maxlength="120"></div><div class="gc-field"><label for="gc-competency-division">Divisão</label><input id="gc-competency-division" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-competency-team">Equipe</label><input id="gc-competency-team" type="text" list="gc-teams-list" maxlength="120"></div><div class="gc-field"><label for="gc-competency-person">Pessoa</label><select id="gc-competency-person"></select></div><div class="gc-field"><label for="gc-competency-trail">Trilha</label><select id="gc-competency-trail"></select></div><div class="gc-field"><label for="gc-competency-training">Treinamento</label><select id="gc-competency-training"></select></div><div class="gc-field"><label for="gc-competency-description">Descrição</label><textarea id="gc-competency-description"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-competency">Salvar competência</button><button type="button" class="btn btn-outline" id="gc-reset-competency">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Catálogo</div><div class="gc-panel-desc">Lista agrupada por vínculos e tipo.</div></div></div><div class="gc-list" id="gc-competencies-list"></div></div></div>`;
     viewTrails.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar trilha</div><div class="gc-panel-desc">Defina objetivo, degrau principal, pré-requisitos e competências.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-trail-name">Nome da trilha</label><input id="gc-trail-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-trail-objective">Objetivo</label><input id="gc-trail-objective" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-trail-level-name">Nome do nível</label><input id="gc-trail-level-name" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-trail-level-goal">Objetivo do nível</label><input id="gc-trail-level-goal" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-trail-level-degree">Grau esperado</label><input id="gc-trail-level-degree" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-trail-macro">Macroprocesso</label><input id="gc-trail-macro" type="text" list="gc-macro-list" maxlength="160"></div><div class="gc-field"><label for="gc-trail-division">Divisão</label><input id="gc-trail-division" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-trail-competencies">Competências vinculadas</label><input id="gc-trail-competencies" type="text" placeholder="Separar por vírgula"></div><div class="gc-field"><label for="gc-trail-prereq">Pré-requisitos</label><input id="gc-trail-prereq" type="text" placeholder="Separar por vírgula"></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-trail">Salvar trilha</button><button type="button" class="btn btn-outline" id="gc-reset-trail">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar treinamento</div><div class="gc-panel-desc">Capacitações grátis/pagas, presenciais/remotas e vínculo com pessoas.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-training-name">Nome do treinamento</label><input id="gc-training-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-training-cost">Grátis ou pago</label><input id="gc-training-cost" type="text" maxlength="40"></div><div class="gc-field"><label for="gc-training-mode">Presencial ou remoto</label><input id="gc-training-mode" type="text" maxlength="40"></div><div class="gc-field"><label for="gc-training-link">Link remoto</label><input id="gc-training-link" type="url" maxlength="240"></div><div class="gc-field"><label for="gc-training-provider">Fornecedor</label><input id="gc-training-provider" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-training-trail">Trilha</label><select id="gc-training-trail"></select></div><div class="gc-field"><label for="gc-training-persons">Pessoas vinculadas</label><input id="gc-training-persons" type="text" placeholder="IDs ou nomes separados por vírgula"></div><div class="gc-field"><label for="gc-training-notes">Observações</label><textarea id="gc-training-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-training">Salvar treinamento</button><button type="button" class="btn btn-outline" id="gc-reset-training">Limpar</button></div></div></div><div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Trilhas</div><div class="gc-panel-desc">Capa com escada de desenvolvimento.</div></div></div><div class="gc-list" id="gc-trails-list"></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Treinamentos</div><div class="gc-panel-desc">Oferta e vínculo com trilhas e pessoas.</div></div></div><div class="gc-list" id="gc-trainings-list"></div></div></div>`;
     viewSurveys.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Pesquisa de ambiente</div><div class="gc-panel-desc">Cadastre os dados anuais da pesquisa da GEPESC.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-survey-year">Ano</label><input id="gc-survey-year" type="number" min="2020" max="2100"></div><div class="gc-field"><label for="gc-survey-engagement">Engajamento</label><input id="gc-survey-engagement" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-leadership">Liderança</label><input id="gc-survey-leadership" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-climate">Clima</label><input id="gc-survey-climate" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-notes">Observações</label><textarea id="gc-survey-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-survey">Salvar pesquisa</button><button type="button" class="btn btn-outline" id="gc-reset-survey">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Histórico</div><div class="gc-panel-desc">Série anual disponível para consulta.</div></div></div><div class="gc-list" id="gc-surveys-list"></div></div></div>`;
-    viewTalent.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Banco de talentos</div><div class="gc-panel-desc">Busca inteligente baseada em cargo, competências, preferências e pedidos de remoção.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-talent-query">Busca livre</label><input id="gc-talent-query" type="search" placeholder="Ex: auditor com SQL, LGPD e interesse em remoção"></div><div class="gc-field"><label for="gc-talent-role">Cargo</label><input id="gc-talent-role" type="text" maxlength="120" placeholder="Opcional"></div><div class="gc-field"><label for="gc-talent-prereq">Pré-requisitos</label><input id="gc-talent-prereq" type="text" placeholder="Separar por vírgula"></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-run-talent-search">Buscar talentos</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Candidatos potenciais</div><div class="gc-panel-desc">Pontuação orientada por aderência textual e vínculos cadastrados.</div></div></div><div class="gc-match-list" id="gc-talent-results"></div></div>`;
+    viewTalent.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Banco de talentos</div><div class="gc-panel-desc">Busca livre com IA, cruzando a necessidade textual com a Arquitetura de Processos, competências cadastradas, preferências e pedidos de remoção.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-talent-query">Busca livre com IA</label><input id="gc-talent-query" type="search" placeholder="Ex: procuro auditor para atuar com balanços contábeis na divisão de contabilidade"></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-run-talent-search">Buscar com IA</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Candidatos potenciais</div><div class="gc-panel-desc">A IA interpreta a necessidade e ranqueia candidatos aderentes.</div></div></div><div class="gc-match-list" id="gc-talent-results"></div></div>`;
   }
 
   function bindTabs() {
@@ -1577,10 +2798,8 @@
     byId('gc-reset-training')?.addEventListener('click', resetTrainingForm);
     byId('gc-save-survey')?.addEventListener('click', saveSurvey);
     byId('gc-reset-survey')?.addEventListener('click', resetSurveyForm);
-    byId('gc-run-talent-search')?.addEventListener('click', renderTalentResults);
-    byId('gc-talent-query')?.addEventListener('input', renderTalentResults);
-    byId('gc-talent-role')?.addEventListener('input', renderTalentResults);
-    byId('gc-talent-prereq')?.addEventListener('input', renderTalentResults);
+    byId('gc-run-talent-search')?.addEventListener('click', runTalentSearchAi);
+    byId('gc-talent-query')?.addEventListener('input', handleTalentSearchInput);
   }
 
   function fillSuggestionList() {
