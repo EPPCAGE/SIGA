@@ -1,7 +1,7 @@
 function _escapeControlChar(c) {
-  if (c === '\n') return '\\n';
-  if (c === '\r') return '\\r';
-  if (c === '\t') return '\\t';
+  if (c === '\n') return String.raw`\n`;
+  if (c === '\r') return String.raw`\r`;
+  if (c === '\t') return String.raw`\t`;
   return c;
 }
 
@@ -10,8 +10,7 @@ function repairJsonString(str) {
   let inString = false;
   let escaped = false;
 
-  for (let i = 0; i < str.length; i += 1) {
-    const c = str[i];
+  for (const c of str) {
     if (escaped) { result += c; escaped = false; continue; }
     if (c === '\\' && inString) { result += c; escaped = true; continue; }
     if (c === '"') { inString = !inString; result += c; continue; }
@@ -57,7 +56,7 @@ function parseAiJson(text) {
   clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
   let lastError = null;
 
-  const m = clean.match(/\{[\s\S]*/);
+  const m = /\{[\s\S]*/.exec(clean);
   if (m) clean = m[0];
 
   try {

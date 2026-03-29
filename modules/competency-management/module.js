@@ -91,7 +91,7 @@
   }
 
   function parseNumber(value) {
-    const num = Number(String(value || '').replace(',', '.'));
+    const num = Number(String(value || '').replaceAll(',', '.'));
     return Number.isFinite(num) ? num : 0;
   }
 
@@ -147,14 +147,6 @@
       option.value = item;
       list.appendChild(option);
     });
-  }
-
-  async function readSheetRows(file) {
-    if (typeof XLSX === 'undefined') throw new Error('Biblioteca XLSX não carregada.');
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(sheet, { defval: '' });
   }
 
   function showInfo(message, type) {
@@ -224,7 +216,13 @@
 
   function ensureStore() {
     if (!globalThis.DATA || typeof globalThis.DATA !== 'object') globalThis.DATA = {};
-    if (!DATA[DATA_KEY] || typeof DATA[DATA_KEY] !== 'object') DATA[DATA_KEY] = { ...DEFAULT_STORE };
+    if (DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object') {
+      Object.keys(DEFAULT_STORE).forEach((key) => {
+        DATA[DATA_KEY][key] = safeArray(DATA[DATA_KEY][key]);
+      });
+      return DATA[DATA_KEY];
+    }
+    DATA[DATA_KEY] = { ...DEFAULT_STORE };
     Object.keys(DEFAULT_STORE).forEach((key) => {
       DATA[DATA_KEY][key] = safeArray(DATA[DATA_KEY][key]);
     });
@@ -471,72 +469,6 @@
     if (type === 'soft') return 'soft';
     if (type === 'normative') return 'normative';
     return 'hard';
-  }
-
-  function createTrailLevelItem(level, index) {
-    const row = createNode('div', 'gc-trail-level-item');
-    row.dataset.levelIndex = String(index);
-    row.append(createNode('div', 'gc-trail-level-badge', level?.name || FIXED_TRAIL_LEVELS[index]));
-
-    const goalField = createNode('div', 'gc-field');
-    goalField.append(createNode('label', '', `Objetivo do nível ${level?.name || FIXED_TRAIL_LEVELS[index]}`));
-    const goalInput = document.createElement('textarea');
-    goalInput.className = 'gc-trail-level-goal';
-    goalInput.value = safeText(level?.goal);
-    goalField.appendChild(goalInput);
-    row.append(goalField);
-    return row;
-  }
-
-  function setTrailLevelsEditor(levels) {
-    const host = byId('gc-trail-levels');
-    if (!host) return;
-    host.replaceChildren();
-    const nextLevels = levels.length ? levels : FIXED_TRAIL_LEVELS.map((name) => ({ name, goal: '' }));
-    nextLevels.forEach((level, index) => host.appendChild(createTrailLevelItem(level, index)));
-  }
-
-  function ensureTrailLevelsEditor() {
-    const levelsHost = byId('gc-trail-levels');
-    if (levelsHost) return;
-    const grid = byId('gc-trail-prereq')?.closest('.gc-form-grid');
-    if (!grid) return;
-
-    ['gc-trail-level-name', 'gc-trail-level-goal', 'gc-trail-level-degree'].forEach((id) => {
-      byId(id)?.closest('.gc-field')?.remove();
-    });
-
-    const section = createNode('div', 'gc-trail-levels-shell');
-    section.id = 'gc-trail-levels-shell';
-    section.append(createNode('div', 'gc-panel-title', 'Objetivos por nível'));
-    section.append(createNode('div', 'gc-panel-desc', 'A trilha usa cinco níveis fixos: Iniciante, Básico, Intermediário, Avançado e Especialista. Preencha apenas o objetivo esperado em cada um.'));
-
-    const host = createNode('div', 'gc-trail-levels');
-    host.id = 'gc-trail-levels';
-    section.appendChild(host);
-    grid.appendChild(section);
-
-    const head = grid.closest('.gc-panel')?.querySelector('.gc-panel-head');
-    if (head) {
-      const title = head.querySelector('.gc-panel-title');
-      const desc = head.querySelector('.gc-panel-desc');
-      if (title) title.textContent = 'Cadastrar trilha';
-      if (desc) desc.textContent = 'Vincule a competências, macroprocesso e divisão, descreva os objetivos dos cinco níveis fixos e informe em que contextos a trilha é pré-requisito.';
-    }
-
-    setTrailLevelsEditor([]);
-  }
-
-  function removalInsight(removal) {
-    const requests = removals().filter((item) => item.id !== removal.id);
-    const direct = requests.find((item) => item.fromUnit === removal.desiredUnit && item.desiredUnit === removal.fromUnit);
-    if (direct) return { label: 'Cruzamento direto identificado', type: 'match' };
-    const triangle = requests.some((item) =>
-      item.fromUnit === removal.desiredUnit &&
-      requests.some((other) => other.id !== item.id && other.fromUnit === item.desiredUnit && other.desiredUnit === removal.fromUnit)
-    );
-    if (triangle) return { label: 'Possível triangulação entre unidades', type: 'alert' };
-    return { label: 'Sem cruzamento encontrado no momento', type: '' };
   }
 
   function tokenize(text) {
@@ -898,16 +830,18 @@
     const latest = [...surveys()].sort((a, b) => String(b.year).localeCompare(String(a.year))).at(0);
     if (latest) {
       const list = createNode('div', 'gc-list');
-      [['Engajamento', latest.engagement], ['Liderança', latest.leadership], ['Clima', latest.climate]].forEach(([label, value]) => {
+      [['Engajamento', latest.engagement], ['Lideran?a', latest.leadership], ['Clima', latest.climate]].forEach(([label, value]) => {
         const item = createNode('div', 'gc-list-item');
-        item.append(createNode('div', 'gc-list-title', `${label}: ${value || '—'}`));
+        item.append(createNode('div', 'gc-list-title', `${label}: ${value || '?'}`));
         list.appendChild(item);
       });
       if (latest.notes) list.append(createNode('div', 'gc-list-text', latest.notes));
       surveyPanel.appendChild(list);
-    } else {
-      surveyPanel.appendChild(createNode('div', 'gc-empty', 'Cadastre a pesquisa anual para completar o painel.'));
+      split.append(demographic, tenure);
+      view.append(grid, split, surveyPanel);
+      return;
     }
+    surveyPanel.appendChild(createNode('div', 'gc-empty', 'Cadastre a pesquisa anual para completar o painel.'));
     split.append(demographic, tenure);
     view.append(grid, split, surveyPanel);
   }
@@ -1740,180 +1674,6 @@
       }
       list.appendChild(card);
     });
-  }
-
-  function ensureImportButton(hostId, buttonId, inputId, label, accept, handler) {
-    const host = byId(hostId);
-    if (!host || byId(buttonId)) return;
-    const button = createButton(label, 'btn btn-outline', () => byId(inputId)?.click());
-    const input = document.createElement('input');
-    button.id = buttonId;
-    input.id = inputId;
-    input.type = 'file';
-    input.accept = accept;
-    input.style.display = 'none';
-    input.addEventListener('change', (event) => handler(event.target.files?.[0]));
-    host.append(button, input);
-  }
-
-  function ensurePerformanceFilters() {
-    const grid = byId('gc-performance-filter-role')?.closest('.gc-form-grid');
-    if (!grid) return;
-    if (!byId('gc-performance-filter-team')) {
-      const field = createNode('div', 'gc-field');
-      field.append(createNode('label', '', 'Equipe'));
-      const input = document.createElement('input');
-      input.id = 'gc-performance-filter-team';
-      input.type = 'text';
-      input.setAttribute('list', 'gc-teams-list');
-      input.maxLength = 120;
-      input.addEventListener('input', renderPerformance);
-      field.appendChild(input);
-      grid.appendChild(field);
-    }
-    if (!byId('gc-performance-compare')) {
-      const field = createNode('div', 'gc-field');
-      field.append(createNode('label', '', 'Comparar por'));
-      const select = document.createElement('select');
-      select.id = 'gc-performance-compare';
-      [
-        ['person', 'Pessoa'],
-        ['institution', 'Instituição'],
-        ['role', 'Cargo'],
-        ['unit', 'Unidade'],
-        ['team', 'Equipe'],
-      ].forEach(([value, label]) => select.appendChild(createOption(value, label)));
-      select.addEventListener('change', renderPerformance);
-      field.appendChild(select);
-      grid.appendChild(field);
-    }
-    const actions = byId('gc-save-performance')?.parentElement;
-    if (actions) {
-      ensureImportButton(actions.id || (actions.id = 'gc-performance-actions'), 'gc-import-performance-trigger', 'gc-performance-import', 'Importar planilha', '.xlsx,.xls,.csv', importPerformanceFile);
-    }
-  }
-
-  function ensureGapImportControls() {
-    const actions = byId('gc-save-gap')?.parentElement;
-    if (actions) {
-      ensureImportButton(actions.id || (actions.id = 'gc-gap-actions'), 'gc-import-gap-trigger', 'gc-gap-import', 'Importar planilha', '.xlsx,.xls,.csv', importGapFile);
-    }
-  }
-
-  function ensureTrailFilters() {
-    const host = byId('gc-trails-list');
-    if (!host || byId('gc-trails-filters')) return;
-    const filters = createNode('div', 'gc-filter-row');
-    filters.id = 'gc-trails-filters';
-    const competency = document.createElement('input');
-    competency.id = 'gc-trail-filter-competency';
-    competency.type = 'text';
-    competency.placeholder = 'Filtrar por competência';
-    competency.setAttribute('list', 'gc-competency-suggestions');
-    competency.addEventListener('input', renderTrails);
-    const macro = document.createElement('input');
-    macro.id = 'gc-trail-filter-macro';
-    macro.type = 'text';
-    macro.placeholder = 'Filtrar por macroprocesso';
-    macro.setAttribute('list', 'gc-macro-list');
-    macro.addEventListener('input', renderTrails);
-    const division = document.createElement('input');
-    division.id = 'gc-trail-filter-division';
-    division.type = 'text';
-    division.placeholder = 'Filtrar por divisão';
-    division.setAttribute('list', 'gc-units-list');
-    division.addEventListener('input', renderTrails);
-    filters.append(competency, macro, division);
-    host.parentElement?.insertBefore(filters, host);
-  }
-
-  function findOrCreatePersonFromRow(row) {
-    const key = personImportKey(row);
-    const existing = people().find((item) => personKey(item) === key);
-    if (existing) return existing;
-    const name = firstFilled(row, ['nome', 'Nome']);
-    if (!name) return null;
-    const entryDate = firstFilled(row, ['data de entrada na CAGE', 'data de entrada', 'data', 'posse']);
-    const probation = probationInfo(entryDate);
-    const person = {
-      ...personTemplate(),
-      id: makeId('gc_person'),
-      name,
-      role: firstFilled(row, ['cargo', 'Cargo']),
-      unit: firstFilled(row, ['unidade', 'Unidade', 'divisão', 'divisao']),
-      team: firstFilled(row, ['equipe', 'Equipe']),
-      entryDate,
-      probation: probation.probation,
-      probationEnd: probation.probationEnd,
-    };
-    people().push(person);
-    return person;
-  }
-
-  async function importGapFile(file) {
-    if (!requireEditor() || !file) return;
-    try {
-      const rows = await readSheetRows(file);
-      let created = 0;
-      rows.forEach((row) => {
-        const person = findOrCreatePersonFromRow(row);
-        if (!person) return;
-        const entry = {
-          ...gapTemplate(),
-          id: makeId('gc_gap'),
-          personId: person.id,
-          unit: firstFilled(row, ['unidade', 'Unidade', 'divisão', 'divisao']) || person.unit,
-          team: firstFilled(row, ['equipe', 'Equipe']) || person.team,
-          currentCompetencies: firstFilled(row, ['competências atuais', 'competencias atuais']),
-          requiredCompetencies: firstFilled(row, ['competências necessárias', 'competencias necessarias', 'competências necessarias']),
-          observations: firstFilled(row, ['observações', 'observacoes']),
-          recommendations: firstFilled(row, ['recomendações', 'recomendacoes']),
-          actionPlan: firstFilled(row, ['plano de ação', 'plano de acao']),
-        };
-        if (!entry.currentCompetencies && !entry.requiredCompetencies) return;
-        gapAnalyses().push(entry);
-        created += 1;
-      });
-      persist(`${created} gap(s) importado(s).`);
-      renderAll();
-    } catch (error) {
-      showInfo(`Erro ao importar gaps: ${error.message}`, 'warn');
-    } finally {
-      const input = byId('gc-gap-import');
-      if (input) input.value = '';
-    }
-  }
-
-  async function importPerformanceFile(file) {
-    if (!requireEditor() || !file) return;
-    try {
-      const rows = await readSheetRows(file);
-      let created = 0;
-      rows.forEach((row) => {
-        const person = findOrCreatePersonFromRow(row);
-        const date = firstFilled(row, ['data da avaliação', 'data da avaliacao', 'data']);
-        if (!person || !date) return;
-        const entry = {
-          ...performanceTemplate(),
-          id: makeId('gc_perf'),
-          personId: person.id,
-          date,
-          method: firstFilled(row, ['método', 'metodo']),
-          objective: firstFilled(row, ['objetivo', 'Objetivo']),
-          result: firstFilled(row, ['resultado', 'Resultado']),
-          notes: firstFilled(row, ['observações', 'observacoes']),
-        };
-        performanceReviews().push(entry);
-        created += 1;
-      });
-      persist(`${created} avaliação(ões) importada(s).`);
-      renderAll();
-    } catch (error) {
-      showInfo(`Erro ao importar avaliações: ${error.message}`, 'warn');
-    } finally {
-      const input = byId('gc-performance-import');
-      if (input) input.value = '';
-    }
   }
 
   function renderHero() {

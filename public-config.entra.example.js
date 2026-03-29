@@ -1,4 +1,4 @@
-window.__SIGA_RUNTIME__ = {
+globalThis.__SIGA_RUNTIME__ = {
   apiUrl: '/api',
   auth: {
     mode: 'entra',
@@ -8,7 +8,7 @@ window.__SIGA_RUNTIME__ = {
       // Directory (tenant) ID do tenant da SEFAZ-RS
       tenantId: '00000000-0000-0000-0000-000000000000',
       // URL publica do frontend no servidor local
-      redirectUri: window.location.origin,
+      redirectUri: globalThis.location.origin,
       // Controle de permissao no frontend
       adminEmails: ['admin@sefaz.rs.gov.br'],
       editorEmails: ['editor1@sefaz.rs.gov.br', 'editor2@sefaz.rs.gov.br'],
