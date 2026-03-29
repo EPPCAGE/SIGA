@@ -494,14 +494,6 @@
     return row;
   }
 
-  function setTrailLevelsEditor(levels) {
-    const host = byId('gc-trail-levels');
-    if (!host) return;
-    host.replaceChildren();
-    const nextLevels = levels.length ? levels : FIXED_TRAIL_LEVELS.map((name) => ({ name, goal: '' }));
-    nextLevels.forEach((level, index) => host.appendChild(createTrailLevelItem(level, index)));
-  }
-
   function tokenize(text) {
     return safeText(text)
       .toLowerCase()
@@ -1707,20 +1699,6 @@
     });
   }
 
-  function ensureImportButton(hostId, buttonId, inputId, label, accept, handler) {
-    const host = byId(hostId);
-    if (!host || byId(buttonId)) return;
-    const button = createButton(label, 'btn btn-outline', () => byId(inputId)?.click());
-    const input = document.createElement('input');
-    button.id = buttonId;
-    input.id = inputId;
-    input.type = 'file';
-    input.accept = accept;
-    input.style.display = 'none';
-    input.addEventListener('change', (event) => handler(event.target.files?.[0]));
-    host.append(button, input);
-  }
-
   function findOrCreatePersonFromRow(row) {
     const key = personImportKey(row);
     const existing = people().find((item) => personKey(item) === key);
@@ -1742,72 +1720,6 @@
     };
     people().push(person);
     return person;
-  }
-
-  async function importGapFile(file) {
-    if (!requireEditor() || !file) return;
-    try {
-      const rows = await readSheetRows(file);
-      let created = 0;
-      rows.forEach((row) => {
-        const person = findOrCreatePersonFromRow(row);
-        if (!person) return;
-        const entry = {
-          ...gapTemplate(),
-          id: makeId('gc_gap'),
-          personId: person.id,
-          unit: firstFilled(row, ['unidade', 'Unidade', 'divisão', 'divisao']) || person.unit,
-          team: firstFilled(row, ['equipe', 'Equipe']) || person.team,
-          currentCompetencies: firstFilled(row, ['competências atuais', 'competencias atuais']),
-          requiredCompetencies: firstFilled(row, ['competências necessárias', 'competencias necessarias', 'competências necessarias']),
-          observations: firstFilled(row, ['observações', 'observacoes']),
-          recommendations: firstFilled(row, ['recomendações', 'recomendacoes']),
-          actionPlan: firstFilled(row, ['plano de ação', 'plano de acao']),
-        };
-        if (!entry.currentCompetencies && !entry.requiredCompetencies) return;
-        gapAnalyses().push(entry);
-        created += 1;
-      });
-      persist(`${created} gap(s) importado(s).`);
-      renderAll();
-    } catch (error) {
-      showInfo(`Erro ao importar gaps: ${error.message}`, 'warn');
-    } finally {
-      const input = byId('gc-gap-import');
-      if (input) input.value = '';
-    }
-  }
-
-  async function importPerformanceFile(file) {
-    if (!requireEditor() || !file) return;
-    try {
-      const rows = await readSheetRows(file);
-      let created = 0;
-      rows.forEach((row) => {
-        const person = findOrCreatePersonFromRow(row);
-        const date = firstFilled(row, ['data da avaliação', 'data da avaliacao', 'data']);
-        if (!person || !date) return;
-        const entry = {
-          ...performanceTemplate(),
-          id: makeId('gc_perf'),
-          personId: person.id,
-          date,
-          method: firstFilled(row, ['método', 'metodo']),
-          objective: firstFilled(row, ['objetivo', 'Objetivo']),
-          result: firstFilled(row, ['resultado', 'Resultado']),
-          notes: firstFilled(row, ['observações', 'observacoes']),
-        };
-        performanceReviews().push(entry);
-        created += 1;
-      });
-      persist(`${created} avaliação(ões) importada(s).`);
-      renderAll();
-    } catch (error) {
-      showInfo(`Erro ao importar avaliações: ${error.message}`, 'warn');
-    } finally {
-      const input = byId('gc-performance-import');
-      if (input) input.value = '';
-    }
   }
 
   function renderHero() {
