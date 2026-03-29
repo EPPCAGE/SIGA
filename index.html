@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -21,6 +21,7 @@
 <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="./public-config.js"></script>
+<link rel="stylesheet" href="./modules/competency-management/module.css">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -964,7 +965,7 @@
   button.home-card{
     padding: 24px 28px 22px !important;
     text-align: left !important;
-  }
+  // }
   .home-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(27,48,34,.55); }
   .home-card-icon {
     width: 48px; height: 48px; border-radius: 12px;
@@ -1003,7 +1004,6 @@
   /* Contraste reforcado das abas principais */
   .nav-tabs{
     background:linear-gradient(180deg,#183c36 0%,#102d29 100%)!important;
-  }
   .nav-tabs .nav-tab{
     background:#143a34!important;
     color:#f3f7f5!important;
@@ -4594,6 +4594,83 @@ function saveToStorage() {
 
 function loadFromStorage() { return false; } // dados vêm exclusivamente do Supabase
 
+function _harvestMetaField(popData, field, val) {
+  const meta = popData.meta || (popData.meta = {});
+  const fieldMap = {
+    obj: 'desc',
+    proc_desc: 'desc',
+    entrada_resumo: 'input',
+    proc_input: 'input',
+    saida_resumo: 'output',
+    proc_output: 'output',
+    el_nome: 'elaborado',
+    proc_elaborado: 'elaborado',
+    proc_revisado: 'revisado',
+    proc_name: 'name',
+    proc_macro: 'macro',
+  };
+  const target = fieldMap[field];
+  if(target) meta[target] = val;
+}
+
+function _harvestRoleField(popData, field, val) {
+  const rMatch = field.match(/^r(\d+)([ntd])(\d*)$/);
+  if(!rMatch || !popData.roles) return;
+  const ri = Number.parseInt(rMatch[1]);
+  const type = rMatch[2];
+  const di = Number.parseInt(rMatch[3]);
+  const role = popData.roles[ri];
+  if(!role) return;
+  if(type === 'n') role.name = val;
+  else if(type === 't') role.title = val;
+  else if(type === 'd' && !Number.isNaN(di)) role.duties[di] = val;
+}
+
+function _harvestDataKeyFields() {
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const [p, field] = el.dataset.key.split(':');
+    const popData = DATA[p];
+    if(!p || !field || !popData) return;
+    const val = el.innerText?.trim() || el.textContent?.trim() || '';
+    _harvestMetaField(popData, field, val);
+    _harvestRoleField(popData, field, val);
+  });
+}
+
+function _applyHarvestStepField(step, sf, val) {
+  if(sf.startsWith('tobe_')) {
+    if(!step.tobe) step.tobe = {};
+    step.tobe[sf.slice(5)] = val;
+    return;
+  }
+  const fieldMap = {
+    title: 'title',
+    subtitle: 'subtitle',
+    responsible: 'responsible',
+    note: 'note',
+    duracao: 'duracao',
+    sistemas: 'sistemas',
+    documentos: 'documentos',
+    pontosMelhoria: 'pontosMelhoria',
+    observacoes: 'observacoes',
+  };
+  const target = fieldMap[sf];
+  if(target) step[target] = val;
+  if(sf === 'dlabel' && step.decision) step.decision.label = val;
+  if(sf === 'dtext' && step.decision) step.decision.text = val;
+}
+
+function _harvestStepFields() {
+  document.querySelectorAll('[data-sf]').forEach(el => {
+    const pp = el.dataset.sp;
+    const si = Number.parseInt(el.dataset.si);
+    const sf = el.dataset.sf;
+    if(!pp || Number.isNaN(si) || !sf || !DATA[pp]?.steps?.[si]) return;
+    const val = el.innerText?.replace(/^ðŸ‘¤\s*/, '').trim() || '';
+    _applyHarvestStepField(DATA[pp].steps[si], sf, val);
+  });
+}
+
 function harvestEditables() {
   // Read contenteditable fields back into DATA
   document.querySelectorAll('[data-key]').forEach(el => {
@@ -7012,25 +7089,38 @@ function _setNpopStepVisibility() {
 }
 
 function _syncNpopMethodUi(m) {
+  _toggleNpopMethodBlocks(m);
+  _updateNpopMethodButton(m);
+  _updateNpopMethodBadge(m);
+}
+
+function _toggleNpopMethodBlocks(m) {
   const manualForm = document.getElementById('npop-manual-form');
   const workflowBlock = document.getElementById('npop-workflow-block');
   if(manualForm) manualForm.style.display = m === 'manual' ? 'block' : 'none';
   if(workflowBlock) workflowBlock.style.display = m === 'workflow' ? 'block' : 'none';
+}
 
+function _getNpopMethodButtonLabel(m) {
+  if(m === 'manual') return 'Iniciar Mapeamento ?';
+  return _npopWorkflowReady ? 'Finalizar Mapeamento ?' : 'Criar Mapeamento ?';
+}
+
+function _getNpopMethodBadgeLabel(m) {
+  if(m === 'manual') return 'Modo manual';
+  return _npopWorkflowReady ? 'Etapa 2: revisar e editar dados extra?dos' : 'Etapa 1: carregar POP Word';
+}
+
+function _updateNpopMethodButton(m) {
   const btn = document.getElementById('npop-confirm-btn');
-  if(btn) {
-    btn.style.display = '';
-    btn.textContent = m === 'manual'
-      ? 'Iniciar Mapeamento ?'
-      : (_npopWorkflowReady ? 'Finalizar Mapeamento ?' : 'Criar Mapeamento ?');
-  }
+  if(!btn) return;
+  btn.style.display = '';
+  btn.textContent = _getNpopMethodButtonLabel(m);
+}
 
+function _updateNpopMethodBadge(m) {
   const badge = document.getElementById('npop-method-badge');
-  if(badge) {
-    badge.textContent = m === 'manual'
-      ? 'Modo manual'
-      : (_npopWorkflowReady ? 'Etapa 2: revisar e editar dados extra?dos' : 'Etapa 1: carregar POP Word');
-  }
+  if(badge) badge.textContent = _getNpopMethodBadgeLabel(m);
 }
 
 function openNovoPop() {
@@ -7505,14 +7595,83 @@ function _extractOuterJsonArray(text) {
   return start !== -1 && end > start ? source.slice(start, end + 1) : null;
 }
 
+function _tryParseFaqJsonCandidate(candidate, label) {
+  if(!candidate) return null;
+  try {
+    JSON.parse(candidate);
+    return candidate;
+  } catch(e) {
+    console.debug(`[_extractFaqJsonArray] ${label} falhou:`, e.message);
+    return null;
+  }
+}
+
+function _findBalancedFaqArray(text) {
+  const source = String(text || '');
+  const start = source.indexOf('[');
+  if(start === -1) return null;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for(let i = start; i < source.length; i++) {
+    const ch = source[i];
+    if(inString) {
+      if(escaped) escaped = false;
+      else if(ch === '\\') escaped = true;
+      else if(ch === '"') inString = false;
+      continue;
+    }
+    if(ch === '"') {
+      inString = true;
+      continue;
+    }
+    if(ch === '[') depth++;
+    if(ch === ']') {
+      depth--;
+      if(depth === 0) return source.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+function _findFaqNarrativeStart(text) {
+  const lines = String(text || '').split('\n');
+  for(let i = 0; i < lines.length; i++) {
+    const line = lines[i].trimStart();
+    if(/^\d+\.\s+/.test(line)) return i;
+  }
+  return -1;
+}
+
+function _parseFaqNumberedQuestion(line) {
+  const text = String(line || '').trim();
+  const dotIdx = text.indexOf('.');
+  if(dotIdx <= 0) return null;
+  const prefix = text.slice(0, dotIdx).trim();
+  if(!/^\d+$/.test(prefix)) return null;
+  const question = text.slice(dotIdx + 1).trim();
+  return question.endsWith('?') ? question : null;
+}
+
+function _parseFaqObjectArray(clean) {
+  const wrapped = `[${String(clean || '').replaceAll(',\n{', '},{').replaceAll('}\n{', '},{').replaceAll('\n', ' ')}]`;
+  const parsed = _tryParseJson(wrapped, null);
+  if(!Array.isArray(parsed)) return null;
+  const safeFaqs = parsed
+    .filter(item => item && typeof item === 'object')
+    .map(item => ({ q: String(item.q || '').trim(), a: String(item.a || '').trim() }))
+    .filter(item => item.q && item.a);
+  return safeFaqs.length ? safeFaqs : null;
+}
+
 function _extractFaqJsonArray(rawText) {
   const text = String(rawText || '').trim();
   
   // Estratégia 0: PRIMEIRO, tentar extrair FAQs em formato NARRATIVO
   // Padrão: "1. Pergunta?\nResposta\n2. Próxima?"
   // Simplificado para evitar ReDoS
-  const narrativeStart = text.search(/\n\s*\d+\.\s+/);
-  const narrativeSection = narrativeStart !== -1 ? text.substring(narrativeStart) : text;
+  const narrativeStart = _findFaqNarrativeStart(text);
+  const narrativeSection = narrativeStart !== -1 ? text.split('\n').slice(narrativeStart).join('\n') : text;
   
   // Padrão simplificado: captura pergunta e resposta até próxima pergunta numerada
   const lines = narrativeSection.split('\n');
@@ -7522,9 +7681,9 @@ function _extractFaqJsonArray(rawText) {
   
   for(let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    const numMatch = line.match(/^(\d+)\.\s+(.+\?)\s*$/);
+    const parsedQuestion = _parseFaqNumberedQuestion(line);
     
-    if(numMatch) {
+    if(parsedQuestion) {
       // Nova pergunta encontrada
       if(currentQ && currentA.length > 0) {
         const answer = currentA.join(' ').trim();
@@ -7532,7 +7691,7 @@ function _extractFaqJsonArray(rawText) {
           faqs.push({ q: currentQ, a: answer });
         }
       }
-      currentQ = numMatch[2];
+      currentQ = parsedQuestion;
       currentA = [];
     } else if(currentQ && line.length > 0) {
       // Continuação da resposta
@@ -7561,7 +7720,8 @@ function _extractFaqJsonArray(rawText) {
   clean = clean.replaceAll('/*', '').replaceAll('*/', '');  // Comentários /* */
   
   // Estratégia 3: Tentar extrair JSON array completo
-  let jsonStr = _extractOuterJsonArray(clean);
+  const jsonStr = _tryParseFaqJsonCandidate(_extractOuterJsonArray(clean), 'FAQ JSON array');
+  if(jsonStr) return jsonStr;
   if(jsonStr) {
     try {
       JSON.parse(jsonStr);
@@ -7572,10 +7732,12 @@ function _extractFaqJsonArray(rawText) {
   }
   
   // Estratégia 4: Procurar por padrão [{ ... }] mais flexível
+  const balancedJson = _tryParseFaqJsonCandidate(_findBalancedFaqArray(clean), 'FAQ balanced array');
+  if(balancedJson) return balancedJson;
   const patterns = [
-    /\[\s*\{[\s\S]*?\}\s*\]/,                    // [{ ... }]
-    /\[\s*\{\s*"q"[\s\S]*?\}\s*\]/,             // [{"q"...}]
-    /\[[\s\S]*?\]/,                              // [... qualquer coisa ...]
+    /\[\{\}\]/,                    // [{ ... }]
+    /\[\{"q"\}\]/,             // [{"q"...}]
+    /\[\]/,                              // [... qualquer coisa ...]
   ];
   
   for(const pattern of patterns) {
@@ -7607,14 +7769,11 @@ function _extractFaqJsonArray(rawText) {
   
   // Estratégia 6: Se tudo falhar, procurar por objetos individuais e montar array
   // Procurar por padrão {"q":"...","a":"..."}
-  const objectPattern = /\{\s*"q"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*,\s*"a"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*\}/gi;
-  const matches = [...clean.matchAll(objectPattern)];
+  const parsedObjects = _parseFaqObjectArray(clean);
+  const matches = parsedObjects;
   
-  if(matches.length > 0) {
-    const faqs = matches.map(m => ({
-      q: m[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\'),
-      a: m[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\')
-    }));
+  if(matches?.length > 0) {
+    const faqs = matches;
     console.log('[_extractFaqJsonArray] Estratégia 6 (objetos individuais) funcionou:', faqs.length);
     return JSON.stringify(faqs);
   }
@@ -9604,6 +9763,13 @@ function eppToggleHeaderBtn(key) {
 }
 
 // ── Config Panel rendering ───────────────────────────────────────────────────
+let _skillChipSeq = 0;
+
+function _nextSkillChipId() {
+  _skillChipSeq += 1;
+  return 'skill-' + _skillChipSeq;
+}
+
 const _CFG_TABLES = [
   { key:'servidoresEPP',       title:'👥 Servidores do EPP',          desc:'Membros lotados no Escritório de Projetos e Processos.', typed:'servidor' },
   { key:'alertasEmail',        title:'📧 Alertas por E-mail',         desc:'Defina quem recebe cada tipo de alerta automático por e-mail.', typed:'alertas' },
@@ -9827,7 +9993,7 @@ function _renderCfgCardEquipeCompetencias(title, desc) {
     if(!all.length) return '<span style="color:#94a3b8;font-size:11px;">—</span>';
     return all.map(sk => {
       const active = selected.includes(sk);
-      const chipId = 'skill-' + Math.random().toString(36).substr(2, 9);
+      const chipId = _nextSkillChipId();
       return `<span class="skill-chip" data-skill-chip="${chipId}" data-equipe="${escapeHtml(equipe)}" data-skill="${escapeHtml(sk)}" data-tipo="${tipo}" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#1B3022;color:white;border:1px solid #1B3022;' : 'background:#334155;color:#64748b;border:1px solid #e2e8f0;'}">${sk}</span>`;
     }).join('');
   }
@@ -9885,7 +10051,7 @@ function _renderCfgCardAptCatalog(title, desc) {
     .map(c => `<option value="${c}">${c}</option>`).join('');
 
   const rows = items.map((a, i) => {
-    const critColor = {Alta:'#dc2626',Média:'#d97706',Baixa:'#16a34a'}[a.criticidade] || '#64748b';
+    const critColor = {'Alta':'#dc2626','Média':'#d97706','Baixa':'#16a34a'}[a.criticidade] || '#64748b';
     const recs = Array.isArray(a.recomendacoes) ? a.recomendacoes : [];
     const recsHtml = recs.map((r, ri) =>
       `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
@@ -14785,8 +14951,28 @@ function calcHorasEcon(p) {
   }
 }
 
+function _setMetricText(id, val) {
+  const el = document.getElementById(id);
+  if(el) el.textContent = val || 'â€”';
+}
+
+function _toggleOverviewGrid(p, meta) {
+  const grid = document.getElementById(p + '-overview-grid');
+  if(!grid) return;
+  const hasValues = meta.volPre || meta.volPos || meta.cicloPre || meta.cicloPos;
+  grid.style.display = (editMode || hasValues) ? '' : 'none';
+}
+
 function renderMetrics(p) {
   const m = DATA[p]?.meta || {};
+  _setMetricText(p + '-metric-vol-pre',   m.volPre   || 'â€”');
+  _setMetricText(p + '-metric-vol-pos',   m.volPos   || 'â€”');
+  _setMetricText(p + '-metric-ciclo-pre', m.cicloPre || 'â€”');
+  _setMetricText(p + '-metric-ciclo-pos', m.cicloPos || 'â€”');
+  calcHorasEcon(p);
+  renderBanner(p);
+  _toggleOverviewGrid(p, m);
+  return;
   const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val || '—'; };
   setVal(p + '-metric-vol-pre',   m.volPre   || '—');
   setVal(p + '-metric-vol-pos',   m.volPos   || '—');
@@ -14802,6 +14988,15 @@ function renderMetrics(p) {
   }
 }
 
+// fim legado
+function _getBannerSubtitle(meta) {
+  if(meta.bannerSub) return meta.bannerSub;
+  if(meta.macro || meta.processo) {
+    return [meta.macro, meta.processo, meta.name].filter(Boolean).join(' Â· ');
+  }
+  return '';
+}
+
 function renderBanner(p) {
   const m = DATA[p]?.meta || {};
   if(!m.bannerIcon && !m.bannerSub && !m.name) return;
@@ -14810,9 +15005,10 @@ function renderBanner(p) {
   const bannerTitle = popEl.querySelector('.pop-banner-title');
   const bannerSub   = popEl.querySelector('.pop-banner-sub');
   const bannerIcon  = popEl.querySelector('.pop-banner-icon');
+  const subtitle = _getBannerSubtitle(m);
   if(bannerTitle && m.name)       bannerTitle.textContent = m.name;
-  if(bannerSub   && m.bannerSub)  bannerSub.textContent   = m.bannerSub;
-  else if(bannerSub && (m.macro || m.processo)) {
+  if(bannerSub && subtitle) bannerSub.textContent = subtitle;
+  if(false) {
     bannerSub.textContent = [m.macro, m.processo, m.name].filter(Boolean).join(' · ');
   }
   if(bannerIcon && m.bannerIcon)  bannerIcon.textContent  = m.bannerIcon;
@@ -15032,6 +15228,40 @@ function _initEtapas(p) {
   return DATA[p].etapasProgress;
 }
 
+function _clearNextEtapaStart(ep, ids, idx) {
+  if(idx < ids.length - 1 && !ep[ids[idx + 1]].ok) ep[ids[idx + 1]].inicio = null;
+}
+
+function _setNextEtapaStart(ep, ids, idx, today) {
+  if(idx < ids.length - 1 && !ep[ids[idx + 1]].inicio) ep[ids[idx + 1]].inicio = today;
+}
+
+function _applyEtapaStatusEffects(p, etapaId, today) {
+  if(etapaId === 'entendimento') {
+    if(!DATA[p].meta.dataInicio) DATA[p].meta.dataInicio = today;
+    if(!['concluido','suspenso'].includes(DATA[p].meta.statusMap)) DATA[p].meta.statusMap = 'em_andamento';
+  }
+  if(etapaId === 'concluido') {
+    DATA[p].meta.statusMap = 'concluido';
+    if(!DATA[p].meta.dataEfetiva) DATA[p].meta.dataEfetiva = today;
+  }
+}
+
+function _uncheckEtapa(ep, ids, idx, et) {
+  et.ok = false;
+  et.fim = null;
+  _clearNextEtapaStart(ep, ids, idx);
+}
+
+function _checkEtapa(p, ep, ids, idx, et, etapaId, today) {
+  et.ok = true;
+  et.na = false;
+  et.fim = today;
+  if(!et.inicio) et.inicio = today;
+  _setNextEtapaStart(ep, ids, idx, today);
+  _applyEtapaStatusEffects(p, etapaId, today);
+}
+
 function toggleEtapaMap(p, etapaId) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
   const ep    = _initEtapas(p);
@@ -15040,34 +15270,8 @@ function toggleEtapaMap(p, etapaId) {
   const idx   = ids.indexOf(etapaId);
   const et    = ep[etapaId];
 
-  if(et.ok) {
-    // Desmarcar
-    et.ok  = false;
-    et.fim = null;
-    // Limpar início da próxima fase se ela ainda não foi marcada
-    if(idx < ids.length - 1 && !ep[ids[idx + 1]].ok) ep[ids[idx + 1]].inicio = null;
-  } else {
-    // Marcar
-    et.ok  = true;
-    et.na  = false;
-    et.fim = today;
-    if(!et.inicio) et.inicio = today;
-    // Registrar início automático da próxima fase
-    if(idx < ids.length - 1 && !ep[ids[idx + 1]].inicio)
-      ep[ids[idx + 1]].inicio = today;
-
-    // Efeito especial: Entendimento → status em_andamento + dataInicio
-    if(etapaId === 'entendimento') {
-      if(!DATA[p].meta.dataInicio) DATA[p].meta.dataInicio = today;
-      if(!['concluido','suspenso'].includes(DATA[p].meta.statusMap))
-        DATA[p].meta.statusMap = 'em_andamento';
-    }
-    // Efeito especial: Concluído → status concluido + dataEfetiva
-    if(etapaId === 'concluido') {
-      DATA[p].meta.statusMap = 'concluido';
-      if(!DATA[p].meta.dataEfetiva) DATA[p].meta.dataEfetiva = today;
-    }
-  }
+  if(et.ok) _uncheckEtapa(ep, ids, idx, et);
+  else _checkEtapa(p, ep, ids, idx, et, etapaId, today);
   markChanged(true, true);
   renderFicha(p);
 }
@@ -15083,34 +15287,46 @@ function toggleEtapaNA(p, etapaId) {
   renderFicha(p);
 }
 
+function _getFichaEtapas(p) {
+  const tipoTrabalho = (DATA[p]?.meta?.tipo || '').toLowerCase();
+  const tiposComRedesenho = ['redesenho', 'mapeamento e redesenho'];
+  return _ETAPAS_MAP.filter(e => e.id !== 'redesenho' || tiposComRedesenho.some(t => tipoTrabalho.includes(t)));
+}
+
+function _getFichaProgressColor(pct) {
+  if(pct === 100) return '#16a34a';
+  if(pct >= 60) return '#d97706';
+  return '#3b82f6';
+}
+
+function _formatFichaDate(str) {
+  if(!str) return '';
+  try { return new Date(str+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); }
+  catch(e){ return str; }
+}
+
+function _diffFichaDays(a, b, today) {
+  if(!a) return null;
+  const dA = new Date(a+'T00:00:00');
+  const dB = b ? new Date(b+'T00:00:00') : today;
+  const d  = Math.round((dB - dA) / 86400000);
+  return d >= 0 ? d : null;
+}
+
 function _renderFichaProgressHtml(p) {
   const ep    = _initEtapas(p);
   const today = new Date(); today.setHours(0,0,0,0);
 
   // "Redesenho" só aparece se o tipo de trabalho for "Redesenho" ou "Mapeamento e Redesenho"
-  const tipoTrabalho = (DATA[p]?.meta?.tipo || '').toLowerCase();
-  const tiposComRedesenho = ['redesenho', 'mapeamento e redesenho'];
-  const etapas = _ETAPAS_MAP.filter(e =>
-    e.id !== 'redesenho' || tiposComRedesenho.some(t => tipoTrabalho.includes(t))
-  );
+  const etapas = _getFichaEtapas(p);
 
   const total = etapas.length;
   const done  = etapas.filter(e => ep[e.id]?.ok || ep[e.id]?.na).length;
   const pct   = total > 0 ? Math.round(done / total * 100) : 0;
-  const barColor = pct === 100 ? '#16a34a' : pct >= 60 ? '#d97706' : '#3b82f6';
+  const barColor = _getFichaProgressColor(pct);
 
-  const fmtD = str => {
-    if(!str) return '';
-    try { return new Date(str+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); }
-    catch(e){ return str; }
-  };
-  const diffDays = (a, b) => {
-    if(!a) return null;
-    const dA = new Date(a+'T00:00:00');
-    const dB = b ? new Date(b+'T00:00:00') : today;
-    const d  = Math.round((dB - dA) / 86400000);
-    return d >= 0 ? d : null;
-  };
+  const fmtD = str => _formatFichaDate(str);
+  const diffDays = (a, b) => _diffFichaDays(a, b, today);
 
   const itemsHtml = etapas.map((e, i) => {
     const st      = ep[e.id] || {};
@@ -15326,66 +15542,7 @@ function deleteRisk(p,i) {
 }
 
 async function generateRisksIA(p) {
-  if(!isEditor) { showToast('🔒 Apenas editores podem usar IA.', 'warn'); return; }
-  const btn = document.getElementById(p + '-risk-ia-btn');
-  if(btn) { btn.disabled = true; btn.textContent = '⏳ Gerando…'; }
-  try {
-    const D = DATA[p];
-    const procName = D.meta?.name || 'Processo';
-    const desc     = D.meta?.desc || '';
-    const stepsCtx = (D.steps || []).map((s,i) => {
-      const acts = (s.actions||[]).map(a => {
-        const lines = [`  - [${(a.type||'atividade').toUpperCase()}] ${a.text||''}`];
-        if(Array.isArray(a.branches)) a.branches.forEach(b =>
-          (b.actions||[]).forEach(ba => lines.push(`    • (${b.label}) ${ba.text||''}`)));
-        return lines.join('\n');
-      }).join('\n');
-      return `Etapa ${i+1}: ${s.title}\n${acts}`;
-    }).join('\n\n');
-    const existingTitles = (D.risks||[]).map(r => r.title).filter(Boolean);
-    const existingCtx = existingTitles.length ? `\n\nRISCOS JÁ CADASTRADOS (não repita):\n${existingTitles.map(t=>'- '+t).join('\n')}` : '';
-
-    const prompt = `Você é um especialista em gestão de riscos de processos públicos. Analise o processo abaixo e identifique de 5 a 8 riscos e/ou oportunidades relevantes e específicos ao conteúdo real do processo. Evite riscos genéricos. Para cada item forneça: título objetivo (máx. 80 chars), descrição breve, causa provável, tratamento sugerido, impacto (1=mínimo a 5=máximo) e probabilidade (1=raro a 5=quase certo).
-
-PROCESSO: ${procName}
-${desc ? 'DESCRIÇÃO: ' + desc + '\n' : ''}
-FLUXO:
-${stepsCtx}${existingCtx}
-
-Responda APENAS em JSON puro (sem markdown, sem \`\`\`), como array:
-[{"type":"risco","title":"","desc":"","causa":"","solucao":"","impact":3,"prob":2,"treat":"Mitigar"}]
-Valores possíveis para "type": "risco" ou "oportunidade".
-Valores possíveis para "treat": "Mitigar", "Aceitar", "Transferir", "Eliminar", "Explorar".`;
-
-    const text = await callGemini(prompt);
-    let clean = text.trim().replaceAll(/```json|```/g,'').trim();
-    const match = _extractOuterJsonArray(clean);
-    if(match) clean = match;
-    const items = JSON.parse(clean);
-    if(!Array.isArray(items) || !items.length) throw new Error('Resposta vazia da IA.');
-    if(!D.risks) D.risks = [];
-    items.forEach(item => {
-      D.risks.push({
-        type:    (item.type === 'oportunidade') ? 'oportunidade' : 'risco',
-        title:   item.title   || '',
-        desc:    item.desc    || '',
-        causa:   item.causa   || '',
-        solucao: item.solucao || '',
-        impact:  Math.min(5, Math.max(1, Number.parseInt(item.impact)||3)),
-        prob:    Math.min(5, Math.max(1, Number.parseInt(item.prob)||2)),
-        score:   Math.min(5, Math.max(1, Number.parseInt(item.impact)||3)) * Math.min(5, Math.max(1, Number.parseInt(item.prob)||2)),
-        treat:   item.treat   || 'Mitigar',
-      });
-    });
-    renderRisks(p);
-    markChanged(true, true);
-    showToast(`✅ ${items.length} itens gerados pela IA e adicionados.`, 'success');
-  } catch(e) {
-    /* notifica o usuario do erro */
-    showToast('❌ Erro ao gerar riscos: ' + (e.message || e), 'error');
-  } finally {
-    if(btn) { btn.disabled = false; btn.textContent = '✨ Gerar por IA'; }
-  }
+  return generateRisksIA_v2(p);
 }
 
 // ═══ VERSIONAMENTO ════════════════════════════════════════════════
@@ -16185,13 +16342,81 @@ function arqRenderStats(filtered, all) {
     `<div style="background:white;border-radius:10px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,.06);min-width:220px;flex:1;">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
         <div style="font-size:13px;font-weight:700;color:#1B3022;">Cobertura de Mapeamento</div>
-        <div style="font-size:22px;font-weight:800;color:${pct===100?'#16a34a':pct>=50?'#f59e0b':'#e11d48'};">${pct}%</div>
+        <div style="font-size:22px;font-weight:800;color:${_getArqCoverageColor(pct)};">${pct}%</div>
       </div>
       <div style="background:#334155;border-radius:20px;height:10px;overflow:hidden;">
-        <div style="height:100%;border-radius:20px;background:${pct===100?'#16a34a':pct>=50?'#f59e0b':'#e11d48'};width:${pct}%;transition:width .6s ease;"></div>
+        <div style="height:100%;border-radius:20px;background:${_getArqCoverageColor(pct)};width:${pct}%;transition:width .6s ease;"></div>
       </div>
       <div style="font-size:11px;color:#64748b;margin-top:6px;">${mappedN} de ${total} processos mapeados</div>
     </div>`;
+}
+
+function _getArqCoverageColor(pct) {
+  if(pct === 100) return '#16a34a';
+  if(pct >= 50) return '#f59e0b';
+  return '#e11d48';
+}
+async function generateRisksIA_v2(p) {
+  if(!isEditor) {
+    return;
+  }
+  const btn = document.getElementById(p + '-risk-ia-btn');
+  if(btn) {
+    btn.disabled = true;
+    btn.textContent = 'Gerando...';
+  }
+  try {
+    const D = DATA[p];
+    const procName = D.meta?.name || 'Processo';
+    const desc = D.meta?.desc || '';
+    const stepsCtx = (D.steps || []).map((s, i) => {
+      const acts = (s.actions || []).map(a => {
+        const lines = [`  - [${(a.type || 'atividade').toUpperCase()}] ${a.text || ''}`];
+        if(Array.isArray(a.branches)) {
+          a.branches.forEach(b => (b.actions || []).forEach(ba => lines.push(`    - (${b.label}) ${ba.text || ''}`)));
+        }
+        return lines.join('\n');
+      }).join('\n');
+      return `Etapa ${i + 1}: ${s.title}\n${acts}`;
+    }).join('\n\n');
+    const existingTitles = (D.risks || []).map(r => r.title).filter(Boolean);
+    const existingCtx = existingTitles.length
+      ? `\n\nRISCOS JA CADASTRADOS (nao repita):\n${existingTitles.map(t => '- ' + t).join('\n')}`
+      : '';
+    const prompt = `Voce e um especialista em gestao de riscos de processos publicos. Analise o processo abaixo e identifique de 5 a 8 riscos e/ou oportunidades relevantes e especificos ao conteudo real do processo. Evite riscos genericos. Para cada item forneca: titulo objetivo (max. 80 chars), descricao breve, causa provavel, tratamento sugerido, impacto (1=minimo a 5=maximo) e probabilidade (1=raro a 5=quase certo).\n\nPROCESSO: ${procName}\n${desc ? 'DESCRICAO: ' + desc + '\n' : ''}FLUXO:\n${stepsCtx}${existingCtx}\n\nResponda APENAS em JSON puro (sem markdown, sem crases), como array:\n[{\"type\":\"risco\",\"title\":\"\",\"desc\":\"\",\"causa\":\"\",\"solucao\":\"\",\"impact\":3,\"prob\":2,\"treat\":\"Mitigar\"}]\nValores possiveis para type: risco ou oportunidade.\nValores possiveis para treat: Mitigar, Aceitar, Transferir, Eliminar, Explorar.`;
+    const text = await callGemini(prompt);
+    let clean = text.trim().replace(/```json|```/g, '').trim();
+    const match = _extractOuterJsonArray(clean);
+    if(match) clean = match;
+    const items = JSON.parse(clean);
+    if(!Array.isArray(items) || !items.length) throw new Error('Resposta vazia da IA.');
+    if(!D.risks) D.risks = [];
+    items.forEach(item => {
+      const impact = Math.min(5, Math.max(1, Number.parseInt(item.impact) || 3));
+      const prob = Math.min(5, Math.max(1, Number.parseInt(item.prob) || 2));
+      D.risks.push({
+        type: item.type === 'oportunidade' ? 'oportunidade' : 'risco',
+        title: item.title || '',
+        desc: item.desc || '',
+        causa: item.causa || '',
+        solucao: item.solucao || '',
+        impact,
+        prob,
+        score: impact * prob,
+        treat: item.treat || 'Mitigar',
+      });
+    });
+    renderRisks(p);
+    markChanged(true, true);
+    showToast(`${items.length} itens gerados pela IA e adicionados.`, 'success');
+  } catch(e) {
+    showToast('Erro ao gerar riscos: ' + (e.message || e), 'error');
+  } finally {
+    if(btn) {
+      btn.disabled = false;
+      btn.textContent = 'Gerar por IA';
+    }
+  }
 }
 
 const NAT_COLORS = {
@@ -26520,6 +26745,9 @@ if ('serviceWorker' in navigator) {
   }
 }
 </script>
+<script src="./modules/competency-management/module.js"></script>
 </body>
 </html>
+
+
 

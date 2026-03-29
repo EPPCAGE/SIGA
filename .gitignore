@@ -5,6 +5,8 @@ node_modules/
 coverage/
 junit.xml
 .scannerwork/
+.sonarlint/
+bin/
 
 # Dados locais e backups — não versionar (podem conter dados reais)
 data/local-data.json
@@ -23,9 +25,11 @@ test-*.html
 verify-*.js
 tmp_zip_test*/
 tmp-*.js
+tmp_*.js
 tmp-*.ps1
 tmp-*.log
 tmp-*.html
+tmp_*.txt
 frontend.*.log
 backend.*.log
 .tmp/
