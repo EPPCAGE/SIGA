@@ -169,8 +169,8 @@ body {
 
 button {
   border: 1px solid transparent;
-  background: linear-gradient(120deg, var(--primary) 0%, var(--primary-2) 100%);
-  color: #f8fbff;
+  background: linear-gradient(120deg, #0d2236 0%, #1f4d3d 100%);
+  color: #ffffff;
   border-radius: 10px;
   padding: 8px 12px;
   font-weight: 600;
@@ -701,7 +701,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 
 .exec-mini-grid strong {
   display: block;
-  color: #f8fbff;
+  color: #0d2236;
   font-size: 18px;
 }
 
@@ -1906,10 +1906,10 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 .sgw-input {
   width: 64px;
   text-align: right;
-  background: rgba(255,255,255,0.08);
+  background: rgba(13, 34, 54, 0.78);
   border: 1px solid rgba(201,214,231,0.25);
   border-radius: 5px;
-  color: #f8fbff;
+  color: #ffffff;
   padding: 3px 6px;
   font-size: 12px;
 }

@@ -13444,7 +13444,7 @@ function runSearch(raw) {
   const results = _collectPopSearchResults(lower).concat(_collectRepoSearchResults(lower));
   countEl.textContent = results.length ? `${results.length} resultado${results.length>1?'s':''}` : '';
   if(!results.length) {
-    resultsEl.innerHTML = _renderSearchEmptyState('🤷', `Nenhum resultado para "${q}"`, 'Tente outras palavras-chave ou verifique a ortografia.');
+    resultsEl.innerHTML = _renderSearchEmptyState('🤷', `Nenhum resultado para "${escapeHtml(q)}"`, 'Tente outras palavras-chave ou verifique a ortografia.');
     return;
   }
   const faqResults     = results.filter(r => r.type === 'faq');

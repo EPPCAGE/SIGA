@@ -3232,11 +3232,31 @@ function openGatewayEditor(gatewayId) {
   }
 }
 
+function clearSelectOptions(select) {
+  if (!select) return;
+  select.textContent = '';
+}
+
+function appendSelectOption(select, value, label) {
+  if (!select) return;
+  const option = document.createElement('option');
+  option.value = value;
+  option.textContent = label;
+  select.appendChild(option);
+}
+
+function populateSelectOptions(select, items) {
+  clearSelectOptions(select);
+  for (const item of items) {
+    appendSelectOption(select, item.value, item.label);
+  }
+}
+
 function updateDashboard() {
   if (!graph) return;
   const sel = $('roiGateway');
   const gateways = gatewayNodes(graph);
-  sel.innerHTML = gateways.map((g) => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.label || g.id)}</option>`).join('');
+  populateSelectOptions(sel, gateways.map((g) => ({ value: g.id, label: g.label || g.id })));
 
   let metrics;
   try {
@@ -3621,12 +3641,12 @@ function renderHypothesisTargets() {
 
   const items = hypothesisTargets(type);
   if (!items.length) {
-    sel.innerHTML = '<option value="">Sem alvos disponiveis</option>';
+    populateSelectOptions(sel, [{ value: '', label: 'Sem alvos disponiveis' }]);
     help.textContent = 'Nao ha itens disponiveis para este tipo no processo atual.';
     return;
   }
 
-  sel.innerHTML = items.map((it) => `<option value="${escapeHtml(it.value)}">${escapeHtml(it.label)}</option>`).join('');
+  populateSelectOptions(sel, items);
 
   if (type === 'gateway') help.textContent = 'Hipotese: retirar etapa de aprovacao (gateway).';
   else if (type === 'loop') help.textContent = 'Hipotese: remover retorno de retrabalho (loop).';

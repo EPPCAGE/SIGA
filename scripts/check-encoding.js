@@ -1,7 +1,7 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const ROOT = process.cwd();
 const TEXT_EXTENSIONS = new Set([
@@ -29,7 +29,7 @@ function walk(dir, files) {
       continue;
     }
     if (!TEXT_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) continue;
-    const relative = path.relative(ROOT, full).replace(/\\/g, '/');
+    const relative = path.relative(ROOT, full).replaceAll('\\', '/');
     if (IGNORE_FILES.has(relative)) continue;
     if (entry.name.startsWith('tmp_')) continue;
     files.push(full);
