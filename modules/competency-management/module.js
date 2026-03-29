@@ -91,7 +91,7 @@
   }
 
   function parseNumber(value) {
-    const num = Number(String(value || '').replace(',', '.'));
+    const num = Number(String(value || '').replaceAll(',', '.'));
     return Number.isFinite(num) ? num : 0;
   }
 
@@ -224,7 +224,13 @@
 
   function ensureStore() {
     if (!globalThis.DATA || typeof globalThis.DATA !== 'object') globalThis.DATA = {};
-    if (!DATA[DATA_KEY] || typeof DATA[DATA_KEY] !== 'object') DATA[DATA_KEY] = { ...DEFAULT_STORE };
+    if (DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object') {
+      Object.keys(DEFAULT_STORE).forEach((key) => {
+        DATA[DATA_KEY][key] = safeArray(DATA[DATA_KEY][key]);
+      });
+      return DATA[DATA_KEY];
+    }
+    DATA[DATA_KEY] = { ...DEFAULT_STORE };
     Object.keys(DEFAULT_STORE).forEach((key) => {
       DATA[DATA_KEY][key] = safeArray(DATA[DATA_KEY][key]);
     });
@@ -494,49 +500,6 @@
     host.replaceChildren();
     const nextLevels = levels.length ? levels : FIXED_TRAIL_LEVELS.map((name) => ({ name, goal: '' }));
     nextLevels.forEach((level, index) => host.appendChild(createTrailLevelItem(level, index)));
-  }
-
-  function ensureTrailLevelsEditor() {
-    const levelsHost = byId('gc-trail-levels');
-    if (levelsHost) return;
-    const grid = byId('gc-trail-prereq')?.closest('.gc-form-grid');
-    if (!grid) return;
-
-    ['gc-trail-level-name', 'gc-trail-level-goal', 'gc-trail-level-degree'].forEach((id) => {
-      byId(id)?.closest('.gc-field')?.remove();
-    });
-
-    const section = createNode('div', 'gc-trail-levels-shell');
-    section.id = 'gc-trail-levels-shell';
-    section.append(createNode('div', 'gc-panel-title', 'Objetivos por nível'));
-    section.append(createNode('div', 'gc-panel-desc', 'A trilha usa cinco níveis fixos: Iniciante, Básico, Intermediário, Avançado e Especialista. Preencha apenas o objetivo esperado em cada um.'));
-
-    const host = createNode('div', 'gc-trail-levels');
-    host.id = 'gc-trail-levels';
-    section.appendChild(host);
-    grid.appendChild(section);
-
-    const head = grid.closest('.gc-panel')?.querySelector('.gc-panel-head');
-    if (head) {
-      const title = head.querySelector('.gc-panel-title');
-      const desc = head.querySelector('.gc-panel-desc');
-      if (title) title.textContent = 'Cadastrar trilha';
-      if (desc) desc.textContent = 'Vincule a competências, macroprocesso e divisão, descreva os objetivos dos cinco níveis fixos e informe em que contextos a trilha é pré-requisito.';
-    }
-
-    setTrailLevelsEditor([]);
-  }
-
-  function removalInsight(removal) {
-    const requests = removals().filter((item) => item.id !== removal.id);
-    const direct = requests.find((item) => item.fromUnit === removal.desiredUnit && item.desiredUnit === removal.fromUnit);
-    if (direct) return { label: 'Cruzamento direto identificado', type: 'match' };
-    const triangle = requests.some((item) =>
-      item.fromUnit === removal.desiredUnit &&
-      requests.some((other) => other.id !== item.id && other.fromUnit === item.desiredUnit && other.desiredUnit === removal.fromUnit)
-    );
-    if (triangle) return { label: 'Possível triangulação entre unidades', type: 'alert' };
-    return { label: 'Sem cruzamento encontrado no momento', type: '' };
   }
 
   function tokenize(text) {
@@ -898,16 +861,18 @@
     const latest = [...surveys()].sort((a, b) => String(b.year).localeCompare(String(a.year))).at(0);
     if (latest) {
       const list = createNode('div', 'gc-list');
-      [['Engajamento', latest.engagement], ['Liderança', latest.leadership], ['Clima', latest.climate]].forEach(([label, value]) => {
+      [['Engajamento', latest.engagement], ['Lideran?a', latest.leadership], ['Clima', latest.climate]].forEach(([label, value]) => {
         const item = createNode('div', 'gc-list-item');
-        item.append(createNode('div', 'gc-list-title', `${label}: ${value || '—'}`));
+        item.append(createNode('div', 'gc-list-title', `${label}: ${value || '?'}`));
         list.appendChild(item);
       });
       if (latest.notes) list.append(createNode('div', 'gc-list-text', latest.notes));
       surveyPanel.appendChild(list);
-    } else {
-      surveyPanel.appendChild(createNode('div', 'gc-empty', 'Cadastre a pesquisa anual para completar o painel.'));
+      split.append(demographic, tenure);
+      view.append(grid, split, surveyPanel);
+      return;
     }
+    surveyPanel.appendChild(createNode('div', 'gc-empty', 'Cadastre a pesquisa anual para completar o painel.'));
     split.append(demographic, tenure);
     view.append(grid, split, surveyPanel);
   }
@@ -1754,77 +1719,6 @@
     input.style.display = 'none';
     input.addEventListener('change', (event) => handler(event.target.files?.[0]));
     host.append(button, input);
-  }
-
-  function ensurePerformanceFilters() {
-    const grid = byId('gc-performance-filter-role')?.closest('.gc-form-grid');
-    if (!grid) return;
-    if (!byId('gc-performance-filter-team')) {
-      const field = createNode('div', 'gc-field');
-      field.append(createNode('label', '', 'Equipe'));
-      const input = document.createElement('input');
-      input.id = 'gc-performance-filter-team';
-      input.type = 'text';
-      input.setAttribute('list', 'gc-teams-list');
-      input.maxLength = 120;
-      input.addEventListener('input', renderPerformance);
-      field.appendChild(input);
-      grid.appendChild(field);
-    }
-    if (!byId('gc-performance-compare')) {
-      const field = createNode('div', 'gc-field');
-      field.append(createNode('label', '', 'Comparar por'));
-      const select = document.createElement('select');
-      select.id = 'gc-performance-compare';
-      [
-        ['person', 'Pessoa'],
-        ['institution', 'Instituição'],
-        ['role', 'Cargo'],
-        ['unit', 'Unidade'],
-        ['team', 'Equipe'],
-      ].forEach(([value, label]) => select.appendChild(createOption(value, label)));
-      select.addEventListener('change', renderPerformance);
-      field.appendChild(select);
-      grid.appendChild(field);
-    }
-    const actions = byId('gc-save-performance')?.parentElement;
-    if (actions) {
-      ensureImportButton(actions.id || (actions.id = 'gc-performance-actions'), 'gc-import-performance-trigger', 'gc-performance-import', 'Importar planilha', '.xlsx,.xls,.csv', importPerformanceFile);
-    }
-  }
-
-  function ensureGapImportControls() {
-    const actions = byId('gc-save-gap')?.parentElement;
-    if (actions) {
-      ensureImportButton(actions.id || (actions.id = 'gc-gap-actions'), 'gc-import-gap-trigger', 'gc-gap-import', 'Importar planilha', '.xlsx,.xls,.csv', importGapFile);
-    }
-  }
-
-  function ensureTrailFilters() {
-    const host = byId('gc-trails-list');
-    if (!host || byId('gc-trails-filters')) return;
-    const filters = createNode('div', 'gc-filter-row');
-    filters.id = 'gc-trails-filters';
-    const competency = document.createElement('input');
-    competency.id = 'gc-trail-filter-competency';
-    competency.type = 'text';
-    competency.placeholder = 'Filtrar por competência';
-    competency.setAttribute('list', 'gc-competency-suggestions');
-    competency.addEventListener('input', renderTrails);
-    const macro = document.createElement('input');
-    macro.id = 'gc-trail-filter-macro';
-    macro.type = 'text';
-    macro.placeholder = 'Filtrar por macroprocesso';
-    macro.setAttribute('list', 'gc-macro-list');
-    macro.addEventListener('input', renderTrails);
-    const division = document.createElement('input');
-    division.id = 'gc-trail-filter-division';
-    division.type = 'text';
-    division.placeholder = 'Filtrar por divisão';
-    division.setAttribute('list', 'gc-units-list');
-    division.addEventListener('input', renderTrails);
-    filters.append(competency, macro, division);
-    host.parentElement?.insertBefore(filters, host);
   }
 
   function findOrCreatePersonFromRow(row) {

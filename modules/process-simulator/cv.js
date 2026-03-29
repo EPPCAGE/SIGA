@@ -1,7 +1,7 @@
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -10,7 +10,7 @@ function readFileAsDataUrl(file) {
 function readFileAsText(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
     reader.onerror = reject;
     reader.readAsText(file, 'utf-8');
   });
@@ -496,8 +496,8 @@ async function toPngDataUrl(file) {
 
 function extractJson(text) {
   const clean = String(text || '').trim();
-  const fenced = clean.match(/```json\s*([\s\S]*?)```/i);
-  const payload = fenced ? fenced[1] : clean;
+  const fencedMatch = /```json\s*([\s\S]*?)```/i.exec(clean);
+  const payload = fencedMatch ? fencedMatch[1] : clean;
 
   const candidates = [];
   candidates.push(payload);
@@ -757,7 +757,7 @@ function parseRetryAfterSeconds(message, raw, json) {
   if (Number.isFinite(byJson) && byJson > 0) return byJson;
 
   const sources = [String(message || ''), String(raw || '')].join('\n');
-  const m = sources.match(/retry\s+in\s+([0-9]+(?:\.[0-9]+)?)s/i);
+  const m = /retry\s+in\s+(\d+(?:\.\d+)?)s/i.exec(sources);
   if (!m) return 0;
   const secs = Number(m[1]);
   return Number.isFinite(secs) && secs > 0 ? secs : 0;
@@ -835,7 +835,7 @@ async function _attemptExtraction(endpoint, payload, base64, mimeType, retriedFo
   try {
     parsedText = text;
     extractJson(text);
-  } catch (parseErr) {
+  } catch {
     parsedText = await repairJsonViaAi(endpoint, text);
   }
 

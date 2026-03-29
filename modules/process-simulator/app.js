@@ -870,7 +870,8 @@ function saveSetupTaskMatrixFromForm() {
     const lane = row.dataset.laneProfile;
     const team = String(row.querySelector('[data-lp-team]')?.value || '').trim();
     const org  = String(row.querySelector('[data-lp-org]')?.value  || '').trim();
-    graph.lanes[lane] = { ...(graph.lanes[lane] || {}), team, org };
+    const existingLane = graph.lanes[lane];
+    graph.lanes[lane] = existingLane ? { ...existingLane, team, org } : { team, org };
   });
   autoApplyHandoffRulesFromLanes();
   $('graphJson').value = JSON.stringify(graph, null, 2);
