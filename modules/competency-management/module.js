@@ -149,14 +149,6 @@
     });
   }
 
-  async function readSheetRows(file) {
-    if (typeof XLSX === 'undefined') throw new Error('Biblioteca XLSX não carregada.');
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(sheet, { defval: '' });
-  }
-
   function showInfo(message, type) {
     if (typeof showToast === 'function') showToast(message, type || 'success');
   }
@@ -477,21 +469,6 @@
     if (type === 'soft') return 'soft';
     if (type === 'normative') return 'normative';
     return 'hard';
-  }
-
-  function createTrailLevelItem(level, index) {
-    const row = createNode('div', 'gc-trail-level-item');
-    row.dataset.levelIndex = String(index);
-    row.append(createNode('div', 'gc-trail-level-badge', level?.name || FIXED_TRAIL_LEVELS[index]));
-
-    const goalField = createNode('div', 'gc-field');
-    goalField.append(createNode('label', '', `Objetivo do nível ${level?.name || FIXED_TRAIL_LEVELS[index]}`));
-    const goalInput = document.createElement('textarea');
-    goalInput.className = 'gc-trail-level-goal';
-    goalInput.value = safeText(level?.goal);
-    goalField.appendChild(goalInput);
-    row.append(goalField);
-    return row;
   }
 
   function tokenize(text) {
@@ -1697,29 +1674,6 @@
       }
       list.appendChild(card);
     });
-  }
-
-  function findOrCreatePersonFromRow(row) {
-    const key = personImportKey(row);
-    const existing = people().find((item) => personKey(item) === key);
-    if (existing) return existing;
-    const name = firstFilled(row, ['nome', 'Nome']);
-    if (!name) return null;
-    const entryDate = firstFilled(row, ['data de entrada na CAGE', 'data de entrada', 'data', 'posse']);
-    const probation = probationInfo(entryDate);
-    const person = {
-      ...personTemplate(),
-      id: makeId('gc_person'),
-      name,
-      role: firstFilled(row, ['cargo', 'Cargo']),
-      unit: firstFilled(row, ['unidade', 'Unidade', 'divisão', 'divisao']),
-      team: firstFilled(row, ['equipe', 'Equipe']),
-      entryDate,
-      probation: probation.probation,
-      probationEnd: probation.probationEnd,
-    };
-    people().push(person);
-    return person;
   }
 
   function renderHero() {
