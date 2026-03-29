@@ -1218,9 +1218,9 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 .rc-gauge { height: 6px; background: rgba(255,255,255,0.12); border-radius: 3px; margin: 4px 0; overflow: hidden; }
 .rc-gauge-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
 
-.rc-kfactor { font-size: 12px; color: #d5ffe7; padding: 6px 12px; background: rgba(22,163,74,0.28); border-radius: 6px; margin-bottom: 4px; }
-.rc-gaveta  { font-size: 12px; color: #e2edf8; padding: 6px 12px; background: rgba(13,34,54,0.34); border-radius: 6px; }
-.rc-gaveta-warn { color: #ffe0a6; background: rgba(180,83,9,0.34); }
+.rc-kfactor { font-size: 12px; color: #ffffff; padding: 6px 12px; background: #166534; border-radius: 6px; margin-bottom: 4px; }
+.rc-gaveta  { font-size: 12px; color: #ffffff; padding: 6px 12px; background: #1f2937; border-radius: 6px; }
+.rc-gaveta-warn { color: #ffffff; background: #b45309; }
 
 /* ==================== GRAFICO DE ATRITO ==================== */
 .friction-chart { display: flex; flex-direction: column; gap: 6px; }
@@ -1379,7 +1379,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
   border-radius: 14px;
   cursor: pointer;
   transition: background 0.18s, border-color 0.18s, transform 0.15s;
-  color: #eff4fb;
+  color: #ffffff;
 }
 
 .entry-card:hover {
@@ -1867,7 +1867,7 @@ textarea { font-family: Consolas, "Courier New", monospace; }
 .sgw-auto-btn {
   font-size: 11px;
   padding: 2px 8px;
-  background: rgba(255,255,255,0.08);
+  background: #1f2937;
   border: 1px solid rgba(201,214,231,0.25);
   border-radius: 5px;
   color: #ffffff;
@@ -2000,7 +2000,7 @@ kbd {
   font-size: 11px;
   border: 1px solid rgba(173,191,214,0.4);
   border-radius: 4px;
-  background: rgba(255,255,255,0.07);
-  color: #c9d8eb;
+  background: #1f2937;
+  color: #ffffff;
   font-family: monospace;
 }
