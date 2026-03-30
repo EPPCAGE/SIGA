@@ -1,7 +1,4 @@
-# ================================================================
-# Pipeline CI — Validação de PRs (gesproc-CI)
-# Dispara em commits/PRs para main, dev e feature/*
-# ================================================================
+name: gesproc-ci-$(Date:yyyyMMdd)$(Rev:.r)
 
 trigger:
   branches:
@@ -17,98 +14,213 @@ pr:
       - dev
       - feature/*
 
-pool:
-  name: "sefaz-self-hosted"
-
 variables:
-  NODE_VERSION: '20.x'
+  - name: NODE_VERSION
+    value: '20.x'
+  - name: BUILD_AGENT_POOL
+    value: 'sefaz-self-hosted'
+  - name: DEV_DEPLOY_AGENT_POOL
+    value: 'sefaz-self-hosted-deployment-container-dev'
+  - name: PRD_DEPLOY_AGENT_POOL
+    value: 'sefaz-self-hosted-deployment-container-prd'
+  - name: ENABLE_DEV_DEPLOY
+    value: 'false'
+  - name: ENABLE_PRD_DEPLOY
+    value: 'false'
+  - name: DEV_DEPLOY_ROOT
+    value: '/var/docker/SIGA'
+  - name: PRD_DEPLOY_ROOT
+    value: '/var/docker/SIGA'
+  - name: DEPLOY_ARTIFACT_NAME
+    value: 'siga-onprem-package'
 
-steps:
-  - checkout: self
-    clean: true
-    fetchDepth: 0
+stages:
+  - stage: CI
+    displayName: 'CI - Build, Test, Quality e Security'
+    jobs:
+      - job: Validate
+        displayName: 'Validar aplicacao'
+        pool:
+          name: $(BUILD_AGENT_POOL)
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 0
 
-#######################################
-  ### GHAS - Init Codeql
+          - task: NodeTool@0
+            displayName: 'Instalar Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
 
-  - task: AdvancedSecurity-Codeql-Init@1
-    displayName: "🛡️ GHAS - Init"
-    inputs:
-      languages: "javascript"
-      enableAutomaticCodeQLInstall: true
+          - task: AdvancedSecurity-Codeql-Init@1
+            displayName: 'GHAS - Init'
+            inputs:
+              languages: 'javascript'
+              enableAutomaticCodeQLInstall: true
 
-#######################################
-  # ── SonarCloud 
-  - task: SonarCloudPrepare@4
-    displayName: "☁️ Sonar — preparar análise"
-    inputs:
-      SonarCloud: "sonarcloud-gesproc"
-      organization: "sefaz-rs"
-      scannerMode: "CLI"
-      configMode: "file"
-      configFile: "sonar-project.properties"
-      extraProperties: |
-        sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+          - task: SonarCloudPrepare@3
+            displayName: 'SonarCloud - Preparar'
+            inputs:
+              SonarCloud: 'sonarcloud-gesproc'
+              organization: 'sefaz-rs'
+              scannerMode: 'CLI'
+              configMode: 'file'
+              configFile: 'sonar-project.properties'
+              extraProperties: |
+                sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
 
-  - task: NodeTool@0
-    displayName: "📦 Node.js $(NODE_VERSION)"
-    inputs:
-      versionSpec: "$(NODE_VERSION)"
+          - script: npm ci
+            displayName: 'npm ci'
 
-  - script: npm ci
-    displayName: "📥 npm ci"
+          - script: npm run check:encoding
+            displayName: 'Validar encoding'
 
-  - script: npm run test
-    displayName: "✅ Testes unitários"
-    continueOnError: false
+          - script: npm run test:coverage
+            displayName: 'Testes + cobertura'
 
-  - script: npm run test:coverage
-    displayName: "📊 Cobertura de código"
-    continueOnError: false
+          - task: PublishTestResults@2
+            displayName: 'Publicar resultados de teste'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/junit.xml'
+              testRunTitle: 'SIGA - Testes'
+              failTaskOnFailedTests: true
 
-  - task: PublishTestResults@2
-    displayName: "📋 Publicar resultados"
-    condition: succeededOrFailed()
-    inputs:
-      testResultsFormat: JUnit
-      testResultsFiles: "**/junit.xml"
-      testRunTitle: "CI — $(Build.SourceBranchName)"
-      failTaskOnFailedTests: true
+          - task: PublishCodeCoverageResults@2
+            displayName: 'Publicar cobertura'
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
+              failIfCoverageEmpty: false
 
-  - task: PublishCodeCoverageResults@2
-    displayName: "📈 Publicar cobertura"
-    condition: succeededOrFailed()
-    inputs:
-      codeCoverageTool: Cobertura
-      summaryFileLocation: "$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml"
-      reportDirectory: "$(System.DefaultWorkingDirectory)/coverage"
+          - task: AdvancedSecurity-Dependency-Scanning@1
+            displayName: 'GHAS - Dependency scanning'
 
-  #######################################
-  ### Run AdvancedSecurity Codeql Analyze
+          - task: AdvancedSecurity-Codeql-Analyze@1
+            displayName: 'GHAS - Analyze'
 
-  - task: AdvancedSecurity-Dependency-Scanning@1
-    displayName: "🛡️ GHAS - Scanning"
+          - task: AdvancedSecurity-Publish@1
+            displayName: 'GHAS - Publish'
 
-  - task: AdvancedSecurity-Codeql-Analyze@1
-    displayName: "🛡️GHAS - Analyze"
+          - task: AdvancedSecurity-Gating-Local@1
+            displayName: 'GHAS - Gating'
+            condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/pull/'))
+            inputs:
+              alertSeverityCriteria: 'critical, high, warning, medium, error, low, note'
+              alertTypeCriteria: 'dependency, code, secret'
+              blockOnNewFindings: true
+            continueOnError: true
 
-  - task: AdvancedSecurity-Publish@1
-    displayName: "🛡️ GHAS - Publish"
+          - task: SonarCloudAnalyze@3
+            displayName: 'SonarCloud - Analyze'
 
-  - task: AdvancedSecurity-Gating-Local@1
-    displayName: "🛡️ GHAS - Gating"
-    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/pull/'))
-    inputs:
-      alertSeverityCriteria: 'critical, high, warning, medium, error, low, note'
-      alertTypeCriteria: 'dependency, code, secret'
-      blockOnNewFindings: true
-    continueOnError: true
- 
-  #######################################
-  ### Run Sonar Analyze and Publish
+          - task: SonarCloudPublish@3
+            displayName: 'SonarCloud - Publish'
+            inputs:
+              pollingTimeoutSec: '300'
 
-  - task: SonarCloudAnalyze@4
-    displayName: "🔎 Sonar Cloud - Analyze"
+  - stage: Package
+    displayName: 'Package - Artefato on-prem'
+    dependsOn: CI
+    condition: succeeded()
+    jobs:
+      - job: BuildPackage
+        displayName: 'Montar pacote de deploy'
+        pool:
+          name: $(BUILD_AGENT_POOL)
+        steps:
+          - checkout: self
+            clean: true
 
-  - task: SonarCloudPublish@4
-    displayName: "🔎 Sonar Cloud - Publish"
+          - task: PowerShell@2
+            displayName: 'Gerar pacote de deploy'
+            inputs:
+              filePath: 'scripts/build-onprem-package.ps1'
+              arguments: >
+                -OutputPath "$(Build.ArtifactStagingDirectory)\package"
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publicar artefato on-prem'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/package'
+              artifact: '$(DEPLOY_ARTIFACT_NAME)'
+              publishLocation: 'pipeline'
+
+  - stage: Deploy_DEV
+    displayName: 'Deploy DEV'
+    dependsOn: Package
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'), eq(variables['ENABLE_DEV_DEPLOY'], 'true'))
+    jobs:
+      - job: DeployDevOnPrem
+        displayName: 'Publicar em DEV on-prem'
+        pool:
+          name: $(DEV_DEPLOY_AGENT_POOL)
+        steps:
+          - download: current
+            artifact: $(DEPLOY_ARTIFACT_NAME)
+
+          - bash: |
+              set -euo pipefail
+              chmod +x scripts/write-public-config.sh
+              chmod +x scripts/deploy-onprem-podman.sh
+              scripts/deploy-onprem-podman.sh \
+                "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
+                "$(DEV_DEPLOY_ROOT)" \
+                "$(SIGA_AI_PROVIDER)" \
+                "$(SIGA_AI_TOKEN)" \
+                "$(SIGA_AI_MODEL)" \
+                "$(SIGA_AI_FALLBACK_MODELS)" \
+                "$(SIGA_AI_API_URL)" \
+                "$(SIGA_AZURE_ENDPOINT)" \
+                "$(SIGA_AZURE_DEPLOYMENT)" \
+                "$(SIGA_AZURE_API_VERSION)" \
+                "$(SIGA_AZURE_API_KEY)" \
+                "$(SIGA_AUTH_MODE)" \
+                "$(SIGA_ENTRA_CLIENT_ID)" \
+                "$(SIGA_ENTRA_TENANT_ID)" \
+                "$(SIGA_ADMIN_EMAILS)" \
+                "$(SIGA_EDITOR_EMAILS)" \
+                "$(SIGA_ADMIN_TOKEN)" \
+                "$(SIGA_ALLOWED_ORIGIN)"
+            displayName: 'Executar deploy DEV'
+
+  - stage: Deploy_PRD
+    displayName: 'Deploy PRD'
+    dependsOn: Package
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['ENABLE_PRD_DEPLOY'], 'true'))
+    jobs:
+      - job: DeployPrdOnPrem
+        displayName: 'Publicar em PRD on-prem'
+        pool:
+          name: $(PRD_DEPLOY_AGENT_POOL)
+        steps:
+          - download: current
+            artifact: $(DEPLOY_ARTIFACT_NAME)
+
+          - bash: |
+              set -euo pipefail
+              chmod +x scripts/write-public-config.sh
+              chmod +x scripts/deploy-onprem-podman.sh
+              scripts/deploy-onprem-podman.sh \
+                "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
+                "$(PRD_DEPLOY_ROOT)" \
+                "$(SIGA_AI_PROVIDER)" \
+                "$(SIGA_AI_TOKEN)" \
+                "$(SIGA_AI_MODEL)" \
+                "$(SIGA_AI_FALLBACK_MODELS)" \
+                "$(SIGA_AI_API_URL)" \
+                "$(SIGA_AZURE_ENDPOINT)" \
+                "$(SIGA_AZURE_DEPLOYMENT)" \
+                "$(SIGA_AZURE_API_VERSION)" \
+                "$(SIGA_AZURE_API_KEY)" \
+                "$(SIGA_AUTH_MODE)" \
+                "$(SIGA_ENTRA_CLIENT_ID)" \
+                "$(SIGA_ENTRA_TENANT_ID)" \
+                "$(SIGA_ADMIN_EMAILS)" \
+                "$(SIGA_EDITOR_EMAILS)" \
+                "$(SIGA_ADMIN_TOKEN)" \
+                "$(SIGA_ALLOWED_ORIGIN)"
+            displayName: 'Executar deploy PRD'

@@ -16,6 +16,7 @@ editor_emails="${6:-}"
 to_js_array() {
   local raw="$1"
   local result=""
+  raw="${raw//;/,}"
   IFS=',' read -r -a items <<< "$raw"
   for item in "${items[@]}"; do
     item="$(echo "$item" | xargs)"

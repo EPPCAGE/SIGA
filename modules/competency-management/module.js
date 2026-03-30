@@ -110,8 +110,22 @@
     return [...new Set(items.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }
 
+  function secureIdSuffix() {
+    if (typeof globalThis.crypto?.randomUUID === 'function') {
+      return globalThis.crypto.randomUUID().replaceAll('-', '');
+    }
+
+    if (typeof globalThis.crypto?.getRandomValues === 'function') {
+      const bytes = new Uint8Array(8);
+      globalThis.crypto.getRandomValues(bytes);
+      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    throw new Error('Secure random generator unavailable in this environment.');
+  }
+
   function makeId(prefix) {
-    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    return `${prefix}_${Date.now()}_${secureIdSuffix().slice(0, 12)}`;
   }
 
   function readFormValue(id) {

@@ -45,7 +45,7 @@ Pipeline canonico:
 Fluxo atual:
 1. `CI`: `npm ci`, validacao de encoding, testes, cobertura, SonarCloud e GHAS
 2. `Package`: gera um artefato de deploy on-prem para Linux
-3. `Deploy_HML`: opcional, ativado por variavel
+3. `Deploy_DEV`: opcional, ativado por variavel
 4. `Deploy_PRD`: opcional, ativado por variavel e branch `main`
 
 Scripts de apoio:
@@ -61,6 +61,8 @@ Documentacao de configuracao:
 
 Para aderencia total ao guia da SEFAZ, ainda e necessario configurar no Azure DevOps:
 1. Branch policy em `main` (PR obrigatorio + revisor + build validation + work item)
-2. Preencher as variaveis de deploy HML/PRD
-3. Confirmar o pool do agente Linux on-prem no Azure DevOps
+2. Preencher as variaveis de deploy DEV/PRD
+3. Pools informados pela Infra:
+   DEV: `sefaz-self-hosted-deployment-container-dev`
+   PRD: `sefaz-self-hosted-deployment-container-prd`
 4. Validar com a Infra o caminho de deploy e a conta do agente

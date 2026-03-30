@@ -15,13 +15,15 @@ variables:
     value: '20.x'
   - name: BUILD_AGENT_POOL
     value: 'sefaz-self-hosted'
-  - name: DEPLOY_AGENT_POOL
-    value: 'sefaz-self-hosted'
-  - name: ENABLE_HML_DEPLOY
+  - name: DEV_DEPLOY_AGENT_POOL
+    value: 'sefaz-self-hosted-deployment-container-dev'
+  - name: PRD_DEPLOY_AGENT_POOL
+    value: 'sefaz-self-hosted-deployment-container-prd'
+  - name: ENABLE_DEV_DEPLOY
     value: 'false'
   - name: ENABLE_PRD_DEPLOY
     value: 'false'
-  - name: HML_DEPLOY_ROOT
+  - name: DEV_DEPLOY_ROOT
     value: '/var/docker/SIGA'
   - name: PRD_DEPLOY_ROOT
     value: '/var/docker/SIGA'
@@ -133,15 +135,15 @@ stages:
               artifact: '$(DEPLOY_ARTIFACT_NAME)'
               publishLocation: 'pipeline'
 
-  - stage: Deploy_HML
-    displayName: 'Deploy HML'
+  - stage: Deploy_DEV
+    displayName: 'Deploy DEV'
     dependsOn: Package
-    condition: and(succeeded(), eq(variables['ENABLE_HML_DEPLOY'], 'true'))
+    condition: and(succeeded(), eq(variables['ENABLE_DEV_DEPLOY'], 'true'))
     jobs:
-      - job: DeployHmlOnPrem
-        displayName: 'Publicar em HML on-prem'
+      - job: DeployDevOnPrem
+        displayName: 'Publicar em DEV on-prem'
         pool:
-          name: $(DEPLOY_AGENT_POOL)
+          name: $(DEV_DEPLOY_AGENT_POOL)
         steps:
           - download: current
             artifact: $(DEPLOY_ARTIFACT_NAME)
@@ -152,7 +154,7 @@ stages:
               chmod +x scripts/deploy-onprem-podman.sh
               scripts/deploy-onprem-podman.sh \
                 "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
-                "$(HML_DEPLOY_ROOT)" \
+                "$(DEV_DEPLOY_ROOT)" \
                 "$(SIGA_AI_PROVIDER)" \
                 "$(SIGA_AZURE_ENDPOINT)" \
                 "$(SIGA_AZURE_DEPLOYMENT)" \
@@ -165,7 +167,7 @@ stages:
                 "$(SIGA_EDITOR_EMAILS)" \
                 "$(SIGA_ADMIN_TOKEN)" \
                 "$(SIGA_ALLOWED_ORIGIN)"
-            displayName: 'Executar deploy HML'
+            displayName: 'Executar deploy DEV'
 
   - stage: Deploy_PRD
     displayName: 'Deploy PRD'
@@ -175,7 +177,7 @@ stages:
       - job: DeployPrdOnPrem
         displayName: 'Publicar em PRD on-prem'
         pool:
-          name: $(DEPLOY_AGENT_POOL)
+          name: $(PRD_DEPLOY_AGENT_POOL)
         steps:
           - download: current
             artifact: $(DEPLOY_ARTIFACT_NAME)
