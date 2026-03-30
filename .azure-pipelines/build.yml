@@ -154,7 +154,7 @@ stages:
   - stage: Deploy_DEV
     displayName: 'Deploy DEV'
     dependsOn: Package
-    condition: and(succeeded(), contains(format(',{0},', variables['DEV_DEPLOY_BRANCHES']), format(',{0},', variables['Build.SourceBranch'])), eq(variables['ENABLE_DEV_DEPLOY'], 'true'))
+    condition: and(succeeded(), contains(format(',{0},', variables['DEV_DEPLOY_BRANCHES']), format(',{0},', variables['Build.SourceBranch'])), or(eq(lower(variables['ENABLE_DEV_DEPLOY']), 'true'), eq(variables['ENABLE_DEV_DEPLOY'], '1'), eq(lower(variables['ENABLE_DEV_DEPLOY']), 'yes')))
     jobs:
       - job: DeployDevOnPrem
         displayName: 'Publicar em DEV on-prem'
@@ -192,7 +192,7 @@ stages:
   - stage: Deploy_PRD
     displayName: 'Deploy PRD'
     dependsOn: Package
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['ENABLE_PRD_DEPLOY'], 'true'))
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), or(eq(lower(variables['ENABLE_PRD_DEPLOY']), 'true'), eq(variables['ENABLE_PRD_DEPLOY'], '1'), eq(lower(variables['ENABLE_PRD_DEPLOY']), 'yes')))
     jobs:
       - job: DeployPrdOnPrem
         displayName: 'Publicar em PRD on-prem'
