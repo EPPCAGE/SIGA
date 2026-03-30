@@ -32,6 +32,7 @@
 - Servidor: `SWDEVPRO01`
 - IP: `172.26.237.6`
 - Deploy feito pelo agente local do Azure DevOps
+- Pool de deploy: `sefaz-self-hosted-deployment-container-dev`
 - Sem uso de `Environment`
 - Caminho base de deploy: `/var/docker`
 - Aplicacao SIGA em `/var/docker/SIGA`
@@ -70,10 +71,9 @@
 
 ## O que ainda falta confirmar com a Infra
 
-1. Nome do pool do agente Linux que executa o deploy
-2. Se HML e PRD vao usar o mesmo servidor/pool ou pools diferentes
-3. Se a autenticacao do frontend sera `local` ou `entra`
-4. Se for `entra`:
+1. Se HML e PRD vao usar o mesmo servidor/pool ou pools diferentes
+2. Se a autenticacao do frontend sera `local` ou `entra`
+3. Se for `entra`:
    - `clientId`
    - `tenantId`
    - emails de administradores

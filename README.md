@@ -63,4 +63,5 @@ Para aderencia total ao guia da SEFAZ, ainda e necessario configurar no Azure De
 1. Branch policy em `main` (PR obrigatorio + revisor + build validation + work item)
 2. Preencher as variaveis de deploy HML/PRD
 3. Confirmar o pool do agente Linux on-prem no Azure DevOps
+   Pool informado pela Infra: `sefaz-self-hosted-deployment-container-dev`
 4. Validar com a Infra o caminho de deploy e a conta do agente

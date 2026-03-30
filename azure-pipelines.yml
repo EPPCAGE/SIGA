@@ -16,7 +16,7 @@ variables:
   - name: BUILD_AGENT_POOL
     value: 'sefaz-self-hosted'
   - name: DEPLOY_AGENT_POOL
-    value: 'sefaz-self-hosted'
+    value: 'sefaz-self-hosted-deployment-container-dev'
   - name: ENABLE_HML_DEPLOY
     value: 'false'
   - name: ENABLE_PRD_DEPLOY
