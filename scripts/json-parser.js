@@ -30,7 +30,7 @@ function truncateRepairJson(str) {
   let s = repairJsonString(str);
   // Remove trailing commas antes de } ou ] iterativamente (uma passagem pode deixar ",," → ",]")
   let prev;
-  do { prev = s; s = s.replace(/,\s*([}\]])/g, '$1'); } while (s !== prev);
+  do { prev = s; s = s.replaceAll(/,\s*([}\]])/g, '$1'); } while (s !== prev);
 
   const stack = [];
   let inString = false;
@@ -45,7 +45,7 @@ function truncateRepairJson(str) {
   }
 
   if (inString) s += '"';
-  s = s.replace(/[,:]\s*$/, '');
+  s = s.replaceAll(/[,:]\s*$/g, '');
   while (stack.length) s += stack.pop();
 
   return s;
@@ -53,7 +53,7 @@ function truncateRepairJson(str) {
 
 function parseAiJson(text) {
   let clean = String(text || '').trim();
-  clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  clean = clean.replaceAll(/^```(?:json)?\s*/gi, '').replaceAll(/\s*```$/gi, '').trim();
   let lastError = null;
 
   const m = /\{[\s\S]*/.exec(clean);

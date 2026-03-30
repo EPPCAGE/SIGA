@@ -200,12 +200,6 @@
     return `${safeText(person.name).toLowerCase()}|${safeText(person.role).toLowerCase()}`;
   }
 
-  function personImportKey(row) {
-    const name = firstFilled(row, ['nome', 'Nome']);
-    const role = firstFilled(row, ['cargo', 'Cargo']);
-    return `${name.toLowerCase()}|${role.toLowerCase()}`;
-  }
-
   function normalizeRecord(record, template) {
     const normalized = { ...template };
     Object.keys(template).forEach((key) => {
@@ -215,13 +209,20 @@
   }
 
   function ensureStore() {
-    if (!globalThis.DATA || typeof globalThis.DATA !== 'object') globalThis.DATA = {};
-    if (DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object') {
+    if (globalThis.DATA && typeof globalThis.DATA === 'object') {
+      if (DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object') {
+        Object.keys(DEFAULT_STORE).forEach((key) => {
+          DATA[DATA_KEY][key] = safeArray(DATA[DATA_KEY][key]);
+        });
+        return DATA[DATA_KEY];
+      }
+      DATA[DATA_KEY] = { ...DEFAULT_STORE };
       Object.keys(DEFAULT_STORE).forEach((key) => {
         DATA[DATA_KEY][key] = safeArray(DATA[DATA_KEY][key]);
       });
       return DATA[DATA_KEY];
     }
+    globalThis.DATA = {};
     DATA[DATA_KEY] = { ...DEFAULT_STORE };
     Object.keys(DEFAULT_STORE).forEach((key) => {
       DATA[DATA_KEY][key] = safeArray(DATA[DATA_KEY][key]);
@@ -475,7 +476,7 @@
     return safeText(text)
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
+      .replaceAll(/[\u0300-\u036f]/g, '')
       .split(/[^a-z0-9]+/i)
       .filter(Boolean);
   }
