@@ -1201,6 +1201,17 @@
     const course = safeText(readFormValue('gc-person-graduation-course'));
     const otherField = byId('gc-person-graduation-other-wrap');
     if (otherField) otherField.style.display = course === 'Outro' ? 'flex' : 'none';
+    const postgraduateType = safeText(readFormValue('gc-person-postgraduate-type'));
+    const postgraduateCourseField = byId('gc-person-postgraduate-course')?.closest('.gc-field');
+    if (postgraduateCourseField) postgraduateCourseField.style.display = postgraduateType ? 'flex' : 'none';
+  }
+
+  function updateManagerNotesState() {
+    const notesField = byId('gc-person-notes');
+    if (!notesField) return;
+    const hasDate = Boolean(safeText(readFormValue('gc-person-notes-date')));
+    const hasAuthor = Boolean(safeText(readFormValue('gc-person-notes-author')));
+    notesField.disabled = !(hasDate && hasAuthor);
   }
 
   function updateCededFieldsState() {
@@ -1255,6 +1266,7 @@
     setPersonTrailRows(person.completedTrails);
     setPersonCourseRows(person.taughtCourses);
     updatePersonEducationVisibility();
+    updateManagerNotesState();
     updateCededFieldsState();
   }
 
@@ -1335,7 +1347,11 @@
       const card = createNode('div', 'gc-list-item');
       const head = createNode('div', 'gc-list-head');
       const wrap = createNode('div');
-      const title = createButton(item.name, 'gc-list-title', () => populatePeopleForm(item));
+      const title = createButton(item.name, 'gc-list-title', () => {
+        const details = card.querySelector('.gc-person-sensitive-details');
+        if (!(details instanceof HTMLElement)) return;
+        details.style.display = details.style.display === 'none' ? 'block' : 'none';
+      });
       title.classList.add('btn-link');
       wrap.append(title, createNode('div', 'gc-list-meta', [item.role, item.division || item.unit, item.team].filter(Boolean).join(' ⬢ ')));
       const actions = createNode('div', 'gc-actions');
@@ -1361,8 +1377,10 @@
       if (safeText(item.completedTrainingsText)) card.appendChild(createNode('div', 'gc-list-text', 'Capacita??es realizadas: ' + item.completedTrainingsText));
       if (taughtCourses) card.appendChild(createNode('div', 'gc-list-text', 'Cursos ministrados: ' + taughtCourses));
       if (item.managerNotes) {
-        const notesMeta = [item.managerNotesDate, item.managerNotesAuthor].filter(Boolean).join(' ⬢ ');
-        card.appendChild(createNode('div', 'gc-list-text', 'Observações do gestor: ' + item.managerNotes + (notesMeta ? ' (' + notesMeta + ')' : '')));
+        const notesMeta = [item.managerNotesDate, item.managerNotesAuthor].filter(Boolean).join(' ??? ');
+        const notes = createNode('div', 'gc-list-text gc-person-sensitive-details', 'Observa????es do gestor: ' + item.managerNotes + (notesMeta ? ' (' + notesMeta + ')' : ''));
+        notes.style.display = 'none';
+        card.appendChild(notes);
       }
       list.appendChild(card);
     });
@@ -2275,7 +2293,10 @@
     byId('gc-import-people-trigger')?.addEventListener('click', () => byId('gc-people-import')?.click());
     byId('gc-people-import')?.addEventListener('change', (event) => importPeopleFile(event.target.files?.[0]));
     byId('gc-person-graduation-course')?.addEventListener('change', updatePersonEducationVisibility);
+    byId('gc-person-postgraduate-type')?.addEventListener('change', updatePersonEducationVisibility);
     byId('gc-person-ceded')?.addEventListener('change', updateCededFieldsState);
+    byId('gc-person-notes-date')?.addEventListener('change', updateManagerNotesState);
+    byId('gc-person-notes-author')?.addEventListener('input', updateManagerNotesState);
     byId('gc-person-division')?.addEventListener('input', () => {
       setDataListOptions('gc-teams-list', getTeamsByUnit(readFormValue('gc-person-division')));
       setFormValue('gc-person-team', '');
