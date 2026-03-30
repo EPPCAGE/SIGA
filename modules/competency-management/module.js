@@ -201,10 +201,16 @@
   }
 
   function ensureStore() {
-    if (!(globalThis.DATA && typeof globalThis.DATA === 'object')) {
+    const hasGlobalData = globalThis.DATA && typeof globalThis.DATA === 'object';
+    if (hasGlobalData) {
+      // already initialized
+    } else {
       globalThis.DATA = {};
     }
-    if (!(DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object')) {
+    const hasModuleStore = DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object';
+    if (hasModuleStore) {
+      // already initialized
+    } else {
       DATA[DATA_KEY] = { ...DEFAULT_STORE };
     }
     Object.keys(DEFAULT_STORE).forEach((key) => {
