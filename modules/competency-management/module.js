@@ -14,11 +14,6 @@
     { key: 'surveys', label: 'Pesquisa de Ambiente' },
     { key: 'talent', label: 'Banco de Talentos' },
   ];
-  const COMPETENCY_TYPES = [
-    { value: 'hard', label: 'Hard Skills' },
-    { value: 'soft', label: 'Soft Skills' },
-    { value: 'normative', label: 'Conhecimentos Normativos' },
-  ];
   const FIXED_TRAIL_LEVELS = [
     'Iniciante',
     'Básico',
@@ -1281,7 +1276,7 @@
       unit: division,
       team: ceded === 'Sim' ? '' : safeText(readFormValue('gc-person-team')),
       role: safeText(readFormValue('gc-person-role')),
-      competencies: safeArray((getPersonById(state.personId) || {}).competencies),
+      competencies: safeArray(getPersonById(state.personId)?.competencies),
       completedTrainingsText: safeText(readFormValue('gc-person-completed-trainings')),
       preferences: safeText(readFormValue('gc-person-preferences')),
       experiences: safeText(readFormValue('gc-person-experiences')),
