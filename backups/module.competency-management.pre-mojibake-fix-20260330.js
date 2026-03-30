@@ -1,4 +1,4 @@
-(function competencyManagementModule() {
+﻿(function competencyManagementModule() {
   'use strict';
 
   const MODULE_ID = 'competency-module';
@@ -6,31 +6,36 @@
   const HOME_CARD_ID = 'home-competency-card';
   const SIDEBAR_BTN_ID = 'sidebar-competency-btn';
   const TABS = [
-    { key: 'overview', label: 'Visão Geral' },
+    { key: 'overview', label: 'VisÃ£o Geral' },
     { key: 'people', label: 'Quadro de Pessoal' },
     { key: 'performance', label: 'Performance' },
-    { key: 'removals', label: 'Banco de Remoções' },
+    { key: 'removals', label: 'Banco de RemoÃ§Ãµes' },
     { key: 'trails', label: 'Trilhas e Treinamentos' },
     { key: 'surveys', label: 'Pesquisa de Ambiente' },
     { key: 'talent', label: 'Banco de Talentos' },
   ];
+  const COMPETENCY_TYPES = [
+    { value: 'hard', label: 'Hard Skills' },
+    { value: 'soft', label: 'Soft Skills' },
+    { value: 'normative', label: 'Conhecimentos Normativos' },
+  ];
   const FIXED_TRAIL_LEVELS = [
     'Iniciante',
-    'Básico',
-    'Intermediário',
-    'Avançado',
+    'BÃ¡sico',
+    'IntermediÃ¡rio',
+    'AvanÃ§ado',
     'Especialista',
   ];
   const GRADUATION_COURSES = [
-    'Administração',
+    'AdministraÃ§Ã£o',
     'Contabilidade',
     'Economia',
     'Engenharia',
-    'Tecnologia da Informação',
+    'Tecnologia da InformaÃ§Ã£o',
     'Direito',
     'Outro',
   ];
-  const POSTGRADUATE_TYPES = ['Pós-graduação lato sensu', 'Mestrado', 'Doutorado'];
+  const POSTGRADUATE_TYPES = ['PÃ³s-graduaÃ§Ã£o lato sensu', 'Mestrado', 'Doutorado'];
   const DEFAULT_STORE = {
     people: [],
     gapAnalyses: [],
@@ -110,22 +115,8 @@
     return [...new Set(items.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }
 
-  function secureIdSuffix() {
-    if (typeof globalThis.crypto?.randomUUID === 'function') {
-      return globalThis.crypto.randomUUID().replaceAll('-', '');
-    }
-
-    if (typeof globalThis.crypto?.getRandomValues === 'function') {
-      const bytes = new Uint8Array(8);
-      globalThis.crypto.getRandomValues(bytes);
-      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-    }
-
-    throw new Error('Secure random generator unavailable in this environment.');
-  }
-
   function makeId(prefix) {
-    return `${prefix}_${Date.now()}_${secureIdSuffix().slice(0, 12)}`;
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
   function readFormValue(id) {
@@ -173,7 +164,7 @@
 
   function requireEditor() {
     if (typeof isEditor === 'undefined' || isEditor) return true;
-    showInfo('Apenas editores podem alterar o módulo de competências.', 'warn');
+    showInfo('Apenas editores podem alterar o mÃ³dulo de competÃªncias.', 'warn');
     return false;
   }
 
@@ -196,12 +187,12 @@
 
   function probationInfo(entryDate) {
     const date = safeText(entryDate);
-    if (!date) return { probation: 'Não', probationEnd: '' };
+    if (!date) return { probation: 'NÃ£o', probationEnd: '' };
     const start = new Date(`${date}T00:00:00`);
-    if (Number.isNaN(start.getTime())) return { probation: 'Não', probationEnd: '' };
+    if (Number.isNaN(start.getTime())) return { probation: 'NÃ£o', probationEnd: '' };
     const end = new Date(start);
     end.setFullYear(end.getFullYear() + 3);
-    const probation = end.getTime() > Date.now() ? 'Sim' : 'Não';
+    const probation = end.getTime() > Date.now() ? 'Sim' : 'NÃ£o';
     const probationEnd = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
     return { probation, probationEnd };
   }
@@ -327,8 +318,8 @@
       birthDate: '',
       age: '',
       gender: '',
-      ceded: 'Não',
-      hasFg: 'Não',
+      ceded: 'NÃ£o',
+      hasFg: 'NÃ£o',
       entryDate: '',
       graduationCourse: '',
       graduationOther: '',
@@ -437,8 +428,8 @@
         const thirdPerson = getPersonById(third.personId);
         return {
           type: 'soft',
-          label: 'Triangulação possível',
-          detail: [middlePerson?.name, thirdPerson?.name].filter(Boolean).join(' → '),
+          label: 'TriangulaÃ§Ã£o possÃ­vel',
+          detail: [middlePerson?.name, thirdPerson?.name].filter(Boolean).join(' â†’ '),
         };
       }
     }
@@ -710,14 +701,14 @@
     prereqList.forEach((item) => {
       if (skills.some((skill) => skill.includes(item.toLowerCase()))) {
         score += 14;
-        reasons.push(`atende pré-requisito: ${item}`);
+        reasons.push(`atende prÃ©-requisito: ${item}`);
       }
     });
 
     architectureCompetencies.forEach((item) => {
       if (skills.some((skill) => skill.includes(item.toLowerCase()))) {
         score += 10;
-        reasons.push(`competência vinculada à arquitetura: ${item}`);
+        reasons.push(`competÃªncia vinculada Ã  arquitetura: ${item}`);
       }
     });
 
@@ -729,13 +720,13 @@
     if (queryTokens.includes('remocao') || queryTokens.includes('remocaoo')) {
       if (safeText(person.removalInterest).toLowerCase() === 'sim' && safeText(person.desiredUnit)) {
         score += 10;
-        reasons.push('possui pedido de remoção cadastrado');
+        reasons.push('possui pedido de remoÃ§Ã£o cadastrado');
       }
     }
 
     if (desiredUnit && architectureMatches.some((item) => safeText(item.area).toLowerCase() === desiredUnit || safeText(item.equipe).toLowerCase() === desiredUnit)) {
       score += 8;
-      reasons.push(`interesse de movimentação para ${person.desiredUnit}`);
+      reasons.push(`interesse de movimentaÃ§Ã£o para ${person.desiredUnit}`);
     }
 
     return { person, score, reasons: uniqueSorted(reasons).slice(0, 4) };
@@ -761,7 +752,7 @@
 
   async function callTalentAi(prompt) {
     const caller = globalThis.callGeminiProxy || globalThis.callGemini;
-    if (typeof caller !== 'function') throw new Error('Serviço de IA não disponível no frontend.');
+    if (typeof caller !== 'function') throw new Error('ServiÃ§o de IA nÃ£o disponÃ­vel no frontend.');
     return caller(prompt, null, { maxTokens: 1200 });
   }
 
@@ -778,18 +769,18 @@
       unidadeDesejada: person.desiredUnit,
     }));
     const prompt = [
-      'Você é um assistente de alocação de talentos da CAGE-RS.',
-      'Interprete a necessidade em linguagem natural e devolva somente JSON válido.',
-      'Considere o contexto de arquitetura de processos e competências vinculadas.',
+      'VocÃª Ã© um assistente de alocaÃ§Ã£o de talentos da CAGE-RS.',
+      'Interprete a necessidade em linguagem natural e devolva somente JSON vÃ¡lido.',
+      'Considere o contexto de arquitetura de processos e competÃªncias vinculadas.',
       '',
-      `Consulta do usuário: ${queryText || 'não informada'}`,
-      `Cargo informado: ${roleText || 'não informado'}`,
-      `Pré-requisitos informados: ${prereqList.join(', ') || 'não informados'}`,
+      `Consulta do usuÃ¡rio: ${queryText || 'nÃ£o informada'}`,
+      `Cargo informado: ${roleText || 'nÃ£o informado'}`,
+      `PrÃ©-requisitos informados: ${prereqList.join(', ') || 'nÃ£o informados'}`,
       `Arquitetura relacionada: ${JSON.stringify(architectureMatches)}`,
-      `Competências relacionadas à arquitetura: ${JSON.stringify(architectureCompetencies)}`,
-      `Candidatos possíveis: ${JSON.stringify(peopleSummary)}`,
+      `CompetÃªncias relacionadas Ã  arquitetura: ${JSON.stringify(architectureCompetencies)}`,
+      `Candidatos possÃ­veis: ${JSON.stringify(peopleSummary)}`,
       '',
-      'Formato obrigatório:',
+      'Formato obrigatÃ³rio:',
       '{"interpreted_need":"","recommended_role":"","recommended_unit":"","recommended_team":"","recommended_competencies":[],"candidate_ids":["id1","id2"],"explanations":{"id1":"motivo"}}',
     ].join('\n');
     const text = await callTalentAi(prompt);
@@ -878,7 +869,7 @@
   function createInlineList(label, items) {
     const wrap = createNode('div', 'gc-inline-list');
     wrap.append(createNode('strong', '', `${label}: `));
-    wrap.append(createNode('span', '', items.join(' ⬢ ')));
+    wrap.append(createNode('span', '', items.join(' â¬¢ ')));
     return wrap;
   }
 
@@ -922,7 +913,7 @@
     const panel = createNode('div', 'gc-panel');
     panel.append(createPanelHead(title, desc));
     if (!entries.length) {
-      panel.appendChild(createNode('div', 'gc-empty', 'Sem dados suficientes para gerar este gráfico.'));
+      panel.appendChild(createNode('div', 'gc-empty', 'Sem dados suficientes para gerar este grÃ¡fico.'));
       return panel;
     }
     const segments = donutSegments(entries);
@@ -951,7 +942,7 @@
     const panel = createNode('div', 'gc-panel');
     panel.append(createPanelHead(title, desc));
     if (!entries.length) {
-      panel.appendChild(createNode('div', 'gc-empty', 'Cadastre competências nas pessoas para visualizar este gráfico.'));
+      panel.appendChild(createNode('div', 'gc-empty', 'Cadastre competÃªncias nas pessoas para visualizar este grÃ¡fico.'));
       return panel;
     }
     const bars = createNode('div', 'gc-stat-bars');
@@ -988,7 +979,7 @@
   }
 
   function ageBandLabel(age) {
-    if (age <= 29) return 'Até 29';
+    if (age <= 29) return 'AtÃ© 29';
     if (age <= 39) return '30-39';
     if (age <= 49) return '40-49';
     if (age <= 59) return '50-59';
@@ -1018,15 +1009,15 @@
   function educationBand(person) {
     const course = safeText(person.graduationCourse);
     const postgraduate = safeText(person.postgraduateType).toLowerCase();
-    if (!course) return 'Ensino médio';
+    if (!course) return 'Ensino mÃ©dio';
     if (postgraduate.includes('doutorado')) return 'Doutorado';
     if (postgraduate.includes('mestrado')) return 'Mestrado';
-    if (postgraduate.includes('lato')) return 'Pós lato sensu';
-    return 'Graduação apenas';
+    if (postgraduate.includes('lato')) return 'PÃ³s lato sensu';
+    return 'GraduaÃ§Ã£o apenas';
   }
 
   function educationEntries() {
-    const order = ['Ensino médio', 'Graduação apenas', 'Pós lato sensu', 'Mestrado', 'Doutorado'];
+    const order = ['Ensino mÃ©dio', 'GraduaÃ§Ã£o apenas', 'PÃ³s lato sensu', 'Mestrado', 'Doutorado'];
     const grouped = new Map(order.map((label) => [label, 0]));
     people().forEach((person) => {
       const label = educationBand(person);
@@ -1056,26 +1047,26 @@
       const threshold = gender.includes('femin') ? 62 : 65;
       return age >= threshold;
     }).length;
-    const roleEntries = distributionEntries(allPeople.map((item) => item.role), 'Não informado');
-    const genderEntries = distributionEntries(allPeople.map((item) => item.gender), 'Não informado');
+    const roleEntries = distributionEntries(allPeople.map((item) => item.role), 'NÃ£o informado');
+    const genderEntries = distributionEntries(allPeople.map((item) => item.gender), 'NÃ£o informado');
     const ageEntries = distributionEntries(allPeople.map((item) => {
       const age = parseNumber(item.age);
-      return age > 0 ? ageBandLabel(age) : 'Não informado';
-    }), 'Não informado');
+      return age > 0 ? ageBandLabel(age) : 'NÃ£o informado';
+    }), 'NÃ£o informado');
     const tenureEntries = distributionEntries(allPeople.map((item) => {
       const years = yearsSince(item.entryDate);
-      return years > 0 ? tenureBandLabel(years) : 'Não informado';
-    }), 'Não informado');
-    const unitEntries = distributionEntries(allPeople.map((item) => item.division || item.unit), 'Não informado');
+      return years > 0 ? tenureBandLabel(years) : 'NÃ£o informado';
+    }), 'NÃ£o informado');
+    const unitEntries = distributionEntries(allPeople.map((item) => item.division || item.unit), 'NÃ£o informado');
     const competencyEntries = competencyUsageEntries();
     const educationPctEntries = educationPercentageEntries();
     view.replaceChildren();
     const grid = createNode('div', 'gc-grid');
     [
-      ['Total de servidores', String(totalPeople), `${unitCount} divisão(ões) mapeada(s)`],
-      ['Cargos mapeados', String(roleCount), `${competencies().length} competências`],
-      ['Idade média', avgAge ? `${avgAge} anos` : '—', `${retirement} em idade de aposentadoria`],
-      ['Trilhas e treinamentos', String(trails().length), `${trainings().length} capacitações`],
+      ['Total de servidores', String(totalPeople), `${unitCount} divisÃ£o(Ãµes) mapeada(s)`],
+      ['Cargos mapeados', String(roleCount), `${competencies().length} competÃªncias`],
+      ['Idade mÃ©dia', avgAge ? `${avgAge} anos` : 'â€”', `${retirement} em idade de aposentadoria`],
+      ['Trilhas e treinamentos', String(trails().length), `${trainings().length} capacitaÃ§Ãµes`],
       ['Servidores cedidos', `${cededPct}%`, `${cededCount} servidor(es) cedidos`],
     ].forEach(([title, value, sub]) => {
       const card = createNode('div', 'gc-card');
@@ -1086,21 +1077,21 @@
     });
     const chartGrid = createNode('div', 'gc-overview-charts');
     chartGrid.append(
-      createDonutPanel('Divisão entre cargos', 'Distribuição do quadro por cargo cadastrado.', roleEntries),
-      createDonutPanel('Distribuição por gêneros', 'Panorama do quadro por gênero informado.', genderEntries),
-      createDonutPanel('Faixas de idade', 'Distribuição etária do quadro atual.', ageEntries),
-      createDonutPanel('Faixas de tempo de CAGE', 'Tempo de permanência institucional.', tenureEntries),
-      createDonutPanel('Pessoas por divisão', 'Quantidade de pessoas por divisão.', unitEntries),
+      createDonutPanel('DivisÃ£o entre cargos', 'DistribuiÃ§Ã£o do quadro por cargo cadastrado.', roleEntries),
+      createDonutPanel('DistribuiÃ§Ã£o por gÃªneros', 'Panorama do quadro por gÃªnero informado.', genderEntries),
+      createDonutPanel('Faixas de idade', 'DistribuiÃ§Ã£o etÃ¡ria do quadro atual.', ageEntries),
+      createDonutPanel('Faixas de tempo de CAGE', 'Tempo de permanÃªncia institucional.', tenureEntries),
+      createDonutPanel('Pessoas por divisÃ£o', 'Quantidade de pessoas por divisÃ£o.', unitEntries),
     );
     const bottom = createNode('div', 'gc-overview-bottom');
-    bottom.appendChild(createBarPanel('Competências mais utilizadas na CAGE', 'Top 10 competências mais recorrentes entre as pessoas cadastradas.', competencyEntries));
-    bottom.appendChild(createPercentageBarPanel('Escolaridade do quadro', 'Percentual de servidores por nível de formação.', educationPctEntries));
+    bottom.appendChild(createBarPanel('CompetÃªncias mais utilizadas na CAGE', 'Top 10 competÃªncias mais recorrentes entre as pessoas cadastradas.', competencyEntries));
+    bottom.appendChild(createPercentageBarPanel('Escolaridade do quadro', 'Percentual de servidores por nÃ­vel de formaÃ§Ã£o.', educationPctEntries));
     const surveyPanel = createNode('div', 'gc-panel');
-    surveyPanel.append(createPanelHead('Pesquisa de ambiente', 'Último recorte anual cadastrado no módulo.'));
+    surveyPanel.append(createPanelHead('Pesquisa de ambiente', 'Ãšltimo recorte anual cadastrado no mÃ³dulo.'));
     const latest = [...surveys()].sort((a, b) => String(b.year).localeCompare(String(a.year))).at(0);
     if (latest) {
       const list = createNode('div', 'gc-list');
-      [['Engajamento', latest.engagement], ['Liderança', latest.leadership], ['Clima', latest.climate]].forEach(([label, value]) => {
+      [['Engajamento', latest.engagement], ['LideranÃ§a', latest.leadership], ['Clima', latest.climate]].forEach(([label, value]) => {
         const item = createNode('div', 'gc-list-item');
         item.append(createNode('div', 'gc-list-title', `${label}: ${value || '?'}`));
         list.appendChild(item);
@@ -1216,10 +1207,10 @@
       if (field) field.disabled = isCeded;
     });
     if (!isCeded) return;
-    setFormValue('gc-person-has-fg', 'Não');
+    setFormValue('gc-person-has-fg', 'NÃ£o');
     setFormValue('gc-person-division', '');
     setFormValue('gc-person-team', '');
-    setFormValue('gc-person-removal-interest', 'Não');
+    setFormValue('gc-person-removal-interest', 'NÃ£o');
     setFormValue('gc-person-desired-unit', '');
     setDataListOptions('gc-teams-list', []);
   }
@@ -1232,7 +1223,7 @@
     setFormValue('gc-person-gender', person.gender);
     const cededField = byId('gc-person-ceded');
     if (cededField) cededField.checked = safeText(person.ceded).toLowerCase() === 'sim';
-    setFormValue('gc-person-has-fg', person.hasFg || 'Não');
+    setFormValue('gc-person-has-fg', person.hasFg || 'NÃ£o');
     setFormValue('gc-person-entry-date', person.entryDate);
     setFormValue('gc-person-graduation-course', person.graduationCourse || person.basicEducation);
     setFormValue('gc-person-graduation-other', person.graduationOther);
@@ -1267,7 +1258,7 @@
     const name = safeText(readFormValue('gc-person-name'));
     if (!name) return showInfo('Informe o nome da pessoa.', 'warn');
     const birthDate = safeText(readFormValue('gc-person-birth-date'));
-    const ceded = byId('gc-person-ceded')?.checked ? 'Sim' : 'Não';
+    const ceded = byId('gc-person-ceded')?.checked ? 'Sim' : 'NÃ£o';
     const entryDate = safeText(readFormValue('gc-person-entry-date'));
     const division = ceded === 'Sim' ? '' : safeText(readFormValue('gc-person-division'));
     const probation = probationInfo(entryDate);
@@ -1278,7 +1269,7 @@
       age: String(calculateAge(birthDate) || ''),
       gender: safeText(readFormValue('gc-person-gender')),
       ceded,
-      hasFg: ceded === 'Sim' ? 'Não' : safeText(readFormValue('gc-person-has-fg')) || 'Não',
+      hasFg: ceded === 'Sim' ? 'NÃ£o' : safeText(readFormValue('gc-person-has-fg')) || 'NÃ£o',
       entryDate,
       graduationCourse: safeText(readFormValue('gc-person-graduation-course')),
       graduationOther: safeText(readFormValue('gc-person-graduation-other')),
@@ -1290,14 +1281,14 @@
       unit: division,
       team: ceded === 'Sim' ? '' : safeText(readFormValue('gc-person-team')),
       role: safeText(readFormValue('gc-person-role')),
-      competencies: safeArray(getPersonById(state.personId)?.competencies),
+      competencies: safeArray((getPersonById(state.personId) || {}).competencies),
       completedTrainingsText: safeText(readFormValue('gc-person-completed-trainings')),
       preferences: safeText(readFormValue('gc-person-preferences')),
       experiences: safeText(readFormValue('gc-person-experiences')),
       completedTrails: readPersonTrailRows(),
       probation: probation.probation,
       probationEnd: probation.probationEnd,
-      removalInterest: ceded === 'Sim' ? 'Não' : (safeText(readFormValue('gc-person-removal-interest')) || 'Não'),
+      removalInterest: ceded === 'Sim' ? 'NÃ£o' : (safeText(readFormValue('gc-person-removal-interest')) || 'NÃ£o'),
       desiredUnit: ceded === 'Sim' ? '' : safeText(readFormValue('gc-person-desired-unit')),
       taughtCourses: readPersonCourseRows(),
       notes: safeText(readFormValue('gc-person-notes')),
@@ -1387,7 +1378,7 @@
     setDataListOptions('gc-teams-list', getTeamsByUnit(readFormValue('gc-person-division')));
     setDataListOptions('gc-roles-list', getRoles());
     setSelectOptions('gc-person-graduation-course', GRADUATION_COURSES, 'Selecione o curso', (item) => ({ value: item, label: item }));
-    setSelectOptions('gc-person-postgraduate-type', POSTGRADUATE_TYPES, 'Selecione a pós-graduação', (item) => ({ value: item, label: item }));
+    setSelectOptions('gc-person-postgraduate-type', POSTGRADUATE_TYPES, 'Selecione a pÃ³s-graduaÃ§Ã£o', (item) => ({ value: item, label: item }));
     if (state.personId) {
       const current = getPersonById(state.personId);
       if (current) populatePeopleForm(current);
@@ -1420,8 +1411,8 @@
           birthDate,
           age: safeText(row.idade || row.Idade || String(calculateAge(birthDate) || '')),
           gender: safeText(row.sexo || row.Sexo),
-          ceded: safeText(row.cedido || row['cedido?'] || row['servidor cedido']) || 'Não',
-          hasFg: safeText(row.fg || row['possui fg'] || row['fg atualmente']) || 'Não',
+          ceded: safeText(row.cedido || row['cedido?'] || row['servidor cedido']) || 'NÃ£o',
+          hasFg: safeText(row.fg || row['possui fg'] || row['fg atualmente']) || 'NÃ£o',
           entryDate: safeText(row['data de entrada na CAGE'] || row['data de entrada'] || row.posse),
           graduationCourse: safeText(row['curso superior'] || row['forma??o b?sica'] || row['formacao basica']),
           graduationOther: safeText(row['outro curso superior'] || row['qual curso superior']),
@@ -1436,14 +1427,14 @@
           completedTrainingsText: safeText(row['capacita??es realizadas'] || row['capacitacoes realizadas'] || row['cursos realizados']),
           preferences: safeText(row['preferencias/objetivos pessoais na carreira'] || row.preferencias),
           experiences: safeText(row['experiencias relevantes anteriores'] || row.experiencias),
-          removalInterest: safeText(row['interesse remoção'] || row['interesse remocao']) || 'Não',
+          removalInterest: safeText(row['interesse remoÃ§Ã£o'] || row['interesse remocao']) || 'NÃ£o',
           desiredUnit: safeText(row['para onde'] || row.destino),
           taughtCourses: normalizeTaughtCourses(row['cursos ministrados'] || row['j? ministrou cursos?'] || row['ja ministrou cursos?']),
           completedTrails: [],
           notes: '',
-          managerNotes: safeText(row['observações do gestor'] || row['observacoes do gestor']),
-          managerNotesDate: safeText(row['data da observação'] || row['data da observacao']),
-          managerNotesAuthor: safeText(row['responsável pela observação'] || row['responsavel pela observacao']),
+          managerNotes: safeText(row['observaÃ§Ãµes do gestor'] || row['observacoes do gestor']),
+          managerNotesDate: safeText(row['data da observaÃ§Ã£o'] || row['data da observacao']),
+          managerNotesAuthor: safeText(row['responsÃ¡vel pela observaÃ§Ã£o'] || row['responsavel pela observacao']),
         };
         if (!draft.name) return;
         const probation = probationInfo(draft.entryDate);
@@ -1470,7 +1461,7 @@
     list.replaceChildren();
     const requests = activeRemovalRequests();
     if (!requests.length) {
-      list.appendChild(createNode('div', 'gc-empty', 'Nenhum interesse de remoção foi marcado no cadastro de pessoas.'));
+      list.appendChild(createNode('div', 'gc-empty', 'Nenhum interesse de remoÃ§Ã£o foi marcado no cadastro de pessoas.'));
       return;
     }
     requests.forEach((item) => {
@@ -1479,7 +1470,7 @@
       const card = createNode('div', 'gc-list-item');
       const head = createNode('div', 'gc-list-head');
       const wrap = createNode('div');
-      wrap.append(createNode('div', 'gc-list-title', person ? person.name : 'Pessoa não encontrada'));
+      wrap.append(createNode('div', 'gc-list-title', person ? person.name : 'Pessoa nÃ£o encontrada'));
       wrap.append(createNode('div', 'gc-list-meta', item.fromUnit + ' -> ' + item.desiredUnit));
       head.append(wrap);
       if (insight.type) {
@@ -1513,7 +1504,7 @@
     if (!requireEditor()) return;
     const personId = safeText(readFormValue('gc-performance-person'));
     const date = safeText(readFormValue('gc-performance-date'));
-    if (!personId || !date) return showInfo('Informe pessoa e data da avaliação.', 'warn');
+    if (!personId || !date) return showInfo('Informe pessoa e data da avaliaÃ§Ã£o.', 'warn');
     const entry = {
       id: state.performanceId || makeId('gc_perf'),
       personId,
@@ -1526,7 +1517,7 @@
     const list = performanceReviews();
     const index = list.findIndex((item) => item.id === entry.id);
     if (index >= 0) list[index] = entry; else list.push(entry);
-    persist(index >= 0 ? 'Avaliação atualizada.' : 'Avaliação registrada.');
+    persist(index >= 0 ? 'AvaliaÃ§Ã£o atualizada.' : 'AvaliaÃ§Ã£o registrada.');
     resetPerformanceForm();
     renderAll();
   }
@@ -1534,7 +1525,7 @@
   function removePerformance(id) {
     if (!requireEditor()) return;
     getStore().performanceReviews = performanceReviews().filter((item) => item.id !== id);
-    persist('Avaliação removida.');
+    persist('AvaliaÃ§Ã£o removida.');
     renderAll();
   }
 
@@ -1558,7 +1549,7 @@
       return true;
     });
     if (!filtered.length) {
-      list.appendChild(createNode('div', 'gc-empty', 'Nenhuma avaliação encontrada para os filtros selecionados.'));
+      list.appendChild(createNode('div', 'gc-empty', 'Nenhuma avaliaÃ§Ã£o encontrada para os filtros selecionados.'));
       return;
     }
     const grouped = new Map();
@@ -1568,8 +1559,8 @@
       const key = person ? person.name : item.personId;
       grouped.set(key, (grouped.get(key) || 0) + score);
       const card = createNode('div', 'gc-list-item');
-      card.append(createNode('div', 'gc-list-title', `${person ? person.name : 'Pessoa'} ⬢ ${item.date}`));
-      card.append(createNode('div', 'gc-list-meta', [item.method, item.objective, `Resultado ${item.result || '—'}`].filter(Boolean).join(' ⬢ ')));
+      card.append(createNode('div', 'gc-list-title', `${person ? person.name : 'Pessoa'} â¬¢ ${item.date}`));
+      card.append(createNode('div', 'gc-list-meta', [item.method, item.objective, `Resultado ${item.result || 'â€”'}`].filter(Boolean).join(' â¬¢ ')));
       if (item.notes) card.appendChild(createNode('div', 'gc-list-text', item.notes));
       const actions = createNode('div', 'gc-actions');
       actions.append(createButton('Editar', 'btn btn-outline', () => populatePerformanceForm(item)));
@@ -1682,7 +1673,7 @@
 
   function renderTrailLadder(panel, trail) {
     const ladder = createNode('div', 'gc-ladder');
-    [['Objetivo', trail.objective], [trail.levelName || 'Nível', trail.levelGoal], ['Grau esperado', trail.levelDegree]].forEach(([title, subtitle]) => {
+    [['Objetivo', trail.objective], [trail.levelName || 'NÃ­vel', trail.levelGoal], ['Grau esperado', trail.levelDegree]].forEach(([title, subtitle]) => {
       const step = createNode('div', 'gc-step');
       step.append(createNode('div', 'gc-step-title', title || 'Etapa'));
       step.append(createNode('div', 'gc-step-sub', subtitle || 'Sem detalhamento'));
@@ -1705,10 +1696,10 @@
     trails().forEach((item) => {
       const card = createNode('div', 'gc-list-item');
       card.append(createNode('div', 'gc-list-title', item.name));
-      card.append(createNode('div', 'gc-list-meta', [item.macroprocess, item.division].filter(Boolean).join(' ⬢ ')));
+      card.append(createNode('div', 'gc-list-meta', [item.macroprocess, item.division].filter(Boolean).join(' â¬¢ ')));
       renderTrailLadder(card, item);
-      if (item.competencies.length) card.appendChild(createInlineList('Competências-chave', item.competencies));
-      if (item.prerequisites.length) card.appendChild(createInlineList('Pré-requisitos', item.prerequisites));
+      if (item.competencies.length) card.appendChild(createInlineList('CompetÃªncias-chave', item.competencies));
+      if (item.prerequisites.length) card.appendChild(createInlineList('PrÃ©-requisitos', item.prerequisites));
       const actions = createNode('div', 'gc-actions');
       actions.append(createButton('Editar', 'btn btn-outline', () => populateTrailForm(item)));
       actions.append(createButton('Excluir', 'btn btn-outline', () => removeTrail(item.id)));
@@ -1718,7 +1709,7 @@
     trainings().forEach((item) => {
       const card = createNode('div', 'gc-list-item');
       card.append(createNode('div', 'gc-list-title', item.name));
-      card.append(createNode('div', 'gc-list-meta', [item.provider, item.costType, item.deliveryMode].filter(Boolean).join(' ⬢ ')));
+      card.append(createNode('div', 'gc-list-meta', [item.provider, item.costType, item.deliveryMode].filter(Boolean).join(' â¬¢ ')));
       if (item.notes) card.appendChild(createNode('div', 'gc-list-text', item.notes));
       if (item.remoteLink) {
         const link = createNode('a', 'gc-list-text', 'Abrir link remoto');
@@ -1782,11 +1773,11 @@
     const list = byId('gc-surveys-list');
     if (!list) return;
     list.replaceChildren();
-    if (!surveys().length) return list.appendChild(createNode('div', 'gc-empty', 'Cadastre a pesquisa anual da GEPESC para enriquecer o diagnóstico.'));
+    if (!surveys().length) return list.appendChild(createNode('div', 'gc-empty', 'Cadastre a pesquisa anual da GEPESC para enriquecer o diagnÃ³stico.'));
     [...surveys()].sort((a, b) => String(b.year).localeCompare(String(a.year))).forEach((item) => {
       const card = createNode('div', 'gc-list-item');
       card.append(createNode('div', 'gc-list-title', `Pesquisa ${item.year}`));
-      card.append(createNode('div', 'gc-list-meta', `Engajamento ${item.engagement || '—'} ⬢ Liderança ${item.leadership || '—'} ⬢ Clima ${item.climate || '—'}`));
+      card.append(createNode('div', 'gc-list-meta', `Engajamento ${item.engagement || 'â€”'} â¬¢ LideranÃ§a ${item.leadership || 'â€”'} â¬¢ Clima ${item.climate || 'â€”'}`));
       if (item.notes) card.appendChild(createNode('div', 'gc-list-text', item.notes));
       const actions = createNode('div', 'gc-actions');
       actions.append(createButton('Editar', 'btn btn-outline', () => populateSurveyForm(item)));
@@ -1802,7 +1793,7 @@
     trigger.textContent = 'Buscar com IA';
     const panel = trigger.closest('.gc-panel');
     if (!panel || byId('gc-talent-ai-note')) return;
-    const note = createNode('div', 'gc-list-text', 'A IA interpreta o texto livre, cruza com a Arquitetura de Processos e com as competências cadastradas, e então ranqueia os candidatos.');
+    const note = createNode('div', 'gc-list-text', 'A IA interpreta o texto livre, cruza com a Arquitetura de Processos e com as competÃªncias cadastradas, e entÃ£o ranqueia os candidatos.');
     note.id = 'gc-talent-ai-note';
     trigger.parentElement?.appendChild(note);
   }
@@ -1810,15 +1801,15 @@
   function renderTalentContextBox(list, search) {
     const box = createNode('div', 'gc-list-item');
     box.append(createNode('div', 'gc-list-title', 'Leitura da necessidade'));
-    box.append(createNode('div', 'gc-list-text', search.interpretedNeed || 'Sem interpretação disponível.'));
+    box.append(createNode('div', 'gc-list-text', search.interpretedNeed || 'Sem interpretaÃ§Ã£o disponÃ­vel.'));
     const meta = [
       search.recommendedRole ? `Cargo sugerido: ${search.recommendedRole}` : '',
       search.recommendedUnit ? `Unidade sugerida: ${search.recommendedUnit}` : '',
       search.recommendedTeam ? `Equipe sugerida: ${search.recommendedTeam}` : '',
-    ].filter(Boolean).join(' ⬢ ');
+    ].filter(Boolean).join(' â¬¢ ');
     if (meta) box.append(createNode('div', 'gc-list-meta', meta));
     if (search.architectureMatches.length) {
-      box.append(createNode('div', 'gc-list-text', `Arquitetura relacionada: ${search.architectureMatches.map((item) => [item.processo, item.subprocesso, item.area, item.equipe].filter(Boolean).join(' / ')).join(' ⬢ ')}`));
+      box.append(createNode('div', 'gc-list-text', `Arquitetura relacionada: ${search.architectureMatches.map((item) => [item.processo, item.subprocesso, item.area, item.equipe].filter(Boolean).join(' / ')).join(' â¬¢ ')}`));
     }
     if (search.architectureCompetencies.length) {
       const badges = createNode('div', 'gc-badges');
@@ -1839,7 +1830,7 @@
     }
     const search = state.talentSearch;
     if (!search) {
-      list.appendChild(createNode('div', 'gc-empty', 'Descreva a necessidade em linguagem natural e clique em "Buscar com IA". Exemplo: procuro auditor para atuar com balanços contábeis na divisão de contabilidade.'));
+      list.appendChild(createNode('div', 'gc-empty', 'Descreva a necessidade em linguagem natural e clique em "Buscar com IA". Exemplo: procuro auditor para atuar com balanÃ§os contÃ¡beis na divisÃ£o de contabilidade.'));
       return;
     }
     renderTalentContextBox(list, search);
@@ -1852,13 +1843,13 @@
       const head = createNode('div', 'gc-list-head');
       const wrap = createNode('div');
       wrap.append(createNode('div', 'gc-list-title', item.person.name));
-      wrap.append(createNode('div', 'gc-list-meta', [item.person.role, item.person.unit, item.person.team].filter(Boolean).join(' ⬢ ')));
+      wrap.append(createNode('div', 'gc-list-meta', [item.person.role, item.person.unit, item.person.team].filter(Boolean).join(' â¬¢ ')));
       head.append(wrap, createNode('div', 'gc-result-score', `${item.score} pts`));
       card.appendChild(head);
       const aiReason = safeText(search.explanations?.[item.person.id]);
-      const reason = aiReason || item.reasons.join(' ⬢ ');
+      const reason = aiReason || item.reasons.join(' â¬¢ ');
       if (reason) card.appendChild(createNode('div', 'gc-list-text', reason));
-      if (item.person.preferences) card.appendChild(createNode('div', 'gc-list-text', `Preferências: ${item.person.preferences}`));
+      if (item.person.preferences) card.appendChild(createNode('div', 'gc-list-text', `PreferÃªncias: ${item.person.preferences}`));
       if (item.person.competencies.length) {
         const badges = createNode('div', 'gc-badges');
         item.person.competencies.slice(0, 8).forEach((value) => badges.appendChild(createNode('span', 'gc-badge match', value)));
@@ -1883,7 +1874,7 @@
 
   function updateHomeCardCount() {
     const footer = byId('home-competency-count');
-    if (footer) footer.textContent = `${people().length} pessoa(s) ⬢ ${trails().length} trilha(s)`;
+    if (footer) footer.textContent = `${people().length} pessoa(s) â¬¢ ${trails().length} trilha(s)`;
   }
 
   function showView(tab) {
@@ -1955,7 +1946,7 @@
     card.append(icon);
     card.append(createNode('div', 'home-card-title', 'Gest\u00E3o de Pessoas'));
     card.append(createNode('div', 'home-card-desc', 'Gerencie quadro de pessoal, compet\u00EAncias, trilhas, remo\u00E7\u00F5es e um banco de talentos com busca inteligente.'));
-    const footer = createNode('div', 'home-card-footer', '0 pessoa(s) ⬢ 0 trilha(s)');
+    const footer = createNode('div', 'home-card-footer', '0 pessoa(s) â¬¢ 0 trilha(s)');
     footer.id = 'home-competency-count';
     card.append(footer);
     host.appendChild(card);
@@ -1976,9 +1967,9 @@
           </div>
           <div class="gc-hero-meta">
             <div class="gc-hero-pill"><span class="gc-hero-pill-label">Pessoas</span><span class="gc-hero-pill-value" id="gc-hero-people">0</span></div>
-            <div class="gc-hero-pill"><span class="gc-hero-pill-label">Competências</span><span class="gc-hero-pill-value" id="gc-hero-competencies">0</span></div>
+            <div class="gc-hero-pill"><span class="gc-hero-pill-label">CompetÃªncias</span><span class="gc-hero-pill-value" id="gc-hero-competencies">0</span></div>
             <div class="gc-hero-pill"><span class="gc-hero-pill-label">Trilhas</span><span class="gc-hero-pill-value" id="gc-hero-paths">0</span></div>
-            <div class="gc-hero-pill"><span class="gc-hero-pill-label">Remoções</span><span class="gc-hero-pill-value" id="gc-hero-removals">0</span></div>
+            <div class="gc-hero-pill"><span class="gc-hero-pill-label">RemoÃ§Ãµes</span><span class="gc-hero-pill-value" id="gc-hero-removals">0</span></div>
           </div>
         </section>
         <div class="gc-toolbar"><div class="gc-tabs" id="gc-tabs"></div></div>
@@ -2009,12 +2000,12 @@
     const viewSurveys = byId('gc-view-surveys');
     const viewTalent = byId('gc-view-talent');
     if (!viewPeople || !viewPerformance || !viewRemovals || !viewTrails || !viewSurveys || !viewTalent) return;
-    viewPeople.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar pessoa</div><div class="gc-panel-desc">Nome, formação, trilhas cursadas, cursos ministrados e importação sem duplicidade.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-person-name">Nome</label><input id="gc-person-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-person-birth-date">Data de nascimento</label><input id="gc-person-birth-date" type="date"></div><div class="gc-field"><label for="gc-person-gender">Gênero</label><select id="gc-person-gender"><option value="">Selecione</option><option value="Feminino">Feminino</option><option value="Masculino">Masculino</option><option value="Outro">Outro</option></select></div><div class="gc-field"><label class="gc-checkbox-label" for="gc-person-ceded"><input id="gc-person-ceded" type="checkbox"> Cedido?</label></div><div class="gc-field"><label for="gc-person-has-fg">Possui FG atualmente?</label><select id="gc-person-has-fg"><option value="Não">Não</option><option value="Sim">Sim</option></select></div><div class="gc-field"><label for="gc-person-entry-date">Entrada na CAGE</label><input id="gc-person-entry-date" type="date"></div><div class="gc-field"><label for="gc-person-graduation-course">Curso superior</label><select id="gc-person-graduation-course"></select></div><div class="gc-field" id="gc-person-graduation-other-wrap" style="display:none;"><label for="gc-person-graduation-other">Qual curso superior?</label><input id="gc-person-graduation-other" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-person-postgraduate-type">Pós-graduação</label><select id="gc-person-postgraduate-type"></select></div><div class="gc-field"><label for="gc-person-postgraduate-course">Curso de pós-graduação</label><input id="gc-person-postgraduate-course" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-person-division">Divisão</label><input id="gc-person-division" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-person-team">Equipe</label><input id="gc-person-team" type="text" list="gc-teams-list" maxlength="120"></div><div class="gc-field"><label for="gc-person-role">Cargo</label><input id="gc-person-role" type="text" list="gc-roles-list" maxlength="120"></div><div class="gc-field gc-field-span-2"><label for="gc-person-completed-trainings">Capacita??es realizadas</label><textarea id="gc-person-completed-trainings" placeholder="Descreva cursos, capacita??es, oficinas e forma??es j? realizadas"></textarea></div><div class="gc-field gc-field-span-2"><label>Trilhas cursadas</label><div id="gc-person-trails-rows" class="gc-repeat-list"></div><button type="button" class="btn btn-outline" id="gc-add-person-trail">Adicionar trilha</button></div><div class="gc-field"><label for="gc-person-probation">Em estágio probatório?</label><input id="gc-person-probation" type="text" readonly></div><div class="gc-field"><label for="gc-person-probation-end">Término do probatório</label><input id="gc-person-probation-end" type="date" readonly></div><div class="gc-field"><label for="gc-person-removal-interest">Interesse em remoção</label><select id="gc-person-removal-interest"><option value="Não">Não</option><option value="Sim">Sim</option></select></div><div class="gc-field"><label for="gc-person-desired-unit">Unidade desejada</label><input id="gc-person-desired-unit" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field gc-field-span-2"><label>Cursos ministrados</label><div id="gc-person-courses-rows" class="gc-repeat-list"></div><button type="button" class="btn btn-outline" id="gc-add-person-course">Adicionar curso</button></div><div class="gc-field"><label for="gc-person-preferences">Preferências / objetivos</label><textarea id="gc-person-preferences"></textarea></div><div class="gc-field"><label for="gc-person-experiences">Experiências relevantes</label><textarea id="gc-person-experiences"></textarea></div><div class="gc-field"><label for="gc-person-notes-date">Data da observação</label><input id="gc-person-notes-date" type="date"></div><div class="gc-field"><label for="gc-person-notes-author">Responsável</label><input id="gc-person-notes-author" type="text" maxlength="120"></div><div class="gc-field gc-field-span-2"><label for="gc-person-notes">Observações do gestor</label><textarea id="gc-person-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-person">Salvar pessoa</button><button type="button" class="btn btn-outline" id="gc-reset-person">Limpar</button><button type="button" class="btn btn-outline" id="gc-import-people-trigger">Importar planilha</button><input id="gc-people-import" type="file" accept=".xlsx,.xls,.csv" style="display:none;"></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Quadro de pessoal</div><div class="gc-panel-desc">Lista clicável com filtros por texto livre.</div></div><div class="gc-filter-row"><input id="gc-people-filter" type="search" placeholder="Filtrar por nome, cargo, equipe ou capacita??o"></div></div><div class="gc-list" id="gc-people-list"></div></div>`;
-    viewPerformance.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Avaliação de performance</div><div class="gc-panel-desc">Cadastre avaliações manualmente e acompanhe a evolução.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-performance-person">Pessoa</label><select id="gc-performance-person"></select></div><div class="gc-field"><label for="gc-performance-date">Data da avaliação</label><input id="gc-performance-date" type="date"></div><div class="gc-field"><label for="gc-performance-method">Método</label><input id="gc-performance-method" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-performance-objective">Objetivo</label><input id="gc-performance-objective" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-performance-result">Resultado</label><input id="gc-performance-result" type="text" maxlength="80"></div><div class="gc-field"><label for="gc-performance-notes">Observações</label><textarea id="gc-performance-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-performance">Salvar avaliação</button><button type="button" class="btn btn-outline" id="gc-reset-performance">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Histórico de avaliações</div><div class="gc-panel-desc">Filtre por pessoa, unidade e cargo para comparar a evolução.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-performance-filter-person">Pessoa</label><select id="gc-performance-filter-person"></select></div><div class="gc-field"><label for="gc-performance-filter-unit">Unidade</label><input id="gc-performance-filter-unit" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-performance-filter-role">Cargo</label><input id="gc-performance-filter-role" type="text" list="gc-roles-list" maxlength="120"></div></div><div class="gc-stat-bars" id="gc-performance-chart"></div><div class="gc-list" id="gc-performance-list"></div></div></div>`;
-    viewRemovals.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Banco de remoções</div><div class="gc-panel-desc">Os cruzamentos abaixo são calculados automaticamente a partir do interesse em remoção e da unidade desejada cadastrados na aba de pessoas.</div></div></div><div class="gc-list" id="gc-removals-list"></div></div>`;
-    viewTrails.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar trilha</div><div class="gc-panel-desc">Defina objetivo, degrau principal, pré-requisitos e competências.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-trail-name">Nome da trilha</label><input id="gc-trail-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-trail-objective">Objetivo</label><input id="gc-trail-objective" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-trail-level-name">Nome do nível</label><input id="gc-trail-level-name" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-trail-level-goal">Objetivo do nível</label><input id="gc-trail-level-goal" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-trail-level-degree">Grau esperado</label><input id="gc-trail-level-degree" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-trail-macro">Macroprocesso</label><input id="gc-trail-macro" type="text" list="gc-macro-list" maxlength="160"></div><div class="gc-field"><label for="gc-trail-division">Divisão</label><input id="gc-trail-division" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-trail-competencies">Competências vinculadas</label><input id="gc-trail-competencies" type="text" placeholder="Separar por vírgula"></div><div class="gc-field"><label for="gc-trail-prereq">Pré-requisitos</label><input id="gc-trail-prereq" type="text" placeholder="Separar por vírgula"></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-trail">Salvar trilha</button><button type="button" class="btn btn-outline" id="gc-reset-trail">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar treinamento</div><div class="gc-panel-desc">Capacitações grátis/pagas, presenciais/remotas e vínculo com pessoas.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-training-name">Nome do treinamento</label><input id="gc-training-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-training-cost">Grátis ou pago</label><input id="gc-training-cost" type="text" maxlength="40"></div><div class="gc-field"><label for="gc-training-mode">Presencial ou remoto</label><input id="gc-training-mode" type="text" maxlength="40"></div><div class="gc-field"><label for="gc-training-link">Link remoto</label><input id="gc-training-link" type="url" maxlength="240"></div><div class="gc-field"><label for="gc-training-provider">Fornecedor</label><input id="gc-training-provider" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-training-trail">Trilha</label><select id="gc-training-trail"></select></div><div class="gc-field"><label for="gc-training-persons">Pessoas vinculadas</label><input id="gc-training-persons" type="text" placeholder="IDs ou nomes separados por vírgula"></div><div class="gc-field"><label for="gc-training-notes">Observações</label><textarea id="gc-training-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-training">Salvar treinamento</button><button type="button" class="btn btn-outline" id="gc-reset-training">Limpar</button></div></div></div><div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Trilhas</div><div class="gc-panel-desc">Capa com escada de desenvolvimento.</div></div></div><div class="gc-list" id="gc-trails-list"></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Treinamentos</div><div class="gc-panel-desc">Oferta e vínculo com trilhas e pessoas.</div></div></div><div class="gc-list" id="gc-trainings-list"></div></div></div>`;
-    viewSurveys.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Pesquisa de ambiente</div><div class="gc-panel-desc">Cadastre os dados anuais da pesquisa da GEPESC.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-survey-year">Ano</label><input id="gc-survey-year" type="number" min="2020" max="2100"></div><div class="gc-field"><label for="gc-survey-engagement">Engajamento</label><input id="gc-survey-engagement" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-leadership">Liderança</label><input id="gc-survey-leadership" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-climate">Clima</label><input id="gc-survey-climate" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-notes">Observações</label><textarea id="gc-survey-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-survey">Salvar pesquisa</button><button type="button" class="btn btn-outline" id="gc-reset-survey">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Histórico</div><div class="gc-panel-desc">Série anual disponível para consulta.</div></div></div><div class="gc-list" id="gc-surveys-list"></div></div></div>`;
-    viewTalent.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Banco de talentos</div><div class="gc-panel-desc">Busca livre com IA, cruzando a necessidade textual com a Arquitetura de Processos, competências cadastradas, preferências e pedidos de remoção.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-talent-query">Busca livre com IA</label><input id="gc-talent-query" type="search" placeholder="Ex: procuro auditor para atuar com balanços contábeis na divisão de contabilidade"></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-run-talent-search">Buscar com IA</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Candidatos potenciais</div><div class="gc-panel-desc">A IA interpreta a necessidade e ranqueia candidatos aderentes.</div></div></div><div class="gc-match-list" id="gc-talent-results"></div></div>`;
+    viewPeople.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar pessoa</div><div class="gc-panel-desc">Nome, formaÃ§Ã£o, trilhas cursadas, cursos ministrados e importaÃ§Ã£o sem duplicidade.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-person-name">Nome</label><input id="gc-person-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-person-birth-date">Data de nascimento</label><input id="gc-person-birth-date" type="date"></div><div class="gc-field"><label for="gc-person-gender">GÃªnero</label><select id="gc-person-gender"><option value="">Selecione</option><option value="Feminino">Feminino</option><option value="Masculino">Masculino</option><option value="Outro">Outro</option></select></div><div class="gc-field"><label class="gc-checkbox-label" for="gc-person-ceded"><input id="gc-person-ceded" type="checkbox"> Cedido?</label></div><div class="gc-field"><label for="gc-person-has-fg">Possui FG atualmente?</label><select id="gc-person-has-fg"><option value="NÃ£o">NÃ£o</option><option value="Sim">Sim</option></select></div><div class="gc-field"><label for="gc-person-entry-date">Entrada na CAGE</label><input id="gc-person-entry-date" type="date"></div><div class="gc-field"><label for="gc-person-graduation-course">Curso superior</label><select id="gc-person-graduation-course"></select></div><div class="gc-field" id="gc-person-graduation-other-wrap" style="display:none;"><label for="gc-person-graduation-other">Qual curso superior?</label><input id="gc-person-graduation-other" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-person-postgraduate-type">PÃ³s-graduaÃ§Ã£o</label><select id="gc-person-postgraduate-type"></select></div><div class="gc-field"><label for="gc-person-postgraduate-course">Curso de pÃ³s-graduaÃ§Ã£o</label><input id="gc-person-postgraduate-course" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-person-division">DivisÃ£o</label><input id="gc-person-division" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-person-team">Equipe</label><input id="gc-person-team" type="text" list="gc-teams-list" maxlength="120"></div><div class="gc-field"><label for="gc-person-role">Cargo</label><input id="gc-person-role" type="text" list="gc-roles-list" maxlength="120"></div><div class="gc-field gc-field-span-2"><label for="gc-person-completed-trainings">Capacita??es realizadas</label><textarea id="gc-person-completed-trainings" placeholder="Descreva cursos, capacita??es, oficinas e forma??es j? realizadas"></textarea></div><div class="gc-field gc-field-span-2"><label>Trilhas cursadas</label><div id="gc-person-trails-rows" class="gc-repeat-list"></div><button type="button" class="btn btn-outline" id="gc-add-person-trail">Adicionar trilha</button></div><div class="gc-field"><label for="gc-person-probation">Em estÃ¡gio probatÃ³rio?</label><input id="gc-person-probation" type="text" readonly></div><div class="gc-field"><label for="gc-person-probation-end">TÃ©rmino do probatÃ³rio</label><input id="gc-person-probation-end" type="date" readonly></div><div class="gc-field"><label for="gc-person-removal-interest">Interesse em remoÃ§Ã£o</label><select id="gc-person-removal-interest"><option value="NÃ£o">NÃ£o</option><option value="Sim">Sim</option></select></div><div class="gc-field"><label for="gc-person-desired-unit">Unidade desejada</label><input id="gc-person-desired-unit" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field gc-field-span-2"><label>Cursos ministrados</label><div id="gc-person-courses-rows" class="gc-repeat-list"></div><button type="button" class="btn btn-outline" id="gc-add-person-course">Adicionar curso</button></div><div class="gc-field"><label for="gc-person-preferences">PreferÃªncias / objetivos</label><textarea id="gc-person-preferences"></textarea></div><div class="gc-field"><label for="gc-person-experiences">ExperiÃªncias relevantes</label><textarea id="gc-person-experiences"></textarea></div><div class="gc-field"><label for="gc-person-notes-date">Data da observaÃ§Ã£o</label><input id="gc-person-notes-date" type="date"></div><div class="gc-field"><label for="gc-person-notes-author">ResponsÃ¡vel</label><input id="gc-person-notes-author" type="text" maxlength="120"></div><div class="gc-field gc-field-span-2"><label for="gc-person-notes">ObservaÃ§Ãµes do gestor</label><textarea id="gc-person-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-person">Salvar pessoa</button><button type="button" class="btn btn-outline" id="gc-reset-person">Limpar</button><button type="button" class="btn btn-outline" id="gc-import-people-trigger">Importar planilha</button><input id="gc-people-import" type="file" accept=".xlsx,.xls,.csv" style="display:none;"></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Quadro de pessoal</div><div class="gc-panel-desc">Lista clicÃ¡vel com filtros por texto livre.</div></div><div class="gc-filter-row"><input id="gc-people-filter" type="search" placeholder="Filtrar por nome, cargo, equipe ou capacita??o"></div></div><div class="gc-list" id="gc-people-list"></div></div>`;
+    viewPerformance.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">AvaliaÃ§Ã£o de performance</div><div class="gc-panel-desc">Cadastre avaliaÃ§Ãµes manualmente e acompanhe a evoluÃ§Ã£o.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-performance-person">Pessoa</label><select id="gc-performance-person"></select></div><div class="gc-field"><label for="gc-performance-date">Data da avaliaÃ§Ã£o</label><input id="gc-performance-date" type="date"></div><div class="gc-field"><label for="gc-performance-method">MÃ©todo</label><input id="gc-performance-method" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-performance-objective">Objetivo</label><input id="gc-performance-objective" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-performance-result">Resultado</label><input id="gc-performance-result" type="text" maxlength="80"></div><div class="gc-field"><label for="gc-performance-notes">ObservaÃ§Ãµes</label><textarea id="gc-performance-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-performance">Salvar avaliaÃ§Ã£o</button><button type="button" class="btn btn-outline" id="gc-reset-performance">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">HistÃ³rico de avaliaÃ§Ãµes</div><div class="gc-panel-desc">Filtre por pessoa, unidade e cargo para comparar a evoluÃ§Ã£o.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-performance-filter-person">Pessoa</label><select id="gc-performance-filter-person"></select></div><div class="gc-field"><label for="gc-performance-filter-unit">Unidade</label><input id="gc-performance-filter-unit" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-performance-filter-role">Cargo</label><input id="gc-performance-filter-role" type="text" list="gc-roles-list" maxlength="120"></div></div><div class="gc-stat-bars" id="gc-performance-chart"></div><div class="gc-list" id="gc-performance-list"></div></div></div>`;
+    viewRemovals.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Banco de remoÃ§Ãµes</div><div class="gc-panel-desc">Os cruzamentos abaixo sÃ£o calculados automaticamente a partir do interesse em remoÃ§Ã£o e da unidade desejada cadastrados na aba de pessoas.</div></div></div><div class="gc-list" id="gc-removals-list"></div></div>`;
+    viewTrails.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar trilha</div><div class="gc-panel-desc">Defina objetivo, degrau principal, prÃ©-requisitos e competÃªncias.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-trail-name">Nome da trilha</label><input id="gc-trail-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-trail-objective">Objetivo</label><input id="gc-trail-objective" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-trail-level-name">Nome do nÃ­vel</label><input id="gc-trail-level-name" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-trail-level-goal">Objetivo do nÃ­vel</label><input id="gc-trail-level-goal" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-trail-level-degree">Grau esperado</label><input id="gc-trail-level-degree" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-trail-macro">Macroprocesso</label><input id="gc-trail-macro" type="text" list="gc-macro-list" maxlength="160"></div><div class="gc-field"><label for="gc-trail-division">DivisÃ£o</label><input id="gc-trail-division" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-trail-competencies">CompetÃªncias vinculadas</label><input id="gc-trail-competencies" type="text" placeholder="Separar por vÃ­rgula"></div><div class="gc-field"><label for="gc-trail-prereq">PrÃ©-requisitos</label><input id="gc-trail-prereq" type="text" placeholder="Separar por vÃ­rgula"></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-trail">Salvar trilha</button><button type="button" class="btn btn-outline" id="gc-reset-trail">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar treinamento</div><div class="gc-panel-desc">CapacitaÃ§Ãµes grÃ¡tis/pagas, presenciais/remotas e vÃ­nculo com pessoas.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-training-name">Nome do treinamento</label><input id="gc-training-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-training-cost">GrÃ¡tis ou pago</label><input id="gc-training-cost" type="text" maxlength="40"></div><div class="gc-field"><label for="gc-training-mode">Presencial ou remoto</label><input id="gc-training-mode" type="text" maxlength="40"></div><div class="gc-field"><label for="gc-training-link">Link remoto</label><input id="gc-training-link" type="url" maxlength="240"></div><div class="gc-field"><label for="gc-training-provider">Fornecedor</label><input id="gc-training-provider" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-training-trail">Trilha</label><select id="gc-training-trail"></select></div><div class="gc-field"><label for="gc-training-persons">Pessoas vinculadas</label><input id="gc-training-persons" type="text" placeholder="IDs ou nomes separados por vÃ­rgula"></div><div class="gc-field"><label for="gc-training-notes">ObservaÃ§Ãµes</label><textarea id="gc-training-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-training">Salvar treinamento</button><button type="button" class="btn btn-outline" id="gc-reset-training">Limpar</button></div></div></div><div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Trilhas</div><div class="gc-panel-desc">Capa com escada de desenvolvimento.</div></div></div><div class="gc-list" id="gc-trails-list"></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Treinamentos</div><div class="gc-panel-desc">Oferta e vÃ­nculo com trilhas e pessoas.</div></div></div><div class="gc-list" id="gc-trainings-list"></div></div></div>`;
+    viewSurveys.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Pesquisa de ambiente</div><div class="gc-panel-desc">Cadastre os dados anuais da pesquisa da GEPESC.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-survey-year">Ano</label><input id="gc-survey-year" type="number" min="2020" max="2100"></div><div class="gc-field"><label for="gc-survey-engagement">Engajamento</label><input id="gc-survey-engagement" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-leadership">LideranÃ§a</label><input id="gc-survey-leadership" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-climate">Clima</label><input id="gc-survey-climate" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-notes">ObservaÃ§Ãµes</label><textarea id="gc-survey-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-survey">Salvar pesquisa</button><button type="button" class="btn btn-outline" id="gc-reset-survey">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">HistÃ³rico</div><div class="gc-panel-desc">SÃ©rie anual disponÃ­vel para consulta.</div></div></div><div class="gc-list" id="gc-surveys-list"></div></div></div>`;
+    viewTalent.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Banco de talentos</div><div class="gc-panel-desc">Busca livre com IA, cruzando a necessidade textual com a Arquitetura de Processos, competÃªncias cadastradas, preferÃªncias e pedidos de remoÃ§Ã£o.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-talent-query">Busca livre com IA</label><input id="gc-talent-query" type="search" placeholder="Ex: procuro auditor para atuar com balanÃ§os contÃ¡beis na divisÃ£o de contabilidade"></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-run-talent-search">Buscar com IA</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Candidatos potenciais</div><div class="gc-panel-desc">A IA interpreta a necessidade e ranqueia candidatos aderentes.</div></div></div><div class="gc-match-list" id="gc-talent-results"></div></div>`;
   }
   function bindTabs() {
     const tabs = byId('gc-tabs');
@@ -2123,6 +2114,8 @@
     hookHomeRefresh();
     globalThis.showCompetencyModule = showModule;
     resetPeopleForm();
+    resetRemovalForm();
+    resetCompetencyForm();
     resetTrailForm();
     resetTrainingForm();
     resetSurveyForm();
