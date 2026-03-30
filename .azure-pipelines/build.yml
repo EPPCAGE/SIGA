@@ -135,11 +135,12 @@ stages:
           - checkout: self
             clean: true
 
-          - bash: |
-              set -euo pipefail
-              chmod +x scripts/build-onprem-package.sh
-              scripts/build-onprem-package.sh "$(Build.ArtifactStagingDirectory)/package"
+          - task: PowerShell@2
             displayName: 'Gerar pacote de deploy'
+            inputs:
+              filePath: 'scripts/build-onprem-package.ps1'
+              arguments: >
+                -OutputPath "$(Build.ArtifactStagingDirectory)\package"
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publicar artefato on-prem'
