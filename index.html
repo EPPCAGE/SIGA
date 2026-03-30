@@ -695,8 +695,10 @@
 
 
   /* ── SUPABASE AUTH ──────────────────────── */
-  .auth-overlay{position:fixed;inset:0;z-index:9000;background:var(--cage-blue);display:none;align-items:center;justify-content:center;}
-  .auth-box{background:white;border-radius:20px;padding:40px 44px;width:420px;max-width:92vw;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.80);}
+  .auth-overlay{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;overflow:hidden;background:#17363f;}
+  .auth-overlay::before{content:"";position:absolute;inset:-24px;background-image:linear-gradient(rgba(28,69,104,.58),rgba(18,44,82,.68)),url('https://www.universocoworking.com.br/site/wp-content/uploads/2021/05/CAFF-1000x570.jpg');background-size:cover;background-position:center;filter:blur(8px) saturate(.92);transform:scale(1.06);}
+  .auth-overlay::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at top,rgba(255,255,255,.14),transparent 42%),linear-gradient(180deg,rgba(9,30,55,.18),rgba(8,27,49,.44));}
+  .auth-box{position:relative;z-index:1;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.65);border-radius:20px;padding:40px 44px;width:420px;max-width:92vw;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.45);}
   .auth-logo-siga{width:100%;margin:0 auto 20px;}
   .auth-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px;line-height:1.5;}
   .auth-ms-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border:none;border-radius:10px;background:#0078d4;cursor:pointer;font-size:14px;font-weight:600;color:white;transition:all .2s;margin-bottom:12px;}
@@ -1472,7 +1474,7 @@
         <!-- Text: subtitle -->
         <text x="190" y="122" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="16" fill="#1A3A8A" letter-spacing="0.4">SISTEMA INTEGRADO DE</text>
         <text x="190" y="142" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="16" fill="#1A3A8A" letter-spacing="0.4">GESTÃO ESTRATÉGICA E ALINHAMENTO</text>
-        <text x="190" y="161" font-family="Arial,Helvetica,sans-serif" font-size="12.5" fill="#4A6FA5">Gestão de Processos, Projetos e Pessoas da CAGE-RS</text>
+        <text x="190" y="161" font-family="Arial,Helvetica,sans-serif" font-size="12.5" fill="#4A6FA5">Integrando projetos, processos e pessoas da CAGE-RS</text>
       </svg>
     </div>
     <div class="auth-sub">Faça login para acessar e sincronizar seus dados</div>
