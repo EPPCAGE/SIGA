@@ -102,14 +102,6 @@
       .filter(Boolean);
   }
 
-  function firstFilled(row, keys) {
-    for (const key of keys) {
-      const value = row?.[key];
-      if (value !== undefined && safeText(value)) return safeText(value);
-    }
-    return '';
-  }
-
   function uniqueSorted(items) {
     return [...new Set(items.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }
@@ -209,21 +201,12 @@
   }
 
   function ensureStore() {
-    if (globalThis.DATA && typeof globalThis.DATA === 'object') {
-      if (DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object') {
-        Object.keys(DEFAULT_STORE).forEach((key) => {
-          DATA[DATA_KEY][key] = safeArray(DATA[DATA_KEY][key]);
-        });
-        return DATA[DATA_KEY];
-      }
-      DATA[DATA_KEY] = { ...DEFAULT_STORE };
-      Object.keys(DEFAULT_STORE).forEach((key) => {
-        DATA[DATA_KEY][key] = safeArray(DATA[DATA_KEY][key]);
-      });
-      return DATA[DATA_KEY];
+    if (!(globalThis.DATA && typeof globalThis.DATA === 'object')) {
+      globalThis.DATA = {};
     }
-    globalThis.DATA = {};
-    DATA[DATA_KEY] = { ...DEFAULT_STORE };
+    if (!(DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object')) {
+      DATA[DATA_KEY] = { ...DEFAULT_STORE };
+    }
     Object.keys(DEFAULT_STORE).forEach((key) => {
       DATA[DATA_KEY][key] = safeArray(DATA[DATA_KEY][key]);
     });
