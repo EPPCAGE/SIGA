@@ -171,7 +171,7 @@
   function safeUrl(url) {
     const target = safeText(url);
     if (!target) return '';
-    if (typeof URL.canParse === 'function' && !URL.canParse(target, location.href)) return '';
+    if (URL.canParse?.(target, location.href) === false) return '';
     const parsed = new URL(target, location.href);
     return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
   }
@@ -563,17 +563,6 @@
     const soft = typeof getConfig === 'function' ? safeArray(getConfig('softSkills')) : [];
     const normative = typeof getConfig === 'function' ? safeArray(getConfig('conhecimentosNormativos')) : [];
     return uniqueSorted([...hard, ...soft, ...normative, ...competencies().map((item) => item.name)]);
-  }
-
-  function syncCompetencyCatalog(item) {
-    if (typeof getConfig !== 'function' || typeof setConfig !== 'function') return;
-    const map = { hard: 'hardSkills', soft: 'softSkills', normative: 'conhecimentosNormativos' };
-    const configKey = map[item.type];
-    const name = safeText(item.name);
-    if (!configKey || !name) return;
-    const current = safeArray(getConfig(configKey));
-    const exists = current.some((value) => String(value).toLowerCase() === name.toLowerCase());
-    if (!exists) setConfig(configKey, [...current, name]);
   }
 
   function syncRoleCatalog(role) {
@@ -1175,7 +1164,7 @@
   }
 
   function createPersonCourseRow(value) {
-    const safeValue = safeText(value).replaceAll('\"', '&quot;');
+    const safeValue = safeText(value).replaceAll('"', '&quot;');
     return [
       '<div class="gc-repeat-row gc-person-course-row">',
       '<input class="gc-person-course-input" type="text" maxlength="220" value="' + safeValue + '" placeholder="Nome do curso ministrado">',
@@ -1336,6 +1325,39 @@
     renderAll();
   }
 
+  function togglePersonSensitiveDetails(card) {
+    const details = card.querySelector('.gc-person-sensitive-details');
+    if (!(details instanceof HTMLElement)) return;
+    details.style.display = details.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function buildPersonBadges(item) {
+    if (!item.competencies.length) return null;
+    const badges = createNode('div', 'gc-badges');
+    item.competencies.slice(0, 6).forEach((value) => badges.appendChild(createNode('span', 'gc-badge', value)));
+    if (item.probation === 'Sim') badges.appendChild(createNode('span', 'gc-badge alert', 'Prob. at?? ' + item.probationEnd));
+    if (item.removalInterest === 'Sim' && item.desiredUnit) badges.appendChild(createNode('span', 'gc-badge match', 'Interesse: ' + item.desiredUnit));
+    if (item.ceded === 'Sim') badges.appendChild(createNode('span', 'gc-badge', 'Cedido'));
+    if (item.hasFg === 'Sim') badges.appendChild(createNode('span', 'gc-badge', 'FG'));
+    return badges;
+  }
+
+  function appendPersonCardDetails(card, item) {
+    const trailsSummary = normalizeCompletedTrails(item.completedTrails)
+      .map((entry) => [entry.trailName || getTrailById(entry.trailId)?.name, trailLevelLabel(entry.level)].filter(Boolean).join(' ??? '))
+      .join(' | ');
+    const taughtCourses = normalizeTaughtCourses(item.taughtCourses).join(', ');
+    if (item.preferences) card.appendChild(createNode('div', 'gc-list-text', 'Prefer??ncias: ' + item.preferences));
+    if (trailsSummary) card.appendChild(createNode('div', 'gc-list-text', 'Trilhas cursadas: ' + trailsSummary));
+    if (safeText(item.completedTrainingsText)) card.appendChild(createNode('div', 'gc-list-text', 'Capacita??es realizadas: ' + item.completedTrainingsText));
+    if (taughtCourses) card.appendChild(createNode('div', 'gc-list-text', 'Cursos ministrados: ' + taughtCourses));
+    if (!item.managerNotes) return;
+    const notesMeta = [item.managerNotesDate, item.managerNotesAuthor].filter(Boolean).join(' ??? ');
+    const notes = createNode('div', 'gc-list-text gc-person-sensitive-details', 'Observa????es do gestor: ' + item.managerNotes + (notesMeta ? ' (' + notesMeta + ')' : ''));
+    notes.style.display = 'none';
+    card.appendChild(notes);
+  }
+
   function renderPeopleList() {
     const list = byId('gc-people-list');
     if (!list) return;
@@ -1347,41 +1369,17 @@
       const card = createNode('div', 'gc-list-item');
       const head = createNode('div', 'gc-list-head');
       const wrap = createNode('div');
-      const title = createButton(item.name, 'gc-list-title', () => {
-        const details = card.querySelector('.gc-person-sensitive-details');
-        if (!(details instanceof HTMLElement)) return;
-        details.style.display = details.style.display === 'none' ? 'block' : 'none';
-      });
+      const title = createButton(item.name, 'gc-list-title', () => togglePersonSensitiveDetails(card));
       title.classList.add('btn-link');
-      wrap.append(title, createNode('div', 'gc-list-meta', [item.role, item.division || item.unit, item.team].filter(Boolean).join(' ⬢ ')));
+      wrap.append(title, createNode('div', 'gc-list-meta', [item.role, item.division || item.unit, item.team].filter(Boolean).join(' ??? ')));
       const actions = createNode('div', 'gc-actions');
       actions.append(createButton('Editar', 'btn btn-outline', () => populatePeopleForm(item)));
       actions.append(createButton('Excluir', 'btn btn-outline', () => removePerson(item.id)));
       head.append(wrap, actions);
       card.appendChild(head);
-      if (item.competencies.length) {
-        const badges = createNode('div', 'gc-badges');
-        item.competencies.slice(0, 6).forEach((value) => badges.appendChild(createNode('span', 'gc-badge', value)));
-        if (item.probation === 'Sim') badges.appendChild(createNode('span', 'gc-badge alert', 'Prob. até ' + item.probationEnd));
-        if (item.removalInterest === 'Sim' && item.desiredUnit) badges.appendChild(createNode('span', 'gc-badge match', 'Interesse: ' + item.desiredUnit));
-        if (item.ceded === 'Sim') badges.appendChild(createNode('span', 'gc-badge', 'Cedido'));
-        if (item.hasFg === 'Sim') badges.appendChild(createNode('span', 'gc-badge', 'FG'));
-        card.appendChild(badges);
-      }
-      const trailsSummary = normalizeCompletedTrails(item.completedTrails)
-        .map((entry) => [entry.trailName || getTrailById(entry.trailId)?.name, trailLevelLabel(entry.level)].filter(Boolean).join(' ⬢ '))
-        .join(' | ');
-      const taughtCourses = normalizeTaughtCourses(item.taughtCourses).join(', ');
-      if (item.preferences) card.appendChild(createNode('div', 'gc-list-text', 'Preferências: ' + item.preferences));
-      if (trailsSummary) card.appendChild(createNode('div', 'gc-list-text', 'Trilhas cursadas: ' + trailsSummary));
-      if (safeText(item.completedTrainingsText)) card.appendChild(createNode('div', 'gc-list-text', 'Capacita??es realizadas: ' + item.completedTrainingsText));
-      if (taughtCourses) card.appendChild(createNode('div', 'gc-list-text', 'Cursos ministrados: ' + taughtCourses));
-      if (item.managerNotes) {
-        const notesMeta = [item.managerNotesDate, item.managerNotesAuthor].filter(Boolean).join(' ??? ');
-        const notes = createNode('div', 'gc-list-text gc-person-sensitive-details', 'Observa????es do gestor: ' + item.managerNotes + (notesMeta ? ' (' + notesMeta + ')' : ''));
-        notes.style.display = 'none';
-        card.appendChild(notes);
-      }
+      const badges = buildPersonBadges(item);
+      if (badges) card.appendChild(badges);
+      appendPersonCardDetails(card, item);
       list.appendChild(card);
     });
   }
@@ -1402,46 +1400,6 @@
     }
     renderPeopleList();
   }
-  function renderGaps() {
-    const list = byId('gc-gap-list');
-    if (!list) return;
-    list.replaceChildren();
-    if (!gapAnalyses().length) return list.appendChild(createNode('div', 'gc-empty', 'Nenhuma análise de gaps cadastrada.'));
-    gapAnalyses().forEach((item) => {
-      const person = getPersonById(item.personId);
-      const card = createNode('div', 'gc-list-item');
-      card.append(createNode('div', 'gc-list-title', person ? person.name : 'Pessoa não encontrada'));
-      card.append(createNode('div', 'gc-list-meta', [item.unit, item.team].filter(Boolean).join(' ⬢ ')));
-      if (item.requiredCompetencies) card.appendChild(createNode('div', 'gc-list-text', `Necessárias: ${item.requiredCompetencies}`));
-      if (item.currentCompetencies) card.appendChild(createNode('div', 'gc-list-text', `Atuais: ${item.currentCompetencies}`));
-      if (item.recommendations) card.appendChild(createNode('div', 'gc-list-text', `Recomendações: ${item.recommendations}`));
-      const actions = createNode('div', 'gc-actions');
-      actions.append(createButton('Editar', 'btn btn-outline', () => populateGapForm(item)));
-      actions.append(createButton('Excluir', 'btn btn-outline', () => removeGap(item.id)));
-      card.appendChild(actions);
-      list.appendChild(card);
-    });
-  }
-
-  function renderFeedbacks() {
-    const list = byId('gc-feedback-list');
-    if (!list) return;
-    list.replaceChildren();
-    if (!feedbackMeetings().length) return list.appendChild(createNode('div', 'gc-empty', 'Nenhuma reunião de feedback registrada.'));
-    feedbackMeetings().forEach((item) => {
-      const person = getPersonById(item.personId);
-      const card = createNode('div', 'gc-list-item');
-      card.append(createNode('div', 'gc-list-title', `${person ? person.name : 'Pessoa'} ⬢ ${item.date}`));
-      card.append(createNode('div', 'gc-list-meta', item.participants || 'Participantes não informados'));
-      if (item.objectives) card.appendChild(createNode('div', 'gc-list-text', `Objetivos: ${item.objectives}`));
-      if (item.minutes) card.appendChild(createNode('div', 'gc-list-text', `Ata: ${item.minutes}`));
-      const actions = createNode('div', 'gc-actions');
-      actions.append(createButton('Editar', 'btn btn-outline', () => populateFeedbackForm(item)));
-      actions.append(createButton('Excluir', 'btn btn-outline', () => removeFeedback(item.id)));
-      card.appendChild(actions);
-      list.appendChild(card);
-    });
-  }
 
   async function importPeopleFile(file) {
     if (!requireEditor() || !file) return;
@@ -1461,7 +1419,7 @@
           name: safeText(row.nome || row.Nome),
           role: safeText(row.cargo || row.Cargo),
           birthDate,
-          age: safeText(row.idade || row.Idade || String(calculateAge(birthDate) || '')) ,
+          age: safeText(row.idade || row.Idade || String(calculateAge(birthDate) || '')),
           gender: safeText(row.sexo || row.Sexo),
           ceded: safeText(row.cedido || row['cedido?'] || row['servidor cedido']) || 'Não',
           hasFg: safeText(row.fg || row['possui fg'] || row['fg atualmente']) || 'Não',
@@ -1505,135 +1463,6 @@
       const input = byId('gc-people-import');
       if (input) input.value = '';
     }
-  }
-  function populateGapForm(record) {
-    const item = normalizeRecord(record, gapTemplate());
-    state.gapId = item.id || '';
-    setFormValue('gc-gap-person', item.personId);
-    setFormValue('gc-gap-unit', item.unit);
-    setFormValue('gc-gap-team', item.team);
-    setFormValue('gc-gap-current', item.currentCompetencies);
-    setFormValue('gc-gap-required', item.requiredCompetencies);
-    setFormValue('gc-gap-observations', item.observations);
-    setFormValue('gc-gap-recommendations', item.recommendations);
-    setFormValue('gc-gap-action', item.actionPlan);
-  }
-
-  function resetGapForm() {
-    populateGapForm(gapTemplate());
-  }
-
-  function saveGap() {
-    if (!requireEditor()) return;
-    const personId = safeText(readFormValue('gc-gap-person'));
-    if (!personId) return showInfo('Selecione a pessoa para registrar o gap.', 'warn');
-    const entry = {
-      id: state.gapId || makeId('gc_gap'),
-      personId,
-      unit: safeText(readFormValue('gc-gap-unit')),
-      team: safeText(readFormValue('gc-gap-team')),
-      currentCompetencies: safeText(readFormValue('gc-gap-current')),
-      requiredCompetencies: safeText(readFormValue('gc-gap-required')),
-      observations: safeText(readFormValue('gc-gap-observations')),
-      recommendations: safeText(readFormValue('gc-gap-recommendations')),
-      actionPlan: safeText(readFormValue('gc-gap-action')),
-    };
-    const list = gapAnalyses();
-    const index = list.findIndex((item) => item.id === entry.id);
-    if (index >= 0) list[index] = entry; else list.push(entry);
-    persist(index >= 0 ? 'Gap atualizado.' : 'Gap registrado.');
-    resetGapForm();
-    renderAll();
-  }
-
-  function removeGap(id) {
-    if (!requireEditor()) return;
-    getStore().gapAnalyses = gapAnalyses().filter((item) => item.id !== id);
-    persist('Gap removido.');
-    renderAll();
-  }
-
-  function populateFeedbackForm(record) {
-    const item = normalizeRecord(record, feedbackTemplate());
-    state.feedbackId = item.id || '';
-    setFormValue('gc-feedback-person', item.personId);
-    setFormValue('gc-feedback-date', item.date);
-    setFormValue('gc-feedback-participants', item.participants);
-    setFormValue('gc-feedback-objectives', item.objectives);
-    setFormValue('gc-feedback-minutes', item.minutes);
-  }
-
-  function resetFeedbackForm() {
-    populateFeedbackForm(feedbackTemplate());
-  }
-
-  function saveFeedback() {
-    if (!requireEditor()) return;
-    const personId = safeText(readFormValue('gc-feedback-person'));
-    const date = safeText(readFormValue('gc-feedback-date'));
-    if (!personId || !date) return showInfo('Informe pessoa e data da reunião.', 'warn');
-    const entry = {
-      id: state.feedbackId || makeId('gc_feedback'),
-      personId,
-      date,
-      participants: safeText(readFormValue('gc-feedback-participants')),
-      objectives: safeText(readFormValue('gc-feedback-objectives')),
-      minutes: safeText(readFormValue('gc-feedback-minutes')),
-    };
-    const list = feedbackMeetings();
-    const index = list.findIndex((item) => item.id === entry.id);
-    if (index >= 0) list[index] = entry; else list.push(entry);
-    persist(index >= 0 ? 'Reunião de feedback atualizada.' : 'Reunião de feedback registrada.');
-    resetFeedbackForm();
-    renderAll();
-  }
-
-  function removeFeedback(id) {
-    if (!requireEditor()) return;
-    getStore().feedbackMeetings = feedbackMeetings().filter((item) => item.id !== id);
-    persist('Reunião de feedback removida.');
-    renderAll();
-  }
-
-  function populateRemovalForm(record) {
-    const removal = normalizeRecord(record, removalTemplate());
-    state.removalId = removal.id || '';
-    setFormValue('gc-removal-person', removal.personId);
-    setFormValue('gc-removal-from', removal.fromUnit);
-    setFormValue('gc-removal-to', removal.desiredUnit);
-    setFormValue('gc-removal-notes', removal.notes);
-  }
-
-  function resetRemovalForm() {
-    populateRemovalForm(removalTemplate());
-  }
-
-  function saveRemoval() {
-    if (!requireEditor()) return;
-    const personId = safeText(readFormValue('gc-removal-person'));
-    const fromUnit = safeText(readFormValue('gc-removal-from'));
-    const desiredUnit = safeText(readFormValue('gc-removal-to'));
-    if (!personId || !fromUnit || !desiredUnit) return showInfo('Preencha pessoa, unidade de origem e unidade desejada.', 'warn');
-    const entry = {
-      id: state.removalId || makeId('gc_removal'),
-      personId,
-      fromUnit,
-      desiredUnit,
-      notes: safeText(readFormValue('gc-removal-notes')),
-    };
-    const list = removals();
-    const index = list.findIndex((item) => item.id === entry.id);
-    if (index >= 0) list[index] = entry; else list.push(entry);
-    persist(index >= 0 ? 'Movimentação atualizada.' : 'Movimentação cadastrada.');
-    resetRemovalForm();
-    renderAll();
-  }
-
-  function removeRemoval(id) {
-    if (!requireEditor()) return;
-    getStore().removals = removals().filter((item) => item.id !== id);
-    persist('Registro de remoção excluído.');
-    renderAll();
   }
 
   function renderRemovals() {
@@ -1752,94 +1581,6 @@
     const bars = createNode('div', 'gc-stat-bars');
     [...grouped.entries()].sort((a, b) => b[1] - a[1]).forEach(([label, value]) => fillBar(bars, label, value, Math.max(...grouped.values())));
     chart.appendChild(bars);
-  }
-
-  function populateCompetencyForm(record) {
-    const item = normalizeRecord(record, competencyTemplate());
-    state.competencyId = item.id || '';
-    setFormValue('gc-competency-name', item.name);
-    setFormValue('gc-competency-type', item.type);
-    setFormValue('gc-competency-macro', item.macroprocess);
-    setFormValue('gc-competency-process', item.process);
-    setFormValue('gc-competency-role', item.role);
-    setFormValue('gc-competency-division', item.division);
-    setFormValue('gc-competency-team', item.team);
-    setFormValue('gc-competency-person', item.personId);
-    setFormValue('gc-competency-trail', item.trailId);
-    setFormValue('gc-competency-training', item.trainingId);
-    setFormValue('gc-competency-description', item.description);
-  }
-
-  function resetCompetencyForm() {
-    populateCompetencyForm(competencyTemplate());
-  }
-
-  function saveCompetency() {
-    if (!requireEditor()) return;
-    const name = safeText(readFormValue('gc-competency-name'));
-    if (!name) return showInfo('Informe o nome da competência.', 'warn');
-    const entry = {
-      id: state.competencyId || makeId('gc_competency'),
-      name,
-      type: safeText(readFormValue('gc-competency-type')) || 'hard',
-      macroprocess: safeText(readFormValue('gc-competency-macro')),
-      process: safeText(readFormValue('gc-competency-process')),
-      role: safeText(readFormValue('gc-competency-role')),
-      division: safeText(readFormValue('gc-competency-division')),
-      team: safeText(readFormValue('gc-competency-team')),
-      personId: safeText(readFormValue('gc-competency-person')),
-      trailId: safeText(readFormValue('gc-competency-trail')),
-      trainingId: safeText(readFormValue('gc-competency-training')),
-      description: safeText(readFormValue('gc-competency-description')),
-    };
-    const list = competencies();
-    const index = list.findIndex((item) => item.id === entry.id);
-    if (index >= 0) list[index] = entry; else list.push(entry);
-    syncRoleCatalog(entry.role);
-    syncCompetencyCatalog(entry);
-    persist(index >= 0 ? 'Competência atualizada.' : 'Competência cadastrada.');
-    resetCompetencyForm();
-    renderAll();
-  }
-
-  function removeCompetency(id) {
-    if (!requireEditor()) return;
-    getStore().competencies = competencies().filter((item) => item.id !== id);
-    persist('Competência removida.');
-    renderAll();
-  }
-
-  function renderCompetencies() {
-    setSelectOptions('gc-competency-type', COMPETENCY_TYPES, 'Tipo', (item) => ({ value: item.value, label: item.label }));
-    setDataListOptions('gc-macro-list', getMacroprocesses());
-    setDataListOptions('gc-process-list', getProcesses());
-    setDataListOptions('gc-roles-list', getRoles());
-    setDataListOptions('gc-units-list', getUnits());
-    setDataListOptions('gc-teams-list', getTeamsByUnit(readFormValue('gc-person-division')));
-    setSelectOptions('gc-competency-person', people(), 'Pessoa específica', (item) => ({ value: item.id, label: item.name }));
-    setSelectOptions('gc-competency-trail', trails(), 'Trilha', (item) => ({ value: item.id, label: item.name }));
-    setSelectOptions('gc-competency-training', trainings(), 'Treinamento', (item) => ({ value: item.id, label: item.name }));
-    const list = byId('gc-competencies-list');
-    if (!list) return;
-    list.replaceChildren();
-    if (!competencies().length) return list.appendChild(createNode('div', 'gc-empty', 'Cadastre competências, hard skills e conhecimentos normativos aqui.'));
-    competencies().forEach((item) => {
-      const card = createNode('div', 'gc-list-item');
-      const head = createNode('div', 'gc-list-head');
-      const wrap = createNode('div');
-      wrap.append(createNode('div', 'gc-list-title', item.name));
-      wrap.append(createNode('div', 'gc-list-meta', [getTypeLabel(item.type), item.macroprocess, item.team, item.role].filter(Boolean).join(' ⬢ ')));
-      const badges = createNode('div', 'gc-badges');
-      badges.appendChild(createNode('span', `gc-badge ${getTypeBadgeClass(item.type)}`, getTypeLabel(item.type)));
-      head.append(wrap, badges);
-      card.appendChild(head);
-      if (item.description) card.appendChild(createNode('div', 'gc-list-text', item.description));
-      const actions = createNode('div', 'gc-actions');
-      actions.append(createButton('Editar', 'btn btn-outline', () => populateCompetencyForm(item)));
-      actions.append(createButton('Excluir', 'btn btn-outline', () => removeCompetency(item.id)));
-      card.appendChild(actions);
-      list.appendChild(card);
-    });
   }
 
   function populateTrailForm(record) {
