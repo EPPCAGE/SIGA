@@ -1651,14 +1651,8 @@
       <button class="home-card" data-sortkey="process-mgmt" onclick="showProcessManagementHub()" style="border-top:4px solid #0f5b57;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🧭</div>
         <div class="home-card-title" contenteditable="false">Gestão de Processos</div>
-        <div class="home-card-desc" contenteditable="false">Hub com os submódulos de Mapeamentos, Auditoria de Processos, Simulador de Processos e Modelador BPMN.</div>
-        <div class="home-card-footer">4 submódulos integrados</div>
-      </button>
-      <button class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">🏛</div>
-        <div class="home-card-title" contenteditable="false">Arquitetura de Processos</div>
-        <div class="home-card-desc" contenteditable="false">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS.</div>
-        <div class="home-card-footer" id="home-arq-count">—</div>
+        <div class="home-card-desc" contenteditable="false">Hub com os submódulos de Arquitetura de Processos, Mapeamentos, Auditoria de Processos, Simulador de Processos e Modelador BPMN.</div>
+        <div class="home-card-footer">5 submódulos integrados</div>
       </button>
       <button class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">📊</div>
@@ -1677,6 +1671,12 @@
         <div class="home-card-title" contenteditable="false">Indicadores CAGE</div>
         <div class="home-card-desc" contenteditable="false">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
+      </button>
+      <button class="home-card" data-sortkey="cockpit" onclick="showCockpitModule()" style="border-top:4px solid #0ea5e9;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
+        <div class="home-card-icon" style="background:#047857;color:white;">🎯</div>
+        <div class="home-card-title" contenteditable="false">Cockpit de Gestão</div>
+        <div class="home-card-desc" contenteditable="false">Acompanhe indicadores executivos, sinais de desempenho e uma visão tática consolidada para tomada de decisão.</div>
+        <div class="home-card-footer">Painel de gestão integrada</div>
       </button>
       <button class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🏢</div>
@@ -1731,6 +1731,12 @@
     </div>
   </div>
   <div class="hub-grid">
+    <button class="hub-subcard" type="button" onclick="showArqModule()">
+      <div class="hub-subcard-icon">🏛️</div>
+      <div class="hub-subcard-title">Arquitetura de Processos</div>
+      <div class="hub-subcard-desc">Gerencie macroprocessos, processos e subprocessos da cadeia de valor da CAGE-RS dentro do mesmo hub de processos.</div>
+      <div class="hub-subcard-footer">Estrutura e governança</div>
+    </button>
     <button class="hub-subcard" type="button" onclick="showHomePops()">
       <div class="hub-subcard-icon">🗺️</div>
       <div class="hub-subcard-title">Mapeamentos</div>
@@ -9344,6 +9350,7 @@ const CONFIG_DEFAULTS = {
   macroprocessos:       [...MACROPROCESSOS],
   tipoTrabalho:         ['Mapeamento de Processo Novo','Mapeamento de Processo Existente','Redesenho','Mapeamento e Redesenho','Criação de Documentação'],
   atores:               ['Auxiliar Administrativo','Analista','Auditor','Coordenador','Chefe de Divisão','Adjunto da CAGE','Contador','Auditor-Geral','Assessor','Auditor Setorial','Estagiário'],
+  cargos:               ['Auditor','Analista'],
   equipes:              [],
   contadorGeral:        '',
   adjuntosCage:         [],
@@ -9747,13 +9754,6 @@ function eppToggleHeaderBtn(key) {
 }
 
 // ── Config Panel rendering ───────────────────────────────────────────────────
-let _skillChipSeq = 0;
-
-function _nextSkillChipId() {
-  _skillChipSeq += 1;
-  return 'skill-' + _skillChipSeq;
-}
-
 const _CFG_TABLES = [
   { key:'servidoresEPP',       title:'👥 Servidores do EPP',          desc:'Membros lotados no Escritório de Projetos e Processos.', typed:'servidor' },
   { key:'alertasEmail',        title:'📧 Alertas por E-mail',         desc:'Defina quem recebe cada tipo de alerta automático por e-mail.', typed:'alertas' },
@@ -9763,6 +9763,7 @@ const _CFG_TABLES = [
   { key:'tipoTrabalho',        title:'🔧 Tipo de Trabalho',           desc:'Tipos de trabalho da ficha técnica de mapeamento.' },
   { key:'tipoAtividadePat',    title:'📅 Tipo de Atividade — PAT',    desc:'Tipos de atividade no Plano Anual de Trabalho.' },
   { key:'atores',              title:'🎭 Atores',                     desc:'Atores que executam ações nos fluxos dos processos mapeados.' },
+  { key:'cargos',             title:'💼 Cargos',                    desc:'Cargos utilizados nos cadastros do módulo de Gestão de Competências.' },
   { key:'equipes',             title:'🫂 Equipes Responsáveis',       desc:'Equipes da CAGE que aparecem na ficha técnica dos mapeamentos.' },
   { key:'contadorGeral',       title:'🏛 Contador-Geral',             desc:'Nome do Contador-Geral da CAGE para o organograma.', typed:'contador-geral' },
   { key:'adjuntosCage',        title:'👔 Adjuntos da CAGE',           desc:'Adjuntos da CAGE (nível hierárquico abaixo do Contador-Geral).' },
@@ -9797,26 +9798,49 @@ function renderConfigPanel() {
   }
   const grid = panel.querySelector('#epp-config-tables-grid');
   if(!grid) return;
-  grid.innerHTML = _CFG_TABLES.map(t => _renderCfgCard(t)).join('');
-  
-  // ── Event delegation para skill-chips (sugestões de competências) ──
-  // Usar delegação de eventos no panel (pai) para evitar duplicatas
-  // Remove listener antigo se existir (detectado por data-chip-listener)
-  if(panel.dataset.chipListener === 'true') {
-    // Listener já foi adicionado, não adicionar novamente
-    return;
-  }
-  
-  panel.dataset.chipListener = 'true';
-  panel.addEventListener('click', (ev) => {
-    const chip = ev.target.closest('.skill-chip[data-skill-chip]');
-    if(!chip) return;
-    const equipe = chip.dataset.equipe;
-    const skill = chip.dataset.skill;
-    const tipo = chip.dataset.tipo;
-    if(equipe && skill && tipo) {
-      toggleEquipeSkill(equipe, skill, tipo);
-    }
+  const orderedTables = [..._CFG_TABLES].sort((a, b) => _cfgSortLabel(a.title).localeCompare(_cfgSortLabel(b.title), 'pt-BR'));
+  grid.innerHTML = orderedTables.map(t => _renderCfgCard(t)).join('');
+  _setupCfgAccordion(grid);
+}
+
+function _cfgSortLabel(title) {
+  return String(title || '').replace(/^[^\p{L}\p{N}]+/u, '').trim();
+}
+
+function _setupCfgAccordion(grid) {
+  [...grid.children].forEach(card => {
+    if(card.dataset.cfgAccordionReady === 'true') return;
+    const children = [...card.children];
+    if(children.length < 3) return;
+    const [titleEl, descEl, ...contentNodes] = children;
+    const header = document.createElement('button');
+    header.type = 'button';
+    header.setAttribute('aria-expanded', 'false');
+    header.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:12px;width:100%;background:none;border:none;padding:0;margin:0 0 12px;cursor:pointer;text-align:left;font:inherit;';
+    const textWrap = document.createElement('div');
+    textWrap.style.cssText = 'flex:1;min-width:0;';
+    textWrap.appendChild(titleEl);
+    textWrap.appendChild(descEl);
+    const icon = document.createElement('span');
+    icon.textContent = '▾';
+    icon.style.cssText = 'font-size:16px;color:#64748b;line-height:1;transform:rotate(-90deg);transition:transform .18s ease;';
+    header.appendChild(textWrap);
+    header.appendChild(icon);
+
+    const content = document.createElement('div');
+    content.style.display = 'none';
+    content.style.marginTop = '4px';
+    contentNodes.forEach(node => content.appendChild(node));
+
+    header.addEventListener('click', () => {
+      const isOpen = content.style.display !== 'none';
+      content.style.display = isOpen ? 'none' : '';
+      header.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+      icon.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+    });
+
+    card.replaceChildren(header, content);
+    card.dataset.cfgAccordionReady = 'true';
   });
 }
 
@@ -9960,10 +9984,10 @@ function configRemoveEquipeUnidade(i) {
 
 function _renderCfgCardEquipeCompetencias(title, desc) {
   const equipes    = getConfig('equipes');
-  const hardAll    = getConfig('hardSkills');
-  const softAll    = getConfig('softSkills');
-  const normasAll  = getConfig('conhecimentosNormativos');
-  const equipeComp = getConfig('equipeCompetencias');
+  const hardAll    = Array.isArray(getConfig('hardSkills')) ? getConfig('hardSkills') : [];
+  const softAll    = Array.isArray(getConfig('softSkills')) ? getConfig('softSkills') : [];
+  const normasAll  = Array.isArray(getConfig('conhecimentosNormativos')) ? getConfig('conhecimentosNormativos') : [];
+  const equipeComp = Array.isArray(getConfig('equipeCompetencias')) ? getConfig('equipeCompetencias') : [];
 
   if(equipes.length === 0) {
     return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;grid-column:1/-1;">
@@ -9973,22 +9997,16 @@ function _renderCfgCardEquipeCompetencias(title, desc) {
     </div>`;
   }
 
-  function chips(all, selected, equipe, tipo) {
-    if(!all.length) return '<span style="color:#94a3b8;font-size:11px;">—</span>';
-    return all.map(sk => {
-      const active = selected.includes(sk);
-      const chipId = _nextSkillChipId();
-      return `<span class="skill-chip" data-skill-chip="${chipId}" data-equipe="${escapeHtml(equipe)}" data-skill="${escapeHtml(sk)}" data-tipo="${tipo}" style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;margin:2px;user-select:none;transition:all .15s;${active ? 'background:#1B3022;color:white;border:1px solid #1B3022;' : 'background:#334155;color:#64748b;border:1px solid #e2e8f0;'}">${sk}</span>`;
-    }).join('');
-  }
-
   const rows = equipes.map(eq => {
-    const rec  = equipeComp.find(e => e.equipe === eq) || {equipe:eq, hard:[], soft:[], normas:[]};
+    const rec  = _getCfgEquipeCompetenciasRecord(eq, equipeComp);
     return `<tr style="border-top:1px solid #f1f5f9;vertical-align:top;">
       <td style="padding:10px 12px;font-size:13px;font-weight:600;color:#1e293b;min-width:130px;white-space:nowrap;">${eq}</td>
-      <td style="padding:8px 10px;">${chips(hardAll,  rec.hard  || [], eq, 'hard')}</td>
-      <td style="padding:8px 10px;">${chips(softAll,  rec.soft  || [], eq, 'soft')}</td>
-      <td style="padding:8px 10px;">${chips(normasAll, rec.normas || [], eq, 'normas')}</td>
+      <td style="padding:8px 10px;">${_renderCfgCompetencySummary(rec.hard, '#ecfdf5', '#166534')}</td>
+      <td style="padding:8px 10px;">${_renderCfgCompetencySummary(rec.soft, '#eff6ff', '#1d4ed8')}</td>
+      <td style="padding:8px 10px;">${_renderCfgCompetencySummary(rec.normas, '#fff7ed', '#c2410c')}</td>
+      <td style="padding:8px 10px;text-align:right;white-space:nowrap;">
+        <button onclick="openCfgEquipeCompetenciasModal('${eq.replaceAll("'", "\\'")}')" class="btn btn-outline" style="font-size:12px;padding:6px 10px;">Vincular competências</button>
+      </td>
     </tr>`;
   }).join('');
 
@@ -10003,27 +10021,116 @@ function _renderCfgCardEquipeCompetencias(title, desc) {
             <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">🛠 Hard Skills</th>
             <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">💬 Soft Skills</th>
             <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">📜 Conhecimentos Normativos</th>
+            <th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Ações</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
-    <div style="margin-top:8px;font-size:11px;color:#94a3b8;">ℹ️ Clique em uma competência para ativar/desativar para a equipe. As alterações são salvas automaticamente.</div>
+    <div style="margin-top:8px;font-size:11px;color:#94a3b8;">ℹ️ Edite os vínculos por equipe no painel de seleção. A tabela mostra apenas as competências atualmente associadas à equipe.</div>
+    <dialog id="cfg-equipe-competencias-modal" style="border:none;border-radius:18px;padding:0;max-width:960px;width:min(960px,calc(100vw - 32px));box-shadow:0 32px 80px rgba(15,23,42,.22);">
+      <div style="padding:22px 24px 18px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px;">
+          <div>
+            <div style="font-size:18px;font-weight:800;color:#1B3022;">Vincular competências por equipe</div>
+            <div id="cfg-equipe-competencias-modal-subtitle" style="font-size:13px;color:#64748b;margin-top:4px;">Selecione as competências exigidas para a equipe.</div>
+          </div>
+          <button onclick="closeCfgEquipeCompetenciasModal()" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:22px;line-height:1;">✕</button>
+        </div>
+        <input id="cfg-equipe-competencias-modal-equipe" type="hidden">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
+          ${_renderCfgEquipeCompetenciasGroup('hard', '🛠 Hard Skills', hardAll)}
+          ${_renderCfgEquipeCompetenciasGroup('soft', '💬 Soft Skills', softAll)}
+          ${_renderCfgEquipeCompetenciasGroup('normas', '📜 Conhecimentos Normativos', normasAll)}
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
+          <button onclick="closeCfgEquipeCompetenciasModal()" class="btn btn-outline">Cancelar</button>
+          <button onclick="saveCfgEquipeCompetenciasModal()" class="btn btn-primary">Salvar vínculos</button>
+        </div>
+      </div>
+    </dialog>
   </div>`;
 }
 
-function toggleEquipeSkill(equipe, skill, tipo) {
+function _getCfgEquipeCompetenciasRecord(equipe, sourceItems=getConfig('equipeCompetencias')) {
+  const items = Array.isArray(sourceItems) ? sourceItems : [];
+  const found = items.find(item => item?.equipe === equipe);
+  return {
+    equipe,
+    hard: Array.isArray(found?.hard) ? found.hard : [],
+    soft: Array.isArray(found?.soft) ? found.soft : [],
+    normas: Array.isArray(found?.normas) ? found.normas : [],
+  };
+}
+
+function _renderCfgCompetencySummary(values, bgColor, textColor) {
+  const items = Array.isArray(values) ? values : [];
+  if(!items.length) return '<span style="color:#94a3b8;font-size:11px;">Nenhuma competência vinculada.</span>';
+  return items.map(value =>
+    `<span style="display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;margin:2px 6px 2px 0;background:${bgColor};color:${textColor};font-size:11px;font-weight:600;">${escapeHtml(value)}</span>`
+  ).join('');
+}
+
+function _renderCfgEquipeCompetenciasGroup(tipo, title, values) {
+  const items = Array.isArray(values) ? values : [];
+  const empty = '<div style="font-size:12px;color:#94a3b8;">Nenhuma competência cadastrada nessa tabela.</div>';
+  const options = items.length
+    ? items.map(value => {
+        const safeValue = escapeHtml(value);
+        return `<label style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;">
+          <input type="checkbox" data-cfg-equipe-competencia="${tipo}" value="${safeValue}" style="margin-top:2px;">
+          <span style="font-size:13px;color:#1e293b;line-height:1.35;">${safeValue}</span>
+        </label>`;
+      }).join('')
+    : empty;
+  return `<div style="border:1px solid #e2e8f0;border-radius:14px;padding:14px;background:#fff;">
+    <div style="font-size:13px;font-weight:800;color:#1B3022;margin-bottom:10px;">${title}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow:auto;">${options}</div>
+  </div>`;
+}
+
+function openCfgEquipeCompetenciasModal(equipe) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
-  const items = [...getConfig('equipeCompetencias')];
-  let rec = items.find(e => e.equipe === equipe);
-  if(!rec) { rec = {equipe, hard:[], soft:[], normas:[]}; items.push(rec); }
-  const arr = rec[tipo] ? [...rec[tipo]] : [];
-  const idx = arr.indexOf(skill);
-  if(idx >= 0) arr.splice(idx, 1); else arr.push(skill);
-  rec[tipo] = arr;
-  setConfig('equipeCompetencias', items);
+  const modal = document.getElementById('cfg-equipe-competencias-modal');
+  const equipeField = document.getElementById('cfg-equipe-competencias-modal-equipe');
+  const subtitle = document.getElementById('cfg-equipe-competencias-modal-subtitle');
+  if(!modal || !equipeField || !subtitle) return;
+  const record = _getCfgEquipeCompetenciasRecord(equipe);
+  equipeField.value = equipe;
+  subtitle.textContent = `Selecione as competências exigidas para a equipe ${equipe}.`;
+  [['hard', record.hard], ['soft', record.soft], ['normas', record.normas]].forEach(([tipo, selected]) => {
+    document.querySelectorAll(`[data-cfg-equipe-competencia="${tipo}"]`).forEach(input => {
+      input.checked = selected.includes(input.value);
+    });
+  });
+  if(typeof modal.showModal === 'function') modal.showModal(); else modal.setAttribute('open', 'open');
+}
+
+function closeCfgEquipeCompetenciasModal() {
+  const modal = document.getElementById('cfg-equipe-competencias-modal');
+  if(!modal) return;
+  if(typeof modal.close === 'function') modal.close(); else modal.removeAttribute('open');
+}
+
+function saveCfgEquipeCompetenciasModal() {
+  if(!isEditor) { showToast('🔒 Apenas editores podem editar.','warn'); return; }
+  const equipe = document.getElementById('cfg-equipe-competencias-modal-equipe')?.value || '';
+  if(!equipe) return;
+  const currentItems = Array.isArray(getConfig('equipeCompetencias')) ? getConfig('equipeCompetencias') : [];
+  const items = [...currentItems];
+  const nextRecord = {
+    equipe,
+    hard: [...document.querySelectorAll('[data-cfg-equipe-competencia="hard"]:checked')].map(input => input.value),
+    soft: [...document.querySelectorAll('[data-cfg-equipe-competencia="soft"]:checked')].map(input => input.value),
+    normas: [...document.querySelectorAll('[data-cfg-equipe-competencia="normas"]:checked')].map(input => input.value),
+  };
+  const filtered = items.filter(item => item?.equipe !== equipe);
+  if(nextRecord.hard.length || nextRecord.soft.length || nextRecord.normas.length) filtered.push(nextRecord);
+  setConfig('equipeCompetencias', filtered);
+  closeCfgEquipeCompetenciasModal();
   renderConfigPanel();
   scheduleSave(4000);
+  showToast('✅ Competências da equipe atualizadas!','success');
 }
 
 // ── Catálogo de Não Conformidades (APT Catalog) ──────────────────────────────
@@ -10794,15 +10901,11 @@ function _renderOrganogramaNivel0(contadorNome) {
     </div>`;
 }
 
-function _renderOrganogramaNivel1(adjuntos, connDown) {
-  if(adjuntos.length === 0) return '';
-  const cols = adjuntos.map(adj =>
-    `<div style="background:#1e3a5f;color:white;border-radius:10px;padding:12px 22px;text-align:center;min-width:170px;box-shadow:0 2px 10px rgba(27,48,34,.65);">
-      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#93c5fd;margin-bottom:4px;">Adjunto</div>
-      <div style="font-size:14px;font-weight:600;">${adj}</div>
-    </div>`
-  ).join('');
-  return `${connDown}<div style="display:flex;justify-content:center;gap:14px;">${cols}</div>`;
+function _renderOrganogramaAdjuntoCard(adj) {
+  return `<div style="background:#1e3a5f;color:white;border-radius:10px;padding:12px 22px;text-align:center;min-width:170px;box-shadow:0 2px 10px rgba(27,48,34,.65);">
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#93c5fd;margin-bottom:4px;">Adjunto</div>
+    <div style="font-size:14px;font-weight:600;">${adj}</div>
+  </div>`;
 }
 
 function _renderOrganogramaTeams(area, teams) {
@@ -10819,7 +10922,7 @@ function _renderOrganogramaUnitCard(area, teams) {
   const teamBlock = teams.length
     ? `<div style="width:2px;height:14px;background:#cbd5e1;"></div><div style="display:flex;flex-direction:column;gap:5px;align-items:stretch;width:100%;">${teamsHtml}</div>`
     : '';
-  return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;min-width:130px;">
+  return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;min-width:0;width:100%;">
     <div id="org-unit-${area}" data-org-unit="${area}" onclick="orgClickUnit('${area}')"
       style="background:#e8a020;color:#1B3022;border-radius:10px;padding:11px 20px;text-align:center;width:100%;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(232,160,32,.3);box-sizing:border-box;cursor:pointer;transition:all .15s;user-select:none;"
       title="Clique para ver os processos desta unidade">${area}</div>
@@ -10827,9 +10930,26 @@ function _renderOrganogramaUnitCard(area, teams) {
   </div>`;
 }
 
-function _renderOrganogramaNivel2(areas, unitTeams, connDown) {
-  const unidadeCards = areas.map(area => _renderOrganogramaUnitCard(area, unitTeams[area] || [])).join('');
-  return `${connDown}<div style="display:flex;justify-content:center;gap:16px;flex-wrap:nowrap;align-items:flex-start;">${unidadeCards}</div>`;
+function _resolveOrganogramaAdjuntos(adjuntos) {
+  const defaults = [
+    'Adjunto de Controle, Auditoria e Integridade',
+    'Adjunto de Gestão e Tecnologia',
+    'Adjunto de Contabilidade',
+  ];
+  const source = Array.isArray(adjuntos) ? adjuntos : [];
+  return defaults.map(label => source.find(item => String(item).trim().toLowerCase() === label.toLowerCase()) || label);
+}
+
+function _renderOrganogramaNivel1(adjuntos, connDown) {
+  if(adjuntos.length === 0) return '';
+  const cols = adjuntos.map(adj => _renderOrganogramaAdjuntoCard(adj)).join('');
+  return `${connDown}<div style="display:flex;justify-content:center;gap:20px;align-items:flex-start;flex-wrap:nowrap;">${cols}</div>`;
+}
+
+function _renderOrganogramaNivel2(unitTeams, connDown) {
+  const orderedAreas = ['DAUD','DCO','DIR','GAB','DTTI','DIE','DCON'];
+  const unidadeCards = orderedAreas.map(area => _renderOrganogramaUnitCard(area, unitTeams[area] || [])).join('');
+  return `${connDown}<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:16px;align-items:flex-start;">${unidadeCards}</div>`;
 }
 
 function _renderOrganogramaHint(adjuntos, equipeUnidade) {
@@ -10847,18 +10967,18 @@ function renderOrganograma() {
   _orgSelectedTeam = null;
 
   const contadorNome  = getConfig('contadorGeral') || '— Não definido —';
-  const adjuntos      = getConfig('adjuntosCage');
-  const areas         = getConfig('areas');
+  const adjuntos      = _resolveOrganogramaAdjuntos(getConfig('adjuntosCage'));
   const equipeUnidade = getConfig('equipeUnidade');
+  const areas         = ['DAUD','DCO','DIR','GAB','DTTI','DIE','DCON'];
   const unitTeams = _getOrganogramaUnitTeams(areas, equipeUnidade);
   const connDown = `<div style="display:flex;justify-content:center;"><div style="width:2px;height:28px;background:#cbd5e1;"></div></div>`;
   const nivel0 = _renderOrganogramaNivel0(contadorNome);
   const nivel1 = _renderOrganogramaNivel1(adjuntos, connDown);
-  const nivel2 = _renderOrganogramaNivel2(areas, unitTeams, connDown);
+  const nivel2 = _renderOrganogramaNivel2(unitTeams, connDown);
   const hint = _renderOrganogramaHint(adjuntos, equipeUnidade);
 
   container.innerHTML = `
-    <div style="background:white;border-radius:14px;padding:36px 28px;box-shadow:0 4px 20px rgba(0,0,0,.08);border:1px solid #e2e8f0;overflow-x:auto;">
+    <div style="background:white;border-radius:14px;padding:36px 28px;box-shadow:0 4px 20px rgba(0,0,0,.08);border:1px solid #e2e8f0;overflow:hidden;">
       ${nivel0}
       ${nivel1}
       ${nivel2}
@@ -16769,9 +16889,9 @@ function arqRenderTable(filtered, all) {
           title="Clique para alternar">${toggleLabel}</button>
       </td>
       <td style="padding:10px 16px;text-align:center;" data-stop-propagation="true">
-        ${isEditor && !mapped ? `<button onclick="arqAbrirMapeamento(${realIdx})" style="background:#dcfce7;color:#166534;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Iniciar mapeamento deste processo">📝 Mapear</button>` : ''}
-        ${isEditor ? `<button onclick="arqShowForm(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Editar">✏️</button>` : ''}
-        ${isEditor ? `<button onclick="arqDelete(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Excluir">🗑</button>` : ''}
+        ${isEditor && !mapped ? `<button onclick="event.stopPropagation();arqAbrirMapeamento(${realIdx})" style="background:#dcfce7;color:#166534;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Iniciar mapeamento deste processo">📝 Mapear</button>` : ''}
+        ${isEditor ? `<button onclick="event.stopPropagation();arqShowForm(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Editar">✏️</button>` : ''}
+        ${isEditor ? `<button onclick="event.stopPropagation();arqDelete(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Excluir">🗑</button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -25046,15 +25166,9 @@ function arqCompRenderSection(idx) {
   const catHtml = COMP_CATS.map(cat => {
     const suggestions = getConfig(cat.configKey);
     const selected    = comp[cat.key] || [];
-
-    const tagsHtml = suggestions.map(sug => {
-      const on = selected.includes(sug);
-      const safeSug = btoa(encodeURIComponent(sug));
-      return `<button class="arq-comp-toggle" data-idx="${idx}" data-cat="${cat.key}" data-val="${safeSug}"
-        style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${on?'#6366f1':'#e2e8f0'};
-               background:${on?'#6366f1':'#f8fafc'};color:${on?'#fff':'#475569'};font-weight:${on?'700':'400'};
-               margin:3px;transition:all .15s;">${on?'✓ ':''} ${sug}</button>`;
-    }).join('');
+    const optionsHtml = suggestions.map(sug =>
+      `<option value="${String(sug).replaceAll('"','&quot;')}"></option>`
+    ).join('');
 
     const selectedHtml = selected.length
       ? selected.map((v, i) => `
@@ -25068,16 +25182,14 @@ function arqCompRenderSection(idx) {
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:12px;">
         <div style="font-size:13px;font-weight:800;color:#1B3022;margin-bottom:2px;">${cat.label}</div>
         <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;">${cat.desc}</div>
-        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Sugestões</div>
-        <div style="display:flex;flex-wrap:wrap;gap:2px;margin-bottom:12px;padding:8px;background:#f8fafc;border-radius:8px;">
-          ${tagsHtml || '<span style="color:#94a3b8;font-size:12px;">Nenhuma sugestão cadastrada nas configurações.</span>'}
-        </div>
         <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Selecionadas</div>
         <div style="margin-bottom:${em?'10px':'0'};">${selectedHtml}</div>
         ${em ? `
         <div style="display:flex;gap:8px;">
+          <datalist id="arq-comp-suggestions-${idx}-${cat.key}">${optionsHtml}</datalist>
           <input id="arq-comp-custom-${idx}-${cat.key}" class="modal-input" type="text"
-            placeholder="Adicionar competência não listada..."
+            list="arq-comp-suggestions-${idx}-${cat.key}"
+            placeholder="Adicionar competência..."
             style="flex:1;font-size:12px;"
             onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v){arqCompAddCustom(${idx},'${cat.key}');this.value='';}}">
           <button class="arq-comp-custom btn btn-primary" data-idx="${idx}" data-cat="${cat.key}" style="font-size:12px;padding:5px 12px;">＋</button>
@@ -25104,12 +25216,7 @@ function arqCompRenderSection(idx) {
       const btn = ev.target.closest('button');
       if(!btn) return;
 
-      if(btn.classList.contains('arq-comp-toggle')) {
-        const i = parseInt(btn.dataset.idx);
-        const c = btn.dataset.cat;
-        const v = decodeURIComponent(atob(btn.dataset.val));
-        arqCompToggle(i, c, v);
-      } else if(btn.classList.contains('arq-comp-remove')) {
+      if(btn.classList.contains('arq-comp-remove')) {
         const i = parseInt(btn.dataset.idx);
         const c = btn.dataset.cat;
         const ci = parseInt(btn.dataset.item);

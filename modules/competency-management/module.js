@@ -202,15 +202,11 @@
 
   function ensureStore() {
     const hasGlobalData = globalThis.DATA && typeof globalThis.DATA === 'object';
-    if (hasGlobalData) {
-      // already initialized
-    } else {
+    if (hasGlobalData !== true) {
       globalThis.DATA = {};
     }
     const hasModuleStore = DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object';
-    if (hasModuleStore) {
-      // already initialized
-    } else {
+    if (hasModuleStore !== true) {
       DATA[DATA_KEY] = { ...DEFAULT_STORE };
     }
     Object.keys(DEFAULT_STORE).forEach((key) => {
@@ -412,7 +408,9 @@
   }
 
   function getRoles() {
-    return uniqueSorted(people().map((item) => item.role).filter(Boolean));
+    const fromConfig = typeof getConfig === 'function' ? safeArray(getConfig('cargos')) : [];
+    const fromPeople = people().map((item) => item.role).filter(Boolean);
+    return uniqueSorted([...fromConfig, ...fromPeople]);
   }
 
   function getMacroprocesses() {
@@ -440,6 +438,15 @@
     const current = safeArray(getConfig(configKey));
     const exists = current.some((value) => String(value).toLowerCase() === name.toLowerCase());
     if (!exists) setConfig(configKey, [...current, name]);
+  }
+
+  function syncRoleCatalog(role) {
+    if (typeof getConfig !== 'function' || typeof setConfig !== 'function') return;
+    const value = safeText(role);
+    if (!value) return;
+    const current = safeArray(getConfig('cargos'));
+    const exists = current.some((item) => String(item).toLowerCase() === value.toLowerCase());
+    if (!exists) setConfig('cargos', [...current, value]);
   }
 
   function getPersonById(id) {
@@ -764,37 +771,125 @@
     container.appendChild(row);
   }
 
+  function distributionEntries(items, fallbackLabel) {
+    const grouped = new Map();
+    items.forEach((item) => {
+      const label = safeText(item) || fallbackLabel;
+      grouped.set(label, (grouped.get(label) || 0) + 1);
+    });
+    return [...grouped.entries()].sort((a, b) => b[1] - a[1]);
+  }
+
+  function donutSegments(entries) {
+    const palette = ['#183c36', '#0f766e', '#2563eb', '#7c3aed', '#d97706', '#dc2626', '#0891b2', '#65a30d'];
+    const total = entries.reduce((sum, [, value]) => sum + value, 0) || 1;
+    let cursor = 0;
+    return entries.map(([label, value], index) => {
+      const angle = (value / total) * 360;
+      const segment = { label, value, color: palette[index % palette.length], start: cursor, end: cursor + angle };
+      cursor += angle;
+      return segment;
+    });
+  }
+
+  function createDonutPanel(title, desc, entries) {
+    const panel = createNode('div', 'gc-panel');
+    panel.append(createPanelHead(title, desc));
+    if (!entries.length) {
+      panel.appendChild(createNode('div', 'gc-empty', 'Sem dados suficientes para gerar este gráfico.'));
+      return panel;
+    }
+    const segments = donutSegments(entries);
+    const donut = createNode('div', 'gc-donut');
+    donut.style.background = `conic-gradient(${segments.map((item) => `${item.color} ${item.start}deg ${item.end}deg`).join(', ')})`;
+    const center = createNode('div', 'gc-donut-center');
+    center.append(createNode('strong', '', String(entries.reduce((sum, [, value]) => sum + value, 0))));
+    center.append(createNode('span', '', 'pessoas'));
+    donut.appendChild(center);
+    const legend = createNode('div', 'gc-donut-legend');
+    segments.forEach((item) => {
+      const row = createNode('div', 'gc-donut-legend-item');
+      const swatch = createNode('span', 'gc-donut-swatch');
+      swatch.style.background = item.color;
+      row.append(swatch, createNode('span', '', item.label), createNode('strong', '', String(item.value)));
+      legend.appendChild(row);
+    });
+    const wrap = createNode('div', 'gc-donut-layout');
+    wrap.append(donut, legend);
+    panel.appendChild(wrap);
+    return panel;
+  }
+
+  function createBarPanel(title, desc, entries) {
+    const panel = createNode('div', 'gc-panel');
+    panel.append(createPanelHead(title, desc));
+    if (!entries.length) {
+      panel.appendChild(createNode('div', 'gc-empty', 'Cadastre competências nas pessoas para visualizar este gráfico.'));
+      return panel;
+    }
+    const bars = createNode('div', 'gc-stat-bars');
+    const maxValue = entries[0]?.[1] || 0;
+    entries.forEach(([label, value]) => fillBar(bars, label, value, maxValue));
+    panel.appendChild(bars);
+    return panel;
+  }
+
+  function ageBandLabel(age) {
+    if (age <= 29) return 'Até 29';
+    if (age <= 39) return '30-39';
+    if (age <= 49) return '40-49';
+    if (age <= 59) return '50-59';
+    return '60+';
+  }
+
+  function tenureBandLabel(years) {
+    if (years < 3) return '1-3 anos';
+    if (years < 5) return '3-5 anos';
+    if (years < 10) return '5-10 anos';
+    if (years < 15) return '10-15 anos';
+    return '15+ anos';
+  }
+
+  function competencyUsageEntries() {
+    const grouped = new Map();
+    people().forEach((person) => {
+      safeArray(person.competencies).forEach((item) => {
+        const label = safeText(item);
+        if (!label) return;
+        grouped.set(label, (grouped.get(label) || 0) + 1);
+      });
+    });
+    return [...grouped.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  }
+
   function renderOverview() {
     const view = byId('gc-view-overview');
     if (!view) return;
-    const totalPeople = people().length;
+    const allPeople = people();
+    const totalPeople = allPeople.length;
     const unitCount = getUnits().length;
     const roleCount = getRoles().length;
-    const avgAge = totalPeople ? Math.round(people().reduce((sum, item) => sum + parseNumber(item.age), 0) / totalPeople) : 0;
-    const retirement = people().filter((item) => parseNumber(item.age) >= 60).length;
-    const female = people().filter((item) => safeText(item.gender).toLowerCase() === 'feminino').length;
-    const male = people().filter((item) => safeText(item.gender).toLowerCase() === 'masculino').length;
-    const ageBands = [
-      ['Até 29', people().filter((item) => parseNumber(item.age) <= 29).length],
-      ['30-39', people().filter((item) => parseNumber(item.age) >= 30 && parseNumber(item.age) <= 39).length],
-      ['40-49', people().filter((item) => parseNumber(item.age) >= 40 && parseNumber(item.age) <= 49).length],
-      ['50-59', people().filter((item) => parseNumber(item.age) >= 50 && parseNumber(item.age) <= 59).length],
-      ['60+', people().filter((item) => parseNumber(item.age) >= 60).length],
-    ];
-    const tenureBands = [
-      ['1-3 anos', people().filter((item) => yearsSince(item.entryDate) >= 1 && yearsSince(item.entryDate) < 3).length],
-      ['3-5 anos', people().filter((item) => yearsSince(item.entryDate) >= 3 && yearsSince(item.entryDate) < 5).length],
-      ['5-10 anos', people().filter((item) => yearsSince(item.entryDate) >= 5 && yearsSince(item.entryDate) < 10).length],
-      ['10-15 anos', people().filter((item) => yearsSince(item.entryDate) >= 10 && yearsSince(item.entryDate) < 15).length],
-      ['15+ anos', people().filter((item) => yearsSince(item.entryDate) >= 15).length],
-    ];
+    const avgAge = totalPeople ? Math.round(allPeople.reduce((sum, item) => sum + parseNumber(item.age), 0) / totalPeople) : 0;
+    const retirement = allPeople.filter((item) => parseNumber(item.age) >= 60).length;
+    const roleEntries = distributionEntries(allPeople.map((item) => item.role), 'Não informado');
+    const genderEntries = distributionEntries(allPeople.map((item) => item.gender), 'Não informado');
+    const ageEntries = distributionEntries(allPeople.map((item) => {
+      const age = parseNumber(item.age);
+      return age > 0 ? ageBandLabel(age) : 'Não informado';
+    }), 'Não informado');
+    const tenureEntries = distributionEntries(allPeople.map((item) => {
+      const years = yearsSince(item.entryDate);
+      return years > 0 ? tenureBandLabel(years) : 'Não informado';
+    }), 'Não informado');
+    const unitEntries = distributionEntries(allPeople.map((item) => item.unit), 'Não informado');
+    const competencyEntries = competencyUsageEntries();
     view.replaceChildren();
     const grid = createNode('div', 'gc-grid');
     [
       ['Total de servidores', String(totalPeople), `${unitCount} unidade(s) mapeada(s)`],
-      ['Cargos mapeados', String(roleCount), `${competencies().length} competência(s)`],
+      ['Cargos mapeados', String(roleCount), `${competencies().length} competências`],
       ['Idade média', avgAge ? `${avgAge} anos` : '—', `${retirement} em idade de aposentadoria`],
-      ['Trilhas e treinamentos', String(trails().length), `${trainings().length} capacitação(ões)`],
+      ['Trilhas e treinamentos', String(trails().length), `${trainings().length} capacitações`],
     ].forEach(([title, value, sub]) => {
       const card = createNode('div', 'gc-card');
       card.append(createNode('div', 'gc-card-title', title));
@@ -802,38 +897,33 @@
       card.append(createNode('div', 'gc-card-sub', sub));
       grid.appendChild(card);
     });
-    const split = createNode('div', 'gc-split');
-    const demographic = createNode('div', 'gc-panel');
-    demographic.append(createPanelHead('Indicadores demográficos', 'Distribuição por gênero e idade.'));
-    const barsA = createNode('div', 'gc-stat-bars');
-    fillBar(barsA, 'Mulheres', female, totalPeople);
-    fillBar(barsA, 'Homens', male, totalPeople);
-    ageBands.forEach(([label, value]) => fillBar(barsA, label, value, totalPeople));
-    demographic.appendChild(barsA);
-    const tenure = createNode('div', 'gc-panel');
-    tenure.append(createPanelHead('Tempo na CAGE', 'Faixas de permanência institucional.'));
-    const barsB = createNode('div', 'gc-stat-bars');
-    tenureBands.forEach(([label, value]) => fillBar(barsB, label, value, totalPeople));
-    tenure.appendChild(barsB);
+    const chartGrid = createNode('div', 'gc-overview-charts');
+    chartGrid.append(
+      createDonutPanel('Divisão entre cargos', 'Distribuição do quadro por cargo cadastrado.', roleEntries),
+      createDonutPanel('Divisão entre sexos', 'Panorama do quadro por sexo informado.', genderEntries),
+      createDonutPanel('Faixas de idade', 'Distribuição etária do quadro atual.', ageEntries),
+      createDonutPanel('Faixas de tempo de CAGE', 'Tempo de permanência institucional.', tenureEntries),
+      createDonutPanel('Pessoas por unidade', 'Quantidade de pessoas por unidade.', unitEntries),
+    );
+    const bottom = createNode('div', 'gc-overview-bottom');
+    bottom.appendChild(createBarPanel('Competências mais utilizadas na CAGE', 'Top 10 competências mais recorrentes entre as pessoas cadastradas.', competencyEntries));
     const surveyPanel = createNode('div', 'gc-panel');
     surveyPanel.append(createPanelHead('Pesquisa de ambiente', 'Último recorte anual cadastrado no módulo.'));
     const latest = [...surveys()].sort((a, b) => String(b.year).localeCompare(String(a.year))).at(0);
     if (latest) {
       const list = createNode('div', 'gc-list');
-      [['Engajamento', latest.engagement], ['Lideran?a', latest.leadership], ['Clima', latest.climate]].forEach(([label, value]) => {
+      [['Engajamento', latest.engagement], ['Liderança', latest.leadership], ['Clima', latest.climate]].forEach(([label, value]) => {
         const item = createNode('div', 'gc-list-item');
         item.append(createNode('div', 'gc-list-title', `${label}: ${value || '?'}`));
         list.appendChild(item);
       });
       if (latest.notes) list.append(createNode('div', 'gc-list-text', latest.notes));
       surveyPanel.appendChild(list);
-      split.append(demographic, tenure);
-      view.append(grid, split, surveyPanel);
-      return;
+    } else {
+      surveyPanel.appendChild(createNode('div', 'gc-empty', 'Cadastre a pesquisa anual para completar o painel.'));
     }
-    surveyPanel.appendChild(createNode('div', 'gc-empty', 'Cadastre a pesquisa anual para completar o painel.'));
-    split.append(demographic, tenure);
-    view.append(grid, split, surveyPanel);
+    bottom.appendChild(surveyPanel);
+    view.append(grid, chartGrid, bottom);
   }
 
   function populatePeopleForm(record) {
@@ -894,6 +984,7 @@
     const list = people();
     const index = list.findIndex((item) => item.id === entry.id);
     if (index >= 0) list[index] = entry; else list.push(entry);
+    syncRoleCatalog(entry.role);
     persist(index >= 0 ? 'Pessoa atualizada.' : 'Pessoa cadastrada.');
     resetPeopleForm();
     renderAll();
@@ -1334,6 +1425,7 @@
     const list = competencies();
     const index = list.findIndex((item) => item.id === entry.id);
     if (index >= 0) list[index] = entry; else list.push(entry);
+    syncRoleCatalog(entry.role);
     syncCompetencyCatalog(entry);
     persist(index >= 0 ? 'Competência atualizada.' : 'Competência cadastrada.');
     resetCompetencyForm();
