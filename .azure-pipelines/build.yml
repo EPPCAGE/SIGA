@@ -31,6 +31,8 @@ variables:
     value: '/var/docker/SIGA'
   - name: PRD_DEPLOY_ROOT
     value: '/var/docker/SIGA'
+  - name: DEV_DEPLOY_BRANCHES
+    value: 'refs/heads/dev,refs/heads/fix/sync-local-to-azure'
   - name: DEPLOY_ARTIFACT_NAME
     value: 'siga-onprem-package'
 
@@ -152,7 +154,7 @@ stages:
   - stage: Deploy_DEV
     displayName: 'Deploy DEV'
     dependsOn: Package
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'), eq(variables['ENABLE_DEV_DEPLOY'], 'true'))
+    condition: and(succeeded(), contains(format(',{0},', variables['DEV_DEPLOY_BRANCHES']), format(',{0},', variables['Build.SourceBranch'])), eq(variables['ENABLE_DEV_DEPLOY'], 'true'))
     jobs:
       - job: DeployDevOnPrem
         displayName: 'Publicar em DEV on-prem'

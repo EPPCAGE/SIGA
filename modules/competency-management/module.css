@@ -199,10 +199,27 @@
   gap: 6px;
 }
 
+.gc-field-span-2 {
+  grid-column: span 2;
+}
+
 .gc-field label {
   font-size: 12px;
   font-weight: 700;
   color: #334155;
+}
+
+.gc-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+}
+
+.gc-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #0f766e;
 }
 
 .gc-field input,
@@ -220,6 +237,26 @@
 .gc-field textarea {
   min-height: 92px;
   resize: vertical;
+}
+
+.gc-repeat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gc-repeat-row {
+  display: grid;
+  gap: 10px;
+  align-items: center;
+}
+
+.gc-person-trail-row {
+  grid-template-columns: minmax(0, 1.35fr) minmax(180px, 0.9fr) auto;
+}
+
+.gc-person-course-row {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .gc-actions {
@@ -328,27 +365,29 @@
 
 .gc-overview-charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 18px;
 }
 
 .gc-overview-charts .gc-panel,
 .gc-overview-bottom .gc-panel {
   min-height: 100%;
+  overflow: hidden;
 }
 
 .gc-overview-bottom {
   display: grid;
-  grid-template-columns: minmax(360px, 1.15fr) minmax(280px, 0.85fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 18px;
   margin-top: 18px;
 }
 
 .gc-donut-layout {
   display: grid;
-  grid-template-columns: 144px minmax(0, 1fr);
+  grid-template-columns: 144px minmax(210px, 1fr);
   gap: 18px;
   align-items: center;
+  min-width: 0;
 }
 
 .gc-donut {
@@ -392,11 +431,13 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
+  width: 100%;
 }
 
 .gc-donut-legend-item {
   display: grid;
-  grid-template-columns: 12px minmax(92px, 1fr) auto;
+  grid-template-columns: 12px minmax(120px, 1fr) minmax(24px, auto);
   gap: 10px;
   align-items: center;
   font-size: 13px;
@@ -405,13 +446,14 @@
   border-radius: 12px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
+  min-width: 0;
 }
 
 .gc-donut-legend-item span:nth-child(2) {
   line-height: 1.3;
   white-space: normal;
-  word-break: normal;
-  overflow-wrap: break-word;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .gc-donut-legend-item strong {
@@ -419,6 +461,8 @@
   font-size: 12px;
   justify-self: end;
   white-space: nowrap;
+  min-width: 24px;
+  text-align: right;
 }
 
 .gc-donut-swatch {

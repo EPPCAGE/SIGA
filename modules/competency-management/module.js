@@ -2123,8 +2123,6 @@
     hookHomeRefresh();
     globalThis.showCompetencyModule = showModule;
     resetPeopleForm();
-    resetRemovalForm();
-    resetCompetencyForm();
     resetTrailForm();
     resetTrainingForm();
     resetSurveyForm();
