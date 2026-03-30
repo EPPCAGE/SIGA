@@ -47,9 +47,16 @@ function readAdminToken(req) {
   return String(req.headers['x-siga-admin-token'] || '').trim();
 }
 
+function isIPv4Loopback(address) {
+  const octets = String(address || '').split('.');
+  return octets.length === 4 && octets[0] === '127';
+}
+
 function isLoopbackRequest(req) {
   const remote = String(req.socket?.remoteAddress || '');
-  return remote === '127.0.0.1' || remote === '::1' || remote === '::ffff:127.0.0.1';
+  if (remote === '::1') return true;
+  if (isIPv4Loopback(remote)) return true;
+  return remote.startsWith('::ffff:') && isIPv4Loopback(remote.slice(7));
 }
 
 function isAuthorizedWriteRequest(req) {
