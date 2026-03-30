@@ -36,8 +36,7 @@ function truncateRepairJson(str) {
   let inString = false;
   let escaped = false;
 
-  for (let i = 0; i < s.length; i += 1) {
-    const c = s[i];
+  for (const c of s) {
     if (escaped) { escaped = false; continue; }
     if (c === '\\' && inString) { escaped = true; continue; }
     if (c === '"') { inString = !inString; continue; }

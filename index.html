@@ -980,6 +980,27 @@
   .home-card-desc { font-size: 11px; color: #1e293b; line-height: 1.6; flex: 1; margin-top: 8px; padding-left: 2px; padding-right: 10px; }
   .home-card-footer { font-size: 12px; color: #000000; font-weight: 600; margin-top: 16px; padding-left: 2px; padding-right: 10px; }
   .home-card-editor-badge { color: #1B3022; font-weight: 600; }
+  .hub-module{display:none;padding:40px 32px 60px;max-width:1200px;margin:0 auto;}
+  .hub-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:28px;}
+  .hub-kicker{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#00a86b;margin-bottom:6px;}
+  .hub-title{font-family:'DM Serif Display',serif;font-size:34px;color:#1B3022;line-height:1.15;margin:0;}
+  .hub-desc{font-size:15px;color:#64748b;margin-top:8px;font-weight:500;max-width:760px;line-height:1.6;}
+  .hub-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;}
+  .hub-subcard{display:flex;flex-direction:column;min-height:220px;padding:22px 20px 18px;background:linear-gradient(180deg,#ffffff 0%,#f6f8f7 100%);border:none;border-top:4px solid #1f5b57;border-radius:18px;box-shadow:0 14px 32px rgba(15,23,42,.08);cursor:pointer;text-align:left;transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;}
+  .hub-subcard:hover{transform:translateY(-3px);box-shadow:0 18px 34px rgba(27,48,34,.16);border-top-color:#0f766e;}
+  .hub-subcard-icon{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:18px;background:#047857;color:#fff;font-size:24px;box-shadow:0 10px 24px rgba(4,120,87,.22);}
+  .hub-subcard-title{font-size:22px;font-weight:800;color:#1B3022;margin-top:18px;line-height:1.25;}
+  .hub-subcard-desc{font-size:14px;color:#334155;line-height:1.65;margin-top:10px;flex:1;}
+  .hub-subcard-footer{font-size:12px;color:#0f172a;font-weight:700;margin-top:14px;}
+  .hub-empty{padding:30px 26px;border-radius:20px;background:linear-gradient(135deg,#f8fafc 0%,#eef3f1 100%);border:1px dashed rgba(15,118,110,.3);color:#475569;}
+  .ideas-fab{position:fixed;right:24px;bottom:24px;z-index:1450;width:58px;height:58px;border:none;border-radius:999px;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;box-shadow:0 18px 36px rgba(180,83,9,.3);transition:transform .2s ease, box-shadow .2s ease, filter .2s ease;}
+  .ideas-fab:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 22px 42px rgba(180,83,9,.36);filter:brightness(1.04);}
+  .ideas-fab:focus-visible{outline:3px solid rgba(251,191,36,.55);outline-offset:3px;}
+  .ideas-fab-tip{position:fixed;right:24px;bottom:94px;z-index:1450;max-width:320px;padding:14px 16px;border-radius:16px;background:#1f2937;color:#f8fafc;box-shadow:0 18px 40px rgba(15,23,42,.28);font-size:13px;line-height:1.6;opacity:0;visibility:hidden;transform:translateY(10px);transition:opacity .18s ease, transform .18s ease, visibility .18s ease;}
+  .ideas-fab-tip strong{display:block;font-size:14px;color:#fde68a;margin-bottom:4px;}
+  .ideas-fab:hover + .ideas-fab-tip,
+  .ideas-fab:focus-visible + .ideas-fab-tip{opacity:1;visibility:visible;transform:translateY(0);}
   #home-stats > div { background: white; border-radius: 8px; padding: 7px 10px; box-shadow: 0 2px 6px rgba(0,0,0,.06); flex: 1 1 0; min-width: 0; }
 
 
@@ -1534,13 +1555,13 @@
     <div class="sidebar-title">Gestão EPP</div>
     <div id="sidebar-nav-btns">
       <button data-mod="home"        data-sortkey="home"        class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:#047857;color:white;border:none;">🏠 Página Inicial</button>
+      <button data-mod="process-mgmt" data-sortkey="process-mgmt" class="sidebar-pat-btn" onclick="closeSidebar();showProcessManagementHub();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(15,91,87,.5);">🧭 Gestão de Processos</button>
+      <button data-mod="projects-mgmt" data-sortkey="projects-mgmt" class="sidebar-pat-btn" onclick="closeSidebar();showProjectManagementHub();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(37,99,235,.5);">📁 Gestão de Projetos</button>
       <button data-mod="repo"        data-sortkey="repo"        class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(225,29,72,.5);">📚 Documentos e Manuais</button>
       <button data-mod="drops"       data-sortkey="drops"       class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(14,165,233,.5);">💧 Drops de Conhecimento</button>
-      <button data-mod="audit"       data-sortkey="audit"       class="sidebar-pat-btn" onclick="closeSidebar();showAuditModule();" style="margin-bottom:8px;background:#047857;color:white;border-color:rgba(220,38,38,.5);">🛡️ Auditoria de Processos</button>
       <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(59,130,246,.5);">🏢 Gestão EPP</button>
       <button data-mod="quadro"      data-sortkey="quadro"      class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:#047857;color:white;border-color:rgba(16,185,129,.5);">🗒 Quadro de Esboço</button>
       <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:#047857;color:white;border-color:rgba(139,92,246,.5);">🏛 Arquitetura de Processos</button>
-      <button data-mod="simulator"   data-sortkey="simulator"   class="sidebar-pat-btn" onclick="closeSidebar();showSimulatorModule();" style="margin-top:4px;background:#047857;color:white;border-color:rgba(6,95,70,.5);">⏱️ Simulador de Processos</button>
       <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:#047857;color:white;border-color:rgba(232,160,32,.5);">📈 Indicadores CAGE</button>
       <button data-mod="cockpit"     data-sortkey="cockpit"     class="sidebar-pat-btn" onclick="closeSidebar();showCockpitModule();" style="margin-top:4px;background:#047857;color:white;border-color:rgba(14,165,233,.5);">🎯 Cockpit de Gestão</button>
     </div>
@@ -1627,11 +1648,11 @@
   <!-- ══ MÓDULOS ══ -->
   <div id="home-block-processos" style="display:block;margin-bottom:40px;">
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
-      <button class="home-card" data-sortkey="pops" onclick="showHomePops()" style="border-top:4px solid #00a86b;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">🗺️</div>
-        <div class="home-card-title" contenteditable="false">Mapeamentos</div>
-        <div class="home-card-desc" contenteditable="false">Visualize, edite e crie POPs. Acesse fluxos BPMN, FAQs, normas e fichas técnicas.</div>
-        <div class="home-card-footer" id="home-pops-count">—</div>
+      <button class="home-card" data-sortkey="process-mgmt" onclick="showProcessManagementHub()" style="border-top:4px solid #0f5b57;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
+        <div class="home-card-icon" style="background:#047857;color:white;">🧭</div>
+        <div class="home-card-title" contenteditable="false">Gestão de Processos</div>
+        <div class="home-card-desc" contenteditable="false">Hub com os submódulos de Mapeamentos, Auditoria de Processos, Simulador de Processos e Modelador BPMN.</div>
+        <div class="home-card-footer">4 submódulos integrados</div>
       </button>
       <button class="home-card" data-sortkey="arq" onclick="showArqModule()" style="border-top:4px solid #8b5cf6;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🏛</div>
@@ -1645,11 +1666,11 @@
         <div class="home-card-desc" contenteditable="false">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
         <div class="home-card-footer">Imagens configuráveis</div>
       </button>
-      <button class="home-card" data-sortkey="audit" onclick="showAuditModule()" style="border-top:4px solid #dc2626;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">&#128737;&#65039;</div>
-        <div class="home-card-title" contenteditable="false">Auditoria de Processos</div>
-        <div class="home-card-desc" contenteditable="false">Planeje auditorias, execute checklists inteligentes, registre não conformidades e acompanhe planos de ação.</div>
-        <div class="home-card-footer" id="home-audit-count">—</div>
+      <button class="home-card" data-sortkey="projects-mgmt" onclick="showProjectManagementHub()" style="border-top:4px solid #2563eb;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
+        <div class="home-card-icon" style="background:#047857;color:white;">📁</div>
+        <div class="home-card-title" contenteditable="false">Gestão de Projetos</div>
+        <div class="home-card-desc" contenteditable="false">Novo hub para centralizar futuros submódulos de projetos, portfólio, cronogramas e acompanhamento executivo.</div>
+        <div class="home-card-footer">Módulo-base preparado</div>
       </button>
       <button class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">📈</div>
@@ -1657,35 +1678,11 @@
         <div class="home-card-desc" contenteditable="false">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
         <div class="home-card-footer" id="home-indcage-count">—</div>
       </button>
-      <button class="home-card" data-sortkey="bpmn" onclick="showBpmnFromHome()" style="border-top:4px solid #6366f1;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">🏗️</div>
-        <div class="home-card-title" contenteditable="false">Modelador BPMN 2.0</div>
-        <div class="home-card-desc" contenteditable="false">Editor visual de processos no padrão BPMN 2.0 com paleta completa, swimlanes, gateways e exportação de diagramas.</div>
-        <div class="home-card-footer">bpmn-js · BPMN 2.0 ISO/IEC 19510</div>
-      </button>
-      <button class="home-card" data-sortkey="quadro" onclick="showQuadroModule()" style="border-top:4px solid #10b981;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">🗒</div>
-        <div class="home-card-title" contenteditable="false">Quadro de Esboço</div>
-        <div class="home-card-desc" contenteditable="false">Canvas livre com post-its, atores e setas para modelagem visual de processos.</div>
-        <div class="home-card-footer">Canvas interativo</div>
-      </button>
-      <button class="home-card" data-sortkey="simulator" onclick="showSimulatorModule()" style="border-top:4px solid #065f46;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">⏱️</div>
-        <div class="home-card-title" contenteditable="false">Simulador de Processos</div>
-        <div class="home-card-desc" contenteditable="false">Simule cenários, compare TEP e índice de Phillip, teste hipóteses e estime ganhos operacionais.</div>
-        <div class="home-card-footer">Motor estocástico e dashboard</div>
-      </button>
       <button class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🏢</div>
         <div class="home-card-title" contenteditable="false">Gestão EPP</div>
         <div class="home-card-desc" contenteditable="false">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
-      </button>
-      <button class="home-card" data-sortkey="search" onclick="openSearchModal()" style="border-top:4px solid #64748b;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">🔍</div>
-        <div class="home-card-title" contenteditable="false">Busca Global</div>
-        <div class="home-card-desc" contenteditable="false">Pesquise em todos os POPs — FAQs, normas, responsáveis e procedimentos.</div>
-        <div class="home-card-footer">Busca em tempo real</div>
       </button>
       <button class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">📚</div>
@@ -1699,12 +1696,6 @@
         <div class="home-card-desc" contenteditable="false">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
         <div class="home-card-footer" id="home-drops-count">—</div>
       </button>
-      <button class="home-card" data-sortkey="ideias" onclick="globalThis.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')" style="border-top:4px solid #ec4899;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#831843;color:white;">💡</div>
-        <div class="home-card-title" contenteditable="false">Caixinha de Ideias</div>
-        <div class="home-card-desc" contenteditable="false">Compartilhe suas ideias para melhoria de processos, inovações e sugestões para o Escritório de Processos.</div>
-        <div class="home-card-footer">Formulário Microsoft Forms</div>
-      </button>
     </div>
   </div>
 
@@ -1715,6 +1706,74 @@
     <a href="mailto:epp.cage@sefaz.rs.gov.br" style="color:#00a86b;font-weight:600;text-decoration:none;margin-left:4px;">epp.cage@sefaz.rs.gov.br</a>
   </div>
 </div>
+
+<button
+  class="ideas-fab"
+  type="button"
+  onclick="globalThis.open('https://forms.office.com/Pages/ResponsePage.aspx?id=Cwm9g251AkqlEuXqAsAwQbvi0Bx7w-FOk8Rk-2iAB21UMFlRV0szV09JTlBMSzEzNlVJS1Y4UjA5Qy4u&origin=Invitation&channel=1','_blank')"
+  aria-label="Enviar ideia ao Escritório de Projetos e Processos"
+  title="Enviar ideia ao Escritório de Projetos e Processos"
+>💡</button>
+<div class="ideas-fab-tip">
+  <strong>Caixinha de Ideias</strong>
+  Tem uma sugestão de melhoria, inovação ou oportunidade? Envie sua ideia ao Escritório de Projetos e Processos.
+</div>
+
+<section id="process-management-module" class="hub-module">
+  <div class="hub-hero">
+    <div>
+      <div class="hub-kicker">Hub estratégico</div>
+      <h1 class="hub-title">Gestão de Processos</h1>
+      <div class="hub-desc">Centralize aqui os submódulos operacionais ligados ao ciclo completo de processos: mapeamento, auditoria, simulação e modelagem BPMN.</div>
+    </div>
+    <div class="hub-actions">
+      <button class="btn btn-outline" onclick="showHome()">← Página Inicial</button>
+    </div>
+  </div>
+  <div class="hub-grid">
+    <button class="hub-subcard" type="button" onclick="showHomePops()">
+      <div class="hub-subcard-icon">🗺️</div>
+      <div class="hub-subcard-title">Mapeamentos</div>
+      <div class="hub-subcard-desc">Acesse a galeria de mapeamentos, abra processos existentes e continue a gestão operacional com FAQs, normas e fichas técnicas.</div>
+      <div class="hub-subcard-footer">Galeria principal de processos</div>
+    </button>
+    <button class="hub-subcard" type="button" onclick="showAuditModule()">
+      <div class="hub-subcard-icon">🛡️</div>
+      <div class="hub-subcard-title">Auditoria de Processos</div>
+      <div class="hub-subcard-desc">Planeje auditorias, execute checklists, registre não conformidades e acompanhe planos de ação dentro do mesmo domínio.</div>
+      <div class="hub-subcard-footer">Governança e conformidade</div>
+    </button>
+    <button class="hub-subcard" type="button" onclick="showSimulatorModule()">
+      <div class="hub-subcard-icon">⏱️</div>
+      <div class="hub-subcard-title">Simulador de Processos</div>
+      <div class="hub-subcard-desc">Teste cenários, compare indicadores operacionais e estime ganhos antes de levar mudanças para a execução real.</div>
+      <div class="hub-subcard-footer">Análises e hipóteses</div>
+    </button>
+    <button class="hub-subcard" type="button" onclick="showBpmnFromHome()">
+      <div class="hub-subcard-icon">🏗️</div>
+      <div class="hub-subcard-title">Modelador BPMN</div>
+      <div class="hub-subcard-desc">Desenhe fluxos em BPMN 2.0, exporte diagramas e trabalhe a modelagem visual como submódulo do mesmo hub.</div>
+      <div class="hub-subcard-footer">Editor visual especializado</div>
+    </button>
+  </div>
+</section>
+
+<section id="project-management-module" class="hub-module">
+  <div class="hub-hero">
+    <div>
+      <div class="hub-kicker">Hub em preparação</div>
+      <h1 class="hub-title">Gestão de Projetos</h1>
+      <div class="hub-desc">Este módulo será a base para futuros submódulos de projetos, portfólio, cronogramas, governança e acompanhamento executivo.</div>
+    </div>
+    <div class="hub-actions">
+      <button class="btn btn-outline" onclick="showHome()">← Página Inicial</button>
+    </div>
+  </div>
+  <div class="hub-empty">
+    <div style="font-size:20px;font-weight:800;color:#1B3022;margin-bottom:10px;">📁 Espaço preparado para expansão</div>
+    <div style="font-size:14px;line-height:1.7;">O hub já está disponível na navegação principal e servirá como contêiner para os próximos submódulos de gestão de projetos.</div>
+  </div>
+</section>
 
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -9453,14 +9512,14 @@ const _PARAMS_COLORS = [];
 
 const _MODULES_NAV = [
   { key:'home',     label:'🏠 Página Inicial',                     color:'#00a86b' },
+  { key:'process-mgmt', label:'🧭 Gestão de Processos',            color:'#0f5b57' },
+  { key:'projects-mgmt', label:'📁 Gestão de Projetos',            color:'#2563eb' },
   { key:'repo',     label:'📚 Documentos e Manuais',               color:'#e11d48' },
   { key:'drops',    label:'💧 Drops de Conhecimento',              color:'#0ea5e9' },
-  { key:'audit',    label:'🛡️ Auditoria de Processos',             color:'#dc2626' },
   { key:'epp',      label:'🏢 Gestão EPP',     color:'#3b82f6' },
   { key:'bi',       label:'📊 Cadeia de Valor e Mapa Estratégico', color:'#eab308' },
   { key:'quadro',   label:'🗒 Quadro de Esboço',                   color:'#10b981' },
   { key:'arq',      label:'🏛 Arquitetura de Processos',           color:'#8b5cf6' },
-  { key:'simulator',  label:'⏱️ Simulador de Processos',             color:'#065f46' },
   { key:'ind-cage',    label:'📈 Indicadores CAGE',                   color:'#e8a020' },
   { key:'organograma', label:'🏛 Organograma CAGE',                   color:'#6366f1' },
   { key:'cockpit',     label:'🎯 Cockpit de Gestão',                  color:'#0ea5e9' },
@@ -11631,7 +11690,7 @@ let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
 let workspaceId = localStorage.getItem('gestpop_wsid') || sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
-  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','simulator-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel','cockpit-module'].forEach(id => {
+  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','simulator-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel','cockpit-module','process-management-module','project-management-module'].forEach(id => {
     const el = document.getElementById(id);
     if(el) { el.style.display = 'none'; el.classList.remove('active'); }
   });
@@ -17386,6 +17445,26 @@ function showHomeBlock(block) {
   // Blocos unificados — mantida por compatibilidade
   const bp = document.getElementById('home-block-processos');
   if(bp) bp.style.display = 'block';
+}
+
+function showProcessManagementHub() {
+  hideAllModules();
+  if(editMode) toggleEditMode();
+  hideHome();
+  _navStack = [];
+  _updateBackBtn();
+  const hub = document.getElementById('process-management-module');
+  if(hub) hub.style.display = 'block';
+}
+
+function showProjectManagementHub() {
+  hideAllModules();
+  if(editMode) toggleEditMode();
+  hideHome();
+  _navStack = [];
+  _updateBackBtn();
+  const hub = document.getElementById('project-management-module');
+  if(hub) hub.style.display = 'block';
 }
 
 function hideHome() {

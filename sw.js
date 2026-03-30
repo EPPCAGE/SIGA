@@ -4,12 +4,12 @@
 const CACHE_VERSION = 'siga-v4';
 
 // ── Install: ativa imediatamente sem esperar abas antigas fecharem ────────────
-self.addEventListener('install', () => {
-  self.skipWaiting();
+globalThis.addEventListener('install', () => {
+  globalThis.skipWaiting();
 });
 
 // ── Activate: remove caches antigos e assume controle de todas as abas ───────
-self.addEventListener('activate', event => {
+globalThis.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
@@ -17,13 +17,13 @@ self.addEventListener('activate', event => {
           return caches.delete(k);
         })
       ))
-      .then(() => self.clients.claim())
+      .then(() => globalThis.clients.claim())
   );
 });
 
 // ── Fetch: network-first para HTML (sempre pega versão mais nova) ─────────────
 // Para outros assets (imagens, fontes CDN) deixa o browser gerenciar.
-self.addEventListener('fetch', event => {
+globalThis.addEventListener('fetch', event => {
   if (event.request.mode !== 'navigate') return; // só intercepta navegação HTML
 
   event.respondWith(
