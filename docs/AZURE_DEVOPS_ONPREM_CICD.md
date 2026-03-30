@@ -3,36 +3,49 @@
 ## O que ja esta pronto
 
 - Pipeline raiz `azure-pipelines.yml`
-- Empacotamento de artefato on-prem via `scripts/build-onprem-package.ps1`
-- Deploy para servidor com Docker Compose via `scripts/deploy-onprem-docker.ps1`
-- Geracao de `public-config.js` em deploy via `scripts/write-public-config.ps1`
+- Empacotamento de artefato on-prem Linux via `scripts/build-onprem-package.sh`
+- Deploy para servidor Linux on-prem via agente do Azure DevOps em `scripts/deploy-onprem-podman.sh`
+- Geracao de `public-config.js` no deploy via `scripts/write-public-config.sh`
 
-## Como o fluxo funciona
+## Como o fluxo funciona agora
 
 1. O Azure DevOps executa o stage `CI`
 2. Se tudo passar, o stage `Package` publica um artefato de deploy
-3. O stage `Deploy_HML` ou `Deploy_PRD` baixa o artefato no servidor registrado no `Environment`
+3. O stage `Deploy_HML` ou `Deploy_PRD` roda no agente Linux on-prem
 4. O script de deploy:
    - copia os arquivos para a pasta alvo
+   - preserva `data/`
    - gera `public-config.js`
    - gera `.env`
-   - executa `docker compose up -d --build`
+   - executa `podman compose up -d --build` ou `podman-compose up -d --build`
 
 ## Premissas do deploy
 
-- O servidor on-prem deve ter Docker Engine e Docker Compose v2
-- O servidor deve estar registrado no Azure DevOps como `Virtual machine resource` de um `Environment`
-- O servidor precisa ter saida HTTPS/443 para `dev.azure.com`
+- Servidor Linux on-prem
+- Agente do Azure DevOps instalado no proprio servidor de deploy
+- Podman instalado no servidor
+- `podman compose` ou `podman-compose` disponivel
+- Saida HTTPS/443 para `dev.azure.com`
+
+## Dados confirmados com a Infra
+
+- Servidor: `SWDEVPRO01`
+- IP: `172.26.237.6`
+- Deploy feito pelo agente local do Azure DevOps
+- Sem uso de `Environment`
+- Caminho base de deploy: `/var/docker`
+- Aplicacao SIGA em `/var/docker/SIGA`
+- Volume persistente do backend: `/var/docker/SIGA/data`
+- Runtime de containers: `podman`
 
 ## Variaveis esperadas no pipeline
 
 ### Gerais
 
 - `BUILD_AGENT_POOL`
+- `DEPLOY_AGENT_POOL`
 - `ENABLE_HML_DEPLOY`
 - `ENABLE_PRD_DEPLOY`
-- `HML_ENVIRONMENT_NAME`
-- `PRD_ENVIRONMENT_NAME`
 
 ### Deploy HML
 
@@ -55,33 +68,26 @@
 - `PRD_DEPLOY_ROOT`
 - As mesmas variaveis de runtime acima
 
-## Dados que ainda precisam vir da Infra
+## O que ainda falta confirmar com a Infra
 
-1. Nome do `Environment` do Azure DevOps para HML e/ou PRD
-2. Caminho da pasta de deploy no servidor
-3. Confirmacao de que o servidor usa Docker Compose
-4. Conta que vai registrar o agente/VM resource
-5. Confirmacao de saida HTTPS para `dev.azure.com`
-6. Se o frontend vai usar autenticacao `local` ou `entra`
-7. Se houver Entra:
+1. Nome do pool do agente Linux que executa o deploy
+2. Se HML e PRD vao usar o mesmo servidor/pool ou pools diferentes
+3. Se a autenticacao do frontend sera `local` ou `entra`
+4. Se for `entra`:
    - `clientId`
    - `tenantId`
    - emails de administradores
    - emails de editores
 
-## Como conectar o servidor on-prem ao Azure DevOps
-
-1. No Azure DevOps, abra `Pipelines > Environments`
-2. Crie o environment desejado, por exemplo `gesproc-prd`
-3. Dentro do environment, escolha `Add resource > Virtual machines`
-4. Copie o script PowerShell gerado pelo Azure DevOps
-5. Execute o script no proprio servidor on-prem com permissao administrativa
-6. Valide que o servidor aparece como `Healthy` no environment
-
 ## Como fazer o primeiro deploy
 
-1. Ajuste as variaveis do pipeline
-2. Ative `ENABLE_HML_DEPLOY=true` ou `ENABLE_PRD_DEPLOY=true`
-3. Rode o pipeline
-4. Verifique os logs do stage de deploy
-5. Valide `docker compose ps` no servidor
+1. Ajuste `BUILD_AGENT_POOL` e `DEPLOY_AGENT_POOL`
+2. Ajuste `HML_DEPLOY_ROOT` e/ou `PRD_DEPLOY_ROOT`
+3. Preencha as variaveis de runtime
+4. Ative `ENABLE_HML_DEPLOY=true` ou `ENABLE_PRD_DEPLOY=true`
+5. Rode o pipeline
+6. Verifique os logs do stage de deploy
+7. Valide no servidor:
+   - `cd /var/docker/SIGA`
+   - `podman ps`
+   - `podman compose ps` ou `podman-compose ps`

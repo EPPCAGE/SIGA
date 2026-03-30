@@ -15,14 +15,16 @@ variables:
     value: '20.x'
   - name: BUILD_AGENT_POOL
     value: 'sefaz-self-hosted'
+  - name: DEPLOY_AGENT_POOL
+    value: 'sefaz-self-hosted'
   - name: ENABLE_HML_DEPLOY
     value: 'false'
   - name: ENABLE_PRD_DEPLOY
     value: 'false'
-  - name: HML_ENVIRONMENT_NAME
-    value: 'gesproc-hml'
-  - name: PRD_ENVIRONMENT_NAME
-    value: 'gesproc-prd'
+  - name: HML_DEPLOY_ROOT
+    value: '/var/docker/SIGA'
+  - name: PRD_DEPLOY_ROOT
+    value: '/var/docker/SIGA'
   - name: DEPLOY_ARTIFACT_NAME
     value: 'siga-onprem-package'
 
@@ -118,17 +120,16 @@ stages:
           - checkout: self
             clean: true
 
-          - task: PowerShell@2
+          - bash: |
+              set -euo pipefail
+              chmod +x scripts/build-onprem-package.sh
+              scripts/build-onprem-package.sh "$(Build.ArtifactStagingDirectory)/package"
             displayName: 'Gerar pacote de deploy'
-            inputs:
-              filePath: 'scripts/build-onprem-package.ps1'
-              arguments: >
-                -OutputPath "$(Build.ArtifactStagingDirectory)\package"
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publicar artefato on-prem'
             inputs:
-              targetPath: '$(Build.ArtifactStagingDirectory)\package'
+              targetPath: '$(Build.ArtifactStagingDirectory)/package'
               artifact: '$(DEPLOY_ARTIFACT_NAME)'
               publishLocation: 'pipeline'
 
@@ -137,69 +138,65 @@ stages:
     dependsOn: Package
     condition: and(succeeded(), eq(variables['ENABLE_HML_DEPLOY'], 'true'))
     jobs:
-      - deployment: DeployHmlOnPrem
+      - job: DeployHmlOnPrem
         displayName: 'Publicar em HML on-prem'
-        environment: $(HML_ENVIRONMENT_NAME)
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - download: current
-                  artifact: $(DEPLOY_ARTIFACT_NAME)
+        pool:
+          name: $(DEPLOY_AGENT_POOL)
+        steps:
+          - download: current
+            artifact: $(DEPLOY_ARTIFACT_NAME)
 
-                - task: PowerShell@2
-                  displayName: 'Executar deploy HML'
-                  inputs:
-                    filePath: 'scripts/deploy-onprem-docker.ps1'
-                    arguments: >
-                      -PackageRoot "$(Pipeline.Workspace)\$(DEPLOY_ARTIFACT_NAME)"
-                      -DeployRoot "$(HML_DEPLOY_ROOT)"
-                      -AiProvider "$(SIGA_AI_PROVIDER)"
-                      -AzureEndpoint "$(SIGA_AZURE_ENDPOINT)"
-                      -AzureDeployment "$(SIGA_AZURE_DEPLOYMENT)"
-                      -AzureApiVersion "$(SIGA_AZURE_API_VERSION)"
-                      -AzureApiKey "$(SIGA_AZURE_API_KEY)"
-                      -AuthMode "$(SIGA_AUTH_MODE)"
-                      -EntraClientId "$(SIGA_ENTRA_CLIENT_ID)"
-                      -EntraTenantId "$(SIGA_ENTRA_TENANT_ID)"
-                      -AdminEmails "$(SIGA_ADMIN_EMAILS)"
-                      -EditorEmails "$(SIGA_EDITOR_EMAILS)"
-                      -AdminToken "$(SIGA_ADMIN_TOKEN)"
-                      -AllowedOrigins "$(SIGA_ALLOWED_ORIGIN)"
-                    pwsh: false
+          - bash: |
+              set -euo pipefail
+              chmod +x scripts/write-public-config.sh
+              chmod +x scripts/deploy-onprem-podman.sh
+              scripts/deploy-onprem-podman.sh \
+                "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
+                "$(HML_DEPLOY_ROOT)" \
+                "$(SIGA_AI_PROVIDER)" \
+                "$(SIGA_AZURE_ENDPOINT)" \
+                "$(SIGA_AZURE_DEPLOYMENT)" \
+                "$(SIGA_AZURE_API_VERSION)" \
+                "$(SIGA_AZURE_API_KEY)" \
+                "$(SIGA_AUTH_MODE)" \
+                "$(SIGA_ENTRA_CLIENT_ID)" \
+                "$(SIGA_ENTRA_TENANT_ID)" \
+                "$(SIGA_ADMIN_EMAILS)" \
+                "$(SIGA_EDITOR_EMAILS)" \
+                "$(SIGA_ADMIN_TOKEN)" \
+                "$(SIGA_ALLOWED_ORIGIN)"
+            displayName: 'Executar deploy HML'
 
   - stage: Deploy_PRD
     displayName: 'Deploy PRD'
     dependsOn: Package
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['ENABLE_PRD_DEPLOY'], 'true'))
     jobs:
-      - deployment: DeployPrdOnPrem
+      - job: DeployPrdOnPrem
         displayName: 'Publicar em PRD on-prem'
-        environment: $(PRD_ENVIRONMENT_NAME)
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - download: current
-                  artifact: $(DEPLOY_ARTIFACT_NAME)
+        pool:
+          name: $(DEPLOY_AGENT_POOL)
+        steps:
+          - download: current
+            artifact: $(DEPLOY_ARTIFACT_NAME)
 
-                - task: PowerShell@2
-                  displayName: 'Executar deploy PRD'
-                  inputs:
-                    filePath: 'scripts/deploy-onprem-docker.ps1'
-                    arguments: >
-                      -PackageRoot "$(Pipeline.Workspace)\$(DEPLOY_ARTIFACT_NAME)"
-                      -DeployRoot "$(PRD_DEPLOY_ROOT)"
-                      -AiProvider "$(SIGA_AI_PROVIDER)"
-                      -AzureEndpoint "$(SIGA_AZURE_ENDPOINT)"
-                      -AzureDeployment "$(SIGA_AZURE_DEPLOYMENT)"
-                      -AzureApiVersion "$(SIGA_AZURE_API_VERSION)"
-                      -AzureApiKey "$(SIGA_AZURE_API_KEY)"
-                      -AuthMode "$(SIGA_AUTH_MODE)"
-                      -EntraClientId "$(SIGA_ENTRA_CLIENT_ID)"
-                      -EntraTenantId "$(SIGA_ENTRA_TENANT_ID)"
-                      -AdminEmails "$(SIGA_ADMIN_EMAILS)"
-                      -EditorEmails "$(SIGA_EDITOR_EMAILS)"
-                      -AdminToken "$(SIGA_ADMIN_TOKEN)"
-                      -AllowedOrigins "$(SIGA_ALLOWED_ORIGIN)"
-                    pwsh: false
+          - bash: |
+              set -euo pipefail
+              chmod +x scripts/write-public-config.sh
+              chmod +x scripts/deploy-onprem-podman.sh
+              scripts/deploy-onprem-podman.sh \
+                "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
+                "$(PRD_DEPLOY_ROOT)" \
+                "$(SIGA_AI_PROVIDER)" \
+                "$(SIGA_AZURE_ENDPOINT)" \
+                "$(SIGA_AZURE_DEPLOYMENT)" \
+                "$(SIGA_AZURE_API_VERSION)" \
+                "$(SIGA_AZURE_API_KEY)" \
+                "$(SIGA_AUTH_MODE)" \
+                "$(SIGA_ENTRA_CLIENT_ID)" \
+                "$(SIGA_ENTRA_TENANT_ID)" \
+                "$(SIGA_ADMIN_EMAILS)" \
+                "$(SIGA_EDITOR_EMAILS)" \
+                "$(SIGA_ADMIN_TOKEN)" \
+                "$(SIGA_ALLOWED_ORIGIN)"
+            displayName: 'Executar deploy PRD'

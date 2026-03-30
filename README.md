@@ -44,14 +44,14 @@ Pipeline canonico:
 
 Fluxo atual:
 1. `CI`: `npm ci`, validacao de encoding, testes, cobertura, SonarCloud e GHAS
-2. `Package`: gera um artefato de deploy on-prem com Docker Compose
+2. `Package`: gera um artefato de deploy on-prem para Linux
 3. `Deploy_HML`: opcional, ativado por variavel
 4. `Deploy_PRD`: opcional, ativado por variavel e branch `main`
 
 Scripts de apoio:
-- `scripts/build-onprem-package.ps1`
-- `scripts/deploy-onprem-docker.ps1`
-- `scripts/write-public-config.ps1`
+- `scripts/build-onprem-package.sh`
+- `scripts/deploy-onprem-podman.sh`
+- `scripts/write-public-config.sh`
 
 Documentacao de configuracao:
 - `docs/DEVOPS_SETUP.md`
@@ -61,6 +61,6 @@ Documentacao de configuracao:
 
 Para aderencia total ao guia da SEFAZ, ainda e necessario configurar no Azure DevOps:
 1. Branch policy em `main` (PR obrigatorio + revisor + build validation + work item)
-2. Configurar `Environment` do Azure DevOps com o servidor on-prem
-3. Preencher as variaveis de deploy HML/PRD
+2. Preencher as variaveis de deploy HML/PRD
+3. Confirmar o pool do agente Linux on-prem no Azure DevOps
 4. Validar com a Infra o caminho de deploy e a conta do agente
