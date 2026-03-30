@@ -1,57 +1,202 @@
+name: siga-$(Date:yyyyMMdd)$(Rev:.r)
+
 trigger:
   branches:
     include:
       - main
 
-pool:
-  vmImage: ubuntu-latest
+pr:
+  branches:
+    include:
+      - main
 
 variables:
-  - group: siga-secrets   # grupo criado em Pipelines > Library com SIGA_AZURE_API_KEY
+  - name: NODE_VERSION
+    value: '20.x'
+  - name: BUILD_AGENT_POOL
+    value: 'sefaz-self-hosted'
+  - name: DEPLOY_AGENT_POOL
+    value: 'sefaz-self-hosted'
+  - name: ENABLE_HML_DEPLOY
+    value: 'false'
+  - name: ENABLE_PRD_DEPLOY
+    value: 'false'
+  - name: HML_DEPLOY_ROOT
+    value: '/var/docker/SIGA'
+  - name: PRD_DEPLOY_ROOT
+    value: '/var/docker/SIGA'
+  - name: DEPLOY_ARTIFACT_NAME
+    value: 'siga-onprem-package'
 
 stages:
-  - stage: Build
-    displayName: Build Docker Images
+  - stage: CI
+    displayName: 'CI - Build, Test, Quality e Security'
     jobs:
-      - job: BuildAndPush
-        displayName: Build & Push
+      - job: Validate
+        displayName: 'Validar aplicacao'
+        pool:
+          name: $(BUILD_AGENT_POOL)
         steps:
-          - task: Docker@2
-            displayName: Build backend
-            inputs:
-              command: build
-              dockerfile: docker/backend/Dockerfile
-              repository: siga-backend
-              tags: $(Build.BuildId)
+          - checkout: self
+            clean: true
+            fetchDepth: 0
 
-          - task: Docker@2
-            displayName: Build frontend
+          - task: NodeTool@0
+            displayName: 'Instalar Node.js $(NODE_VERSION)'
             inputs:
-              command: build
-              dockerfile: docker/frontend/Dockerfile
-              repository: siga-frontend
-              tags: $(Build.BuildId)
+              versionSpec: '$(NODE_VERSION)'
 
-  - stage: Deploy
-    displayName: Deploy
-    dependsOn: Build
+          - task: AdvancedSecurity-Codeql-Init@1
+            displayName: 'GHAS - Init'
+            inputs:
+              languages: 'javascript'
+              enableAutomaticCodeQLInstall: true
+
+          - task: SonarCloudPrepare@3
+            displayName: 'SonarCloud - Preparar'
+            inputs:
+              SonarCloud: 'sonarcloud-gesproc'
+              organization: 'sefaz-rs'
+              scannerMode: 'CLI'
+              configMode: 'file'
+              configFile: 'sonar-project.properties'
+              extraProperties: |
+                sonar.links.ci=$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)
+
+          - script: npm ci
+            displayName: 'npm ci'
+
+          - script: npm run check:encoding
+            displayName: 'Validar encoding'
+
+          - script: npm run test:coverage
+            displayName: 'Testes + cobertura'
+
+          - task: PublishTestResults@2
+            displayName: 'Publicar resultados de teste'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/junit.xml'
+              testRunTitle: 'SIGA - Testes'
+              failTaskOnFailedTests: true
+
+          - task: PublishCodeCoverageResults@2
+            displayName: 'Publicar cobertura'
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
+              failIfCoverageEmpty: false
+
+          - task: AdvancedSecurity-Dependency-Scanning@1
+            displayName: 'GHAS - Dependency scanning'
+
+          - task: AdvancedSecurity-Codeql-Analyze@1
+            displayName: 'GHAS - Analyze'
+
+          - task: AdvancedSecurity-Publish@1
+            displayName: 'GHAS - Publish'
+
+          - task: SonarCloudAnalyze@3
+            displayName: 'SonarCloud - Analyze'
+
+          - task: SonarCloudPublish@3
+            displayName: 'SonarCloud - Publish'
+            inputs:
+              pollingTimeoutSec: '300'
+
+  - stage: Package
+    displayName: 'Package - Artefato on-prem'
+    dependsOn: CI
+    condition: succeeded()
     jobs:
-      - deployment: DeployCompose
-        displayName: Docker Compose Up
-        environment: producao
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - script: |
-                    cat > .env <<EOF
-                    SIGA_AI_PROVIDER=azure
-                    SIGA_AZURE_ENDPOINT=https://projeto-gesproc-cage.cognitiveservices.azure.com
-                    SIGA_AZURE_DEPLOYMENT=gpt-5.1-chat
-                    SIGA_AZURE_API_VERSION=2024-12-01-preview
-                    SIGA_AZURE_API_KEY=$(SIGA_AZURE_API_KEY)
-                    EOF
-                    docker compose up -d --build
-                  displayName: Deploy com docker compose
-                  env:
-                    SIGA_AZURE_API_KEY: $(SIGA_AZURE_API_KEY)
+      - job: BuildPackage
+        displayName: 'Montar pacote de deploy'
+        pool:
+          name: $(BUILD_AGENT_POOL)
+        steps:
+          - checkout: self
+            clean: true
+
+          - bash: |
+              set -euo pipefail
+              chmod +x scripts/build-onprem-package.sh
+              scripts/build-onprem-package.sh "$(Build.ArtifactStagingDirectory)/package"
+            displayName: 'Gerar pacote de deploy'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publicar artefato on-prem'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/package'
+              artifact: '$(DEPLOY_ARTIFACT_NAME)'
+              publishLocation: 'pipeline'
+
+  - stage: Deploy_HML
+    displayName: 'Deploy HML'
+    dependsOn: Package
+    condition: and(succeeded(), eq(variables['ENABLE_HML_DEPLOY'], 'true'))
+    jobs:
+      - job: DeployHmlOnPrem
+        displayName: 'Publicar em HML on-prem'
+        pool:
+          name: $(DEPLOY_AGENT_POOL)
+        steps:
+          - download: current
+            artifact: $(DEPLOY_ARTIFACT_NAME)
+
+          - bash: |
+              set -euo pipefail
+              chmod +x scripts/write-public-config.sh
+              chmod +x scripts/deploy-onprem-podman.sh
+              scripts/deploy-onprem-podman.sh \
+                "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
+                "$(HML_DEPLOY_ROOT)" \
+                "$(SIGA_AI_PROVIDER)" \
+                "$(SIGA_AZURE_ENDPOINT)" \
+                "$(SIGA_AZURE_DEPLOYMENT)" \
+                "$(SIGA_AZURE_API_VERSION)" \
+                "$(SIGA_AZURE_API_KEY)" \
+                "$(SIGA_AUTH_MODE)" \
+                "$(SIGA_ENTRA_CLIENT_ID)" \
+                "$(SIGA_ENTRA_TENANT_ID)" \
+                "$(SIGA_ADMIN_EMAILS)" \
+                "$(SIGA_EDITOR_EMAILS)" \
+                "$(SIGA_ADMIN_TOKEN)" \
+                "$(SIGA_ALLOWED_ORIGIN)"
+            displayName: 'Executar deploy HML'
+
+  - stage: Deploy_PRD
+    displayName: 'Deploy PRD'
+    dependsOn: Package
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['ENABLE_PRD_DEPLOY'], 'true'))
+    jobs:
+      - job: DeployPrdOnPrem
+        displayName: 'Publicar em PRD on-prem'
+        pool:
+          name: $(DEPLOY_AGENT_POOL)
+        steps:
+          - download: current
+            artifact: $(DEPLOY_ARTIFACT_NAME)
+
+          - bash: |
+              set -euo pipefail
+              chmod +x scripts/write-public-config.sh
+              chmod +x scripts/deploy-onprem-podman.sh
+              scripts/deploy-onprem-podman.sh \
+                "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
+                "$(PRD_DEPLOY_ROOT)" \
+                "$(SIGA_AI_PROVIDER)" \
+                "$(SIGA_AZURE_ENDPOINT)" \
+                "$(SIGA_AZURE_DEPLOYMENT)" \
+                "$(SIGA_AZURE_API_VERSION)" \
+                "$(SIGA_AZURE_API_KEY)" \
+                "$(SIGA_AUTH_MODE)" \
+                "$(SIGA_ENTRA_CLIENT_ID)" \
+                "$(SIGA_ENTRA_TENANT_ID)" \
+                "$(SIGA_ADMIN_EMAILS)" \
+                "$(SIGA_EDITOR_EMAILS)" \
+                "$(SIGA_ADMIN_TOKEN)" \
+                "$(SIGA_ALLOWED_ORIGIN)"
+            displayName: 'Executar deploy PRD'

@@ -10,15 +10,9 @@
     { key: 'people', label: 'Quadro de Pessoal' },
     { key: 'performance', label: 'Performance' },
     { key: 'removals', label: 'Banco de Remoções' },
-    { key: 'competencies', label: 'Competências' },
     { key: 'trails', label: 'Trilhas e Treinamentos' },
     { key: 'surveys', label: 'Pesquisa de Ambiente' },
     { key: 'talent', label: 'Banco de Talentos' },
-  ];
-  const COMPETENCY_TYPES = [
-    { value: 'hard', label: 'Hard Skills' },
-    { value: 'soft', label: 'Soft Skills' },
-    { value: 'normative', label: 'Conhecimentos Normativos' },
   ];
   const FIXED_TRAIL_LEVELS = [
     'Iniciante',
@@ -27,6 +21,16 @@
     'Avançado',
     'Especialista',
   ];
+  const GRADUATION_COURSES = [
+    'Administração',
+    'Contabilidade',
+    'Economia',
+    'Engenharia',
+    'Tecnologia da Informação',
+    'Direito',
+    'Outro',
+  ];
+  const POSTGRADUATE_TYPES = ['Pós-graduação lato sensu', 'Mestrado', 'Doutorado'];
   const DEFAULT_STORE = {
     people: [],
     gapAnalyses: [],
@@ -162,7 +166,7 @@
   function safeUrl(url) {
     const target = safeText(url);
     if (!target) return '';
-    if (typeof URL.canParse === 'function' && !URL.canParse(target, location.href)) return '';
+    if (URL.canParse?.(target, location.href) === false) return '';
     const parsed = new URL(target, location.href);
     return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
   }
@@ -188,6 +192,51 @@
     return { probation, probationEnd };
   }
 
+  function calculateAge(birthDate) {
+    const date = safeText(birthDate);
+    if (!date) return 0;
+    const birth = new Date(`${date}T00:00:00`);
+    if (Number.isNaN(birth.getTime())) return 0;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDelta = today.getMonth() - birth.getMonth();
+    if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < birth.getDate())) age -= 1;
+    return Math.max(0, age);
+  }
+
+  function normalizeCompletedTrails(value) {
+    return safeArray(value).map((item) => {
+      if (item && typeof item === 'object') {
+        return {
+          trailId: safeText(item.trailId),
+          trailName: safeText(item.trailName),
+          level: safeText(item.level),
+        };
+      }
+      const trailName = safeText(item);
+      return { trailId: '', trailName, level: '' };
+    }).filter((item) => item.trailId || item.trailName);
+  }
+
+  function normalizeTaughtCourses(value) {
+    if (Array.isArray(value)) return value.map((item) => safeText(item)).filter(Boolean);
+    return safeText(value)
+      .split(/\r?\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function trailLevelLabel(value) {
+    const labels = {
+      '1': '1 - Iniciante',
+      '2': '2 - B?sico',
+      '3': '3 - Intermedi?rio',
+      '4': '4 - Avan?ado',
+      '5': '5 - Especialista',
+    };
+    return labels[safeText(value)] || '';
+  }
+
   function personKey(person) {
     return `${safeText(person.name).toLowerCase()}|${safeText(person.role).toLowerCase()}`;
   }
@@ -195,18 +244,20 @@
   function normalizeRecord(record, template) {
     const normalized = { ...template };
     Object.keys(template).forEach((key) => {
-      normalized[key] = record?.[key] !== undefined ? record[key] : template[key];
+      normalized[key] = record?.[key] ?? template[key];
     });
     return normalized;
   }
 
   function ensureStore() {
-    const hasGlobalData = globalThis.DATA && typeof globalThis.DATA === 'object';
-    if (hasGlobalData !== true) {
+    if (globalThis.DATA && typeof globalThis.DATA === 'object') {
+      // Global store already exists.
+    } else {
       globalThis.DATA = {};
     }
-    const hasModuleStore = DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object';
-    if (hasModuleStore !== true) {
+    if (DATA[DATA_KEY] && typeof DATA[DATA_KEY] === 'object') {
+      // Module store already exists.
+    } else {
       DATA[DATA_KEY] = { ...DEFAULT_STORE };
     }
     Object.keys(DEFAULT_STORE).forEach((key) => {
@@ -259,24 +310,36 @@
     return {
       id: '',
       name: '',
+      birthDate: '',
       age: '',
       gender: '',
+      ceded: 'Não',
+      hasFg: 'Não',
       entryDate: '',
+      graduationCourse: '',
+      graduationOther: '',
+      postgraduateType: '',
+      postgraduateCourse: '',
       basicEducation: '',
       extraEducation: '',
+      division: '',
       unit: '',
       team: '',
       role: '',
       competencies: [],
+      completedTrainingsText: '',
       preferences: '',
       experiences: '',
       completedTrails: [],
-      probation: 'Não',
+      probation: 'N?o',
       probationEnd: '',
-      removalInterest: 'Não',
+      removalInterest: 'N?o',
       desiredUnit: '',
-      taughtCourses: '',
+      taughtCourses: [],
       notes: '',
+      managerNotes: '',
+      managerNotesDate: '',
+      managerNotesAuthor: '',
     };
   }
 
@@ -319,6 +382,54 @@
 
   function removalTemplate() {
     return { id: '', personId: '', fromUnit: '', desiredUnit: '', notes: '' };
+  }
+
+  function activeRemovalRequests() {
+    return people()
+      .filter((person) => safeText(person.removalInterest).toLowerCase() === 'sim' && safeText(person.desiredUnit))
+      .map((person) => ({
+        id: person.id ? `person_${person.id}` : makeId('gc_removal_person'),
+        personId: person.id,
+        fromUnit: safeText(person.division || person.unit),
+        desiredUnit: safeText(person.desiredUnit),
+        notes: safeText(person.preferences || person.notes),
+      }))
+      .filter((item) => item.personId && item.fromUnit && item.desiredUnit);
+  }
+
+  function removalInsight(item, pool) {
+    const entries = Array.isArray(pool) ? pool : activeRemovalRequests();
+    const direct = entries.find((candidate) =>
+      candidate.personId !== item.personId &&
+      safeText(candidate.fromUnit).toLowerCase() === safeText(item.desiredUnit).toLowerCase() &&
+      safeText(candidate.desiredUnit).toLowerCase() === safeText(item.fromUnit).toLowerCase(),
+    );
+    if (direct) {
+      const person = getPersonById(direct.personId);
+      return { type: 'match', label: 'Cruzamento direto', detail: person ? person.name : direct.desiredUnit };
+    }
+
+    for (const middle of entries) {
+      if (middle.personId === item.personId) continue;
+      if (safeText(middle.fromUnit).toLowerCase() !== safeText(item.desiredUnit).toLowerCase()) continue;
+      const third = entries.find((candidate) =>
+        candidate.personId !== item.personId &&
+        candidate.personId !== middle.personId &&
+        safeText(candidate.fromUnit).toLowerCase() === safeText(middle.desiredUnit).toLowerCase() &&
+        safeText(candidate.desiredUnit).toLowerCase() === safeText(item.fromUnit).toLowerCase(),
+      );
+      if (third) {
+        const middlePerson = getPersonById(middle.personId);
+        const thirdPerson = getPersonById(third.personId);
+        return {
+          type: 'soft',
+          label: 'Triangulação possível',
+          detail: [middlePerson?.name, thirdPerson?.name].filter(Boolean).join(' → '),
+        };
+      }
+    }
+
+    return { type: '', label: '', detail: '' };
   }
 
   function competencyTemplate() {
@@ -372,8 +483,12 @@
   function normalizeData() {
     getStore().people = people().map((item) => normalizeRecord(item, personTemplate())).map((item) => ({
       ...item,
+      division: safeText(item.division || item.unit),
+      unit: safeText(item.unit || item.division),
+      age: String(parseNumber(item.age) || calculateAge(item.birthDate) || ''),
       competencies: safeArray(item.competencies),
-      completedTrails: safeArray(item.completedTrails),
+      completedTrails: normalizeCompletedTrails(item.completedTrails),
+      taughtCourses: normalizeTaughtCourses(item.taughtCourses),
     }));
     getStore().gapAnalyses = gapAnalyses().map((item) => normalizeRecord(item, gapTemplate()));
     getStore().feedbackMeetings = feedbackMeetings().map((item) => normalizeRecord(item, feedbackTemplate()));
@@ -407,6 +522,22 @@
     return uniqueSorted([...safeArray(fromConfig), ...mapped, ...people().map((item) => item.team)]);
   }
 
+  function getTeamsByUnit(unit) {
+    const target = safeText(unit).toLowerCase();
+    if (!target) return getTeams();
+    const fromMap = typeof getConfig === 'function' ? getConfig('equipeUnidade') : [];
+    const mapped = safeArray(fromMap)
+      .filter((item) => {
+        const unidade = safeText(item?.unidade || item?.area || item?.sigla).toLowerCase();
+        return unidade === target;
+      })
+      .flatMap((item) => [item?.equipe, item?.team]);
+    const fromPeople = people()
+      .filter((item) => safeText(item.division || item.unit).toLowerCase() === target)
+      .map((item) => item.team);
+    return uniqueSorted([...mapped, ...fromPeople]);
+  }
+
   function getRoles() {
     const fromConfig = typeof getConfig === 'function' ? safeArray(getConfig('cargos')) : [];
     const fromPeople = people().map((item) => item.role).filter(Boolean);
@@ -417,27 +548,11 @@
     return typeof getConfig === 'function' ? safeArray(getConfig('macroprocessos')) : [];
   }
 
-  function getProcesses() {
-    if (typeof arqGetData !== 'function') return [];
-    return uniqueSorted(arqGetData().map((item) => item.processo).filter(Boolean));
-  }
-
   function getCompetencySuggestions() {
     const hard = typeof getConfig === 'function' ? safeArray(getConfig('hardSkills')) : [];
     const soft = typeof getConfig === 'function' ? safeArray(getConfig('softSkills')) : [];
     const normative = typeof getConfig === 'function' ? safeArray(getConfig('conhecimentosNormativos')) : [];
     return uniqueSorted([...hard, ...soft, ...normative, ...competencies().map((item) => item.name)]);
-  }
-
-  function syncCompetencyCatalog(item) {
-    if (typeof getConfig !== 'function' || typeof setConfig !== 'function') return;
-    const map = { hard: 'hardSkills', soft: 'softSkills', normative: 'conhecimentosNormativos' };
-    const configKey = map[item.type];
-    const name = safeText(item.name);
-    if (!configKey || !name) return;
-    const current = safeArray(getConfig(configKey));
-    const exists = current.some((value) => String(value).toLowerCase() === name.toLowerCase());
-    if (!exists) setConfig(configKey, [...current, name]);
   }
 
   function syncRoleCatalog(role) {
@@ -457,16 +572,6 @@
     return trails().find((item) => item.id === id) || null;
   }
 
-  function getTypeLabel(type) {
-    const found = COMPETENCY_TYPES.find((item) => item.value === type);
-    return found ? found.label : 'Competência';
-  }
-
-  function getTypeBadgeClass(type) {
-    if (type === 'soft') return 'soft';
-    if (type === 'normative') return 'normative';
-    return 'hard';
-  }
 
   function tokenize(text) {
     return safeText(text)
@@ -478,21 +583,23 @@
   }
 
   function personSearchCorpus(person) {
-    const trailsText = safeArray(person.completedTrails).join(' ');
-    const removal = removals().find((item) => item.personId === person.id);
+    const trailsText = normalizeCompletedTrails(person.completedTrails)
+      .map((item) => [item.trailName, trailLevelLabel(item.level)].filter(Boolean).join(' '))
+      .join(' ');
     return [
       person.name,
       person.role,
-      person.unit,
+      person.division || person.unit,
       person.team,
-      person.basicEducation,
-      person.extraEducation,
+      person.graduationCourse || person.basicEducation,
+      person.postgraduateType || person.extraEducation,
+      person.postgraduateCourse,
       person.preferences,
       person.experiences,
       safeArray(person.competencies).join(' '),
       trailsText,
       person.desiredUnit,
-      removal?.desiredUnit,
+      normalizeTaughtCourses(person.taughtCourses).join(' '),
     ].join(' ');
   }
 
@@ -605,8 +712,8 @@
       if (architectureTokens.has(token)) score += 2;
     });
 
-    if (queryTokens.includes('remocao') || queryTokens.includes('remoção')) {
-      if (removals().some((item) => item.personId === person.id)) {
+    if (queryTokens.includes('remocao') || queryTokens.includes('remocaoo')) {
+      if (safeText(person.removalInterest).toLowerCase() === 'sim' && safeText(person.desiredUnit)) {
         score += 10;
         reasons.push('possui pedido de remoção cadastrado');
       }
@@ -688,6 +795,30 @@
     return explanations && typeof explanations === 'object' ? explanations : {};
   }
 
+  function orderTalentCandidates(ranked, aiCandidateIds) {
+    if (!aiCandidateIds.length) return ranked;
+    return aiCandidateIds
+      .map((id) => ranked.find((item) => item.person.id === id))
+      .filter(Boolean)
+      .concat(ranked.filter((item) => !aiCandidateIds.includes(item.person.id)));
+  }
+
+  function buildTalentSearchState(queryText, roleText, architectureMatches, architectureCompetencies, ai, ranked) {
+    const aiCandidateIds = safeArray(ai?.candidate_ids);
+    const ordered = orderTalentCandidates(ranked, aiCandidateIds);
+
+    return {
+      interpretedNeed: safeText(ai?.interpreted_need) || queryText,
+      recommendedRole: safeText(ai?.recommended_role) || roleText,
+      recommendedUnit: safeText(ai?.recommended_unit),
+      recommendedTeam: safeText(ai?.recommended_team),
+      architectureMatches,
+      architectureCompetencies,
+      explanations: normalizeAiExplanations(ai),
+      candidates: ordered.slice(0, 3),
+    };
+  }
+
   async function runTalentSearchAi() {
     const queryText = safeText(readFormValue('gc-talent-query'));
     const roleText = '';
@@ -703,30 +834,11 @@
       const architectureMatches = relatedArchitectureEntries(queryText, roleText, prereqList);
       const architectureCompetencies = architectureLinkedCompetencies(architectureMatches, roleText, prereqList);
       const ai = await tryInterpretTalentQueryWithAi(queryText, roleText, prereqList, architectureMatches, architectureCompetencies);
-
-      const aiCandidateIds = safeArray(ai?.candidate_ids);
       const ranked = people()
         .map((person) => buildTalentCandidate(person, roleText || safeText(ai?.recommended_role), prereqList, architectureCompetencies, architectureMatches))
         .filter((item) => item.score > 0)
         .sort((a, b) => b.score - a.score);
-
-      const ordered = aiCandidateIds.length
-        ? aiCandidateIds
-          .map((id) => ranked.find((item) => item.person.id === id))
-          .filter(Boolean)
-          .concat(ranked.filter((item) => !aiCandidateIds.includes(item.person.id)))
-        : ranked;
-
-      state.talentSearch = {
-        interpretedNeed: safeText(ai?.interpreted_need) || queryText,
-        recommendedRole: safeText(ai?.recommended_role) || roleText,
-        recommendedUnit: safeText(ai?.recommended_unit),
-        recommendedTeam: safeText(ai?.recommended_team),
-        architectureMatches,
-        architectureCompetencies,
-        explanations: normalizeAiExplanations(ai),
-        candidates: ordered.slice(0, 12),
-      };
+      state.talentSearch = buildTalentSearchState(queryText, roleText, architectureMatches, architectureCompetencies, ai, ranked);
     } catch (error) {
       showInfo(`Erro ao executar busca inteligente: ${error.message}`, 'warn');
     } finally {
@@ -800,8 +912,9 @@
       return panel;
     }
     const segments = donutSegments(entries);
+    const gradientStops = segments.map((item) => item.color + ' ' + item.start + 'deg ' + item.end + 'deg').join(', ');
     const donut = createNode('div', 'gc-donut');
-    donut.style.background = `conic-gradient(${segments.map((item) => `${item.color} ${item.start}deg ${item.end}deg`).join(', ')})`;
+    donut.style.background = 'conic-gradient(' + gradientStops + ')';
     const center = createNode('div', 'gc-donut-center');
     center.append(createNode('strong', '', String(entries.reduce((sum, [, value]) => sum + value, 0))));
     center.append(createNode('span', '', 'pessoas'));
@@ -834,6 +947,32 @@
     return panel;
   }
 
+  function createPercentageBarPanel(title, desc, entries) {
+    const panel = createNode('div', 'gc-panel');
+    panel.append(createPanelHead(title, desc));
+    if (!entries.length) {
+      panel.appendChild(createNode('div', 'gc-empty', 'Sem dados suficientes para gerar este painel.'));
+      return panel;
+    }
+    const bars = createNode('div', 'gc-stat-bars');
+    const maxValue = Math.max(...entries.map(([, value]) => value), 0);
+    entries.forEach(([label, value]) => {
+      const row = createNode('div', 'gc-bar-row');
+      const top = createNode('div');
+      top.style.display = 'flex';
+      top.style.justifyContent = 'space-between';
+      top.append(createNode('span', '', label), createNode('span', '', `${value}%`));
+      const track = createNode('div', 'gc-bar-track');
+      const fill = createNode('div', 'gc-bar-fill');
+      fill.style.width = `${maxValue > 0 ? Math.round((value / maxValue) * 100) : 0}%`;
+      track.appendChild(fill);
+      row.append(top, track);
+      bars.appendChild(row);
+    });
+    panel.appendChild(bars);
+    return panel;
+  }
+
   function ageBandLabel(age) {
     if (age <= 29) return 'Até 29';
     if (age <= 39) return '30-39';
@@ -862,6 +1001,31 @@
     return [...grouped.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
   }
 
+  function educationBand(person) {
+    const course = safeText(person.graduationCourse);
+    const postgraduate = safeText(person.postgraduateType).toLowerCase();
+    if (!course) return 'Ensino médio';
+    if (postgraduate.includes('doutorado')) return 'Doutorado';
+    if (postgraduate.includes('mestrado')) return 'Mestrado';
+    if (postgraduate.includes('lato')) return 'Pós lato sensu';
+    return 'Graduação apenas';
+  }
+
+  function educationEntries() {
+    const order = ['Ensino médio', 'Graduação apenas', 'Pós lato sensu', 'Mestrado', 'Doutorado'];
+    const grouped = new Map(order.map((label) => [label, 0]));
+    people().forEach((person) => {
+      const label = educationBand(person);
+      grouped.set(label, (grouped.get(label) || 0) + 1);
+    });
+    return order.map((label) => [label, grouped.get(label) || 0]);
+  }
+
+  function educationPercentageEntries() {
+    const total = people().length || 1;
+    return educationEntries().map(([label, count]) => [label, Math.round((count / total) * 100)]);
+  }
+
   function renderOverview() {
     const view = byId('gc-view-overview');
     if (!view) return;
@@ -870,7 +1034,14 @@
     const unitCount = getUnits().length;
     const roleCount = getRoles().length;
     const avgAge = totalPeople ? Math.round(allPeople.reduce((sum, item) => sum + parseNumber(item.age), 0) / totalPeople) : 0;
-    const retirement = allPeople.filter((item) => parseNumber(item.age) >= 60).length;
+    const cededCount = allPeople.filter((item) => safeText(item.ceded).toLowerCase() === 'sim').length;
+    const cededPct = totalPeople ? Math.round((cededCount / totalPeople) * 100) : 0;
+    const retirement = allPeople.filter((item) => {
+      const age = parseNumber(item.age);
+      const gender = safeText(item.gender).toLowerCase();
+      const threshold = gender.includes('femin') ? 62 : 65;
+      return age >= threshold;
+    }).length;
     const roleEntries = distributionEntries(allPeople.map((item) => item.role), 'Não informado');
     const genderEntries = distributionEntries(allPeople.map((item) => item.gender), 'Não informado');
     const ageEntries = distributionEntries(allPeople.map((item) => {
@@ -881,15 +1052,17 @@
       const years = yearsSince(item.entryDate);
       return years > 0 ? tenureBandLabel(years) : 'Não informado';
     }), 'Não informado');
-    const unitEntries = distributionEntries(allPeople.map((item) => item.unit), 'Não informado');
+    const unitEntries = distributionEntries(allPeople.map((item) => item.division || item.unit), 'Não informado');
     const competencyEntries = competencyUsageEntries();
+    const educationPctEntries = educationPercentageEntries();
     view.replaceChildren();
     const grid = createNode('div', 'gc-grid');
     [
-      ['Total de servidores', String(totalPeople), `${unitCount} unidade(s) mapeada(s)`],
+      ['Total de servidores', String(totalPeople), `${unitCount} divisão(ões) mapeada(s)`],
       ['Cargos mapeados', String(roleCount), `${competencies().length} competências`],
       ['Idade média', avgAge ? `${avgAge} anos` : '—', `${retirement} em idade de aposentadoria`],
       ['Trilhas e treinamentos', String(trails().length), `${trainings().length} capacitações`],
+      ['Servidores cedidos', `${cededPct}%`, `${cededCount} servidor(es) cedidos`],
     ].forEach(([title, value, sub]) => {
       const card = createNode('div', 'gc-card');
       card.append(createNode('div', 'gc-card-title', title));
@@ -900,13 +1073,14 @@
     const chartGrid = createNode('div', 'gc-overview-charts');
     chartGrid.append(
       createDonutPanel('Divisão entre cargos', 'Distribuição do quadro por cargo cadastrado.', roleEntries),
-      createDonutPanel('Divisão entre sexos', 'Panorama do quadro por sexo informado.', genderEntries),
+      createDonutPanel('Distribuição por gêneros', 'Panorama do quadro por gênero informado.', genderEntries),
       createDonutPanel('Faixas de idade', 'Distribuição etária do quadro atual.', ageEntries),
       createDonutPanel('Faixas de tempo de CAGE', 'Tempo de permanência institucional.', tenureEntries),
-      createDonutPanel('Pessoas por unidade', 'Quantidade de pessoas por unidade.', unitEntries),
+      createDonutPanel('Pessoas por divisão', 'Quantidade de pessoas por divisão.', unitEntries),
     );
     const bottom = createNode('div', 'gc-overview-bottom');
     bottom.appendChild(createBarPanel('Competências mais utilizadas na CAGE', 'Top 10 competências mais recorrentes entre as pessoas cadastradas.', competencyEntries));
+    bottom.appendChild(createPercentageBarPanel('Escolaridade do quadro', 'Percentual de servidores por nível de formação.', educationPctEntries));
     const surveyPanel = createNode('div', 'gc-panel');
     surveyPanel.append(createPanelHead('Pesquisa de ambiente', 'Último recorte anual cadastrado no módulo.'));
     const latest = [...surveys()].sort((a, b) => String(b.year).localeCompare(String(a.year))).at(0);
@@ -925,29 +1099,149 @@
     bottom.appendChild(surveyPanel);
     view.append(grid, chartGrid, bottom);
   }
+  function createTrailLevelOptions(selected) {
+    return ['<option value="">Selecione o n?vel</option>']
+      .concat(FIXED_TRAIL_LEVELS.map((label, index) => {
+        const value = String(index + 1);
+        const isSelected = value === safeText(selected) ? ' selected' : '';
+        return '<option value="' + value + '"' + isSelected + '>' + value + ' - ' + label + '</option>';
+      }))
+      .join('');
+  }
+
+  function createPersonTrailRow(item) {
+    const trail = item && typeof item === 'object' ? item : { trailId: '', trailName: '', level: '' };
+    const trailOptions = ['<option value="">Selecione a trilha</option>']
+      .concat(trails().map((entry) => {
+        const selected = entry.id === safeText(trail.trailId) ? ' selected' : '';
+        return '<option value="' + entry.id + '"' + selected + '>' + entry.name + '</option>';
+      }))
+      .join('');
+    return [
+      '<div class="gc-repeat-row gc-person-trail-row">',
+      '<select class="gc-person-trail-select">',
+      trailOptions,
+      '</select>',
+      '<select class="gc-person-trail-level">',
+      createTrailLevelOptions(trail.level),
+      '</select>',
+      '<button type="button" class="btn btn-outline gc-remove-row">Remover</button>',
+      '</div>',
+    ].join('');
+  }
+
+  function setPersonTrailRows(items) {
+    const host = byId('gc-person-trails-rows');
+    if (!host) return;
+    const rows = normalizeCompletedTrails(items);
+    host.innerHTML = rows.length ? rows.map((item) => createPersonTrailRow(item)).join('') : createPersonTrailRow({ trailId: '', level: '' });
+  }
+
+  function readPersonTrailRows() {
+    const host = byId('gc-person-trails-rows');
+    if (!host) return [];
+    return [...host.querySelectorAll('.gc-person-trail-row')].map((row) => {
+      const trailId = safeText(row.querySelector('.gc-person-trail-select')?.value);
+      const level = safeText(row.querySelector('.gc-person-trail-level')?.value);
+      const trail = getTrailById(trailId);
+      return { trailId, trailName: trail ? trail.name : '', level };
+    }).filter((item) => item.trailId);
+  }
+
+  function createPersonCourseRow(value) {
+    const safeValue = safeText(value).replaceAll('"', '&quot;');
+    return [
+      '<div class="gc-repeat-row gc-person-course-row">',
+      '<input class="gc-person-course-input" type="text" maxlength="220" value="' + safeValue + '" placeholder="Nome do curso ministrado">',
+      '<button type="button" class="btn btn-outline gc-remove-row">Remover</button>',
+      '</div>',
+    ].join('');
+  }
+
+  function setPersonCourseRows(items) {
+    const host = byId('gc-person-courses-rows');
+    if (!host) return;
+    const rows = normalizeTaughtCourses(items);
+    host.innerHTML = rows.length ? rows.map((item) => createPersonCourseRow(item)).join('') : createPersonCourseRow('');
+  }
+
+  function readPersonCourseRows() {
+    const host = byId('gc-person-courses-rows');
+    if (!host) return [];
+    return [...host.querySelectorAll('.gc-person-course-input')].map((input) => safeText(input.value)).filter(Boolean);
+  }
+
+  function updatePersonEducationVisibility() {
+    const course = safeText(readFormValue('gc-person-graduation-course'));
+    const otherField = byId('gc-person-graduation-other-wrap');
+    if (otherField) otherField.style.display = course === 'Outro' ? 'flex' : 'none';
+    const postgraduateType = safeText(readFormValue('gc-person-postgraduate-type'));
+    const postgraduateCourseField = byId('gc-person-postgraduate-course')?.closest('.gc-field');
+    if (postgraduateCourseField) postgraduateCourseField.style.display = postgraduateType ? 'flex' : 'none';
+  }
+
+  function updateManagerNotesState() {
+    const notesField = byId('gc-person-notes');
+    if (!notesField) return;
+    const hasDate = Boolean(safeText(readFormValue('gc-person-notes-date')));
+    const hasAuthor = Boolean(safeText(readFormValue('gc-person-notes-author')));
+    notesField.disabled = !(hasDate && hasAuthor);
+  }
+
+  function updateCededFieldsState() {
+    const isCeded = byId('gc-person-ceded')?.checked === true;
+    const lockedIds = [
+      'gc-person-has-fg',
+      'gc-person-division',
+      'gc-person-team',
+      'gc-person-removal-interest',
+      'gc-person-desired-unit',
+    ];
+    lockedIds.forEach((id) => {
+      const field = byId(id);
+      if (field) field.disabled = isCeded;
+    });
+    if (!isCeded) return;
+    setFormValue('gc-person-has-fg', 'Não');
+    setFormValue('gc-person-division', '');
+    setFormValue('gc-person-team', '');
+    setFormValue('gc-person-removal-interest', 'Não');
+    setFormValue('gc-person-desired-unit', '');
+    setDataListOptions('gc-teams-list', []);
+  }
 
   function populatePeopleForm(record) {
     const person = normalizeRecord(record, personTemplate());
     state.personId = person.id || '';
     setFormValue('gc-person-name', person.name);
-    setFormValue('gc-person-age', person.age);
+    setFormValue('gc-person-birth-date', person.birthDate);
     setFormValue('gc-person-gender', person.gender);
+    const cededField = byId('gc-person-ceded');
+    if (cededField) cededField.checked = safeText(person.ceded).toLowerCase() === 'sim';
+    setFormValue('gc-person-has-fg', person.hasFg || 'Não');
     setFormValue('gc-person-entry-date', person.entryDate);
-    setFormValue('gc-person-basic-education', person.basicEducation);
-    setFormValue('gc-person-extra-education', person.extraEducation);
-    setFormValue('gc-person-unit', person.unit);
+    setFormValue('gc-person-graduation-course', person.graduationCourse || person.basicEducation);
+    setFormValue('gc-person-graduation-other', person.graduationOther);
+    setFormValue('gc-person-postgraduate-type', person.postgraduateType || person.extraEducation);
+    setFormValue('gc-person-postgraduate-course', person.postgraduateCourse);
+    setFormValue('gc-person-division', person.division || person.unit);
     setFormValue('gc-person-team', person.team);
     setFormValue('gc-person-role', person.role);
-    setFormValue('gc-person-competencies', safeArray(person.competencies).join(', '));
+    setFormValue('gc-person-completed-trainings', person.completedTrainingsText || safeArray(person.competencies).join(', '));
     setFormValue('gc-person-preferences', person.preferences);
     setFormValue('gc-person-experiences', person.experiences);
-    setFormValue('gc-person-trails', safeArray(person.completedTrails).join(', '));
     setFormValue('gc-person-probation', person.probation);
     setFormValue('gc-person-probation-end', person.probationEnd);
     setFormValue('gc-person-removal-interest', person.removalInterest);
     setFormValue('gc-person-desired-unit', person.desiredUnit);
-    setFormValue('gc-person-taught-courses', person.taughtCourses);
-    setFormValue('gc-person-notes', person.notes);
+    setFormValue('gc-person-notes-date', person.managerNotesDate);
+    setFormValue('gc-person-notes-author', person.managerNotesAuthor);
+    setFormValue('gc-person-notes', person.managerNotes || person.notes);
+    setPersonTrailRows(person.completedTrails);
+    setPersonCourseRows(person.taughtCourses);
+    updatePersonEducationVisibility();
+    updateManagerNotesState();
+    updateCededFieldsState();
   }
 
   function resetPeopleForm() {
@@ -958,28 +1252,44 @@
     if (!requireEditor()) return;
     const name = safeText(readFormValue('gc-person-name'));
     if (!name) return showInfo('Informe o nome da pessoa.', 'warn');
-    const probation = probationInfo(readFormValue('gc-person-entry-date'));
+    const birthDate = safeText(readFormValue('gc-person-birth-date'));
+    const ceded = byId('gc-person-ceded')?.checked ? 'Sim' : 'Não';
+    const entryDate = safeText(readFormValue('gc-person-entry-date'));
+    const division = ceded === 'Sim' ? '' : safeText(readFormValue('gc-person-division'));
+    const probation = probationInfo(entryDate);
     const entry = {
       id: state.personId || makeId('gc_person'),
       name,
-      age: safeText(readFormValue('gc-person-age')),
+      birthDate,
+      age: String(calculateAge(birthDate) || ''),
       gender: safeText(readFormValue('gc-person-gender')),
-      entryDate: safeText(readFormValue('gc-person-entry-date')),
-      basicEducation: safeText(readFormValue('gc-person-basic-education')),
-      extraEducation: safeText(readFormValue('gc-person-extra-education')),
-      unit: safeText(readFormValue('gc-person-unit')),
-      team: safeText(readFormValue('gc-person-team')),
+      ceded,
+      hasFg: ceded === 'Sim' ? 'Não' : safeText(readFormValue('gc-person-has-fg')) || 'Não',
+      entryDate,
+      graduationCourse: safeText(readFormValue('gc-person-graduation-course')),
+      graduationOther: safeText(readFormValue('gc-person-graduation-other')),
+      postgraduateType: safeText(readFormValue('gc-person-postgraduate-type')),
+      postgraduateCourse: safeText(readFormValue('gc-person-postgraduate-course')),
+      basicEducation: safeText(readFormValue('gc-person-graduation-course')),
+      extraEducation: safeText(readFormValue('gc-person-postgraduate-type')),
+      division,
+      unit: division,
+      team: ceded === 'Sim' ? '' : safeText(readFormValue('gc-person-team')),
       role: safeText(readFormValue('gc-person-role')),
-      competencies: splitList(readFormValue('gc-person-competencies')),
+      competencies: safeArray(getPersonById(state.personId)?.competencies),
+      completedTrainingsText: safeText(readFormValue('gc-person-completed-trainings')),
       preferences: safeText(readFormValue('gc-person-preferences')),
       experiences: safeText(readFormValue('gc-person-experiences')),
-      completedTrails: splitList(readFormValue('gc-person-trails')),
+      completedTrails: readPersonTrailRows(),
       probation: probation.probation,
       probationEnd: probation.probationEnd,
-      removalInterest: safeText(readFormValue('gc-person-removal-interest')) || 'Não',
-      desiredUnit: safeText(readFormValue('gc-person-desired-unit')),
-      taughtCourses: safeText(readFormValue('gc-person-taught-courses')),
+      removalInterest: ceded === 'Sim' ? 'Não' : (safeText(readFormValue('gc-person-removal-interest')) || 'Não'),
+      desiredUnit: ceded === 'Sim' ? '' : safeText(readFormValue('gc-person-desired-unit')),
+      taughtCourses: readPersonCourseRows(),
       notes: safeText(readFormValue('gc-person-notes')),
+      managerNotes: safeText(readFormValue('gc-person-notes')),
+      managerNotesDate: safeText(readFormValue('gc-person-notes-date')),
+      managerNotesAuthor: safeText(readFormValue('gc-person-notes-author')),
     };
     const list = people();
     const index = list.findIndex((item) => item.id === entry.id);
@@ -1000,6 +1310,39 @@
     renderAll();
   }
 
+  function togglePersonSensitiveDetails(card) {
+    const details = card.querySelector('.gc-person-sensitive-details');
+    if (!(details instanceof HTMLElement)) return;
+    details.style.display = details.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function buildPersonBadges(item) {
+    if (!item.competencies.length) return null;
+    const badges = createNode('div', 'gc-badges');
+    item.competencies.slice(0, 6).forEach((value) => badges.appendChild(createNode('span', 'gc-badge', value)));
+    if (item.probation === 'Sim') badges.appendChild(createNode('span', 'gc-badge alert', 'Prob. at?? ' + item.probationEnd));
+    if (item.removalInterest === 'Sim' && item.desiredUnit) badges.appendChild(createNode('span', 'gc-badge match', 'Interesse: ' + item.desiredUnit));
+    if (item.ceded === 'Sim') badges.appendChild(createNode('span', 'gc-badge', 'Cedido'));
+    if (item.hasFg === 'Sim') badges.appendChild(createNode('span', 'gc-badge', 'FG'));
+    return badges;
+  }
+
+  function appendPersonCardDetails(card, item) {
+    const trailsSummary = normalizeCompletedTrails(item.completedTrails)
+      .map((entry) => [entry.trailName || getTrailById(entry.trailId)?.name, trailLevelLabel(entry.level)].filter(Boolean).join(' ??? '))
+      .join(' | ');
+    const taughtCourses = normalizeTaughtCourses(item.taughtCourses).join(', ');
+    if (item.preferences) card.appendChild(createNode('div', 'gc-list-text', 'Prefer??ncias: ' + item.preferences));
+    if (trailsSummary) card.appendChild(createNode('div', 'gc-list-text', 'Trilhas cursadas: ' + trailsSummary));
+    if (safeText(item.completedTrainingsText)) card.appendChild(createNode('div', 'gc-list-text', 'Capacita??es realizadas: ' + item.completedTrainingsText));
+    if (taughtCourses) card.appendChild(createNode('div', 'gc-list-text', 'Cursos ministrados: ' + taughtCourses));
+    if (!item.managerNotes) return;
+    const notesMeta = [item.managerNotesDate, item.managerNotesAuthor].filter(Boolean).join(' ??? ');
+    const notes = createNode('div', 'gc-list-text gc-person-sensitive-details', 'Observa????es do gestor: ' + item.managerNotes + (notesMeta ? ' (' + notesMeta + ')' : ''));
+    notes.style.display = 'none';
+    card.appendChild(notes);
+  }
+
   function renderPeopleList() {
     const list = byId('gc-people-list');
     if (!list) return;
@@ -1011,83 +1354,41 @@
       const card = createNode('div', 'gc-list-item');
       const head = createNode('div', 'gc-list-head');
       const wrap = createNode('div');
-      const title = createButton(item.name, 'gc-list-title', () => populatePeopleForm(item));
+      const title = createButton(item.name, 'gc-list-title', () => togglePersonSensitiveDetails(card));
       title.classList.add('btn-link');
-      wrap.append(title, createNode('div', 'gc-list-meta', [item.role, item.unit, item.team].filter(Boolean).join(' ⬢ ')));
+      wrap.append(title, createNode('div', 'gc-list-meta', [item.role, item.division || item.unit, item.team].filter(Boolean).join(' ??? ')));
       const actions = createNode('div', 'gc-actions');
       actions.append(createButton('Editar', 'btn btn-outline', () => populatePeopleForm(item)));
-      actions.append(createButton('Remoção', 'btn btn-outline', () => populateRemovalForm({ ...removalTemplate(), personId: item.id, fromUnit: item.unit })));
       actions.append(createButton('Excluir', 'btn btn-outline', () => removePerson(item.id)));
       head.append(wrap, actions);
       card.appendChild(head);
-      if (item.competencies.length) {
-        const badges = createNode('div', 'gc-badges');
-        item.competencies.slice(0, 6).forEach((value) => badges.appendChild(createNode('span', 'gc-badge', value)));
-        if (item.probation === 'Sim') badges.appendChild(createNode('span', 'gc-badge alert', `Prob. até ${item.probationEnd}`));
-        if (item.removalInterest === 'Sim' && item.desiredUnit) badges.appendChild(createNode('span', 'gc-badge match', `Interesse: ${item.desiredUnit}`));
-        card.appendChild(badges);
-      }
-      if (item.preferences) card.appendChild(createNode('div', 'gc-list-text', `Preferências: ${item.preferences}`));
-      if (item.taughtCourses) card.appendChild(createNode('div', 'gc-list-text', `Cursos ministrados: ${item.taughtCourses}`));
+      const badges = buildPersonBadges(item);
+      if (badges) card.appendChild(badges);
+      appendPersonCardDetails(card, item);
       list.appendChild(card);
     });
   }
-
   function renderPeople() {
     setDataListOptions('gc-units-list', getUnits());
-    setDataListOptions('gc-teams-list', getTeams());
+    setDataListOptions('gc-teams-list', getTeamsByUnit(readFormValue('gc-person-division')));
     setDataListOptions('gc-roles-list', getRoles());
-    setSelectOptions('gc-gap-person', people(), 'Selecione a pessoa', (item) => ({ value: item.id, label: item.name }));
-    setSelectOptions('gc-feedback-person', people(), 'Selecione a pessoa', (item) => ({ value: item.id, label: item.name }));
+    setSelectOptions('gc-person-graduation-course', GRADUATION_COURSES, 'Selecione o curso', (item) => ({ value: item, label: item }));
+    setSelectOptions('gc-person-postgraduate-type', POSTGRADUATE_TYPES, 'Selecione a pós-graduação', (item) => ({ value: item, label: item }));
+    if (state.personId) {
+      const current = getPersonById(state.personId);
+      if (current) populatePeopleForm(current);
+      else resetPeopleForm();
+    } else {
+      updatePersonEducationVisibility();
+      setPersonTrailRows([]);
+      setPersonCourseRows([]);
+    }
     renderPeopleList();
-    renderGaps();
-    renderFeedbacks();
-  }
-
-  function renderGaps() {
-    const list = byId('gc-gap-list');
-    if (!list) return;
-    list.replaceChildren();
-    if (!gapAnalyses().length) return list.appendChild(createNode('div', 'gc-empty', 'Nenhuma análise de gaps cadastrada.'));
-    gapAnalyses().forEach((item) => {
-      const person = getPersonById(item.personId);
-      const card = createNode('div', 'gc-list-item');
-      card.append(createNode('div', 'gc-list-title', person ? person.name : 'Pessoa não encontrada'));
-      card.append(createNode('div', 'gc-list-meta', [item.unit, item.team].filter(Boolean).join(' ⬢ ')));
-      if (item.requiredCompetencies) card.appendChild(createNode('div', 'gc-list-text', `Necessárias: ${item.requiredCompetencies}`));
-      if (item.currentCompetencies) card.appendChild(createNode('div', 'gc-list-text', `Atuais: ${item.currentCompetencies}`));
-      if (item.recommendations) card.appendChild(createNode('div', 'gc-list-text', `Recomendações: ${item.recommendations}`));
-      const actions = createNode('div', 'gc-actions');
-      actions.append(createButton('Editar', 'btn btn-outline', () => populateGapForm(item)));
-      actions.append(createButton('Excluir', 'btn btn-outline', () => removeGap(item.id)));
-      card.appendChild(actions);
-      list.appendChild(card);
-    });
-  }
-
-  function renderFeedbacks() {
-    const list = byId('gc-feedback-list');
-    if (!list) return;
-    list.replaceChildren();
-    if (!feedbackMeetings().length) return list.appendChild(createNode('div', 'gc-empty', 'Nenhuma reunião de feedback registrada.'));
-    feedbackMeetings().forEach((item) => {
-      const person = getPersonById(item.personId);
-      const card = createNode('div', 'gc-list-item');
-      card.append(createNode('div', 'gc-list-title', `${person ? person.name : 'Pessoa'} ⬢ ${item.date}`));
-      card.append(createNode('div', 'gc-list-meta', item.participants || 'Participantes não informados'));
-      if (item.objectives) card.appendChild(createNode('div', 'gc-list-text', `Objetivos: ${item.objectives}`));
-      if (item.minutes) card.appendChild(createNode('div', 'gc-list-text', `Ata: ${item.minutes}`));
-      const actions = createNode('div', 'gc-actions');
-      actions.append(createButton('Editar', 'btn btn-outline', () => populateFeedbackForm(item)));
-      actions.append(createButton('Excluir', 'btn btn-outline', () => removeFeedback(item.id)));
-      card.appendChild(actions);
-      list.appendChild(card);
-    });
   }
 
   async function importPeopleFile(file) {
     if (!requireEditor() || !file) return;
-    if (typeof XLSX === 'undefined') return showInfo('Biblioteca XLSX não carregada.', 'warn');
+    if (typeof XLSX === 'undefined') return showInfo('Biblioteca XLSX n?o carregada.', 'warn');
     try {
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
@@ -1096,25 +1397,39 @@
       const existing = new Map(people().map((item) => [personKey(item), item]));
       let created = 0;
       rows.forEach((row) => {
+        const birthDate = safeText(row['data de nascimento'] || row.nascimento || row['data nascimento']);
+        const division = safeText(row['divis?o'] || row.divisao || row.unidade);
         const draft = {
           id: makeId('gc_person'),
           name: safeText(row.nome || row.Nome),
           role: safeText(row.cargo || row.Cargo),
-          age: safeText(row.idade || row.Idade),
+          birthDate,
+          age: safeText(row.idade || row.Idade || String(calculateAge(birthDate) || '')),
           gender: safeText(row.sexo || row.Sexo),
+          ceded: safeText(row.cedido || row['cedido?'] || row['servidor cedido']) || 'Não',
+          hasFg: safeText(row.fg || row['possui fg'] || row['fg atualmente']) || 'Não',
           entryDate: safeText(row['data de entrada na CAGE'] || row['data de entrada'] || row.posse),
-          basicEducation: safeText(row['formação básica'] || row['formacao basica']),
-          extraEducation: safeText(row['formação complementar'] || row['formacao complementar']),
-          unit: safeText(row['divisão'] || row.divisao || row.unidade),
+          graduationCourse: safeText(row['curso superior'] || row['forma??o b?sica'] || row['formacao basica']),
+          graduationOther: safeText(row['outro curso superior'] || row['qual curso superior']),
+          postgraduateType: safeText(row['p?s-gradua??o'] || row['pos-graduacao'] || row['forma??o complementar'] || row['formacao complementar']),
+          postgraduateCourse: safeText(row['curso da p?s-gradua??o'] || row['curso da pos-graduacao']),
+          basicEducation: safeText(row['curso superior'] || row['forma??o b?sica'] || row['formacao basica']),
+          extraEducation: safeText(row['p?s-gradua??o'] || row['pos-graduacao'] || row['forma??o complementar'] || row['formacao complementar']),
+          division,
+          unit: division,
           team: safeText(row.equipe),
-          competencies: splitList(row['competências'] || row.competencias),
+          competencies: splitList(row['compet?ncias'] || row.competencias),
+          completedTrainingsText: safeText(row['capacita??es realizadas'] || row['capacitacoes realizadas'] || row['cursos realizados']),
           preferences: safeText(row['preferencias/objetivos pessoais na carreira'] || row.preferencias),
           experiences: safeText(row['experiencias relevantes anteriores'] || row.experiencias),
           removalInterest: safeText(row['interesse remoção'] || row['interesse remocao']) || 'Não',
           desiredUnit: safeText(row['para onde'] || row.destino),
-          taughtCourses: safeText(row['cursos ministrados'] || row['já ministrou cursos?'] || row['ja ministrou cursos?']),
+          taughtCourses: normalizeTaughtCourses(row['cursos ministrados'] || row['j? ministrou cursos?'] || row['ja ministrou cursos?']),
           completedTrails: [],
           notes: '',
+          managerNotes: safeText(row['observações do gestor'] || row['observacoes do gestor']),
+          managerNotesDate: safeText(row['data da observação'] || row['data da observacao']),
+          managerNotesAuthor: safeText(row['responsável pela observação'] || row['responsavel pela observacao']),
         };
         if (!draft.name) return;
         const probation = probationInfo(draft.entryDate);
@@ -1125,173 +1440,42 @@
         existing.set(key, candidate);
         created += 1;
       });
-      persist(`${created} pessoa(s) importada(s) sem duplicidade.`);
+      persist(String(created) + ' pessoa(s) importada(s) sem duplicidade.');
       renderAll();
     } catch (error) {
-      showInfo(`Erro ao importar planilha: ${error.message}`, 'warn');
+      showInfo('Erro ao importar planilha: ' + error.message, 'warn');
     } finally {
       const input = byId('gc-people-import');
       if (input) input.value = '';
     }
   }
 
-  function populateGapForm(record) {
-    const item = normalizeRecord(record, gapTemplate());
-    state.gapId = item.id || '';
-    setFormValue('gc-gap-person', item.personId);
-    setFormValue('gc-gap-unit', item.unit);
-    setFormValue('gc-gap-team', item.team);
-    setFormValue('gc-gap-current', item.currentCompetencies);
-    setFormValue('gc-gap-required', item.requiredCompetencies);
-    setFormValue('gc-gap-observations', item.observations);
-    setFormValue('gc-gap-recommendations', item.recommendations);
-    setFormValue('gc-gap-action', item.actionPlan);
-  }
-
-  function resetGapForm() {
-    populateGapForm(gapTemplate());
-  }
-
-  function saveGap() {
-    if (!requireEditor()) return;
-    const personId = safeText(readFormValue('gc-gap-person'));
-    if (!personId) return showInfo('Selecione a pessoa para registrar o gap.', 'warn');
-    const entry = {
-      id: state.gapId || makeId('gc_gap'),
-      personId,
-      unit: safeText(readFormValue('gc-gap-unit')),
-      team: safeText(readFormValue('gc-gap-team')),
-      currentCompetencies: safeText(readFormValue('gc-gap-current')),
-      requiredCompetencies: safeText(readFormValue('gc-gap-required')),
-      observations: safeText(readFormValue('gc-gap-observations')),
-      recommendations: safeText(readFormValue('gc-gap-recommendations')),
-      actionPlan: safeText(readFormValue('gc-gap-action')),
-    };
-    const list = gapAnalyses();
-    const index = list.findIndex((item) => item.id === entry.id);
-    if (index >= 0) list[index] = entry; else list.push(entry);
-    persist(index >= 0 ? 'Gap atualizado.' : 'Gap registrado.');
-    resetGapForm();
-    renderAll();
-  }
-
-  function removeGap(id) {
-    if (!requireEditor()) return;
-    getStore().gapAnalyses = gapAnalyses().filter((item) => item.id !== id);
-    persist('Gap removido.');
-    renderAll();
-  }
-
-  function populateFeedbackForm(record) {
-    const item = normalizeRecord(record, feedbackTemplate());
-    state.feedbackId = item.id || '';
-    setFormValue('gc-feedback-person', item.personId);
-    setFormValue('gc-feedback-date', item.date);
-    setFormValue('gc-feedback-participants', item.participants);
-    setFormValue('gc-feedback-objectives', item.objectives);
-    setFormValue('gc-feedback-minutes', item.minutes);
-  }
-
-  function resetFeedbackForm() {
-    populateFeedbackForm(feedbackTemplate());
-  }
-
-  function saveFeedback() {
-    if (!requireEditor()) return;
-    const personId = safeText(readFormValue('gc-feedback-person'));
-    const date = safeText(readFormValue('gc-feedback-date'));
-    if (!personId || !date) return showInfo('Informe pessoa e data da reunião.', 'warn');
-    const entry = {
-      id: state.feedbackId || makeId('gc_feedback'),
-      personId,
-      date,
-      participants: safeText(readFormValue('gc-feedback-participants')),
-      objectives: safeText(readFormValue('gc-feedback-objectives')),
-      minutes: safeText(readFormValue('gc-feedback-minutes')),
-    };
-    const list = feedbackMeetings();
-    const index = list.findIndex((item) => item.id === entry.id);
-    if (index >= 0) list[index] = entry; else list.push(entry);
-    persist(index >= 0 ? 'Reunião de feedback atualizada.' : 'Reunião de feedback registrada.');
-    resetFeedbackForm();
-    renderAll();
-  }
-
-  function removeFeedback(id) {
-    if (!requireEditor()) return;
-    getStore().feedbackMeetings = feedbackMeetings().filter((item) => item.id !== id);
-    persist('Reunião de feedback removida.');
-    renderAll();
-  }
-
-  function populateRemovalForm(record) {
-    const removal = normalizeRecord(record, removalTemplate());
-    state.removalId = removal.id || '';
-    setFormValue('gc-removal-person', removal.personId);
-    setFormValue('gc-removal-from', removal.fromUnit);
-    setFormValue('gc-removal-to', removal.desiredUnit);
-    setFormValue('gc-removal-notes', removal.notes);
-  }
-
-  function resetRemovalForm() {
-    populateRemovalForm(removalTemplate());
-  }
-
-  function saveRemoval() {
-    if (!requireEditor()) return;
-    const personId = safeText(readFormValue('gc-removal-person'));
-    const fromUnit = safeText(readFormValue('gc-removal-from'));
-    const desiredUnit = safeText(readFormValue('gc-removal-to'));
-    if (!personId || !fromUnit || !desiredUnit) return showInfo('Preencha pessoa, unidade de origem e unidade desejada.', 'warn');
-    const entry = {
-      id: state.removalId || makeId('gc_removal'),
-      personId,
-      fromUnit,
-      desiredUnit,
-      notes: safeText(readFormValue('gc-removal-notes')),
-    };
-    const list = removals();
-    const index = list.findIndex((item) => item.id === entry.id);
-    if (index >= 0) list[index] = entry; else list.push(entry);
-    persist(index >= 0 ? 'Movimentação atualizada.' : 'Movimentação cadastrada.');
-    resetRemovalForm();
-    renderAll();
-  }
-
-  function removeRemoval(id) {
-    if (!requireEditor()) return;
-    getStore().removals = removals().filter((item) => item.id !== id);
-    persist('Registro de remoção excluído.');
-    renderAll();
-  }
-
   function renderRemovals() {
-    setSelectOptions('gc-removal-person', people(), 'Selecione a pessoa', (item) => ({ value: item.id, label: item.name }));
-    setDataListOptions('gc-removals-units-list', getUnits());
     const list = byId('gc-removals-list');
     if (!list) return;
     list.replaceChildren();
-    if (!removals().length) return list.appendChild(createNode('div', 'gc-empty', 'Nenhuma movimentação registrada.'));
-    removals().forEach((item) => {
+    const requests = activeRemovalRequests();
+    if (!requests.length) {
+      list.appendChild(createNode('div', 'gc-empty', 'Nenhum interesse de remoção foi marcado no cadastro de pessoas.'));
+      return;
+    }
+    requests.forEach((item) => {
       const person = getPersonById(item.personId);
-      const insight = removalInsight(item);
+      const insight = removalInsight(item, requests);
       const card = createNode('div', 'gc-list-item');
       const head = createNode('div', 'gc-list-head');
       const wrap = createNode('div');
       wrap.append(createNode('div', 'gc-list-title', person ? person.name : 'Pessoa não encontrada'));
-      wrap.append(createNode('div', 'gc-list-meta', `${item.fromUnit} → ${item.desiredUnit}`));
+      wrap.append(createNode('div', 'gc-list-meta', item.fromUnit + ' -> ' + item.desiredUnit));
       head.append(wrap);
       if (insight.type) {
         const badges = createNode('div', 'gc-badges');
-        badges.appendChild(createNode('span', `gc-badge ${insight.type}`, insight.label));
+        badges.appendChild(createNode('span', 'gc-badge ' + insight.type, insight.label));
         head.appendChild(badges);
       }
       card.appendChild(head);
+      if (insight.detail) card.appendChild(createNode('div', 'gc-list-text', insight.detail));
       if (item.notes) card.appendChild(createNode('div', 'gc-list-text', item.notes));
-      const actions = createNode('div', 'gc-actions');
-      actions.append(createButton('Editar', 'btn btn-outline', () => populateRemovalForm(item)));
-      actions.append(createButton('Excluir', 'btn btn-outline', () => removeRemoval(item.id)));
-      card.appendChild(actions);
       list.appendChild(card);
     });
   }
@@ -1382,94 +1566,6 @@
     const bars = createNode('div', 'gc-stat-bars');
     [...grouped.entries()].sort((a, b) => b[1] - a[1]).forEach(([label, value]) => fillBar(bars, label, value, Math.max(...grouped.values())));
     chart.appendChild(bars);
-  }
-
-  function populateCompetencyForm(record) {
-    const item = normalizeRecord(record, competencyTemplate());
-    state.competencyId = item.id || '';
-    setFormValue('gc-competency-name', item.name);
-    setFormValue('gc-competency-type', item.type);
-    setFormValue('gc-competency-macro', item.macroprocess);
-    setFormValue('gc-competency-process', item.process);
-    setFormValue('gc-competency-role', item.role);
-    setFormValue('gc-competency-division', item.division);
-    setFormValue('gc-competency-team', item.team);
-    setFormValue('gc-competency-person', item.personId);
-    setFormValue('gc-competency-trail', item.trailId);
-    setFormValue('gc-competency-training', item.trainingId);
-    setFormValue('gc-competency-description', item.description);
-  }
-
-  function resetCompetencyForm() {
-    populateCompetencyForm(competencyTemplate());
-  }
-
-  function saveCompetency() {
-    if (!requireEditor()) return;
-    const name = safeText(readFormValue('gc-competency-name'));
-    if (!name) return showInfo('Informe o nome da competência.', 'warn');
-    const entry = {
-      id: state.competencyId || makeId('gc_competency'),
-      name,
-      type: safeText(readFormValue('gc-competency-type')) || 'hard',
-      macroprocess: safeText(readFormValue('gc-competency-macro')),
-      process: safeText(readFormValue('gc-competency-process')),
-      role: safeText(readFormValue('gc-competency-role')),
-      division: safeText(readFormValue('gc-competency-division')),
-      team: safeText(readFormValue('gc-competency-team')),
-      personId: safeText(readFormValue('gc-competency-person')),
-      trailId: safeText(readFormValue('gc-competency-trail')),
-      trainingId: safeText(readFormValue('gc-competency-training')),
-      description: safeText(readFormValue('gc-competency-description')),
-    };
-    const list = competencies();
-    const index = list.findIndex((item) => item.id === entry.id);
-    if (index >= 0) list[index] = entry; else list.push(entry);
-    syncRoleCatalog(entry.role);
-    syncCompetencyCatalog(entry);
-    persist(index >= 0 ? 'Competência atualizada.' : 'Competência cadastrada.');
-    resetCompetencyForm();
-    renderAll();
-  }
-
-  function removeCompetency(id) {
-    if (!requireEditor()) return;
-    getStore().competencies = competencies().filter((item) => item.id !== id);
-    persist('Competência removida.');
-    renderAll();
-  }
-
-  function renderCompetencies() {
-    setSelectOptions('gc-competency-type', COMPETENCY_TYPES, 'Tipo', (item) => ({ value: item.value, label: item.label }));
-    setDataListOptions('gc-macro-list', getMacroprocesses());
-    setDataListOptions('gc-process-list', getProcesses());
-    setDataListOptions('gc-roles-list', getRoles());
-    setDataListOptions('gc-units-list', getUnits());
-    setDataListOptions('gc-teams-list', getTeams());
-    setSelectOptions('gc-competency-person', people(), 'Pessoa específica', (item) => ({ value: item.id, label: item.name }));
-    setSelectOptions('gc-competency-trail', trails(), 'Trilha', (item) => ({ value: item.id, label: item.name }));
-    setSelectOptions('gc-competency-training', trainings(), 'Treinamento', (item) => ({ value: item.id, label: item.name }));
-    const list = byId('gc-competencies-list');
-    if (!list) return;
-    list.replaceChildren();
-    if (!competencies().length) return list.appendChild(createNode('div', 'gc-empty', 'Cadastre competências, hard skills e conhecimentos normativos aqui.'));
-    competencies().forEach((item) => {
-      const card = createNode('div', 'gc-list-item');
-      const head = createNode('div', 'gc-list-head');
-      const wrap = createNode('div');
-      wrap.append(createNode('div', 'gc-list-title', item.name));
-      wrap.append(createNode('div', 'gc-list-meta', [getTypeLabel(item.type), item.macroprocess, item.team, item.role].filter(Boolean).join(' ⬢ ')));
-      const badges = createNode('div', 'gc-badges');
-      badges.appendChild(createNode('span', `gc-badge ${getTypeBadgeClass(item.type)}`, getTypeLabel(item.type)));
-      head.append(wrap, badges);
-      card.appendChild(head);
-      if (item.description) card.appendChild(createNode('div', 'gc-list-text', item.description));
-      const actions = createNode('div', 'gc-actions');
-      actions.append(createButton('Editar', 'btn btn-outline', () => populateCompetencyForm(item)));
-      actions.append(createButton('Excluir', 'btn btn-outline', () => removeCompetency(item.id)));
-      card.appendChild(actions);
-      list.appendChild(card);
-    });
   }
 
   function populateTrailForm(record) {
@@ -1763,7 +1859,7 @@
       ['gc-hero-people', people().length],
       ['gc-hero-competencies', competencies().length],
       ['gc-hero-paths', trails().length],
-      ['gc-hero-removals', removals().length],
+      ['gc-hero-removals', activeRemovalRequests().length],
     ];
     map.forEach(([id, value]) => {
       const node = byId(id);
@@ -1794,7 +1890,6 @@
     renderPeople();
     renderPerformance();
     renderRemovals();
-    renderCompetencies();
     renderTrails();
     renderSurveys();
     renderTalentResults();
@@ -1813,7 +1908,7 @@
   function injectSidebarButton() {
     const host = byId('sidebar-nav-btns');
     if (!host || byId(SIDEBAR_BTN_ID)) return;
-    const button = createButton('🎓 Gestão de Competências', 'sidebar-pat-btn', () => {
+    const button = createButton('\u{1F465} Gest\u00E3o de Pessoas', 'sidebar-pat-btn', () => {
       if (typeof closeSidebar === 'function') closeSidebar();
       showModule();
     });
@@ -1840,12 +1935,12 @@
     card.style.fontFamily = 'inherit';
     card.style.fontSize = 'inherit';
     card.style.textAlign = 'left';
-    const icon = createNode('div', 'home-card-icon', '🎓');
+    const icon = createNode('div', 'home-card-icon', '\u{1F465}');
     icon.style.background = '#047857';
     icon.style.color = '#fff';
     card.append(icon);
-    card.append(createNode('div', 'home-card-title', 'Gestão de Competências'));
-    card.append(createNode('div', 'home-card-desc', 'Gerencie quadro de pessoal, competências, trilhas, remoções e um banco de talentos com busca inteligente.'));
+    card.append(createNode('div', 'home-card-title', 'Gest\u00E3o de Pessoas'));
+    card.append(createNode('div', 'home-card-desc', 'Gerencie quadro de pessoal, compet\u00EAncias, trilhas, remo\u00E7\u00F5es e um banco de talentos com busca inteligente.'));
     const footer = createNode('div', 'home-card-footer', '0 pessoa(s) ⬢ 0 trilha(s)');
     footer.id = 'home-competency-count';
     card.append(footer);
@@ -1861,9 +1956,9 @@
       <div class="gc-shell">
         <section class="gc-hero">
           <div>
-            <div class="gc-hero-kicker">Gestão de Pessoas e Competências</div>
-            <div class="gc-hero-title">Módulo de Gestão de Competências</div>
-            <div class="gc-hero-subtitle">Centralize quadro de pessoal, trilhas, treinamentos, pedidos de remoção, pesquisas de ambiente e um banco de talentos pesquisável.</div>
+            <div class="gc-hero-kicker">Gest\u00E3o de Pessoas e Trilhas</div>
+            <div class="gc-hero-title">M\u00F3dulo de Gest\u00E3o de Pessoas</div>
+            <div class="gc-hero-subtitle">Centralize quadro de pessoal, trilhas, treinamentos, pedidos de remo\u00E7\u00E3o, pesquisas de ambiente e um banco de talentos pesquis\u00E1vel.</div>
           </div>
           <div class="gc-hero-meta">
             <div class="gc-hero-pill"><span class="gc-hero-pill-label">Pessoas</span><span class="gc-hero-pill-value" id="gc-hero-people">0</span></div>
@@ -1877,8 +1972,7 @@
         <section class="gc-view" data-view="people" id="gc-view-people" style="display:none;"></section>
         <section class="gc-view" data-view="performance" id="gc-view-performance" style="display:none;"></section>
         <section class="gc-view" data-view="removals" id="gc-view-removals" style="display:none;"></section>
-        <section class="gc-view" data-view="competencies" id="gc-view-competencies" style="display:none;"></section>
-        <section class="gc-view" data-view="trails" id="gc-view-trails" style="display:none;"></section>
+                <section class="gc-view" data-view="trails" id="gc-view-trails" style="display:none;"></section>
         <section class="gc-view" data-view="surveys" id="gc-view-surveys" style="display:none;"></section>
         <section class="gc-view" data-view="talent" id="gc-view-talent" style="display:none;"></section>
         <datalist id="gc-competency-suggestions"></datalist>
@@ -1897,20 +1991,17 @@
     const viewPeople = byId('gc-view-people');
     const viewPerformance = byId('gc-view-performance');
     const viewRemovals = byId('gc-view-removals');
-    const viewCompetencies = byId('gc-view-competencies');
     const viewTrails = byId('gc-view-trails');
     const viewSurveys = byId('gc-view-surveys');
     const viewTalent = byId('gc-view-talent');
-    if (!viewPeople || !viewPerformance || !viewRemovals || !viewCompetencies || !viewTrails || !viewSurveys || !viewTalent) return;
-    viewPeople.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar pessoa</div><div class="gc-panel-desc">Nome, perfil, trilhas cursadas, objetivos e importação sem duplicidade.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-person-name">Nome</label><input id="gc-person-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-person-age">Idade</label><input id="gc-person-age" type="number" min="16" max="100"></div><div class="gc-field"><label for="gc-person-gender">Sexo</label><select id="gc-person-gender"><option value="">Selecione</option><option value="Feminino">Feminino</option><option value="Masculino">Masculino</option><option value="Outro">Outro</option></select></div><div class="gc-field"><label for="gc-person-entry-date">Entrada na CAGE</label><input id="gc-person-entry-date" type="date"></div><div class="gc-field"><label for="gc-person-basic-education">Formação básica</label><input id="gc-person-basic-education" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-person-extra-education">Formação complementar</label><input id="gc-person-extra-education" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-person-unit">Divisão / unidade</label><input id="gc-person-unit" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-person-team">Equipe</label><input id="gc-person-team" type="text" list="gc-teams-list" maxlength="120"></div><div class="gc-field"><label for="gc-person-role">Cargo</label><input id="gc-person-role" type="text" list="gc-roles-list" maxlength="120"></div><div class="gc-field"><label for="gc-person-competencies">Competências</label><input id="gc-person-competencies" type="text" list="gc-competency-suggestions" placeholder="Separar por vírgula"></div><div class="gc-field"><label for="gc-person-trails">Trilhas cursadas + nível</label><input id="gc-person-trails" type="text" placeholder="Separar por vírgula"></div><div class="gc-field"><label for="gc-person-probation">Em estágio probatório?</label><input id="gc-person-probation" type="text" readonly></div><div class="gc-field"><label for="gc-person-probation-end">Término do probatório</label><input id="gc-person-probation-end" type="date" readonly></div><div class="gc-field"><label for="gc-person-removal-interest">Interesse em remoção</label><select id="gc-person-removal-interest"><option value="Não">Não</option><option value="Sim">Sim</option></select></div><div class="gc-field"><label for="gc-person-desired-unit">Unidade desejada</label><input id="gc-person-desired-unit" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-person-taught-courses">Cursos ministrados</label><input id="gc-person-taught-courses" type="text" maxlength="220"></div><div class="gc-field"><label for="gc-person-preferences">Preferências / objetivos</label><textarea id="gc-person-preferences"></textarea></div><div class="gc-field"><label for="gc-person-experiences">Experiências relevantes</label><textarea id="gc-person-experiences"></textarea></div><div class="gc-field"><label for="gc-person-notes">Observações</label><textarea id="gc-person-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-person">Salvar pessoa</button><button type="button" class="btn btn-outline" id="gc-reset-person">Limpar</button><button type="button" class="btn btn-outline" id="gc-import-people-trigger">Importar planilha</button><input id="gc-people-import" type="file" accept=".xlsx,.xls,.csv" style="display:none;"></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Quadro de pessoal</div><div class="gc-panel-desc">Lista clicável com filtros por texto livre.</div></div><div class="gc-filter-row"><input id="gc-people-filter" type="search" placeholder="Filtrar por nome, cargo, equipe ou competência"></div></div><div class="gc-list" id="gc-people-list"></div></div><div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Análise de gaps</div><div class="gc-panel-desc">Compara competências atuais e necessárias para o contexto da pessoa.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-gap-person">Pessoa</label><select id="gc-gap-person"></select></div><div class="gc-field"><label for="gc-gap-unit">Unidade</label><input id="gc-gap-unit" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-gap-team">Equipe</label><input id="gc-gap-team" type="text" list="gc-teams-list" maxlength="120"></div><div class="gc-field"><label for="gc-gap-current">Competências atuais</label><textarea id="gc-gap-current"></textarea></div><div class="gc-field"><label for="gc-gap-required">Competências necessárias</label><textarea id="gc-gap-required"></textarea></div><div class="gc-field"><label for="gc-gap-observations">Observações</label><textarea id="gc-gap-observations"></textarea></div><div class="gc-field"><label for="gc-gap-recommendations">Recomendações</label><textarea id="gc-gap-recommendations"></textarea></div><div class="gc-field"><label for="gc-gap-action">Plano de ação</label><textarea id="gc-gap-action"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-gap">Salvar gap</button><button type="button" class="btn btn-outline" id="gc-reset-gap">Limpar</button></div><div class="gc-list" id="gc-gap-list"></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Reuniões de feedback</div><div class="gc-panel-desc">Registre participantes, objetivos e ata por pessoa.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-feedback-person">Pessoa</label><select id="gc-feedback-person"></select></div><div class="gc-field"><label for="gc-feedback-date">Data</label><input id="gc-feedback-date" type="date"></div><div class="gc-field"><label for="gc-feedback-participants">Participantes</label><input id="gc-feedback-participants" type="text" maxlength="220"></div><div class="gc-field"><label for="gc-feedback-objectives">Objetivos</label><textarea id="gc-feedback-objectives"></textarea></div><div class="gc-field"><label for="gc-feedback-minutes">Ata</label><textarea id="gc-feedback-minutes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-feedback">Salvar feedback</button><button type="button" class="btn btn-outline" id="gc-reset-feedback">Limpar</button></div><div class="gc-list" id="gc-feedback-list"></div></div></div>`;
+    if (!viewPeople || !viewPerformance || !viewRemovals || !viewTrails || !viewSurveys || !viewTalent) return;
+    viewPeople.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar pessoa</div><div class="gc-panel-desc">Nome, formação, trilhas cursadas, cursos ministrados e importação sem duplicidade.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-person-name">Nome</label><input id="gc-person-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-person-birth-date">Data de nascimento</label><input id="gc-person-birth-date" type="date"></div><div class="gc-field"><label for="gc-person-gender">Gênero</label><select id="gc-person-gender"><option value="">Selecione</option><option value="Feminino">Feminino</option><option value="Masculino">Masculino</option><option value="Outro">Outro</option></select></div><div class="gc-field"><label class="gc-checkbox-label" for="gc-person-ceded"><input id="gc-person-ceded" type="checkbox"> Cedido?</label></div><div class="gc-field"><label for="gc-person-has-fg">Possui FG atualmente?</label><select id="gc-person-has-fg"><option value="Não">Não</option><option value="Sim">Sim</option></select></div><div class="gc-field"><label for="gc-person-entry-date">Entrada na CAGE</label><input id="gc-person-entry-date" type="date"></div><div class="gc-field"><label for="gc-person-graduation-course">Curso superior</label><select id="gc-person-graduation-course"></select></div><div class="gc-field" id="gc-person-graduation-other-wrap" style="display:none;"><label for="gc-person-graduation-other">Qual curso superior?</label><input id="gc-person-graduation-other" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-person-postgraduate-type">Pós-graduação</label><select id="gc-person-postgraduate-type"></select></div><div class="gc-field"><label for="gc-person-postgraduate-course">Curso de pós-graduação</label><input id="gc-person-postgraduate-course" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-person-division">Divisão</label><input id="gc-person-division" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-person-team">Equipe</label><input id="gc-person-team" type="text" list="gc-teams-list" maxlength="120"></div><div class="gc-field"><label for="gc-person-role">Cargo</label><input id="gc-person-role" type="text" list="gc-roles-list" maxlength="120"></div><div class="gc-field gc-field-span-2"><label for="gc-person-completed-trainings">Capacita??es realizadas</label><textarea id="gc-person-completed-trainings" placeholder="Descreva cursos, capacita??es, oficinas e forma??es j? realizadas"></textarea></div><div class="gc-field gc-field-span-2"><label>Trilhas cursadas</label><div id="gc-person-trails-rows" class="gc-repeat-list"></div><button type="button" class="btn btn-outline" id="gc-add-person-trail">Adicionar trilha</button></div><div class="gc-field"><label for="gc-person-probation">Em estágio probatório?</label><input id="gc-person-probation" type="text" readonly></div><div class="gc-field"><label for="gc-person-probation-end">Término do probatório</label><input id="gc-person-probation-end" type="date" readonly></div><div class="gc-field"><label for="gc-person-removal-interest">Interesse em remoção</label><select id="gc-person-removal-interest"><option value="Não">Não</option><option value="Sim">Sim</option></select></div><div class="gc-field"><label for="gc-person-desired-unit">Unidade desejada</label><input id="gc-person-desired-unit" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field gc-field-span-2"><label>Cursos ministrados</label><div id="gc-person-courses-rows" class="gc-repeat-list"></div><button type="button" class="btn btn-outline" id="gc-add-person-course">Adicionar curso</button></div><div class="gc-field"><label for="gc-person-preferences">Preferências / objetivos</label><textarea id="gc-person-preferences"></textarea></div><div class="gc-field"><label for="gc-person-experiences">Experiências relevantes</label><textarea id="gc-person-experiences"></textarea></div><div class="gc-field"><label for="gc-person-notes-date">Data da observação</label><input id="gc-person-notes-date" type="date"></div><div class="gc-field"><label for="gc-person-notes-author">Responsável</label><input id="gc-person-notes-author" type="text" maxlength="120"></div><div class="gc-field gc-field-span-2"><label for="gc-person-notes">Observações do gestor</label><textarea id="gc-person-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-person">Salvar pessoa</button><button type="button" class="btn btn-outline" id="gc-reset-person">Limpar</button><button type="button" class="btn btn-outline" id="gc-import-people-trigger">Importar planilha</button><input id="gc-people-import" type="file" accept=".xlsx,.xls,.csv" style="display:none;"></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Quadro de pessoal</div><div class="gc-panel-desc">Lista clicável com filtros por texto livre.</div></div><div class="gc-filter-row"><input id="gc-people-filter" type="search" placeholder="Filtrar por nome, cargo, equipe ou capacita??o"></div></div><div class="gc-list" id="gc-people-list"></div></div>`;
     viewPerformance.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Avaliação de performance</div><div class="gc-panel-desc">Cadastre avaliações manualmente e acompanhe a evolução.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-performance-person">Pessoa</label><select id="gc-performance-person"></select></div><div class="gc-field"><label for="gc-performance-date">Data da avaliação</label><input id="gc-performance-date" type="date"></div><div class="gc-field"><label for="gc-performance-method">Método</label><input id="gc-performance-method" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-performance-objective">Objetivo</label><input id="gc-performance-objective" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-performance-result">Resultado</label><input id="gc-performance-result" type="text" maxlength="80"></div><div class="gc-field"><label for="gc-performance-notes">Observações</label><textarea id="gc-performance-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-performance">Salvar avaliação</button><button type="button" class="btn btn-outline" id="gc-reset-performance">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Histórico de avaliações</div><div class="gc-panel-desc">Filtre por pessoa, unidade e cargo para comparar a evolução.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-performance-filter-person">Pessoa</label><select id="gc-performance-filter-person"></select></div><div class="gc-field"><label for="gc-performance-filter-unit">Unidade</label><input id="gc-performance-filter-unit" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-performance-filter-role">Cargo</label><input id="gc-performance-filter-role" type="text" list="gc-roles-list" maxlength="120"></div></div><div class="gc-stat-bars" id="gc-performance-chart"></div><div class="gc-list" id="gc-performance-list"></div></div></div>`;
-    viewRemovals.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Banco de remoções</div><div class="gc-panel-desc">Registre origem, destino desejado e veja cruzamentos.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-removal-person">Pessoa</label><select id="gc-removal-person"></select></div><div class="gc-field"><label for="gc-removal-from">Unidade de origem</label><input id="gc-removal-from" type="text" list="gc-removals-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-removal-to">Unidade desejada</label><input id="gc-removal-to" type="text" list="gc-removals-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-removal-notes">Observação</label><textarea id="gc-removal-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-removal">Salvar remoção</button><button type="button" class="btn btn-outline" id="gc-reset-removal">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Solicitações cadastradas</div><div class="gc-panel-desc">Detecta cruzamentos diretos e triangulações.</div></div></div><div class="gc-list" id="gc-removals-list"></div></div></div>`;
-    viewCompetencies.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar competência</div><div class="gc-panel-desc">Vincule a processos, equipes, pessoas, trilhas e treinamentos.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-competency-name">Competência / habilidade</label><input id="gc-competency-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-competency-type">Tipo</label><select id="gc-competency-type"></select></div><div class="gc-field"><label for="gc-competency-macro">Macroprocesso</label><input id="gc-competency-macro" type="text" list="gc-macro-list" maxlength="160"></div><div class="gc-field"><label for="gc-competency-process">Processo</label><input id="gc-competency-process" type="text" list="gc-process-list" maxlength="160"></div><div class="gc-field"><label for="gc-competency-role">Cargo</label><input id="gc-competency-role" type="text" list="gc-roles-list" maxlength="120"></div><div class="gc-field"><label for="gc-competency-division">Divisão</label><input id="gc-competency-division" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-competency-team">Equipe</label><input id="gc-competency-team" type="text" list="gc-teams-list" maxlength="120"></div><div class="gc-field"><label for="gc-competency-person">Pessoa</label><select id="gc-competency-person"></select></div><div class="gc-field"><label for="gc-competency-trail">Trilha</label><select id="gc-competency-trail"></select></div><div class="gc-field"><label for="gc-competency-training">Treinamento</label><select id="gc-competency-training"></select></div><div class="gc-field"><label for="gc-competency-description">Descrição</label><textarea id="gc-competency-description"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-competency">Salvar competência</button><button type="button" class="btn btn-outline" id="gc-reset-competency">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Catálogo</div><div class="gc-panel-desc">Lista agrupada por vínculos e tipo.</div></div></div><div class="gc-list" id="gc-competencies-list"></div></div></div>`;
+    viewRemovals.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Banco de remoções</div><div class="gc-panel-desc">Os cruzamentos abaixo são calculados automaticamente a partir do interesse em remoção e da unidade desejada cadastrados na aba de pessoas.</div></div></div><div class="gc-list" id="gc-removals-list"></div></div>`;
     viewTrails.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar trilha</div><div class="gc-panel-desc">Defina objetivo, degrau principal, pré-requisitos e competências.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-trail-name">Nome da trilha</label><input id="gc-trail-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-trail-objective">Objetivo</label><input id="gc-trail-objective" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-trail-level-name">Nome do nível</label><input id="gc-trail-level-name" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-trail-level-goal">Objetivo do nível</label><input id="gc-trail-level-goal" type="text" maxlength="180"></div><div class="gc-field"><label for="gc-trail-level-degree">Grau esperado</label><input id="gc-trail-level-degree" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-trail-macro">Macroprocesso</label><input id="gc-trail-macro" type="text" list="gc-macro-list" maxlength="160"></div><div class="gc-field"><label for="gc-trail-division">Divisão</label><input id="gc-trail-division" type="text" list="gc-units-list" maxlength="120"></div><div class="gc-field"><label for="gc-trail-competencies">Competências vinculadas</label><input id="gc-trail-competencies" type="text" placeholder="Separar por vírgula"></div><div class="gc-field"><label for="gc-trail-prereq">Pré-requisitos</label><input id="gc-trail-prereq" type="text" placeholder="Separar por vírgula"></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-trail">Salvar trilha</button><button type="button" class="btn btn-outline" id="gc-reset-trail">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Cadastrar treinamento</div><div class="gc-panel-desc">Capacitações grátis/pagas, presenciais/remotas e vínculo com pessoas.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-training-name">Nome do treinamento</label><input id="gc-training-name" type="text" maxlength="160"></div><div class="gc-field"><label for="gc-training-cost">Grátis ou pago</label><input id="gc-training-cost" type="text" maxlength="40"></div><div class="gc-field"><label for="gc-training-mode">Presencial ou remoto</label><input id="gc-training-mode" type="text" maxlength="40"></div><div class="gc-field"><label for="gc-training-link">Link remoto</label><input id="gc-training-link" type="url" maxlength="240"></div><div class="gc-field"><label for="gc-training-provider">Fornecedor</label><input id="gc-training-provider" type="text" maxlength="120"></div><div class="gc-field"><label for="gc-training-trail">Trilha</label><select id="gc-training-trail"></select></div><div class="gc-field"><label for="gc-training-persons">Pessoas vinculadas</label><input id="gc-training-persons" type="text" placeholder="IDs ou nomes separados por vírgula"></div><div class="gc-field"><label for="gc-training-notes">Observações</label><textarea id="gc-training-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-training">Salvar treinamento</button><button type="button" class="btn btn-outline" id="gc-reset-training">Limpar</button></div></div></div><div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Trilhas</div><div class="gc-panel-desc">Capa com escada de desenvolvimento.</div></div></div><div class="gc-list" id="gc-trails-list"></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Treinamentos</div><div class="gc-panel-desc">Oferta e vínculo com trilhas e pessoas.</div></div></div><div class="gc-list" id="gc-trainings-list"></div></div></div>`;
     viewSurveys.innerHTML = `<div class="gc-split"><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Pesquisa de ambiente</div><div class="gc-panel-desc">Cadastre os dados anuais da pesquisa da GEPESC.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-survey-year">Ano</label><input id="gc-survey-year" type="number" min="2020" max="2100"></div><div class="gc-field"><label for="gc-survey-engagement">Engajamento</label><input id="gc-survey-engagement" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-leadership">Liderança</label><input id="gc-survey-leadership" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-climate">Clima</label><input id="gc-survey-climate" type="text" maxlength="60"></div><div class="gc-field"><label for="gc-survey-notes">Observações</label><textarea id="gc-survey-notes"></textarea></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-save-survey">Salvar pesquisa</button><button type="button" class="btn btn-outline" id="gc-reset-survey">Limpar</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Histórico</div><div class="gc-panel-desc">Série anual disponível para consulta.</div></div></div><div class="gc-list" id="gc-surveys-list"></div></div></div>`;
     viewTalent.innerHTML = `<div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Banco de talentos</div><div class="gc-panel-desc">Busca livre com IA, cruzando a necessidade textual com a Arquitetura de Processos, competências cadastradas, preferências e pedidos de remoção.</div></div></div><div class="gc-form-grid"><div class="gc-field"><label for="gc-talent-query">Busca livre com IA</label><input id="gc-talent-query" type="search" placeholder="Ex: procuro auditor para atuar com balanços contábeis na divisão de contabilidade"></div></div><div class="gc-actions"><button type="button" class="btn btn-primary" id="gc-run-talent-search">Buscar com IA</button></div></div><div class="gc-panel"><div class="gc-panel-head"><div><div class="gc-panel-title">Candidatos potenciais</div><div class="gc-panel-desc">A IA interpreta a necessidade e ranqueia candidatos aderentes.</div></div></div><div class="gc-match-list" id="gc-talent-results"></div></div>`;
   }
-
   function bindTabs() {
     const tabs = byId('gc-tabs');
     if (!tabs || tabs.childElementCount) return;
@@ -1927,24 +2018,43 @@
     byId('gc-people-filter')?.addEventListener('input', renderPeopleList);
     byId('gc-import-people-trigger')?.addEventListener('click', () => byId('gc-people-import')?.click());
     byId('gc-people-import')?.addEventListener('change', (event) => importPeopleFile(event.target.files?.[0]));
+    byId('gc-person-graduation-course')?.addEventListener('change', updatePersonEducationVisibility);
+    byId('gc-person-postgraduate-type')?.addEventListener('change', updatePersonEducationVisibility);
+    byId('gc-person-ceded')?.addEventListener('change', updateCededFieldsState);
+    byId('gc-person-notes-date')?.addEventListener('change', updateManagerNotesState);
+    byId('gc-person-notes-author')?.addEventListener('input', updateManagerNotesState);
+    byId('gc-person-division')?.addEventListener('input', () => {
+      setDataListOptions('gc-teams-list', getTeamsByUnit(readFormValue('gc-person-division')));
+      setFormValue('gc-person-team', '');
+    });
+    byId('gc-add-person-trail')?.addEventListener('click', () => {
+      const host = byId('gc-person-trails-rows');
+      if (host) host.insertAdjacentHTML('beforeend', createPersonTrailRow({ trailId: '', level: '' }));
+    });
+    byId('gc-add-person-course')?.addEventListener('click', () => {
+      const host = byId('gc-person-courses-rows');
+      if (host) host.insertAdjacentHTML('beforeend', createPersonCourseRow(''));
+    });
+    byId('gc-view-people')?.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement) || !target.classList.contains('gc-remove-row')) return;
+      const row = target.closest('.gc-repeat-row');
+      row?.remove();
+      const trailsHost = byId('gc-person-trails-rows');
+      const coursesHost = byId('gc-person-courses-rows');
+      if (trailsHost && !trailsHost.children.length) trailsHost.innerHTML = createPersonTrailRow({ trailId: '', level: '' });
+      if (coursesHost && !coursesHost.children.length) coursesHost.innerHTML = createPersonCourseRow('');
+    });
     byId('gc-person-entry-date')?.addEventListener('change', () => {
       const data = probationInfo(readFormValue('gc-person-entry-date'));
       setFormValue('gc-person-probation', data.probation);
       setFormValue('gc-person-probation-end', data.probationEnd);
     });
-    byId('gc-save-gap')?.addEventListener('click', saveGap);
-    byId('gc-reset-gap')?.addEventListener('click', resetGapForm);
-    byId('gc-save-feedback')?.addEventListener('click', saveFeedback);
-    byId('gc-reset-feedback')?.addEventListener('click', resetFeedbackForm);
     byId('gc-save-performance')?.addEventListener('click', savePerformance);
     byId('gc-reset-performance')?.addEventListener('click', resetPerformanceForm);
     byId('gc-performance-filter-person')?.addEventListener('change', renderPerformance);
     byId('gc-performance-filter-unit')?.addEventListener('input', renderPerformance);
     byId('gc-performance-filter-role')?.addEventListener('input', renderPerformance);
-    byId('gc-save-removal')?.addEventListener('click', saveRemoval);
-    byId('gc-reset-removal')?.addEventListener('click', resetRemovalForm);
-    byId('gc-save-competency')?.addEventListener('click', saveCompetency);
-    byId('gc-reset-competency')?.addEventListener('click', resetCompetencyForm);
     byId('gc-save-trail')?.addEventListener('click', saveTrail);
     byId('gc-reset-trail')?.addEventListener('click', resetTrailForm);
     byId('gc-save-training')?.addEventListener('click', saveTraining);
