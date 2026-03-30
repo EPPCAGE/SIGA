@@ -79,6 +79,7 @@
    - `tenantId`
    - emails de administradores
    - emails de editores
+   - observacao: os emails podem ser informados separados por `,` ou `;`
 
 ## Como fazer o primeiro deploy
 
