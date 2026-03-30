@@ -249,7 +249,7 @@
   function normalizeRecord(record, template) {
     const normalized = { ...template };
     Object.keys(template).forEach((key) => {
-      normalized[key] = record?.[key] !== undefined ? record[key] : template[key];
+      normalized[key] = record?.[key] ?? template[key];
     });
     return normalized;
   }
@@ -553,11 +553,6 @@
     return typeof getConfig === 'function' ? safeArray(getConfig('macroprocessos')) : [];
   }
 
-  function getProcesses() {
-    if (typeof arqGetData !== 'function') return [];
-    return uniqueSorted(arqGetData().map((item) => item.processo).filter(Boolean));
-  }
-
   function getCompetencySuggestions() {
     const hard = typeof getConfig === 'function' ? safeArray(getConfig('hardSkills')) : [];
     const soft = typeof getConfig === 'function' ? safeArray(getConfig('softSkills')) : [];
@@ -582,16 +577,6 @@
     return trails().find((item) => item.id === id) || null;
   }
 
-  function getTypeLabel(type) {
-    const found = COMPETENCY_TYPES.find((item) => item.value === type);
-    return found ? found.label : 'Competência';
-  }
-
-  function getTypeBadgeClass(type) {
-    if (type === 'soft') return 'soft';
-    if (type === 'normative') return 'normative';
-    return 'hard';
-  }
 
   function tokenize(text) {
     return safeText(text)
@@ -815,6 +800,30 @@
     return explanations && typeof explanations === 'object' ? explanations : {};
   }
 
+  function orderTalentCandidates(ranked, aiCandidateIds) {
+    if (!aiCandidateIds.length) return ranked;
+    return aiCandidateIds
+      .map((id) => ranked.find((item) => item.person.id === id))
+      .filter(Boolean)
+      .concat(ranked.filter((item) => !aiCandidateIds.includes(item.person.id)));
+  }
+
+  function buildTalentSearchState(queryText, roleText, architectureMatches, architectureCompetencies, ai, ranked) {
+    const aiCandidateIds = safeArray(ai?.candidate_ids);
+    const ordered = orderTalentCandidates(ranked, aiCandidateIds);
+
+    return {
+      interpretedNeed: safeText(ai?.interpreted_need) || queryText,
+      recommendedRole: safeText(ai?.recommended_role) || roleText,
+      recommendedUnit: safeText(ai?.recommended_unit),
+      recommendedTeam: safeText(ai?.recommended_team),
+      architectureMatches,
+      architectureCompetencies,
+      explanations: normalizeAiExplanations(ai),
+      candidates: ordered.slice(0, 3),
+    };
+  }
+
   async function runTalentSearchAi() {
     const queryText = safeText(readFormValue('gc-talent-query'));
     const roleText = '';
@@ -830,30 +839,11 @@
       const architectureMatches = relatedArchitectureEntries(queryText, roleText, prereqList);
       const architectureCompetencies = architectureLinkedCompetencies(architectureMatches, roleText, prereqList);
       const ai = await tryInterpretTalentQueryWithAi(queryText, roleText, prereqList, architectureMatches, architectureCompetencies);
-
-      const aiCandidateIds = safeArray(ai?.candidate_ids);
       const ranked = people()
         .map((person) => buildTalentCandidate(person, roleText || safeText(ai?.recommended_role), prereqList, architectureCompetencies, architectureMatches))
         .filter((item) => item.score > 0)
         .sort((a, b) => b.score - a.score);
-
-      const ordered = aiCandidateIds.length
-        ? aiCandidateIds
-          .map((id) => ranked.find((item) => item.person.id === id))
-          .filter(Boolean)
-          .concat(ranked.filter((item) => !aiCandidateIds.includes(item.person.id)))
-        : ranked;
-
-      state.talentSearch = {
-        interpretedNeed: safeText(ai?.interpreted_need) || queryText,
-        recommendedRole: safeText(ai?.recommended_role) || roleText,
-        recommendedUnit: safeText(ai?.recommended_unit),
-        recommendedTeam: safeText(ai?.recommended_team),
-        architectureMatches,
-        architectureCompetencies,
-        explanations: normalizeAiExplanations(ai),
-        candidates: ordered.slice(0, 3),
-      };
+      state.talentSearch = buildTalentSearchState(queryText, roleText, architectureMatches, architectureCompetencies, ai, ranked);
     } catch (error) {
       showInfo(`Erro ao executar busca inteligente: ${error.message}`, 'warn');
     } finally {
