@@ -1,25 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -lt 14 ]]; then
-  echo "Uso: $0 <package-root> <deploy-root> <ai-provider> <azure-endpoint> <azure-deployment> <azure-api-version> <azure-api-key> <auth-mode> <entra-client-id> <entra-tenant-id> <admin-emails> <editor-emails> <admin-token> <allowed-origins>" >&2
+if [[ $# -lt 18 ]]; then
+  echo "Uso: $0 <package-root> <deploy-root> <ai-provider> <ai-token> <ai-model> <ai-fallback-models> <ai-api-url> <azure-endpoint> <azure-deployment> <azure-api-version> <azure-api-key> <auth-mode> <entra-client-id> <entra-tenant-id> <admin-emails> <editor-emails> <admin-token> <allowed-origins>" >&2
   exit 1
 fi
 
 package_root="$1"
 deploy_root="$2"
-ai_provider="${3:-azure}"
-azure_endpoint="${4:-}"
-azure_deployment="${5:-}"
-azure_api_version="${6:-}"
-azure_api_key="${7:-}"
-auth_mode="${8:-local}"
-entra_client_id="${9:-}"
-entra_tenant_id="${10:-}"
-admin_emails="${11:-}"
-editor_emails="${12:-}"
-admin_token="${13:-}"
-allowed_origins="${14:-}"
+ai_provider="${3:-github-models}"
+ai_token="${4:-}"
+ai_model="${5:-}"
+ai_fallback_models="${6:-}"
+ai_api_url="${7:-}"
+azure_endpoint="${8:-}"
+azure_deployment="${9:-}"
+azure_api_version="${10:-}"
+azure_api_key="${11:-}"
+auth_mode="${12:-local}"
+entra_client_id="${13:-}"
+entra_tenant_id="${14:-}"
+admin_emails="${15:-}"
+editor_emails="${16:-}"
+admin_token="${17:-}"
+allowed_origins="${18:-}"
 
 if [[ ! -d "$package_root" ]]; then
   echo "Pacote de deploy nao encontrado: $package_root" >&2
@@ -80,6 +84,10 @@ shopt -u dotglob
 
 cat > "$deploy_root/.env" <<EOF
 SIGA_AI_PROVIDER=$ai_provider
+SIGA_AI_TOKEN=$ai_token
+SIGA_AI_MODEL=$ai_model
+SIGA_AI_FALLBACK_MODELS=$ai_fallback_models
+SIGA_AI_API_URL=$ai_api_url
 SIGA_AZURE_ENDPOINT=$azure_endpoint
 SIGA_AZURE_DEPLOYMENT=$azure_deployment
 SIGA_AZURE_API_VERSION=$azure_api_version

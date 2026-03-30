@@ -170,6 +170,10 @@ stages:
                 "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
                 "$(DEV_DEPLOY_ROOT)" \
                 "$(SIGA_AI_PROVIDER)" \
+                "$(SIGA_AI_TOKEN)" \
+                "$(SIGA_AI_MODEL)" \
+                "$(SIGA_AI_FALLBACK_MODELS)" \
+                "$(SIGA_AI_API_URL)" \
                 "$(SIGA_AZURE_ENDPOINT)" \
                 "$(SIGA_AZURE_DEPLOYMENT)" \
                 "$(SIGA_AZURE_API_VERSION)" \
@@ -204,6 +208,10 @@ stages:
                 "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
                 "$(PRD_DEPLOY_ROOT)" \
                 "$(SIGA_AI_PROVIDER)" \
+                "$(SIGA_AI_TOKEN)" \
+                "$(SIGA_AI_MODEL)" \
+                "$(SIGA_AI_FALLBACK_MODELS)" \
+                "$(SIGA_AI_API_URL)" \
                 "$(SIGA_AZURE_ENDPOINT)" \
                 "$(SIGA_AZURE_DEPLOYMENT)" \
                 "$(SIGA_AZURE_API_VERSION)" \

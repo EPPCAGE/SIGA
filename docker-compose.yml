@@ -14,7 +14,11 @@ services:
       # ── IA / Azure OpenAI (GPT-5.1) ──────────────────────────────────
       # Defina as variáveis abaixo no arquivo .env do servidor (nunca aqui).
       # O Docker Compose lê o .env automaticamente.
-      SIGA_AI_PROVIDER: ${SIGA_AI_PROVIDER:-azure}
+      SIGA_AI_PROVIDER: ${SIGA_AI_PROVIDER:-github-models}
+      SIGA_AI_TOKEN: ${SIGA_AI_TOKEN}
+      SIGA_AI_MODEL: ${SIGA_AI_MODEL:-openai/gpt-4.1-mini}
+      SIGA_AI_FALLBACK_MODELS: ${SIGA_AI_FALLBACK_MODELS:-}
+      SIGA_AI_API_URL: ${SIGA_AI_API_URL:-https://models.github.ai/inference/chat/completions}
       SIGA_AZURE_ENDPOINT: ${SIGA_AZURE_ENDPOINT:-https://projeto-gesproc-cage.cognitiveservices.azure.com}
       SIGA_AZURE_DEPLOYMENT: ${SIGA_AZURE_DEPLOYMENT:-gpt-5.1-chat}
       SIGA_AZURE_API_VERSION: ${SIGA_AZURE_API_VERSION:-2024-12-01-preview}
