@@ -26,7 +26,7 @@ variables:
   - name: BUILD_AGENT_POOL
     value: 'sefaz-self-hosted'
   - name: DEV_DEPLOY_AGENT_POOL
-    value: 'sefaz-self-hosted-deployment-container-dev'
+    value: 'gesproc-sefaz-self-hosted-deployment-container-dev'
   - name: PRD_DEPLOY_AGENT_POOL
     value: 'sefaz-self-hosted-deployment-container-prd'
   - name: ENABLE_DEV_DEPLOY
