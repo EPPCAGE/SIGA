@@ -94,6 +94,7 @@ SIGA_AZURE_API_VERSION=$azure_api_version
 SIGA_AZURE_API_KEY=$azure_api_key
 SIGA_ADMIN_TOKEN=$admin_token
 SIGA_ALLOWED_ORIGIN=$allowed_origins
+SIGA_FRONTEND_PORT=${SIGA_FRONTEND_PORT:-8081}
 EOF
 
 cd "$deploy_root"
