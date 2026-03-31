@@ -98,6 +98,14 @@ SIGA_FRONTEND_PORT=${SIGA_FRONTEND_PORT:-8081}
 EOF
 
 cd "$deploy_root"
+# Derruba a stack atual antes do rebuild para liberar nomes/portas do SIGA.
+"${compose_cmd[@]}" down --remove-orphans || true
+podman rm -f siga-frontend siga-backend || true
+
+if command -v ss >/dev/null 2>&1; then
+  ss -ltnp | grep ':8081' || true
+fi
+
 "${compose_cmd[@]}" up -d --build
 
 echo "Deploy on-prem concluido em: $deploy_root"
