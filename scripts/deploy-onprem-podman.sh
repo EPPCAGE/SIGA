@@ -74,7 +74,7 @@ for item in "$package_root"/*; do
 done
 shopt -u dotglob
 
-"$deploy_root/scripts/write-public-config.sh" \
+bash "$deploy_root/scripts/write-public-config.sh" \
   "$deploy_root/public-config.js" \
   "$auth_mode" \
   "$entra_client_id" \
