@@ -21,7 +21,7 @@ to_js_array() {
   for item in "${items[@]}"; do
     item="$(echo "$item" | xargs)"
     [[ -z "$item" ]] && continue
-    item="${item//\'/\\'}"
+    item="$(printf "%s" "$item" | sed "s/'/\\\\'/g")"
     if [[ -n "$result" ]]; then
       result+=", "
     fi
