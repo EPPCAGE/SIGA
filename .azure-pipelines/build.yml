@@ -1,11 +1,5 @@
 name: gesproc-ci-$(Date:yyyyMMdd)$(Rev:.r)
 
-parameters:
-  - name: forceDevDeploy
-    displayName: 'Forçar Deploy DEV'
-    type: boolean
-    default: false
-
 trigger:
   branches:
     include:
@@ -25,20 +19,6 @@ variables:
     value: '20.x'
   - name: BUILD_AGENT_POOL
     value: 'sefaz-self-hosted'
-  - name: DEV_DEPLOY_AGENT_POOL
-    value: 'gesproc-sefaz-self-hosted-deployment-container-dev'
-  - name: PRD_DEPLOY_AGENT_POOL
-    value: 'sefaz-self-hosted-deployment-container-prd'
-  - name: ENABLE_DEV_DEPLOY
-    value: 'true'
-  - name: ENABLE_PRD_DEPLOY
-    value: 'false'
-  - name: DEV_DEPLOY_ROOT
-    value: '/var/docker/SIGA'
-  - name: PRD_DEPLOY_ROOT
-    value: '/var/docker/SIGA'
-  - name: DEV_DEPLOY_BRANCHES
-    value: 'refs/heads/dev,refs/heads/fix/sync-local-to-azure'
   - name: DEPLOY_ARTIFACT_NAME
     value: 'siga-onprem-package'
 
@@ -156,79 +136,3 @@ stages:
               targetPath: '$(Build.ArtifactStagingDirectory)/package'
               artifact: '$(DEPLOY_ARTIFACT_NAME)'
               publishLocation: 'pipeline'
-
-  - stage: Deploy_DEV
-    displayName: 'Deploy DEV'
-    dependsOn: Package
-    condition: and(succeeded(), contains(format(',{0},', variables['DEV_DEPLOY_BRANCHES']), format(',{0},', variables['Build.SourceBranch'])), or(${{ parameters.forceDevDeploy }}, eq(lower(variables['ENABLE_DEV_DEPLOY']), 'true'), eq(variables['ENABLE_DEV_DEPLOY'], '1'), eq(lower(variables['ENABLE_DEV_DEPLOY']), 'yes')))
-    jobs:
-      - job: DeployDevOnPrem
-        displayName: 'Publicar em DEV on-prem'
-        pool:
-          name: $(DEV_DEPLOY_AGENT_POOL)
-        steps:
-          - download: current
-            artifact: $(DEPLOY_ARTIFACT_NAME)
-
-          - bash: |
-              set -euo pipefail
-              chmod +x scripts/write-public-config.sh
-              chmod +x scripts/deploy-onprem-podman.sh
-              scripts/deploy-onprem-podman.sh \
-                "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
-                "$(DEV_DEPLOY_ROOT)" \
-                "$(SIGA_AI_PROVIDER)" \
-                "$(SIGA_AI_TOKEN)" \
-                "$(SIGA_AI_MODEL)" \
-                "$(SIGA_AI_FALLBACK_MODELS)" \
-                "$(SIGA_AI_API_URL)" \
-                "$(SIGA_AZURE_ENDPOINT)" \
-                "$(SIGA_AZURE_DEPLOYMENT)" \
-                "$(SIGA_AZURE_API_VERSION)" \
-                "$(SIGA_AZURE_API_KEY)" \
-                "$(SIGA_AUTH_MODE)" \
-                "$(SIGA_ENTRA_CLIENT_ID)" \
-                "$(SIGA_ENTRA_TENANT_ID)" \
-                "$(SIGA_ADMIN_EMAILS)" \
-                "$(SIGA_EDITOR_EMAILS)" \
-                "$(SIGA_ADMIN_TOKEN)" \
-                "$(SIGA_ALLOWED_ORIGIN)"
-            displayName: 'Executar deploy DEV'
-
-  - stage: Deploy_PRD
-    displayName: 'Deploy PRD'
-    dependsOn: Package
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), or(eq(lower(variables['ENABLE_PRD_DEPLOY']), 'true'), eq(variables['ENABLE_PRD_DEPLOY'], '1'), eq(lower(variables['ENABLE_PRD_DEPLOY']), 'yes')))
-    jobs:
-      - job: DeployPrdOnPrem
-        displayName: 'Publicar em PRD on-prem'
-        pool:
-          name: $(PRD_DEPLOY_AGENT_POOL)
-        steps:
-          - download: current
-            artifact: $(DEPLOY_ARTIFACT_NAME)
-
-          - bash: |
-              set -euo pipefail
-              chmod +x scripts/write-public-config.sh
-              chmod +x scripts/deploy-onprem-podman.sh
-              scripts/deploy-onprem-podman.sh \
-                "$(Pipeline.Workspace)/$(DEPLOY_ARTIFACT_NAME)" \
-                "$(PRD_DEPLOY_ROOT)" \
-                "$(SIGA_AI_PROVIDER)" \
-                "$(SIGA_AI_TOKEN)" \
-                "$(SIGA_AI_MODEL)" \
-                "$(SIGA_AI_FALLBACK_MODELS)" \
-                "$(SIGA_AI_API_URL)" \
-                "$(SIGA_AZURE_ENDPOINT)" \
-                "$(SIGA_AZURE_DEPLOYMENT)" \
-                "$(SIGA_AZURE_API_VERSION)" \
-                "$(SIGA_AZURE_API_KEY)" \
-                "$(SIGA_AUTH_MODE)" \
-                "$(SIGA_ENTRA_CLIENT_ID)" \
-                "$(SIGA_ENTRA_TENANT_ID)" \
-                "$(SIGA_ADMIN_EMAILS)" \
-                "$(SIGA_EDITOR_EMAILS)" \
-                "$(SIGA_ADMIN_TOKEN)" \
-                "$(SIGA_ALLOWED_ORIGIN)"
-            displayName: 'Executar deploy PRD'
