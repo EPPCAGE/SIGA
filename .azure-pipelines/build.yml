@@ -1,5 +1,11 @@
 name: gesproc-ci-$(Date:yyyyMMdd)$(Rev:.r)
 
+parameters:
+  - name: forceDevDeploy
+    displayName: 'Forçar Deploy DEV'
+    type: boolean
+    default: false
+
 trigger:
   branches:
     include:
@@ -154,7 +160,7 @@ stages:
   - stage: Deploy_DEV
     displayName: 'Deploy DEV'
     dependsOn: Package
-    condition: and(succeeded(), contains(format(',{0},', variables['DEV_DEPLOY_BRANCHES']), format(',{0},', variables['Build.SourceBranch'])), or(eq(lower(variables['ENABLE_DEV_DEPLOY']), 'true'), eq(variables['ENABLE_DEV_DEPLOY'], '1'), eq(lower(variables['ENABLE_DEV_DEPLOY']), 'yes')))
+    condition: and(succeeded(), contains(format(',{0},', variables['DEV_DEPLOY_BRANCHES']), format(',{0},', variables['Build.SourceBranch'])), or(${{ parameters.forceDevDeploy }}, eq(lower(variables['ENABLE_DEV_DEPLOY']), 'true'), eq(variables['ENABLE_DEV_DEPLOY'], '1'), eq(lower(variables['ENABLE_DEV_DEPLOY']), 'yes')))
     jobs:
       - job: DeployDevOnPrem
         displayName: 'Publicar em DEV on-prem'
