@@ -24,7 +24,7 @@ variables:
   - name: PRD_DEPLOY_AGENT_POOL
     value: 'sefaz-self-hosted-deployment-container-prd'
   - name: ENABLE_DEV_DEPLOY
-    value: 'false'
+    value: 'true'
   - name: ENABLE_PRD_DEPLOY
     value: 'false'
   - name: DEV_DEPLOY_ROOT
