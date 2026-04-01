@@ -13027,6 +13027,13 @@ async function signInMicrosoft() {
     return;
   }
 
+  if (!globalThis.isSecureContext || !globalThis.crypto?.subtle) {
+    const msg = 'Login Microsoft requer conexão segura (HTTPS). Acesse o sistema via HTTPS e tente novamente.';
+    if (statusEl) statusEl.textContent = msg;
+    showToast('⚠️ ' + msg, 'warn');
+    return;
+  }
+
   try {
     if (statusEl) statusEl.textContent = 'Abrindo login Microsoft...';
     const msalLib = await _loadMsalBrowser();

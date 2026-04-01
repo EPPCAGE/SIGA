@@ -44,4 +44,5 @@ services:
         condition: service_healthy
     ports:
       - "${SIGA_FRONTEND_PORT:-8081}:8080"
+      - "${SIGA_FRONTEND_HTTPS_PORT:-443}:8443"
     restart: unless-stopped
