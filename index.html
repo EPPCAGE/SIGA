@@ -695,8 +695,10 @@
 
 
   /* ── SUPABASE AUTH ──────────────────────── */
-  .auth-overlay{position:fixed;inset:0;z-index:9000;background:var(--cage-blue);display:none;align-items:center;justify-content:center;}
-  .auth-box{background:white;border-radius:20px;padding:40px 44px;width:420px;max-width:92vw;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.80);}
+  .auth-overlay{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;overflow:hidden;background:#17363f;}
+  .auth-overlay::before{content:"";position:absolute;inset:-24px;background-image:linear-gradient(rgba(28,69,104,.58),rgba(18,44,82,.68)),url('https://www.universocoworking.com.br/site/wp-content/uploads/2021/05/CAFF-1000x570.jpg');background-size:cover;background-position:center;filter:blur(8px) saturate(.92);transform:scale(1.06);}
+  .auth-overlay::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at top,rgba(255,255,255,.14),transparent 42%),linear-gradient(180deg,rgba(9,30,55,.18),rgba(8,27,49,.44));}
+  .auth-box{position:relative;z-index:1;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.65);border-radius:20px;padding:40px 44px;width:420px;max-width:92vw;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.45);}
   .auth-logo-siga{width:100%;margin:0 auto 20px;}
   .auth-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px;line-height:1.5;}
   .auth-ms-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 20px;border:none;border-radius:10px;background:#0078d4;cursor:pointer;font-size:14px;font-weight:600;color:white;transition:all .2s;margin-bottom:12px;}
@@ -1472,7 +1474,7 @@
         <!-- Text: subtitle -->
         <text x="190" y="122" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="16" fill="#1A3A8A" letter-spacing="0.4">SISTEMA INTEGRADO DE</text>
         <text x="190" y="142" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="16" fill="#1A3A8A" letter-spacing="0.4">GESTÃO ESTRATÉGICA E ALINHAMENTO</text>
-        <text x="190" y="161" font-family="Arial,Helvetica,sans-serif" font-size="12.5" fill="#4A6FA5">Gestão de Processos, Projetos e Pessoas da CAGE-RS</text>
+        <text x="190" y="161" font-family="Arial,Helvetica,sans-serif" font-size="12.5" fill="#4A6FA5">Integrando projetos, processos e pessoas da CAGE-RS</text>
       </svg>
     </div>
     <div class="auth-sub">Faça login para acessar e sincronizar seus dados</div>
@@ -1730,7 +1732,7 @@
       <button class="btn btn-outline" onclick="showHome()">← Página Inicial</button>
     </div>
   </div>
-  <div class="hub-grid">
+  <div id="process-management-hub-grid" class="hub-grid">
     <button class="hub-subcard" type="button" onclick="showArqModule()">
       <div class="hub-subcard-icon">🏛️</div>
       <div class="hub-subcard-title">Arquitetura de Processos</div>
@@ -1761,6 +1763,17 @@
       <div class="hub-subcard-desc">Desenhe fluxos em BPMN 2.0, exporte diagramas e trabalhe a modelagem visual como submódulo do mesmo hub.</div>
       <div class="hub-subcard-footer">Editor visual especializado</div>
     </button>
+  </div>
+  <div id="process-management-gallery-view" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+      <div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#00a86b;margin-bottom:6px;">Submódulo</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:28px;color:#1B3022;line-height:1.2;">🗺️ Mapeamentos</div>
+        <div id="pop-gallery-subtitle" style="font-size:14px;color:#64748b;margin-top:4px;font-weight:500;">Galeria principal de processos mapeados da CAGE-RS.</div>
+      </div>
+      <button class="btn btn-outline" onclick="showProcessManagementHub()">← Voltar ao hub</button>
+    </div>
+    <div id="pop-gallery-panel" style="padding:4px 0 0;"></div>
   </div>
 </section>
 
@@ -4883,6 +4896,12 @@ function switchPop(pop, tabEl) {
   _navPush();
   const gal = document.getElementById('pop-gallery-panel');
   if(gal) gal.classList.remove('active');
+  const galleryView = document.getElementById('process-management-gallery-view');
+  if(galleryView) galleryView.style.display = 'none';
+  const hubGrid = document.getElementById('process-management-hub-grid');
+  if(hubGrid) hubGrid.style.display = 'grid';
+  const processHub = document.getElementById('process-management-module');
+  if(processHub) processHub.style.display = 'none';
   
   _restorePrevVersion();
   
@@ -17612,6 +17631,10 @@ function showProcessManagementHub() {
   _updateBackBtn();
   const hub = document.getElementById('process-management-module');
   if(hub) hub.style.display = 'block';
+  const hubGrid = document.getElementById('process-management-hub-grid');
+  if(hubGrid) hubGrid.style.display = 'grid';
+  const galleryView = document.getElementById('process-management-gallery-view');
+  if(galleryView) galleryView.style.display = 'none';
 }
 
 function showProjectManagementHub() {
@@ -17634,6 +17657,7 @@ function hideHome() {
 }
 
 function showHomePops() {
+  hideAllModules();
   hideHome();
   // Na galeria não há POP ativo: ocultar barra de processo e nav-tabs.
   // Elas serão exibidas apenas quando o usuário abrir um POP específico (switchPop).
@@ -17641,37 +17665,31 @@ function showHomePops() {
   const navTabs  = document.querySelector('.nav-tabs');
   if(switcher) switcher.style.display = 'none';
   if(navTabs)  navTabs.style.display  = 'none';
+  const processHub = document.getElementById('process-management-module');
+  if(processHub) processHub.style.display = 'block';
+  const hubGrid = document.getElementById('process-management-hub-grid');
+  if(hubGrid) hubGrid.style.display = 'none';
+  const galleryView = document.getElementById('process-management-gallery-view');
+  if(galleryView) {
+    galleryView.style.display = 'block';
+    galleryView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   // Mostrar tela de galeria de POPs em vez de abrir direto
   showPopGallery();
 }
 
 function showPopGallery() {
-  // Esconder todos os pop-contents
   document.querySelectorAll('.pop-content').forEach(p => p.classList.remove('active'));
-  // Mostrar painel de galeria (criar se não existir)
-  let gallery = document.getElementById('pop-gallery-panel');
-  if(!gallery) {
-    gallery = document.createElement('div');
-    gallery.id = 'pop-gallery-panel';
-    gallery.className = 'pop-content active';
-    gallery.style.cssText = 'padding:32px;max-width:900px;margin:0 auto;';
-    // Insert after pop-r
-    const anchor = document.getElementById('pop-r');
-    if(anchor?.parentNode) anchor.parentNode.insertBefore(gallery, anchor.nextSibling);
-    else document.body.appendChild(gallery);
-  } else {
-    gallery.classList.add('active');
-  }
+  const gallery = document.getElementById('pop-gallery-panel');
+  if(!gallery) return;
 
   const _GALLERY_SKIP = new Set(['_arqOverrides','pat','d','r','_logoUrl','_repoDocs','_drops']);
   const keys = Object.keys(DATA).filter(k => !_GALLERY_SKIP.has(k) && k.startsWith('pop_'));
+  const subtitle = document.getElementById('pop-gallery-subtitle');
+  if(subtitle) subtitle.textContent = `${keys.length} POP${keys.length !== 1 ? 's' : ''} cadastrado${keys.length !== 1 ? 's' : ''} na galeria principal de processos.`;
 
   gallery.innerHTML = `
-    <div style="margin-bottom:28px;">
-      <div style="font-size:22px;font-weight:800;color:#1B3022;font-family:'DM Serif Display',serif;">🗺️ Mapeamentos</div>
-      <div style="font-size:14px;color:#64748b;margin-top:4px;">${keys.length} POP${keys.length !== 1 ? 's' : ''} cadastrado${keys.length !== 1 ? 's' : ''}</div>
-    </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;">
       ${keys.length ? keys.map(k => {
         const meta = DATA[k]?.meta || {};
@@ -17700,6 +17718,7 @@ function showPopGallery() {
         </div>`;
       }).join('') : '<div style="color:#94a3b8;font-size:14px;padding:40px 0;text-align:center;">Nenhum processo cadastrado. Clique em ＋ Novo Processo para começar.</div>'}
     </div>`;
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e) { window.scrollTo(0, 0); }
 }
 
 // ══ renderPopsGrid ══════════════════════════════════════════════

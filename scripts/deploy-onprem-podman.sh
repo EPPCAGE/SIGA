@@ -74,7 +74,7 @@ for item in "$package_root"/*; do
 done
 shopt -u dotglob
 
-"$deploy_root/scripts/write-public-config.sh" \
+bash "$deploy_root/scripts/write-public-config.sh" \
   "$deploy_root/public-config.js" \
   "$auth_mode" \
   "$entra_client_id" \
@@ -94,9 +94,18 @@ SIGA_AZURE_API_VERSION=$azure_api_version
 SIGA_AZURE_API_KEY=$azure_api_key
 SIGA_ADMIN_TOKEN=$admin_token
 SIGA_ALLOWED_ORIGIN=$allowed_origins
+SIGA_FRONTEND_PORT=${SIGA_FRONTEND_PORT:-8081}
 EOF
 
 cd "$deploy_root"
+# Derruba a stack atual antes do rebuild para liberar nomes/portas do SIGA.
+"${compose_cmd[@]}" down --remove-orphans || true
+podman rm -f siga-frontend siga-backend || true
+
+if command -v ss >/dev/null 2>&1; then
+  ss -ltnp | grep ':8081' || true
+fi
+
 "${compose_cmd[@]}" up -d --build
 
 echo "Deploy on-prem concluido em: $deploy_root"

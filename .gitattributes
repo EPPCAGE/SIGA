@@ -9,6 +9,7 @@
 *.txt text eol=crlf
 *.csv text eol=crlf
 *.svg text eol=crlf
+*.sh text eol=lf
 
 *.png binary
 *.jpg binary

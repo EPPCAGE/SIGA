@@ -52,15 +52,51 @@ function isIPv4Loopback(address) {
   return octets.length === 4 && octets[0] === '127';
 }
 
+function normalizeRemoteAddress(address) {
+  const raw = String(address || '');
+  return raw.startsWith('::ffff:') ? raw.slice(7) : raw;
+}
+
+function isIPv4Private(address) {
+  const octets = String(address || '').split('.').map((part) => Number(part));
+  if (octets.length !== 4 || octets.some((part) => Number.isNaN(part))) return false;
+  if (octets[0] === 10) return true;
+  if (octets[0] === 192 && octets[1] === 168) return true;
+  return octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31;
+}
+
 function isLoopbackRequest(req) {
   const remote = String(req.socket?.remoteAddress || '');
   if (remote === '::1') return true;
-  if (isIPv4Loopback(remote)) return true;
-  return remote.startsWith('::ffff:') && isIPv4Loopback(remote.slice(7));
+  return isIPv4Loopback(normalizeRemoteAddress(remote));
+}
+
+function isPrivateNetworkRequest(req) {
+  const remote = normalizeRemoteAddress(req.socket?.remoteAddress || '');
+  return isIPv4Private(remote);
+}
+
+function isLocalOrigin(value) {
+  const text = String(value || '').trim().toLowerCase();
+  return text.startsWith('http://localhost:') || text.startsWith('http://127.0.0.1:');
+}
+
+function isLocalHost(value) {
+  const host = String(value || '').trim().toLowerCase().split(':')[0];
+  return host === 'localhost' || host === '127.0.0.1';
+}
+
+function isTrustedLocalProxyWrite(req) {
+  const proxyMarker = String(req.headers['x-siga-local-proxy'] || '').trim();
+  if (proxyMarker !== '1') return false;
+  if (!isPrivateNetworkRequest(req)) return false;
+  return isLocalOrigin(req.headers.origin)
+    || isLocalOrigin(req.headers.referer)
+    || isLocalHost(req.headers.host);
 }
 
 function isAuthorizedWriteRequest(req) {
-  if (!ADMIN_TOKEN) return isLoopbackRequest(req);
+  if (!ADMIN_TOKEN) return isLoopbackRequest(req) || isTrustedLocalProxyWrite(req);
   return readAdminToken(req) === ADMIN_TOKEN;
 }
 

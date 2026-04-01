@@ -35,6 +35,13 @@ foreach ($relative in $itemsToCopy) {
   Copy-Item -LiteralPath $source -Destination (Join-Path $target $relative) -Recurse -Force
 }
 
+# O build roda em Windows; normalize scripts shell no artefato para LF antes de publicar.
+Get-ChildItem -Path $target -Recurse -Filter *.sh | ForEach-Object {
+  $content = Get-Content -LiteralPath $_.FullName -Raw
+  $content = $content -replace "`r`n", "`n"
+  [System.IO.File]::WriteAllText($_.FullName, $content, [System.Text.UTF8Encoding]::new($false))
+}
+
 $manifest = [ordered]@{
   buildId    = $env:BUILD_BUILDID
   branch     = $env:BUILD_SOURCEBRANCH
