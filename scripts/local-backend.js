@@ -89,7 +89,10 @@ function isLocalHost(value) {
 function isTrustedLocalProxyWrite(req) {
   const proxyMarker = String(req.headers['x-siga-local-proxy'] || '').trim();
   if (proxyMarker !== '1') return false;
-  if (!isPrivateNetworkRequest(req)) return false;
+  // Note: port 3000 is not exposed externally in docker-compose, so any request
+  // reaching here with X-SIGA-Local-Proxy:1 is already from the internal Docker
+  // network. The IP check is omitted because Docker may allocate subnets outside
+  // RFC 1918 172.16-31.x range (e.g. 172.32.x.x+) when many networks exist.
   return isLocalOrigin(req.headers.origin)
     || isLocalOrigin(req.headers.referer)
     || isLocalHost(req.headers.host);
