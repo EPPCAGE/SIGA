@@ -2148,10 +2148,27 @@
   </div>
 
   <!-- Botões da barra superior -->
-  <div class="card fade-up">
+  <div class="card fade-up" style="margin-bottom:20px;">
     <div class="card-header"><span class="card-title">&#128280; Barra Superior</span></div>
     <div class="card-body" style="padding:16px;" id="gp-header-btns-list">
       <!-- rendered by eppRenderParams() -->
+    </div>
+  </div>
+
+  <!-- Configuração de IA (somente admin) -->
+  <div class="card fade-up" id="gp-ai-card" style="display:none;">
+    <div class="card-header"><span class="card-title">&#129302; Intelig&ecirc;ncia Artificial</span></div>
+    <div class="card-body" style="padding:20px;">
+      <p style="font-size:13px;color:#64748b;margin:0 0 14px;">Token pessoal do GitHub usado nas fun&ccedil;&otilde;es de IA (importa&ccedil;&atilde;o de POP Word, an&aacute;lise de processos). Armazenado localmente no seu navegador — n&atilde;o &eacute; enviado ao servidor de dados.</p>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+        <div style="flex:1;min-width:240px;">
+          <label for="gp-ai-token" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">GitHub Token (ghp_...)</label>
+          <input class="modal-input" id="gp-ai-token" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" style="font-size:12px;white-space:nowrap;" onclick="saveAiToken()">Salvar Token</button>
+        <button class="btn btn-outline" style="font-size:12px;white-space:nowrap;" onclick="clearAiToken()">Remover</button>
+      </div>
+      <div id="gp-ai-token-status" style="margin-top:10px;font-size:12px;"></div>
     </div>
   </div>
 </div>
@@ -9715,6 +9732,37 @@ function gpUpdateLogoPreview() {
   }
 }
 
+function saveAiToken() {
+  if (!isAdmin) { showToast('🔒 Apenas administradores podem configurar o token de IA.', 'warn'); return; }
+  const val = String(document.getElementById('gp-ai-token')?.value || '').trim();
+  if (!val) { showToast('Informe o token antes de salvar.', 'warn'); return; }
+  localStorage.setItem('siga_ai_token', val);
+  document.getElementById('gp-ai-token').value = '';
+  _gpUpdateAiTokenStatus();
+  showToast('✅ Token de IA salvo no navegador.', 'success');
+}
+
+function clearAiToken() {
+  if (!isAdmin) { showToast('🔒 Apenas administradores podem remover o token de IA.', 'warn'); return; }
+  localStorage.removeItem('siga_ai_token');
+  _gpUpdateAiTokenStatus();
+  showToast('Token de IA removido.', 'info');
+}
+
+function _gpUpdateAiTokenStatus() {
+  const card = document.getElementById('gp-ai-card');
+  if (card) card.style.display = isAdmin ? '' : 'none';
+  const el = document.getElementById('gp-ai-token-status');
+  if (!el) return;
+  const token = localStorage.getItem('siga_ai_token') || '';
+  if (token) {
+    const masked = token.slice(0, 6) + '\u2022'.repeat(Math.max(0, token.length - 10)) + token.slice(-4);
+    el.innerHTML = `<span style="color:#16a34a;">&#10004; Token configurado: ${masked}</span>`;
+  } else {
+    el.innerHTML = `<span style="color:#94a3b8;">&#8212; Token n&atilde;o configurado</span>`;
+  }
+}
+
 function eppRenderParams() {
   if(document.getElementById('epp-params-panel')?.style.display === 'none') return;
   const gp = _gpGet();
@@ -9763,6 +9811,8 @@ function eppRenderParams() {
     </div>`;
     btnList.innerHTML = logoSection;
   }
+
+  _gpUpdateAiTokenStatus();
 }
 
 function eppMoveModule(key, dir) {
@@ -12881,11 +12931,15 @@ async function callGeminiProxy(prompt, image = null, options = {}) {
   let saw503 = false;
   let definitiveErr = null;
 
+  const _aiToken = localStorage.getItem('siga_ai_token') || '';
+  const _aiHeaders = { 'Content-Type': 'application/json' };
+  if (_aiToken) _aiHeaders['X-Ai-Token'] = _aiToken;
+
   for (const endpoint of uniqueEndpoints) {
     try {
       const resp = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: _aiHeaders,
         body: JSON.stringify(payload),
       });
 

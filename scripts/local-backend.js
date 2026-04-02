@@ -472,7 +472,7 @@ async function parseXlsxTopology(base64Data) {
   };
 }
 async function callGithubModels(parsed) {
-  const AI_TOKEN = process.env.SIGA_AI_TOKEN || '';
+  const AI_TOKEN = String(parsed._aiToken || process.env.SIGA_AI_TOKEN || '').trim();
   const AI_API_URL = process.env.SIGA_AI_API_URL || 'https://models.github.ai/inference/chat/completions';
   const AI_MODEL  = process.env.SIGA_AI_MODEL  || 'openai/gpt-4.1-mini';
 
@@ -744,6 +744,8 @@ async function _routePostAi(req, res) {
   const parsed = await _parseRequestBody(req, res);
   if (parsed === null) return;
   const provider = String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase();
+  const headerToken = String(req.headers['x-ai-token'] || '').trim();
+  if (headerToken) parsed._aiToken = headerToken;
   const result = await callAiWithFallback(parsed, provider);
   sendJson(req, res, 200, {
     ok: true, text: result.text, providerUsed: result.providerUsed,
