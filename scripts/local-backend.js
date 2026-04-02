@@ -724,6 +724,7 @@ async function _routeGetHealth(req, res) {
     ok: true, service: 'siga-local-backend',
     aiProvider: process.env.SIGA_AI_PROVIDER || 'ai',
     hasAdminToken: Boolean(ADMIN_TOKEN),
+    hasAiConfigured: hasGithubProviderConfigured() || hasAzureProviderConfigured(),
   });
 }
 

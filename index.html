@@ -7576,6 +7576,13 @@ function setImportTarget(target) {
   }
 }
 
+function _npopIsAiUnavailableError(e) {
+  const msg = String(e?.message || '');
+  return /nao configurada|não configurada/i.test(msg)
+    || /Failed to fetch|NetworkError|Load failed/i.test(msg)
+    || /temporariamente indispon/i.test(msg);
+}
+
 async function _npopLoadWordStage1(npopFile, npopPopFile) {
   if(!npopFile) { showToast('Selecione um POP em Word (.docx) antes de continuar.', 'warn'); return false; }
   if(!_npopIsAllowedWorkflowFile(npopFile)) { showToast('Formato inválido. Use apenas arquivos .docx (Word moderno).', 'warn'); return false; }
@@ -7589,6 +7596,11 @@ async function _npopLoadWordStage1(npopFile, npopPopFile) {
     showToast('✅ Dados extraídos do POP Word. Revise o formulário e clique em Finalizar Mapeamento.', 'success');
     return true;
   } catch (e) {
+    if (_npopIsAiUnavailableError(e)) {
+      showToast('ℹ️ IA não disponível neste ambiente. Preencha os campos manualmente e clique em Finalizar Mapeamento.', 'info');
+      _npopApplyWorkflowExtractedData({ steps: [], atores: [] });
+      return true;
+    }
     showToast('⚠️ Falha ao carregar POP Word: ' + e.message, 'warn');
     return false;
   }
