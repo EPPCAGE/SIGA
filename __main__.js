@@ -6517,12 +6517,23 @@ async function checkEditorPermission() {
   if ((SIGA_AUTH.mode || 'local') === 'entra') {
     const entraCfg = SIGA_AUTH.entra || {};
     const email = (currentUserEmail || '').toLowerCase();
-    const adminEmails = (entraCfg.adminEmails || []).map((e) => String(e).toLowerCase());
+    const adminEmails  = (entraCfg.adminEmails  || []).map((e) => String(e).toLowerCase());
     const editorEmails = (entraCfg.editorEmails || []).map((e) => String(e).toLowerCase());
 
-    isAdmin = adminEmails.includes(email);
+    isAdmin  = adminEmails.includes(email);
     isEditor = isAdmin || editorEmails.includes(email);
-    isViewer = !isEditor;
+    isViewer = false; // por padrão sem acesso — exige aprovação explícita
+
+    if (!isEditor) {
+      // Verifica usuários aprovados dinamicamente pelo painel de gestão (LOCAL_ACCESS.editors)
+      const localUser = LOCAL_ACCESS.editors.find(e => (e.email || '').toLowerCase() === email);
+      if (localUser) {
+        isAdmin  = localUser.is_admin;
+        const localRole = localUser.is_admin ? 'admin' : (localUser.role || 'viewer');
+        isEditor = (localRole === 'editor' || localRole === 'admin' || localUser.is_admin);
+        isViewer = !isEditor; // viewer aprovado: acesso leitura; editor/admin: acesso completo
+      }
+    }
   } else {
     // Modo local: sempre admin/editor
     isEditor = true;
@@ -7097,6 +7108,14 @@ async function loadFromCloud() {
       });
     }
 
+    // Restaurar controle de acesso de usuários (solicitações, editores aprovados e logs)
+    if(payload.localAccess && typeof payload.localAccess === 'object') {
+      if(Array.isArray(payload.localAccess.editors))    LOCAL_ACCESS.editors    = payload.localAccess.editors;
+      if(Array.isArray(payload.localAccess.requests))   LOCAL_ACCESS.requests   = payload.localAccess.requests;
+      if(Array.isArray(payload.localAccess.history))    LOCAL_ACCESS.history    = payload.localAccess.history;
+      if(Array.isArray(payload.localAccess.accessLogs)) LOCAL_ACCESS.accessLogs = payload.localAccess.accessLogs;
+    }
+
     ['d','r'].forEach(p => {
       try {
         sanitizePop(p);
@@ -7291,6 +7310,8 @@ async function handleRequest(email, name, action) {
   } else {
     showToast('Solicitação de ' + email + ' rejeitada.', 'warn');
   }
+  await logHistory((action === 'aprovado' ? 'Aprovou acesso: ' : 'Rejeitou acesso: ') + email);
+  saveToCloud();
   loadRequestsList();
   loadEditorList();
 }
@@ -7338,6 +7359,7 @@ async function setEditorRole(email, role) {
   target.role = role === 'admin' ? 'editor' : role;
   await logHistory('Alterou perfil: ' + email + ' -> ' + labels[role]);
   showToast(`✓ ${email} → ${labels[role]}`, 'success');
+  saveToCloud();
   loadEditorList();
 }
 
@@ -7372,6 +7394,7 @@ async function saveNewEditor() {
   }
   await logHistory('Adicionou editor: ' + email);
   showToast('Editor adicionado!','success');
+  saveToCloud();
   document.getElementById(_pid('add-row')).style.display = 'none';
   document.getElementById(_pid('add-btn-row')).style.display = '';
   document.getElementById(_pid('new-email')).value = '';
@@ -7384,6 +7407,7 @@ async function removeEditor(email) {
   LOCAL_ACCESS.editors = LOCAL_ACCESS.editors.filter(e => e.email !== email);
   await logHistory('Removeu editor: ' + email);
   showToast('Editor removido.','success');
+  saveToCloud();
   loadEditorList();
 }
 
@@ -7559,8 +7583,9 @@ async function signInMicrosoft() {
     showUserUI(currentUser);
     document.getElementById('auth-overlay').style.display = 'none';
 
-    await checkEditorPermission();
+    // Carrega dados primeiro para que LOCAL_ACCESS.editors esteja disponível antes da verificação de permissões
     await loadFromCloud();
+    await checkEditorPermission();
     window._appInitialized = true;
 
     try { logAccessEvent('login'); } catch(e) { console.warn('[siga]', e); }
