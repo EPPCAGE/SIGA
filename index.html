@@ -9757,7 +9757,11 @@ function _gpUpdateAiTokenStatus() {
   const token = localStorage.getItem('siga_ai_token') || '';
   if (token) {
     const masked = token.slice(0, 6) + '\u2022'.repeat(Math.max(0, token.length - 10)) + token.slice(-4);
-    el.innerHTML = `<span style="color:#16a34a;">&#10004; Token configurado: ${masked}</span>`;
+    const span = document.createElement('span');
+    span.style.color = '#16a34a';
+    span.textContent = '\u2714 Token configurado: ' + masked;
+    el.innerHTML = '';
+    el.appendChild(span);
   } else {
     el.innerHTML = `<span style="color:#94a3b8;">&#8212; Token n&atilde;o configurado</span>`;
   }
