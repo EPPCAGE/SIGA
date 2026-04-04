@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: docker/backend/Dockerfile
     container_name: siga-backend
+    ports:
+      - "3000:3000"
     environment:
       HOST: 0.0.0.0
       PORT: 3000
@@ -23,6 +25,21 @@ services:
       SIGA_AZURE_DEPLOYMENT: ${SIGA_AZURE_DEPLOYMENT:-gpt-5.1-chat}
       SIGA_AZURE_API_VERSION: ${SIGA_AZURE_API_VERSION:-2024-12-01-preview}
       SIGA_AZURE_API_KEY: ${SIGA_AZURE_API_KEY}
+      SIGA_AUTH_MODE: ${SIGA_AUTH_MODE:-local}
+      SIGA_ENTRA_TENANT_ID: ${SIGA_ENTRA_TENANT_ID:-}
+      SIGA_ENTRA_API_CLIENT_ID: ${SIGA_ENTRA_API_CLIENT_ID:-}
+      SIGA_ENTRA_API_AUDIENCE: ${SIGA_ENTRA_API_AUDIENCE:-}
+      SIGA_PUBLIC_URL: ${SIGA_PUBLIC_URL:-}
+      SIGA_ADMIN_EMAILS: ${SIGA_ADMIN_EMAILS:-}
+      SIGA_EDITOR_EMAILS: ${SIGA_EDITOR_EMAILS:-}
+      SIGA_SMTP_HOST: ${SIGA_SMTP_HOST:-}
+      SIGA_SMTP_PORT: ${SIGA_SMTP_PORT:-587}
+      SIGA_SMTP_SECURE: ${SIGA_SMTP_SECURE:-false}
+      SIGA_SMTP_STARTTLS: ${SIGA_SMTP_STARTTLS:-true}
+      SIGA_SMTP_USER: ${SIGA_SMTP_USER:-}
+      SIGA_SMTP_PASS: ${SIGA_SMTP_PASS:-}
+      SIGA_SMTP_FROM_EMAIL: ${SIGA_SMTP_FROM_EMAIL:-}
+      SIGA_SMTP_FROM_NAME: ${SIGA_SMTP_FROM_NAME:-SIGA}
       # ── IA / GitHub Copilot (fallback) ───────────────────────────────
       # SIGA_AI_TOKEN: ${SIGA_AI_TOKEN}
     volumes:

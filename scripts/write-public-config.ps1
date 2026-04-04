@@ -4,6 +4,9 @@ param(
   [string]$AuthMode = 'local',
   [string]$EntraClientId = '',
   [string]$EntraTenantId = '',
+  [string]$EntraApiClientId = '',
+  [string]$EntraApiAudience = '',
+  [string]$EntraApiScope = '',
   [string]$AdminEmails = '',
   [string]$EditorEmails = ''
 )
@@ -40,6 +43,9 @@ globalThis.__SIGA_RUNTIME__ = {
       clientId: '$EntraClientId',
       tenantId: '$EntraTenantId',
       redirectUri: globalThis.location.origin,
+      apiClientId: '$EntraApiClientId',
+      apiAudience: '$EntraApiAudience',
+      apiScope: '$EntraApiScope',
       adminEmails: $adminEmailsLiteral,
       editorEmails: $editorEmailsLiteral,
     },

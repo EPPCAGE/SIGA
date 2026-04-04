@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -lt 6 ]]; then
-  echo "Uso: $0 <output-path> <auth-mode> <entra-client-id> <entra-tenant-id> <admin-emails> <editor-emails>" >&2
+if [[ $# -lt 9 ]]; then
+  echo "Uso: $0 <output-path> <auth-mode> <entra-client-id> <entra-tenant-id> <entra-api-client-id> <entra-api-audience> <entra-api-scope> <admin-emails> <editor-emails>" >&2
   exit 1
 fi
 
@@ -10,8 +10,11 @@ output_path="$1"
 auth_mode="${2:-local}"
 entra_client_id="${3:-}"
 entra_tenant_id="${4:-}"
-admin_emails="${5:-}"
-editor_emails="${6:-}"
+entra_api_client_id="${5:-}"
+entra_api_audience="${6:-}"
+entra_api_scope="${7:-}"
+admin_emails="${8:-}"
+editor_emails="${9:-}"
 
 to_js_array() {
   local raw="$1"
@@ -46,6 +49,9 @@ globalThis.__SIGA_RUNTIME__ = {
       clientId: '$entra_client_id',
       tenantId: '$entra_tenant_id',
       redirectUri: globalThis.location.origin,
+      apiClientId: '$entra_api_client_id',
+      apiAudience: '$entra_api_audience',
+      apiScope: '$entra_api_scope',
       adminEmails: $admin_array,
       editorEmails: $editor_array,
     },

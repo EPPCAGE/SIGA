@@ -11,6 +11,9 @@ param(
   [string]$AuthMode = 'local',
   [string]$EntraClientId = '',
   [string]$EntraTenantId = '',
+  [string]$EntraApiClientId = '',
+  [string]$EntraApiAudience = '',
+  [string]$EntraApiScope = '',
   [string]$AdminEmails = '',
   [string]$EditorEmails = '',
   [string]$AdminToken = '',
@@ -97,6 +100,9 @@ Get-ChildItem -LiteralPath $packageFullPath -Force | ForEach-Object {
   -AuthMode $AuthMode `
   -EntraClientId $EntraClientId `
   -EntraTenantId $EntraTenantId `
+  -EntraApiClientId $EntraApiClientId `
+  -EntraApiAudience $EntraApiAudience `
+  -EntraApiScope $EntraApiScope `
   -AdminEmails $AdminEmails `
   -EditorEmails $EditorEmails
 
@@ -106,6 +112,10 @@ $envValues = @{
   SIGA_AZURE_DEPLOYMENT  = $AzureDeployment
   SIGA_AZURE_API_VERSION = $AzureApiVersion
   SIGA_AZURE_API_KEY     = $AzureApiKey
+  SIGA_AUTH_MODE         = $AuthMode
+  SIGA_ENTRA_TENANT_ID   = $EntraTenantId
+  SIGA_ENTRA_API_CLIENT_ID = $EntraApiClientId
+  SIGA_ENTRA_API_AUDIENCE = $EntraApiAudience
   SIGA_ADMIN_TOKEN       = $AdminToken
   SIGA_ALLOWED_ORIGIN    = $AllowedOrigins
 }

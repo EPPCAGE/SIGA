@@ -867,7 +867,7 @@
   .pat-progress-fill{height:100%;border-radius:3px;transition:width .4s;}
 
 
-  /* ── EPP MODULE (Gestão EPP) ── */
+  /* ── EPP / Gestão do Sistema ── */
   .epp-tab{padding:9px 20px;border:none;border-bottom:3px solid transparent;background:none;font-size:13px;font-weight:600;cursor:pointer;color:#64748b;white-space:nowrap;transition:all .15s;}
   .epp-tab.active{color:#1B3022;border-bottom-color:#1B3022;}
   .epp-tab:hover{color:#1B3022;}
@@ -1554,14 +1554,15 @@
 
 <div class="sidebar" id="sidebar">
   <div class="sidebar-head">
-    <div class="sidebar-title">Gestão EPP</div>
+    <div class="sidebar-title">SIGA</div>
     <div id="sidebar-nav-btns">
       <button data-mod="home"        data-sortkey="home"        class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:#047857;color:white;border:none;">🏠 Página Inicial</button>
       <button data-mod="process-mgmt" data-sortkey="process-mgmt" class="sidebar-pat-btn" onclick="closeSidebar();showProcessManagementHub();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(15,91,87,.5);">🧭 Gestão de Processos</button>
       <button data-mod="projects-mgmt" data-sortkey="projects-mgmt" class="sidebar-pat-btn" onclick="closeSidebar();showProjectManagementHub();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(37,99,235,.5);">📁 Gestão de Projetos</button>
       <button data-mod="repo"        data-sortkey="repo"        class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(225,29,72,.5);">📚 Documentos e Manuais</button>
       <button data-mod="drops"       data-sortkey="drops"       class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(14,165,233,.5);">💧 Drops de Conhecimento</button>
-      <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(59,130,246,.5);">🏢 Gestão EPP</button>
+      <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(59,130,246,.5);">🏢 EPP</button>
+      <button data-mod="system-mgmt" data-sortkey="system-mgmt" class="sidebar-pat-btn" onclick="closeSidebar();openSystemManagementIfAllowed();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(147,51,234,.5);">⚙️ Gestão do Sistema</button>
       <button data-mod="quadro"      data-sortkey="quadro"      class="sidebar-pat-btn" onclick="closeSidebar();showQuadroModule();" style="margin-top:4px;background:#047857;color:white;border-color:rgba(16,185,129,.5);">🗒 Quadro de Esboço</button>
       <button data-mod="arq"         data-sortkey="arq"         class="sidebar-pat-btn" onclick="closeSidebar();showArqModule();" style="margin-top:4px;background:#047857;color:white;border-color:rgba(139,92,246,.5);">🏛 Arquitetura de Processos</button>
       <button data-mod="ind-cage"    data-sortkey="ind-cage"    class="sidebar-pat-btn" onclick="closeSidebar();showIndCageModule();" style="margin-top:4px;background:#047857;color:white;border-color:rgba(232,160,32,.5);">📈 Indicadores CAGE</button>
@@ -1682,8 +1683,14 @@
       </button>
       <button class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
         <div class="home-card-icon" style="background:#047857;color:white;">🏢</div>
-        <div class="home-card-title" contenteditable="false">Gestão EPP</div>
-        <div class="home-card-desc" contenteditable="false">Plano Anual de Trabalho e Dashboard de desempenho do EPP — indicadores de impacto, cobertura e PAT.</div>
+        <div class="home-card-title" contenteditable="false">EPP</div>
+        <div class="home-card-desc" contenteditable="false">Plano Anual de Trabalho e dashboard executivo do EPP, com visão de impacto, cobertura e execução.</div>
+        <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
+      </button>
+      <button class="home-card home-card-editor" data-sortkey="system-mgmt" onclick="openSystemManagementIfAllowed()" style="border-top:4px solid #9333ea;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
+        <div class="home-card-icon" style="background:#047857;color:white;">⚙️</div>
+        <div class="home-card-title" contenteditable="false">Gestão do Sistema</div>
+        <div class="home-card-desc" contenteditable="false">Administração do SIGA: tabelas de referência, usuários, parâmetros globais e monitoramento operacional.</div>
         <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
       </button>
       <button class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
@@ -1863,13 +1870,13 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- MÓDULO: GESTÃO ESCRITÓRIO DE PROCESSOS (EPP)              -->
+<!-- MÓDULO: EPP                                               -->
 <!-- ═══════════════════════════════════════════════════════════ -->
-<div id="epp-module" style="display:none;background:white;border-bottom:2px solid #e2e8f0;position:sticky;top:64px;z-index:20;">
+<div id="epp-work-module" style="display:none;background:white;border-bottom:2px solid #e2e8f0;position:sticky;top:64px;z-index:20;">
   <div style="max-width:1100px;margin:0 auto;padding:16px 32px 0;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
       <div>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:#1B3022;margin:0 0 2px;">&#127970; Gest&atilde;o EPP</h2>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:#1B3022;margin:0 0 2px;">&#127970; EPP</h2>
         <div style="font-size:12px;color:#64748b;">CAGE-RS &middot; Plano Anual de Trabalho e Dashboard de Desempenho</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
@@ -1878,12 +1885,31 @@
       </div>
     </div>
     <div style="display:flex;gap:0;">
-      <button class="epp-tab active" data-tab="pat"    onclick="eppTab('pat',this)">&#128197; Plano Anual de Trabalho</button>
-      <button class="epp-tab"        data-tab="dash"   onclick="eppTab('dash',this)">&#128202; Dashboard EPP</button>
-      <button class="epp-tab"        data-tab="config" onclick="eppTab('config',this)">&#9881;&#65039; Tabelas de Refer&ecirc;ncia</button>
-      <button class="epp-tab"        data-tab="users"  onclick="eppTab('users',this)">&#128101; Usu&aacute;rios</button>
-      <button class="epp-tab"        data-tab="params" onclick="eppTab('params',this)">&#128736; Par&acirc;metros Globais</button>
-      <button class="epp-tab"        data-tab="monitoring" onclick="eppTab('monitoring',this)" id="epp-tab-monitoring">&#128203; Monitoramento</button>
+      <button class="epp-tab active" data-epp-tab="pat" onclick="eppTab('pat',this)">&#128197; Plano Anual de Trabalho</button>
+      <button class="epp-tab" data-epp-tab="dash" onclick="eppTab('dash',this)">&#128202; Dashboard EPP</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MÓDULO: GESTÃO DO SISTEMA                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="epp-module" style="display:none;background:white;border-bottom:2px solid #e2e8f0;position:sticky;top:64px;z-index:20;">
+  <div style="max-width:1100px;margin:0 auto;padding:16px 32px 0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:#1B3022;margin:0 0 2px;">&#9881;&#65039; Gest&atilde;o do Sistema</h2>
+        <div style="font-size:12px;color:#64748b;">CAGE-RS &middot; Configura&ccedil;&atilde;o, usu&aacute;rios e monitoramento do SIGA</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-outline" data-show-home="true" style="font-size:12px;padding:6px 14px;">&#8592; In&iacute;cio</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:0;">
+      <button class="epp-tab active" data-system-tab="config" onclick="systemTab('config',this)">&#9881;&#65039; Tabelas de Refer&ecirc;ncia</button>
+      <button class="epp-tab" data-system-tab="users" onclick="systemTab('users',this)">&#128101; Usu&aacute;rios</button>
+      <button class="epp-tab" data-system-tab="params" onclick="systemTab('params',this)">&#128736; Par&acirc;metros Globais</button>
+      <button class="epp-tab" data-system-tab="monitoring" onclick="systemTab('monitoring',this)" id="epp-tab-monitoring">&#128203; Monitoramento</button>
     </div>
   </div>
 </div>
@@ -1951,7 +1977,7 @@
 
   <!-- Block 3: Performance do EPP -->
   <div class="epp-dash-section">
-    <div class="epp-dash-section-title">&#9889; Performance do Gest&atilde;o EPP</div>
+    <div class="epp-dash-section-title">&#9889; Performance do EPP</div>
     <div class="epp-kpi-grid">
       <div class="epp-kpi-card" style="border-left-color:#3b82f6;">
         <div class="epp-kpi-value" id="epp-kpi-prazo">&mdash;</div>
@@ -2218,6 +2244,11 @@
         <option value="">Todos os eventos</option>
         <option value="login">Login</option>
         <option value="logout">Logout</option>
+        <option value="access_request">Solicitação de acesso</option>
+        <option value="access_approved">Acesso aprovado</option>
+        <option value="access_rejected">Acesso rejeitado</option>
+        <option value="role_changed">Perfil alterado</option>
+        <option value="access_removed">Acesso removido</option>
       </select>
       <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="eppLoadAccessLogs(true)">&#8635; Recarregar</button>
     </div>
@@ -2237,8 +2268,8 @@
 <div id="pat-module" class="pat-module" style="display:none;">
   <div class="pat-header-row">
     <div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">&#128197; Plano de Trabalho &mdash; Gest&atilde;o EPP</h2>
-      <div style="font-size:13px;color:var(--text-muted);">Gest&atilde;o EPP &mdash; Vis&iacute;vel apenas para editores</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--cage-blue);margin:0 0 4px;">&#128197; Plano de Trabalho &mdash; EPP</h2>
+      <div style="font-size:13px;color:var(--text-muted);">EPP &mdash; Vis&iacute;vel apenas para editores</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <button class="btn btn-primary" onclick="openPatModal()" style="font-size:13px;">&#65291; Nova Atividade</button>
@@ -2669,7 +2700,7 @@
   <!-- Header -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
     <div>
-      <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#0ea5e9;margin-bottom:4px;">CAGE-RS · Gestão EPP</div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#0ea5e9;margin-bottom:4px;">CAGE-RS · EPP</div>
       <h2 style="font-family:'DM Serif Display',serif;font-size:28px;color:#1B3022;margin:0;line-height:1.2;">&#127919; Cockpit de Gest&atilde;o</h2>
       <div style="font-size:13px;color:#64748b;margin-top:4px;">Vis&atilde;o estrat&eacute;gica em tempo real</div>
     </div>
@@ -9571,7 +9602,8 @@ const _MODULES_NAV = [
   { key:'projects-mgmt', label:'📁 Gestão de Projetos',            color:'#2563eb' },
   { key:'repo',     label:'📚 Documentos e Manuais',               color:'#e11d48' },
   { key:'drops',    label:'💧 Drops de Conhecimento',              color:'#0ea5e9' },
-  { key:'epp',      label:'🏢 Gestão EPP',     color:'#3b82f6' },
+  { key:'epp',      label:'🏢 EPP',                                color:'#3b82f6' },
+  { key:'system-mgmt', label:'⚙️ Gestão do Sistema',              color:'#9333ea' },
   { key:'bi',       label:'📊 Cadeia de Valor e Mapa Estratégico', color:'#eab308' },
   { key:'quadro',   label:'🗒 Quadro de Esboço',                   color:'#10b981' },
   { key:'arq',      label:'🏛 Arquitetura de Processos',           color:'#8b5cf6' },
@@ -10939,9 +10971,77 @@ async function checkActionsDeadlinesEmail() {
 }
 
 function renderSidebar() {
-  // Processos mapeados não são exibidos na sidebar — navegação via Página Inicial
   const el = document.getElementById('sidebar-list');
-  if(el) el.innerHTML = '';
+  if(!el) return;
+  if(_isArqModuleVisible()) {
+    _renderArqSidebar(el);
+    return;
+  }
+  el.innerHTML = '';
+}
+
+function _isArqModuleVisible() {
+  const el = document.getElementById('arq-module');
+  return !!el && el.style.display !== 'none';
+}
+
+function _renderArqSidebar(el) {
+  const entries = _arqSidebarState.filteredRealIdxs
+    .map((realIdx) => {
+      const record = arqGetData()[realIdx];
+      return record ? { record, realIdx } : null;
+    })
+    .filter(Boolean);
+
+  if(!entries.length) {
+    el.innerHTML = `
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">Arquitetura</div>
+        <div style="padding:10px 16px;font-size:12px;line-height:1.5;color:rgba(255,255,255,.72);">
+          Nenhum processo encontrado com os filtros atuais.
+        </div>
+      </div>`;
+    return;
+  }
+
+  const total = entries.length;
+  const mapped = entries.filter(({ record }) => !!record.mapeado).length;
+  let currentMacro = '';
+  const chunks = [
+    `<div class="sidebar-group">
+      <div class="sidebar-group-label">Arquitetura</div>
+      <div style="padding:0 16px 10px;font-size:11px;color:rgba(255,255,255,.72);">${mapped} de ${total} item(ns) mapeado(s)</div>
+    </div>`
+  ];
+
+  entries.forEach(({ record, realIdx }) => {
+    if(record.macroprocesso !== currentMacro) {
+      currentMacro = record.macroprocesso;
+      chunks.push(`
+        <div class="sidebar-group">
+          <div class="sidebar-group-label sidebar-macro-label">
+            <span class="sidebar-macro-icon">${MACRO_ICONS[currentMacro] || '•'}</span>
+            <span>${escapeHtml(currentMacro)}</span>
+          </div>
+        </div>`);
+    }
+
+    const label = record.subprocesso || record.processo;
+    const badges = [
+      record.critico ? '<span class="sidebar-item-badge" style="background:#dc2626;">Crítico</span>' : '',
+      record.mapeado ? '<span class="sidebar-item-badge">Mapeado</span>' : ''
+    ].filter(Boolean).join('');
+    const activeClass = _arqSidebarState.selectedRealIdx === realIdx ? ' active' : '';
+
+    chunks.push(`
+      <button type="button" class="sidebar-item${activeClass}" onclick="arqSidebarOpenItem(${realIdx})" title="${escapeHtml(record.processo)}">
+        <span class="sidebar-item-icon">${record.subprocesso ? '↳' : '•'}</span>
+        <span class="sidebar-item-name">${escapeHtml(label)}</span>
+        ${badges}
+      </button>`);
+  });
+
+  el.innerHTML = chunks.join('');
 }
 
 
@@ -11040,7 +11140,7 @@ function _renderOrganogramaNivel2(unitTeams, connDown) {
 function _renderOrganogramaHint(adjuntos, equipeUnidade) {
   if(adjuntos.length !== 0 || equipeUnidade.length !== 0) return '';
   return `<div style="margin-top:20px;padding:16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;text-align:center;font-size:13px;color:#94a3b8;">
-    Configure o organograma em <strong>Gestão EPP → Configurações</strong>:<br>
+    Configure o organograma em <strong>Gestão do Sistema → Tabelas de Referência</strong>:<br>
     defina o Contador-Geral, Adjuntos e vincule Equipes às Unidades.
   </div>`;
 }
@@ -11574,24 +11674,18 @@ function openEppIfAllowed() {
   if(isEditor) { showEppModule('pat'); }
   else { showToast('🔒 Acesso restrito a editores.', 'warn'); }
 }
+function openSystemManagementIfAllowed() {
+  if(isEditor) { showSystemManagementModule('config'); }
+  else { showToast('🔒 Acesso restrito a editores.', 'warn'); }
+}
 
 function showPatModule(show = true) {
+  if(show) { showEppModule('pat'); return; }
   const pat = document.getElementById('pat-module');
-
-  if(show) {
-    hideHome();
-    hideAllModules();
-    // Mostrar PAT — usar style.display para sobrepor qualquer CSS inline anterior
-    pat.style.display = 'block';
-    pat.classList.add('active');
-    renderPat();
-    populatePatPopSelect();
-    renderSidebar();
-  } else {
-    pat.style.display = 'none';
-    pat.classList.remove('active');
-    showHome();
-  }
+  const work = document.getElementById('epp-work-module');
+  if(pat) { pat.style.display = 'none'; pat.classList.remove('active'); }
+  if(work) work.style.display = 'none';
+  showHome();
 }
 
 function populatePatPopSelect() {
@@ -11895,7 +11989,7 @@ let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
 let workspaceId = localStorage.getItem('gestpop_wsid') || sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
-  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','simulator-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel','cockpit-module','process-management-module','project-management-module'].forEach(id => {
+  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','simulator-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-work-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel','cockpit-module','process-management-module','project-management-module'].forEach(id => {
     const el = document.getElementById(id);
     if(el) { el.style.display = 'none'; el.classList.remove('active'); }
   });
@@ -11914,14 +12008,12 @@ async function checkEditorPermission() {
   currentUserName  = currentUser?.user_metadata?.full_name || currentUserEmail.split('@')[0];
 
   if ((SIGA_AUTH.mode || 'local') === 'entra') {
-    const entraCfg = SIGA_AUTH.entra || {};
-    const email = (currentUserEmail || '').toLowerCase();
-    const adminEmails = (entraCfg.adminEmails || []).map((e) => String(e).toLowerCase());
-    const editorEmails = (entraCfg.editorEmails || []).map((e) => String(e).toLowerCase());
-
-    isAdmin = adminEmails.includes(email);
-    isEditor = isAdmin || editorEmails.includes(email);
-    isViewer = !isEditor;
+    const useServerState = _serverAccessState?.email === _normalizeAccessEmail(currentUserEmail)
+      && _serverAccessState?.localAccessConfigured !== false;
+    const entry = useServerState ? _serverAccessState : _getEffectiveAccessEntry(currentUserEmail);
+    isAdmin = Boolean(entry?.is_admin);
+    isEditor = isAdmin || entry?.role === 'editor';
+    isViewer = !isEditor && entry?.role === 'viewer';
   } else {
     // Modo local: sempre admin/editor
     isEditor = true;
@@ -12039,14 +12131,14 @@ function eppExitViewerPreview() {
 }
 
 async function showAccessRequestOverlay() {
-  const existing = LOCAL_ACCESS.requests.find(r => r.email === currentUserEmail) || null;
+  const requestStatus = _serverAccessState?.requestStatus || null;
 
   let msg = '';
-  if(existing?.status === 'pendente') {
+  if(requestStatus === 'pendente') {
     msg = `<div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:14px 18px;font-size:13px;color:#854d0e;margin-bottom:16px;">
       ⏳ <strong>Solicitação enviada!</strong> Aguarde a aprovação do administrador.
     </div>`;
-  } else if(existing?.status === 'rejeitado') {
+  } else if(requestStatus === 'rejeitado') {
     msg = `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:14px 18px;font-size:13px;color:#991b1b;margin-bottom:16px;">
       ❌ <strong>Acesso negado.</strong> Entre em contato com o administrador.
     </div>`;
@@ -12064,7 +12156,7 @@ async function showAccessRequestOverlay() {
         Você está logado como <strong>${currentUserEmail}</strong>, mas não tem permissão para acessar este sistema.
       </div>
       ${msg}
-      ${!existing ? `
+      ${!requestStatus ? `
       <div style="text-align:left;margin-bottom:16px;">
         <label for="req-motivo" style="font-size:12px;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">MOTIVO DA SOLICITAÇÃO (opcional)</label>
         <textarea id="req-motivo" rows="3" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:10px;font-size:13px;resize:none;box-sizing:border-box;"
@@ -12084,19 +12176,28 @@ async function showAccessRequestOverlay() {
 async function submitAccessRequest() {
   const motivo = document.getElementById('req-motivo')?.value.trim() || '';
   document.getElementById('req-status').textContent = 'Enviando...';
-  const existing = LOCAL_ACCESS.requests.find(r => r.email === currentUserEmail);
-  const payload = {
-    email: currentUserEmail,
-    name:  currentUserName,
-    motivo,
-    status: 'pendente',
-    requested_at: new Date().toISOString()
-  };
-  if(existing) Object.assign(existing, payload);
-  else LOCAL_ACCESS.requests.push(payload);
-  document.getElementById('req-status').innerHTML =
-    '<span style="color:#16a34a;font-weight:600;">✅ Solicitação registrada localmente.</span>';
-  setTimeout(() => showAccessRequestOverlay(), 1500);
+  try {
+    const headers = await _buildApiHeaders({ 'Content-Type': 'application/json' }, { allowWithoutAuth: false });
+    const res = await fetch(API_URL + '/access-request', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ motivo })
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok) throw new Error(data?.error || ('HTTP ' + res.status));
+    _serverAccessState = data?.access || {
+      email: _normalizeAccessEmail(currentUserEmail),
+      role: 'pending',
+      requestStatus: 'pendente',
+      is_admin: false
+    };
+    document.getElementById('req-status').innerHTML =
+      '<span style="color:#16a34a;font-weight:600;">✅ Solicitação enviada para aprovação.</span>';
+    setTimeout(() => showAccessRequestOverlay(), 1500);
+  } catch (error) {
+    document.getElementById('req-status').innerHTML =
+      `<span style="color:#dc2626;font-weight:600;">❌ ${escapeHtml(error.message || 'Falha ao enviar solicitação.')}</span>`;
+  }
 }
 
 // ── sanitizePopData — garante estrutura mínima de um POP ────
@@ -12215,6 +12316,7 @@ globalThis.addEventListener('beforeunload', (e) => {
     newPops:         newPopKeys.map(k => ({ key: k, data: _stripTrans(DATA[k]) })),
     indicadoresCage: DATA.indicadoresCage || { indicadores: [], resultados: [] },
     competencyManagement: DATA.competencyManagement || null,
+    localAccess:     _serializeLocalAccessState(),
     repoDocs:        [],
     drops:           [],
   };
@@ -12245,7 +12347,7 @@ globalThis.addEventListener('beforeunload', (e) => {
     fetch(API_URL + '/data', {
       method: 'POST',
       keepalive: true,
-      headers: { 'Content-Type': 'application/json' },
+      headers: _buildKeepaliveApiHeaders({ 'Content-Type': 'application/json' }),
       body: reqBody
     });
     /* keepalive log suppressed */
@@ -12295,7 +12397,9 @@ function _normalizeUnidades() {
 
 async function _fetchMergeNewPopsFromServer(apiUrl, dirtyPops) {
   try {
-    const serverRes = await fetch(apiUrl + '/data');
+    const serverRes = await fetch(apiUrl + '/data', {
+      headers: await _buildApiHeaders({}, { allowWithoutAuth: false })
+    });
     if(!serverRes.ok) return;
     const serverRow = await serverRes.json();
     if(!serverRow?.data?.newPops) return;
@@ -12335,6 +12439,7 @@ function _buildSavePayload(DATA, REPO_DOCS, DROPS) {
     config:             DATA.config          || null,
     aptCatalog:         Array.isArray(DATA.aptCatalog) && DATA.aptCatalog.length > 0 ? DATA.aptCatalog : null,
     quadro:             DATA.quadro          || null,
+    localAccess:        _serializeLocalAccessState(),
   };
 }
 
@@ -12385,7 +12490,9 @@ function _mergePendingServerPops() {
 
 async function _fetchAndMergeServerPops() {
   try {
-    const serverRes = await fetch(API_URL + '/data');
+    const serverRes = await fetch(API_URL + '/data', {
+      headers: await _buildApiHeaders({}, { allowWithoutAuth: false })
+    });
     if (!serverRes.ok) return;
     const serverRow = await serverRes.json();
     const newPops = serverRow?.data?.newPops;
@@ -12416,9 +12523,10 @@ function _hideUnsavedDotIfClean() {
 }
 
 async function _postSavePayload(payload) {
+  const headers = await _buildApiHeaders({ 'Content-Type': 'application/json' });
   const res = await fetch(API_URL + '/data', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       data: payload,
       updated_by: currentUserEmail,
@@ -12449,6 +12557,7 @@ async function saveToCloud(attempt=1) {
 
   try {
     const saved = await _postSavePayload(payload);
+    _applySavedLocalAccessState(saved);
 
     _saveInProgress = false;
     _clearSavedDirtyPops(_popsIncludedInThisSave);
@@ -12538,7 +12647,8 @@ async function loadFromCloud() {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
-    const res = await fetch(API_URL + '/data', { signal: controller.signal });
+    const headers = await _buildApiHeaders({}, { allowWithoutAuth: false });
+    const res = await fetch(API_URL + '/data', { signal: controller.signal, headers });
     clearTimeout(timeoutId);
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
@@ -12558,6 +12668,9 @@ async function loadFromCloud() {
     workspaceId = data.id; sessionStorage.setItem('gestpop_wsid', workspaceId); try { localStorage.setItem('gestpop_wsid', workspaceId); } catch(e) { console.warn('[siga]', e); };
     const payload = data.data;
     /* payload received */
+
+    _replaceLocalAccessState(payload?.localAccess || null);
+    _ensureLocalAccessState();
 
     if(payload.d && typeof payload.d === 'object') Object.assign(DATA.d, payload.d);
     if(payload.r && typeof payload.r === 'object') Object.assign(DATA.r, payload.r);
@@ -12653,26 +12766,177 @@ const LOCAL_ACCESS = {
   accessLogs: []
 };
 
+let _serverAccessState = null;
+
+function _normalizeAccessEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function _sanitizeLocalAccessState(raw) {
+  const next = {
+    requests: [],
+    editors: [],
+    history: [],
+    accessLogs: []
+  };
+  if(!raw || typeof raw !== 'object') return next;
+
+  if(Array.isArray(raw.requests)) {
+    next.requests = raw.requests
+      .map((item) => {
+        const email = _normalizeAccessEmail(item?.email);
+        if(!email) return null;
+        return {
+          email,
+          name: String(item?.name || email).trim(),
+          motivo: String(item?.motivo || '').trim(),
+          status: ['pendente', 'aprovado', 'rejeitado'].includes(String(item?.status || '').trim()) ? String(item.status).trim() : 'pendente',
+          requested_at: String(item?.requested_at || new Date().toISOString()),
+          decision_reason: String(item?.decision_reason || '').trim(),
+          decided_at: String(item?.decided_at || '').trim(),
+          decided_by: _normalizeAccessEmail(item?.decided_by),
+          decided_by_name: String(item?.decided_by_name || '').trim(),
+        };
+      })
+      .filter(Boolean);
+  }
+
+  if(Array.isArray(raw.editors)) {
+    next.editors = raw.editors
+      .map((item) => {
+        const email = _normalizeAccessEmail(item?.email);
+        if(!email) return null;
+        const role = ['viewer', 'editor'].includes(String(item?.role || '').trim()) ? String(item.role).trim() : 'viewer';
+        return {
+          email,
+          name: String(item?.name || email).trim(),
+          is_admin: Boolean(item?.is_admin),
+          role,
+          added_at: String(item?.added_at || new Date().toISOString()),
+        };
+      })
+      .filter(Boolean);
+  }
+
+  if(Array.isArray(raw.history)) {
+    next.history = raw.history
+      .map((item) => ({
+        action: String(item?.action || '').trim(),
+        event_type: String(item?.event_type || 'audit').trim(),
+        updated_by: String(item?.updated_by || '').trim(),
+        updated_by_name: String(item?.updated_by_name || '').trim(),
+        target_email: _normalizeAccessEmail(item?.target_email),
+        target_name: String(item?.target_name || '').trim(),
+        details: String(item?.details || '').trim(),
+        created_at: String(item?.created_at || new Date().toISOString()),
+      }))
+      .filter((item) => item.action);
+  }
+
+  if(Array.isArray(raw.accessLogs)) {
+    next.accessLogs = raw.accessLogs
+      .map((item) => ({
+        email: _normalizeAccessEmail(item?.email),
+        name: String(item?.name || '').trim(),
+        action: String(item?.action || '').trim(),
+        event_type: String(item?.event_type || item?.action || '').trim(),
+        target_email: _normalizeAccessEmail(item?.target_email),
+        target_name: String(item?.target_name || '').trim(),
+        created_at: String(item?.created_at || new Date().toISOString()),
+      }))
+      .filter((item) => item.email && item.action);
+  }
+
+  return next;
+}
+
+function _replaceLocalAccessState(raw) {
+  const next = _sanitizeLocalAccessState(raw);
+  LOCAL_ACCESS.requests.length = 0;
+  LOCAL_ACCESS.requests.push(...next.requests);
+  LOCAL_ACCESS.editors.length = 0;
+  LOCAL_ACCESS.editors.push(...next.editors);
+  LOCAL_ACCESS.history.length = 0;
+  LOCAL_ACCESS.history.push(...next.history);
+  LOCAL_ACCESS.accessLogs.length = 0;
+  LOCAL_ACCESS.accessLogs.push(...next.accessLogs);
+}
+
+function _seedAccessFromRuntimeConfig() {
+  const authMode = SIGA_AUTH.mode || 'local';
+  if(authMode !== 'entra') {
+    _replaceLocalAccessState({
+      editors: [{
+        email: 'local@admin',
+        name: 'Administrador Local',
+        is_admin: true,
+        role: 'editor',
+        added_at: new Date().toISOString()
+      }]
+    });
+    return;
+  }
+
+  const entraCfg = SIGA_AUTH.entra || {};
+  const seen = new Set();
+  const editors = [];
+  (entraCfg.adminEmails || []).forEach((email) => {
+    const normalized = _normalizeAccessEmail(email);
+    if(!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    editors.push({
+      email: normalized,
+      name: normalized,
+      is_admin: true,
+      role: 'editor',
+      added_at: new Date().toISOString()
+    });
+  });
+  (entraCfg.editorEmails || []).forEach((email) => {
+    const normalized = _normalizeAccessEmail(email);
+    if(!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    editors.push({
+      email: normalized,
+      name: normalized,
+      is_admin: false,
+      role: 'editor',
+      added_at: new Date().toISOString()
+    });
+  });
+  _replaceLocalAccessState({ editors });
+}
+
 function _ensureLocalAccessState() {
-  if(!LOCAL_ACCESS.editors.length) {
-    LOCAL_ACCESS.editors.push({
-      email: currentUserEmail || 'local@admin',
-      name: currentUserName || 'Administrador Local',
-      is_admin: true,
-      role: 'editor',
-      added_at: new Date().toISOString()
-    });
-  }
-  const hasSelf = LOCAL_ACCESS.editors.some(e => e.email === (currentUserEmail || 'local@admin'));
-  if(!hasSelf) {
-    LOCAL_ACCESS.editors.push({
-      email: currentUserEmail || 'local@admin',
-      name: currentUserName || 'Administrador Local',
-      is_admin: true,
-      role: 'editor',
-      added_at: new Date().toISOString()
-    });
-  }
+  if(LOCAL_ACCESS.editors.length) return;
+  _seedAccessFromRuntimeConfig();
+}
+
+function _getEffectiveAccessEntry(email = currentUserEmail) {
+  _ensureLocalAccessState();
+  const normalized = _normalizeAccessEmail(email);
+  if(!normalized) return null;
+  return LOCAL_ACCESS.editors.find((item) => _normalizeAccessEmail(item.email) === normalized) || null;
+}
+
+function _serializeLocalAccessState() {
+  return _sanitizeLocalAccessState(LOCAL_ACCESS);
+}
+
+function _getSavedLocalAccessState(saved) {
+  return saved?.row?.data?.localAccess || saved?.data?.localAccess || null;
+}
+
+function _applySavedLocalAccessState(saved) {
+  const state = _getSavedLocalAccessState(saved);
+  if(state) _replaceLocalAccessState(state);
+  _refreshAccessManagementViews();
+}
+
+function _refreshAccessManagementViews() {
+  if(document.getElementById(_pid('editor-list'))) loadEditorList();
+  if(document.getElementById(_pid('requests-list'))) loadRequestsList();
+  if(document.getElementById(_pid('history-list'))) loadHistoryList();
 }
 
 async function logHistory(action) {
@@ -12734,6 +12998,7 @@ async function loadRequestsList() {
     const isPending = r.status === 'pendente';
     const statusColor = getAccessRequestStatusColor(r.status);
     const statusLabel = getAccessRequestStatusLabel(r.status);
+    const decisionMeta = _renderAccessDecisionMeta(r);
     return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <div>
@@ -12741,6 +13006,7 @@ async function loadRequestsList() {
           <div style="font-size:11px;color:#64748b;">${escapeHtml(r.email)}</div>
           ${r.motivo ? '<div style="font-size:12px;color:#475569;margin-top:6px;font-style:italic;">' + escapeHtml(r.motivo) + '</div>' : ''}
           <div style="font-size:10px;color:#94a3b8;margin-top:4px;">${new Date(r.requested_at).toLocaleString('pt-BR')}</div>
+          ${decisionMeta}
         </div>
         <span style="font-size:11px;font-weight:700;color:${statusColor};white-space:nowrap;">${statusLabel}</span>
       </div>
@@ -12749,24 +13015,54 @@ async function loadRequestsList() {
   }).join('');
 }
 
-async function handleRequest(email, name, action) {
+function _renderAccessDecisionMeta(request) {
+  if(!request?.decided_at) return '';
+  const when = new Date(request.decided_at).toLocaleString('pt-BR');
+  const who = request.decided_by_name || request.decided_by || 'Administrador';
+  const reason = request.decision_reason
+    ? `<div style="font-size:10px;color:#475569;margin-top:4px;">Motivo: ${escapeHtml(request.decision_reason)}</div>`
+    : '';
+  return `<div style="font-size:10px;color:#64748b;margin-top:6px;">Decisão por ${escapeHtml(who)} em ${escapeHtml(when)}</div>${reason}`;
+}
+
+function _promptAccessDecisionReason(action, email) {
+  const label = action === 'aprovado' ? 'aprovação' : 'rejeição';
+  const value = prompt(`Informe o motivo da ${label} para ${email} (opcional):`, '');
+  return value === null ? null : value.trim();
+}
+
+function _markPendingRequest(email, action, decisionReason) {
   const req = LOCAL_ACCESS.requests.find(r => r.email === email && r.status === 'pendente');
-  if(req) req.status = action;
-  if(action === 'aprovado') {
-    const existing = LOCAL_ACCESS.editors.find(e => e.email === email);
-    if(existing) {
-      existing.name = name || email;
-      existing.is_admin = false;
-      existing.role = 'viewer';
-    } else {
-      LOCAL_ACCESS.editors.push({ email, name: name || email, is_admin: false, role: 'viewer', added_at: new Date().toISOString() });
-    }
-    showToast('✅ Acesso aprovado para ' + email + ' (Visualizador)', 'success');
-  } else {
-    showToast('Solicitação de ' + email + ' rejeitada.', 'warn');
+  if(!req) return;
+  req.status = action;
+  req.decision_reason = decisionReason;
+}
+
+function _upsertApprovedAccess(email, name) {
+  const existing = LOCAL_ACCESS.editors.find(e => e.email === email);
+  if(existing) {
+    existing.name = name || email;
+    existing.is_admin = false;
+    existing.role = 'viewer';
+    return;
   }
+  LOCAL_ACCESS.editors.push({ email, name: name || email, is_admin: false, role: 'viewer', added_at: new Date().toISOString() });
+}
+
+function _showRequestDecisionToast(email, action) {
+  if(action === 'aprovado') showToast('✅ Acesso aprovado para ' + email + ' (Visualizador)', 'success');
+  else showToast('Solicitação de ' + email + ' rejeitada.', 'warn');
+}
+
+async function handleRequest(email, name, action) {
+  const decisionReason = _promptAccessDecisionReason(action, email);
+  if(decisionReason === null) return;
+  _markPendingRequest(email, action, decisionReason);
+  if(action === 'aprovado') _upsertApprovedAccess(email, name);
+  _showRequestDecisionToast(email, action);
   loadRequestsList();
   loadEditorList();
+  try { saveToCloud(); } catch(e) { console.warn('[siga]', e); }
 }
 
 async function loadEditorList() {
@@ -12810,9 +13106,9 @@ async function setEditorRole(email, role) {
   if(!target) { showToast('Usuário não encontrado.', 'warn'); return; }
   target.is_admin = role === 'admin';
   target.role = role === 'admin' ? 'editor' : role;
-  await logHistory('Alterou perfil: ' + email + ' -> ' + labels[role]);
   showToast(`✓ ${email} → ${labels[role]}`, 'success');
   loadEditorList();
+  try { saveToCloud(); } catch(e) { console.warn('[siga]', e); }
 }
 
 async function toggleEditorRole(email, makeAdmin) {
@@ -12844,21 +13140,21 @@ async function saveNewEditor() {
       added_at: new Date().toISOString()
     });
   }
-  await logHistory('Adicionou editor: ' + email);
   showToast('Editor adicionado!','success');
   document.getElementById(_pid('add-row')).style.display = 'none';
   document.getElementById(_pid('add-btn-row')).style.display = '';
   document.getElementById(_pid('new-email')).value = '';
   document.getElementById(_pid('new-name')).value  = '';
   loadEditorList();
+  try { saveToCloud(); } catch(e) { console.warn('[siga]', e); }
 }
 
 async function removeEditor(email) {
   if(!confirm('Remover ' + email + ' dos editores?')) return;
   LOCAL_ACCESS.editors = LOCAL_ACCESS.editors.filter(e => e.email !== email);
-  await logHistory('Removeu editor: ' + email);
   showToast('Editor removido.','success');
   loadEditorList();
+  try { saveToCloud(); } catch(e) { console.warn('[siga]', e); }
 }
 
 async function loadHistoryList() {
@@ -12905,8 +13201,116 @@ function aiErrMsg(status, body) {
   return 'Erro da IA ' + status + ': ' + body.slice(0,150);
 }
 
-async function _resolveFreshAccessToken() {
-  return null;
+function _isEntraAuthMode() {
+  return (SIGA_AUTH.mode || 'local') === 'entra';
+}
+
+function _getEntraConfig() {
+  return SIGA_AUTH.entra || {};
+}
+
+function _getEntraApiAudience(cfg = _getEntraConfig()) {
+  const explicit = String(cfg.apiAudience || '').trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+  const apiClientId = String(cfg.apiClientId || '').trim();
+  return apiClientId ? `api://${apiClientId}` : '';
+}
+
+function _getEntraApiScopes(cfg = _getEntraConfig()) {
+  const explicit = String(cfg.apiScope || '').trim();
+  if (explicit) return [explicit];
+  const audience = _getEntraApiAudience(cfg);
+  return audience ? [`${audience}/access_as_user`] : [];
+}
+
+function _getMsalActiveAccount() {
+  if (!_msalClient) return null;
+  if (typeof _msalClient.getActiveAccount === 'function') {
+    const active = _msalClient.getActiveAccount();
+    if (active) return active;
+  }
+  const accounts = typeof _msalClient.getAllAccounts === 'function' ? _msalClient.getAllAccounts() : [];
+  return accounts[0] || null;
+}
+
+function _isMsalInteractionRequired(error) {
+  const code = String(error?.errorCode || error?.code || '').toLowerCase();
+  const msg = String(error?.message || '').toLowerCase();
+  return code.includes('interaction')
+    || code.includes('consent')
+    || code.includes('login_required')
+    || msg.includes('interaction_required')
+    || msg.includes('consent_required')
+    || msg.includes('login_required');
+}
+
+async function _resolveFreshAccessToken(forceRefresh = false) {
+  if (!_isEntraAuthMode()) return currentAccessToken || null;
+  if (!_msalClient) return currentAccessToken || null;
+
+  const account = _getMsalActiveAccount();
+  if (!account) return currentAccessToken || null;
+
+  const scopes = _getEntraApiScopes();
+  if (!scopes.length) {
+    throw new Error('Configure apiScope ou apiAudience no public-config.js para habilitar o token da API.');
+  }
+
+  try {
+    const silent = await _msalClient.acquireTokenSilent({
+      account,
+      scopes,
+      forceRefresh,
+    });
+    currentAccessToken = silent?.accessToken || currentAccessToken || null;
+    return currentAccessToken;
+  } catch (error) {
+    if (!_isMsalInteractionRequired(error)) throw error;
+    const interactive = await _msalClient.acquireTokenPopup({
+      scopes,
+      prompt: 'select_account',
+    });
+    currentAccessToken = interactive?.accessToken || currentAccessToken || null;
+    return currentAccessToken;
+  }
+}
+
+async function _buildApiHeaders(baseHeaders = {}, options = {}) {
+  const headers = { ...baseHeaders };
+  if (!_isEntraAuthMode()) return headers;
+  const token = await _resolveFreshAccessToken(Boolean(options.forceRefresh));
+  if (!token && !options.allowWithoutAuth) {
+    throw new Error('Sessão Entra ID indisponível. Faça login novamente.');
+  }
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
+function _buildKeepaliveApiHeaders(baseHeaders = {}) {
+  const headers = { ...baseHeaders };
+  if (_isEntraAuthMode() && currentAccessToken) {
+    headers.Authorization = `Bearer ${currentAccessToken}`;
+  }
+  return headers;
+}
+
+async function _fetchServerAccessState() {
+  if(!_isEntraAuthMode()) {
+    _serverAccessState = {
+      email: _normalizeAccessEmail(currentUserEmail),
+      authorized: true,
+      role: 'admin',
+      is_admin: true,
+      requestStatus: 'aprovado'
+    };
+    return _serverAccessState;
+  }
+  const headers = await _buildApiHeaders({}, { allowWithoutAuth: false });
+  const res = await fetch(API_URL + '/access-state', { headers });
+  const data = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error(data?.error || ('HTTP ' + res.status));
+  _serverAccessState = data?.access || null;
+  return _serverAccessState;
 }
 
 let supaClient = null;
@@ -12936,7 +13340,7 @@ async function callGeminiProxy(prompt, image = null, options = {}) {
   let definitiveErr = null;
 
   const _aiToken = localStorage.getItem('siga_ai_token') || '';
-  const _aiHeaders = { 'Content-Type': 'application/json' };
+  const _aiHeaders = await _buildApiHeaders({ 'Content-Type': 'application/json' });
   if (_aiToken) _aiHeaders['X-Ai-Token'] = _aiToken;
 
   for (const endpoint of uniqueEndpoints) {
@@ -13096,6 +13500,12 @@ async function signInMicrosoft() {
     showToast('⚠️ Configure clientId e tenantId no public-config.js.', 'warn');
     return;
   }
+  const apiScopes = _getEntraApiScopes(cfg);
+  if (!apiScopes.length) {
+    if (statusEl) statusEl.textContent = 'Configure apiScope ou apiAudience no public-config.js.';
+    showToast('⚠️ Configure apiScope ou apiAudience no public-config.js.', 'warn');
+    return;
+  }
 
   if (!globalThis.isSecureContext || !globalThis.crypto?.subtle) {
     const msg = 'Login Microsoft requer conexão segura (HTTPS). Acesse o sistema via HTTPS e tente novamente.';
@@ -13127,12 +13537,16 @@ async function signInMicrosoft() {
     }
 
     const loginRes = await _msalClient.loginPopup({
-      scopes: ['openid', 'profile', 'email', 'User.Read'],
+      scopes: ['openid', 'profile', 'email', ...apiScopes],
       prompt: 'select_account',
     });
 
-    const account = loginRes.account;
-    currentAccessToken = loginRes.accessToken || null;
+    const account = loginRes.account || _getMsalActiveAccount();
+    if (account && typeof _msalClient.setActiveAccount === 'function') {
+      _msalClient.setActiveAccount(account);
+    }
+    currentAccessToken = null;
+    currentAccessToken = await _resolveFreshAccessToken(Boolean(loginRes?.accessToken));
     currentUser = {
       id: account?.homeAccountId || account?.localAccountId || 'entra',
       email: account?.username || '',
@@ -13145,8 +13559,14 @@ async function signInMicrosoft() {
     document.getElementById('auth-overlay').style.display = 'none';
     if (statusEl) statusEl.textContent = '';
 
+    const accessState = await _fetchServerAccessState();
+    if (accessState?.authorized) {
+      await loadFromCloud();
+    }
     await checkEditorPermission();
-    await loadFromCloud();
+    if (_serverAccessState?.localAccessConfigured === false && isEditor) {
+      try { saveToCloud(); } catch (saveBootstrapError) { console.warn('[siga]', saveBootstrapError); }
+    }
     globalThis._appInitialized = true;
 
     try { logAccessEvent('login'); } catch(e) { console.warn('[siga]', e); }
@@ -13176,6 +13596,8 @@ async function signOut() {
   try { await _clearPresence(); } catch(e) { console.warn('[siga]', e); }
   try { await logAccessEvent('logout'); } catch(e) { console.warn('[siga]', e); }
   /* tenta fallback alternativo */
+  currentAccessToken = null;
+  _serverAccessState = null;
 
   if ((SIGA_AUTH.mode || 'local') === 'entra' && _msalClient) {
     try {
@@ -14785,7 +15207,7 @@ async function _buildEppStatusReport(opts = {}) {
     // Teal separator
     s.addShape(pres.ShapeType.rect, { x:0.6, y:2.82, w:5.5, h:0.07, fill:{color:C.teal} });
     // Institution subtitle
-    s.addText('Gestão EPP', { x:0.6, y:3.0, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
+    s.addText('EPP', { x:0.6, y:3.0, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
     s.addText('CAGE-RS — Controladoria e Auditoria-Geral do Estado', { x:0.6, y:3.38, w:6.5, h:0.3, fontSize:10, color:'5B8C8A', margin:0 });
     // Cycle pill
     s.addShape(pres.ShapeType.rect, { x:0.6, y:3.9, w:2.8, h:0.45, fill:{color:C.teal} });
@@ -14930,7 +15352,7 @@ async function _buildEppStatusReport(opts = {}) {
     s.background = { color:C.white };
     // Header bar
     s.addShape(pres.ShapeType.rect, { x:0, y:0, w:10, h:0.9, fill:{color:C.teal} });
-    s.addText('Indicadores — Gestão EPP', {
+    s.addText('Indicadores — EPP', {
       x:0.3, y:0, w:7.5, h:0.9, fontSize:20, color:C.white, bold:true, valign:'middle', margin:0
     });
     s.addText(monthLong, { x:0.3, y:0, w:9.4, h:0.9, fontSize:11, color:'E0F9F7', align:'right', valign:'middle', margin:0 });
@@ -15254,7 +15676,7 @@ async function _buildEppStatusReport(opts = {}) {
     // Teal separator
     s.addShape(pres.ShapeType.rect, { x:0.6, y:2.4, w:5.0, h:0.07, fill:{color:C.teal} });
     // Institution
-    s.addText('Gestão EPP', { x:0.6, y:2.6, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
+    s.addText('EPP', { x:0.6, y:2.6, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
     s.addText('CAGE-RS — Comprometidos com a melhoria contínua dos processos do Estado', { x:0.6, y:2.98, w:6.5, h:0.35, fontSize:10, color:'5B8C8A', margin:0 });
     // Second teal separator
     s.addShape(pres.ShapeType.rect, { x:0.6, y:3.5, w:3.0, h:0.05, fill:{color:'006B63'} });
@@ -16588,7 +17010,7 @@ function gerarAtaAcomp(pop, period) {
   const acomp = DATA[pop]?.acompanhamento?.[period] || {};
   const gp    = DATA.config?.globalParams || {};
   const inst  = gp.nomeSistema || 'SIGA';
-  const sub   = gp.subtitulo   || 'Gestão EPP · CAGE-RS';
+  const sub   = gp.subtitulo   || 'EPP · CAGE-RS';
   const nomeProcesso = DATA[pop]?.meta?.name || DATA[pop]?.ficha?.nome || pop.toUpperCase();
 
   const isSegunda = period === '1a';
@@ -16741,6 +17163,7 @@ function deleteMeet(p,i) {
 // ══════════════════════════════════════════════════════════════
 
 let _arqData = null; // working copy, loaded from CAGE_PROCESSOS + Supabase overrides
+let _arqSidebarState = { filteredRealIdxs: [], selectedRealIdx: null };
 
 function arqGetData() {
   if(!_arqData) {
@@ -16768,7 +17191,9 @@ function showArqModule(show = true) {
   hideHome();
   hideAllModules();
   document.getElementById('arq-module').style.display = 'block';
+  _arqSidebarState.selectedRealIdx = null;
   arqInit();
+  if(_sidebarOpen) renderSidebar();
 }
 
 function arqInit() {
@@ -16836,8 +17261,15 @@ function arqApplyFilter() {
     });
   }
 
+  _arqSidebarState.filteredRealIdxs = filtered
+    .map((record) => data.indexOf(record))
+    .filter((idx) => idx >= 0);
+  if(!_arqSidebarState.filteredRealIdxs.includes(_arqSidebarState.selectedRealIdx)) {
+    _arqSidebarState.selectedRealIdx = null;
+  }
   arqRenderTable(filtered, data);
   arqRenderStats(filtered, data);
+  if(_sidebarOpen) renderSidebar();
 }
 
 function arqClearFilter() {
@@ -17003,7 +17435,7 @@ function arqRenderTable(filtered, all) {
     const critBg    = critico ? '#fee2e2' : '#f1f5f9';
     const critColor = critico ? '#dc2626' : '#94a3b8';
     const critLabel = critico ? '⚠️ Sim'  : '○ Não';
-    return `<tr onclick="arqShowProcessDetail(${realIdx})" style="background:${rowColor ? '#f8fafc' : 'white'};border-bottom:1px solid #f1f5f9;${critico ? 'border-left:3px solid #dc2626;' : mapped ? 'border-left:3px solid #00a86b;' : ''}cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${rowColor?'#f8fafc':'white'}'">
+    return `<tr id="arq-row-${realIdx}" onclick="arqShowProcessDetail(${realIdx})" style="background:${rowColor ? '#f8fafc' : 'white'};border-bottom:1px solid #f1f5f9;${critico ? 'border-left:3px solid #dc2626;' : mapped ? 'border-left:3px solid #00a86b;' : ''}cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${rowColor?'#f8fafc':'white'}'">
       <td style="padding:10px 16px;font-weight:600;color:#1B3022;font-size:12px;">${r.macroprocesso}</td>
       <td style="padding:10px 16px;color:#1e293b;font-size:13px;text-decoration:underline;text-underline-offset:2px;">${r.processo}</td>
       <td style="padding:10px 16px;color:#475569;font-size:12px;text-decoration:underline;text-underline-offset:2px;">${r.subprocesso || '<span style="color:#cbd5e1;text-decoration:none;">—</span>'}</td>
@@ -17296,6 +17728,8 @@ function arqFindLinkedPop(r) {
 }
 
 function arqShowProcessDetail(idx) {
+  _arqSidebarState.selectedRealIdx = idx;
+  if(_sidebarOpen) renderSidebar();
   const r = arqGetData()[idx];
   if(!r) return;
 
@@ -17487,8 +17921,17 @@ function arqShowProcessDetail(idx) {
 }
 
 function arqCloseDetail() {
+  _arqSidebarState.selectedRealIdx = null;
+  if(_sidebarOpen) renderSidebar();
   const modal = document.getElementById('arq-detail-modal');
   if(modal) modal.classList.remove('open');
+}
+
+function arqSidebarOpenItem(idx) {
+  const row = document.getElementById('arq-row-' + idx);
+  if(row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  closeSidebar();
+  arqShowProcessDetail(idx);
 }
 
 function arqOpenFluxoLightbox(url) {
@@ -19859,62 +20302,105 @@ function dropsCloseLightbox() {
 // ═══════════════════════════════════════════════════════════
 
 let _eppCurrentTab = 'pat';
+let _systemCurrentTab = 'config';
+
+function _activateModuleTab(selector, tab, el, attr) {
+  document.querySelectorAll(selector).forEach((item) => item.classList.remove('active'));
+  if(el) { el.classList.add('active'); return; }
+  const next = document.querySelector(`${selector}[${attr}="${tab}"]`);
+  if(next) next.classList.add('active');
+}
+
+function _showModuleHeader(id) {
+  const el = document.getElementById(id);
+  if(el) el.style.display = 'block';
+}
+
+function _toggleSystemMonitoringTab() {
+  const tab = document.getElementById('epp-tab-monitoring');
+  if(tab) tab.style.display = isAdmin ? '' : 'none';
+}
 
 function showEppModule(tab) {
   _navPush();
-  tab = tab || _eppCurrentTab || 'pat';
+  _eppCurrentTab = tab || _eppCurrentTab || 'pat';
   hideHome();
   hideAllModules();
-  document.getElementById('epp-module').style.display = 'block';
-  // Mostrar aba Monitoramento apenas para admins
-  const monTab = document.getElementById('epp-tab-monitoring');
-  if(monTab) monTab.style.display = isAdmin ? '' : 'none';
-  eppTab(tab);
+  _showModuleHeader('epp-work-module');
+  eppTab(_eppCurrentTab);
+}
+
+function showSystemManagementModule(tab) {
+  _navPush();
+  _systemCurrentTab = tab || _systemCurrentTab || 'config';
+  hideHome();
+  hideAllModules();
+  _showModuleHeader('epp-module');
+  _toggleSystemMonitoringTab();
+  systemTab(_systemCurrentTab);
+}
+
+function _hideEppBusinessPanels() {
+  const pat = document.getElementById('pat-module');
+  const dash = document.getElementById('epp-dash-panel');
+  if(pat) { pat.style.display = 'none'; pat.classList.remove('active'); }
+  if(dash) dash.style.display = 'none';
+}
+
+function _showPatPanel() {
+  const pat = document.getElementById('pat-module');
+  if(pat) { pat.style.display = 'block'; pat.classList.add('active'); }
+  try { renderPat(); populatePatPopSelect(); } catch(e) { console.warn('[siga]', e); }
+}
+
+function _showEppDashboardPanel() {
+  const dash = document.getElementById('epp-dash-panel');
+  if(dash) dash.style.display = 'block';
+  eppRenderDashboard();
 }
 
 function eppTab(tab, el) {
   _eppCurrentTab = tab;
-  document.querySelectorAll('.epp-tab').forEach(t => t.classList.remove('active'));
-  if(el) el.classList.add('active');
-  else { const f=document.querySelector('.epp-tab[data-tab="'+tab+'"]'); if(f) f.classList.add('active'); }
+  _activateModuleTab('.epp-tab[data-epp-tab]', tab, el, 'data-epp-tab');
+  _hideEppBusinessPanels();
+  if(tab === 'pat') _showPatPanel();
+  else _showEppDashboardPanel();
+}
 
-  const pat        = document.getElementById('pat-module');
-  const dash       = document.getElementById('epp-dash-panel');
-  const cfg        = document.getElementById('epp-config-panel');
-  const users      = document.getElementById('epp-users-panel');
-  const params     = document.getElementById('epp-params-panel');
-  const monitoring = document.getElementById('epp-monitoring-panel');
+function _hideSystemPanels() {
+  ['epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel']
+    .forEach((id) => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+}
 
-  if(pat)        { pat.style.display='none'; pat.classList.remove('active'); }
-  if(dash)       dash.style.display='none';
-  if(cfg)        cfg.style.display='none';
-  if(users)      users.style.display='none';
-  if(params)     params.style.display='none';
-  if(monitoring) monitoring.style.display='none';
+function _showUsersPanel() {
+  const users = document.getElementById('epp-users-panel');
+  if(users) users.style.display = 'block';
+  _permCtx = 'epp';
+  eppSwitchUsersTab('editors');
+  loadEditorList();
+  if(isAdmin) loadRequestsList();
+}
 
-  if(tab === 'pat') {
-    if(pat)  { pat.style.display='block'; pat.classList.add('active'); }
-    try { renderPat(); populatePatPopSelect(); } catch(e) { console.warn('[siga]', e); }
-  } else if(tab === 'config') {
-    if(cfg) cfg.style.display='block';
-    try { renderConfigPanel(); } catch(e) { console.warn('[siga]', e); }
-  } else if(tab === 'users') {
-    if(users) users.style.display='block';
-    _permCtx = 'epp';
-    eppSwitchUsersTab('editors');
-    loadEditorList();
-    if(isAdmin) loadRequestsList();
-  } else if(tab === 'params') {
-    if(params) params.style.display='block';
-    eppRenderParams();
-  } else if(tab === 'monitoring') {
-    if(!isAdmin) { showToast('🔒 Acesso restrito a administradores.', 'warn'); eppTab('dash'); return; }
-    if(monitoring) monitoring.style.display='block';
-    eppMonTab('online');
-  } else {
-    if(dash) dash.style.display='block';
-    eppRenderDashboard();
-  }
+function _showSystemPanel(tab) {
+  if(tab === 'config') document.getElementById('epp-config-panel').style.display = 'block';
+  if(tab === 'users') _showUsersPanel();
+  if(tab === 'params') document.getElementById('epp-params-panel').style.display = 'block';
+  if(tab === 'monitoring') document.getElementById('epp-monitoring-panel').style.display = 'block';
+}
+
+function _renderSystemTab(tab) {
+  if(tab === 'config') renderConfigPanel();
+  if(tab === 'params') eppRenderParams();
+  if(tab === 'monitoring') eppMonTab('online');
+}
+
+function systemTab(tab, el) {
+  if(tab === 'monitoring' && !isAdmin) { showToast('🔒 Acesso restrito a administradores.', 'warn'); return systemTab('config'); }
+  _systemCurrentTab = tab;
+  _activateModuleTab('.epp-tab[data-system-tab]', tab, el, 'data-system-tab');
+  _hideSystemPanels();
+  _showSystemPanel(tab);
+  _renderSystemTab(tab);
 }
 
 function eppSwitchUsersTab(tab) {
@@ -19987,6 +20473,9 @@ async function logAccessEvent(action) {
     email: currentUserEmail || 'local@admin',
     name: currentUserName || 'Administrador Local',
     action,
+    event_type: action,
+    target_email: '',
+    target_name: '',
     created_at: new Date().toISOString()
   });
   if(LOCAL_ACCESS.accessLogs.length > 200) LOCAL_ACCESS.accessLogs.length = 200;
@@ -20056,13 +20545,17 @@ function eppFilterChangeLogs() {
   tbody.innerHTML = rows.map(h => {
     const dt = new Date(h.created_at).toLocaleString('pt-BR');
     const av = (h.updated_by_name||'?').charAt(0).toUpperCase();
+    const details = h.details ? `<div style="font-size:10px;color:var(--text-muted);margin-top:3px;">${escapeHtml(h.details)}</div>` : '';
+    const target = h.target_name || h.target_email
+      ? `<div style="font-size:10px;color:var(--text-muted);">${escapeHtml(h.target_name || h.target_email)}${h.target_email && h.target_name ? ` · ${escapeHtml(h.target_email)}` : ''}</div>`
+      : '';
     return `<tr>
       <td style="white-space:nowrap;color:var(--text-muted);">${dt}</td>
       <td><div style="display:flex;align-items:center;gap:6px;">
         <div style="width:24px;height:24px;border-radius:50%;background:var(--cage-blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${av}</div>
         <div><div style="font-size:12px;font-weight:600;color:#1B3022;">${h.updated_by_name||'—'}</div><div style="font-size:10px;color:var(--text-muted);">${h.updated_by||''}</div></div>
       </div></td>
-      <td>${h.action||'—'}</td>
+      <td><div>${h.action||'—'}</div>${target}${details}</td>
     </tr>`;
   }).join('');
 }
@@ -20093,13 +20586,14 @@ function eppFilterAccessLogs() {
   if(!tbody) return;
   const rows = _accessLogsData.filter(r =>
     (!q      || (r.name||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q)) &&
-    (!action || (r.action||'') === action)
+    (!action || (r.event_type||r.action||'') === action)
   );
   if(!rows.length) { tbody.innerHTML = '<tr><td colspan="4" class="mon-empty">Nenhum registro encontrado.</td></tr>'; return; }
   tbody.innerHTML = rows.map(r => {
     const dt = new Date(r.created_at).toLocaleString('pt-BR');
-    const badgeClass = r.action === 'login' ? 'mon-badge-login' : r.action === 'logout' ? 'mon-badge-logout' : 'mon-badge-save';
-    const label = r.action === 'login' ? 'Login' : r.action === 'logout' ? 'Logout' : r.action;
+    const eventType = r.event_type || r.action || '';
+    const badgeClass = eventType === 'login' ? 'mon-badge-login' : eventType === 'logout' ? 'mon-badge-logout' : 'mon-badge-save';
+    const label = _accessEventLabel(r);
     return `<tr>
       <td style="white-space:nowrap;color:var(--text-muted);">${dt}</td>
       <td style="font-weight:600;color:#1B3022;">${r.name||'—'}</td>
@@ -20107,6 +20601,20 @@ function eppFilterAccessLogs() {
       <td><span class="mon-badge ${badgeClass}">${label}</span></td>
     </tr>`;
   }).join('');
+}
+
+function _accessEventLabel(row) {
+  const eventType = row?.event_type || row?.action || '';
+  const labels = {
+    login: 'Login',
+    logout: 'Logout',
+    access_request: 'Solicitação de acesso',
+    access_approved: 'Acesso aprovado',
+    access_rejected: 'Acesso rejeitado',
+    role_changed: 'Perfil alterado',
+    access_removed: 'Acesso removido',
+  };
+  return labels[eventType] || row?.action || 'Evento';
 }
 
 function eppToggleHorasDetail() {
@@ -27001,7 +27509,6 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-primary editor-only" onclick="arqShowForm()">＋ Novo Processo</button>
-        <button class="btn btn-outline editor-only" onclick="showPatrocinadoresModal()">🤝 Patrocinadores</button>
         <button class="btn btn-outline" onclick="showArqModule(false)">✕ Fechar</button>
       </div>
     </div>

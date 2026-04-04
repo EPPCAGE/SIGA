@@ -163,6 +163,9 @@ stages:
                 "$(SIGA_AUTH_MODE)" \
                 "$(SIGA_ENTRA_CLIENT_ID)" \
                 "$(SIGA_ENTRA_TENANT_ID)" \
+                "$(SIGA_ENTRA_API_CLIENT_ID)" \
+                "$(SIGA_ENTRA_API_AUDIENCE)" \
+                "$(SIGA_ENTRA_API_SCOPE)" \
                 "$(SIGA_ADMIN_EMAILS)" \
                 "$(SIGA_EDITOR_EMAILS)" \
                 "$(SIGA_ADMIN_TOKEN)" \
@@ -197,6 +200,9 @@ stages:
                 "$(SIGA_AUTH_MODE)" \
                 "$(SIGA_ENTRA_CLIENT_ID)" \
                 "$(SIGA_ENTRA_TENANT_ID)" \
+                "$(SIGA_ENTRA_API_CLIENT_ID)" \
+                "$(SIGA_ENTRA_API_AUDIENCE)" \
+                "$(SIGA_ENTRA_API_SCOPE)" \
                 "$(SIGA_ADMIN_EMAILS)" \
                 "$(SIGA_EDITOR_EMAILS)" \
                 "$(SIGA_ADMIN_TOKEN)" \
