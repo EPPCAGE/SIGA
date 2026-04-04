@@ -32,14 +32,17 @@ const SMTP_USER = String(process.env.SIGA_SMTP_USER || '').trim();
 const SMTP_PASS = String(process.env.SIGA_SMTP_PASS || '').trim();
 const SMTP_FROM_EMAIL = normalizeEmail(process.env.SIGA_SMTP_FROM_EMAIL || '');
 const SMTP_FROM_NAME = String(process.env.SIGA_SMTP_FROM_NAME || 'SIGA').trim() || 'SIGA';
-const BOOTSTRAP_ADMIN_EMAILS = String(process.env.SIGA_ADMIN_EMAILS || '')
-  .split(/[;,]/)
-  .map((item) => normalizeEmail(item))
-  .filter(Boolean);
-const BOOTSTRAP_EDITOR_EMAILS = String(process.env.SIGA_EDITOR_EMAILS || '')
-  .split(/[;,]/)
-  .map((item) => normalizeEmail(item))
-  .filter(Boolean);
+function readBootstrapEmails(value) {
+  return new Set(
+    String(value || '')
+      .split(/[;,]/)
+      .map((item) => normalizeEmail(item))
+      .filter(Boolean)
+  );
+}
+
+const BOOTSTRAP_ADMIN_EMAILS = readBootstrapEmails(process.env.SIGA_ADMIN_EMAILS);
+const BOOTSTRAP_EDITOR_EMAILS = readBootstrapEmails(process.env.SIGA_EDITOR_EMAILS);
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const DOC_MIME = 'application/msword';
 const DATA_FILE = process.env.SIGA_DATA_FILE
@@ -100,7 +103,7 @@ function isEntraConfigured() {
 }
 
 function base64UrlToBuffer(value) {
-  const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+  const normalized = String(value || '').replaceAll('-', '+').replaceAll('_', '/');
   const padding = (4 - (normalized.length % 4 || 4)) % 4;
   return Buffer.from(normalized + '='.repeat(padding), 'base64');
 }
@@ -500,7 +503,7 @@ function buildAccessDecision(record, auth) {
   const state = getLocalAccessState(record);
   const localAccessConfigured = state.editors.length > 0;
   if (!localAccessConfigured) {
-    if (BOOTSTRAP_ADMIN_EMAILS.includes(email)) {
+    if (BOOTSTRAP_ADMIN_EMAILS.has(email)) {
       return {
         email,
         name,
@@ -511,7 +514,7 @@ function buildAccessDecision(record, auth) {
         localAccessConfigured: false,
       };
     }
-    if (BOOTSTRAP_EDITOR_EMAILS.includes(email)) {
+    if (BOOTSTRAP_EDITOR_EMAILS.has(email)) {
       return {
         email,
         name,
@@ -657,7 +660,7 @@ function mergeAccessAudit(previousState, nextState, updatedBy, updatedByName) {
 
 function sanitizeIncomingData(parsed, current) {
   const data = parsed && typeof parsed.data === 'object' && parsed.data !== null ? parsed.data : current.data;
-  const nextData = { ...(data || {}) };
+  const nextData = data && typeof data === 'object' ? { ...data } : {};
   const previousState = getLocalAccessState(current);
   const nextState = sanitizeLocalAccessState(nextData.localAccess);
   nextData.localAccess = mergeAccessAudit(previousState, nextState, parsed?.updated_by, parsed?.updated_by_name);
@@ -849,7 +852,7 @@ function formatEmailAddress(email, name) {
 }
 
 function dotStuff(value) {
-  return String(value || '').replace(/\r?\n/g, '\r\n').replace(/^\./gm, '..');
+  return String(value || '').replaceAll(/\r?\n/g, '\r\n').replaceAll(/^\./gm, '..');
 }
 
 async function openSmtpConnection() {
@@ -1050,7 +1053,7 @@ function readRecord() {
 
   return {
     id: 1,
-    data: parsed && typeof parsed === 'object' ? (parsed.data || {}) : {},
+    data: parsed && typeof parsed === 'object' && parsed.data && typeof parsed.data === 'object' ? parsed.data : {},
     updated_at: parsed?.updated_at || null,
     updated_by: parsed?.updated_by || 'local@admin',
     updated_by_name: parsed?.updated_by_name || 'Administrador Local'
@@ -1643,7 +1646,7 @@ async function _routePostAccessRequest(req, res) {
 
   const motivo = typeof parsed?.motivo === 'string' ? parsed.motivo.trim() : '';
   const existing = state.requests.find((item) => normalizeEmail(item.email) === email);
-  const shouldNotifyAdmins = !existing || existing.status !== 'pendente';
+  const shouldNotifyAdmins = !(existing?.status === 'pendente');
   const payload = {
     email,
     name,
@@ -1661,7 +1664,7 @@ async function _routePostAccessRequest(req, res) {
   const next = {
     ...current,
     data: {
-      ...(current.data || {}),
+      ...(current.data && typeof current.data === 'object' ? current.data : {}),
       localAccess: state
     },
     updated_at: new Date().toISOString(),
