@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -lt 18 ]]; then
-  echo "Uso: $0 <package-root> <deploy-root> <ai-provider> <ai-token> <ai-model> <ai-fallback-models> <ai-api-url> <azure-endpoint> <azure-deployment> <azure-api-version> <azure-api-key> <auth-mode> <entra-client-id> <entra-tenant-id> <admin-emails> <editor-emails> <admin-token> <allowed-origins>" >&2
+if [[ $# -lt 21 ]]; then
+  echo "Uso: $0 <package-root> <deploy-root> <ai-provider> <ai-token> <ai-model> <ai-fallback-models> <ai-api-url> <azure-endpoint> <azure-deployment> <azure-api-version> <azure-api-key> <auth-mode> <entra-client-id> <entra-tenant-id> <entra-api-client-id> <entra-api-audience> <entra-api-scope> <admin-emails> <editor-emails> <admin-token> <allowed-origins>" >&2
   exit 1
 fi
 
@@ -20,10 +20,13 @@ azure_api_key="${11:-}"
 auth_mode="${12:-local}"
 entra_client_id="${13:-}"
 entra_tenant_id="${14:-}"
-admin_emails="${15:-}"
-editor_emails="${16:-}"
-admin_token="${17:-}"
-allowed_origins="${18:-}"
+entra_api_client_id="${15:-}"
+entra_api_audience="${16:-}"
+entra_api_scope="${17:-}"
+admin_emails="${18:-}"
+editor_emails="${19:-}"
+admin_token="${20:-}"
+allowed_origins="${21:-}"
 
 if [[ ! -d "$package_root" ]]; then
   echo "Pacote de deploy nao encontrado: $package_root" >&2
@@ -79,6 +82,9 @@ bash "$deploy_root/scripts/write-public-config.sh" \
   "$auth_mode" \
   "$entra_client_id" \
   "$entra_tenant_id" \
+  "$entra_api_client_id" \
+  "$entra_api_audience" \
+  "$entra_api_scope" \
   "$admin_emails" \
   "$editor_emails"
 
@@ -92,6 +98,10 @@ SIGA_AZURE_ENDPOINT=$azure_endpoint
 SIGA_AZURE_DEPLOYMENT=$azure_deployment
 SIGA_AZURE_API_VERSION=$azure_api_version
 SIGA_AZURE_API_KEY=$azure_api_key
+SIGA_AUTH_MODE=$auth_mode
+SIGA_ENTRA_TENANT_ID=$entra_tenant_id
+SIGA_ENTRA_API_CLIENT_ID=$entra_api_client_id
+SIGA_ENTRA_API_AUDIENCE=$entra_api_audience
 SIGA_ADMIN_TOKEN=$admin_token
 SIGA_ALLOWED_ORIGIN=$allowed_origins
 SIGA_FRONTEND_PORT=${SIGA_FRONTEND_PORT:-8081}

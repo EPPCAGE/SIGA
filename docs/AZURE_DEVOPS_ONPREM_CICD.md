@@ -61,6 +61,9 @@
 - `SIGA_AUTH_MODE`
 - `SIGA_ENTRA_CLIENT_ID`
 - `SIGA_ENTRA_TENANT_ID`
+- `SIGA_ENTRA_API_CLIENT_ID`
+- `SIGA_ENTRA_API_AUDIENCE`
+- `SIGA_ENTRA_API_SCOPE`
 - `SIGA_ADMIN_EMAILS`
 - `SIGA_EDITOR_EMAILS`
 - `SIGA_ADMIN_TOKEN`
@@ -75,11 +78,22 @@
 
 1. Se a autenticacao do frontend sera `local` ou `entra`
 2. Se for `entra`:
-   - `clientId`
+   - `clientId` do frontend (SPA)
    - `tenantId`
+   - `clientId` da API protegida
+   - `audience` da API, normalmente `api://<clientId-da-api>`
+   - `scope` delegado da API, por exemplo `api://<clientId-da-api>/access_as_user`
    - emails de administradores
    - emails de editores
    - observacao: os emails podem ser informados separados por `,` ou `;`
+
+## Regras de autenticacao em modo Entra
+
+- O frontend usa MSAL e solicita o escopo configurado em `SIGA_ENTRA_API_SCOPE`
+- O backend valida JWT do Entra ID para todas as rotas, exceto `GET /health`
+- A audience aceita no backend vem de `SIGA_ENTRA_API_AUDIENCE` e, como fallback, de `SIGA_ENTRA_API_CLIENT_ID`
+- Em modo `entra`, o header `Authorization: Bearer <token>` passa a ser obrigatorio para leitura e escrita
+- O `SIGA_ADMIN_TOKEN` continua util apenas no modo `local`
 
 ## Como fazer o primeiro deploy
 
