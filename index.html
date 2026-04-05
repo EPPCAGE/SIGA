@@ -7409,7 +7409,7 @@ function _npopCreateManualMapping() {
   if(!nome) { showToast('Selecione ao menos um Processo ou Subprocesso.', 'warn'); return; }
 
   const elaborado = currentUserName || localStorage.getItem('cage_nome_usuario') || '';
-  createBlankPop({
+  const info = {
     nome,
     macro:             document.getElementById('nf-macro').value.trim(),
     processo:          proc,
@@ -7438,7 +7438,9 @@ function _npopCreateManualMapping() {
     sistemas:          document.getElementById('nf-sistemas').value.trim(),
     patVinc:           document.getElementById('nf-pat-vinc')?.value || '',
     flowOutline:       _npopSerializeOutline('nf-flow-outline-list'),
-  });
+  };
+  if(!_npopConfirmDuplicate(info)) return;
+  createBlankPop(info);
 }
 
 function _npopRunManualCreate() {
@@ -7783,6 +7785,43 @@ function _tryParseJson(str, fallback) {
 function _splitLines(str) {
   if(!str) return [];
   return str.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+}
+
+function _npopScopeInfo(info) {
+  return { processo: String(info?.processo || '').trim(), sub: String(info?.sub || info?.subprocesso || '').trim() };
+}
+
+function _npopIsOpenStatus(status) {
+  return !['concluido', 'suspenso'].includes(String(status || '').trim());
+}
+
+function _npopMatchesScope(meta, scope) {
+  const processo = String(meta?.processo || '').trim();
+  const sub = String(meta?.sub || meta?.subprocesso || '').trim();
+  if(!scope.processo || processo !== scope.processo) return false;
+  if(scope.sub) return sub === scope.sub;
+  return !sub;
+}
+
+function _npopOpenDuplicates(info, ignoreKey) {
+  const scope = _npopScopeInfo(info);
+  return ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
+    .filter((k, i, arr) => arr.indexOf(k) === i && k !== ignoreKey)
+    .filter(k => _npopMatchesScope(DATA[k]?.meta, scope) && _npopIsOpenStatus(DATA[k]?.meta?.statusMap));
+}
+
+function _npopDuplicateLabel(key) {
+  const meta = DATA[key]?.meta || {};
+  const nome = meta.name || meta.sub || meta.processo || key;
+  const status = meta.statusMap || 'planejado';
+  return `• ${nome} (${_statusLabel(status)})`;
+}
+
+function _npopConfirmDuplicate(info, ignoreKey) {
+  const found = _npopOpenDuplicates(info, ignoreKey);
+  if(!found.length) return true;
+  const alvo = info?.sub || info?.processo || info?.nome || 'este processo';
+  return confirm(`Já existe mapeamento aberto para ${alvo}.\n\n${found.map(_npopDuplicateLabel).join('\n')}\n\nDeseja realmente criar um novo mapeamento mesmo assim?`);
 }
 
 function _npopOutlineLines(text) {
@@ -9179,6 +9218,11 @@ function applyIaResult(parsed) {
   btn.style.display = 'inline-flex';
   btn.textContent = '✅ Criar POP →';
   btn.onclick = () => {
+    if(!_npopConfirmDuplicate({
+      nome: DATA[key]?.meta?.name,
+      processo: DATA[key]?.meta?.processo,
+      sub: DATA[key]?.meta?.sub
+    }, key)) return;
     mountNewPopTab(key, DATA[key].meta.name);
     closeNovoPop();
     showToast('✅ POP importado! O desenho do fluxo foi gerado automaticamente na aba "Desenhar Fluxo".', 'success');
