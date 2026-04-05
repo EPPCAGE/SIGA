@@ -245,19 +245,17 @@
       <p>Identifique o processo e preencha as informacoes minimas para iniciar com seguranca.</p>
       <div class="setup-progress">
         <div id="setupStepCounter" class="setup-step-counter">Etapa 1 de 7</div>
-        <div id="setupStepTitle" class="setup-step-title">Secao 0 - Identificacao do Processo</div>
+        <div id="setupStepTitle" class="setup-step-title">Identificacao do Processo</div>
       </div>
 
       <div id="setupStepHost">
       <!-- SECAO 0 - Processo da Arquitetura -->
-      <div class="setup-step" data-step-title="Secao 0 - Identificacao do Processo">
-        <h3>Secao 0 - Identificacao do Processo</h3>
+      <div class="setup-step" data-step-title="Identificacao do Processo">
         <div class="box">Escolha qual processo da Arquitetura de Processos esta sendo simulado. Esse vinculo permite salvar os resultados diretamente no cadastro do processo.</div>
         <div id="setupSection0" class="box"></div>
       </div>
 
-      <div class="setup-step" data-step-title="Secao 1 - Leitura do BPMN/XPDL">
-        <h3>Secao 1 - Leitura do BPMN/XPDL</h3>
+      <div class="setup-step" data-step-title="Leitura do BPMN/XPDL">
         <label class="field">
           <span>Arquivo (PNG/JPG/PDF/XPDL/XML/BPMN/XLSX)</span>
           <input id="fileInput" type="file" accept=".png,.jpg,.jpeg,.pdf,.xpdl,.xml,.bpmn,.xlsx,.xls" />
@@ -269,20 +267,17 @@
         <pre id="cvOutput" class="codebox"></pre>
       </div>
 
-      <div class="setup-step" data-step-title="Secao 2 - Matriz de Atividades e Perfil das Raias">
-        <h3>Secao 2 - Matriz de Atividades e Perfil das Raias</h3>
+      <div class="setup-step" data-step-title="Matriz de Atividades e Perfil das Raias">
         <div class="box">Defina o ator/raia de cada atividade e informe a equipe e o orgao de cada raia. O sistema classificara os handoffs automaticamente.</div>
         <div id="setupTaskMatrix" class="box"></div>
       </div>
 
-      <div class="setup-step" data-step-title="Secao 3 - Handoffs Detectados Automaticamente">
-        <h3>Secao 3 - Handoffs Detectados Automaticamente</h3>
+      <div class="setup-step" data-step-title="Handoffs Detectados Automaticamente">
         <div class="box">Com base nos perfis das raias da Secao 2, o sistema detecta e classifica cada handoff. Nenhuma acao e necessaria aqui - apenas revise.</div>
         <div id="handoffWizard" class="box"></div>
       </div>
 
-      <div class="setup-step" data-step-title="Secao 4 - Parametros Minimos">
-        <h3>Secao 4 - Parametros Minimos</h3>
+      <div class="setup-step" data-step-title="Tempos e Caminho Feliz">
         <div class="field">
           <span>Caminho feliz no desenho (inicio -> ... -> fim)</span>
           <div class="box">Clique diretamente no mapa abaixo, seguindo um caminho continuo do no de inicio ate o no de fim. Use <kbd>Ctrl + Scroll</kbd> para dar zoom no mapa.</div>
@@ -306,20 +301,17 @@
         </label>
       </div>
 
-      <div class="setup-step" data-step-title="Secao 5 - Probabilidades dos Gateways">
-        <h3>Secao 5 - Probabilidades dos Gateways</h3>
+      <div class="setup-step" data-step-title="Probabilidades dos Gateways">
         <div class="box">Ajuste aqui as probabilidades dos caminhos de decisao para garantir soma de 100% em cada gateway.</div>
         <div id="setupGatewayEditor" class="box"></div>
       </div>
 
-      <div class="setup-step" data-step-title="Secao 6 - Loops de Retrabalho">
-        <h3>Secao 6 - Loops de Retrabalho</h3>
+      <div class="setup-step" data-step-title="Loops de Retrabalho">
         <div class="box">Defina o <strong>gateway de decisao</strong> que pode acionar retrabalho e a atividade de retorno. A probabilidade do loop e integrada automaticamente nas saidas do gateway. As arestas de loop ficam laranja no mapa.</div>
         <div id="setupLoopEditor" class="box"></div>
       </div>
 
       <div class="setup-step" data-step-title="Revisao Final">
-        <h3>Revisao Final</h3>
         <div class="box">Revise os itens minimos e os refinamentos opcionais antes de concluir a preparacao.</div>
         <div id="setupChecklist" class="box"></div>
       </div>
