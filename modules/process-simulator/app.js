@@ -3624,7 +3624,7 @@ function _automationBreakdown(target) {
 
 function _formatUtMinutesLine(label, utValue, factor) {
   const utText = _fmtUT(utValue);
-  if (!(factor > 0)) return `${label}: ${utText}`;
+  if (factor <= 0) return `${label}: ${utText}`;
   return `${label}: ${utText} (${_fmtMin(utValue * factor)})`;
 }
 
