@@ -137,6 +137,13 @@ const RULES_DEFAULT = {
   handoffDiffOrg: 40,
 };
 
+const COMPLEXITY_UT = {
+  baixa: 5,
+  media: 10,
+  alta: 20,
+  extrema: 40,
+};
+
 function applyWeightsFromUI() {
   const r = (id, fallback) => {
     const v = Number($(`weight_${id}`)?.value);
@@ -3576,7 +3583,43 @@ function _applyHandoffHypothesis(projectedGraph, target) {
 
 function _applyAutomationHypothesis(projectedGraph, target) {
   const node = (projectedGraph.nodes || []).find((n) => n.id === target);
-  if (node?.type === 'task') node.automated = true;
+  if (node?.type === 'task') {
+    node.automated = true;
+  }
+}
+
+function _taskUt(node) {
+  if (!node || node.type !== 'task') return 0;
+  if (node.automated) return RULES.automated;
+  return COMPLEXITY_UT[node.complexity] ?? RULES.nextManual;
+}
+
+function _handoffUt(fromNode, toNode) {
+  if (!fromNode || !toNode) return 0;
+  if (fromNode.type !== 'task' || toNode.type !== 'task') return 0;
+  if (fromNode.automated || toNode.automated) return 0;
+  return _calcCrossLanePenalty(fromNode, toNode);
+}
+
+function _sumHandoffs(edges, nodeMap, targetId, incoming) {
+  return edges.reduce((sum, edge) => {
+    const matches = incoming ? edge.to === targetId : edge.from === targetId;
+    if (!matches) return sum;
+    const fromNode = nodeMap.get(edge.from);
+    const toNode = nodeMap.get(edge.to);
+    return sum + _handoffUt(fromNode, toNode);
+  }, 0);
+}
+
+function _automationBreakdown(target) {
+  const nodes = graph?.nodes || [];
+  const edges = graph?.edges || [];
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  const node = nodeMap.get(target);
+  const taskUt = _taskUt(node) - RULES.automated;
+  const inUt = _sumHandoffs(edges, nodeMap, target, true);
+  const outUt = _sumHandoffs(edges, nodeMap, target, false);
+  return { taskUt, handoffUt: inUt + outUt };
 }
 
 function _formatUtMinutesLine(label, utValue, factor) {
@@ -3585,11 +3628,21 @@ function _formatUtMinutesLine(label, utValue, factor) {
   return `${label}: ${utText} (${_fmtMin(utValue * factor)})`;
 }
 
-function _buildHypothesisLines(currentTer, projectedTer, factor) {
+function _appendAutomationLines(lines, detail, factor) {
+  const totalUt = detail.taskUt + detail.handoffUt;
+  lines.push('');
+  lines.push('Composicao direta da automacao:');
+  lines.push(_formatUtMinutesLine('Reducao na atividade', detail.taskUt, factor));
+  lines.push(_formatUtMinutesLine('Reducao em handoffs adjacentes', detail.handoffUt, factor));
+  lines.push(_formatUtMinutesLine('Impacto direto combinado', totalUt, factor));
+}
+
+function _buildHypothesisLines(currentTer, projectedTer, factor, detail) {
   const gainUt = currentTer - projectedTer;
   const pct = currentTer > 0 ? (gainUt / currentTer) * 100 : 0;
   const lines = [_formatUtMinutesLine('Tempo de simulacao atual', currentTer, factor), _formatUtMinutesLine('Tempo de simulacao projetado', projectedTer, factor), _formatUtMinutesLine('Ganho estimado', gainUt, factor)];
   lines.push(`Reducao percentual: ${pct.toFixed(2)}%`);
+  if (detail) _appendAutomationLines(lines, detail, factor);
   return lines;
 }
 
@@ -3606,10 +3659,12 @@ function runHypothesisSimulation() {
 
   const currentMetrics = computeScenarioMetrics();
   const projectedGraph = cloneLocal(graph);
+  let detail = null;
 
   if (type === 'gateway') {
     _applyGatewayHypothesis(projectedGraph, target);
   } else if (type === 'automation') {
+    detail = _automationBreakdown(target);
     _applyAutomationHypothesis(projectedGraph, target);
   } else if (type === 'loop') {
     _applyLoopHypothesis(projectedGraph, target);
@@ -3620,7 +3675,7 @@ function runHypothesisSimulation() {
   const projected = calculateTEPAndIP(projectedGraph, 2500);
   const currentTer = Number(currentMetrics.ter || 0);
   const projectedTer = Number(projected.tepReal || 0);
-  out.textContent = _buildHypothesisLines(currentTer, projectedTer, currentMetrics.kFactor).join('\n');
+  out.textContent = _buildHypothesisLines(currentTer, projectedTer, currentMetrics.kFactor, detail).join('\n');
 }
 
 function runRoi() {

@@ -60,7 +60,7 @@
         <summary>Tempo e Escala</summary>
         <div class="accordion-body">
           <label class="field">
-            <span>T.P. - Tempo de Percepcao (opcional)</span>
+            <span>Tempo estimado total (opcional)</span>
             <div style="display:flex;gap:6px;">
               <input id="leadTimeInformed" type="number" min="0" step="0.1" placeholder="Ex: 240" style="flex:1;" />
               <select id="tpUnit" style="width:90px;">
@@ -69,10 +69,10 @@
                 <option value="dias">Dias</option>
               </select>
             </div>
-            <small>Lead time total sentido pelo executor - do insumo ao produto final, incluindo filas e gavetas.</small>
+            <small>Tempo total percebido no processo, do insumo ao produto final, incluindo filas e gavetas.</small>
           </label>
           <label class="field">
-            <span>T.P.E. - Tempo de Processamento Estimado (opcional)</span>
+            <span>Tempo estimado puro (opcional)</span>
             <div style="display:flex;gap:6px;">
               <input id="processingTimeInformed" type="number" min="0" step="0.1" placeholder="Ex: 120" style="flex:1;" />
               <select id="tpeUnit" style="width:90px;">
@@ -81,7 +81,7 @@
                 <option value="dias">Dias</option>
               </select>
             </div>
-            <small>Tempo sem filas/gaveta, estimado pelo executor. <strong>T.Gaveta = T.P. - T.P.E.</strong></small>
+            <small>Tempo de execucao sem filas nem gaveta. <strong>Tempo de gaveta = tempo total - tempo puro.</strong></small>
           </label>
           <label>Velocidade da Simulacao
             <input id="speed" type="range" min="0.5" max="10" value="1" step="0.1" />
