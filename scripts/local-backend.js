@@ -1007,7 +1007,7 @@ function corsHeadersFor(req) {
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-SIGA-Admin-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-SIGA-Admin-Token, X-Ai-Token, X-Ai-Provider',
     'Vary': 'Origin'
   };
 }
@@ -1495,8 +1495,12 @@ async function normalizeAiInput(parsed) {
 }
 
 
+function getAzureApiKey(parsed) {
+  return String(parsed?._aiToken || process.env.SIGA_AZURE_API_KEY || '').trim();
+}
+
 async function callAzureOpenAI(parsed) {
-  const AZURE_API_KEY    = process.env.SIGA_AZURE_API_KEY || '';
+  const AZURE_API_KEY    = getAzureApiKey(parsed);
   const AZURE_ENDPOINT   = (process.env.SIGA_AZURE_ENDPOINT || 'https://projeto-gesproc-cage.cognitiveservices.azure.com').replace(/\/$/, '');
   const AZURE_DEPLOYMENT = process.env.SIGA_AZURE_DEPLOYMENT || 'gpt-5.1-chat';
   const AZURE_API_VER    = process.env.SIGA_AZURE_API_VERSION || '2024-12-01-preview';
@@ -1702,7 +1706,7 @@ async function _routePostData(req, res) {
 async function _routePostAi(req, res) {
   const parsed = await _parseRequestBody(req, res);
   if (parsed === null) return;
-  const provider = String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase();
+  const provider = getAiProviderOverride(req) || String(process.env.SIGA_AI_PROVIDER || 'ai').toLowerCase();
   const headerToken = String(req.headers['x-ai-token'] || '').trim();
   if (headerToken) parsed._aiToken = headerToken;
   const result = await callAiWithFallback(parsed, provider);
@@ -1764,6 +1768,10 @@ async function _ensureAuthorizedRoute(req, res, routeKey) {
     sendJson(req, res, statusCode, { ok: false, error: error?.message || 'Unauthorized' });
     return false;
   }
+}
+
+function getAiProviderOverride(req) {
+  return String(req.headers['x-ai-provider'] || '').trim().toLowerCase();
 }
 
 async function _handleRequest(req, res, url) {

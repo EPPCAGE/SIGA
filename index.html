@@ -586,6 +586,10 @@
   .npop-form label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);display:block;margin-bottom:3px;}
   .npop-form .modal-input{width:100%;box-sizing:border-box;}
   .npop-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .flow-outline-list{display:flex;flex-direction:column;gap:8px;}
+  .flow-outline-item{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;}
+  .flow-outline-kind{display:flex;align-items:center;gap:6px;font-size:12px;color:#334155;white-space:nowrap;}
+  .flow-outline-remove{padding:8px 10px;border:1px solid #dbeafe;background:#fff;border-radius:8px;color:#1e3a8a;cursor:pointer;font-size:12px;font-weight:700;}
 
   /* AI extracting state */
   .npop-extracting{text-align:center;padding:32px 20px;}
@@ -2185,10 +2189,17 @@
   <div class="card fade-up" id="gp-ai-card" style="display:none;">
     <div class="card-header"><span class="card-title">&#129302; Intelig&ecirc;ncia Artificial</span></div>
     <div class="card-body" style="padding:20px;">
-      <p style="font-size:13px;color:#64748b;margin:0 0 14px;">Token pessoal do GitHub usado nas fun&ccedil;&otilde;es de IA (importa&ccedil;&atilde;o de POP Word, an&aacute;lise de processos). Armazenado localmente no seu navegador — n&atilde;o &eacute; enviado ao servidor de dados.</p>
+      <p style="font-size:13px;color:#64748b;margin:0 0 14px;">Credencial pessoal usada nas fun&ccedil;&otilde;es de IA. Pode ser um token do GitHub Models ou uma chave do Azure OpenAI. Fica armazenada localmente no navegador.</p>
       <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+        <div style="min-width:210px;">
+          <label for="gp-ai-provider" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Provider</label>
+          <select class="modal-input" id="gp-ai-provider" onchange="_gpSyncAiProviderUi()">
+            <option value="github-models">GitHub Models</option>
+            <option value="azure">Azure OpenAI</option>
+          </select>
+        </div>
         <div style="flex:1;min-width:240px;">
-          <label for="gp-ai-token" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">GitHub Token (ghp_...)</label>
+          <label id="gp-ai-token-label" for="gp-ai-token" style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">GitHub Token (ghp_...)</label>
           <input class="modal-input" id="gp-ai-token" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="new-password">
         </div>
         <button class="btn btn-primary" style="font-size:12px;white-space:nowrap;" onclick="saveAiToken()">Salvar Token</button>
@@ -2535,6 +2546,14 @@
         <select class="modal-input" id="pat-pop-vinc">
           <option value="">Nenhum</option>
         </select>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap;">
+          <label class="gmod-label" style="margin:0;">Produtos da Atividade <span style="font-weight:400;color:var(--text-muted);">(links)</span></label>
+          <button type="button" class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="patAddProdutoRow(true)">＋ Adicionar link</button>
+        </div>
+        <div id="pat-produtos-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div style="font-size:11px;color:#64748b;margin-top:6px;">Cadastre os arquivos/produtos desta atividade por link, como Drive, SharePoint, PDF ou pasta da rede.</div>
       </div>
       <div>
         <label for="pat-obs" class="gmod-label">Observações</label>
@@ -3082,6 +3101,15 @@
                 <div style="font-size:11px;color:#78716c;margin-top:5px;">Vincule este mapeamento a uma atividade já cadastrada no PAT. O campo <em>POP Vinculado</em> do item selecionado será atualizado automaticamente.</div>
               </div>
             </div>
+            <div style="background:#ecfeff;border:1.5px solid #a5f3fc;border-radius:8px;padding:12px 14px;margin-top:10px;">
+              <div style="font-size:11px;font-weight:700;color:#155e75;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🧭 Estrutura Inicial do Fluxo</div>
+              <div>
+                <label for="nf-etapas-sequenciais" style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Principais atividades do processo <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+                <div id="nf-flow-outline-list" class="flow-outline-list"></div>
+                <button type="button" class="btn btn-outline" onclick="npopAddFlowOutlineRow(true)" style="margin-top:8px;font-size:12px;padding:7px 12px;">＋ Adicionar linha</button>
+                <div style="font-size:11px;color:#0f766e;margin-top:5px;">Cada linha representa um item da sequência. Se o checkbox estiver marcado, a linha será tratada como atividade; se não estiver, será uma macro-etapa. O sistema vai montar automaticamente a aba <em>Fluxo</em> e um esboço inicial do BPMN.</div>
+              </div>
+            </div>
 
           </div>
         </div>
@@ -3113,10 +3141,10 @@
     </div><!-- /npop-body -->
 
     <div class="npop-footer">
-      <button class="btn btn-outline" onclick="closeNovoPop()">Cancelar</button>
+      <button type="button" class="btn btn-outline" onclick="closeNovoPop()">Cancelar</button>
       <div style="display:flex;gap:8px;">
         <span id="npop-method-badge" style="font-size:12px;color:var(--text-muted);align-self:center;"></span>
-        <button class="btn btn-success" id="npop-confirm-btn" onclick="confirmNovoPop()">Criar Mapeamento →</button>
+        <button type="button" class="btn btn-success" id="npop-confirm-btn" onclick="confirmNovoPop()">Criar Mapeamento →</button>
       </div>
     </div>
   </div>
@@ -7268,7 +7296,7 @@ function _resetNpopTextFields() {
   [
     'nf-macro','nf-processo','nf-subprocesso','nf-gerente','nf-desc','nf-input','nf-output',
     'nf-resultados','nf-solicitante','nf-equipe','nf-sistemas','nf-fornecedores','nf-clientes',
-    'nf-data-inicio','nf-data-prevista',
+    'nf-data-inicio','nf-data-prevista','nf-etapas-sequenciais',
   ].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.value = '';
@@ -7285,6 +7313,7 @@ function _resetNpopStatusFields() {
 function _resetNpopSupportPanels() {
   const tagsEl = document.getElementById('nf-obj-estrategico-tags');
   if(tagsEl) tagsEl.innerHTML = '<span style="color:#94a3b8;font-size:12px;">Preenchido automaticamente ao selecionar o processo</span>';
+  _npopRenderOutlineRows('nf-flow-outline-list', []);
   const procList = document.getElementById('nf-processo-list');
   const subList = document.getElementById('nf-subprocesso-list');
   const jsonStatus = document.getElementById('npop-json-status');
@@ -7319,6 +7348,7 @@ function _resetNpopPrimaryUi() {
   _resetNpopTextFields();
   _resetNpopStatusFields();
   _resetNpopSupportPanels();
+  npopAddFlowOutlineRow(false);
   _resetNpopActorsAndSponsors();
   _resetNpopFilesAndWorkflow();
 }
@@ -7379,7 +7409,7 @@ function _npopCreateManualMapping() {
   if(!nome) { showToast('Selecione ao menos um Processo ou Subprocesso.', 'warn'); return; }
 
   const elaborado = currentUserName || localStorage.getItem('cage_nome_usuario') || '';
-  createBlankPop({
+  const info = {
     nome,
     macro:             document.getElementById('nf-macro').value.trim(),
     processo:          proc,
@@ -7407,7 +7437,19 @@ function _npopCreateManualMapping() {
     clientes:          document.getElementById('nf-clientes').value.trim(),
     sistemas:          document.getElementById('nf-sistemas').value.trim(),
     patVinc:           document.getElementById('nf-pat-vinc')?.value || '',
-  });
+    flowOutline:       _npopSerializeOutline('nf-flow-outline-list'),
+  };
+  if(!_npopConfirmDuplicate(info)) return;
+  createBlankPop(info);
+}
+
+function _npopRunManualCreate() {
+  try {
+    _npopCreateManualMapping();
+  } catch(err) {
+    console.error('[npop] falha ao iniciar mapeamento manual:', err);
+    showToast('Não foi possível iniciar o mapeamento. Verifique os campos e tente novamente.', 'error');
+  }
 }
 
 function _npopUpdateWorkflowStatusAfterFileChange() {
@@ -7711,7 +7753,7 @@ function _npopApplyFormStage2(extracted) {
 
 async function confirmNovoPop() {
   if(_npopMethod === 'manual') {
-    _npopCreateManualMapping();
+    _npopRunManualCreate();
     return;
   }
 
@@ -7743,6 +7785,232 @@ function _tryParseJson(str, fallback) {
 function _splitLines(str) {
   if(!str) return [];
   return str.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+}
+
+function _npopScopeInfo(info) {
+  return { processo: String(info?.processo || '').trim(), sub: String(info?.sub || info?.subprocesso || '').trim() };
+}
+
+function _npopIsOpenStatus(status) {
+  return !['concluido', 'suspenso'].includes(String(status || '').trim());
+}
+
+function _npopMatchesScope(meta, scope) {
+  const processo = String(meta?.processo || '').trim();
+  const sub = String(meta?.sub || meta?.subprocesso || '').trim();
+  if(!scope.processo || processo !== scope.processo) return false;
+  if(scope.sub) return sub === scope.sub;
+  return !sub;
+}
+
+function _npopOpenDuplicates(info, ignoreKey) {
+  const scope = _npopScopeInfo(info);
+  return ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
+    .filter((k, i, arr) => arr.indexOf(k) === i && k !== ignoreKey)
+    .filter(k => _npopMatchesScope(DATA[k]?.meta, scope) && _npopIsOpenStatus(DATA[k]?.meta?.statusMap));
+}
+
+function _npopDuplicateLabel(key) {
+  const meta = DATA[key]?.meta || {};
+  const nome = meta.name || meta.sub || meta.processo || key;
+  const status = meta.statusMap || 'planejado';
+  return `• ${nome} (${_statusLabel(status)})`;
+}
+
+function _npopConfirmDuplicate(info, ignoreKey) {
+  const found = _npopOpenDuplicates(info, ignoreKey);
+  if(!found.length) return true;
+  const alvo = info?.sub || info?.processo || info?.nome || 'este processo';
+  return confirm(`Já existe mapeamento aberto para ${alvo}.\n\n${found.map(_npopDuplicateLabel).join('\n')}\n\nDeseja realmente criar um novo mapeamento mesmo assim?`);
+}
+
+function _npopOutlineLines(text) {
+  return String(text || '').split('\n').map(line => line.trim()).filter(Boolean);
+}
+
+function _npopOutlineItem(text, isActivity) {
+  return { text: String(text || '').trim(), isActivity: !!isActivity };
+}
+
+function _npopOutlineKind(line) {
+  if(/^\s*(\[?\s*m\s*\]?|macro-?etapa)\s*[:\-]/i.test(line)) return false;
+  return /^\s*(\[?\s*a\s*\]?|atividade)\s*[:\-]/i.test(line);
+}
+
+function _npopOutlineText(line) {
+  return line.replace(/^\s*(\[?\s*[ma]\s*\]?|macro-?etapa|atividade)\s*[:\-]\s*/i, '').trim();
+}
+
+function _npopNormalizeOutline(items) {
+  if(Array.isArray(items) && items.length) return items.map(item => _npopOutlineItem(item?.text, item?.isActivity)).filter(item => item.text);
+  return [];
+}
+
+function _npopLegacyOutline(text) {
+  return _npopOutlineLines(text).map(line => _npopOutlineItem(_npopOutlineText(line), _npopOutlineKind(line))).filter(item => item.text);
+}
+
+function _npopSerializeOutline(listId) {
+  const host = document.getElementById(listId);
+  if(!host) return [];
+  return [...host.querySelectorAll('.flow-outline-item')].map(row => _npopOutlineItem(row.querySelector('input[type="text"]')?.value, row.querySelector('input[type="checkbox"]')?.checked)).filter(item => item.text);
+}
+
+function _npopOutlineRowHtml(listId, item) {
+  const checked = item.isActivity ? 'checked' : '';
+  return `<div class="flow-outline-item"><input class="modal-input" type="text" value="${escapeHtml(item.text)}" placeholder="Descreva a etapa ou atividade"><label class="flow-outline-kind"><input type="checkbox" ${checked}> É atividade</label><button type="button" class="flow-outline-remove" onclick="this.closest('.flow-outline-item').remove()">✕</button></div>`;
+}
+
+function _npopRenderOutlineRows(listId, items) {
+  const host = document.getElementById(listId);
+  if(!host) return;
+  host.innerHTML = _npopNormalizeOutline(items).map(item => _npopOutlineRowHtml(listId, item)).join('');
+}
+
+function _npopAddOutlineRow(listId, focus) {
+  const host = document.getElementById(listId);
+  if(!host) return;
+  host.insertAdjacentHTML('beforeend', _npopOutlineRowHtml(listId, _npopOutlineItem('', false)));
+  if(focus) host.lastElementChild?.querySelector('input[type="text"]')?.focus();
+}
+
+function npopAddFlowOutlineRow(focus) {
+  _npopAddOutlineRow('nf-flow-outline-list', focus);
+}
+
+function statusModalAddFlowOutlineRow(focus) {
+  _npopAddOutlineRow('status-modal-flow-outline-list', focus);
+}
+
+function _npopOutlineFromSteps(steps) {
+  const items = [];
+  (Array.isArray(steps) ? steps : []).forEach(step => {
+    items.push(_npopOutlineItem(step?.title, false));
+    (Array.isArray(step?.actions) ? step.actions : []).forEach(action => items.push(_npopOutlineItem(action?.text, true)));
+  });
+  return items.filter(item => item.text);
+}
+
+function _npopDefaultStep(responsible) {
+  return { title:'Etapa 1', subtitle:'', responsible: responsible || 'Responsável', respClass:'resp-green', actions:[] };
+}
+
+function _npopActionObj(text) {
+  return { type:'atividade', text, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'', eventoTipo:'', automatico:false, loop:false };
+}
+
+function _npopEnsureOutlineStep(steps, responsible) {
+  if(!steps.length) steps.push(_npopDefaultStep(responsible));
+  return steps[steps.length - 1];
+}
+
+function _npopAppendOutlineLine(steps, item, responsible) {
+  if(!item?.text) return;
+  if(!item.isActivity) steps.push({ ..._npopDefaultStep(responsible), title:item.text });
+  else _npopEnsureOutlineStep(steps, responsible).actions.push(_npopActionObj(item.text));
+}
+
+function _npopBuildStepsFromOutline(items, responsible) {
+  const steps = [];
+  _npopNormalizeOutline(items).forEach(item => _npopAppendOutlineLine(steps, item, responsible));
+  if(!steps.length) return null;
+  return steps.map((step, index) => step.actions.length ? step : { ...step, actions:[_npopActionObj(step.title || ('Atividade ' + (index + 1)))] });
+}
+
+function _npopFlowItemsFromSteps(steps) {
+  const items = [];
+  steps.forEach(step => step.actions.forEach(action => items.push({ step: step.title, text: action.text || step.title })));
+  return items.length ? items : steps.map(step => ({ step: step.title, text: step.title }));
+}
+
+function _npopMermaidNode(id, label) {
+  return `  ${id}["${String(label || '').replace(/"/g, "'")}"]`;
+}
+
+function _npopBuildMermaidFromSteps(steps) {
+  const items = _npopFlowItemsFromSteps(steps);
+  const lines = ['flowchart LR', '  START([Início])'];
+  items.forEach((item, index) => lines.push(_npopMermaidNode('N' + (index + 1), item.step === item.text ? item.text : `${item.step}\\n${item.text}`)));
+  items.forEach((item, index) => lines.push(`  ${index === 0 ? 'START' : 'N' + index} --> N${index + 1}`));
+  lines.push(`  ${items.length ? 'N' + items.length : 'START'} --> END([Fim])`);
+  return lines.join('\n');
+}
+
+function _npopXmlEscape(text) {
+  return String(text || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+}
+
+function _npopBpmnTaskNodes(items) {
+  return items.map((item, index) => `    <bpmn:task id="Task_${index + 1}" name="${_npopXmlEscape(item.step === item.text ? item.text : item.step + ' - ' + item.text)}"/>`).join('\n');
+}
+
+function _npopBpmnFlows(items) {
+  const flows = items.map((item, index) => `    <bpmn:sequenceFlow id="Flow_${index + 1}" sourceRef="${index === 0 ? 'StartEvent_1' : 'Task_' + index}" targetRef="Task_${index + 1}"/>`);
+  flows.push(`    <bpmn:sequenceFlow id="Flow_end" sourceRef="${items.length ? 'Task_' + items.length : 'StartEvent_1'}" targetRef="EndEvent_1"/>`);
+  return flows.join('\n');
+}
+
+function _npopBpmnShapes(items) {
+  const start = ['      <bpmndi:BPMNShape id="Shape_StartEvent_1" bpmnElement="StartEvent_1"><dc:Bounds x="120" y="102" width="36" height="36"/></bpmndi:BPMNShape>'];
+  const tasks = items.map((item, index) => `      <bpmndi:BPMNShape id="Shape_Task_${index + 1}" bpmnElement="Task_${index + 1}"><dc:Bounds x="${220 + (index * 180)}" y="80" width="120" height="80"/></bpmndi:BPMNShape>`);
+  const endX = 220 + (items.length * 180);
+  return start.concat(tasks, `      <bpmndi:BPMNShape id="Shape_EndEvent_1" bpmnElement="EndEvent_1"><dc:Bounds x="${endX}" y="102" width="36" height="36"/></bpmndi:BPMNShape>`).join('\n');
+}
+
+function _npopBpmnEdges(items) {
+  const edges = items.map((item, index) => {
+    const fromX = index === 0 ? 156 : 340 + ((index - 1) * 180);
+    const toX = 220 + (index * 180);
+    return `      <bpmndi:BPMNEdge id="Edge_Flow_${index + 1}" bpmnElement="Flow_${index + 1}"><di:waypoint x="${fromX}" y="120"/><di:waypoint x="${toX}" y="120"/></bpmndi:BPMNEdge>`;
+  });
+  const endFromX = items.length ? 340 + ((items.length - 1) * 180) : 156;
+  const endToX = 220 + (items.length * 180);
+  edges.push(`      <bpmndi:BPMNEdge id="Edge_Flow_end" bpmnElement="Flow_end"><di:waypoint x="${endFromX}" y="120"/><di:waypoint x="${endToX}" y="120"/></bpmndi:BPMNEdge>`);
+  return edges.join('\n');
+}
+
+function _npopBuildBpmnFromSteps(steps, processName) {
+  const items = _npopFlowItemsFromSteps(steps);
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1" name="${_npopXmlEscape(processName || 'Processo')}" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_1" name="Início"/>
+${_npopBpmnTaskNodes(items)}
+    <bpmn:endEvent id="EndEvent_1" name="Fim"/>
+${_npopBpmnFlows(items)}
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1"><bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
+${_npopBpmnShapes(items)}
+${_npopBpmnEdges(items)}
+  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+}
+
+function _npopApplyInitialFlowStructure(key, info) {
+  const outline = _npopNormalizeOutline(info.flowOutline).length ? _npopNormalizeOutline(info.flowOutline) : _npopLegacyOutline(info.etapasSequenciais);
+  const steps = _npopBuildStepsFromOutline(outline, info.equipeResponsavel);
+  if(!steps) return;
+  DATA[key].meta.flowOutline = outline;
+  DATA[key].steps = steps;
+  DATA[key].currentStep = 0;
+  DATA[key].flowDiagram = DATA[key].flowDiagram || {};
+  DATA[key].flowDiagram.mermaid = _npopBuildMermaidFromSteps(steps);
+  DATA[key].flowDiagram.text = DATA[key].flowDiagram.mermaid;
+  DATA[key].flowDiagram.bpmnXml = _npopBuildBpmnFromSteps(steps, info.nome || info.processo || 'Processo');
+}
+
+function _npopApplyFlowStructureToPop(key, outline) {
+  const items = _npopNormalizeOutline(outline);
+  const pop = DATA[key];
+  const steps = _npopBuildStepsFromOutline(items, pop?.meta?.equipeResponsavel);
+  if(!pop || !steps) return;
+  pop.meta.flowOutline = items;
+  pop.steps = steps;
+  pop.currentStep = 0;
+  pop.flowDiagram = pop.flowDiagram || {};
+  pop.flowDiagram.mermaid = _npopBuildMermaidFromSteps(steps);
+  pop.flowDiagram.text = pop.flowDiagram.mermaid;
+  pop.flowDiagram.bpmnXml = _npopBuildBpmnFromSteps(steps, pop.meta?.name || pop.meta?.processo || 'Processo');
 }
 
 function _extractOuterJsonArray(text) {
@@ -8216,6 +8484,7 @@ function createBlankPop(info) {
       clientes:         info.clientes         || '',
       sistemas:         info.sistemas         || '',
       patVinc:          info.patVinc          || '',
+      flowOutline:      _npopNormalizeOutline(info.flowOutline),
     },
     sipoc: {
       fornecedores: _splitLines(info.fornecedores),
@@ -8237,6 +8506,7 @@ function createBlankPop(info) {
     normas: [],
     revisions: [{ num:'0', date: today, desc:'Emissão Inicial.', author: info.elaborado || '' }]
   };
+  _npopApplyInitialFlowStructure(key, info);
 
   // Vincular o item do PAT a este novo POP (atualiza popVinc do item PAT)
   if(info.patVinc) {
@@ -8948,6 +9218,11 @@ function applyIaResult(parsed) {
   btn.style.display = 'inline-flex';
   btn.textContent = '✅ Criar POP →';
   btn.onclick = () => {
+    if(!_npopConfirmDuplicate({
+      nome: DATA[key]?.meta?.name,
+      processo: DATA[key]?.meta?.processo,
+      sub: DATA[key]?.meta?.sub
+    }, key)) return;
     mountNewPopTab(key, DATA[key].meta.name);
     closeNovoPop();
     showToast('✅ POP importado! O desenho do fluxo foi gerado automaticamente na aba "Desenhar Fluxo".', 'success');
@@ -9767,9 +10042,11 @@ function gpUpdateLogoPreview() {
 
 function saveAiToken() {
   if (!isAdmin) { showToast('🔒 Apenas administradores podem configurar o token de IA.', 'warn'); return; }
+  const provider = _gpGetAiProvider();
   const val = String(document.getElementById('gp-ai-token')?.value || '').trim();
   if (!val) { showToast('Informe o token antes de salvar.', 'warn'); return; }
   localStorage.setItem('siga_ai_token', val);
+  localStorage.setItem('siga_ai_provider', provider);
   document.getElementById('gp-ai-token').value = '';
   _gpUpdateAiTokenStatus();
   showToast('✅ Token de IA salvo no navegador.', 'success');
@@ -9778,8 +10055,28 @@ function saveAiToken() {
 function clearAiToken() {
   if (!isAdmin) { showToast('🔒 Apenas administradores podem remover o token de IA.', 'warn'); return; }
   localStorage.removeItem('siga_ai_token');
+  localStorage.removeItem('siga_ai_provider');
   _gpUpdateAiTokenStatus();
   showToast('Token de IA removido.', 'info');
+}
+
+function _gpGetAiProvider() {
+  const select = document.getElementById('gp-ai-provider');
+  return String(select?.value || localStorage.getItem('siga_ai_provider') || 'github-models');
+}
+
+function _gpGetAiProviderMeta(provider) {
+  return provider === 'azure'
+    ? { label: 'Azure OpenAI Key', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', status: 'Azure OpenAI' }
+    : { label: 'GitHub Token (ghp_...)', placeholder: 'ghp_xxxxxxxxxxxxxxxxxxxx', status: 'GitHub Models' };
+}
+
+function _gpSyncAiProviderUi() {
+  const meta = _gpGetAiProviderMeta(_gpGetAiProvider());
+  const label = document.getElementById('gp-ai-token-label');
+  const input = document.getElementById('gp-ai-token');
+  if (label) label.textContent = meta.label;
+  if (input) input.placeholder = meta.placeholder;
 }
 
 function _gpUpdateAiTokenStatus() {
@@ -9788,11 +10085,15 @@ function _gpUpdateAiTokenStatus() {
   const el = document.getElementById('gp-ai-token-status');
   if (!el) return;
   const token = localStorage.getItem('siga_ai_token') || '';
+  const provider = localStorage.getItem('siga_ai_provider') || 'github-models';
+  const select = document.getElementById('gp-ai-provider');
+  if (select) select.value = provider;
+  _gpSyncAiProviderUi();
   if (token) {
     const masked = token.slice(0, 6) + '\u2022'.repeat(Math.max(0, token.length - 10)) + token.slice(-4);
     const span = document.createElement('span');
     span.style.color = '#16a34a';
-    span.textContent = '\u2714 Token configurado: ' + masked;
+    span.textContent = `\u2714 ${_gpGetAiProviderMeta(provider).status}: ${masked}`;
     el.innerHTML = '';
     el.appendChild(span);
   } else {
@@ -11874,6 +12175,70 @@ function _getPatGoalHtml(item) {
   return `<div style="font-size:12px;color:#0369a1;background:#e0f2fe;border-radius:6px;padding:5px 10px;margin-top:8px;">🎯 Meta: ${item.meta} &nbsp;|&nbsp; Realizado: ${item.qtdRealizada} &nbsp;|&nbsp; <strong>${pct}%</strong></div>`;
 }
 
+function _patNormalizeProduto(item) {
+  if(!item) return null;
+  const nome = String(item.nome || item.titulo || '').trim();
+  const url = String(item.url || item.link || '').trim();
+  if(!nome && !url) return null;
+  return { nome: nome || 'Produto', url };
+}
+
+function _patProdutos(item) {
+  const list = Array.isArray(item?.produtos) ? item.produtos : [];
+  return list.map(_patNormalizeProduto).filter(p => p?.url);
+}
+
+function _patProdutoRow(item) {
+  const nome = escapeHtml(item?.nome || '');
+  const url = escapeHtml(item?.url || '');
+  return `<div class="pat-produto-row" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) auto;gap:8px;align-items:center;"><input class="modal-input pat-produto-nome" type="text" placeholder="Nome do produto" value="${nome}"><input class="modal-input pat-produto-url" type="url" placeholder="https://..." value="${url}"><button type="button" class="btn btn-outline" style="padding:8px 10px;font-size:12px;" onclick="patRemoveProdutoRow(this)">✕</button></div>`;
+}
+
+function patRenderProdutoRows(items) {
+  const el = document.getElementById('pat-produtos-list');
+  if(!el) return;
+  const list = Array.isArray(items) && items.length ? items : [{ nome:'', url:'' }];
+  el.innerHTML = list.map(_patProdutoRow).join('');
+}
+
+function patAddProdutoRow(focus) {
+  const el = document.getElementById('pat-produtos-list');
+  if(!el) return;
+  el.insertAdjacentHTML('beforeend', _patProdutoRow({ nome:'', url:'' }));
+  if(focus) el.lastElementChild?.querySelector('.pat-produto-nome')?.focus();
+}
+
+function patRemoveProdutoRow(btn) {
+  const el = document.getElementById('pat-produtos-list');
+  const row = btn?.closest('.pat-produto-row');
+  if(!el || !row) return;
+  row.remove();
+  if(!el.children.length) patAddProdutoRow(false);
+}
+
+function _patCollectProdutos() {
+  const rows = Array.from(document.querySelectorAll('#pat-produtos-list .pat-produto-row'));
+  return rows.map(_patProdutoFromRow).filter(Boolean);
+}
+
+function _patProdutoFromRow(row) {
+  const nome = row?.querySelector('.pat-produto-nome')?.value.trim() || '';
+  const url = row?.querySelector('.pat-produto-url')?.value.trim() || '';
+  return url ? { nome: nome || 'Produto', url } : null;
+}
+
+function _getPatProdutosHtml(item) {
+  const produtos = _patProdutos(item);
+  if(!produtos.length) return '';
+  return `<div style="margin-top:10px;padding:10px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;"><div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">📎 Produtos</div><div style="display:flex;flex-wrap:wrap;gap:8px;">${produtos.map(_patProdutoLink).join('')}</div></div>`;
+}
+
+function _patProdutoLink(item) {
+  const nome = escapeHtml(item.nome || 'Produto');
+  const url = escapeHtml(item.url || '#');
+  return `<a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#ecfeff;color:#0f766e;font-size:12px;font-weight:700;text-decoration:none;border:1px solid #a5f3fc;">📄 ${nome}</a>`;
+}
+
 function _renderPatCard(item, items) {
   const realIdx = items.indexOf(item);
   const statusStyle = _getPatStatusStyle(item.status);
@@ -11903,6 +12268,7 @@ function _renderPatCard(item, items) {
         <span class="pat-progress-label">${progresso}%</span>
       </div>
       ${_getPatGoalHtml(item)}
+      ${_getPatProdutosHtml(item)}
       ${obsHtml}
     </div>`;
 }
@@ -11944,6 +12310,7 @@ function openPatModal(idx = null) {
   populateConfigSelect('pat-unidade', 'areas', item?.unidade || '');
   populateConfigSelect('pat-tipo', 'tipoAtividadePat', item?.tipo || '');
   document.getElementById('pat-pop-vinc').value    = item?.popVinc      || '';
+  patRenderProdutoRows(_patProdutos(item));
   if(item?.meta && item?.qtdRealizada != null) patCalcProgresso();
   openModal('pat-modal');
 }
@@ -11967,6 +12334,7 @@ function savePat() {
     meta:          document.getElementById('pat-meta').value ===  ''  ? null : Number.parseFloat(document.getElementById('pat-meta').value),
     qtdRealizada:  document.getElementById('pat-qtd').value   ===  ''  ? null : Number.parseFloat(document.getElementById('pat-qtd').value),
     popVinc:       document.getElementById('pat-pop-vinc').value,
+    produtos:      _patCollectProdutos(),
     obs:           document.getElementById('pat-obs').value.trim(),
   };
   if(!DATA.pat) DATA.pat = [];
@@ -13348,8 +13716,10 @@ async function callGeminiProxy(prompt, image = null, options = {}) {
   let definitiveErr = null;
 
   const _aiToken = localStorage.getItem('siga_ai_token') || '';
+  const _aiProvider = localStorage.getItem('siga_ai_provider') || '';
   const _aiHeaders = await _buildApiHeaders({ 'Content-Type': 'application/json' });
   if (_aiToken) _aiHeaders['X-Ai-Token'] = _aiToken;
+  if (_aiProvider) _aiHeaders['X-Ai-Provider'] = _aiProvider;
 
   for (const endpoint of uniqueEndpoints) {
     try {
@@ -15946,9 +16316,21 @@ function _getSipocItems(sipoc, key) {
   return [];
 }
 
+function _getSipocProcessItems(p, sipoc) {
+  const flowItems = _npopOutlineFromSteps(DATA[p]?.steps);
+  const macroSteps = flowItems.filter(item => !item.isActivity).map(item => item.text);
+  if(macroSteps.length) return macroSteps;
+  return _getSipocItems(sipoc, 'processo');
+}
+
+function _renderSipocProcessItems(items) {
+  if(!items.length) return '<div class="sipoc-processo">Não informado</div>';
+  return items.map(item => `<div class="sipoc-item">${escapeHtml(item)}</div>`).join('');
+}
+
 function _renderSipocBodyContent(p, sipoc, column) {
   if(column.key === 'processo') {
-    return `<div class="sipoc-processo">${escapeHtml(sipoc.processo || DATA[p]?.meta?.name || '')}</div>`;
+    return _renderSipocProcessItems(_getSipocProcessItems(p, sipoc));
   }
   const items = _getSipocItems(sipoc, column.key);
   if(!items.length) return '<div style="color:#94a3b8;font-size:11px;font-style:italic;">Não informado</div>';
@@ -18263,8 +18645,10 @@ function showPopGallery() {
   const gallery = document.getElementById('pop-gallery-panel');
   if(!gallery) return;
 
-  const _GALLERY_SKIP = new Set(['_arqOverrides','pat','d','r','_logoUrl','_repoDocs','_drops']);
-  const keys = Object.keys(DATA).filter(k => !_GALLERY_SKIP.has(k) && k.startsWith('pop_'));
+  const _GALLERY_SKIP = new Set(['_arqOverrides','pat','_logoUrl','_repoDocs','_drops']);
+  const keys = ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
+    .filter((k, i, arr) => arr.indexOf(k) === i)
+    .filter(k => !_GALLERY_SKIP.has(k) && typeof DATA[k] === 'object' && DATA[k]?.meta);
   const subtitle = document.getElementById('pop-gallery-subtitle');
   if(subtitle) subtitle.textContent = `${keys.length} POP${keys.length !== 1 ? 's' : ''} cadastrado${keys.length !== 1 ? 's' : ''} na galeria principal de processos.`;
 
@@ -18278,7 +18662,7 @@ function showPopGallery() {
         const macro = meta.macro || '';
         const processo = meta.processo || '';
         const subprocesso = meta.subprocesso || '';
-        const canDelete = (typeof isAdmin !== 'undefined' && isAdmin) || (typeof isEditor !== 'undefined' && isEditor);
+        const canDelete = k.startsWith('pop_') && ((typeof isAdmin !== 'undefined' && isAdmin) || (typeof isEditor !== 'undefined' && isEditor));
         return `<div style="background:white;border:1.5px solid #e2e8f0;border-top:4px solid #00a86b;border-radius:12px;padding:20px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.05);position:relative;"
           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.90)'"
           onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,.05)'">
@@ -23030,6 +23414,8 @@ function openStatusModal(p) {
   document.getElementById('status-modal-sistemas').value    = m.sistemas    || '';
   // Atores
   npopRenderAtores(Array.isArray(m.atores) ? m.atores : [], false);
+  _npopRenderOutlineRows('status-modal-flow-outline-list', _npopNormalizeOutline(m.flowOutline).length ? m.flowOutline : _npopOutlineFromSteps(DATA[p]?.steps));
+  if(!document.getElementById('status-modal-flow-outline-list')?.children.length) statusModalAddFlowOutlineRow(false);
   // Vínculo com PAT
   const sel = document.getElementById('status-modal-pat-vinc');
   if(sel) {
@@ -23085,6 +23471,7 @@ function saveStatusModal() {
   m.fornecedores = document.getElementById('status-modal-fornecedores').value.trim();
   m.clientes     = document.getElementById('status-modal-clientes').value.trim();
   m.sistemas     = document.getElementById('status-modal-sistemas').value.trim();
+  m.flowOutline  = _npopSerializeOutline('status-modal-flow-outline-list');
   // Atualizar SIPOC
   if(!DATA[p].sipoc) DATA[p].sipoc = {};
   DATA[p].sipoc.fornecedores = _splitLines(m.fornecedores);
@@ -23092,6 +23479,7 @@ function saveStatusModal() {
   DATA[p].sipoc.processo     = m.sub || m.processo || m.name || '';
   DATA[p].sipoc.saidas       = _splitLines(m.output);
   DATA[p].sipoc.clientes     = _splitLines(m.clientes);
+  _npopApplyFlowStructureToPop(p, m.flowOutline);
   // PAT link
   const newPatVinc = document.getElementById('status-modal-pat-vinc')?.value || '';
   const oldPatVinc = m.patVinc || '';
@@ -23208,9 +23596,9 @@ function statusModalAutoFill() {
   };
 
   function _allPops() {
-    // Apenas mapeamentos criados pelo usuário (chave pop_*). As chaves 'd' e 'r'
-    // são estruturas legadas fixas no código e não representam mapeamentos reais.
-    return Object.keys(DATA).filter(k => k.startsWith('pop_') && typeof DATA[k] === 'object' && DATA[k]?.meta);
+    return ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
+      .filter((k, i, arr) => arr.indexOf(k) === i)
+      .filter(k => typeof DATA[k] === 'object' && DATA[k]?.meta);
   }
 
   function _statusColor(st) {
@@ -24048,6 +24436,36 @@ Regras obrigatórias:
   let _modeler    = null;
   let _currentPop = null;
 
+  function _fdBpmnColorPalette(type) {
+    const map = {
+      'bpmn:StartEvent': { fill: '#DCFCE7', stroke: '#15803D' },
+      'bpmn:EndEvent': { fill: '#FEE2E2', stroke: '#DC2626' },
+      'bpmn:Task': { fill: '#DBEAFE', stroke: '#2563EB' },
+      'bpmn:UserTask': { fill: '#DBEAFE', stroke: '#2563EB' },
+      'bpmn:ServiceTask': { fill: '#D1FAE5', stroke: '#059669' },
+      'bpmn:ExclusiveGateway': { fill: '#FEF3C7', stroke: '#D97706' },
+      'bpmn:ParallelGateway': { fill: '#EDE9FE', stroke: '#7C3AED' },
+    };
+    return map[type] || null;
+  }
+
+  function _fdBpmnShapes() {
+    const registry = _modeler?.get('elementRegistry');
+    if (!registry) return [];
+    return registry.getAll().filter((el) => el?.type && !el.labelTarget);
+  }
+
+  function _fdApplyElementColor(modeling, element) {
+    const color = _fdBpmnColorPalette(element?.type);
+    if (color) modeling.setColor([element], color);
+  }
+
+  function _fdApplyBpmnColors() {
+    const modeling = _modeler?.get('modeling');
+    if (!modeling) return;
+    _fdBpmnShapes().forEach((element) => _fdApplyElementColor(modeling, element));
+  }
+
   // ── Initialize bpmn-js modeler (lazy, once) ────────────────────
   function _initModeler() {
     if (_modeler) return;
@@ -24069,11 +24487,13 @@ Regras obrigatórias:
 
     try {
       await _modeler.importXML(xml);
+      _fdApplyBpmnColors();
       _modeler.get('canvas').zoom('fit-viewport');
     } catch(e) {
       /* tenta fallback alternativo */
       try {
         await _modeler.importXML(DEFAULT_BPMN);
+        _fdApplyBpmnColors();
         _modeler.get('canvas').zoom('fit-viewport');
       } catch(e2) { console.warn('[siga]', e2); }
     }
@@ -27953,6 +28373,12 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
           </select>
           <div style="font-size:11px;color:#78716c;margin-top:5px;">Vincule este mapeamento a uma atividade cadastrada no PAT.</div>
         </div>
+      </div>
+      <div style="background:#ecfeff;border:1.5px solid #a5f3fc;border-radius:8px;padding:12px 14px;margin-top:10px;">
+        <div style="font-size:11px;font-weight:700;color:#155e75;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🧭 Estrutura Inicial do Fluxo</div>
+        <div id="status-modal-flow-outline-list" class="flow-outline-list"></div>
+        <button type="button" class="btn btn-outline" onclick="statusModalAddFlowOutlineRow(true)" style="margin-top:8px;font-size:12px;padding:7px 12px;">＋ Adicionar linha</button>
+        <div style="font-size:11px;color:#0f766e;margin-top:5px;">Use o checkbox para marcar quando a linha for atividade. Sem marcação, a linha será tratada como macro-etapa. Ao salvar, o fluxo textual e o BPMN inicial serão atualizados.</div>
       </div>
 
     </div>
