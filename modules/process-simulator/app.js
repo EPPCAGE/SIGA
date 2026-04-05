@@ -2005,7 +2005,7 @@ function _buildGavetaCard(metrics) {
 }
 
 function _buildConversionCard(metrics) {
-  if (!(metrics?.kFactor > 0)) return '';
+  if (metrics?.kFactor <= 0) return '';
   return _resultCard('UT', 'Conversao da simulacao', `${metrics.kFactor.toFixed(2)} min`, 'equivale a 1 UT', 'Mostra quanto vale uma unidade de tempo do simulador em minutos reais.', 'Essa conversao usa o tempo estimado puro informado pelo executor.');
 }
 
@@ -2028,7 +2028,7 @@ function formatOptionalPercent(value) {
 
 function formatExecutionMetric(metrics, utValue) {
   if (!Number.isFinite(utValue)) return '-- (opcional nao informado)';
-  return metrics?.kFactor !== null ? _fmtMin(utValue * metrics.kFactor) : _fmtUT(utValue);
+  return metrics?.kFactor === null ? _fmtUT(utValue) : _fmtMin(utValue * metrics.kFactor);
 }
 
 function _buildCalibrationScenarioLine(metrics) {
@@ -2302,7 +2302,7 @@ function computeScenarioMetrics() {
   const kFactor = (Number.isFinite(processingTimeInformed) && processingTimeInformed > 0 && ter > 0)
     ? processingTimeInformed / ter
     : null;
-  const leadIdeal = kFactor !== null ? top * kFactor : null;
+  const leadIdeal = kFactor === null ? null : top * kFactor;
 
   // Tempo de Gaveta = T.P. − T.P.E.  (fila + espera passiva)
   // Só calculável quando ambos os campos estão preenchidos pelo executor
@@ -3589,9 +3589,9 @@ function _applyAutomationHypothesis(projectedGraph, target) {
 }
 
 function _taskUt(node) {
-  if (!node || node.type !== 'task') return 0;
+  if (node?.type !== 'task') return 0;
   if (node.automated) return RULES.automated;
-  return COMPLEXITY_UT[node.complexity] ?? RULES.nextManual;
+  return COMPLEXITY_UT[node?.complexity] ?? RULES.nextManual;
 }
 
 function _handoffUt(fromNode, toNode) {
@@ -3630,11 +3630,13 @@ function _formatUtMinutesLine(label, utValue, factor) {
 
 function _appendAutomationLines(lines, detail, factor) {
   const totalUt = detail.taskUt + detail.handoffUt;
-  lines.push('');
-  lines.push('Composicao direta da automacao:');
-  lines.push(_formatUtMinutesLine('Reducao na atividade', detail.taskUt, factor));
-  lines.push(_formatUtMinutesLine('Reducao em handoffs adjacentes', detail.handoffUt, factor));
-  lines.push(_formatUtMinutesLine('Impacto direto combinado', totalUt, factor));
+  lines.push(
+    '',
+    'Composicao direta da automacao:',
+    _formatUtMinutesLine('Reducao na atividade', detail.taskUt, factor),
+    _formatUtMinutesLine('Reducao em handoffs adjacentes', detail.handoffUt, factor),
+    _formatUtMinutesLine('Impacto direto combinado', totalUt, factor)
+  );
 }
 
 function _buildHypothesisLines(currentTer, projectedTer, factor, detail) {
