@@ -20,16 +20,12 @@
 
   <main class="workspace">
     <aside class="panel editor-rail">
-      <h2>Modelo do Processo</h2>
-      <div class="row">
+      <div style="display:none;">
         <button id="btnLoadSample" type="button">Carregar Exemplo</button>
         <button id="btnValidate" type="button">Validar Grafo</button>
-      </div>
-      <label class="field">
-        <span>JSON de Topologia</span>
         <textarea id="graphJson" rows="16" spellcheck="false"></textarea>
-      </label>
-      <div id="validationBox" class="box"></div>
+        <div id="validationBox" class="box"></div>
+      </div>
 
       <h2>Cadastro de Handoff</h2>
       <div class="box">
@@ -52,14 +48,10 @@
       <select id="simMode" style="display:none;">
         <option value="real">Real (atual)</option>
         <option value="ideal">Ideal (sem punicoes)</option>
-        <option value="ideal_auto">Ideal Auto</option>
       </select>
       <input id="happyPath" type="text" readonly style="display:none;" />
       <div id="happyPathHint" style="display:none;"></div>
       <div id="timerSetup"></div>
-
-      <h2>Confirmacao de Automacao (Cenario To-Be)</h2>
-      <div id="autoConfirmBox"></div>
 
       <!-- PAINEL DE CONTROLE DA SIMULACAO - Accordions -->
       <h2>Painel de Controle</h2>
@@ -68,7 +60,7 @@
         <summary>Tempo e Escala</summary>
         <div class="accordion-body">
           <label class="field">
-            <span>T.P. - Tempo de Percepcao (opcional)</span>
+            <span>Tempo estimado total (opcional)</span>
             <div style="display:flex;gap:6px;">
               <input id="leadTimeInformed" type="number" min="0" step="0.1" placeholder="Ex: 240" style="flex:1;" />
               <select id="tpUnit" style="width:90px;">
@@ -77,10 +69,10 @@
                 <option value="dias">Dias</option>
               </select>
             </div>
-            <small>Lead time total sentido pelo executor - do insumo ao produto final, incluindo filas e gavetas.</small>
+            <small>Tempo total percebido no processo, do insumo ao produto final, incluindo filas e gavetas.</small>
           </label>
           <label class="field">
-            <span>T.P.E. - Tempo de Processamento Estimado (opcional)</span>
+            <span>Tempo estimado puro (opcional)</span>
             <div style="display:flex;gap:6px;">
               <input id="processingTimeInformed" type="number" min="0" step="0.1" placeholder="Ex: 120" style="flex:1;" />
               <select id="tpeUnit" style="width:90px;">
@@ -89,7 +81,7 @@
                 <option value="dias">Dias</option>
               </select>
             </div>
-            <small>Tempo sem filas/gaveta, estimado pelo executor. <strong>T.Gaveta = T.P. - T.P.E.</strong></small>
+            <small>Tempo de execucao sem filas nem gaveta. <strong>Tempo de gaveta = tempo total - tempo puro.</strong></small>
           </label>
           <label>Velocidade da Simulacao
             <input id="speed" type="range" min="0.5" max="10" value="1" step="0.1" />
@@ -178,22 +170,32 @@
     <div id="roiResult"    style="display:none;"></div>
 
     <h3>Simulacao de Hipotese</h3>
-    <div class="box">Teste ganhos removendo um ponto de atrito: aprovacao (gateway), loop ou handoff.</div>
-    <label class="field">
-      <span>Tipo de remocao</span>
-      <select id="hypothesisType">
-        <option value="gateway">Remover aprovacao (gateway)</option>
-        <option value="loop">Remover loop/retrabalho</option>
-        <option value="handoff">Remover handoff</option>
-      </select>
-    </label>
-    <label class="field">
-      <span>Alvo</span>
-      <select id="hypothesisTarget"></select>
-    </label>
-    <div id="hypothesisHelp" class="box"></div>
-    <button id="btnRunHypothesis" type="button">Simular Ganho</button>
-    <div id="hypothesisResult" class="box"></div>
+    <section class="hypothesis-panel">
+      <div class="hypothesis-hero">
+        <div class="hypothesis-eyebrow">Teste de melhoria</div>
+        <div class="hypothesis-summary">Simule o ganho potencial ao remover um atrito relevante do processo atual ou automatizar uma atividade.</div>
+      </div>
+      <div class="hypothesis-grid">
+        <label class="field hypothesis-field">
+          <span>Tipo de melhoria</span>
+          <select id="hypothesisType">
+            <option value="gateway">Remover aprovacao (gateway)</option>
+            <option value="loop">Remover loop/retrabalho</option>
+            <option value="handoff">Remover handoff</option>
+            <option value="automation">Automatizar atividade</option>
+          </select>
+        </label>
+        <label class="field hypothesis-field">
+          <span>Alvo</span>
+          <select id="hypothesisTarget"></select>
+        </label>
+      </div>
+      <div id="hypothesisHelp" class="box hypothesis-help"></div>
+      <div class="hypothesis-actions">
+        <button id="btnRunHypothesis" class="hypothesis-cta" type="button">Simular Ganho</button>
+      </div>
+      <div id="hypothesisResult" class="box hypothesis-result"></div>
+    </section>
 
     <h3>Relatorio</h3>
     <button id="btnReport" type="button">Gerar Relatorio</button>
@@ -241,16 +243,19 @@
     <div class="setup-dialog">
       <h2 id="setupModalTitle">Preparar Simulacao</h2>
       <p>Identifique o processo e preencha as informacoes minimas para iniciar com seguranca.</p>
+      <div class="setup-progress">
+        <div id="setupStepCounter" class="setup-step-counter">Etapa 1 de 7</div>
+        <div id="setupStepTitle" class="setup-step-title">Identificacao do Processo</div>
+      </div>
 
+      <div id="setupStepHost">
       <!-- SECAO 0 - Processo da Arquitetura -->
-      <div class="setup-step">
-        <h3>Secao 0 - Identificacao do Processo</h3>
+      <div class="setup-step" data-step-title="Identificacao do Processo">
         <div class="box">Escolha qual processo da Arquitetura de Processos esta sendo simulado. Esse vinculo permite salvar os resultados diretamente no cadastro do processo.</div>
         <div id="setupSection0" class="box"></div>
       </div>
 
-      <div class="setup-step">
-        <h3>Secao 1 - Leitura do BPMN/XPDL</h3>
+      <div class="setup-step" data-step-title="Leitura do BPMN/XPDL">
         <label class="field">
           <span>Arquivo (PNG/JPG/PDF/XPDL/XML/BPMN/XLSX)</span>
           <input id="fileInput" type="file" accept=".png,.jpg,.jpeg,.pdf,.xpdl,.xml,.bpmn,.xlsx,.xls" />
@@ -262,20 +267,17 @@
         <pre id="cvOutput" class="codebox"></pre>
       </div>
 
-      <div class="setup-step">
-        <h3>Secao 2 - Matriz de Atividades e Perfil das Raias</h3>
+      <div class="setup-step" data-step-title="Matriz de Atividades e Perfil das Raias">
         <div class="box">Defina o ator/raia de cada atividade e informe a equipe e o orgao de cada raia. O sistema classificara os handoffs automaticamente.</div>
         <div id="setupTaskMatrix" class="box"></div>
       </div>
 
-      <div class="setup-step">
-        <h3>Secao 3 - Handoffs Detectados Automaticamente</h3>
+      <div class="setup-step" data-step-title="Handoffs Detectados Automaticamente">
         <div class="box">Com base nos perfis das raias da Secao 2, o sistema detecta e classifica cada handoff. Nenhuma acao e necessaria aqui - apenas revise.</div>
         <div id="handoffWizard" class="box"></div>
       </div>
 
-      <div class="setup-step">
-        <h3>Secao 4 - Parametros Minimos</h3>
+      <div class="setup-step" data-step-title="Tempos e Caminho Feliz">
         <div class="field">
           <span>Caminho feliz no desenho (inicio -> ... -> fim)</span>
           <div class="box">Clique diretamente no mapa abaixo, seguindo um caminho continuo do no de inicio ate o no de fim. Use <kbd>Ctrl + Scroll</kbd> para dar zoom no mapa.</div>
@@ -299,23 +301,25 @@
         </label>
       </div>
 
-      <div class="setup-step">
-        <h3>Secao 5 - Probabilidades dos Gateways</h3>
+      <div class="setup-step" data-step-title="Probabilidades dos Gateways">
         <div class="box">Ajuste aqui as probabilidades dos caminhos de decisao para garantir soma de 100% em cada gateway.</div>
         <div id="setupGatewayEditor" class="box"></div>
       </div>
 
-      <!-- Secao 6 removida (Automacoes consolidadas na Secao 2) -->
-      <div id="setupAutomationEditor" style="display:none;"></div>
-
-      <div class="setup-step">
-        <h3>Secao 6 - Loops de Retrabalho</h3>
+      <div class="setup-step" data-step-title="Loops de Retrabalho">
         <div class="box">Defina o <strong>gateway de decisao</strong> que pode acionar retrabalho e a atividade de retorno. A probabilidade do loop e integrada automaticamente nas saidas do gateway. As arestas de loop ficam laranja no mapa.</div>
         <div id="setupLoopEditor" class="box"></div>
       </div>
 
-      <div id="setupChecklist" class="box"></div>
+      <div class="setup-step" data-step-title="Revisao Final">
+        <div class="box">Revise os itens minimos e os refinamentos opcionais antes de concluir a preparacao.</div>
+        <div id="setupChecklist" class="box"></div>
+      </div>
+
+      </div>
       <div class="row setup-actions">
+        <button id="btnSetupPrev" type="button">Voltar</button>
+        <button id="btnSetupNext" type="button">Avancar</button>
         <button id="btnReadyToSimulate" type="button">Concluir Preparacao</button>
       </div>
     </div>
