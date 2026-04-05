@@ -776,6 +776,11 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function withFallbackEndpoint(primaryEndpoint, fallbackEndpoint) {
+  const endpoints = [String(primaryEndpoint || '').trim(), fallbackEndpoint];
+  return endpoints.filter(Boolean);
+}
+
 async function repairJsonViaAi(endpoint, rawText) {
   const repairPayload = {
     prompt: buildRepairPrompt(rawText),
@@ -875,12 +880,7 @@ export async function extractTopologyFromImage(file, aiEndpoint = '/api/ai') {
     maxTokens: 6000,
   };
 
-  const endpoints = [
-    aiEndpoint,
-    '/ai',
-    'http://127.0.0.1:3000/ai',
-    'http://localhost:3000/ai',
-  ];
+  const endpoints = withFallbackEndpoint(aiEndpoint, '/ai');
 
   let lastError = null;
   for (const endpoint of endpoints) {
@@ -916,11 +916,7 @@ export async function extractTopologyFromSpreadsheetFile(file) {
   const fileName = String(file?.name || 'arquivo.xlsx');
 
   // Deterministic local parser only (no AI quota usage for spreadsheets).
-  const localEndpoints = [
-    '/parse-xlsx',
-    'http://127.0.0.1:3000/parse-xlsx',
-    'http://localhost:3000/parse-xlsx',
-  ];
+  const localEndpoints = withFallbackEndpoint('/api/parse-xlsx', '/parse-xlsx');
 
   let lastLocalError = null;
   for (const endpoint of localEndpoints) {

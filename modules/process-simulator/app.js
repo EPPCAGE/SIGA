@@ -98,9 +98,8 @@ let happyPathMarking = {
   active: false,
   nodes: [],
 };
-// Processo vinculado (selecionado na Secao 0 do setup)
-let confirmedAutoNodes = new Set();
 let setupCompleted = false;
+let setupStepIndex = 0;
 // Ultimas metricas de simulacao calculadas (para incluir no save)
 let animationLastTickMs = 0;
 let simulationClockMs = 0;
@@ -229,7 +228,7 @@ function extractActorsFromSigaDataPayload(root) {
 async function fetchSigaActorCatalog() {
   if (Array.isArray(sigaActorCatalogCache)) return sigaActorCatalogCache;
 
-  const endpoints = ['/data', 'http://127.0.0.1:3000/data', 'http://localhost:3000/data'];
+  const endpoints = ['/api/data', '/data'];
   let lastErr = null;
   for (const endpoint of endpoints) {
     try {
@@ -527,76 +526,6 @@ function appendDiagramBackdrop(svg, opacity = 0.92) {
   svg.appendChild(img);
 }
 
-
-function suggestedAutomationNodeIds() {
-  if (!graph) return [];
-  const automatedSet = new Set(
-    (graph.nodes || [])
-      .filter((n) => n.type === 'task' && n.automated)
-      .map((n) => String(n.id || ''))
-  );
-  return scanSuggestions(graph)
-    .filter((s) => s.kind === 'automation')
-    .filter((s) => !automatedSet.has(String(s.nodeId || '')))
-    .map((s) => s.nodeId);
-}
-
-function renderAutomationConfirm() {
-  const box = $('autoConfirmBox');
-  if (!box) return;
-  if (!graph) {
-    box.innerHTML = '<div class="box">Carregue um grafo para confirmar automacoes sugeridas.</div>';
-    return;
-  }
-
-  const ids = suggestedAutomationNodeIds();
-  if (!ids.length) {
-    box.innerHTML = '<div class="box">Nenhuma automacao sugerida no modelo atual.</div>';
-    return;
-  }
-
-  const rows = ids.map((id) => {
-    const n = graph.nodes.find((x) => x.id === id);
-    if (n?.automated) return '';
-    const checked = confirmedAutoNodes.has(id) ? 'checked' : '';
-    return `<label class="check-row"><input type="checkbox" data-auto-node="${escapeHtml(id)}" ${checked}> ${escapeHtml(n?.label || id)}</label>`;
-  }).filter(Boolean).join('');
-
-  box.innerHTML = `<div class="box" style="margin-bottom:6px;">Sugestoes de automacao detectadas. Confirme as que entram no cenario "TEP ideal auto".</div>${rows}`;
-}
-
-function syncConfirmedAutoFromUi() {
-  const boxes = document.querySelectorAll('input[data-auto-node]');
-  if (boxes.length === 0) return;
-
-  const next = new Set();
-  boxes.forEach((el) => {
-    if (!el.checked) return;
-    const id = String(el.dataset.autoNode || '').trim();
-    if (id) next.add(id);
-  });
-
-  // Uma atividade ja automatica nao entra como "automatizavel" no cenario auto.
-  const automatedSet = new Set(
-    (graph?.nodes || [])
-      .filter((n) => n.type === 'task' && n.automated)
-      .map((n) => String(n.id || ''))
-  );
-  for (const id of next) {
-    if (automatedSet.has(id)) next.delete(id);
-  }
-
-  confirmedAutoNodes = next;
-}
-
-function buildAutoScenarioGraph() {
-  const g = cloneLocal(graph);
-  for (const node of g.nodes || []) {
-    if (node.automated) continue;
-    if (confirmedAutoNodes.has(node.id)) node.automated = true;
-  }
-  return g;
-}
 
 function detectLaneName(laneId) {
   if (!graph) return laneId;
@@ -976,7 +905,7 @@ function collectSetupStatus() {
   status.handoffOk = isHandoffReadyLocal();
 
   status.happyPathOk = isHappyPathConfigured();
-  status.leadTimeOk = isLeadTimeConfigured();
+  status.leadTimeOk = true;
 
   return status;
 }
@@ -1022,7 +951,7 @@ function isLeadTimeConfigured() {
     parseLeadTimeInformedRequired();
     return true;
   } catch (e) {
-    console.debug('[simulator] lead time pendente:', e);
+    console.debug('[simulator] T.P. pendente:', e);
     return false;
   }
 }
@@ -1039,13 +968,14 @@ function _sec0UpdateTable() {
   const search = ($('sec0Search')?.value || '').toLowerCase().trim();
 
   _sec0Filtered = list.filter((p) => {
-    if (!search) return true;
+    if (!search) return false;
     const hay = `${p.macroprocesso || ''} ${p.processo || ''} ${p.subprocesso || ''} ${p.area || ''}`.toLowerCase();
     return hay.includes(search);
   });
 
   const tbody = $('sec0Tbody');
   if (!tbody) return;
+  _toggleSec0Results(search);
 
   tbody.innerHTML = _sec0Filtered.slice(0, 100).map((p, i) => {
     const isLinked = Boolean(
@@ -1060,14 +990,27 @@ function _sec0UpdateTable() {
       <td class="sec0-td-nat">${escapeHtml(p.natureza || '')}</td>
       <td class="sec0-td-area">${escapeHtml(p.area || '')}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="4" class="sec0-empty">Nenhum processo encontrado.</td></tr>';
+  }).join('') || _sec0EmptyRow(search);
 
   const counter = $('sec0Counter');
   if (counter) {
     counter.textContent = search
       ? `${_sec0Filtered.length} resultado(s) para "${search}"`
-      : `${list.length} processo(s)`;
+      : '';
   }
+}
+
+function _sec0EmptyRow(search) {
+  if (!search) return '<tr><td colspan="4" class="sec0-empty">Digite para buscar processos.</td></tr>';
+  return '<tr><td colspan="4" class="sec0-empty">Nenhum processo encontrado.</td></tr>';
+}
+
+function _toggleSec0Results(search) {
+  const wrap = $('sec0TableWrap');
+  const hint = $('sec0Hint');
+  const hasSearch = Boolean(search);
+  if (wrap) wrap.style.display = hasSearch ? 'block' : 'none';
+  if (hint) hint.style.display = hasSearch ? 'none' : 'block';
 }
 
 // Reconstrui a ESTRUTURA (badge + campo de busca + tabela shell).
@@ -1124,13 +1067,14 @@ function renderSetupSection0() {
     box.innerHTML = `
       <div id="sec0Badge"></div>
       <div style="margin:10px 0 8px;display:flex;gap:8px;align-items:center;">
-        <input id="sec0Search" type="text" placeholder="Buscar processo..."
+        <input id="sec0Search" type="text" placeholder="Digite o nome do processo, macroprocesso ou area..."
           autocomplete="off" spellcheck="false"
           style="flex:1;background:#ffffff;color:#0d2236;border:1.5px solid rgba(60,110,180,0.45);
                  border-radius:8px;padding:8px 12px;font-size:13px;outline:none;" />
         <span id="sec0Counter" style="font-size:12px;color:#3d546d;white-space:nowrap;font-weight:500;"></span>
       </div>
-      <div class="sec0-table-wrap">
+      <div id="sec0Hint" class="box" style="margin-top:0;">Digite para buscar processos.</div>
+      <div id="sec0TableWrap" class="sec0-table-wrap" style="display:none;">
         <table class="sec0-table">
           <thead><tr>
             <th>Macroprocesso</th><th>Processo</th><th>Natureza</th><th>Area</th>
@@ -1190,15 +1134,58 @@ function _sec0RefreshBadge() {
 function renderSetupChecklist() {
   const box = $('setupChecklist');
   if (!box) return;
-  const s = collectSetupStatus();
-  const line = (ok, text) => `${ok ? 'OK' : 'PENDENTE'} - ${text}`;
-  box.textContent = [
-    line(s.graphOk, 'Modelo valido (integridade + probabilidades).'),
-    line(s.handoffOk, 'Handoffs entre atores mapeados.'),
-    line(s.happyPathOk, 'Caminho feliz selecionado por cliques e consistente.'),
-    line(true, 'Lead time informado pelo executor e opcional.'),
-    ...(!s.graphOk && s.graphIssues.length ? [`Detalhe: ${s.graphIssues[0]}`] : []),
-  ].join('\n');
+  box.textContent = _buildSetupChecklistText(collectSetupStatus());
+}
+
+function getSetupSteps() {
+  return [...document.querySelectorAll('#setupStepHost .setup-step')];
+}
+
+function clampSetupStepIndex(total) {
+  if (setupStepIndex < 0) setupStepIndex = 0;
+  if (setupStepIndex >= total) setupStepIndex = total - 1;
+}
+
+function updateSetupStepVisibility(steps) {
+  steps.forEach((step, idx) => step.classList.toggle('is-hidden', idx !== setupStepIndex));
+}
+
+function updateSetupStepMeta(steps) {
+  const total = steps.length;
+  const current = steps[setupStepIndex];
+  $('setupStepCounter').textContent = `Etapa ${setupStepIndex + 1} de ${total}`;
+  $('setupStepTitle').textContent = String(current?.dataset.stepTitle || '');
+}
+
+function updateSetupStepButtons(steps) {
+  const last = steps.length - 1;
+  $('btnSetupPrev').disabled = setupStepIndex === 0;
+  $('btnSetupNext').classList.toggle('hidden', setupStepIndex >= last);
+  $('btnReadyToSimulate').classList.toggle('hidden', setupStepIndex < last);
+}
+
+function renderSetupWizard() {
+  const steps = getSetupSteps();
+  if (!steps.length) return;
+  clampSetupStepIndex(steps.length);
+  updateSetupStepVisibility(steps);
+  updateSetupStepMeta(steps);
+  updateSetupStepButtons(steps);
+}
+
+function moveSetupStep(delta) {
+  setupStepIndex += delta;
+  renderSetupWizard();
+}
+
+function _setupLine(ok, text) {
+  return `${ok ? 'OK' : 'PENDENTE'} - ${text}`;
+}
+
+function _buildSetupChecklistText(status) {
+  const lines = ['MINIMO PARA SIMULAR', _setupLine(status.graphOk, 'Modelo valido (integridade + probabilidades).'), _setupLine(status.handoffOk, 'Handoffs entre atores mapeados.'), _setupLine(status.happyPathOk, 'Caminho feliz selecionado por cliques e consistente.'), '', 'REFINOS OPCIONAIS', 'OK - T.P.E. do executor, se informado, libera T.O.P. e T.E.R. em minutos.', 'OK - T.P. do executor, se informado junto com T.P.E., calcula o Tempo de Gaveta.'];
+  if (!status.graphOk && status.graphIssues.length) lines.push('', `Detalhe: ${status.graphIssues[0]}`);
+  return lines.join('\n');
 }
 
 function renderSetupTaskMatrix() {
@@ -1225,15 +1212,9 @@ function renderSetupTaskMatrix() {
     extrema: { label: 'Extrema', ut: 40, color: '#8f3d3a', bg: '#fde8e8' },
   };
 
-  const suggestedSet = new Set(suggestedAutomationNodeIds());
   const rows = tasks.map((t, idx) => {
     const actor = actorLaneIdOf(t);
     const autoChecked = t.automated ? 'checked' : '';
-    const potentialChecked = (!t.automated && confirmedAutoNodes.has(t.id)) ? 'checked' : '';
-    const potentialDisabled = t.automated ? 'disabled' : '';
-    const suggestionBadge = suggestedSet.has(t.id)
-      ? '<span class="badge auto">sugerida</span>'
-      : '<span class="badge" style="background:#6b7c90;">manual</span>';
 
     // Complexidade: desabilitada para tarefas automatizadas
     const comp = t.complexity || (idx === 0 ? 'alta' : 'media');
@@ -1251,7 +1232,6 @@ function renderSetupTaskMatrix() {
         <div class="task-col"><input type="text" data-task-actor="${escapeHtml(t.id)}" value="${escapeHtml(actor)}" placeholder="Ator/raia" /></div>
         <div class="task-col task-comp">${compSelect}</div>
         <label class="task-col task-check"><input type="checkbox" data-task-automated="${escapeHtml(t.id)}" ${autoChecked}> <span>Automatica</span></label>
-        <label class="task-col task-check"><input type="checkbox" data-task-potential="${escapeHtml(t.id)}" ${potentialChecked} ${potentialDisabled}> <span>Automatizavel</span> ${suggestionBadge}</label>
       </div>`;
   }).join('');
 
@@ -1261,7 +1241,6 @@ function renderSetupTaskMatrix() {
       <span>Ator/Raia</span>
       <span>Complexidade (UT)</span>
       <span>Status atual</span>
-      <span>Cenario auto</span>
     </div>
     <div class="task-matrix-body">${rows}</div>
     <div class="box" style="margin-top:8px;font-size:12px;">
@@ -1487,12 +1466,6 @@ function _onSidebarGwClick(ev) {
   drawGraph();
 }
 
-function renderSetupAutomationEditor() {
-  const box = $('setupAutomationEditor');
-  if (!box) return;
-  box.innerHTML = '<div class="box">As automacoes foram consolidadas na matriz de atividades para evitar repeticao.</div>';
-}
-
 function renderSetupLoopEditor() {
   const box = $('setupLoopEditor');
   if (!box) return;
@@ -1623,8 +1596,7 @@ function saveSetupAutomationSelection() {
 
   const matrixActorInputs = document.querySelectorAll('input[data-task-actor]');
   const matrixAutoInputs = document.querySelectorAll('input[data-task-automated]');
-  const matrixPotentialInputs = document.querySelectorAll('input[data-task-potential]');
-  if (matrixActorInputs.length || matrixAutoInputs.length || matrixPotentialInputs.length) {
+  if (matrixActorInputs.length || matrixAutoInputs.length) {
     const taskMap = new Map((graph.nodes || []).filter((n) => n.type === 'task').map((n) => [String(n.id), n]));
 
     matrixActorInputs.forEach((i) => {
@@ -1646,19 +1618,6 @@ function saveSetupAutomationSelection() {
       if (n.type !== 'task') continue;
       n.automated = selectedAuto.has(String(n.id || ''));
     }
-
-    const selectedPotential = new Set(
-      [...matrixPotentialInputs]
-        .filter((i) => i.checked)
-        .map((i) => String(i.dataset.taskPotential || ''))
-        .filter(Boolean)
-    );
-
-    // Regra de exclusao mutua: automatica e automatizavel nao coexistem na mesma atividade.
-    for (const id of selectedPotential) {
-      if (selectedAuto.has(id)) selectedPotential.delete(id);
-    }
-    confirmedAutoNodes = selectedPotential;
     $('graphJson').value = JSON.stringify(graph, null, 2);
     return;
   }
@@ -1677,6 +1636,7 @@ function saveSetupAutomationSelection() {
 }
 
 function openSetupModal() {
+  setupStepIndex = 0;
   syncMainInputsToSetup();
   // Auto-iguala probabilidades de gateways que ainda não têm distribuição válida
   if (graph) autoFixGatewayProbabilitiesInGraph();
@@ -1690,6 +1650,7 @@ function openSetupModal() {
   renderSetupGatewayEditor();
   renderSetupLoopEditor();
   renderSetupChecklist();
+  renderSetupWizard();
 }
 
 function closeSetupModal() {
@@ -1780,9 +1741,6 @@ function computeInsightIndices(metrics, base) {
   const totalFriction = ranking.reduce((acc, r) => acc + Number(r.total || 0), 0);
   const top3 = ranking.slice(0, 3).reduce((acc, r) => acc + Number(r.total || 0), 0);
 
-  const potentialAuto = suggestedAutomationNodeIds();
-  const potentialSet = new Set(potentialAuto);
-  const confirmedPotentialCount = [...confirmedAutoNodes].filter((id) => potentialSet.has(id)).length;
   const manualTasks = nodes.filter((n) => n.type === 'task' && !n.automated);
 
   const taskById = new Map(nodes.map((n) => [n.id, n]));
@@ -1810,12 +1768,11 @@ function computeInsightIndices(metrics, base) {
     informedWastePercent: (metrics && Number.isFinite(metrics.leadTimeInformed))
       ? pct(metrics.leadTimeInformed - metrics.leadIdeal, metrics.leadTimeInformed)
       : null,
-    autoOpportunityPercent: metrics ? pct(metrics.tepIdeal - metrics.tepIdealAuto, metrics.tepIdeal) : null,
     concentrationTop3Percent: pct(top3, totalFriction),
     handoffExposurePercent: pct(laneTransitions.length, manualTransitions.length),
     loopPressurePercent: avgLoopProb,
-    autoPotentialPercent: pct(potentialAuto.length, manualTasks.length),
-    autoConfirmedPercent: pct(confirmedPotentialCount, Math.max(potentialAuto.length, 1)),
+    autoPotentialPercent: pct(0, manualTasks.length),
+    autoConfirmedPercent: 0,
   };
 }
 
@@ -1826,11 +1783,10 @@ function fmtInsight(v) {
 function semaphoreForPhillip(kind, value) {
   if (!Number.isFinite(value)) return { cls: 'sev-gray', label: 'sem dado' };
 
-  // Escala Phillip: 100% = mundo perfeito (teto). Quanto menor, pior.
-  if (value > 80) return { cls: 'sev-green', label: 'eficiencia de fluxo' };
-  if (value >= 50) return { cls: 'sev-yellow', label: 'alerta de atrito' };
-  if (value >= 30) return { cls: 'sev-orange', label: 'gargalo institucional' };
-  return { cls: 'sev-red', label: 'paralisia burocratica' };
+  if (value >= 80) return { cls: 'sev-green', label: 'otimo' };
+  if (value >= 60) return { cls: 'sev-yellow', label: 'bom' };
+  if (value >= 40) return { cls: 'sev-orange', label: 'regular' };
+  return { cls: 'sev-red', label: 'ruim' };
 }
 
 function semaforoTag(title, kind, value) {
@@ -1870,17 +1826,10 @@ function computeDashboardIndices(metrics, base) {
   const totalTasks = tasks.length;
   const automatedNowCount = tasks.filter((n) => n.automated).length;
 
-  const potentialSet = new Set(suggestedAutomationNodeIds());
-  const confirmedPotential = [...confirmedAutoNodes].filter((id) => potentialSet.has(id));
-  const projectedAutoCount = Math.min(totalTasks, automatedNowCount + confirmedPotential.length);
-
   const phStd = Number.isFinite(metrics?.ipRealVsIdeal) ? Number(metrics.ipRealVsIdeal) : Number(base?.ip || 0);
-  const phAuto = Number.isFinite(metrics?.ipAutoVsIdeal) ? Number(metrics.ipAutoVsIdeal) : phStd;
   const hasInformed = Number.isFinite(metrics?.ipLeadInformedVsIdeal);
   const phInf = hasInformed ? Number(metrics.ipLeadInformedVsIdeal) : phStd;
-  const composite = hasInformed
-    ? clampPct((phStd * 0.5) + (phAuto * 0.35) + (phInf * 0.15))
-    : clampPct((phStd * 0.6) + (phAuto * 0.4));
+  const composite = hasInformed ? clampPct((phStd * 0.8) + (phInf * 0.2)) : phStd;
 
   const friction = frictionTotalsByType(ranking);
   const frictionTotal = Math.max(0.0001, friction.handoff + friction.gateway + friction.loop);
@@ -1896,7 +1845,6 @@ function computeDashboardIndices(metrics, base) {
 
   return {
     phStd: clampPct(phStd),
-    phAuto: clampPct(phAuto),
     phInf: clampPct(phInf),
     composite,
     hasInformed,
@@ -1908,10 +1856,9 @@ function computeDashboardIndices(metrics, base) {
     insight,
     totalTasks,
     automatedNowCount,
-    projectedAutoCount,
     autoCoverageNow: pct(automatedNowCount, totalTasks),
-    autoCoverageProjected: pct(projectedAutoCount, totalTasks),
-    potentialYield: clampPct(insight.autoOpportunityPercent || 0),
+    autoCoverageProjected: pct(automatedNowCount, totalTasks),
+    potentialYield: 0,
   };
 }
 
@@ -1980,12 +1927,53 @@ function _ipCard(ip) {
   const badge = `<span class="ph-badge" style="background:${color}22;color:${color};border:1px solid ${color}55;">${s.label}</span>`;
   return `<div class="result-card rc-ip">
     <div class="rc-icon">IP</div>
-    <div class="rc-title">I.P. - Indice de Phillip</div>
+    <div class="rc-title">I.P. - Indice de Phillip (grau de otimizacao do processo)</div>
     <div class="rc-value" style="color:${color};">${Number.isFinite(Number(ip)) ? `${pctVal.toFixed(1)}%` : '-'}</div>
     ${gauge}${badge}
-    <div class="rc-definition">O percentual de aproveitamento do esforco. Mede quanto do T.E.R. e transformado em valor pelo T.O.P.</div>
+    <div class="rc-definition">O percentual de aderencia do processo ao fluxo perfeito. Quanto maior, mais proximo do ideal.</div>
     <div class="rc-audit">"A nota de saude do seu fluxo de trabalho."</div>
   </div>`;
+}
+
+function _hasTpe(metrics) {
+  return Number.isFinite(metrics?.processingTimeInformed) && metrics.processingTimeInformed > 0;
+}
+
+function _hasTp(metrics) {
+  return Number.isFinite(metrics?.leadTimeInformed) && metrics.leadTimeInformed > 0;
+}
+
+function _resolvePhillipCardValue(metrics, base) {
+  if (_hasTpe(metrics) && Number.isFinite(metrics?.leadIdeal) && metrics.leadIdeal > 0) {
+    return phillipEfficiency(metrics.processingTimeInformed, metrics.leadIdeal);
+  }
+  return Number.isFinite(metrics?.ipRealVsIdeal) ? metrics.ipRealVsIdeal : Number(base?.ip || 0);
+}
+
+function _buildTopCard(metrics) {
+  const hasK = metrics.kFactor !== null;
+  const value = hasK ? _fmtMin(metrics.leadIdeal) : _fmtUT(metrics.top);
+  const suffix = hasK ? ' - estimado em minutos' : ' - em UT';
+  return _resultCard('TOP', 'Tempo otimo', value, 'caminho feliz, sem atritos' + suffix, 'Representa o tempo estritamente necessario para a execucao das tarefas, removendo burocracias, esperas e erros.', 'Se este processo fosse 100% fluido e sem interrupcoes, este seria o esforco real.');
+}
+
+function _buildTerCard(metrics) {
+  const hasK = metrics.kFactor !== null;
+  const value = hasK ? _fmtMin(metrics.processingTimeInformed) : _fmtUT(metrics.ter);
+  const suffix = hasK ? ' - estimado em minutos' : ' - em UT';
+  return _resultCard('TER', 'Tempo de simulacao', value, 'fluxo medio com obstaculos' + suffix, 'Tempo medio percorrido pelas bolinhas do inicio ao fim, considerando atritos de handoff, decisao e retrabalho.', 'Representa a execucao simulada do processo no desenho atual.');
+}
+
+function _buildTpeCard(metrics) {
+  return _resultCard('TEP', 'Tempo estimado puro', _fmtMin(metrics.processingTimeInformed), 'sem filas ou gaveta', 'Tempo informado pelo executor para a execucao do processo sem espera passiva. Base para converter UT em minutos.', 'Quando o tempo estimado total tambem e informado, a diferenca vira tempo de gaveta.');
+}
+
+function _buildScenarioCards(metrics, base) {
+  const phillip = _resolvePhillipCardValue(metrics, base);
+  if (!metrics || (!_hasTpe(metrics) && !_hasTp(metrics))) return [_ipCard(phillip)];
+  if (_hasTpe(metrics) && !_hasTp(metrics)) return [_buildTpeCard(metrics), _buildTopCard(metrics), _ipCard(phillip), _buildConversionCard(metrics)];
+  if (_hasTpe(metrics) && _hasTp(metrics)) return [_buildTopCard(metrics), _buildTpeCard(metrics), _ipCard(phillip), _buildGavetaCard(metrics), _buildConversionCard(metrics)];
+  return [_ipCard(phillip)];
 }
 
 function _buildGavetaCard(metrics) {
@@ -2000,26 +1988,25 @@ function _buildGavetaCard(metrics) {
   const gavetaTone = metrics.tempoGaveta > 0 ? 'rc-gaveta-warn' : '';
   return _resultCard(
     'Fila',
-    'T.Gaveta - Tempo de Fila / Espera Passiva',
+    'Tempo de gaveta',
     _fmtMin(metrics.tempoGaveta),
-    `${gavetaSubtitle} - T.P. - T.P.E.`,
+    `${gavetaSubtitle} - tempo total menos tempo puro`,
     'Tempo em que o processo fica parado na fila, gaveta ou aguardando decisao - sem nenhuma execucao ativa.',
     gavetaAudit,
     gavetaTone
   );
 }
 
-function _buildAutoCard(metrics, hasAuto, topAutoDisp, subSuffix) {
-  if (hasAuto !== true) return '';
-  const gainPct = (metrics.top > 0 ? ((metrics.top - metrics.topAuto) / metrics.top * 100) : 0).toFixed(1);
-  return _resultCard('Auto', 'T.O.P. Auto', topAutoDisp, 'caminho feliz com automacoes' + subSuffix, 'T.O.P. projetado apos confirmacao das automacoes marcadas no cenario To-Be.', `Ganho potencial: ${gainPct}% de reducao no T.O.P.`, 'rc-auto');
+function _buildConversionCard(metrics) {
+  if (!(metrics?.kFactor > 0)) return '';
+  return _resultCard('UT', 'Conversao da simulacao', `${metrics.kFactor.toFixed(2)} min`, 'equivale a 1 UT', 'Mostra quanto vale uma unidade de tempo do simulador em minutos reais.', 'Essa conversao usa o tempo estimado puro informado pelo executor.');
 }
 
 function buildCalibrationLeadInfo(metrics) {
   if (Number.isFinite(metrics.ipLeadInformedVsIdeal)) {
-    return `Lead time ideal = 100%; lead informado proporcional = ${metrics.ipLeadInformedVsIdeal.toFixed(2)}%.`;
+    return `Tempo estimado puro usado como ancora da execucao; tempo estimado total em relacao ao tempo otimo = ${metrics.ipLeadInformedVsIdeal.toFixed(2)}%.`;
   }
-  return 'Lead time informado nao preenchido (opcional); calculos usam o tempo padrao do motor (primeira atividade 10 min, demais 5 min, etc).';
+  return 'Sem tempo estimado puro, o simulador mostra apenas a distancia do processo em relacao ao fluxo perfeito pelo Indice de Phillip.';
 }
 
 function formatOptionalMinutes(value) {
@@ -2032,80 +2019,30 @@ function formatOptionalPercent(value) {
   return `${value.toFixed(2)}%`;
 }
 
+function formatExecutionMetric(metrics, utValue) {
+  if (!Number.isFinite(utValue)) return '-- (opcional nao informado)';
+  return metrics?.kFactor !== null ? _fmtMin(utValue * metrics.kFactor) : _fmtUT(utValue);
+}
+
+function _buildCalibrationScenarioLine(metrics) {
+  if (!_hasTpe(metrics)) return 'Sem tempo estimado puro: leitura centrada no Indice de Phillip.';
+  if (!_hasTp(metrics)) return `Tempo estimado puro: ${formatOptionalMinutes(metrics.processingTimeInformed)} | Tempo otimo: ${formatExecutionMetric(metrics, metrics.top)} | Tempo de simulacao: ${formatExecutionMetric(metrics, metrics.ter)} | 1 UT = ${metrics.kFactor.toFixed(2)} min`;
+  return `Tempo otimo: ${formatExecutionMetric(metrics, metrics.top)} | Tempo de simulacao: ${formatExecutionMetric(metrics, metrics.ter)} | Tempo de gaveta: ${formatOptionalMinutes(metrics.tempoGaveta)} | 1 UT = ${metrics.kFactor.toFixed(2)} min`;
+}
+
+function _buildCalibrationLines(metrics) {
+  return [`Indice de Phillip atual: ${metrics.ipRealVsIdeal.toFixed(2)}% (${semaphoreForPhillip('standard', metrics.ipRealVsIdeal).label}).`, _buildCalibrationScenarioLine(metrics), `Leitura do executor: ${buildCalibrationLeadInfo(metrics)}`];
+}
+
 function renderExecutiveKpis(metrics, base) {
   const box = $('kpi');
   if (!box) return;
-
-  const liveLine = `<div class="mblock-live">
-    Bolinhas finalizadas: <strong id="liveTokensFinished">${liveSimulationStatus.finished}/${liveSimulationStatus.total}</strong> &nbsp;|
-    T.E.R. medio ao vivo: <strong id="liveLeadAvg">${Number(liveSimulationStatus.avgLeadTime || 0).toFixed(1)} UT</strong>
-  </div>`;
-
-  if (!metrics) {
-    const base_ = base || {};
-    const terVal = Number(base_.tepReal || 0);
-    box.className = 'kpi kpi-executive';
-    box.innerHTML = `
-      <div class="results-grid-partial">
-        ${_resultCard('TOP', 'T.O.P. - Tempo Otimo', '-', 'informe o caminho feliz', 'A regua de ouro da eficiencia. Tempo sem burocracias, esperas ou erros.', 'Se este processo fosse 100% fluido e sem interrupcoes, este seria o esforco real.')}
-        ${_resultCard('TER', 'T.E.R. - Tempo de Execucao Realista', terVal > 0 ? _fmtUT(terVal) : '-', 'com todo o atrito do processo', 'O termometro da realidade. Media do tempo das 100 particulas com todos os atritos.', 'Este e o custo atual do desenho do processo considerando o atrito administrativo.')}
-        ${_ipCard(null)}
-      </div>
-      ${liveLine}`;
-    return;
-  }
-
-  const hasAuto = Number.isFinite(metrics.topAuto);
-  const hasInformed = Number.isFinite(metrics.leadTimeInformed);
-
-  const hasK = metrics.kFactor !== null;
-  const fmtK  = (ut) => hasK ? _fmtMin(ut * metrics.kFactor) : _fmtUT(ut);
-  const subSuffix = hasK ? ' - tempo real' : '';
-
-  const kLine = hasK
-    ? `<div class="rc-kfactor">Conversao: 1 UT = ${metrics.kFactor.toFixed(2)} min reais - T.O.P., T.E.R. e T.O.P.Auto exibidos em tempo real</div>`
-    : '';
-
-  const tpCard = hasInformed
-    ? _resultCard('TP', 'T.P. - Tempo de Percepcao', _fmtMin(metrics.leadTimeInformed), 'lead time total - declarado pelo executor', 'O tempo de calendario (Lead Time). E o que o cidadao sente na ponta - do insumo ao produto final, incluindo filas e gavetas.', 'Informe tambem o T.P.E. para calcular o Tempo de Gaveta.')
-    : '';
-
-  const hasTPE = Number.isFinite(metrics.processingTimeInformed) && metrics.processingTimeInformed > 0;
-  const tpeCard = hasTPE
-    ? _resultCard('TPE', 'T.P.E. - Tempo de Processamento Estimado', _fmtMin(metrics.processingTimeInformed), 'sem filas/gaveta - declarado pelo executor', 'Tempo estimado para executar o processo sem tempos de fila ou espera passiva. Base para o calculo do Tempo de Gaveta.', 'T.P.E. < T.P. - a diferenca e o tempo desperdicado em fila.')
-    : '';
-
-  const gavetaCard = metrics.tempoGaveta === null ? '' : _buildGavetaCard(metrics);
-
-  const topDisp = metrics.top > 0 ? fmtK(metrics.top) : '-';
-  const topAutoDisp = metrics.topAuto > 0 ? fmtK(metrics.topAuto) : '-';
-
-  const autoCard = _buildAutoCard(metrics, hasAuto, topAutoDisp, subSuffix);
-
-  const liveUT = Number(liveSimulationStatus.avgLeadTime || 0);
-  let liveTerDisp = '-';
-  if (liveUT > 0) {
-    liveTerDisp = hasK ? _fmtMin(liveUT * metrics.kFactor) : `${liveUT.toFixed(1)} UT`;
-  }
-  const liveLineK = `<div class="mblock-live">
-    Bolinhas finalizadas: <strong id="liveTokensFinished">${liveSimulationStatus.finished}/${liveSimulationStatus.total}</strong> &nbsp;|
-    T.E.R. medio ao vivo: <strong id="liveLeadAvg">${liveTerDisp}</strong>
-  </div>`;
-
   box.className = 'kpi kpi-executive';
+  const cards = _buildScenarioCards(metrics, base);
   box.innerHTML = `
     <div class="results-grid">
-      ${_resultCard('TOP', 'T.O.P. - Tempo Otimo de Processamento', topDisp, 'caminho feliz, sem atritos' + subSuffix, 'A regua de ouro da eficiencia. Representa o tempo estritamente necessario para a execucao das tarefas, removendo todas as burocracias, esperas e erros.', 'Se este processo fosse 100% fluido e sem interrupcoes, este seria o esforco real.')}
-      ${_resultCard('TER', 'T.E.R. - Tempo de Execucao Realista', fmtK(metrics.ter), 'media das 100 particulas' + subSuffix, 'O termometro da realidade. E a media do tempo gasto pelas 100 particulas, contabilizando penalidades de handoffs, gateways e a probabilidade de retrabalho (loops).', 'Este e o custo atual do desenho do processo considerando o atrito administrativo.')}
-      ${tpCard}
-      ${tpeCard}
-      ${gavetaCard}
-      ${_ipCard(metrics.ipRealVsIdeal)}
-      ${_resultCard('Comp', 'Complexidade', String(metrics.complexidade), 'caminhos possiveis no processo', 'Quantidade de trajetos distintos que uma particula pode percorrer do inicio ao fim, considerando todos os gateways e eventos de fim.', 'Quanto maior, mais variavel e o comportamento do processo em campo.')}
-      ${autoCard}
-    </div>
-    ${kLine}
-    ${liveLineK}`;
+      ${cards.join('')}
+    </div>`;
 }
 
 function refreshLiveSimulationStatus(tokens) {
@@ -2164,7 +2101,7 @@ function renderInsightKpis(metrics, base) {
       <div>Desperdicio Estrutural</div>
       <div class="value">${fmtInsight(i.estimatedWastePercent)}</div>
       ${meter(i.estimatedWastePercent, 'tone-warn')}
-      <small>Perda do TEP real em relacao ao ideal.</small>
+      <small>Perda do T.E.R. em relacao ao T.O.P.</small>
     </div>
     <div class="card">
       <div>Gap da Visao do Executor</div>
@@ -2191,22 +2128,10 @@ function renderInsightKpis(metrics, base) {
       <small>${d.automatedNowCount}/${d.totalTasks} tarefas atualmente automaticas.</small>
     </div>
     <div class="card">
-      <div>Automacao Projetada</div>
-      <div class="value">${d.autoCoverageProjected.toFixed(1)}%</div>
-      ${meter(d.autoCoverageProjected, 'tone-good')}
-      <small>${d.projectedAutoCount}/${d.totalTasks} tarefas no cenario ideal auto.</small>
-    </div>
-    <div class="card">
       <div>Concentracao de Atrito</div>
       <div class="value">${fmtInsight(i.concentrationTop3Percent)}</div>
       ${meter(i.concentrationTop3Percent, 'tone-warn')}
       <small>Quanto os 3 maiores atritos dominam o processo.</small>
-    </div>
-    <div class="card">
-      <div>Ganho Potencial de Automacao</div>
-      <div class="value">${fmtInsight(i.autoOpportunityPercent)}</div>
-      ${meter(i.autoOpportunityPercent, 'tone-good')}
-      <small>Reducao de tempo entre ideal e ideal auto.</small>
     </div>`;
 }
 
@@ -2306,10 +2231,8 @@ function _buildP4Gaveta(metrics) {
     const gavetaFmt = _fmtMin(gaveta);
     return `O executor informou T.P. de <strong>${_fmtMin(tp)}</strong> e T.P.E. de <strong>${_fmtMin(tpe)}</strong>. Isso revela que <strong>${gavetaPct}%</strong> do tempo total (<strong>${gavetaFmt}</strong>) e gasto em espera passiva - filas, gavetas e aguardo de decisao - sem execucao ativa. O foco da gestao deve ser a reducao do Tempo de Gaveta.`;
   }
-  if (Number.isFinite(metrics.leadTimeInformed)) {
-    return 'T.P. informado. Informe tambem o <strong>T.P.E. (Tempo de Processamento Estimado)</strong> para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
-  }
-  return 'Informe o <strong>T.P.</strong> (Tempo de Percepcao) e o <strong>T.P.E.</strong> (Tempo de Processamento Estimado) para calcular o Tempo de Gaveta e medir o impacto das filas no processo.';
+  if (Number.isFinite(metrics.leadTimeInformed)) return 'T.P. informado. Informe tambem o <strong>T.P.E.</strong> para separar o tempo de execucao do tempo de fila e calcular o Tempo de Gaveta.';
+  return 'Se quiser medir fila e espera passiva, informe o <strong>T.P.E.</strong> e o <strong>T.P.</strong>. Sem esses dados, o foco da leitura continua sendo o Indice de Phillip.';
 }
 
 function renderAutomaticInterpretation(metrics, base) {
@@ -2318,8 +2241,8 @@ function renderAutomaticInterpretation(metrics, base) {
 
   if (!metrics) {
     box.innerHTML = `<div class="veredito-parcial">
-      <p><strong>Leitura parcial:</strong> informe o caminho feliz e o T.P. (Tempo de Percepcao) do executor para liberar o diagnostico completo.</p>
-      <p>Enquanto isso, use o grafico de atrito abaixo para identificar os maiores gargalos do processo atual.</p>
+      <p><strong>Leitura parcial:</strong> o simulador ja consegue mostrar a distancia do processo em relacao ao perfeito pelo Indice de Phillip.</p>
+      <p>Se voce informar o T.P.E., o painel passa a mostrar T.O.P. e T.E.R. em minutos. Se informar tambem o T.P., o sistema calcula o Tempo de Gaveta.</p>
     </div>`;
     return;
   }
@@ -2355,14 +2278,9 @@ function computeScenarioMetrics() {
   const leadTimeInformed      = parseLeadTimeInformedRequired();
   const processingTimeInformed = parseProcessingTimeInformed();
 
-  syncConfirmedAutoFromUi();
-  const autoGraph = buildAutoScenarioGraph();
-  const autoBase = calculateTEPAndIP(autoGraph, 3500);
-
   // Usa o TER das 100 partículas animadas quando disponível,
   // assim o dashboard e o contador ao vivo mostram o mesmo número.
   const ter = (_animatedTer !== null && _animatedTer > 0) ? _animatedTer : base.tepReal;
-  const terAuto = autoBase.tepReal;
 
   // T.O.P. = caminho feliz sem atrito.
   // Nunca lança exceção — falha no happy path mostra "—" no card sem derrubar os demais.
@@ -2372,19 +2290,12 @@ function computeScenarioMetrics() {
     if (t > 0) top = t;
   } catch (_) { console.warn('[simulator] path inválido, TOP = 0', _); }
 
-  // T.O.P. Auto = cenário com automações.
-  // Fallback para top quando não calculável.
-  let topAuto = top;
-  try {
-    const ta = calculatePathTime(autoGraph, path, true);
-    if (ta > 0) topAuto = ta;
-  } catch (_) { console.warn('[simulator] automação path inválido', _); }
-
-  // Conversao K: 1 UT = quantos minutos reais (usando T.P. como ancora)
-  // K = T.P. (min) / T.E.R. (UT)
-  const kFactor = (Number.isFinite(leadTimeInformed) && leadTimeInformed > 0 && ter > 0)
-    ? leadTimeInformed / ter
+  // Conversao K: 1 UT = quantos minutos reais de execucao.
+  // A ancora correta e o T.P.E. informado pelo executor, comparado ao T.E.R.
+  const kFactor = (Number.isFinite(processingTimeInformed) && processingTimeInformed > 0 && ter > 0)
+    ? processingTimeInformed / ter
     : null;
+  const leadIdeal = kFactor !== null ? top * kFactor : null;
 
   // Tempo de Gaveta = T.P. − T.P.E.  (fila + espera passiva)
   // Só calculável quando ambos os campos estão preenchidos pelo executor
@@ -2399,8 +2310,6 @@ function computeScenarioMetrics() {
   return {
     ter,
     top,
-    topAuto,
-    terAuto,
     leadTimeInformed,
     processingTimeInformed,
     kFactor,
@@ -2409,18 +2318,14 @@ function computeScenarioMetrics() {
     // Compatibilidade com codigo legado
     tepReal:    ter,
     tepIdeal:   top,
-    tepIdealAuto: topAuto,
-    tepRealAuto:  terAuto,
-    leadIdeal:  top,
+    leadIdeal,
     ipRealVsIdeal:         phillipEfficiency(ter,     top),
-    ipRealAutoVsIdealAuto: phillipEfficiency(terAuto, topAuto),
-    ipAutoVsIdeal:         phillipEfficiency(topAuto, top),
-    ipLeadInformedVsIdeal: Number.isFinite(leadTimeInformed) ? phillipEfficiency(leadTimeInformed, top * (kFactor || 1)) : null,
+    ipLeadInformedVsIdeal: Number.isFinite(leadTimeInformed) && leadIdeal !== null
+      ? phillipEfficiency(leadTimeInformed, leadIdeal)
+      : null,
     ipIdeal: 100,
     ipLeadIdeal: 100,
-    ipIdealAuto: 100,
     ranking: base.ranking,
-    autoCount: (autoGraph.nodes || []).filter((n) => n.type === 'task' && n.automated).length,
   };
 }
 
@@ -3281,14 +3186,7 @@ function updateDashboard() {
 
   renderExecutiveKpis(metrics, null);
 
-  $('calibrationResult').textContent = [
-    `Estimado: TEP ideal = 100%; TEP real proporcional = ${metrics.ipRealVsIdeal.toFixed(2)}%.`,
-    `Informado executor: ${buildCalibrationLeadInfo(metrics)}`,
-    `Automacao: ideal auto vs ideal = ${metrics.ipAutoVsIdeal.toFixed(2)}%.`,
-    `Semaforos -> padrao: ${semaphoreForPhillip('standard', metrics.ipRealVsIdeal).label}; informado: ${semaphoreForPhillip('informed', metrics.ipLeadInformedVsIdeal).label}; automacao: ${semaphoreForPhillip('automation', metrics.ipAutoVsIdeal).label}.`,
-    `Lead time ideal e calculado no caminho feliz informado, sem punicoes (handoff/gateway/loop).`,
-    `Automacoes confirmadas para cenario auto: ${metrics.autoCount}.`,
-  ].join('\n');
+  $('calibrationResult').textContent = _buildCalibrationLines(metrics).join('\n');
 
   renderFrictionChart(metrics);
 
@@ -3303,17 +3201,7 @@ function applyCalibration() {
   try {
     const metrics = computeScenarioMetrics();
 
-    $('calibrationResult').textContent = [
-      `Estimado -> TEP real: ${metrics.tepReal.toFixed(2)} min | TEP ideal: ${metrics.tepIdeal.toFixed(2)} min (100%)`,
-      `Estimado -> TEP real proporcional: ${metrics.ipRealVsIdeal.toFixed(2)}%`,
-      `Informado executor -> Lead time informado: ${formatOptionalMinutes(metrics.leadTimeInformed)}`,
-      `Informado executor -> Lead time ideal (100%): ${metrics.leadIdeal.toFixed(2)} min`,
-      `Informado executor -> Proporcional: ${formatOptionalPercent(metrics.ipLeadInformedVsIdeal)}`,
-      `TEP ideal auto: ${metrics.tepIdealAuto.toFixed(2)} min (100% na escala auto)`,
-      `Comparativo ideal auto vs ideal: ${metrics.ipAutoVsIdeal.toFixed(2)}%`,
-      `Semaforos -> padrao: ${semaphoreForPhillip('standard', metrics.ipRealVsIdeal).label}; informado: ${semaphoreForPhillip('informed', metrics.ipLeadInformedVsIdeal).label}; automacao: ${semaphoreForPhillip('automation', metrics.ipAutoVsIdeal).label}.`,
-      `Automacoes confirmadas: ${metrics.autoCount}`,
-    ].join('\n');
+    $('calibrationResult').textContent = _buildCalibrationLines(metrics).join('\n');
 
     updateDashboard();
   } catch (e) {
@@ -3390,11 +3278,7 @@ function edgeDurationMinutes(fromId, toId) {
 
   let mins = 0;
   const isIdealMode = simulationMode !== 'real';
-
-  let toAutomated = to.automated;
-  if (simulationMode === 'ideal_auto' && confirmedAutoNodes.has(to.id)) {
-    toAutomated = true;
-  }
+  const toAutomated = to.automated;
 
   if (to.type === 'timer') mins += Number(to.timerUT || 0);
   if (to.type === 'task') mins += toAutomated ? 0.5 : 10;
@@ -3436,10 +3320,7 @@ function drawTokens(tokens) {
 function _classifyToken(t, edge, to, fromNode) {
   const toId = to?.id;
   const toVisits = Number(t.nodeVisits?.[toId] || 0);
-  const toAutomated = Boolean(
-    to?.automated
-    || (simulationMode === 'ideal_auto' && confirmedAutoNodes.has(toId))
-  );
+  const toAutomated = Boolean(to?.automated);
   const isLoopRepeatPass = Boolean(edge?.isLoopReturn && toVisits >= 1);
   const fromMeta = fromNode ? laneMetaOf(fromNode) : null;
   const toMeta = to ? laneMetaOf(to) : null;
@@ -3534,7 +3415,7 @@ function animate(frameTimeMs = performance.now()) {
 
 function playSimulation() {
   const setupStatus = collectSetupStatus();
-  const readyNow = setupStatus.graphOk && setupStatus.handoffOk && setupStatus.happyPathOk && setupStatus.leadTimeOk;
+  const readyNow = setupStatus.graphOk && setupStatus.handoffOk && setupStatus.happyPathOk;
   if (!setupCompleted || !readyNow) {
     setupCompleted = false;
     openSetupModal();
@@ -3544,7 +3425,6 @@ function playSimulation() {
   if (!validateAndShow()) return;
   if (!ensureHandoffReady()) return;
   simulationMode = $('simMode')?.value || 'real';
-  syncConfirmedAutoFromUi();
   _animatedTer = null; // limpa TER anterior; será recalculado ao fim desta rodada
 
   if (simulationMode !== 'real') {
@@ -3623,6 +3503,11 @@ function hypothesisTargets(type) {
       .filter((n) => n.type === 'gateway')
       .map((n) => ({ value: n.id, label: `${n.label || n.id} (${n.id})` }));
   }
+  if (type === 'automation') {
+    return (graph.nodes || [])
+      .filter((n) => n.type === 'task')
+      .map((n) => ({ value: n.id, label: _automationTargetLabel(n) }));
+  }
   if (type === 'loop') {
     return (graph.edges || [])
       .filter((e) => e.isLoopReturn)
@@ -3632,6 +3517,11 @@ function hypothesisTargets(type) {
     return crossLaneTransitions().map((t) => ({ value: t.key, label: `${t.fromName} -> ${t.toName}` }));
   }
   return [];
+}
+
+function _automationTargetLabel(node) {
+  const status = node?.automated ? 'ja automatica' : 'manual';
+  return `${node?.label || node?.id} (${status})`;
 }
 
 function renderHypothesisTargets() {
@@ -3650,6 +3540,7 @@ function renderHypothesisTargets() {
   populateSelectOptions(sel, items);
 
   if (type === 'gateway') help.textContent = 'Hipotese: retirar etapa de aprovacao (gateway).';
+  else if (type === 'automation') help.textContent = 'Hipotese: automatizar uma atividade para reduzir o tempo de execucao da etapa.';
   else if (type === 'loop') help.textContent = 'Hipotese: remover retorno de retrabalho (loop).';
   else help.textContent = 'Hipotese: reduzir atrito de handoff para mesma equipe.';
 }
@@ -3683,6 +3574,25 @@ function _applyHandoffHypothesis(projectedGraph, target) {
   projectedGraph.handoffRules[target] = 'same_team';
 }
 
+function _applyAutomationHypothesis(projectedGraph, target) {
+  const node = (projectedGraph.nodes || []).find((n) => n.id === target);
+  if (node?.type === 'task') node.automated = true;
+}
+
+function _formatUtMinutesLine(label, utValue, factor) {
+  const utText = _fmtUT(utValue);
+  if (!(factor > 0)) return `${label}: ${utText}`;
+  return `${label}: ${utText} (${_fmtMin(utValue * factor)})`;
+}
+
+function _buildHypothesisLines(currentTer, projectedTer, factor) {
+  const gainUt = currentTer - projectedTer;
+  const pct = currentTer > 0 ? (gainUt / currentTer) * 100 : 0;
+  const lines = [_formatUtMinutesLine('Tempo de simulacao atual', currentTer, factor), _formatUtMinutesLine('Tempo de simulacao projetado', projectedTer, factor), _formatUtMinutesLine('Ganho estimado', gainUt, factor)];
+  lines.push(`Reducao percentual: ${pct.toFixed(2)}%`);
+  return lines;
+}
+
 function runHypothesisSimulation() {
   if (!validateAndShow()) return;
   const type = $('hypothesisType')?.value || 'gateway';
@@ -3694,11 +3604,13 @@ function runHypothesisSimulation() {
     return;
   }
 
-  const baseline = calculateTEPAndIP(graph, 2500);
+  const currentMetrics = computeScenarioMetrics();
   const projectedGraph = cloneLocal(graph);
 
   if (type === 'gateway') {
     _applyGatewayHypothesis(projectedGraph, target);
+  } else if (type === 'automation') {
+    _applyAutomationHypothesis(projectedGraph, target);
   } else if (type === 'loop') {
     _applyLoopHypothesis(projectedGraph, target);
   } else if (type === 'handoff') {
@@ -3706,14 +3618,9 @@ function runHypothesisSimulation() {
   }
 
   const projected = calculateTEPAndIP(projectedGraph, 2500);
-  const gainMin = baseline.tepReal - projected.tepReal;
-  const gainPct = baseline.tepReal > 0 ? (gainMin / baseline.tepReal) * 100 : 0;
-
-  out.textContent = [
-    `TEP real atual: ${baseline.tepReal.toFixed(2)} min`,
-    `TEP real projetado: ${projected.tepReal.toFixed(2)} min`,
-    `Ganho estimado: ${gainMin.toFixed(2)} min (${gainPct.toFixed(2)}%)`,
-  ].join('\n');
+  const currentTer = Number(currentMetrics.ter || 0);
+  const projectedTer = Number(projected.tepReal || 0);
+  out.textContent = _buildHypothesisLines(currentTer, projectedTer, currentMetrics.kFactor).join('\n');
 }
 
 function runRoi() {
@@ -3727,33 +3634,34 @@ function runRoi() {
 }
 
 function _formatLeadTimeInformedLine(metrics) {
-  if (Number.isFinite(metrics.leadTimeInformed)) {
-    return `Lead time informado: ${metrics.leadTimeInformed.toFixed(2)} min | Proporcao: ${metrics.ipLeadInformedVsIdeal.toFixed(2)}%`;
+  if (Number.isFinite(metrics.leadTimeInformed) && Number.isFinite(metrics.ipLeadInformedVsIdeal)) {
+    return `T.P. informado: ${metrics.leadTimeInformed.toFixed(2)} min | T.P. sobre o T.O.P.: ${metrics.ipLeadInformedVsIdeal.toFixed(2)}%`;
   }
-  return 'Lead time informado: nao informado (opcional)';
+  if (Number.isFinite(metrics.leadTimeInformed)) return `T.P. informado: ${metrics.leadTimeInformed.toFixed(2)} min | Tempo de Gaveta depende do T.P.E.`;
+  return 'T.P. nao informado.';
+}
+
+function _buildReportExecutionLines(metrics) {
+  if (!_hasTpe(metrics) && !_hasTp(metrics)) return ['Cenario sem tempos informados.', 'Leitura disponivel: Indice de Phillip e ranking de atritos em UT.'];
+  if (_hasTpe(metrics) && !_hasTp(metrics)) return [`T.P.E.: ${formatOptionalMinutes(metrics.processingTimeInformed)}`, `T.O.P.: ${formatExecutionMetric(metrics, metrics.top)}`, `T.E.R.: ${formatExecutionMetric(metrics, metrics.ter)}`];
+  return [`T.O.P.: ${formatExecutionMetric(metrics, metrics.top)}`, `T.E.R.: ${formatExecutionMetric(metrics, metrics.ter)}`, _formatLeadTimeInformedLine(metrics), `Tempo de Gaveta: ${formatOptionalMinutes(metrics.tempoGaveta)}`];
 }
 
 function _buildReportText(metrics) {
-  const top = metrics.ranking.slice(0, 5).map((r, i) => `${i + 1}. ${r.type} - ${r.key} (${r.total.toFixed(1)} min)`).join('\n');
+  const top = metrics.ranking.slice(0, 5).map((r, i) => `${i + 1}. ${r.type} - ${r.key} (${r.total.toFixed(1)} UT)`).join('\n');
   return [
     'RELATORIO AUTOMATICO - SIMULADOR DE PROCESSOS',
-    'BLOCO ESTIMADO',
-    `TEP ideal: ${metrics.tepIdeal.toFixed(2)} min | Base: ${metrics.ipIdeal.toFixed(2)}%`,
-    `TEP real: ${metrics.tepReal.toFixed(2)} min | Proporcao: ${metrics.ipRealVsIdeal.toFixed(2)}%`,
+    'BLOCO PRINCIPAL',
+    `Indice de Phillip: ${metrics.ipRealVsIdeal.toFixed(2)}%`,
+    `Classificacao: ${semaphoreForPhillip('standard', metrics.ipRealVsIdeal).label}`,
     '',
-    'BLOCO INFORMADO PELO EXECUTOR',
-    `Lead time ideal (caminho feliz sem punicoes): ${metrics.leadIdeal.toFixed(2)} min | Base: ${metrics.ipLeadIdeal.toFixed(2)}%`,
-    _formatLeadTimeInformedLine(metrics),
-    '',
-    'BLOCO IDEAL AUTO',
-    `TEP ideal auto: ${metrics.tepIdealAuto.toFixed(2)} min | Indice(auto): ${metrics.ipIdealAuto.toFixed(2)}%`,
-    `Comparativo ideal auto vs ideal: ${metrics.ipAutoVsIdeal.toFixed(2)}%`,
-    `Automacoes confirmadas: ${metrics.autoCount}`,
+    'BLOCO DO EXECUTOR',
+    ..._buildReportExecutionLines(metrics),
     '',
     'Ranking de Atrito:',
     top || 'Sem atritos relevantes.',
     '',
-    'Observacao: Validar loops e handoffs para ganho de eficiencia.',
+    'Observacao: validar handoffs, loops e automacoes para elevar o Indice de Phillip.',
   ].join('\n');
 }
 
@@ -3905,10 +3813,8 @@ function refreshAll() {
   renderHandoffWizard();
   renderSetupPathPicker();
   renderSetupGatewayEditor();
-  renderSetupAutomationEditor();
   renderSetupLoopEditor();
   renderTimerSetup();
-  renderAutomationConfirm();
   updateDashboard();
   renderSuggestions();
   renderSetupChecklist();
@@ -4083,7 +3989,6 @@ function wireEvents() {
   });
   $('btnScanSuggestions')?.addEventListener('click', () => {
     if (parseEditorGraph()) renderSuggestions();
-    renderAutomationConfirm();
     renderSetupChecklist();
   });
   $('btnMarkHappyPath')?.addEventListener('click', () => {
@@ -4104,10 +4009,6 @@ function wireEvents() {
   });
   $('simMode')?.addEventListener('change', () => {
     simulationMode = $('simMode').value;
-  });
-  $('autoConfirmBox')?.addEventListener('change', () => {
-    syncConfirmedAutoFromUi();
-    updateDashboard();
   });
   $('happyPath')?.addEventListener('input', renderSetupChecklist);
   // NOTA: leadTimeInformed usa 'change' (ao sair do campo), NÃO 'input',
@@ -4136,10 +4037,6 @@ function wireEvents() {
       refreshAll();
     }
   });
-  $('setupAutomationEditor')?.addEventListener('change', () => {
-    saveSetupAutomationSelection();
-    refreshAll();
-  });
   $('setupTaskMatrix')?.addEventListener('change', (ev) => {
     const t = ev.target;
     // Select de complexidade: salva e atualiza dashboard
@@ -4150,19 +4047,7 @@ function wireEvents() {
       return;
     }
     // Checkbox de automação: trata interdependência e faz refresh completo
-    if (t.matches('input[data-task-automated], input[data-task-potential]')) {
-      document.querySelectorAll('input[data-task-automated]').forEach((autoEl) => {
-        const id = String(autoEl.dataset.taskAutomated || '');
-        if (!id) return;
-        const potentialEl = document.querySelector(`input[data-task-potential="${CSS.escape(id)}"]`);
-        if (!potentialEl) return;
-        if (autoEl.checked) {
-          potentialEl.checked = false;
-          potentialEl.disabled = true;
-        } else {
-          potentialEl.disabled = false;
-        }
-      });
+    if (t.matches('input[data-task-automated]')) {
       saveSetupAutomationSelection();
       refreshAll();
     }
@@ -4223,6 +4108,8 @@ function wireEvents() {
   $('btnPlay')?.addEventListener('click', playSimulation);
   $('btnStop')?.addEventListener('click', stopSimulation);
   $('btnViewDashboard')?.addEventListener('click', revealDashboard);
+  $('btnSetupPrev')?.addEventListener('click', () => moveSetupStep(-1));
+  $('btnSetupNext')?.addEventListener('click', () => moveSetupStep(1));
   $('btnReadyToSimulate')?.addEventListener('click', completeSetup);
   $('btnApplyCalibration')?.addEventListener('click', applyCalibration);
   $('btnResetRules')?.addEventListener('click', () => { resetRulesToDefaults(); applyCalibration(); });
@@ -4328,10 +4215,7 @@ function saveToSIGA() {
     const simSummary = simResults ? {
       ter:       simResults.ter,
       top:       simResults.top,
-      topAuto:   simResults.topAuto,
-      terAuto:   simResults.terAuto,
       ip:        simResults.ipRealVsIdeal,
-      ipAuto:    simResults.ipAutoVsIdeal,
       kFactor:   simResults.kFactor,
       tempoGaveta: simResults.tempoGaveta,
       complexidade: simResults.complexidade,
