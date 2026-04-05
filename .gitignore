@@ -10,6 +10,7 @@ bin/
 
 # Dados locais e backups — não versionar (podem conter dados reais)
 data/local-data.json
+data/local-data.before-restore-*.json
 backups/*.json
 backups/*.ndjson
 backups/*.csv

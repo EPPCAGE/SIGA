@@ -9464,6 +9464,7 @@ const CONFIG_DEFAULTS = {
     { key:'distribuicao', label:'Distribuição',  icon:'📤', bg:'#f3e8ff', color:'#6b21a8' },
     { key:'comunicacao',  label:'Comunicação',   icon:'📢', bg:'#ffedd5', color:'#9a3412' },
   ],
+  projetosEstrategicos: [],
 };
 
 function getConfig(key) {
@@ -9897,6 +9898,7 @@ const _CFG_TABLES = [
   { key:'aptCatalog', title:'⚠️ Catálogo de Não Conformidades', desc:'Apontamentos padrão usados nas auditorias, com suas recomendações vinculadas. Editável livremente.', typed:'apt-catalog' },
   { key:'gerentesProcessos',   title:'👤 Gerentes dos Processos',      desc:'Lista de gerentes responsáveis pelos processos mapeados na arquitetura.' },
   { key:'objetivosEstrategicos', title:'🎯 Objetivos Estratégicos',    desc:'Objetivos estratégicos institucionais vinculados aos processos na arquitetura.' },
+  { key:'projetosEstrategicos', title:'📁 Projetos Estratégicos',      desc:'Tabela inicialmente vazia para futuros vínculos entre processos e projetos estratégicos.' },
 ];
 
 const _ALERT_TYPES = [
@@ -11029,7 +11031,10 @@ function _renderArqSidebar(el) {
     const label = record.subprocesso || record.processo;
     const badges = [
       record.critico ? '<span class="sidebar-item-badge" style="background:#dc2626;">Crítico</span>' : '',
-      record.mapeado ? '<span class="sidebar-item-badge">Mapeado</span>' : ''
+      (() => {
+        const mapUi = arqGetMapeadoUi(record);
+        return mapUi.status === 'nao' ? '' : `<span class="sidebar-item-badge" style="${mapUi.status === 'andamento' ? 'background:#f59e0b;' : ''}">${mapUi.badge.replace('✅ ','').replace('🔄 ','')}</span>`;
+      })()
     ].filter(Boolean).join('');
     const activeClass = _arqSidebarState.selectedRealIdx === realIdx ? ' active' : '';
 
@@ -11267,7 +11272,10 @@ function _orgRenderProcessRows(list, all) {
           ${r.equipe ? `<div style="font-size:11px;color:#4338ca;font-weight:700;margin-top:1px;">👥 ${r.equipe}</div>` : ''}
         </div>
         ${r.critico ? '<span title="Processo crítico" style="font-size:14px;flex-shrink:0;">⚠️</span>' : ''}
-        <span style="font-size:11px;color:${r.mapeado?'#166534':'#94a3b8'};font-weight:600;flex-shrink:0;">${r.mapeado?'✅ Mapeado':'○'}</span>
+        ${(() => {
+          const mapUi = arqGetMapeadoUi(r);
+          return `<span style="font-size:11px;color:${mapUi.color};font-weight:600;flex-shrink:0;">${mapUi.status === 'sim' ? '✅ Mapeado' : mapUi.status === 'andamento' ? '🔄 Em andamento' : '○'}</span>`;
+        })()}
       </div>`;
   }).join('');
 }
@@ -17238,12 +17246,13 @@ function arqApplyFilter() {
   const search  = (document.getElementById('arq-filter-search').value || '').toLowerCase();
 
   let filtered = data.filter(r => {
+    const mapStatus    = arqGetMapeadoStatus(r);
     const matchMacro   = !macro   || r.macroprocesso.toLowerCase() === macro;
     const matchNat     = !nat     || (r.natureza||'').toLowerCase() === nat;
     const matchArea    = !area    || (r.area||'').toLowerCase() === area;
     const matchGerente = !gerente || (r.gerente||'') === gerente;
     const matchObj     = !obj     || (r.objEstrategicos || []).includes(obj);
-    const matchMapeado = !mapeado || (mapeado === 'sim' ? !!r.mapeado : !r.mapeado);
+    const matchMapeado = !mapeado || mapStatus === mapeado;
     const matchCritico = !critico || (critico === 'sim' ? !!r.critico : !r.critico);
     const matchSearch  = !search  || [r.macroprocesso, r.processo, r.subprocesso, r.area, r.gerente]
       .some(v => (v||'').toLowerCase().includes(search));
@@ -17290,7 +17299,7 @@ function arqRenderStats(filtered, all) {
   const macros   = new Set(filtered.map(r => r.macroprocesso)).size;
   const procs    = new Set(filtered.map(r => r.macroprocesso + '|' + r.processo)).size;
   const subs     = filtered.filter(r => r.subprocesso).length;
-  const mappedN  = filtered.filter(r => r.mapeado).length;
+  const mappedN  = filtered.filter(r => arqGetMapeadoStatus(r) === 'sim').length;
   const total    = filtered.length;
   const pct      = total ? Math.round(mappedN / total * 100) : 0;
 
@@ -17427,15 +17436,17 @@ function arqRenderTable(filtered, all) {
     }
     const nat     = NAT_COLORS[r.natureza] || { bg: '#f1f5f9', color: '#475569' };
     const realIdx = all.indexOf(r);
-    const mapped  = !!r.mapeado;
+    const mappedUi = arqGetMapeadoUi(r);
+    const mapped  = mappedUi.status === 'sim';
     const critico = !!r.critico;
-    const toggleBg    = mapped ? '#dcfce7' : '#f1f5f9';
-    const toggleColor = mapped ? '#16a34a' : '#94a3b8';
-    const toggleLabel = mapped ? '✅ Sim'  : '○ Não';
     const critBg    = critico ? '#fee2e2' : '#f1f5f9';
     const critColor = critico ? '#dc2626' : '#94a3b8';
     const critLabel = critico ? '⚠️ Sim'  : '○ Não';
-    return `<tr id="arq-row-${realIdx}" onclick="arqShowProcessDetail(${realIdx})" style="background:${rowColor ? '#f8fafc' : 'white'};border-bottom:1px solid #f1f5f9;${critico ? 'border-left:3px solid #dc2626;' : mapped ? 'border-left:3px solid #00a86b;' : ''}cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${rowColor?'#f8fafc':'white'}'">
+    const mapBorder = critico ? '#dc2626' : mappedUi.border;
+    const mapBtn = mappedUi.status === 'andamento'
+      ? `<span style="background:${mappedUi.bg};color:${mappedUi.color};font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;display:inline-block;" title="Vinculado a um mapeamento ainda não concluído">${mappedUi.label}</span>`
+      : `<button onclick="event.stopPropagation();arqToggleMapeado(${realIdx})" style="background:${mappedUi.bg};color:${mappedUi.color};border:none;cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;transition:all .2s;" title="Clique para alternar">${mappedUi.label}</button>`;
+    return `<tr id="arq-row-${realIdx}" onclick="arqShowProcessDetail(${realIdx})" style="background:${rowColor ? '#f8fafc' : 'white'};border-bottom:1px solid #f1f5f9;${mapBorder ? `border-left:3px solid ${mapBorder};` : ''}cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${rowColor?'#f8fafc':'white'}'">
       <td style="padding:10px 16px;font-weight:600;color:#1B3022;font-size:12px;">${r.macroprocesso}</td>
       <td style="padding:10px 16px;color:#1e293b;font-size:13px;text-decoration:underline;text-underline-offset:2px;">${r.processo}</td>
       <td style="padding:10px 16px;color:#475569;font-size:12px;text-decoration:underline;text-underline-offset:2px;">${r.subprocesso || '<span style="color:#cbd5e1;text-decoration:none;">—</span>'}</td>
@@ -17449,12 +17460,10 @@ function arqRenderTable(filtered, all) {
           title="Clique para alternar">${critLabel}</button>
       </td>
       <td style="padding:10px 16px;text-align:center;" data-stop-propagation="true">
-        <button onclick="arqToggleMapeado(${realIdx})"
-          style="background:${toggleBg};color:${toggleColor};border:none;cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;transition:all .2s;"
-          title="Clique para alternar">${toggleLabel}</button>
+        ${mapBtn}
       </td>
       <td style="padding:10px 16px;text-align:center;" data-stop-propagation="true">
-        ${isEditor && !mapped ? `<button onclick="event.stopPropagation();arqAbrirMapeamento(${realIdx})" style="background:#dcfce7;color:#166534;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Iniciar mapeamento deste processo">📝 Mapear</button>` : ''}
+        ${isEditor && mappedUi.status === 'nao' ? `<button onclick="event.stopPropagation();arqAbrirMapeamento(${realIdx})" style="background:#dcfce7;color:#166534;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px;" title="Iniciar mapeamento deste processo">📝 Mapear</button>` : ''}
         ${isEditor ? `<button onclick="event.stopPropagation();arqShowForm(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Editar">✏️</button>` : ''}
         ${isEditor ? `<button onclick="event.stopPropagation();arqDelete(${realIdx})" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;" title="Excluir">🗑</button>` : ''}
       </td>
@@ -17469,15 +17478,6 @@ function arqShowForm(idx = null) {
   document.getElementById('arq-form-idx').value = idx !== null ? idx : '';
 
   // Popular select de equipes
-  const equipeSelect = document.getElementById('arq-f-equipe');
-  equipeSelect.innerHTML = '<option value="">— Nenhuma —</option>';
-  getConfig('equipeUnidade').forEach(eu => {
-    const opt = document.createElement('option');
-    opt.value = eu.equipe;
-    opt.textContent = eu.equipe + (eu.unidade ? ' · ' + eu.unidade : '');
-    equipeSelect.appendChild(opt);
-  });
-
   // Popular select de áreas
   const areaSelect = document.getElementById('arq-f-area');
   areaSelect.innerHTML = '<option value="">— Selecione —</option>';
@@ -17497,7 +17497,7 @@ function arqShowForm(idx = null) {
     document.getElementById('arq-f-natureza').value = r.natureza      || 'FINALÍSTICO';
     areaSelect.value = _ORG_AREA_MAP_REV[(r.area||'').trim().toUpperCase()] || r.area || '';
     document.getElementById('arq-f-gerente').value  = r.gerente       || '';
-    equipeSelect.value                              = r.equipe        || '';
+    arqFillEquipeOptions(areaSelect.value, r.equipe || '');
     document.getElementById('arq-f-objetivo').value = r.objetivo      || '';
     document.getElementById('arq-f-entradas').value = r.entradas      || '';
     document.getElementById('arq-f-entregas').value = r.entregas      || '';
@@ -17508,9 +17508,10 @@ function arqShowForm(idx = null) {
     ['macro','processo','sub','area','gerente','objetivo','entradas','entregas','clientes'].forEach(f =>
       document.getElementById('arq-f-' + f).value = '');
     document.getElementById('arq-f-natureza').value = 'FINALÍSTICO';
-    equipeSelect.value = '';
+    arqFillEquipeOptions('', '');
     document.getElementById('arq-f-critico').checked = false;
   }
+  areaSelect.onchange = () => arqFillEquipeOptions(areaSelect.value);
 
   // Popular checkboxes de Objetivos Estratégicos
   const objsContainer = document.getElementById('arq-f-objs-container');
@@ -17530,6 +17531,20 @@ function arqShowForm(idx = null) {
         </label>`;
       }).join('')
     : '<div style="font-size:12px;color:#94a3b8;padding:4px;">Nenhum objetivo cadastrado. Adicione em Gestão do Site → 🎯 Objetivos Estratégicos.</div>';
+
+  const projetosContainer = document.getElementById('arq-f-projetos-container');
+  const projetosList = getConfig('projetosEstrategicos');
+  const existingProjetos = (idx !== null ? (arqGetData()[idx] || {}).projetosEstrategicos : null) || [];
+  projetosContainer.innerHTML = projetosList.length
+    ? projetosList.map(nome => {
+        const esc = nome.replaceAll(/"/g, '&quot;');
+        const checked = existingProjetos.includes(nome) ? 'checked' : '';
+        return `<label for="proj-chk-${esc}" style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#1e293b;cursor:pointer;padding:5px 8px;background:white;border-radius:6px;border:1px solid #e2e8f0;line-height:1.4;">
+          <input id="proj-chk-${esc}" type="checkbox" value="${esc}" ${checked} style="margin-top:2px;accent-color:#2563eb;flex-shrink:0;">
+          ${nome}
+        </label>`;
+      }).join('')
+    : '<div style="font-size:12px;color:#94a3b8;padding:4px;">Nenhum projeto estratégico cadastrado ainda. A tabela foi criada para uso futuro no módulo de Gestão de Projetos.</div>';
 
   modal.style.display = 'flex';
 }
@@ -17558,6 +17573,7 @@ function arqSaveForm() {
     equipe:        document.getElementById('arq-f-equipe').value,
     objetivo:         document.getElementById('arq-f-objetivo').value.trim(),
     objEstrategicos:  [...document.querySelectorAll('#arq-f-objs-container input[type=checkbox]:checked')].map(cb => cb.value),
+    projetosEstrategicos: [...document.querySelectorAll('#arq-f-projetos-container input[type=checkbox]:checked')].map(cb => cb.value),
     entradas:         document.getElementById('arq-f-entradas').value.trim(),
     entregas:      document.getElementById('arq-f-entregas').value.trim(),
     clientes:      document.getElementById('arq-f-clientes').value.trim(),
@@ -17727,6 +17743,43 @@ function arqFindLinkedPop(r) {
   });
 }
 
+function arqFindLinkedPopMeta(record) {
+  const key = arqFindLinkedPop(record);
+  return key ? DATA[key]?.meta : null;
+}
+
+function arqGetMapeadoStatus(record) {
+  const meta = arqFindLinkedPopMeta(record);
+  if(meta) return meta.statusMap === 'concluido' ? 'sim' : 'andamento';
+  return record?.mapeado ? 'sim' : 'nao';
+}
+
+function arqGetMapeadoUi(record) {
+  const status = arqGetMapeadoStatus(record);
+  const map = {
+    sim:{ bg:'#dcfce7', color:'#166534', label:'✅ Sim', badge:'✅ Mapeado', border:'#00a86b' },
+    andamento:{ bg:'#fffbeb', color:'#b45309', label:'🔄 Em andamento', badge:'🔄 Em andamento', border:'#f59e0b' },
+    nao:{ bg:'#f1f5f9', color:'#64748b', label:'○ Não', badge:'○ Não mapeado', border:'' },
+  };
+  return { status, ...map[status] };
+}
+
+function arqGetEquipesByArea(area) {
+  if(!area) return [];
+  const items = getConfig('equipeUnidade');
+  const names = items.filter(eu => eu?.equipe && eu?.unidade && (_orgAreaMatches(area, eu.unidade) || _orgAreaMatches(eu.unidade, area))).map(eu => eu.equipe);
+  return [...new Set(names)];
+}
+
+function arqFillEquipeOptions(area, selected = '') {
+  const sel = document.getElementById('arq-f-equipe');
+  if(!sel) return;
+  const equipes = arqGetEquipesByArea(area);
+  const opts = !area ? '<option value="">Selecione a área primeiro</option>' : '<option value="">— Nenhuma —</option>';
+  sel.innerHTML = opts + equipes.map(e => `<option value="${e}">${e}</option>`).join('');
+  if(selected && equipes.includes(selected)) sel.value = selected;
+}
+
 function arqShowProcessDetail(idx) {
   _arqSidebarState.selectedRealIdx = idx;
   if(_sidebarOpen) renderSidebar();
@@ -17734,10 +17787,10 @@ function arqShowProcessDetail(idx) {
   if(!r) return;
 
   const nat = NAT_COLORS[r.natureza] || { bg:'#f1f5f9', color:'#475569' };
-  const mapped = !!r.mapeado;
+  const mappedUi = arqGetMapeadoUi(r);
 
   // Find linked POP
-  const popKey = mapped ? arqFindLinkedPop(r) : null;
+  const popKey = arqFindLinkedPop(r);
   const popData = popKey ? DATA[popKey] : null;
   const fluxoUrl = popData?.fluxoImgUrl || null;
 
@@ -17751,7 +17804,7 @@ function arqShowProcessDetail(idx) {
 
   // Mapped section
   let mappedSection = '';
-  if(mapped && popData) {
+  if(popData) {
     const meta = popData.meta || {};
     const risks = Array.isArray(popData.risks) ? popData.risks : [];
     const normas = Array.isArray(popData.normas) ? popData.normas : [];
@@ -17832,9 +17885,9 @@ function arqShowProcessDetail(idx) {
           </div>
         </div>
       </div>`;
-  } else if(mapped && !popData) {
+  } else if(mappedUi.status !== 'nao') {
     mappedSection = `<div style="margin-top:16px;background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:12px;font-size:13px;color:#854d0e;">
-      ✅ Processo marcado como mapeado, mas o POP correspondente não foi encontrado neste workspace.
+      ✅ Processo vinculado a um mapeamento, mas o POP correspondente não foi encontrado neste workspace.
     </div>`;
   }
 
@@ -17847,7 +17900,7 @@ function arqShowProcessDetail(idx) {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
         <span style="background:${nat.bg};color:${nat.color};font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;">${r.natureza||''}</span>
-        <span style="background:${mapped?'#dcfce7':'#f1f5f9'};color:${mapped?'#166534':'#64748b'};font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;">${mapped?'✅ Mapeado':'○ Não mapeado'}</span>
+        <span style="background:${mappedUi.bg};color:${mappedUi.color};font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;">${mappedUi.badge}</span>
       </div>
     </div>
     ${row('Área responsável', r.area)}
@@ -17857,6 +17910,12 @@ function arqShowProcessDetail(idx) {
       <div style="width:140px;flex-shrink:0;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding-top:2px;">Objetivos Estratégicos</div>
       <div style="font-size:13px;color:#1e293b;flex:1;display:flex;flex-wrap:wrap;gap:6px;">
         ${r.objEstrategicos.map(o => `<span style="background:#ede9fe;color:#5b21b6;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;">${o}</span>`).join('')}
+      </div>
+    </div>` : ''}
+    ${r.projetosEstrategicos && r.projetosEstrategicos.length ? `<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+      <div style="width:140px;flex-shrink:0;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding-top:2px;">Projetos Estratégicos</div>
+      <div style="font-size:13px;color:#1e293b;flex:1;display:flex;flex-wrap:wrap;gap:6px;">
+        ${r.projetosEstrategicos.map(p => `<span style="background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;">${p}</span>`).join('')}
       </div>
     </div>` : ''}
     ${row('Objetivo', r.objetivo)}
@@ -17870,7 +17929,7 @@ function arqShowProcessDetail(idx) {
       <div id="arq-comp-section"></div>
     </div>
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;gap:10px;flex-wrap:wrap;">
-      ${!mapped || !popData ? `
+      ${mappedUi.status === 'nao' ? `
         <button onclick="arqAbrirMapeamento(${idx})"
           style="background:#00a86b;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">
           📝 Mapear este processo
@@ -27561,6 +27620,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <select id="arq-filter-mapeado" data-arq-filter-trigger="true" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;background:white;">
           <option value="">Todos</option>
           <option value="sim">✅ Sim</option>
+          <option value="andamento">🔄 Em andamento</option>
           <option value="nao">○ Não</option>
         </select>
       </div>
@@ -27647,7 +27707,12 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       <div style="grid-column:1/-1;">
         <span style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">🎯 Objetivos Estratégicos</span>
         <div id="arq-f-objs-container" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;min-height:40px;"></div>
-        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Gerencie a lista em Gestão do Site → Objetivos Estratégicos</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Gerencie a lista em Gestão do Sistema → Objetivos Estratégicos</div>
+      </div>
+      <div style="grid-column:1/-1;">
+        <span style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">📁 Projeto Estratégico</span>
+        <div id="arq-f-projetos-container" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;min-height:40px;"></div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Os projetos estratégicos serão cadastrados futuramente no módulo de Gestão de Projetos.</div>
       </div>
       <div style="grid-column:1/-1;">
         <label for="arq-f-entradas" style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">Entradas do Processo</label>
