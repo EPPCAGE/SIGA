@@ -2549,7 +2549,7 @@
       </div>
       <div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap;">
-          <label class="gmod-label" style="margin:0;">Produtos da Atividade <span style="font-weight:400;color:var(--text-muted);">(links)</span></label>
+          <div class="gmod-label" style="margin:0;">Produtos da Atividade <span style="font-weight:400;color:var(--text-muted);">(links)</span></div>
           <button type="button" class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="patAddProdutoRow(true)">＋ Adicionar link</button>
         </div>
         <div id="pat-produtos-list" style="display:flex;flex-direction:column;gap:8px;"></div>
@@ -6498,6 +6498,68 @@ function addIndicator(p){
   // Open modal for the new indicator immediately
   openIndModal(p, DATA[p].indicators.length-1);
 }
+function _indicatorIaBtn(p) {
+  return document.getElementById(p + '-ind-ia-btn');
+}
+function _indicatorIaActions(step) {
+  return (step.actions || []).map(action => _indicatorIaActionText(action)).join('\n');
+}
+function _indicatorIaActionText(action) {
+  const parts = [`- ${action.text || ''}`];
+  (action.branches || []).forEach(branch => {
+    (branch.actions || []).forEach(item => parts.push(`  - (${branch.label || 'ramo'}) ${item.text || ''}`));
+  });
+  return parts.join('\n');
+}
+function _indicatorIaSteps(D) {
+  return (D.steps || []).map((step, idx) => `Etapa ${idx + 1}: ${step.title || 'Sem título'}\n${_indicatorIaActions(step)}`).join('\n\n');
+}
+function _indicatorIaRoles(D) {
+  return (D.roles || []).map(role => `- ${role.name || 'Responsável'}: ${(role.duties || []).join('; ') || 'sem atribuições detalhadas'}`).join('\n');
+}
+function _indicatorIaExisting(D) {
+  return (D.indicators || []).map(ind => `- ${ind.title || 'Indicador'} (${ind.meta || 'sem meta'})`).join('\n');
+}
+function _indicatorIaPrompt(p) {
+  const D = DATA[p] || {};
+  const meta = D.meta || {};
+  const base = [`Processo: ${meta.name || p}`, `Macroprocesso: ${meta.macro || '—'}`, `Processo institucional: ${meta.processo || '—'}`, `Subprocesso: ${meta.sub || meta.subprocesso || '—'}`, `Objetivo: ${meta.desc || D.objetivo || '—'}`, `Entradas: ${meta.input || '—'}`, `Saídas: ${meta.output || '—'}`, `Fluxo:\n${_indicatorIaSteps(D) || '- fluxo não detalhado'}`, `Responsáveis:\n${_indicatorIaRoles(D) || '- não informados'}`, `Riscos:\n${(D.risks || []).map(r => `- ${r.title || r.desc || 'Risco'} (${r.type || 'risco'})`).join('\n') || '- não informados'}`];
+  const existing = _indicatorIaExisting(D);
+  if(existing) base.push(`Indicadores já cadastrados (não repetir):\n${existing}`);
+  base.push('Responda APENAS em JSON puro, sem markdown, como array com 3 a 6 objetos no formato [{"icon":"📊","title":"","desc":"","tag":"perc","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}]. Use tag "perc" para percentual e "time" para tempo.');
+  return `Você é especialista em gestão de processos públicos e indicadores de desempenho. Sugira indicadores específicos e úteis para monitorar este processo, cobrindo eficiência, qualidade, prazo, produtividade, conformidade ou resultado. Evite indicadores genéricos e não repita os já existentes.\n\n${base.join('\n\n')}`;
+}
+function _indicatorIaNormalize(item) {
+  return { icon: item.icon || '📊', title: item.title || 'Indicador sugerido', desc: item.desc || '', tag: item.tag === 'time' ? 'time' : 'perc', formula: item.formula || '', fonte: item.fonte || '', periodicidade: item.periodicidade || 'Mensal', responsavel: item.responsavel || '', meta: item.meta || '' };
+}
+function _indicatorIaParse(text) {
+  let clean = String(text || '').trim().replace(/```json|```/g, '').trim();
+  const match = _extractOuterJsonArray(clean);
+  if(match) clean = match;
+  const items = JSON.parse(clean);
+  return Array.isArray(items) ? items.map(_indicatorIaNormalize).filter(item => item.title) : [];
+}
+function _indicatorIaApply(p, items) {
+  if(!Array.isArray(DATA[p].indicators)) DATA[p].indicators = [];
+  items.forEach(item => DATA[p].indicators.push(item));
+  renderIndicators(p);
+  markChanged(true, true);
+}
+async function generateIndicatorsIA(p) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem gerar indicadores.', 'warn'); return; }
+  const btn = _indicatorIaBtn(p);
+  if(btn) { btn.disabled = true; btn.textContent = 'Gerando...'; }
+  try {
+    const items = _indicatorIaParse(await callGemini(_indicatorIaPrompt(p)));
+    if(!items.length) throw new Error('Resposta vazia da IA.');
+    _indicatorIaApply(p, items);
+    showToast(`${items.length} indicadores sugeridos pela IA foram adicionados.`, 'success');
+  } catch(e) {
+    showToast('Erro ao gerar indicadores: ' + (e.message || e), 'error');
+  } finally {
+    if(btn) { btn.disabled = false; btn.textContent = '🤖 Gerar sugestões com IA'; }
+  }
+}
 function rmIndicator(p,i){ if(!isEditor) { showToast('🔒 Apenas editores podem remover indicadores.', 'warn'); return; } DATA[p].indicators.splice(i,1); renderIndicators(p); markChanged(true, true); } // kept for compatibility
 
 // ═══ INDICATOR GRID EVENT DELEGATION ════════════
@@ -7787,24 +7849,26 @@ function _splitLines(str) {
   return str.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
 }
 
-function _npopScopeInfo(info) {
-  return { processo: String(info?.processo || '').trim(), sub: String(info?.sub || info?.subprocesso || '').trim() };
-}
-
 function _npopIsOpenStatus(status) {
   return !['concluido', 'suspenso'].includes(String(status || '').trim());
 }
 
+function _npopNormScopeText(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+}
+
+function _npopScopeTerms(info) {
+  return [...new Set([info?.processo, info?.sub, info?.subprocesso, info?.nome].map(_npopNormScopeText).filter(Boolean))];
+}
+
 function _npopMatchesScope(meta, scope) {
-  const processo = String(meta?.processo || '').trim();
-  const sub = String(meta?.sub || meta?.subprocesso || '').trim();
-  if(!scope.processo || processo !== scope.processo) return false;
-  if(scope.sub) return sub === scope.sub;
-  return !sub;
+  const terms = _npopScopeTerms({ processo: meta?.processo, sub: meta?.sub || meta?.subprocesso, nome: meta?.name });
+  if(!scope.length || !terms.length) return false;
+  return scope.some(term => terms.includes(term));
 }
 
 function _npopOpenDuplicates(info, ignoreKey) {
-  const scope = _npopScopeInfo(info);
+  const scope = _npopScopeTerms(info);
   return ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
     .filter((k, i, arr) => arr.indexOf(k) === i && k !== ignoreKey)
     .filter(k => _npopMatchesScope(DATA[k]?.meta, scope) && _npopIsOpenStatus(DATA[k]?.meta?.statusMap));
@@ -7858,7 +7922,7 @@ function _npopSerializeOutline(listId) {
 
 function _npopOutlineRowHtml(listId, item) {
   const checked = item.isActivity ? 'checked' : '';
-  return `<div class="flow-outline-item"><input class="modal-input" type="text" value="${escapeHtml(item.text)}" placeholder="Descreva a etapa ou atividade"><label class="flow-outline-kind"><input type="checkbox" ${checked}> É atividade</label><button type="button" class="flow-outline-remove" onclick="this.closest('.flow-outline-item').remove()">✕</button></div>`;
+  return `<div class="flow-outline-item"><input class="modal-input" type="text" value="${escapeHtml(item.text)}" placeholder="Descreva a etapa ou atividade"><span class="flow-outline-kind"><input type="checkbox" aria-label="Marcar linha como atividade" ${checked}> É atividade</span><button type="button" class="flow-outline-remove" onclick="this.closest('.flow-outline-item').remove()">✕</button></div>`;
 }
 
 function _npopRenderOutlineRows(listId, items) {
@@ -8639,8 +8703,11 @@ function mountNewPopTab(key, label, silent=false) {
     <div id="${key}-indicadores" class="section">
       <div class="card fade-up" style="margin-bottom:20px;"><div class="card-body" style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
         <div style="display:flex;align-items:center;gap:10px;"><span>💡</span><p style="font-size:13px;color:var(--text-secondary);">Indicadores de desempenho do processo.</p></div>
-        <button class="btn-add-ind" id="${key}-add-ind" onclick="addIndicator('${key}')">＋ Novo Indicador</button>
-        <button class="btn-add-ind" onclick="openIndSisplanPicker('${key}')" style="background:#e0f2fe;color:#0369a1;border-color:#7dd3fc;">🔗 Vincular SISPLAN</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+          <button class="btn-add-ind" id="${key}-add-ind" onclick="addIndicator('${key}')">＋ Novo Indicador</button>
+          <button class="btn-add-ind" id="${key}-ind-ia-btn" onclick="generateIndicatorsIA('${key}')" style="background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;">🤖 Gerar sugestões com IA</button>
+          <button class="btn-add-ind" onclick="openIndSisplanPicker('${key}')" style="background:#e0f2fe;color:#0369a1;border-color:#7dd3fc;">🔗 Vincular SISPLAN</button>
+        </div>
       </div></div>
       <div id="${key}-indicator-grid" class="indicator-grid"></div>
     </div>
@@ -12000,9 +12067,10 @@ function showPatModule(show = true) {
 function populatePatPopSelect() {
   const sel = document.getElementById('pat-pop-vinc');
   if(!sel) return;
-  const pops = [
-    ...Object.keys(DATA).filter(k=>k!=='d'&&k!=='r'&&k!=='pat').map(k=>({ key:k, label: DATA[k]?.meta?.name||'Novo POP' }))
-  ];
+  const pops = ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
+    .filter((k, i, arr) => arr.indexOf(k) === i)
+    .filter(k => typeof DATA[k] === 'object' && DATA[k]?.meta)
+    .map(k => ({ key:k, label: DATA[k]?.meta?.name || 'Novo POP' }));
   sel.innerHTML = '<option value="">Nenhum</option>' + pops.map(p=>`<option value="${escapeHtml(p.key)}">${escapeHtml(p.label)}</option>`).join('');
 }
 
@@ -18652,36 +18720,67 @@ function showPopGallery() {
   const subtitle = document.getElementById('pop-gallery-subtitle');
   if(subtitle) subtitle.textContent = `${keys.length} POP${keys.length !== 1 ? 's' : ''} cadastrado${keys.length !== 1 ? 's' : ''} na galeria principal de processos.`;
 
-  gallery.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;">
-      ${keys.length ? keys.map(k => {
-        const meta = DATA[k]?.meta || {};
-        const name = meta.name || 'POP';
-        const area = meta.area || meta.gerente || '';
-        const steps = DATA[k]?.steps?.length || 0;
-        const macro = meta.macro || '';
-        const processo = meta.processo || '';
-        const subprocesso = meta.subprocesso || '';
-        const canDelete = k.startsWith('pop_') && ((typeof isAdmin !== 'undefined' && isAdmin) || (typeof isEditor !== 'undefined' && isEditor));
-        return `<div style="background:white;border:1.5px solid #e2e8f0;border-top:4px solid #00a86b;border-radius:12px;padding:20px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.05);position:relative;"
-          onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.90)'"
-          onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,.05)'">
-          ${canDelete ? `<button onclick="event.stopPropagation();popDeleteWork('${k}')"
-            style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 5px;border-radius:4px;"
-            onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
-          <div onclick="switchPop('${k}')">
-            <div style="font-size:28px;margin-bottom:10px;">📄</div>
-            <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:6px;">${name}</div>
-            ${macro ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macro}</div>` : ''}
-            ${processo ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Processo:</span> ${processo}</div>` : ''}
-            ${subprocesso ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Subprocesso:</span> ${subprocesso}</div>` : ''}
-            ${area && !processo && !macro ? `<div style="font-size:11px;color:#64748b;margin-bottom:8px;">${area}</div>` : ''}
-            <div style="font-size:11px;color:#94a3b8;margin-top:6px;">${steps} etapa${steps !== 1 ? 's' : ''}</div>
-          </div>
-        </div>`;
-      }).join('') : '<div style="color:#94a3b8;font-size:14px;padding:40px 0;text-align:center;">Nenhum processo cadastrado. Clique em ＋ Novo Processo para começar.</div>'}
-    </div>`;
+  const records = keys.map(_popGalleryRecord).sort(_popGallerySort);
+  const andamento = records.filter(record => !_popGalleryIsDone(record.meta?.statusMap));
+  const concluidos = records.filter(record => _popGalleryIsDone(record.meta?.statusMap));
+  gallery.innerHTML = keys.length
+    ? _popGallerySection('🔄 Em andamento', andamento, 'Mapeamentos ativos, planejados, atrasados ou suspensos.')
+      + _popGallerySection('✅ Concluídos', concluidos, 'Mapeamentos já finalizados e mantidos para consulta.')
+    : '<div style="color:#94a3b8;font-size:14px;padding:40px 0;text-align:center;">Nenhum processo cadastrado. Clique em ＋ Novo Processo para começar.</div>';
   try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e) { window.scrollTo(0, 0); }
+}
+
+function _popGalleryRecord(key) {
+  return { key, meta: DATA[key]?.meta || {} };
+}
+
+function _popGallerySort(a, b) {
+  return _popGalleryName(a).localeCompare(_popGalleryName(b), 'pt-BR', { sensitivity:'base' });
+}
+
+function _popGalleryName(record) {
+  return record?.meta?.name || 'POP';
+}
+
+function _popGalleryIsDone(status) {
+  return String(status || '').trim() === 'concluido';
+}
+
+function _popGallerySection(title, records, helpText) {
+  return `<div style="margin-bottom:26px;"><div style="display:flex;align-items:end;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><div><div style="font-size:13px;font-weight:800;color:#1B3022;">${title}</div><div style="font-size:12px;color:#64748b;">${helpText}</div></div><div style="font-size:12px;color:#94a3b8;font-weight:700;">${records.length}</div></div>${_popGalleryGrid(records)}</div>`;
+}
+
+function _popGalleryGrid(records) {
+  if(!records.length) return '<div style="padding:18px 0;color:#94a3b8;font-size:13px;">Nenhum item nesta seção.</div>';
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;">${records.map(_popGalleryCard).join('')}</div>`;
+}
+
+function _popGalleryCard(record) {
+  const key = record.key;
+  const meta = record.meta || {};
+  const name = _popGalleryName(record);
+  const area = meta.area || meta.gerente || '';
+  const steps = DATA[key]?.steps?.length || 0;
+  const macro = meta.macro || '';
+  const processo = meta.processo || '';
+  const subprocesso = meta.subprocesso || meta.sub || '';
+  const canDelete = key.startsWith('pop_') && ((typeof isAdmin !== 'undefined' && isAdmin) || (typeof isEditor !== 'undefined' && isEditor));
+  return `<div style="background:white;border:1.5px solid #e2e8f0;border-top:4px solid #00a86b;border-radius:12px;padding:20px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.05);position:relative;"
+    onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.90)'"
+    onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,.05)'">
+    ${canDelete ? `<button onclick="event.stopPropagation();popDeleteWork('${key}')"
+      style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 5px;border-radius:4px;"
+      onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
+    <div onclick="switchPop('${key}')">
+      <div style="font-size:28px;margin-bottom:10px;">📄</div>
+      <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:6px;">${name}</div>
+      ${macro ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macro}</div>` : ''}
+      ${processo ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Processo:</span> ${processo}</div>` : ''}
+      ${subprocesso ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Subprocesso:</span> ${subprocesso}</div>` : ''}
+      ${area && !processo && !macro ? `<div style="font-size:11px;color:#64748b;margin-bottom:8px;">${area}</div>` : ''}
+      <div style="font-size:11px;color:#94a3b8;margin-top:6px;">${steps} etapa${steps !== 1 ? 's' : ''}</div>
+    </div>
+  </div>`;
 }
 
 // ══ renderPopsGrid ══════════════════════════════════════════════
