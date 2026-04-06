@@ -4064,10 +4064,16 @@
         <label for="act-text">Descrição da ação</label>
         <textarea class="modal-input modal-textarea" id="act-text" rows="2" placeholder="Descreva o que acontece neste elemento..."></textarea>
       </div>
-      <div>
+      <div id="act-actor-wrap">
         <label for="act-actor">Executor / Ator responsável <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
         <input class="modal-input" id="act-actor" type="text" list="act-actor-list" placeholder="Selecione ou digite um novo ator...">
         <datalist id="act-actor-list"></datalist>
+      </div>
+      <div id="act-decision-wrap" style="display:none;">
+        <label style="margin-bottom:8px;display:block;">Caminhos da decisão</label>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Cadastre os caminhos possíveis e as ações executadas em cada um deles. O executor fica apenas nas ações derivadas.</div>
+        <div id="act-decision-branches"></div>
+        <button class="btn btn-outline" type="button" onclick="addActionDecisionBranch()" style="margin-top:10px;">+ Caminho</button>
       </div>
       <div id="act-natureza-wrap" style="display:none;">
         <span style="display:flex;align-items:center;gap:8px;">Natureza da Atividade <span id="act-nat-auto-hint" style="display:none;font-size:10px;font-weight:600;color:#0891b2;background:#e0f2fe;padding:1px 7px;border-radius:8px;">✨ sugerido</span></span>
@@ -5333,6 +5339,7 @@ function actionObj(a) {
   // Normalise: plain string → atividade object
   if(typeof a === 'string') return { type:'atividade', text:a, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'', eventoTipo:'', automatico:false, loop:false };
   const base = { type: a.type||'atividade', text: a.text||'', actor: a.actor||'', duracao: a.duracao||'', sistemas: a.sistemas||'', documentos: a.documentos||'', observacoes: a.observacoes||'', pontosMelhoria: a.pontosMelhoria||'', natureza: a.natureza||'', eventoTipo: a.eventoTipo||'', automatico: a.automatico||false, loop: a.loop||false };
+  if(base.type === 'decisao') base.decisionText = a.decisionText || a.text || '';
   if(Array.isArray(a.branches)) base.branches = a.branches;
   return base;
 }
@@ -5479,6 +5486,7 @@ function _actionToggleElements(p, si, ai, obj, em) {
 function _buildStepActionHTML(p, si, ai, a, isTobe, em) {
   const obj = actionObj(a);
   const t = ACTION_TYPES[obj.type] || ACTION_TYPES.atividade;
+  const actionText = obj.type === 'decisao' ? (obj.decisionText || obj.text) : obj.text;
   const actorHTML = obj.actor ? `<span class="action-actor">👤 ${obj.actor}</span>` : '';
   const { natBadge, etipoBadge, loopHint, automHint } = _actionBadges(obj);
   const ce = em ? 'contenteditable="true"' : '';
@@ -5491,7 +5499,7 @@ function _buildStepActionHTML(p, si, ai, a, isTobe, em) {
         ${dragHandle}
         <span class="action-icon" style="color:${t.color}">${t.icon}</span>
         <div class="action-body">
-          <span class="action-text" ${ce} data-sp="${p}" data-si="${si}" data-ai="${ai}" data-tobe="${isTobe}">${obj.text}</span>${natBadge}${etipoBadge}${loopHint}${automHint}
+          <span class="action-text" ${ce} data-sp="${p}" data-si="${si}" data-ai="${ai}" data-tobe="${isTobe}">${actionText}</span>${natBadge}${etipoBadge}${loopHint}${automHint}
           ${actorHTML}
         </div>
         ${loopBtn}${autoBtn}${editBtn}${rmBtn}
@@ -5503,6 +5511,7 @@ function _buildStepActionHTML(p, si, ai, a, isTobe, em) {
 function _buildBranchActionHTML(p, si, ai, bi, bai, ba, em) {
   const bo = actionObj(ba);
   const bt = ACTION_TYPES[bo.type] || ACTION_TYPES.atividade;
+  const branchText = bo.type === 'decisao' ? (bo.decisionText || bo.text) : bo.text;
   const baActor = bo.actor ? `<span class="branch-action-actor">👤 ${bo.actor}</span>` : '';
   const { natBadge: baNatBadge, loopHint: baLoopHint, automHint: baAutomHint } = _actionBadges(bo);
   const baEdit = em ? `<button class="edit-rm-btn" style="margin-left:auto;" onclick="openBranchActionModal('${p}',${si},${ai},${bi},${bai})" title="Editar">✏️</button>` : '';
@@ -5517,7 +5526,7 @@ function _buildBranchActionHTML(p, si, ai, bi, bai, ba, em) {
         <div class="nested-decision-wrapper" style="width:100%;box-sizing:border-box;">
           <div class="nested-decision-header">
             <span class="action-icon" style="color:${bt.color};font-size:12px;flex-shrink:0;">${bt.icon}</span>
-            <span class="nested-decision-text">${bo.text}</span>
+            <span class="nested-decision-text">${branchText}</span>
             ${baEdit}${baRm}
           </div>
           ${nestedHTML}${addNestedBtn}
@@ -5633,11 +5642,13 @@ function _wireStepActionBlur(p, i, container) {
         if(!Array.isArray(step.tobe.actions) || !step.tobe.actions[ai]) return;
         const cur = actionObj(step.tobe.actions[ai]);
         cur.text = this.innerText.trim();
+        if(cur.type === 'decisao') cur.decisionText = cur.text;
         step.tobe.actions[ai] = cur;
       } else {
         if(!step.actions || !step.actions[ai]) return;
         const cur = actionObj(step.actions[ai]);
         cur.text = this.innerText.trim();
+        if(cur.type === 'decisao') cur.decisionText = cur.text;
         step.actions[ai] = cur;
       }
       markChanged(true);
@@ -9363,6 +9374,7 @@ function openActionModal(p, si, ai) {
   _fillActionModalFields(obj, step);
   _syncActionNatureza(obj);
   _syncActionEventoTipo(obj);
+  _syncActionDecision(obj);
   _setActionModalTitle();
   _populateActionMoveSteps(p, si);
   _attachNaturezaInferenceListener();
@@ -9388,15 +9400,106 @@ function _populateActionActorList() {
   const atores = getConfig('atores');
   actorList.innerHTML = atores.map(a => `<option value="${escapeHtml(a)}">`).join('');
 }
+function _saveNewActors(values) {
+  const atores = getConfig('atores');
+  const novos = values.filter(Boolean).filter(v => !atores.some(a => a.toLowerCase() === v.toLowerCase()));
+  if(novos.length) setConfig('atores', [...atores, ...novos]);
+}
 
 function _fillActionModalFields(obj, step) {
-  document.getElementById('act-text').value = obj.text;
+  document.getElementById('act-text').value = obj.type === 'decisao' ? (obj.decisionText || obj.text) : obj.text;
   document.getElementById('act-actor').value = obj.actor || step.responsible || '';
   document.getElementById('act-duracao').value = obj.duracao;
   document.getElementById('act-sistemas').value = obj.sistemas;
   document.getElementById('act-documentos').value = obj.documentos;
   document.getElementById('act-observacoes').value = obj.observacoes;
   document.getElementById('act-pontos').value = obj.pontosMelhoria;
+  _renderDecisionEditor(obj.branches || []);
+}
+function _actionModalWrap(id) {
+  return document.getElementById(id);
+}
+function _decisionEditorEl() {
+  return _actionModalWrap('act-decision-branches');
+}
+function _decisionEditorWrap() {
+  return _actionModalWrap('act-decision-wrap');
+}
+function _actionActorWrap() {
+  return _actionModalWrap('act-actor-wrap');
+}
+function _actionOriginalData(action) {
+  return encodeURIComponent(JSON.stringify(actionObj(action)));
+}
+function _decisionRowAction(action, bi, bai) {
+  const obj = actionObj(action);
+  return `<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px 36px;gap:8px;align-items:start;margin-top:8px;" data-decision-action-row="${bi}-${bai}" data-original="${_actionOriginalData(obj)}">
+    <input class="modal-input" data-decision-action-text type="text" value="${escapeHtml(obj.text || '')}" placeholder="Ação executada neste caminho">
+    <input class="modal-input" data-decision-action-actor type="text" list="act-actor-list" value="${escapeHtml(obj.actor || '')}" placeholder="Executor da ação">
+    <button class="btn btn-outline" type="button" onclick="removeActionDecisionBranchAction(${bi},${bai})">✕</button>
+  </div>`;
+}
+function _decisionBranchCard(branch, bi) {
+  const actions = (branch.actions || []).map((action, bai) => _decisionRowAction(action, bi, bai)).join('');
+  return `<div style="border:1px solid #e2e8f0;border-radius:12px;padding:14px 14px 12px;background:#f8fafc;margin-bottom:12px;" data-decision-branch="${bi}">
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input class="modal-input" data-decision-branch-label type="text" value="${escapeHtml(branch.label || `Caminho ${bi+1}`)}" placeholder="Nome do caminho">
+      <button class="btn btn-outline" type="button" onclick="removeActionDecisionBranch(${bi})">Remover</button>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin-top:8px;">Ações deste caminho</div>
+    <div data-decision-branch-actions>${actions}</div>
+    <button class="btn btn-outline" type="button" onclick="addActionDecisionBranchAction(${bi})" style="margin-top:10px;">+ Ação neste caminho</button>
+  </div>`;
+}
+function _renderDecisionEditor(branches) {
+  const el = _decisionEditorEl();
+  if(!el) return;
+  const items = Array.isArray(branches) ? branches : [];
+  el.innerHTML = items.map((branch, bi) => _decisionBranchCard(branch, bi)).join('') || '<div style="font-size:12px;color:#64748b;padding:8px 0;">Nenhum caminho cadastrado ainda.</div>';
+}
+function _decisionBranchesSnapshot() {
+  const cards = [...document.querySelectorAll('[data-decision-branch]')];
+  return cards.map(card => _decisionBranchData(card)).filter(branch => branch.actions.length || branch.label);
+}
+function _decisionBranchData(card) {
+  const label = card.querySelector('[data-decision-branch-label]')?.value.trim() || 'Caminho';
+  const actions = [...card.querySelectorAll('[data-decision-action-row]')].map(row => _decisionActionData(row)).filter(Boolean);
+  return { label, actions };
+}
+function _decisionActionData(row) {
+  const base = _decisionActionBase(row);
+  const text = row.querySelector('[data-decision-action-text]')?.value.trim() || '';
+  if(!text) return null;
+  base.text = text;
+  base.actor = row.querySelector('[data-decision-action-actor]')?.value.trim() || '';
+  return base;
+}
+function _decisionActionBase(row) {
+  const raw = row.dataset.original || '';
+  try { return actionObj(JSON.parse(decodeURIComponent(raw))); }
+  catch(e) { return actionObj({ type:'atividade' }); }
+}
+function addActionDecisionBranch() {
+  const branches = _decisionBranchesSnapshot();
+  branches.push({ label: `Caminho ${branches.length + 1}`, actions: [] });
+  _renderDecisionEditor(branches);
+}
+function removeActionDecisionBranch(branchIndex) {
+  const branches = _decisionBranchesSnapshot();
+  branches.splice(branchIndex, 1);
+  _renderDecisionEditor(branches);
+}
+function addActionDecisionBranchAction(branchIndex) {
+  const branches = _decisionBranchesSnapshot();
+  if(!branches[branchIndex]) return;
+  branches[branchIndex].actions.push(actionObj({ type:'atividade' }));
+  _renderDecisionEditor(branches);
+}
+function removeActionDecisionBranchAction(branchIndex, actionIndex) {
+  const branches = _decisionBranchesSnapshot();
+  if(!branches[branchIndex]) return;
+  branches[branchIndex].actions.splice(actionIndex, 1);
+  _renderDecisionEditor(branches);
 }
 
 function _renderActionNaturezaButtons(selectedNat, natList) {
@@ -9424,6 +9527,12 @@ function _syncActionEventoTipo(obj) {
   document.querySelectorAll('[data-etipo]').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.etipo === selectedEtipo);
   });
+}
+function _syncActionDecision(obj) {
+  const wrap = _decisionEditorWrap();
+  if(wrap) wrap.style.display = obj.type === 'decisao' ? 'block' : 'none';
+  const actorWrap = _actionActorWrap();
+  if(actorWrap) actorWrap.style.display = obj.type === 'decisao' ? 'none' : 'block';
 }
 
 function _setActionModalTitle() {
@@ -9484,6 +9593,7 @@ function openBranchActionModal(p, si, ai, bi, bai) {
   document.getElementById('act-documentos').value  = obj.documentos;
   document.getElementById('act-observacoes').value = obj.observacoes;
   document.getElementById('act-pontos').value      = obj.pontosMelhoria;
+  _renderDecisionEditor(obj.branches || []);
   const natWrap = document.getElementById('act-natureza-wrap');
   if(natWrap) natWrap.style.display = obj.type === 'atividade' ? 'block' : 'none';
   const natList = getConfig('naturezaAtividade');
@@ -9503,6 +9613,7 @@ function openBranchActionModal(p, si, ai, bi, bai) {
       btn.classList.toggle('selected', btn.dataset.etipo === selectedEtipoB);
     });
   }
+  _syncActionDecision(obj);
   const titleEl = document.querySelector('.action-type-title');
   if(titleEl) titleEl.textContent = `Caminho ${bi+1} — Configurar Ação`;
   // Hide move-to-step for branch actions
@@ -9522,6 +9633,7 @@ function selectActionType(type) {
   // Mostrar campo Tipo de Evento só para Evento
   const etipoWrap = document.getElementById('act-evento-tipo-wrap');
   if(etipoWrap) etipoWrap.style.display = type === 'evento' ? 'block' : 'none';
+  _syncActionDecision({ type });
 }
 
 function selectEventoTipo(etipo) {
@@ -9599,15 +9711,11 @@ function saveActionModal() {
   const selectedBtn = document.querySelector('.action-type-btn.selected');
   const type           = selectedBtn ? selectedBtn.dataset.type : 'atividade';
   const text           = document.getElementById('act-text').value.trim() || 'Nova ação';
-  const actor          = document.getElementById('act-actor').value.trim();
+  const actor          = type === 'decisao' ? '' : document.getElementById('act-actor').value.trim();
+  const branches       = type === 'decisao' ? _decisionBranchesSnapshot() : [];
 
   // If actor is new, add it to config.atores so the lists feed each other
-  if(actor) {
-    const atores = getConfig('atores');
-    if(!atores.some(a => a.toLowerCase() === actor.toLowerCase())) {
-      setConfig('atores', [...atores, actor]);
-    }
-  }
+  _saveNewActors([actor, ...branches.flatMap(branch => branch.actions.map(action => action.actor || ''))]);
 
   const duracao        = document.getElementById('act-duracao').value.trim();
   const sistemas       = document.getElementById('act-sistemas').value.trim();
@@ -9625,6 +9733,8 @@ function saveActionModal() {
   const _existingAuto = _existingObj.automatico || false;
   const _existingLoop = _existingObj.loop || false;
   const actionData = { type, text, actor, duracao, sistemas, documentos, observacoes, pontosMelhoria, natureza, eventoTipo, automatico: _existingAuto, loop: _existingLoop };
+  if(type === 'decisao') actionData.decisionText = text;
+  if(branches.length) actionData.branches = branches;
 
   _applyActionToStep(step, actionData, {actIsTobe: _actIsTobe, actAi: _actAi, actBi: _actBi, actBai: _actBai, actNbi: _actNbi, actNbai: _actNbai});
   // Sync action text to responsible's duties list (root actions only)
