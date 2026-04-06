@@ -10095,10 +10095,10 @@ function _renderFichaProgressHtml(p) {
 
   const itemsHtml = etapas.map((e, i) => {
     const st      = ep[e.id] || {};
-    const isDone  = !!st.ok;
+    const isDone  = !!st.ok && !!st.fim;  // OK E COM FIM = realmente completo
     const isNA    = !!st.na;
     const durDone = isDone ? diffDays(st.inicio, st.fim) : null;
-    const durAtiv = !isDone && !isNA && st.inicio ? diffDays(st.inicio, null) : null;
+    const durAtiv = (st.ok && !st.fim && st.inicio) || (!isDone && !isNA && st.inicio) ? diffDays(st.inicio, null) : null;  // Ativo = com início mas sem fim
 
     const circleStyle = isDone
       ? 'width:18px;height:18px;border-radius:50%;background:#16a34a;border:2px solid #16a34a;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;'
