@@ -10023,25 +10023,31 @@ function toggleEtapaMap(p, etapaId) {
     // Marcar
     et.ok  = true;
     et.na  = false;
-    et.fim = today;
-    if(!et.inicio) et.inicio = today;
-    // Registrar início automático da próxima fase
-    if(idx < ids.length - 1 && !ep[ids[idx + 1]].inicio)
-      ep[ids[idx + 1]].inicio = today;
-
-    // Efeito especial: Entendimento → status em_andamento + dataInicio
+    
+    // Efeito especial: Entendimento → usar dataInicio + NÃO finalizar (ainda em andamento)
     if(etapaId === 'entendimento') {
       if(!DATA[p].meta.dataInicio) DATA[p].meta.dataInicio = today;
-      et.inicio = DATA[p].meta.dataInicio; // Sempre usar dataInicio
+      et.inicio = DATA[p].meta.dataInicio;
+      et.fim = null; // Ainda em progresso, não tem fim
       if(!['concluido','suspenso'].includes(DATA[p].meta.statusMap))
         DATA[p].meta.statusMap = 'em_andamento';
     }
-    // Efeito especial: Concluído → status concluido + dataEfetiva
-    if(etapaId === 'concluido') {
+    // Efeito especial: Concluído = FIM do projeto
+    else if(etapaId === 'concluido') {
       if(!DATA[p].meta.dataEfetiva) DATA[p].meta.dataEfetiva = today;
-      et.fim = DATA[p].meta.dataEfetiva; // Sempre usar dataEfetiva
+      et.fim = DATA[p].meta.dataEfetiva;
+      if(!et.inicio) et.inicio = ep.revisao?.inicio || ep.aprovacao?.inicio || today;
       DATA[p].meta.statusMap = 'concluido';
     }
+    // Para outras etapas normais
+    else {
+      et.fim = today;
+      if(!et.inicio) et.inicio = today;
+    }
+    
+    // Registrar início automático da próxima fase
+    if(idx < ids.length - 1 && !ep[ids[idx + 1]].inicio)
+      ep[ids[idx + 1]].inicio = today;
   }
   markChanged(true, true);
   renderFicha(p);
