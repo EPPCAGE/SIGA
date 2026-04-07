@@ -9,11 +9,9 @@ const net = require('node:net');
 // DOMParser.parseFromString(xml, contentType) where contentType can be undefined
 // for some entries inside a DOCX ZIP. Patch it here before mammoth is loaded.
 if (globalThis.DOMParser !== undefined) {
-  const _OriginalDOMParser = globalThis.DOMParser;
-  globalThis.DOMParser = class extends _OriginalDOMParser {
-    parseFromString(str, mimeType) {
-      return super.parseFromString(str, mimeType || 'text/xml');
-    }
+  const _orig = globalThis.DOMParser.prototype.parseFromString;
+  globalThis.DOMParser.prototype.parseFromString = function parseFromString(str, mimeType) {
+    return _orig.call(this, str, mimeType || 'text/xml');
   };
 }
 const tls = require('node:tls');
