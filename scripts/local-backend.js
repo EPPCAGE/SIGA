@@ -4,6 +4,19 @@ const fs = require('fs');
 const path = require('path');
 const ExcelJS = require('exceljs');
 
+// Node.js v18+ exposes a native DOMParser global that is stricter than browser
+// implementations — it rejects undefined mimeType. The mammoth library calls
+// DOMParser.parseFromString(xml, contentType) where contentType can be undefined
+// for some entries inside a DOCX ZIP. Patch it here before mammoth is loaded.
+if (typeof globalThis.DOMParser !== 'undefined') {
+  const _OriginalDOMParser = globalThis.DOMParser;
+  globalThis.DOMParser = class extends _OriginalDOMParser {
+    parseFromString(str, mimeType) {
+      return super.parseFromString(str, mimeType || 'text/xml');
+    }
+  };
+}
+
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
 const MAX_BODY_BYTES = Number(process.env.SIGA_MAX_BODY_BYTES || 50 * 1024 * 1024);
