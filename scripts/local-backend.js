@@ -12,7 +12,7 @@ const net = require('node:net');
 // Patch both issues on the @xmldom/xmldom DOMParser class before mammoth loads.
 const _xmldom = require('@xmldom/xmldom');
 const _XmldomOrig = _xmldom.DOMParser;
-class _XmldomDOMParserPatch extends _XmldomOrig {
+class XmldomDOMParserPatch extends _XmldomOrig {
   constructor(options) {
     const fixed = (options && typeof options.errorHandler === 'function')
       ? { ...options, onError: options.errorHandler, errorHandler: undefined }
@@ -23,7 +23,7 @@ class _XmldomDOMParserPatch extends _XmldomOrig {
     return super.parseFromString(str, mimeType || 'text/xml');
   }
 }
-_xmldom.DOMParser = _XmldomDOMParserPatch;
+_xmldom.DOMParser = XmldomDOMParserPatch;
 const tls = require('node:tls');
 const ExcelJS = require('exceljs');
 
