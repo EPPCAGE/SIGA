@@ -4,18 +4,26 @@ const fs = require('node:fs');
 const crypto = require('node:crypto');
 const net = require('node:net');
 
-// Node.js v18+ exposes a native DOMParser global that is stricter than browser
-// implementations — it rejects undefined mimeType. The mammoth library calls
-// DOMParser.parseFromString(xml, contentType) where contentType can be undefined
-// for some entries inside a DOCX ZIP. Patch it here before mammoth is loaded.
-if (globalThis.DOMParser !== undefined) {
-  const _OriginalDOMParser = globalThis.DOMParser;
-  globalThis.DOMParser = class extends _OriginalDOMParser {
-    parseFromString(str, mimeType) {
-      return super.parseFromString(str, mimeType || 'text/xml');
-    }
-  };
+// mammoth@1.x was written for @xmldom/xmldom < 0.9.9. In 0.9.9 two breaking
+// changes were introduced that cause DOCX imports to fail:
+//   1. parseFromString now requires a valid mimeType (rejects undefined)
+//   2. The constructor emits a deprecation warning via the legacy errorHandler
+//      callback, which mammoth's error handler treats as a fatal error.
+// Patch both issues on the @xmldom/xmldom DOMParser class before mammoth loads.
+const _xmldom = require('@xmldom/xmldom');
+const _XmldomOrig = _xmldom.DOMParser;
+class XmldomDOMParserPatch extends _XmldomOrig {
+  constructor(options) {
+    const fixed = (options && typeof options.errorHandler === 'function')
+      ? { ...options, onError: options.errorHandler, errorHandler: undefined }
+      : options;
+    super(fixed);
+  }
+  parseFromString(str, mimeType) {
+    return super.parseFromString(str, mimeType || 'text/xml');
+  }
 }
+_xmldom.DOMParser = XmldomDOMParserPatch;
 const tls = require('node:tls');
 const ExcelJS = require('exceljs');
 
