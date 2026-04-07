@@ -94,6 +94,10 @@
   body.edit-mode [contenteditable="true"]{outline:2px dashed var(--edit-border);border-radius:4px;padding:2px 4px;cursor:text;transition:all .15s;}
   body.edit-mode [contenteditable="true"]:hover{outline-color:var(--edit-color);background:rgba(217, 119, 6, .2);}
   body.edit-mode [contenteditable="true"]:focus{outline:2px solid var(--edit-color);background:white;box-shadow:0 0 0 3px rgba(217, 119, 6, .15);}
+  /* Título e responsável ficam sobre fundo escuro — ao receber foco o background
+     vira branco mas o texto continua branco (herdado). Força cor legível. */
+  body.edit-mode .step-panel-head [contenteditable="true"]:focus,
+  body.edit-mode .resp-tag[contenteditable="true"]:focus{color:#1e293b;}
   body.edit-mode .edit-add-btn,body.edit-mode .edit-rm-btn{display:inline-flex;}
 
   /* DRAG-AND-DROP em modo edição */
@@ -23630,6 +23634,16 @@ function openStatusModal(p) {
   npopRenderAtores(Array.isArray(m.atores) ? m.atores : [], false);
   _npopRenderOutlineRows('status-modal-flow-outline-list', _npopNormalizeOutline(m.flowOutline).length ? m.flowOutline : _npopOutlineFromSteps(DATA[p]?.steps));
   if(!document.getElementById('status-modal-flow-outline-list')?.children.length) statusModalAddFlowOutlineRow(false);
+  // Oculta a seção de estrutura do fluxo quando a aba Fluxo já tiver conteúdo,
+  // pois o campo só é útil para POPs novos ainda sem fluxo preenchido.
+  const _stepsParaChecar = DATA[p]?.steps;
+  const _fluxoJaPreenchido = Array.isArray(_stepsParaChecar) && _stepsParaChecar.length > 0 &&
+    _stepsParaChecar.some(s =>
+      (Array.isArray(s.actions) && s.actions.length > 0) ||
+      (s.tobe && (s.tobe.title || (Array.isArray(s.tobe.actions) && s.tobe.actions.length > 0)))
+    );
+  const _outlineSection = document.getElementById('status-modal-flow-outline-section');
+  if(_outlineSection) _outlineSection.style.display = _fluxoJaPreenchido ? 'none' : '';
   // Vínculo com PAT
   const sel = document.getElementById('status-modal-pat-vinc');
   if(sel) {
@@ -23693,7 +23707,20 @@ function saveStatusModal() {
   DATA[p].sipoc.processo     = m.sub || m.processo || m.name || '';
   DATA[p].sipoc.saidas       = _splitLines(m.output);
   DATA[p].sipoc.clientes     = _splitLines(m.clientes);
-  _npopApplyFlowStructureToPop(p, m.flowOutline);
+  // Só reconstrói os steps a partir do outline se a aba Fluxo ainda não tiver
+  // conteúdo (nem AS IS nem TO BE). Se já estiver preenchida, apenas persiste
+  // o outline como metadado sem sobrescrever o trabalho existente.
+  const _existingSteps = DATA[p].steps;
+  const _fluxoPreenchido = Array.isArray(_existingSteps) && _existingSteps.length > 0 &&
+    _existingSteps.some(s =>
+      (Array.isArray(s.actions) && s.actions.length > 0) ||
+      (s.tobe && (s.tobe.title || (Array.isArray(s.tobe.actions) && s.tobe.actions.length > 0)))
+    );
+  if (_fluxoPreenchido) {
+    DATA[p].meta.flowOutline = _npopNormalizeOutline(m.flowOutline);
+  } else {
+    _npopApplyFlowStructureToPop(p, m.flowOutline);
+  }
   // PAT link
   const newPatVinc = document.getElementById('status-modal-pat-vinc')?.value || '';
   const oldPatVinc = m.patVinc || '';
@@ -26703,15 +26730,18 @@ function matAuditDetails(p, version) {
 
   let prevActor = '';
   steps.forEach((step, si) => {
-    const actions  = version === 'tobe' ? ((step.tobe && step.tobe.actions) || []) : (step.actions || []);
-    const stepName = step.title || `Etapa ${si+1}`;
-    if(step.responsible) audit.actors.add(step.responsible);
+    const isTobe   = version === 'tobe';
+    const tb       = (isTobe && step.tobe) ? step.tobe : {};
+    const actions  = isTobe ? (tb.actions || []) : (step.actions || []);
+    const stepName = (isTobe ? (tb.title || step.title) : step.title) || `Etapa ${si+1}`;
+    const stepResp = (isTobe ? (tb.responsible || step.responsible) : step.responsible) || '';
+    if(stepResp) audit.actors.add(stepResp.toLowerCase());
     const seenHandoffs = new Set();
 
     actions.forEach((action, ai) => {
       const type    = action.type || 'atividade';
       const nat     = action.natureza || '';
-      const actor   = action.actor || step.responsible || '';
+      const actor   = action.actor || stepResp || '';
       const textLow = (action.text || '').toLowerCase();
       const txt     = action.text || `Ação ${ai+1}`;
       const hasBranches = type === 'decisao' && Array.isArray(action.branches) && action.branches.length > 0;
@@ -26744,7 +26774,7 @@ function matAuditDetails(p, version) {
           const key = `${prevActor.toLowerCase()}→${actor.toLowerCase()}`;
           if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: actor }); }
         }
-        if(actor) { prevActor = actor; audit.actors.add(actor); }
+        if(actor) { prevActor = actor; audit.actors.add(actor.toLowerCase()); }
         // Digitalização: tem sistema registrado OU está marcada como automática (⚙️)
         if(action.automatico || (action.sistemas && action.sistemas.trim()))
           audit.digitalized.push({ step: stepName, text: txt, sistemas: action.sistemas || '⚙️ automático' });
@@ -26788,7 +26818,7 @@ function matAuditDetails(p, version) {
                       const key = `${prevActor.toLowerCase()}→${nbaActor.toLowerCase()}`;
                       if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: nbaActor }); }
                     }
-                    if(nbaActor) { prevActor = nbaActor; audit.actors.add(nbaActor); }
+                    if(nbaActor) { prevActor = nbaActor; audit.actors.add(nbaActor.toLowerCase()); }
                     if(nba.automatico || (nba.sistemas && nba.sistemas.trim()))
                       audit.digitalized.push({ step: stepName, text: nbaTxt, sistemas: nba.sistemas || '⚙️ automático' });
                   }
@@ -26808,7 +26838,7 @@ function matAuditDetails(p, version) {
                 const key = `${prevActor.toLowerCase()}→${baActor.toLowerCase()}`;
                 if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: baActor }); }
               }
-              if(baActor) { prevActor = baActor; audit.actors.add(baActor); }
+              if(baActor) { prevActor = baActor; audit.actors.add(baActor.toLowerCase()); }
               if(ba.automatico || (ba.sistemas && ba.sistemas.trim()))
                 audit.digitalized.push({ step: stepName, text: baTxt, sistemas: ba.sistemas || '⚙️ automático' });
             }
@@ -26886,16 +26916,17 @@ function matComputeMetrics(p, version='asis') {
 
   let prevActor = '';
   steps.forEach((step) => {
-    const actions = version === 'tobe'
-      ? ((step.tobe && step.tobe.actions) || [])
-      : (step.actions || []);
+    const isTobe   = version === 'tobe';
+    const tb       = (isTobe && step.tobe) ? step.tobe : {};
+    const actions  = isTobe ? (tb.actions || []) : (step.actions || []);
+    const stepResp = (isTobe ? (tb.responsible || step.responsible) : step.responsible) || '';
     const seenHandoffs = new Set(); // dedup por etapa: mesmo par A→B conta só 1x por etapa
-    if(step.responsible) allActors.add(step.responsible.toLowerCase());
+    if(stepResp) allActors.add(stepResp.toLowerCase());
 
     actions.forEach(action => {
       const type    = action.type || 'atividade';
       const nat     = action.natureza || '';
-      const actor   = action.actor || step.responsible || '';
+      const actor   = action.actor || stepResp || '';
       const textLow = (action.text || '').toLowerCase();
       const hasBranches = type === 'decisao' && Array.isArray(action.branches) && action.branches.length > 0;
 
@@ -28613,7 +28644,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
           <div style="font-size:11px;color:#78716c;margin-top:5px;">Vincule este mapeamento a uma atividade cadastrada no PAT.</div>
         </div>
       </div>
-      <div style="background:#ecfeff;border:1.5px solid #a5f3fc;border-radius:8px;padding:12px 14px;margin-top:10px;">
+      <div id="status-modal-flow-outline-section" style="background:#ecfeff;border:1.5px solid #a5f3fc;border-radius:8px;padding:12px 14px;margin-top:10px;">
         <div style="font-size:11px;font-weight:700;color:#155e75;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🧭 Estrutura Inicial do Fluxo</div>
         <div id="status-modal-flow-outline-list" class="flow-outline-list"></div>
         <button type="button" class="btn btn-outline" onclick="statusModalAddFlowOutlineRow(true)" style="margin-top:8px;font-size:12px;padding:7px 12px;">＋ Adicionar linha</button>
