@@ -26726,15 +26726,18 @@ function matAuditDetails(p, version) {
 
   let prevActor = '';
   steps.forEach((step, si) => {
-    const actions  = version === 'tobe' ? ((step.tobe && step.tobe.actions) || []) : (step.actions || []);
-    const stepName = step.title || `Etapa ${si+1}`;
-    if(step.responsible) audit.actors.add(step.responsible);
+    const isTobe   = version === 'tobe';
+    const tb       = (isTobe && step.tobe) ? step.tobe : {};
+    const actions  = isTobe ? (tb.actions || []) : (step.actions || []);
+    const stepName = (isTobe ? (tb.title || step.title) : step.title) || `Etapa ${si+1}`;
+    const stepResp = (isTobe ? (tb.responsible || step.responsible) : step.responsible) || '';
+    if(stepResp) audit.actors.add(stepResp.toLowerCase());
     const seenHandoffs = new Set();
 
     actions.forEach((action, ai) => {
       const type    = action.type || 'atividade';
       const nat     = action.natureza || '';
-      const actor   = action.actor || step.responsible || '';
+      const actor   = action.actor || stepResp || '';
       const textLow = (action.text || '').toLowerCase();
       const txt     = action.text || `Ação ${ai+1}`;
       const hasBranches = type === 'decisao' && Array.isArray(action.branches) && action.branches.length > 0;
@@ -26767,7 +26770,7 @@ function matAuditDetails(p, version) {
           const key = `${prevActor.toLowerCase()}→${actor.toLowerCase()}`;
           if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: actor }); }
         }
-        if(actor) { prevActor = actor; audit.actors.add(actor); }
+        if(actor) { prevActor = actor; audit.actors.add(actor.toLowerCase()); }
         // Digitalização: tem sistema registrado OU está marcada como automática (⚙️)
         if(action.automatico || (action.sistemas && action.sistemas.trim()))
           audit.digitalized.push({ step: stepName, text: txt, sistemas: action.sistemas || '⚙️ automático' });
@@ -26811,7 +26814,7 @@ function matAuditDetails(p, version) {
                       const key = `${prevActor.toLowerCase()}→${nbaActor.toLowerCase()}`;
                       if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: nbaActor }); }
                     }
-                    if(nbaActor) { prevActor = nbaActor; audit.actors.add(nbaActor); }
+                    if(nbaActor) { prevActor = nbaActor; audit.actors.add(nbaActor.toLowerCase()); }
                     if(nba.automatico || (nba.sistemas && nba.sistemas.trim()))
                       audit.digitalized.push({ step: stepName, text: nbaTxt, sistemas: nba.sistemas || '⚙️ automático' });
                   }
@@ -26831,7 +26834,7 @@ function matAuditDetails(p, version) {
                 const key = `${prevActor.toLowerCase()}→${baActor.toLowerCase()}`;
                 if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: baActor }); }
               }
-              if(baActor) { prevActor = baActor; audit.actors.add(baActor); }
+              if(baActor) { prevActor = baActor; audit.actors.add(baActor.toLowerCase()); }
               if(ba.automatico || (ba.sistemas && ba.sistemas.trim()))
                 audit.digitalized.push({ step: stepName, text: baTxt, sistemas: ba.sistemas || '⚙️ automático' });
             }
@@ -26909,16 +26912,17 @@ function matComputeMetrics(p, version='asis') {
 
   let prevActor = '';
   steps.forEach((step) => {
-    const actions = version === 'tobe'
-      ? ((step.tobe && step.tobe.actions) || [])
-      : (step.actions || []);
+    const isTobe   = version === 'tobe';
+    const tb       = (isTobe && step.tobe) ? step.tobe : {};
+    const actions  = isTobe ? (tb.actions || []) : (step.actions || []);
+    const stepResp = (isTobe ? (tb.responsible || step.responsible) : step.responsible) || '';
     const seenHandoffs = new Set(); // dedup por etapa: mesmo par A→B conta só 1x por etapa
-    if(step.responsible) allActors.add(step.responsible.toLowerCase());
+    if(stepResp) allActors.add(stepResp.toLowerCase());
 
     actions.forEach(action => {
       const type    = action.type || 'atividade';
       const nat     = action.natureza || '';
-      const actor   = action.actor || step.responsible || '';
+      const actor   = action.actor || stepResp || '';
       const textLow = (action.text || '').toLowerCase();
       const hasBranches = type === 'decisao' && Array.isArray(action.branches) && action.branches.length > 0;
 
