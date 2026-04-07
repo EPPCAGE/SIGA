@@ -8,7 +8,7 @@ const net = require('node:net');
 // implementations — it rejects undefined mimeType. The mammoth library calls
 // DOMParser.parseFromString(xml, contentType) where contentType can be undefined
 // for some entries inside a DOCX ZIP. Patch it here before mammoth is loaded.
-if (typeof globalThis.DOMParser !== 'undefined') {
+if (globalThis.DOMParser !== undefined) {
   const _OriginalDOMParser = globalThis.DOMParser;
   globalThis.DOMParser = class extends _OriginalDOMParser {
     parseFromString(str, mimeType) {
