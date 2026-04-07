@@ -94,6 +94,10 @@
   body.edit-mode [contenteditable="true"]{outline:2px dashed var(--edit-border);border-radius:4px;padding:2px 4px;cursor:text;transition:all .15s;}
   body.edit-mode [contenteditable="true"]:hover{outline-color:var(--edit-color);background:rgba(217, 119, 6, .2);}
   body.edit-mode [contenteditable="true"]:focus{outline:2px solid var(--edit-color);background:white;box-shadow:0 0 0 3px rgba(217, 119, 6, .15);}
+  /* Título e responsável ficam sobre fundo escuro — ao receber foco o background
+     vira branco mas o texto continua branco (herdado). Força cor legível. */
+  body.edit-mode .step-panel-head [contenteditable="true"]:focus,
+  body.edit-mode .resp-tag[contenteditable="true"]:focus{color:#1e293b;}
   body.edit-mode .edit-add-btn,body.edit-mode .edit-rm-btn{display:inline-flex;}
 
   /* DRAG-AND-DROP em modo edição */
