@@ -23630,6 +23630,16 @@ function openStatusModal(p) {
   npopRenderAtores(Array.isArray(m.atores) ? m.atores : [], false);
   _npopRenderOutlineRows('status-modal-flow-outline-list', _npopNormalizeOutline(m.flowOutline).length ? m.flowOutline : _npopOutlineFromSteps(DATA[p]?.steps));
   if(!document.getElementById('status-modal-flow-outline-list')?.children.length) statusModalAddFlowOutlineRow(false);
+  // Oculta a seção de estrutura do fluxo quando a aba Fluxo já tiver conteúdo,
+  // pois o campo só é útil para POPs novos ainda sem fluxo preenchido.
+  const _stepsParaChecar = DATA[p]?.steps;
+  const _fluxoJaPreenchido = Array.isArray(_stepsParaChecar) && _stepsParaChecar.length > 0 &&
+    _stepsParaChecar.some(s =>
+      (Array.isArray(s.actions) && s.actions.length > 0) ||
+      (s.tobe && (s.tobe.title || (Array.isArray(s.tobe.actions) && s.tobe.actions.length > 0)))
+    );
+  const _outlineSection = document.getElementById('status-modal-flow-outline-section');
+  if(_outlineSection) _outlineSection.style.display = _fluxoJaPreenchido ? 'none' : '';
   // Vínculo com PAT
   const sel = document.getElementById('status-modal-pat-vinc');
   if(sel) {
@@ -28626,7 +28636,7 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
           <div style="font-size:11px;color:#78716c;margin-top:5px;">Vincule este mapeamento a uma atividade cadastrada no PAT.</div>
         </div>
       </div>
-      <div style="background:#ecfeff;border:1.5px solid #a5f3fc;border-radius:8px;padding:12px 14px;margin-top:10px;">
+      <div id="status-modal-flow-outline-section" style="background:#ecfeff;border:1.5px solid #a5f3fc;border-radius:8px;padding:12px 14px;margin-top:10px;">
         <div style="font-size:11px;font-weight:700;color:#155e75;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🧭 Estrutura Inicial do Fluxo</div>
         <div id="status-modal-flow-outline-list" class="flow-outline-list"></div>
         <button type="button" class="btn btn-outline" onclick="statusModalAddFlowOutlineRow(true)" style="margin-top:8px;font-size:12px;padding:7px 12px;">＋ Adicionar linha</button>
