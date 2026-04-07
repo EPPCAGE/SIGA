@@ -23693,7 +23693,20 @@ function saveStatusModal() {
   DATA[p].sipoc.processo     = m.sub || m.processo || m.name || '';
   DATA[p].sipoc.saidas       = _splitLines(m.output);
   DATA[p].sipoc.clientes     = _splitLines(m.clientes);
-  _npopApplyFlowStructureToPop(p, m.flowOutline);
+  // Só reconstrói os steps a partir do outline se a aba Fluxo ainda não tiver
+  // conteúdo (nem AS IS nem TO BE). Se já estiver preenchida, apenas persiste
+  // o outline como metadado sem sobrescrever o trabalho existente.
+  const _existingSteps = DATA[p].steps;
+  const _fluxoPreenchido = Array.isArray(_existingSteps) && _existingSteps.length > 0 &&
+    _existingSteps.some(s =>
+      (Array.isArray(s.actions) && s.actions.length > 0) ||
+      (s.tobe && (s.tobe.title || (Array.isArray(s.tobe.actions) && s.tobe.actions.length > 0)))
+    );
+  if (_fluxoPreenchido) {
+    DATA[p].meta.flowOutline = _npopNormalizeOutline(m.flowOutline);
+  } else {
+    _npopApplyFlowStructureToPop(p, m.flowOutline);
+  }
   // PAT link
   const newPatVinc = document.getElementById('status-modal-pat-vinc')?.value || '';
   const oldPatVinc = m.patVinc || '';
