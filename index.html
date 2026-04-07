@@ -4070,7 +4070,7 @@
         <datalist id="act-actor-list"></datalist>
       </div>
       <div id="act-decision-wrap" style="display:none;">
-        <label style="margin-bottom:8px;display:block;">Caminhos da decisão</label>
+        <div class="gmod-label" style="margin-bottom:8px;">Caminhos da decisão</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Cadastre os caminhos possíveis e as ações executadas em cada um deles. O executor fica apenas nas ações derivadas.</div>
         <div id="act-decision-branches"></div>
         <button class="btn btn-outline" type="button" onclick="addActionDecisionBranch()" style="margin-top:10px;">+ Caminho</button>
@@ -12991,6 +12991,7 @@ function _buildSavePayload(DATA, REPO_DOCS, DROPS) {
     competencyManagement: DATA.competencyManagement || null,
     patrocinadores:     DATA.patrocinadores  || null,
     config:             DATA.config          || null,
+    homeCards:          DATA.homeCards && Object.keys(DATA.homeCards).length > 0 ? DATA.homeCards : null,
     aptCatalog:         Array.isArray(DATA.aptCatalog) && DATA.aptCatalog.length > 0 ? DATA.aptCatalog : null,
     quadro:             DATA.quadro          || null,
     localAccess:        _serializeLocalAccessState(),
@@ -13009,7 +13010,7 @@ async function _awaitSaveQueueTurn(attempt) {
   return !_saveInProgress;
 }
 
-const SAVE_PAYLOAD_INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores','aptCatalog','quadro','competencyManagement']);
+const SAVE_PAYLOAD_INTERNAL_KEYS = new Set(['d','r','pat','_arqOverrides','_repoDocs','_drops','_logoUrl','indicadoresCage','audits','config','patrocinadores','homeCards','aptCatalog','quadro','competencyManagement']);
 
 function _stripTransientFields(obj) {
   if(!obj || typeof obj !== 'object') return obj;
@@ -13247,6 +13248,10 @@ async function loadFromCloud() {
     }
     if(Array.isArray(payload.patrocinadores)) DATA.patrocinadores = payload.patrocinadores;
     if(payload.config && typeof payload.config === 'object') DATA.config = payload.config;
+    if(payload.homeCards && typeof payload.homeCards === 'object') {
+      DATA.homeCards = payload.homeCards;
+      _applyHomeCards(DATA.homeCards);
+    }
     try { applyConfigToDropdowns(); } catch(e) { console.warn('[siga]', e); }
     // Catálogo de apontamentos (não conformidades) — persiste itens customizados
     if(Array.isArray(payload.aptCatalog) && payload.aptCatalog.length > 0) DATA.aptCatalog = payload.aptCatalog;
@@ -24458,22 +24463,38 @@ function statusModalAutoFill() {
   };
 
   // ── Generate with Gemini AI ───────────────────────────────────
+  function _fdDescribeAction(action, prefix) {
+    const obj = actionObj(action);
+    const actor = obj.actor ? ` [${obj.actor}]` : '';
+    const text = obj.type === 'decisao' ? (obj.decisionText || obj.text || 'Decisão') : (obj.text || 'Ação');
+    return `${prefix}${ACTION_TYPES[obj.type]?.icon || '•'} ${text}${actor}`;
+  }
+  function _fdDescribeBranches(action, prefix) {
+    return (action.branches || []).map(branch => {
+      const items = (branch.actions || []).map(item => _fdDescribeAction(item, `${prefix}  - (${branch.label || 'caminho'}) `)).join('\n');
+      return items || `${prefix}  - (${branch.label || 'caminho'}) sem ações detalhadas`;
+    }).join('\n');
+  }
+  function _fdDescribeStep(step, index) {
+    const head = `${index + 1}. ${step.title || step.subtitle || 'Etapa ' + (index + 1)}${step.responsible ? ` [${step.responsible}]` : ''}`;
+    const body = (step.actions || []).map(action => {
+      const base = _fdDescribeAction(action, '  - ');
+      return actionObj(action).type === 'decisao' ? `${base}\n${_fdDescribeBranches(actionObj(action), '  ')}` : base;
+    }).join('\n');
+    return `${head}\n${body || '  - Sem ações detalhadas'}`;
+  }
+  function _fdStepsPrompt(steps) {
+    return steps.length
+      ? steps.map(_fdDescribeStep).join('\n\n')
+      : 'Sem ações definidas. Crie um fluxo genérico de mapeamento de processos.';
+  }
   window.fdGenerateWithAI = async function() {
     const p = popPrefix(currentPop);
     if (!p || !DATA[p]) { showToast('Nenhum processo selecionado.', 'warn'); return; }
     const steps = DATA[p].steps || [];
     const meta  = DATA[p].meta  || {};
     const dir   = _direction;
-
-    const stepsText = steps.length
-      ? steps.map((s, i) => {
-          let line = `${i+1}. ${s.title || s.subtitle || 'Passo ' + (i+1)}`;
-          if (s.responsible) line += ` [${s.responsible}]`;
-          if (s.decision) line += ' (decisão/bifurcação)';
-          if (s.actions?.length) line += ' → ' + s.actions.slice(0,3).join(', ');
-          return line;
-        }).join('\n')
-      : 'Sem passos definidos. Crie um fluxo genérico de mapeamento de processos.';
+    const stepsText = _fdStepsPrompt(steps);
 
     const prompt = `Você é um especialista em BPM. Gere um diagrama de fluxo em sintaxe Mermaid (flowchart ${dir}) para o processo abaixo.
 
@@ -24481,7 +24502,7 @@ Processo: "${meta.name || currentPop}"
 Unidade: "${meta.unidade || meta.area || ''}"
 Objetivo: "${meta.desc || ''}"
 
-Passos:
+Etapas e ações previstas:
 ${stepsText}
 
 Regras obrigatórias:
@@ -24491,6 +24512,7 @@ Regras obrigatórias:
 - Atividades: retângulos B[Atividade]
 - Indique responsável em cada nó quando disponível: B["Atividade\\n[Responsável]"]
 - Crie conexões lógicas com labels Sim/Não nas bifurcações
+- Baseie o fluxo principalmente nas ações descritas dentro de cada etapa, e não apenas no nome das etapas
 - Mantenha o diagrama limpo e legível
 - Retorne APENAS o código Mermaid puro, sem blocos markdown, sem explicações.`;
 
@@ -26624,6 +26646,13 @@ function matAnsweredCount(questionnaires) {
     return acc + q.filter(a => a !== null).length;
   }, 0);
 }
+function matCompletedQuestionnaires(questionnaires) {
+  return (questionnaires || []).filter(q =>
+    Array.isArray(q) &&
+    q.length === MAT_QUESTIONS.length &&
+    q.every(a => a === 'sim' || a === 'talvez' || a === 'nao')
+  ).length;
+}
 
 function matTotalAnswersRequired() {
   return MAT_QUESTIONNAIRE_COUNT * MAT_QUESTIONS.length;
@@ -27205,6 +27234,7 @@ function matRender(p) {
   const questionnaires = matNormalizeQuestionnaires(mat);
   const answered    = matAnsweredCount(questionnaires);
   const totalAnswers = matTotalAnswersRequired();
+  const completedQuestionnaires = matCompletedQuestionnaires(questionnaires);
   const activeQIndex = Math.max(0, Math.min(MAT_QUESTIONNAIRE_COUNT - 1, Number.parseInt(mat.currentQuestionnaire, 10) || 0));
   mat.currentQuestionnaire = activeQIndex;
   const procName    = p === 'd' ? 'Denúncias' : 'Representações';
@@ -27391,13 +27421,13 @@ function matRender(p) {
     </div>`;
 
   let resultHtml = '';
-  if(answered < totalAnswers || !final) {
+  if(completedQuestionnaires < 1 || !final) {
     resultHtml = `
       ${levelsLegend}
       <div style="text-align:center;padding:28px;background:#f8fafc;border-radius:10px;border:1.5px dashed #e2e8f0;">
         <div style="font-size:36px;">📋</div>
-        <div style="font-size:14px;color:#64748b;margin-top:8px;">Responda os <strong>3 questionários completos</strong> para ver o score final.</div>
-        <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${answered}/${totalAnswers} respostas preenchidas</div>
+        <div style="font-size:14px;color:#64748b;margin-top:8px;">Responda pelo menos <strong>1 questionário completo</strong> para ver o score final.</div>
+        <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${answered}/${totalAnswers} respostas preenchidas · ${completedQuestionnaires} questionário(s) completo(s)</div>
       </div>`;
   } else {
     // issue #4: mostrar valores BRUTOS (↓ menor = melhor) para burocracia, complexidade e risco
@@ -27422,7 +27452,7 @@ function matRender(p) {
       ${levelsLegend}
       <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;">Componentes do score (normalizado 0–100):</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
-        ${scoreCard('Percepção da Equipe', final.equipe+'/100', 'média de 3 questionários ↑', '30%', '#6366f1', '↑ maior = melhor')}
+        ${scoreCard('Percepção da Equipe', final.equipe+'/100', `média de ${completedQuestionnaires} questionário(s) ↑`, '30%', '#6366f1', '↑ maior = melhor')}
         ${(()=>{ const rc = final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444'; return scoreCard('Risco Operacional', final.normRisco+'/100', 'maior = melhor', '20%', rc, ''); })()}
         ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '30%', '#22c55e', '↑ mais lean = melhor')}
         ${scoreCard('Digitalização', final.normAutom+'/100', '% atividades com sistema ↑', '10%', '#0891b2', '↑ maior = melhor')}
@@ -27467,7 +27497,7 @@ function matRender(p) {
           <div style="font-size:12px;color:#94a3b8;">${mat.lastAnalysis ? 'Última análise: ' + mat.lastAnalysis : 'Nenhuma análise realizada ainda.'}</div>
         </div>
         <button onclick="matGeminiAnalyze('${p}')" id="mat-gemini-btn-${p}" class="btn btn-primary"
-          style="font-size:13px;" ${answered < totalAnswers ? 'disabled title="Responda os 3 questionários primeiro"' : ''}>
+          style="font-size:13px;" ${completedQuestionnaires < 1 ? 'disabled title="Responda ao menos 1 questionário completo primeiro"' : ''}>
           ✨ Analisar com IA
         </button>
       </div>
@@ -27506,7 +27536,7 @@ function matRender(p) {
 // ── Maturidade: Histórico de snapshots ──────────────────────────────────
 function matSaveSnapshot(p) {
   const final = matComputeFinal(p);
-  if(!final) { showToast('Responda os 3 questionários (30 respostas) antes de salvar.', 'warn'); return; }
+  if(!final) { showToast('Responda ao menos 1 questionário completo antes de salvar.', 'warn'); return; }
   const mat = matGetData(p);
   if(!Array.isArray(mat.snapshots)) mat.snapshots = [];
   const today = new Date().toISOString().slice(0,10);
@@ -27659,7 +27689,7 @@ function matExportPdf(p) {
           <strong>Lean</strong> = execução ÷ (execução + aprovações + controle). <strong>Automação</strong> = % de atividades marcadas com ⚙️ no fluxo.
         </p>
       </div>
-    </div>` : `<div class="empty-block">⚠️ Score não disponível — 3 questionários não respondidos completamente.</div>`;
+    </div>` : `<div class="empty-block">⚠️ Score não disponível — nenhum questionário foi respondido completamente.</div>`;
 
   // ── Métricas ───────────────────────────────────────────────────────────
   const metricsBlock = `
