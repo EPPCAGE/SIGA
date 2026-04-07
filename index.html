@@ -16504,9 +16504,19 @@ function _getSipocItems(sipoc, key) {
 }
 
 function _getSipocProcessItems(p, sipoc) {
-  const flowItems = _npopOutlineFromSteps(DATA[p]?.steps);
-  const macroSteps = flowItems.filter(item => !item.isActivity).map(item => item.text);
-  if(macroSteps.length) return macroSteps;
+  const steps = DATA[p]?.steps;
+  if (Array.isArray(steps) && steps.length) {
+    // Usa TO BE se alguma etapa tiver conteúdo TO BE; senão usa AS IS
+    const hasTobeContent = steps.some(s => {
+      const tb = s.tobe || {};
+      return tb.title || (Array.isArray(tb.actions) && tb.actions.length > 0);
+    });
+    const titles = steps.map(s => {
+      const tb = s.tobe || {};
+      return (hasTobeContent ? (tb.title || s.title) : s.title) || '';
+    }).filter(Boolean);
+    if (titles.length) return titles;
+  }
   return _getSipocItems(sipoc, 'processo');
 }
 
