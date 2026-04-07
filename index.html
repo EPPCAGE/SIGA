@@ -24375,15 +24375,25 @@ function statusModalAutoFill() {
     const svgEl  = output?.querySelector('svg');
     if(!svgEl) return;
 
-    // Capturar dimensões naturais uma única vez (antes de qualquer override)
+    // Captura as dimensões naturais uma única vez por diagrama.
+    // Tenta em ordem: atributos width/height explícitos → viewBox → bounding rect.
     if(!_fdBaseW || !_fdBaseH) {
-      const vb = svgEl.getAttribute('viewBox');
-      if(vb) {
-        const parts = vb.trim().split(/[\s,]+/).map(Number);
-        _fdBaseW = parts[2] || 0;
-        _fdBaseH = parts[3] || 0;
+      const attrW = parseFloat(svgEl.getAttribute('width'));
+      const attrH = parseFloat(svgEl.getAttribute('height'));
+      if(attrW > 0 && attrH > 0) {
+        _fdBaseW = attrW;
+        _fdBaseH = attrH;
+      } else {
+        const vb = svgEl.getAttribute('viewBox');
+        if(vb) {
+          const parts = vb.trim().split(/[\s,]+/).map(Number);
+          _fdBaseW = parts[2] || 0;
+          _fdBaseH = parts[3] || 0;
+        }
       }
-      if(!_fdBaseW) {
+      if(!_fdBaseW || !_fdBaseH) {
+        // Garante que o SVG está visível antes de medir
+        svgEl.style.width = ''; svgEl.style.height = ''; svgEl.style.maxWidth = '100%';
         const r = svgEl.getBoundingClientRect();
         _fdBaseW = r.width  || 800;
         _fdBaseH = r.height || 600;
@@ -24403,6 +24413,16 @@ function statusModalAutoFill() {
     const lbl = document.getElementById('fd-zoom-label');
     if(lbl) lbl.textContent = Math.round(_fdZoomLevel * 100) + '%';
   };
+
+  // Zoom com scroll do mouse sobre o diagrama
+  document.addEventListener('wheel', function(e) {
+    const wrap = document.getElementById('fd-canvas-wrap');
+    if(!wrap || !wrap.contains(e.target)) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.1 : -0.1;
+    _fdZoomLevel = Math.max(0.2, Math.min(3, _fdZoomLevel + delta));
+    fdApplyZoom();
+  }, { passive: false });
 
   // delta=0 resets to 100%
   window.fdZoom = function(delta) {
@@ -24503,8 +24523,18 @@ function statusModalAutoFill() {
     }).join('\n');
   }
   function _fdDescribeStep(step, index) {
-    const head = `${index + 1}. ${step.title || step.subtitle || 'Etapa ' + (index + 1)}${step.responsible ? ` [${step.responsible}]` : ''}`;
-    const body = (step.actions || []).map(action => {
+    // Usa as ações do flowMode atual; se estiver vazio, tenta o outro modo
+    const isTobe = flowMode === 'tobe';
+    const tb = step.tobe || {};
+    const tobeActions = Array.isArray(tb.actions) ? tb.actions : [];
+    const asisActions = Array.isArray(step.actions) ? step.actions : [];
+    const actions = isTobe
+      ? (tobeActions.length ? tobeActions : asisActions)
+      : (asisActions.length  ? asisActions  : tobeActions);
+    const title      = (isTobe ? (tb.title || step.title) : step.title) || step.subtitle || `Etapa ${index + 1}`;
+    const responsible = (isTobe ? (tb.responsible || step.responsible) : step.responsible) || '';
+    const head = `${index + 1}. ${title}${responsible ? ` [${responsible}]` : ''}`;
+    const body = actions.map(action => {
       const base = _fdDescribeAction(action, '  - ');
       return actionObj(action).type === 'decisao' ? `${base}\n${_fdDescribeBranches(actionObj(action), '  ')}` : base;
     }).join('\n');
