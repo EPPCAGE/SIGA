@@ -12527,7 +12527,7 @@ function replicatePatNextQuarter(idx) {
   if(!isEditor) { showToast('🔒 Apenas editores podem replicar atividades PAT.', 'warn'); return; }
   const source = DATA.pat?.[idx];
   if(!source) return;
-  const clone = { ...source, id: 'pat_' + Date.now(), inicio: _patShiftQuarter(source.inicio), fim: _patShiftQuarter(source.fim), status: 'planejado', progresso: 0, qtdRealizada: '' };
+  const clone = { ...source, id: 'pat_' + Date.now(), inicio: _patShiftQuarter(source.inicio), fim: _patShiftQuarter(source.fim), status: 'planejado', progresso: 0, qtdRealizada: '', dataConclusaoEfetiva: '' };
   DATA.pat.push(clone);
   saveToCloud();
   renderPatKpis();
@@ -12584,6 +12584,26 @@ function patCalcProgresso() {
   }
 }
 
+function _patTodayStamp() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function _patCompletionStamp(previous, nextStatus) {
+  if (nextStatus !== 'concluido') return previous?.dataConclusaoEfetiva || '';
+  if (previous?.status === 'concluido' && previous?.dataConclusaoEfetiva) return previous.dataConclusaoEfetiva;
+  return _patTodayStamp();
+}
+
+function _patCountOnTime(concluidos) {
+  return concluidos.filter((item) => {
+    if (!item?.fim || !item?.dataConclusaoEfetiva) return false;
+    const prevista = new Date(`${item.fim}T12:00:00Z`);
+    const efetiva = new Date(`${item.dataConclusaoEfetiva}T12:00:00Z`);
+    if (Number.isNaN(prevista.getTime()) || Number.isNaN(efetiva.getTime())) return false;
+    return efetiva <= prevista;
+  }).length;
+}
+
 function openPatModal(idx = null) {
   _patEditIdx = idx;
   const item = idx === null ? null : DATA.pat[idx];
@@ -12616,6 +12636,8 @@ function savePat() {
   if(!isEditor) { showToast('🔒 Apenas editores podem salvar atividades PAT.', 'warn'); return; }
   const titulo = document.getElementById('pat-titulo').value.trim();
   if(!titulo) { showToast('Informe o título da atividade.', 'warn'); return; }
+  const previous = _patEditIdx === null ? null : DATA.pat[_patEditIdx];
+  const status = document.getElementById('pat-status').value;
   const item = {
     id:           _patEditIdx === null ? 'pat_' + Date.now() : DATA.pat[_patEditIdx].id,
     titulo,
@@ -12626,12 +12648,13 @@ function savePat() {
     equipe:       document.getElementById('pat-equipe').value.trim(),
     inicio:       document.getElementById('pat-inicio').value,
     fim:          document.getElementById('pat-fim').value,
-    status:        document.getElementById('pat-status').value,
+    status,
     progresso:     document.getElementById('pat-progresso').value,
     meta:          document.getElementById('pat-meta').value ===  ''  ? null : Number.parseFloat(document.getElementById('pat-meta').value),
     qtdRealizada:  document.getElementById('pat-qtd').value   ===  ''  ? null : Number.parseFloat(document.getElementById('pat-qtd').value),
     popVinc:       document.getElementById('pat-pop-vinc').value,
     produtos:      _patCollectProdutos(),
+    dataConclusaoEfetiva: _patCompletionStamp(previous, status),
     obs:           document.getElementById('pat-obs').value.trim(),
   };
   if(!DATA.pat) DATA.pat = [];
@@ -15821,9 +15844,8 @@ async function _buildEppStatusReport(opts = {}) {
   const pctMapeado = arqData.length ? Math.round(arqData.filter(r=>r.mapeado).length/arqData.length*100) : 0;
   const pctPat     = patItems.length ? Math.round(patItems.filter(p=>p.status==='concluido').length/patItems.length*100) : 0;
   const concl_all  = patItems.filter(p=>p.status==='concluido');
-  const atras_all  = patItems.filter(p=>p.status==='atrasado');
-  const totalFin   = concl_all.length + atras_all.length;
-  const taxaOnTime = totalFin ? Math.round(concl_all.length/totalFin*100) : null;
+  const totalFin   = concl_all.length;
+  const taxaOnTime = totalFin ? Math.round(_patCountOnTime(concl_all) / totalFin * 100) : null;
   const prazos     = concl_all.filter(p=>p.inicio&&p.fim).map(p=>
     Math.max(0,Math.round((new Date(p.fim+'T00:00:00')-new Date(p.inicio+'T00:00:00'))/86400000)));
   const prazoMedio = prazos.length ? Math.round(prazos.reduce((s,v)=>s+v,0)/prazos.length) : null;
@@ -21525,9 +21547,9 @@ function eppRenderDashboard() {
   // ── 3. Performance EPP ──────────────────────────────────────
   const patItems = Array.isArray(DATA.pat) ? DATA.pat : [];
   const concluidos = patItems.filter(p=>p.status==='concluido');
-  const atrasados  = patItems.filter(p=>p.status==='atrasado');
-  const totalFin   = concluidos.length + atrasados.length;
-  const taxaOnTime = totalFin ? Math.round(concluidos.length/totalFin*100) : null;
+  const totalFin   = concluidos.length;
+  const concluidosNoPrazo = _patCountOnTime(concluidos);
+  const taxaOnTime = totalFin ? Math.round(concluidosNoPrazo / totalFin * 100) : null;
 
   // Prazo médio
   const prazos = concluidos.filter(p=>p.inicio&&p.fim).map(p => {

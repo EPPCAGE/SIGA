@@ -69,6 +69,9 @@ const DOC_MIME = 'application/msword';
 const DATA_FILE = process.env.SIGA_DATA_FILE
   ? path.resolve(process.env.SIGA_DATA_FILE)
   : path.resolve(__dirname, '..', 'backups', 'local-data.json');
+const BACKUP_DIR = process.env.SIGA_BACKUP_DIR
+  ? path.resolve(process.env.SIGA_BACKUP_DIR)
+  : path.join(path.dirname(DATA_FILE), 'backups');
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:5173',
@@ -94,8 +97,14 @@ const ADMIN_TOKEN = String(process.env.SIGA_ADMIN_TOKEN || '').trim();
 const AUTH_CLOCK_SKEW_SECONDS = 300;
 const ENTRA_CONFIG_CACHE_MS = 60 * 60 * 1000;
 const ENTRA_JWKS_CACHE_MS = 15 * 60 * 1000;
+const AUTO_BACKUP_ENABLED = parseBooleanEnv(process.env.SIGA_AUTO_BACKUP_ENABLED, true);
+const AUTO_BACKUP_INTERVAL_DAYS = Math.max(1, Number(process.env.SIGA_AUTO_BACKUP_INTERVAL_DAYS || 3));
+const AUTO_BACKUP_HOUR = clampClockValue(process.env.SIGA_AUTO_BACKUP_HOUR, 0, 23);
+const AUTO_BACKUP_MINUTE = clampClockValue(process.env.SIGA_AUTO_BACKUP_MINUTE, 0, 59);
+const AUTO_BACKUP_PREFIX = 'auto-backup-';
 let _entraOpenIdConfigCache = null;
 let _entraJwksCache = null;
+let _autoBackupTimer = null;
 
 function parseBooleanEnv(value, defaultValue = false) {
   const text = String(value ?? '').trim().toLowerCase();
@@ -107,6 +116,12 @@ function parseBooleanEnv(value, defaultValue = false) {
 
 function readAdminToken(req) {
   return String(req.headers['x-siga-admin-token'] || '').trim();
+}
+
+function clampClockValue(value, min, max) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return min;
+  return Math.min(max, Math.max(min, Math.trunc(num)));
 }
 
 function readBearerToken(req) {
@@ -1061,6 +1076,79 @@ function ensureDataFile() {
   }
 }
 
+function ensureBackupDir() {
+  fs.mkdirSync(BACKUP_DIR, { recursive: true });
+}
+
+function backupStamp(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function backupFileName(stamp) {
+  return `${AUTO_BACKUP_PREFIX}${stamp}.json`;
+}
+
+function backupFilePath(stamp) {
+  return path.join(BACKUP_DIR, backupFileName(stamp));
+}
+
+function readAutoBackupDates() {
+  ensureBackupDir();
+  return fs.readdirSync(BACKUP_DIR)
+    .filter((name) => name.startsWith(AUTO_BACKUP_PREFIX) && name.endsWith('.json'))
+    .map((name) => name.slice(AUTO_BACKUP_PREFIX.length, -5))
+    .filter(Boolean)
+    .sort();
+}
+
+function lastAutoBackupDate() {
+  const dates = readAutoBackupDates();
+  return dates.length ? dates[dates.length - 1] : '';
+}
+
+function dayDistance(fromStamp, toStamp) {
+  if (!fromStamp || !toStamp) return Number.POSITIVE_INFINITY;
+  const from = new Date(`${fromStamp}T00:00:00`);
+  const to = new Date(`${toStamp}T00:00:00`);
+  return Math.floor((to - from) / 86400000);
+}
+
+function shouldCreateAutoBackup(now = new Date()) {
+  if (!AUTO_BACKUP_ENABLED) return false;
+  return dayDistance(lastAutoBackupDate(), backupStamp(now)) >= AUTO_BACKUP_INTERVAL_DAYS;
+}
+
+function createAutoBackup(now = new Date()) {
+  if (!shouldCreateAutoBackup(now)) return false;
+  ensureDataFile();
+  ensureBackupDir();
+  fs.copyFileSync(DATA_FILE, backupFilePath(backupStamp(now)));
+  return true;
+}
+
+function nextAutoBackupAt(now = new Date()) {
+  const next = new Date(now);
+  next.setHours(AUTO_BACKUP_HOUR, AUTO_BACKUP_MINUTE, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  return next;
+}
+
+function scheduleAutoBackup() {
+  if (_autoBackupTimer) clearTimeout(_autoBackupTimer);
+  if (!AUTO_BACKUP_ENABLED) return;
+  const delay = Math.max(1000, nextAutoBackupAt().getTime() - Date.now());
+  _autoBackupTimer = setTimeout(runAutoBackupCycle, delay);
+}
+
+function runAutoBackupCycle() {
+  try {
+    if (createAutoBackup()) console.info(`[siga-local-backend] backup automatico criado em ${backupFilePath(backupStamp())}`);
+  } catch (error) {
+    console.warn(`[siga-local-backend] falha no backup automatico: ${error.message}`);
+  }
+  scheduleAutoBackup();
+}
+
 function readRecord() {
   ensureDataFile();
   const raw = fs.readFileSync(DATA_FILE, 'utf8');
@@ -1652,6 +1740,11 @@ async function _routeGetHealth(req, res) {
     hasAdminToken: Boolean(ADMIN_TOKEN),
     hasAiConfigured: hasGithubProviderConfigured() || hasAzureProviderConfigured(),
     hasEmailNotificationsConfigured: isEmailNotificationConfigured(),
+    autoBackupEnabled: AUTO_BACKUP_ENABLED,
+    autoBackupIntervalDays: AUTO_BACKUP_INTERVAL_DAYS,
+    autoBackupSchedule: `${String(AUTO_BACKUP_HOUR).padStart(2, '0')}:${String(AUTO_BACKUP_MINUTE).padStart(2, '0')}`,
+    autoBackupDir: BACKUP_DIR,
+    lastAutoBackupDate: lastAutoBackupDate() || null,
   });
 }
 
@@ -1845,6 +1938,8 @@ function checkOptionalDeps() {
 server.listen(PORT, HOST, () => {
   console.info(`[siga-local-backend] running at http://${HOST}:${PORT}`);
   console.info(`[siga-local-backend] data file: ${DATA_FILE}`);
+  console.info(`[siga-local-backend] auto backup: ${AUTO_BACKUP_ENABLED ? 'enabled' : 'disabled'} (${AUTO_BACKUP_INTERVAL_DAYS}d @ ${String(AUTO_BACKUP_HOUR).padStart(2, '0')}:${String(AUTO_BACKUP_MINUTE).padStart(2, '0')})`);
+  scheduleAutoBackup();
   checkOptionalDeps();
 });
 

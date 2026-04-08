@@ -12,6 +12,11 @@ services:
       # Caminho dentro do container — mapeado para ./data no host via volume abaixo.
       # Em desenvolvimento local (sem Docker): padrão é <raiz>/backups/local-data.json
       SIGA_DATA_FILE: /data/local-data.json
+      SIGA_AUTO_BACKUP_ENABLED: ${SIGA_AUTO_BACKUP_ENABLED:-true}
+      SIGA_AUTO_BACKUP_INTERVAL_DAYS: ${SIGA_AUTO_BACKUP_INTERVAL_DAYS:-3}
+      SIGA_AUTO_BACKUP_HOUR: ${SIGA_AUTO_BACKUP_HOUR:-0}
+      SIGA_AUTO_BACKUP_MINUTE: ${SIGA_AUTO_BACKUP_MINUTE:-0}
+      SIGA_BACKUP_DIR: ${SIGA_BACKUP_DIR:-/data/backups}
       SIGA_MAX_BODY_BYTES: 52428800
       # ── IA / Azure OpenAI (GPT-5.1) ──────────────────────────────────
       # Defina as variáveis abaixo no arquivo .env do servidor (nunca aqui).
