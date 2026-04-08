@@ -2302,6 +2302,7 @@
     <button class="pat-filter-btn" onclick="filterPat('andamento',this)">Em Andamento</button>
     <button class="pat-filter-btn" onclick="filterPat('concluido',this)">Concluído</button>
     <button class="pat-filter-btn" onclick="filterPat('atrasado',this)">Atrasado</button>
+    <button class="pat-filter-btn" onclick="filterPat('suspenso',this)">Suspenso</button>
     <button class="pat-filter-btn" onclick="filterPat('cancelado',this)">Cancelado</button>
   </div>
 
@@ -2524,6 +2525,7 @@
             <option value="andamento">🔵 Em Andamento</option>
             <option value="concluido">🟢 Concluído</option>
             <option value="atrasado">🔴 Atrasado</option>
+            <option value="suspenso">⏸ Suspenso</option>
             <option value="cancelado">⚫ Cancelado</option>
           </select>
         </div>
@@ -7478,7 +7480,7 @@ function _populateNpopPatSelect() {
   if(!sel) return;
   if(!DATA.pat) DATA.pat = [];
   const pat = DATA.pat || [];
-  const statusLabel = { planejado:'Planejado', andamento:'Em Andamento', concluido:'Concluído', atrasado:'Atrasado', cancelado:'Cancelado' };
+  const statusLabel = { planejado:'Planejado', andamento:'Em Andamento', concluido:'Concluído', atrasado:'Atrasado', suspenso:'Suspenso', cancelado:'Cancelado' };
   sel.innerHTML = '<option value="">— Nenhum vínculo —</option>'
     + pat.map(item => {
         const info = [item.unidade, statusLabel[item.status] || item.status].filter(Boolean).join(' · ');
@@ -12003,7 +12005,7 @@ function _patParseDueDate(dateValue) {
 }
 
 function _patClassifyDeadlineItem(item, idx, today, in1, in7, overdue, urgente, soon) {
-  if(!item.fim || ['concluido','cancelado'].includes(item.status)) return;
+  if(!item.fim || ['concluido','suspenso','cancelado'].includes(item.status)) return;
   const date = _patParseDueDate(item.fim);
   if(!date) return;
   const dias = Math.round((date - today) / 86400000);
@@ -12345,6 +12347,7 @@ function renderPatKpis() {
   const andamento  = items.filter(i=>i.status==='andamento').length;
   const concluido  = items.filter(i=>i.status==='concluido').length;
   const atrasado   = items.filter(i=>i.status==='atrasado').length;
+  const suspenso   = items.filter(i=>i.status==='suspenso').length;
   const avgProg    = total ? Math.round(items.reduce((s,i)=>s+(+i.progresso||0),0)/total) : 0;
 
   const kpis = [
@@ -12353,6 +12356,7 @@ function renderPatKpis() {
     { v: andamento, l: 'Em Andamento', icon: '🔵',  col: '0369A1', bg: 'E0F2FE' },
     { v: concluido, l: 'Concluído',    icon: '✅',  col: '15803D', bg: 'DCFCE7' },
     { v: atrasado,  l: 'Atrasado',     icon: '🔴',  col: 'B91C1C', bg: 'FEE2E2' },
+    { v: suspenso,  l: 'Suspenso',     icon: '⏸',  col: '6B7280', bg: 'F3F4F6' },
     { v: avgProg+'%', l: 'Progresso Médio', icon: '📊', col: '7C3AED', bg: 'EDE9FE' },
   ];
 
@@ -12389,6 +12393,7 @@ function _getPatStatusStyle(status) {
     andamento: { icon:'🔵', bg:'E0F2FE', col:'0369A1', label:'Em Andamento' },
     concluido: { icon:'✅', bg:'DCFCE7', col:'15803D', label:'Concluído' },
     atrasado: { icon:'🔴', bg:'FEE2E2', col:'B91C1C', label:'Atrasado' },
+    suspenso: { icon:'⏸', bg:'F3F4F6', col:'6B7280', label:'Suspenso' },
     cancelado: { icon:'⚫', bg:'F3F4F6', col:'6B7280', label:'Cancelado' },
   };
   return styles[status] || styles.planejado;
@@ -21602,6 +21607,7 @@ function eppRenderDashboard() {
       andamento: {label:'Em Andamento', col:'#3b82f6'},
       concluido: {label:'Concluído', col:'#15803d'},
       atrasado:  {label:'Atrasado', col:'#dc2626'},
+      suspenso:  {label:'Suspenso', col:'#6b7280'},
       cancelado: {label:'Cancelado', col:'#f59e0b'},
     };
     statusGrid.innerHTML = Object.entries(statusMap).map(([k,v]) => {
@@ -24257,7 +24263,7 @@ function openStatusModal(p) {
   const sel = document.getElementById('status-modal-pat-vinc');
   if(sel) {
     if(!DATA.pat) DATA.pat = [];
-    const slbl = { planejado:'Planejado', andamento:'Em Andamento', concluido:'Concluído', atrasado:'Atrasado', cancelado:'Cancelado' };
+    const slbl = { planejado:'Planejado', andamento:'Em Andamento', concluido:'Concluído', atrasado:'Atrasado', suspenso:'Suspenso', cancelado:'Cancelado' };
     sel.innerHTML = '<option value="">— Nenhum vínculo —</option>'
       + DATA.pat.map(item => {
           const info = [item.unidade, slbl[item.status]||item.status].filter(Boolean).join(' · ');
