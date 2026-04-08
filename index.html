@@ -9254,8 +9254,13 @@ function applyIaResult(parsed) {
       periodicidade: ind.periodicidade||'', responsavel: ind.responsavel||'', meta: ind.meta||''
     })),
     faqs:     (parsed.faqs    || []),
-    normas:   (parsed.normas  || []).map(n => ({icon: n.icon||'📄', code: n.code||'', name: n.name||''})),
-    revisions:[{num:'0', date: today, desc:'Emissão Inicial (importado via IA).', author: parsed.elaborado||''}],
+    normas:   (parsed.normas  || []).map(n => ({icon: n.icon||'📄', code: n.code||'', name: n.name||'', url: n.url||''})),
+    revisions: (() => {
+      const docRevs = (parsed.revisoes || []).map(r => ({
+        num: String(r.num||''), date: r.date||today, desc: r.desc||'', author: r.author||''
+      }));
+      return docRevs.length > 0 ? docRevs : [{num:'0', date: today, desc:'Emissão Inicial (importado via IA).', author: parsed.elaborado||''}];
+    })(),
     siglas: (parsed.siglas || []),
     flowDiagram: null,  // will be built below if flow[] exists
   };
@@ -23272,19 +23277,58 @@ async function _npopExtractWordParsed(file) {
   const mimeType = _npopGetPopFileMime(file);
 
   const prompt =
-`Extraia o mapeamento de processo deste POP Word. Retorne APENAS JSON válido e completo, sem markdown, sem texto extra.
-Nao invente dados ausentes. Use strings curtas e objetivas.
+`# EXTRAÇÃO INTELIGENTE DE POP — SIGA/CAGE-RS
+Analise este documento Word (POP/Procedimento Operacional Padrão) e extraia TODAS as informações estruturadas. Leia o documento INTEIRO. Nunca invente dados ausentes. Retorne APENAS JSON puro, sem markdown, sem texto extra. O JSON deve ser sintaticamente completo e fechado.
 
-Esquema obrigatório (mantenha TODOS os campos, mesmo que vazios):
-{"nome":"","macro":"","processo":"","subprocesso":"","unidade":"","elaborado":"","desc":"","input":"","output":"","fornecedores":"","clientes":"","atores":[""],"steps":[{"title":"","responsible":"","note":null,"actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":"","branches":[]}]}]}
+# 1. METADADOS
+nome, macro, processo, subprocesso, unidade, elaborado (quem elaborou), revisado (quem revisou), aprovado (quem aprovou), versao, data_emissao, desc (objetivo/finalidade), input (entradas/insumos), output (saídas/produtos), resultados (resultados esperados), fornecedores (quem fornece os insumos), clientes (quem recebe o resultado), sistemas (sistemas de TI utilizados).
 
-IMPORTANTE: o JSON deve ser sintaticamente completo e fechado. Não corte no meio.`;
+# 2. ATORES / EXECUTORES
+atores[] — lista simples de nomes (strings) de todos os atores/executores.
+executores[] — lista detalhada: "name" (nome exato), "title" (cargo/função), "duties" (array de responsabilidades). NUNCA concatene múltiplos nomes num único item.
 
-  const respText = await callGeminiProxy(prompt, { data: base64, mimeType }, { maxTokens: 8192 });
+# 3. ETAPAS DO PROCESSO (steps[]) — FOCO PRINCIPAL
+Identifique a seção de Execução/Procedimento/Descrição das Atividades. Cada fase/agrupamento lógico = uma step. NUNCA mescle fases distintas.
+
+Para cada step: "title" (nome da etapa), "responsible" (executor principal, igual a executores[].name), "note" (observação geral ou null), "actions" (lista de ações — uma por linha/bullet/item).
+
+Para cada action:
+- "type": "atividade" | "decisao" | "evento" | "observacao"
+  · atividade = ação executável · decisao = ponto de escolha/bifurcação com caminhos alternativos
+  · evento = marco de início ou fim · observacao = nota, OBS:, aviso, texto não-ação
+- "text": texto exato (não resuma, não parafraseie)
+- "actor": executor (somente type="atividade"; "" para demais)
+- "natureza": "aprovacao" | "revisao" | ""
+- "sistemas": sistema de TI (somente type="atividade"; "" se não houver)
+- "eventoTipo": somente type="evento" — "inicio" | "encerramento" | "intermediario"
+- "branches": somente type="decisao" — [{"label":"Sim","actions":[...]},{"label":"Não","actions":[...]}]
+
+REGRAS: ✓ Primeira action do processo = evento "inicio"; última = evento "encerramento". ✓ Decisões usam type="decisao" com branches — NUNCA classifique como "atividade". ✓ Não inclua FAQ/Normas/Indicadores/Revisões nas steps.
+
+# 4. PERGUNTAS FREQUENTES (faqs[])
+Extraia da seção de FAQ ou perguntas frequentes. Cada item: "q" (pergunta), "a" (resposta).
+
+# 5. INDICADORES (indicators[])
+Extraia da seção de indicadores/métricas/KPIs. Cada item: "title", "desc", "formula", "fonte", "periodicidade", "responsavel", "meta".
+
+# 6. NORMAS E LEGISLAÇÃO (normas[])
+Extraia da seção de referências/normas/base legal. Cada item: "code" (número da norma), "name" (descrição), "url" (link ou "").
+
+# 7. HISTÓRICO DE REVISÕES (revisoes[])
+Extraia do controle de versões/histórico. Cada item: "num" (número da versão), "date" (DD/MM/AAAA), "desc" (descrição), "author" (autor).
+
+# FORMATO JSON OBRIGATÓRIO
+{"nome":"","macro":"","processo":"","subprocesso":"","unidade":"","elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","output":"","resultados":"","fornecedores":"","clientes":"","sistemas":"","atores":[],"executores":[{"name":"","title":"","duties":[]}],"steps":[{"title":"","responsible":"","note":null,"actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":"","eventoTipo":"","branches":[]}]}],"faqs":[{"q":"","a":""}],"indicators":[{"title":"","desc":"","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"normas":[{"code":"","name":"","url":""}],"revisoes":[{"num":"","date":"","desc":"","author":""}]}`;
+
+  const respText = await callGeminiProxy(prompt, { data: base64, mimeType }, { maxTokens: 16384 });
   const extracted = parseAiJson(respText);
 
-  if(!Array.isArray(extracted.steps)) extracted.steps = [];
-  if(!Array.isArray(extracted.atores)) extracted.atores = [];
+  if(!Array.isArray(extracted.steps))     extracted.steps     = [];
+  if(!Array.isArray(extracted.atores))    extracted.atores    = [];
+  if(!Array.isArray(extracted.faqs))      extracted.faqs      = [];
+  if(!Array.isArray(extracted.indicators))extracted.indicators= [];
+  if(!Array.isArray(extracted.normas))    extracted.normas    = [];
+  if(!Array.isArray(extracted.revisoes))  extracted.revisoes  = [];
   return extracted;
 }
 
