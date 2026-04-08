@@ -12515,6 +12515,26 @@ function _patProdutoLink(item) {
   return `<a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#ecfeff;color:#0f766e;font-size:12px;font-weight:700;text-decoration:none;border:1px solid #a5f3fc;">📄 ${nome}</a>`;
 }
 
+function _patShiftQuarter(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr + 'T12:00:00');
+  if (Number.isNaN(date.getTime())) return '';
+  date.setMonth(date.getMonth() + 3);
+  return date.toISOString().slice(0, 10);
+}
+
+function replicatePatNextQuarter(idx) {
+  if(!isEditor) { showToast('🔒 Apenas editores podem replicar atividades PAT.', 'warn'); return; }
+  const source = DATA.pat?.[idx];
+  if(!source) return;
+  const clone = { ...source, id: 'pat_' + Date.now(), inicio: _patShiftQuarter(source.inicio), fim: _patShiftQuarter(source.fim), status: 'planejado', progresso: 0, qtdRealizada: '' };
+  DATA.pat.push(clone);
+  saveToCloud();
+  renderPatKpis();
+  renderPatCards();
+  showToast('✅ Atividade replicada para o próximo trimestre.', 'success');
+}
+
 function _renderPatCard(item, items) {
   const realIdx = items.indexOf(item);
   const statusStyle = _getPatStatusStyle(item.status);
@@ -12531,6 +12551,7 @@ function _renderPatCard(item, items) {
           <div style="font-size:16px;font-weight:700;color:var(--cage-blue);line-height:1.3;">${item.titulo || 'Sem título'}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="edit-rm-btn" onclick="replicatePatNextQuarter(${realIdx})" title="Replicar para o próximo trimestre">⎘</button>
           <button class="edit-rm-btn" onclick="openPatModal(${realIdx})" title="Editar">✏️</button>
           <button class="edit-rm-btn" onclick="deletePat(${realIdx})" title="Remover">✕</button>
         </div>
