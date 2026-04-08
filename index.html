@@ -7813,12 +7813,33 @@ function _npopFillWorkflowExtractedFields(extracted) {
   _npopSetWorkflowField('nf-macro', extracted.macro || '');
   _npopSetWorkflowField('nf-subprocesso', extracted.subprocesso || '');
   _npopSetWorkflowField('nf-unidade', extracted.unidade || '');
+  _npopSetWorkflowField('nf-gerente', extracted.gerente || '');
   _npopSetWorkflowField('nf-desc', extracted.desc || '');
   _npopSetWorkflowField('nf-input', extracted.input || '');
   _npopSetWorkflowField('nf-output', extracted.output || '');
+  _npopSetWorkflowField('nf-resultados', extracted.resultados || '');
+  _npopSetWorkflowField('nf-solicitante', extracted.solicitante || '');
   _npopSetWorkflowField('nf-equipe', extracted.elaborado || '');
+  _npopSetWorkflowField('nf-sistemas', extracted.sistemas || '');
   _npopSetWorkflowField('nf-fornecedores', extracted.fornecedores || '');
   _npopSetWorkflowField('nf-clientes', extracted.clientes || '');
+  _npopSetWorkflowField('nf-data-inicio', extracted.dataInicio || extracted.data_emissao || '');
+  _npopSetWorkflowField('nf-data-prevista', extracted.dataPrevista || '');
+  _npopSetWorkflowField('nf-dificuldade', extracted.dificuldade || '');
+  _npopSetWorkflowField('nf-tipo', extracted.tipo || '');
+  _npopSetWorkflowField('nf-pat-vinc', extracted.patVinc || '');
+  _npopSetWorkflowField('nf-status-map', extracted.statusMap || '');
+  _npopSetWorkflowField('nf-status-display', _statusLabel(extracted.statusMap || 'planejado'));
+  populatePatrocinadoresSelect('nf-patrocinador', extracted.patrocinador || '');
+  npopUpdateEquipeSelect(extracted.unidade || '', 'nf-equipe-resp');
+  _npopSetWorkflowField('nf-equipe-resp', extracted.equipeResponsavel || '');
+  const objetivos = Array.isArray(extracted.objEstrategicos) ? extracted.objEstrategicos : [];
+  const objField = document.getElementById('nf-obj-estrategico');
+  if(objField) objField.value = JSON.stringify(objetivos);
+  _renderObjTags('nf-obj-estrategico-tags', objetivos);
+  const outline = _npopNormalizeOutline(extracted.flowOutline).length ? extracted.flowOutline : _npopOutlineFromSteps(extracted.steps);
+  _npopRenderOutlineRows('nf-flow-outline-list', outline);
+  if(!document.getElementById('nf-flow-outline-list')?.children.length) npopAddFlowOutlineRow(false);
 }
 
 function _npopApplyWorkflowExtractedData(extracted) {
@@ -7834,17 +7855,18 @@ function _npopApplyWorkflowExtractedData(extracted) {
   if(badge) badge.textContent = 'Etapa 2: revisar e editar dados extraídos';
 }
 
+function _npopReadFormInfo(prefix) {
+  const v = id => document.getElementById(`${prefix}${id}`)?.value?.trim() || '';
+  return { nome:v('processo') || v('subprocesso'), macro:v('macro'), processo:v('processo'), sub:v('subprocesso'), unidade:v('unidade'), gerente:v('gerente'), objEstrategicos:_tryParseJson(document.getElementById(`${prefix}obj-estrategico`)?.value, []), equipeResponsavel:v('equipe-resp'), tipo:v('tipo'), dificuldade:v('dificuldade'), statusMap:v('status-map') || v('status') || 'planejado', dataInicio:v('data-inicio') || v('inicio'), dataPrevista:v('data-prevista') || v('prevista'), dataEfetiva:v('efetiva'), solicitante:v('solicitante'), patrocinador:v('patrocinador'), equipe:v('equipe'), atores:(document.getElementById(`${prefix}atores`)?.value || '').split(',').map(s => s.trim()).filter(Boolean), desc:v('desc'), input:v('input'), output:v('output'), resultados:v('resultados'), fornecedores:v('fornecedores'), clientes:v('clientes'), sistemas:v('sistemas'), patVinc:v('pat-vinc'), flowOutline:_npopSerializeOutline(`${prefix}flow-outline-list`) };
+}
+
+function _npopFillExtractedMeta(extracted, info) {
+  Object.assign(extracted, { nome:info.nome || extracted.nome || extracted.processo || '', macro:info.macro, processo:info.processo, subprocesso:info.sub, unidade:info.unidade, gerente:info.gerente, objEstrategicos:info.objEstrategicos, equipeResponsavel:info.equipeResponsavel, tipo:info.tipo, dificuldade:info.dificuldade, statusMap:info.statusMap, dataInicio:info.dataInicio, dataPrevista:info.dataPrevista, dataEfetiva:info.dataEfetiva, solicitante:info.solicitante, patrocinador:info.patrocinador, elaborado:info.equipe || extracted.elaborado || '', equipe:info.equipe, desc:info.desc, input:info.input, output:info.output, resultados:info.resultados, fornecedores:info.fornecedores, clientes:info.clientes, sistemas:info.sistemas, patVinc:info.patVinc, flowOutline:info.flowOutline, atores:info.atores });
+}
+
 function _npopApplyFormStage2(extracted) {
-  const v = function(id) { return document.getElementById(id)?.value?.trim() || ''; };
-  if(v('nf-processo'))    extracted.nome        = v('nf-processo');
-  if(v('nf-macro'))       extracted.macro       = v('nf-macro');
-  if(v('nf-desc'))        extracted.desc        = v('nf-desc');
-  if(v('nf-input'))       extracted.input       = v('nf-input');
-  if(v('nf-output'))      extracted.output      = v('nf-output');
-  if(v('nf-equipe'))      extracted.elaborado   = v('nf-equipe');
-  if(v('nf-subprocesso')) extracted.subprocesso = v('nf-subprocesso');
-  if(v('nf-unidade'))     extracted.unidade     = v('nf-unidade');
-  extracted.atores = (document.getElementById('nf-atores')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const info = _npopReadFormInfo('nf-');
+  _npopFillExtractedMeta(extracted, info);
   openNpopOrderModal(extracted, ordered => showImportTargetModal(ordered));
 }
 
@@ -8018,8 +8040,26 @@ function _npopBuildStepsFromOutline(items, responsible) {
 
 function _npopFlowItemsFromSteps(steps) {
   const items = [];
-  steps.forEach(step => step.actions.forEach(action => items.push({ step: step.title, text: action.text || step.title })));
-  return items.length ? items : steps.map(step => ({ step: step.title, text: step.title }));
+  steps.forEach(step => _npopStepFlowItems(step, items));
+  return items.length ? items : steps.map(step => ({ label: step.title || 'Etapa' }));
+}
+
+function _npopActionLabel(action, fallback) {
+  const obj = actionObj(action);
+  return obj.type === 'decisao' ? (obj.decisionText || obj.text || fallback || 'Decisão') : (obj.text || fallback || 'Ação');
+}
+
+function _npopPushBranchItems(branches, items) {
+  (Array.isArray(branches) ? branches : []).forEach(branch => (branch.actions || []).forEach(action => items.push({ label: `${branch.label || 'Caminho'}: ${_npopActionLabel(action, 'Ação')}` })));
+}
+
+function _npopStepFlowItems(step, items) {
+  const actions = Array.isArray(step?.actions) ? step.actions : [];
+  if(!actions.length) { items.push({ label: step?.title || 'Etapa' }); return; }
+  actions.forEach(action => {
+    items.push({ label: _npopActionLabel(action, step?.title) });
+    _npopPushBranchItems(actionObj(action).branches, items);
+  });
 }
 
 function _npopMermaidNode(id, label) {
@@ -8029,7 +8069,7 @@ function _npopMermaidNode(id, label) {
 function _npopBuildMermaidFromSteps(steps) {
   const items = _npopFlowItemsFromSteps(steps);
   const lines = ['flowchart LR', '  START([Início])'];
-  items.forEach((item, index) => lines.push(_npopMermaidNode('N' + (index + 1), item.step === item.text ? item.text : `${item.step}\\n${item.text}`)));
+  items.forEach((item, index) => lines.push(_npopMermaidNode('N' + (index + 1), item.label)));
   items.forEach((item, index) => lines.push(`  ${index === 0 ? 'START' : 'N' + index} --> N${index + 1}`));
   lines.push(`  ${items.length ? 'N' + items.length : 'START'} --> END([Fim])`);
   return lines.join('\n');
@@ -8040,7 +8080,7 @@ function _npopXmlEscape(text) {
 }
 
 function _npopBpmnTaskNodes(items) {
-  return items.map((item, index) => `    <bpmn:task id="Task_${index + 1}" name="${_npopXmlEscape(item.step === item.text ? item.text : item.step + ' - ' + item.text)}"/>`).join('\n');
+  return items.map((item, index) => `    <bpmn:task id="Task_${index + 1}" name="${_npopXmlEscape(item.label)}"/>`).join('\n');
 }
 
 function _npopBpmnFlows(items) {
@@ -9219,9 +9259,13 @@ function applyIaResult(parsed) {
       sub:               parsed.subprocesso      || '',
       unidade:           parsed.unidade          || parsed.divisao || parsed.area_responsavel || '',
       gerente:           parsed.gerente          || '',
+      objEstrategicos:   Array.isArray(parsed.objEstrategicos) ? parsed.objEstrategicos : [],
+      equipeResponsavel: parsed.equipeResponsavel || '',
+      tipo:              parsed.tipo             || '',
+      dificuldade:       parsed.dificuldade      || '',
       area:              parsed.area_responsavel || parsed.unidade || '',
       solicitante:       parsed.solicitante      || '',
-      patrocinador:      parsed.patrocinador      || '',
+      patrocinador:      parsed.patrocinador     || '',
       equipe:            parsed.equipe           || '',
       atores:            Array.isArray(parsed.atores) ? parsed.atores : [],
       elaborado:         parsed.elaborado        || '',
@@ -9233,10 +9277,12 @@ function applyIaResult(parsed) {
       fornecedores:      parsed.fornecedores     || '',
       clientes:          parsed.clientes         || '',
       sistemas:          parsed.sistemas         || '',
-      statusMap:         'planejado',
-      dataInicio:        '',
-      dataPrevista:      '',
-      dataEfetiva:       '',
+      statusMap:         parsed.statusMap        || 'planejado',
+      dataInicio:        parsed.dataInicio       || '',
+      dataPrevista:      parsed.dataPrevista     || '',
+      dataEfetiva:       parsed.dataEfetiva      || '',
+      patVinc:           parsed.patVinc          || '',
+      flowOutline:       _npopNormalizeOutline(parsed.flowOutline).length ? parsed.flowOutline : _npopOutlineFromSteps(steps),
     },
     sipoc: {
       fornecedores: _splitLines(parsed.fornecedores),
@@ -9282,6 +9328,11 @@ function applyIaResult(parsed) {
     flowDiagram: null,  // will be built below if flow[] exists
   };
 
+  if(DATA[key].meta.patVinc) {
+    const patItem = (DATA.pat || []).find(item => item.id === DATA[key].meta.patVinc);
+    if(patItem) patItem.popVinc = key;
+  }
+
   // Auto-build flow diagram from flow[] if extracted
   if(Array.isArray(parsed.flow) && parsed.flow.length > 0 && typeof fdBuildFromFlowJSON === 'function') {
     // Temporarily set currentPop to key so fdBuildFromFlowJSON stores in correct slot
@@ -9289,6 +9340,13 @@ function applyIaResult(parsed) {
     currentPop = key;
     fdBuildFromFlowJSON(parsed.flow);
     currentPop = _prevPop;
+  }
+  if(!DATA[key].flowDiagram) {
+    DATA[key].flowDiagram = {
+      mermaid: _npopBuildMermaidFromSteps(steps),
+      text: _npopBuildMermaidFromSteps(steps),
+      bpmnXml: _npopBuildBpmnFromSteps(steps, parsed.nome || parsed.processo || 'Processo'),
+    };
   }
 
   document.getElementById('npop-s2').classList.remove('active');
@@ -24873,7 +24931,7 @@ function statusModalAutoFill() {
     const actions = Array.isArray(step.actions) ? step.actions : [];
     const title       = step.title       || step.subtitle || `Etapa ${index + 1}`;
     const responsible = step.responsible || '';
-    const head = `${index + 1}. ${title}${responsible ? ` [${responsible}]` : ''}`;
+    const head = `Etapa ${index + 1}: ${title}${responsible ? ` [${responsible}]` : ''}`;
     const body = actions.map(action => {
       const base = _fdDescribeAction(action, '  - ');
       return actionObj(action).type === 'decisao' ? `${base}\n${_fdDescribeBranches(actionObj(action), '  ')}` : base;
@@ -24899,7 +24957,7 @@ Processo: "${meta.name || currentPop}"
 Unidade: "${meta.unidade || meta.area || ''}"
 Objetivo: "${meta.desc || ''}"
 
-Etapas e ações previstas:
+Fluxo operacional completo do processo (ações na ordem em que aparecem na aba Fluxo):
 ${stepsText}
 
 Regras obrigatórias:
@@ -24909,7 +24967,7 @@ Regras obrigatórias:
 - Atividades: retângulos B[Atividade]
 - Indique responsável em cada nó quando disponível: B["Atividade\\n[Responsável]"]
 - Crie conexões lógicas com labels Sim/Não nas bifurcações
-- Baseie o fluxo principalmente nas ações descritas dentro de cada etapa, e não apenas no nome das etapas
+- Trate as etapas apenas como agrupadores visuais; o desenho deve refletir principalmente as ações e decisões do fluxo completo
 - Mantenha o diagrama limpo e legível
 - Retorne APENAS o código Mermaid puro, sem blocos markdown, sem explicações.`;
 
