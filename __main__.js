@@ -6517,23 +6517,12 @@ async function checkEditorPermission() {
   if ((SIGA_AUTH.mode || 'local') === 'entra') {
     const entraCfg = SIGA_AUTH.entra || {};
     const email = (currentUserEmail || '').toLowerCase();
-    const adminEmails  = (entraCfg.adminEmails  || []).map((e) => String(e).toLowerCase());
+    const adminEmails = (entraCfg.adminEmails || []).map((e) => String(e).toLowerCase());
     const editorEmails = (entraCfg.editorEmails || []).map((e) => String(e).toLowerCase());
 
-    isAdmin  = adminEmails.includes(email);
+    isAdmin = adminEmails.includes(email);
     isEditor = isAdmin || editorEmails.includes(email);
-    isViewer = false; // por padrão sem acesso — exige aprovação explícita
-
-    if (!isEditor) {
-      // Verifica usuários aprovados dinamicamente pelo painel de gestão (LOCAL_ACCESS.editors)
-      const localUser = LOCAL_ACCESS.editors.find(e => (e.email || '').toLowerCase() === email);
-      if (localUser) {
-        isAdmin  = localUser.is_admin;
-        const localRole = localUser.is_admin ? 'admin' : (localUser.role || 'viewer');
-        isEditor = (localRole === 'editor' || localRole === 'admin' || localUser.is_admin);
-        isViewer = !isEditor; // viewer aprovado: acesso leitura; editor/admin: acesso completo
-      }
-    }
+    isViewer = !isEditor;
   } else {
     // Modo local: sempre admin/editor
     isEditor = true;
@@ -7108,14 +7097,6 @@ async function loadFromCloud() {
       });
     }
 
-    // Restaurar controle de acesso de usuários (solicitações, editores aprovados e logs)
-    if(payload.localAccess && typeof payload.localAccess === 'object') {
-      if(Array.isArray(payload.localAccess.editors))    LOCAL_ACCESS.editors    = payload.localAccess.editors;
-      if(Array.isArray(payload.localAccess.requests))   LOCAL_ACCESS.requests   = payload.localAccess.requests;
-      if(Array.isArray(payload.localAccess.history))    LOCAL_ACCESS.history    = payload.localAccess.history;
-      if(Array.isArray(payload.localAccess.accessLogs)) LOCAL_ACCESS.accessLogs = payload.localAccess.accessLogs;
-    }
-
     ['d','r'].forEach(p => {
       try {
         sanitizePop(p);
@@ -7310,8 +7291,6 @@ async function handleRequest(email, name, action) {
   } else {
     showToast('Solicitação de ' + email + ' rejeitada.', 'warn');
   }
-  await logHistory((action === 'aprovado' ? 'Aprovou acesso: ' : 'Rejeitou acesso: ') + email);
-  saveToCloud();
   loadRequestsList();
   loadEditorList();
 }
@@ -7359,7 +7338,6 @@ async function setEditorRole(email, role) {
   target.role = role === 'admin' ? 'editor' : role;
   await logHistory('Alterou perfil: ' + email + ' -> ' + labels[role]);
   showToast(`✓ ${email} → ${labels[role]}`, 'success');
-  saveToCloud();
   loadEditorList();
 }
 
@@ -7394,7 +7372,6 @@ async function saveNewEditor() {
   }
   await logHistory('Adicionou editor: ' + email);
   showToast('Editor adicionado!','success');
-  saveToCloud();
   document.getElementById(_pid('add-row')).style.display = 'none';
   document.getElementById(_pid('add-btn-row')).style.display = '';
   document.getElementById(_pid('new-email')).value = '';
@@ -7407,7 +7384,6 @@ async function removeEditor(email) {
   LOCAL_ACCESS.editors = LOCAL_ACCESS.editors.filter(e => e.email !== email);
   await logHistory('Removeu editor: ' + email);
   showToast('Editor removido.','success');
-  saveToCloud();
   loadEditorList();
 }
 
@@ -7583,9 +7559,8 @@ async function signInMicrosoft() {
     showUserUI(currentUser);
     document.getElementById('auth-overlay').style.display = 'none';
 
-    // Carrega dados primeiro para que LOCAL_ACCESS.editors esteja disponível antes da verificação de permissões
-    await loadFromCloud();
     await checkEditorPermission();
+    await loadFromCloud();
     window._appInitialized = true;
 
     try { logAccessEvent('login'); } catch(e) { console.warn('[siga]', e); }
@@ -9843,7 +9818,19 @@ async function renderFlowPreview(p) {
     const { svg } = await mermaid.render(id, mermaidCode);
     body.innerHTML = svg;
     const svgEl = body.querySelector('svg');
-    if(svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto'; }
+    if(svgEl) { 
+      svgEl.style.maxWidth = '100%'; 
+      svgEl.style.height = 'auto';
+      let scale = 1;
+      svgEl.addEventListener('wheel', (ev) => {
+        if (!ev.ctrlKey) return;
+        ev.preventDefault();
+        const factor = ev.deltaY < 0 ? 1.1 : 0.9;
+        scale = Math.max(0.5, Math.min(3, scale * factor));
+        svgEl.style.transform = `scale(${scale})`;
+        svgEl.style.transformOrigin = 'top left';
+      });
+    }
   } catch(e) {
     /* exibe mensagem de erro na interface */
     body.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:12px;">Erro ao renderizar o diagrama de fluxo.</div>';
@@ -10007,7 +9994,15 @@ function _initEtapas(p) {
     if(!DATA[p].etapasProgress[e.id])
       DATA[p].etapasProgress[e.id] = { ok:false, na:false, inicio:null, fim:null };
   });
-  return DATA[p].etapasProgress;
+  // Sincronizar datas especiais
+  const ep = DATA[p].etapasProgress;
+  if(DATA[p].meta?.dataInicio && ep.entendimento && !ep.entendimento.inicio) {
+    ep.entendimento.inicio = DATA[p].meta.dataInicio;
+  }
+  if(DATA[p].meta?.dataEfetiva && ep.concluido && !ep.concluido.fim) {
+    ep.concluido.fim = DATA[p].meta.dataEfetiva;
+  }
+  return ep;
 }
 
 function toggleEtapaMap(p, etapaId) {
@@ -10028,23 +10023,31 @@ function toggleEtapaMap(p, etapaId) {
     // Marcar
     et.ok  = true;
     et.na  = false;
-    et.fim = today;
-    if(!et.inicio) et.inicio = today;
-    // Registrar início automático da próxima fase
-    if(idx < ids.length - 1 && !ep[ids[idx + 1]].inicio)
-      ep[ids[idx + 1]].inicio = today;
-
-    // Efeito especial: Entendimento → status em_andamento + dataInicio
+    
+    // Efeito especial: Entendimento → usar dataInicio + NÃO finalizar (ainda em andamento)
     if(etapaId === 'entendimento') {
       if(!DATA[p].meta.dataInicio) DATA[p].meta.dataInicio = today;
+      et.inicio = DATA[p].meta.dataInicio;
+      et.fim = null; // Ainda em progresso, não tem fim
       if(!['concluido','suspenso'].includes(DATA[p].meta.statusMap))
         DATA[p].meta.statusMap = 'em_andamento';
     }
-    // Efeito especial: Concluído → status concluido + dataEfetiva
-    if(etapaId === 'concluido') {
-      DATA[p].meta.statusMap = 'concluido';
+    // Efeito especial: Concluído = FIM do projeto
+    else if(etapaId === 'concluido') {
       if(!DATA[p].meta.dataEfetiva) DATA[p].meta.dataEfetiva = today;
+      et.fim = DATA[p].meta.dataEfetiva;
+      if(!et.inicio) et.inicio = ep.revisao?.inicio || ep.aprovacao?.inicio || today;
+      DATA[p].meta.statusMap = 'concluido';
     }
+    // Para outras etapas normais
+    else {
+      et.fim = today;
+      if(!et.inicio) et.inicio = today;
+    }
+    
+    // Registrar início automático da próxima fase
+    if(idx < ids.length - 1 && !ep[ids[idx + 1]].inicio)
+      ep[ids[idx + 1]].inicio = today;
   }
   markChanged(true, true);
   renderFicha(p);
@@ -10092,10 +10095,10 @@ function _renderFichaProgressHtml(p) {
 
   const itemsHtml = etapas.map((e, i) => {
     const st      = ep[e.id] || {};
-    const isDone  = !!st.ok;
+    const isDone  = !!st.ok && !!st.fim;  // OK E COM FIM = realmente completo
     const isNA    = !!st.na;
     const durDone = isDone ? diffDays(st.inicio, st.fim) : null;
-    const durAtiv = !isDone && !isNA && st.inicio ? diffDays(st.inicio, null) : null;
+    const durAtiv = (st.ok && !st.fim && st.inicio) || (!isDone && !isNA && st.inicio) ? diffDays(st.inicio, null) : null;  // Ativo = com início mas sem fim
 
     const circleStyle = isDone
       ? 'width:18px;height:18px;border-radius:50%;background:#16a34a;border:2px solid #16a34a;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;'
@@ -11578,7 +11581,7 @@ function arqShowProcessDetail(idx) {
         <div style="position:absolute;bottom:4px;right:6px;font-size:10px;background:rgba(0,0,0,.45);color:white;border-radius:4px;padding:2px 6px;">🔍 ampliar</div>
       </div>`;
     } else if(flowDiag?.mermaid) {
-      fluxoSection = `<div id="arq-det-mermaid" style="font-size:11px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;max-height:180px;overflow:auto;"></div>`;
+      fluxoSection = `<div id="arq-det-mermaid" style="font-size:11px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;max-height:400px;overflow:auto;"></div>`;
     } else {
       fluxoSection = `<div style="color:#94a3b8;font-size:12px;">Fluxograma não disponível</div>`;
     }
@@ -11696,7 +11699,29 @@ function arqShowProcessDetail(idx) {
           <div style="font-size:20px;margin-bottom:6px;">🎨</div>
           Diagrama Excalidraw salvo — abra o <strong>Fluxo</strong> para visualizar e editar.</div>`;
       } else if(popData.flowDiagram.mermaid && window.mermaid) {
-        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{}); } catch(e) { console.warn('[siga]', e); }
+        try { 
+          const id = 'arq-mmd-' + Date.now();
+          mermaid.render(id, popData.flowDiagram.mermaid).then(({svg}) => { 
+            if(mDiv) {
+              mDiv.innerHTML = svg;
+              const svgEl = mDiv.querySelector('svg');
+              if(svgEl) {
+                svgEl.style.maxWidth = 'none';
+                svgEl.style.width = '100%';
+                svgEl.style.height = 'auto';
+                let scale = 1;
+                svgEl.addEventListener('wheel', (ev) => {
+                  if (!ev.ctrlKey) return;
+                  ev.preventDefault();
+                  const factor = ev.deltaY < 0 ? 1.1 : 0.9;
+                  scale = Math.max(0.5, Math.min(3, scale * factor));
+                  svgEl.style.transform = `scale(${scale})`;
+                  svgEl.style.transformOrigin = 'top left';
+                });
+              }
+            }
+          }).catch(()=>{}); 
+        } catch(e) { console.warn('[siga]', e); }
       }
     }
   }

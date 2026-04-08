@@ -7813,12 +7813,33 @@ function _npopFillWorkflowExtractedFields(extracted) {
   _npopSetWorkflowField('nf-macro', extracted.macro || '');
   _npopSetWorkflowField('nf-subprocesso', extracted.subprocesso || '');
   _npopSetWorkflowField('nf-unidade', extracted.unidade || '');
+  _npopSetWorkflowField('nf-gerente', extracted.gerente || '');
   _npopSetWorkflowField('nf-desc', extracted.desc || '');
   _npopSetWorkflowField('nf-input', extracted.input || '');
   _npopSetWorkflowField('nf-output', extracted.output || '');
+  _npopSetWorkflowField('nf-resultados', extracted.resultados || '');
+  _npopSetWorkflowField('nf-solicitante', extracted.solicitante || '');
   _npopSetWorkflowField('nf-equipe', extracted.elaborado || '');
+  _npopSetWorkflowField('nf-sistemas', extracted.sistemas || '');
   _npopSetWorkflowField('nf-fornecedores', extracted.fornecedores || '');
   _npopSetWorkflowField('nf-clientes', extracted.clientes || '');
+  _npopSetWorkflowField('nf-data-inicio', extracted.dataInicio || extracted.data_emissao || '');
+  _npopSetWorkflowField('nf-data-prevista', extracted.dataPrevista || '');
+  _npopSetWorkflowField('nf-dificuldade', extracted.dificuldade || '');
+  _npopSetWorkflowField('nf-tipo', extracted.tipo || '');
+  _npopSetWorkflowField('nf-pat-vinc', extracted.patVinc || '');
+  _npopSetWorkflowField('nf-status-map', extracted.statusMap || '');
+  _npopSetWorkflowField('nf-status-display', _statusLabel(extracted.statusMap || 'planejado'));
+  populatePatrocinadoresSelect('nf-patrocinador', extracted.patrocinador || '');
+  npopUpdateEquipeSelect(extracted.unidade || '', 'nf-equipe-resp');
+  _npopSetWorkflowField('nf-equipe-resp', extracted.equipeResponsavel || '');
+  const objetivos = Array.isArray(extracted.objEstrategicos) ? extracted.objEstrategicos : [];
+  const objField = document.getElementById('nf-obj-estrategico');
+  if(objField) objField.value = JSON.stringify(objetivos);
+  _renderObjTags('nf-obj-estrategico-tags', objetivos);
+  const outline = _npopNormalizeOutline(extracted.flowOutline).length ? extracted.flowOutline : _npopOutlineFromSteps(extracted.steps);
+  _npopRenderOutlineRows('nf-flow-outline-list', outline);
+  if(!document.getElementById('nf-flow-outline-list')?.children.length) npopAddFlowOutlineRow(false);
 }
 
 function _npopApplyWorkflowExtractedData(extracted) {
@@ -7834,17 +7855,18 @@ function _npopApplyWorkflowExtractedData(extracted) {
   if(badge) badge.textContent = 'Etapa 2: revisar e editar dados extraídos';
 }
 
+function _npopReadFormInfo(prefix) {
+  const v = id => document.getElementById(`${prefix}${id}`)?.value?.trim() || '';
+  return { nome:v('processo') || v('subprocesso'), macro:v('macro'), processo:v('processo'), sub:v('subprocesso'), unidade:v('unidade'), gerente:v('gerente'), objEstrategicos:_tryParseJson(document.getElementById(`${prefix}obj-estrategico`)?.value, []), equipeResponsavel:v('equipe-resp'), tipo:v('tipo'), dificuldade:v('dificuldade'), statusMap:v('status-map') || v('status') || 'planejado', dataInicio:v('data-inicio') || v('inicio'), dataPrevista:v('data-prevista') || v('prevista'), dataEfetiva:v('efetiva'), solicitante:v('solicitante'), patrocinador:v('patrocinador'), equipe:v('equipe'), atores:(document.getElementById(`${prefix}atores`)?.value || '').split(',').map(s => s.trim()).filter(Boolean), desc:v('desc'), input:v('input'), output:v('output'), resultados:v('resultados'), fornecedores:v('fornecedores'), clientes:v('clientes'), sistemas:v('sistemas'), patVinc:v('pat-vinc'), flowOutline:_npopSerializeOutline(`${prefix}flow-outline-list`) };
+}
+
+function _npopFillExtractedMeta(extracted, info) {
+  Object.assign(extracted, { nome:info.nome || extracted.nome || extracted.processo || '', macro:info.macro, processo:info.processo, subprocesso:info.sub, unidade:info.unidade, gerente:info.gerente, objEstrategicos:info.objEstrategicos, equipeResponsavel:info.equipeResponsavel, tipo:info.tipo, dificuldade:info.dificuldade, statusMap:info.statusMap, dataInicio:info.dataInicio, dataPrevista:info.dataPrevista, dataEfetiva:info.dataEfetiva, solicitante:info.solicitante, patrocinador:info.patrocinador, elaborado:info.equipe || extracted.elaborado || '', equipe:info.equipe, desc:info.desc, input:info.input, output:info.output, resultados:info.resultados, fornecedores:info.fornecedores, clientes:info.clientes, sistemas:info.sistemas, patVinc:info.patVinc, flowOutline:info.flowOutline, atores:info.atores });
+}
+
 function _npopApplyFormStage2(extracted) {
-  const v = function(id) { return document.getElementById(id)?.value?.trim() || ''; };
-  if(v('nf-processo'))    extracted.nome        = v('nf-processo');
-  if(v('nf-macro'))       extracted.macro       = v('nf-macro');
-  if(v('nf-desc'))        extracted.desc        = v('nf-desc');
-  if(v('nf-input'))       extracted.input       = v('nf-input');
-  if(v('nf-output'))      extracted.output      = v('nf-output');
-  if(v('nf-equipe'))      extracted.elaborado   = v('nf-equipe');
-  if(v('nf-subprocesso')) extracted.subprocesso = v('nf-subprocesso');
-  if(v('nf-unidade'))     extracted.unidade     = v('nf-unidade');
-  extracted.atores = (document.getElementById('nf-atores')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const info = _npopReadFormInfo('nf-');
+  _npopFillExtractedMeta(extracted, info);
   openNpopOrderModal(extracted, ordered => showImportTargetModal(ordered));
 }
 
@@ -8018,8 +8040,26 @@ function _npopBuildStepsFromOutline(items, responsible) {
 
 function _npopFlowItemsFromSteps(steps) {
   const items = [];
-  steps.forEach(step => step.actions.forEach(action => items.push({ step: step.title, text: action.text || step.title })));
-  return items.length ? items : steps.map(step => ({ step: step.title, text: step.title }));
+  steps.forEach(step => _npopStepFlowItems(step, items));
+  return items.length ? items : steps.map(step => ({ label: step.title || 'Etapa' }));
+}
+
+function _npopActionLabel(action, fallback) {
+  const obj = actionObj(action);
+  return obj.type === 'decisao' ? (obj.decisionText || obj.text || fallback || 'Decisão') : (obj.text || fallback || 'Ação');
+}
+
+function _npopPushBranchItems(branches, items) {
+  (Array.isArray(branches) ? branches : []).forEach(branch => (branch.actions || []).forEach(action => items.push({ label: `${branch.label || 'Caminho'}: ${_npopActionLabel(action, 'Ação')}` })));
+}
+
+function _npopStepFlowItems(step, items) {
+  const actions = Array.isArray(step?.actions) ? step.actions : [];
+  if(!actions.length) { items.push({ label: step?.title || 'Etapa' }); return; }
+  actions.forEach(action => {
+    items.push({ label: _npopActionLabel(action, step?.title) });
+    _npopPushBranchItems(actionObj(action).branches, items);
+  });
 }
 
 function _npopMermaidNode(id, label) {
@@ -8029,7 +8069,7 @@ function _npopMermaidNode(id, label) {
 function _npopBuildMermaidFromSteps(steps) {
   const items = _npopFlowItemsFromSteps(steps);
   const lines = ['flowchart LR', '  START([Início])'];
-  items.forEach((item, index) => lines.push(_npopMermaidNode('N' + (index + 1), item.step === item.text ? item.text : `${item.step}\\n${item.text}`)));
+  items.forEach((item, index) => lines.push(_npopMermaidNode('N' + (index + 1), item.label)));
   items.forEach((item, index) => lines.push(`  ${index === 0 ? 'START' : 'N' + index} --> N${index + 1}`));
   lines.push(`  ${items.length ? 'N' + items.length : 'START'} --> END([Fim])`);
   return lines.join('\n');
@@ -8040,7 +8080,7 @@ function _npopXmlEscape(text) {
 }
 
 function _npopBpmnTaskNodes(items) {
-  return items.map((item, index) => `    <bpmn:task id="Task_${index + 1}" name="${_npopXmlEscape(item.step === item.text ? item.text : item.step + ' - ' + item.text)}"/>`).join('\n');
+  return items.map((item, index) => `    <bpmn:task id="Task_${index + 1}" name="${_npopXmlEscape(item.label)}"/>`).join('\n');
 }
 
 function _npopBpmnFlows(items) {
@@ -8699,7 +8739,9 @@ function mountNewPopTab(key, label, silent=false) {
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;">
-          <button onclick="exportFluxoWord('${key}')" style="padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">📄 Exportar Fluxo</button>
+          <button onclick="exportFluxoExcel('${key}')" style="padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">📊 Exportar Fluxo</button>
+          <button onclick="triggerImportFluxoExcel('${key}')" style="padding:8px 16px;background:#0f766e;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">📥 Importar Fluxo</button>
+          <input type="file" id="${key}-flow-import-file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importFluxoExcel('${key}', this)">
           <button onclick="showFlowDesigner(document.getElementById('tab-fd'))" style="padding:8px 16px;background:var(--cage-blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">🎨 Desenhar Fluxo</button>
         </div>
       </div>
@@ -9219,9 +9261,13 @@ function applyIaResult(parsed) {
       sub:               parsed.subprocesso      || '',
       unidade:           parsed.unidade          || parsed.divisao || parsed.area_responsavel || '',
       gerente:           parsed.gerente          || '',
+      objEstrategicos:   Array.isArray(parsed.objEstrategicos) ? parsed.objEstrategicos : [],
+      equipeResponsavel: parsed.equipeResponsavel || '',
+      tipo:              parsed.tipo             || '',
+      dificuldade:       parsed.dificuldade      || '',
       area:              parsed.area_responsavel || parsed.unidade || '',
       solicitante:       parsed.solicitante      || '',
-      patrocinador:      parsed.patrocinador      || '',
+      patrocinador:      parsed.patrocinador     || '',
       equipe:            parsed.equipe           || '',
       atores:            Array.isArray(parsed.atores) ? parsed.atores : [],
       elaborado:         parsed.elaborado        || '',
@@ -9233,10 +9279,12 @@ function applyIaResult(parsed) {
       fornecedores:      parsed.fornecedores     || '',
       clientes:          parsed.clientes         || '',
       sistemas:          parsed.sistemas         || '',
-      statusMap:         'planejado',
-      dataInicio:        '',
-      dataPrevista:      '',
-      dataEfetiva:       '',
+      statusMap:         parsed.statusMap        || 'planejado',
+      dataInicio:        parsed.dataInicio       || '',
+      dataPrevista:      parsed.dataPrevista     || '',
+      dataEfetiva:       parsed.dataEfetiva      || '',
+      patVinc:           parsed.patVinc          || '',
+      flowOutline:       _npopNormalizeOutline(parsed.flowOutline).length ? parsed.flowOutline : _npopOutlineFromSteps(steps),
     },
     sipoc: {
       fornecedores: _splitLines(parsed.fornecedores),
@@ -9282,6 +9330,11 @@ function applyIaResult(parsed) {
     flowDiagram: null,  // will be built below if flow[] exists
   };
 
+  if(DATA[key].meta.patVinc) {
+    const patItem = (DATA.pat || []).find(item => item.id === DATA[key].meta.patVinc);
+    if(patItem) patItem.popVinc = key;
+  }
+
   // Auto-build flow diagram from flow[] if extracted
   if(Array.isArray(parsed.flow) && parsed.flow.length > 0 && typeof fdBuildFromFlowJSON === 'function') {
     // Temporarily set currentPop to key so fdBuildFromFlowJSON stores in correct slot
@@ -9289,6 +9342,13 @@ function applyIaResult(parsed) {
     currentPop = key;
     fdBuildFromFlowJSON(parsed.flow);
     currentPop = _prevPop;
+  }
+  if(!DATA[key].flowDiagram) {
+    DATA[key].flowDiagram = {
+      mermaid: _npopBuildMermaidFromSteps(steps),
+      text: _npopBuildMermaidFromSteps(steps),
+      bpmnXml: _npopBuildBpmnFromSteps(steps, parsed.nome || parsed.processo || 'Processo'),
+    };
   }
 
   document.getElementById('npop-s2').classList.remove('active');
@@ -23081,6 +23141,168 @@ function exportFluxoWord(p) {
   showToast('📄 Fluxo exportado para Word!', 'success');
 }
 
+function _flowTypeLabel(type) {
+  const map = { atividade:'atividade', evento:'evento', decisao:'decisao', observacao:'observacao' };
+  return map[type] || 'atividade';
+}
+
+function _flowExcelRow(stepTitle, obj, branchPath) {
+  const prefix = branchPath ? `${branchPath} :: ` : '';
+  const desc = `${prefix}${obj.type === 'decisao' ? (obj.decisionText || obj.text || '') : (obj.text || '')}`.trim();
+  return { 'Etapa': stepTitle || '', 'Ação': _flowTypeLabel(obj.type), 'Descrição da ação': desc, 'Natureza da atividade': obj.type === 'atividade' ? (obj.natureza || '') : '', 'Executor': obj.type === 'atividade' ? (obj.actor || '') : '', 'Automática? (sim ou nao)': obj.automatico ? 'sim' : 'nao', 'Retrabalho? (sim ou nao)': obj.loop ? 'sim' : 'nao', 'Sistema envolvido': obj.sistemas || '' };
+}
+
+function _appendFlowExcelRows(rows, stepTitle, action, branchPath) {
+  const obj = actionObj(action);
+  rows.push(_flowExcelRow(stepTitle, obj, branchPath));
+  if(obj.type !== 'decisao') return;
+  (obj.branches || []).forEach(branch => _appendFlowBranchRows(rows, stepTitle, branch, branchPath));
+}
+
+function _appendFlowBranchRows(rows, stepTitle, branch, branchPath) {
+  const nextPath = branchPath ? `${branchPath} > ${branch.label || 'Caminho'}` : (branch.label || 'Caminho');
+  (branch.actions || []).forEach(item => _appendFlowExcelRows(rows, stepTitle, item, nextPath));
+}
+
+function _flowRowsFromSteps(steps) {
+  const rows = [];
+  steps.forEach(step => (step.actions || []).forEach(action => _appendFlowExcelRows(rows, step.title || '', action, '')));
+  return rows;
+}
+
+function _flowModeLabel() {
+  return flowMode === 'tobe' ? 'TOBE' : 'ASIS';
+}
+
+function exportFluxoExcel(p) {
+  const pop = DATA[p];
+  const steps = (pop?.steps || []).map(step => resolveStep(step, flowMode));
+  const rows = _flowRowsFromSteps(steps);
+  if(!rows.length) { showToast('Nenhuma ação cadastrada no fluxo atual.', 'warn'); return; }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Fluxo');
+  const safe = (pop?.meta?.name || 'processo').replace(/[\\/:*?"<>|]+/g, '_');
+  XLSX.writeFile(wb, `Fluxo_${safe}_${_flowModeLabel()}.xlsx`);
+  showToast('📊 Fluxo exportado para Excel!', 'success');
+}
+
+function triggerImportFluxoExcel(p) {
+  const input = document.getElementById(`${p}-flow-import-file`);
+  if(input) input.click();
+}
+
+function _flowBool(value) {
+  return /^s/i.test(String(value || '').trim());
+}
+
+function _flowBranchSplit(text) {
+  const value = String(text || '').trim();
+  const idx = value.indexOf('::');
+  if(idx === -1) return { path:'', text:value };
+  return { path:value.slice(0, idx).trim(), text:value.slice(idx + 2).trim() };
+}
+
+function _flowBranchPath(path) {
+  return String(path || '').split('>').map(item => item.trim()).filter(Boolean);
+}
+
+function _flowImportedAction(row) {
+  return { type:row._type, text:row._text, decisionText:row._type === 'decisao' ? row._text : '', actor:row._type === 'atividade' ? String(row['Executor'] || '').trim() : '', duracao:'', sistemas:String(row['Sistema envolvido'] || '').trim(), documentos:'', observacoes:'', pontosMelhoria:'', natureza:row._type === 'atividade' ? String(row['Natureza da atividade'] || '').trim() : '', eventoTipo:'', automatico:_flowBool(row['Automática? (sim ou nao)']), loop:_flowBool(row['Retrabalho? (sim ou nao)']) };
+}
+
+function _flowImportType(value) {
+  const type = String(value || '').trim().toLowerCase();
+  if(['atividade','evento','decisao','observacao'].includes(type)) return type;
+  return 'atividade';
+}
+
+function _flowNormalizeImportRow(row) {
+  const split = _flowBranchSplit(row['Descrição da ação']);
+  return { ...row, _step:String(row['Etapa'] || '').trim(), _type:_flowImportType(row['Ação']), _path:_flowBranchPath(split.path), _text:split.text };
+}
+
+function _flowEnsureDecisionParent(step, pending) {
+  if(pending && step.actions.includes(pending)) return pending;
+  return null;
+}
+
+function _flowFindOrCreateBranch(branches, label) {
+  const found = branches.find(item => String(item.label || '') === label);
+  if(found) return found;
+  const created = { label, actions:[] };
+  branches.push(created);
+  return created;
+}
+
+function _flowBranchDecision(branch, label) {
+  const last = actionObj(branch.actions[branch.actions.length - 1] || {});
+  if(last.type === 'decisao') return last;
+  const created = { type:'decisao', text:label, decisionText:label, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'', eventoTipo:'', automatico:false, loop:false, branches:[] };
+  branch.actions.push(created);
+  return created;
+}
+
+function _flowAttachToBranches(root, path, action) {
+  let current = root;
+  path.forEach((label, index) => {
+    const branch = _flowFindOrCreateBranch(current.branches, label);
+    if(index === path.length - 1) branch.actions.push(action);
+    else current = _flowBranchDecision(branch, label);
+  });
+}
+
+function _flowAppendImportedRow(state, row) {
+  const stepName = row._step || 'Etapa';
+  if(!state.map.has(stepName)) state.map.set(stepName, { title:stepName, subtitle:'', responsible:'', note:'', actions:[] });
+  const step = state.map.get(stepName);
+  const action = _flowImportedAction(row);
+  if(!row._path.length) {
+    step.actions.push(action);
+    state.pending.set(stepName, action.type === 'decisao' ? action : null);
+    return;
+  }
+  const parent = _flowEnsureDecisionParent(step, state.pending.get(stepName));
+  if(parent) _flowAttachToBranches(parent, row._path, action);
+  else step.actions.push(action);
+}
+
+function _flowBuildImportedSteps(rows) {
+  const state = { map:new Map(), pending:new Map() };
+  rows.map(_flowNormalizeImportRow).filter(row => row._text).forEach(row => _flowAppendImportedRow(state, row));
+  return [...state.map.values()];
+}
+
+function _flowApplyImportedSteps(p, steps) {
+  if(flowMode === 'tobe') DATA[p].steps = steps.map((step, index) => ({ ...(DATA[p].steps[index] || { title:step.title, subtitle:'', responsible:'', respClass:'resp-green', actions:[] }), tobe:{ title:step.title, subtitle:'', responsible:'', actions:step.actions, note:null } }));
+  if(flowMode === 'asis') {
+    DATA[p].steps = steps.map(step => ({ title:step.title, subtitle:'', responsible:'', respClass:'resp-green', actions:step.actions, decision:null, note:'', duracao:'', sistemas:'', documentos:'', pontosMelhoria:'', observacoes:'', tobe:{ actions:[] } }));
+    DATA[p].currentStep = 0;
+  }
+}
+
+function importFluxoExcel(p, input) {
+  const file = input?.files?.[0];
+  if(!file) return;
+  const isCsv = /\.csv$/i.test(file.name) || file.type === 'text/csv';
+  const reader = new FileReader();
+  reader.onload = function(e) { try { _processImportFluxoExcel(p, e.target.result, isCsv); input.value = ''; } catch(err) { input.value = ''; showToast('Erro ao importar fluxo: ' + err.message, 'warn'); } };
+  if(isCsv) reader.readAsText(file, 'UTF-8'); else reader.readAsArrayBuffer(file);
+}
+
+function _processImportFluxoExcel(p, content, isCsv) {
+  const wb = isCsv ? XLSX.read(content, { type:'string', cellDates:true }) : XLSX.read(content, { type:'array', cellDates:true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { defval:'' });
+  const steps = _flowBuildImportedSteps(rows);
+  if(!steps.length) throw new Error('Nenhuma linha válida encontrada na planilha.');
+  _flowApplyImportedSteps(p, steps);
+  markChanged(true, true);
+  renderTracker(p);
+  renderStep(p, DATA[p].currentStep || 0);
+  showToast(`📥 Fluxo importado com ${rows.length} linha(s).`, 'success');
+}
+
 // ── Helpers compartilhados de exportação de auditoria ──────────────────────
 function _auditDocStyle() {
   return `
@@ -24873,7 +25095,7 @@ function statusModalAutoFill() {
     const actions = Array.isArray(step.actions) ? step.actions : [];
     const title       = step.title       || step.subtitle || `Etapa ${index + 1}`;
     const responsible = step.responsible || '';
-    const head = `${index + 1}. ${title}${responsible ? ` [${responsible}]` : ''}`;
+    const head = `Etapa ${index + 1}: ${title}${responsible ? ` [${responsible}]` : ''}`;
     const body = actions.map(action => {
       const base = _fdDescribeAction(action, '  - ');
       return actionObj(action).type === 'decisao' ? `${base}\n${_fdDescribeBranches(actionObj(action), '  ')}` : base;
@@ -24899,7 +25121,7 @@ Processo: "${meta.name || currentPop}"
 Unidade: "${meta.unidade || meta.area || ''}"
 Objetivo: "${meta.desc || ''}"
 
-Etapas e ações previstas:
+Fluxo operacional completo do processo (ações na ordem em que aparecem na aba Fluxo):
 ${stepsText}
 
 Regras obrigatórias:
@@ -24909,7 +25131,7 @@ Regras obrigatórias:
 - Atividades: retângulos B[Atividade]
 - Indique responsável em cada nó quando disponível: B["Atividade\\n[Responsável]"]
 - Crie conexões lógicas com labels Sim/Não nas bifurcações
-- Baseie o fluxo principalmente nas ações descritas dentro de cada etapa, e não apenas no nome das etapas
+- Trate as etapas apenas como agrupadores visuais; o desenho deve refletir principalmente as ações e decisões do fluxo completo
 - Mantenha o diagrama limpo e legível
 - Retorne APENAS o código Mermaid puro, sem blocos markdown, sem explicações.`;
 
