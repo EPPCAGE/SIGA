@@ -26988,13 +26988,22 @@ function arqCompRenderSection(idx) {
 // ═══════════════════════════════════════════════════════════════════
 
 const MAT_QUESTIONS = [
-  { text: 'Mesmo com o fluxo definido, você ainda precisa tirar dúvidas para executar o processo?', inverted: false },
-  { text: 'Existem muitas exceções que não estão representadas no fluxo?', inverted: false },
-  { text: 'Você precisa refazer atividades com frequência?', inverted: false },
-  { text: 'Problemas em etapas anteriores impactam seu trabalho?', inverted: false },
-  { text: 'Você precisa buscar dados adicionais fora do processo?', inverted: false },
-  { text: 'O processo depende de conhecimento informal (não documentado)?', inverted: false },
-  { text: 'Existem diferenças relevantes entre o processo desenhado e o que acontece na prática?', inverted: false },
+  // Execução do Processo
+  { text: 'Existem muitas exceções que não estão representadas no fluxo?',                           inverted: false, section: 'Execução do Processo' },
+  { text: 'Você precisa refazer atividades com frequência?',                                          inverted: false, section: 'Execução do Processo' },
+  { text: 'Existem diferenças relevantes entre o processo desenhado e o que acontece na prática?',   inverted: false, section: 'Execução do Processo' },
+  // Tecnologia
+  { text: 'Você precisa buscar dados ou informações fora do processo para executar sua atividade?',  inverted: false, section: 'Tecnologia' },
+  { text: 'Os sistemas e ferramentas disponíveis são adequados para executar o processo?',            inverted: true,  section: 'Tecnologia' },
+  { text: 'Problemas com sistemas ou ferramentas causam atrasos ou interrupções na execução?',        inverted: false, section: 'Tecnologia' },
+  // Pessoas
+  { text: 'Mesmo com o fluxo definido, você ainda precisa tirar dúvidas para executar o processo?', inverted: false, section: 'Pessoas' },
+  { text: 'O processo depende de conhecimento informal (não documentado)?',                           inverted: false, section: 'Pessoas' },
+  { text: 'Problemas em etapas anteriores impactam seu trabalho?',                                   inverted: false, section: 'Pessoas' },
+  // Monitoramento e Métricas
+  { text: 'O desempenho do processo é acompanhado com indicadores ou métricas claras?',              inverted: true,  section: 'Monitoramento e Métricas' },
+  { text: 'Falhas ou gargalos no processo são identificados e tratados com agilidade?',               inverted: true,  section: 'Monitoramento e Métricas' },
+  { text: 'Há registros históricos que permitem analisar a evolução do processo ao longo do tempo?', inverted: true,  section: 'Monitoramento e Métricas' },
 ];
 
 const MAT_QUESTIONNAIRE_COUNT = 3;
@@ -27003,7 +27012,6 @@ const MAT_QUESTIONNAIRE_COUNT = 3;
 const MAT_DIGITAL_QUESTIONS = [
   { text: 'As atividades do processo são executadas com suporte de sistemas informatizados (TI)?', inverted: false },
   { text: 'Os dados e informações gerados no processo são registrados e consultados em sistemas digitais?', inverted: false },
-  { text: 'O processo gera registros ou relatórios digitais que permitem rastreabilidade e consulta posterior?', inverted: false },
 ];
 
 function matCreateEmptyDigitalAnswers() {
@@ -27831,19 +27839,29 @@ function matRender(p) {
         </button>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">${qIndicators}</div>
-      ${MAT_QUESTIONS.map((q, i) => {
-        const cur = activeAnswers[i];
-        return `
-          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${cur !== null ? '#f0fdf4' : '#f8fafc'};border-radius:8px;margin-bottom:8px;border:1px solid ${cur !== null ? '#bbf7d0' : '#f1f5f9'};flex-wrap:wrap;">
-            <div style="min-width:22px;font-size:12px;font-weight:800;color:#94a3b8;">${i+1}</div>
-            <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}${q.inverted ? ' <span style="font-size:10px;color:#6366f1;font-weight:600;">(invertida)</span>' : ''}</div>
-            <div style="display:flex;gap:6px;flex-shrink:0;">
-              ${ansBtn(p, i, activeQIndex, 'sim',    'Sim',    cur)}
-              ${ansBtn(p, i, activeQIndex, 'talvez', 'Talvez', cur)}
-              ${ansBtn(p, i, activeQIndex, 'nao',    'Não',    cur)}
-            </div>
-          </div>`;
-      }).join('')}
+      ${(()=>{
+        const sectionIcons = { 'Execução do Processo':'▶', 'Tecnologia':'💻', 'Pessoas':'👥', 'Monitoramento e Métricas':'📊' };
+        let lastSection = null;
+        return MAT_QUESTIONS.map((q, i) => {
+          const cur = activeAnswers[i];
+          let header = '';
+          if(q.section !== lastSection) {
+            lastSection = q.section;
+            const icon = sectionIcons[q.section] || '•';
+            header = `<div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;padding:10px 4px 6px;${i > 0 ? 'margin-top:6px;border-top:1px solid #f1f5f9;' : ''}">${icon} ${q.section}</div>`;
+          }
+          return header + `
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${cur !== null ? '#f0fdf4' : '#f8fafc'};border-radius:8px;margin-bottom:8px;border:1px solid ${cur !== null ? '#bbf7d0' : '#f1f5f9'};flex-wrap:wrap;">
+              <div style="min-width:22px;font-size:12px;font-weight:800;color:#94a3b8;">${i+1}</div>
+              <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}${q.inverted ? ' <span style="font-size:10px;color:#6366f1;font-weight:600;">(invertida)</span>' : ''}</div>
+              <div style="display:flex;gap:6px;flex-shrink:0;">
+                ${ansBtn(p, i, activeQIndex, 'sim',    'Sim',    cur)}
+                ${ansBtn(p, i, activeQIndex, 'talvez', 'Talvez', cur)}
+                ${ansBtn(p, i, activeQIndex, 'nao',    'Não',    cur)}
+              </div>
+            </div>`;
+        }).join('');
+      })()}
     </div>`;
 
   // issue #3: legenda dos níveis de maturidade
