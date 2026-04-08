@@ -8354,6 +8354,15 @@ function _extractOuterJsonObject(text) {
   return start !== -1 && end > start ? source.slice(start, end + 1) : null;
 }
 
+function _extractOuterJsonValue(text) {
+  const source = String(text || '');
+  const arrayPos = source.indexOf('[');
+  const objectPos = source.indexOf('{');
+  if (arrayPos !== -1 && (objectPos === -1 || arrayPos < objectPos)) return _extractOuterJsonArray(source);
+  if (objectPos !== -1) return _extractOuterJsonObject(source);
+  return null;
+}
+
 function indexDocumentForFaq(content, maxChunks = 20) {
   const text = String(content || '').trim();
   if (text.length === 0) return null;
@@ -22854,6 +22863,22 @@ function auditRemoveQuestao(planId, idx) {
   auditRenderQuestoes(planId);
 }
 
+function _auditQuestionCriteriaText(plan) {
+  const criterios = Array.isArray(plan?.criterios) ? plan.criterios : [];
+  if (!criterios.length) return 'Nenhum critério formal informado.';
+  return criterios.map((c, i) => `${i + 1}. ${c.titulo || 'Critério'}${c.descricao ? ': ' + c.descricao : ''}`).join('\n');
+}
+
+function _auditQuestionFlowText(proc) {
+  const tobeSteps = proc?.tobeSteps || [];
+  const steps = tobeSteps.length ? tobeSteps : (proc?.steps || []);
+  return steps.map((step, i) => {
+    const actions = Array.isArray(step?.actions) ? step.actions : [];
+    const items = actions.map((action, idx) => `${i + 1}.${idx + 1} ${actionObj(action).decisionText || actionObj(action).text || 'Ação'}`);
+    return [`Etapa ${i + 1}: ${step?.title || 'Etapa ' + (i + 1)}`, ...items].join('\n');
+  }).join('\n\n');
+}
+
 async function auditGerarQuestoesIA() {
   const planId = _auditCurrentPlanId;
   const plan = DATA.audits.plans.find(p => p.id === planId);
@@ -22862,17 +22887,31 @@ async function auditGerarQuestoesIA() {
   const proc = pKey ? DATA[pKey] : null;
   if(!proc) { showToast('Processo não vinculado ao plano. Edite o plano e selecione o processo.', 'warn'); return; }
   showToast('🤖 Gerando questões com IA…', 'info');
-  const tobeSteps = proc.tobeSteps || [];
-  const stepsForAI = (tobeSteps.length ? tobeSteps : (proc.steps||[]));
-  const steps = stepsForAI.map((s,i)=>`${i+1}. ${s.title||'Etapa '+(i+1)}`).join('\n');
-  const prompt = `Você é um auditor sênior. Com base nas etapas do processo "${proc.meta?.name||''}", gere questões de auditoria objetivas que verifiquem conformidade, qualidade e eficiência.
+  const flow = _auditQuestionFlowText(proc);
+  const criteria = _auditQuestionCriteriaText(plan);
+  const prompt = `Você é um auditor sênior. Gere questões de auditoria com base no processo mapeado "${proc.meta?.name || ''}", limitando-se prioritariamente ao objetivo, escopo e critérios da auditoria.
 
-Etapas do processo:
-${steps}
+OBJETIVO DA AUDITORIA
+${plan.objetivo || 'Verificar aderência ao POP vigente'}
 
-Objetivo da auditoria: ${plan.objetivo||'Verificar aderência ao POP vigente'}
+ESCOPO DA AUDITORIA
+${plan.escopo || 'Escopo não informado. Use o objetivo como referência principal.'}
 
-Gere de 5 a 10 questões. Retorne APENAS JSON:
+CRITÉRIOS DA AUDITORIA
+${criteria}
+
+PROCESSO MAPEADO
+${flow || 'Fluxo não detalhado.'}
+
+REGRAS
+- Gere perguntas objetivas de conformidade, qualidade, eficiência ou aderência aos critérios.
+- Priorize apenas partes do processo claramente cobertas por objetivo, escopo e critérios.
+- Se houver dúvida razoável sobre um ponto possivelmente dentro do escopo, inclua a questão para revisão humana posterior.
+- Evite perguntas sobre trechos evidentemente fora do escopo.
+- Gere de 5 a 10 questões.
+- Retorne APENAS JSON.
+
+FORMATO
 [{"pergunta":"...","etapa":"nome da etapa relacionada"}]`;
   try {
     const raw = await callGemini(prompt);
@@ -23778,8 +23817,7 @@ function truncateRepairJson(str) {
 
 function parseAiJson(text) {
   let clean = _stripMarkdownCodeFence(text);
-  // Extrai apenas o objeto JSON mais externo
-  const m = _extractOuterJsonObject(clean);
+  const m = _extractOuterJsonValue(clean);
   if (m) clean = m;
   // 1) Tenta parse direto
   try { return JSON.parse(clean); } catch (_e1) { /* intentional */ }
