@@ -4851,21 +4851,10 @@ function _harvestDataKeyFields() {
 }
 
 function _applyHarvestStepField(step, sf, val) {
-  if(sf.startsWith('tobe_')) {
-    if(!step.tobe) step.tobe = {};
-    step.tobe[sf.slice(5)] = val;
-    return;
-  }
   const fieldMap = {
-    title: 'title',
-    subtitle: 'subtitle',
-    responsible: 'responsible',
-    note: 'note',
-    duracao: 'duracao',
-    sistemas: 'sistemas',
-    documentos: 'documentos',
-    pontosMelhoria: 'pontosMelhoria',
-    observacoes: 'observacoes',
+    title: 'title', subtitle: 'subtitle', responsible: 'responsible', note: 'note',
+    duracao: 'duracao', sistemas: 'sistemas', documentos: 'documentos',
+    pontosMelhoria: 'pontosMelhoria', observacoes: 'observacoes',
   };
   const target = fieldMap[sf];
   if(target) step[target] = val;
@@ -4878,9 +4867,10 @@ function _harvestStepFields() {
     const pp = el.dataset.sp;
     const si = Number.parseInt(el.dataset.si);
     const sf = el.dataset.sf;
-    if(!pp || Number.isNaN(si) || !sf || !DATA[pp]?.steps?.[si]) return;
+    const steps = _stepsArr(pp);
+    if(!pp || Number.isNaN(si) || !sf || !steps[si]) return;
     const val = el.innerText?.replace(/^👤\s*/, '').trim() || '';
-    _applyHarvestStepField(DATA[pp].steps[si], sf, val);
+    _applyHarvestStepField(steps[si], sf, val);
   });
 }
 
@@ -4913,14 +4903,10 @@ function _harvestActionFields() {
     const pp = el.dataset.sp;
     const si = Number.parseInt(el.dataset.si);
     const ai = Number.parseInt(el.dataset.ai);
-    if(!pp || Number.isNaN(si) || Number.isNaN(ai) || !DATA[pp]?.steps?.[si]) return;
-    const step = DATA[pp].steps[si];
+    if(!pp || Number.isNaN(si) || Number.isNaN(ai)) return;
+    const step = _stepsArr(pp)[si];
+    if(!step) return;
     const text = el.innerText?.trim() || '';
-    if(el.dataset.tobe === 'true') {
-      if(!step.tobe) step.tobe = {};
-      _setHarvestActionText(step.tobe.actions, ai, text);
-      return;
-    }
     _setHarvestActionText(step.actions, ai, text);
   });
 }
@@ -5340,7 +5326,7 @@ function _rerenderUndoCurrentPop() {
   if(!currentPop) return;
   const p = popPrefix(currentPop);
   if(!DATA[p]) return;
-  try { DATA[p].steps.forEach((_, si) => renderStep(p, si)); } catch(e) { console.warn('[siga]', e); }
+  try { _stepsArr(p).forEach((_, si) => renderStep(p, si)); } catch(e) { console.warn('[siga]', e); }
   try { renderTracker(p); } catch(e) { console.warn('[siga]', e); }
   try { renderMetrics(p); } catch(e) { console.warn('[siga]', e); }
 }
@@ -5355,17 +5341,18 @@ function renderTracker(p) {
   const el = document.getElementById(p + '-step-tracker');
   if(!el) return;
   const cur = DATA[p].currentStep;
+  const steps = _stepsArr(p);
   el.innerHTML = '';
-  DATA[p].steps.forEach((s,i) => {
+  steps.forEach((s,i) => {
     const dot = document.createElement('div');
     let dotState = '';
     if(i === cur) dotState = ' active';
     else if(i < cur) dotState = ' done';
     dot.className = 'step-dot'+dotState;
-    dot.innerHTML = `<div class="step-dot-circle">${i<cur?'✓':i+1}</div><div class="step-dot-label">${escapeHtml(resolveStep(s, flowMode).title)}</div>`;
+    dot.innerHTML = `<div class="step-dot-circle">${i<cur?'✓':i+1}</div><div class="step-dot-label">${escapeHtml(s.title||'')}</div>`;
     dot.onclick = () => { DATA[p].currentStep=i; renderStep(p,i); };
     el.appendChild(dot);
-    if(i<DATA[p].steps.length-1){
+    if(i<steps.length-1){
       const line = document.createElement('div');
       line.className = 'step-line'+(i<cur?' done':'');
       el.appendChild(line);
@@ -5419,9 +5406,6 @@ function _sanitizeStep(s) {
     documentos:     s?.documentos     || '',
     pontosMelhoria: s?.pontosMelhoria || '',
     observacoes:    s?.observacoes    || '',
-    tobe:           (s?.tobe && typeof s.tobe === 'object')
-      ? { ...s.tobe, actions: Array.isArray(s.tobe?.actions) ? s.tobe.actions : [] }
-      : { actions: [] }
   };
 }
 
@@ -5646,8 +5630,9 @@ function _wireStepDnD(p, i, container) {
       e.preventDefault();
       const toIdx = Number.parseInt(li.dataset.ai);
       if(_dragIdx === null || _dragIdx === toIdx) return;
-      const _s = DATA[p].steps[i];
-      const actions = flowMode === 'tobe' ? (_s.tobe.actions||[]) : _s.actions;
+      const _s = _stepsArr(p)[i];
+      if(!_s) return;
+      const actions = _s.actions || [];
       const moved = actions.splice(_dragIdx, 1)[0];
       actions.splice(toIdx, 0, moved);
       _dragIdx = null;
@@ -5676,16 +5661,9 @@ function _wireStepFieldBlur(p, i, container) {
     el.addEventListener('blur', function() {
       const pp=this.dataset.sp, si=Number.parseInt(this.dataset.si), sf=this.dataset.sf;
       const val = this.innerText.replace(/^👤\s*/,'').trim();
-      const step = DATA[pp].steps[si];
+      const step = _stepsArr(pp)[si];
       if(!step) return;
-      if(sf.startsWith('tobe_')) {
-        if(!step.tobe) step.tobe = {};
-        const tobeField = sf.slice(5);
-        step.tobe[tobeField] = val;
-        if(tobeField === 'title') renderTracker(pp);
-      } else {
-        _applyStepField(step, sf, val, pp);
-      }
+      _applyStepField(step, sf, val, pp);
       markChanged(true);
     });
   });
@@ -5695,22 +5673,13 @@ function _wireStepActionBlur(p, i, container) {
   container.querySelectorAll('[data-ai]:not([data-field])').forEach(el => {
     el.addEventListener('blur', function() {
       const pp=this.dataset.sp, si=Number.parseInt(this.dataset.si), ai=Number.parseInt(this.dataset.ai);
-      const step = DATA[pp].steps[si];
+      const step = _stepsArr(pp)[si];
       if(!step) return;
-      if(this.dataset.tobe === 'true') {
-        if(!step.tobe) step.tobe = {};
-        if(!Array.isArray(step.tobe.actions) || !step.tobe.actions[ai]) return;
-        const cur = actionObj(step.tobe.actions[ai]);
-        cur.text = this.innerText.trim();
-        if(cur.type === 'decisao') cur.decisionText = cur.text;
-        step.tobe.actions[ai] = cur;
-      } else {
-        if(!step.actions || !step.actions[ai]) return;
-        const cur = actionObj(step.actions[ai]);
-        cur.text = this.innerText.trim();
-        if(cur.type === 'decisao') cur.decisionText = cur.text;
-        step.actions[ai] = cur;
-      }
+      if(!step.actions || !step.actions[ai]) return;
+      const cur = actionObj(step.actions[ai]);
+      cur.text = this.innerText.trim();
+      if(cur.type === 'decisao') cur.decisionText = cur.text;
+      step.actions[ai] = cur;
       markChanged(true);
     });
   });
@@ -5720,9 +5689,9 @@ function _wireStepBranchBlurs(p, i, container) {
   container.querySelectorAll('[data-field="branchlabel"]').forEach(el => {
     el.addEventListener('blur', function() {
       const pp=this.dataset.sp, si=Number.parseInt(this.dataset.si), ai=Number.parseInt(this.dataset.ai), bi=Number.parseInt(this.dataset.bi);
-      const step = DATA[pp].steps[si];
+      const step = _stepsArr(pp)[si];
       if(!step) return;
-      const actions = flowMode==='tobe' ? (step.tobe?.actions||[]) : step.actions;
+      const actions = step.actions || [];
       const action = actionObj(actions[ai]);
       if(Array.isArray(action.branches) && action.branches[bi]) {
         action.branches[bi].label = this.innerText.trim() || `Caminho ${bi+1}`;
@@ -5735,9 +5704,9 @@ function _wireStepBranchBlurs(p, i, container) {
     el.addEventListener('blur', function() {
       const pp=this.dataset.sp, si=Number.parseInt(this.dataset.si), ai=Number.parseInt(this.dataset.ai);
       const bi=Number.parseInt(this.dataset.bi), bai=Number.parseInt(this.dataset.bai), nbi=Number.parseInt(this.dataset.nbi);
-      const step = DATA[pp].steps[si];
+      const step = _stepsArr(pp)[si];
       if(!step) return;
-      const actions = flowMode==='tobe' ? (step.tobe?.actions||[]) : step.actions;
+      const actions = step.actions || [];
       const parent = actionObj(actions[ai]);
       const subDec = actionObj((parent.branches[bi]?.actions||[])[bai]||{});
       if(Array.isArray(subDec.branches) && subDec.branches[nbi]) {
@@ -5809,35 +5778,44 @@ function buildNestedBranchesHTML(p, si, ai, bi, bai, branches, em) {
 }
 
 function renderStep(p, i) {
-  if(!DATA[p] || !Array.isArray(DATA[p].steps) || !DATA[p].steps[i]) {
+  const container = document.getElementById(p+'-step-panel');
+  if(!container) return;
+  if(!DATA[p]) return;
+  const steps = _stepsArr(p);
+  if(steps.length === 0) {
+    const isTobe = flowMode === 'tobe';
+    container.innerHTML = `
+      <div class="step-panel${isTobe ? ' tobe-mode' : ''}" style="text-align:center;padding:48px 24px;">
+        <p style="color:var(--text-muted);margin-bottom:16px;">Nenhuma etapa no fluxo ${isTobe ? 'TO BE' : 'AS IS'}.</p>
+        ${editMode ? `<button class="edit-add-btn" onclick="addStep('${p}')">+ Adicionar Etapa</button>` : ''}
+      </div>`;
+    renderTracker(p);
     return;
   }
-  const s = DATA[p].steps[i];
+  const s = steps[i];
+  if(!s) { DATA[p].currentStep = 0; renderStep(p, 0); return; }
   const em = editMode;
   const isTobe = flowMode === 'tobe';
-  const stepData = _getStepDisplayData(s, isTobe, em);
-  const currentActions = isTobe ? (stepData.tb.actions || []) : (s.actions || []);
-  const actHTML = currentActions.map((a, ai) => _buildStepActionHTML(p, i, ai, a, isTobe, em)).join('');
-  const container = document.getElementById(p+'-step-panel');
-  if(!container) { return; }
+  const stepData = _getStepDisplayData(s, em);
+  const actHTML = (s.actions || []).map((a, ai) => _buildStepActionHTML(p, i, ai, a, isTobe, em)).join('');
   container.innerHTML = `
     <div class="step-panel${isTobe ? ' tobe-mode' : ''}">
       <div class="step-panel-head">
         <div class="step-number">${i+1}</div>
         <div class="step-info" style="flex:1;">
-          <h3 ${stepData.ce} data-sp="${p}" data-si="${i}" data-sf="${stepData.titleSf}">${stepData.title}</h3>
-          <p ${stepData.ce} data-sp="${p}" data-si="${i}" data-sf="${stepData.subtitleSf}">${stepData.subtitle}</p>
+          <h3 ${stepData.ce} data-sp="${p}" data-si="${i}" data-sf="title">${stepData.title}</h3>
+          <p ${stepData.ce} data-sp="${p}" data-si="${i}" data-sf="subtitle">${stepData.subtitle}</p>
         </div>
         ${_getStepModeBadge(isTobe)}
         <button class="move-step-btn" onclick="moveStep('${p}',${i},-1)" title="Mover etapa para cima" ${i===0?'disabled':''}>↑</button>
-        <button class="move-step-btn" onclick="moveStep('${p}',${i},1)" title="Mover etapa para baixo" ${i===DATA[p].steps.length-1?'disabled':''}>↓</button>
+        <button class="move-step-btn" onclick="moveStep('${p}',${i},1)" title="Mover etapa para baixo" ${i===steps.length-1?'disabled':''}>↓</button>
         <button class="rm-step-btn" onclick="rmStep('${p}',${i})" title="Apagar esta etapa">🗑 Apagar etapa</button>
       </div>
       <div class="step-panel-body">
-        <div class="resp-tag ${stepData.respClass}" ${stepData.ce} data-sp="${p}" data-si="${i}" data-sf="${stepData.respSf}">👤 ${stepData.responsible}</div>
+        <div class="resp-tag ${stepData.respClass}" ${stepData.ce} data-sp="${p}" data-si="${i}" data-sf="responsible">👤 ${stepData.responsible}</div>
         <ul class="step-actions ${em ? 'edit-mode-list' : ''}" id="${p}-actions-list-${i}">${actHTML}</ul>
         ${_getStepFlowActionsHtml(p, i, isTobe)}
-        ${_getStepDecisionHtml(s, stepData.ce, p, i)}${_getStepNoteHtml(stepData.note, stepData.ce, p, i, stepData.noteSf)}
+        ${_getStepDecisionHtml(s, stepData.ce, p, i)}${_getStepNoteHtml(stepData.note, stepData.ce, p, i, 'note')}
       </div>
     </div>`;
   _wireStepPanel(p, i, container);
@@ -5847,8 +5825,9 @@ function renderStep(p, i) {
 
 function toggleAutomatico(p, si, ai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem marcar automações.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  const actions = step.actions || [];
   const a = actionObj(actions[ai]);
   a.automatico = !a.automatico;
   actions[ai] = a;
@@ -5856,20 +5835,14 @@ function toggleAutomatico(p, si, ai) {
   renderStep(p, si);
 }
 
-function _getStepDisplayData(step, isTobe, isEditable) {
-  const tb = step.tobe || (step.tobe = {});
+function _getStepDisplayData(step, isEditable) {
   return {
-    tb,
-    ce: isEditable ? 'contenteditable="true"' : '',
-    title: isTobe ? (tb.title || step.title) : step.title,
-    subtitle: isTobe ? (tb.subtitle || (step.subtitle || '')) : (step.subtitle || ''),
-    responsible: isTobe ? (tb.responsible || step.responsible) : step.responsible,
-    respClass: isTobe ? (tb.respClass || step.respClass) : step.respClass,
-    note: isTobe ? (tb.note || step.note || '') : (step.note || ''),
-    titleSf: isTobe ? 'tobe_title' : 'title',
-    subtitleSf: isTobe ? 'tobe_subtitle' : 'subtitle',
-    respSf: isTobe ? 'tobe_responsible' : 'responsible',
-    noteSf: isTobe ? 'tobe_note' : 'note',
+    ce:          isEditable ? 'contenteditable="true"' : '',
+    title:       step.title       || '',
+    subtitle:    step.subtitle    || '',
+    responsible: step.responsible || '',
+    respClass:   step.respClass   || 'resp-green',
+    note:        step.note        || '',
   };
 }
 
@@ -5919,15 +5892,17 @@ function _updateStepNavState(p, i) {
   const stepPos = document.getElementById(p + '-step-pos');
   const btnPrev = document.getElementById(p + '-btn-prev');
   const btnNext = document.getElementById(p + '-btn-next');
-  if(stepPos) stepPos.textContent = `Etapa ${i + 1} de ${DATA[p].steps.length}`;
+  const total = _stepsArr(p).length;
+  if(stepPos) stepPos.textContent = `Etapa ${i + 1} de ${total}`;
   if(btnPrev) btnPrev.disabled = i === 0;
-  if(btnNext) btnNext.textContent = i === DATA[p].steps.length - 1 ? '✅ Concluído' : 'Próximo →';
+  if(btnNext) btnNext.textContent = i === total - 1 ? '✅ Concluído' : 'Próximo →';
 }
 
 function toggleLoop(p, si, ai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem marcar loops.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  const actions = step.actions || [];
   const a = actionObj(actions[ai]);
   a.loop = !a.loop;
   actions[ai] = a;
@@ -5937,8 +5912,9 @@ function toggleLoop(p, si, ai) {
 
 function toggleAutomaticoBranch(p, si, ai, bi, bai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem marcar automações.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  const actions = step.actions || [];
   const parent = actionObj(actions[ai]);
   const a = actionObj((parent.branches[bi].actions || [])[bai]);
   a.automatico = !a.automatico;
@@ -5950,8 +5926,9 @@ function toggleAutomaticoBranch(p, si, ai, bi, bai) {
 
 function toggleLoopBranch(p, si, ai, bi, bai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem marcar loops.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  const actions = step.actions || [];
   const parent = actionObj(actions[ai]);
   const a = actionObj((parent.branches[bi].actions || [])[bai]);
   a.loop = !a.loop;
@@ -5963,8 +5940,9 @@ function toggleLoopBranch(p, si, ai, bi, bai) {
 
 function toggleAutomaticoNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem marcar automações.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  const actions = step.actions || [];
   const parent = actionObj(actions[ai]);
   const subDec = actionObj((parent.branches[bi].actions || [])[bai]);
   const a = actionObj((subDec.branches[nbi].actions || [])[nbai]);
@@ -5978,8 +5956,9 @@ function toggleAutomaticoNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
 
 function toggleLoopNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem marcar loops.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  const actions = flowMode === 'tobe' ? (step.tobe?.actions || []) : (step.actions || []);
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  const actions = step.actions || [];
   const parent = actionObj(actions[ai]);
   const subDec = actionObj((parent.branches[bi].actions || [])[bai]);
   const a = actionObj((subDec.branches[nbi].actions || [])[nbai]);
@@ -5993,18 +5972,12 @@ function toggleLoopNestedBranch(p, si, ai, bi, bai, nbi, nbai) {
 
 function addStepAction(p,si){
   if(!isEditor) { showToast('🔒 Apenas editores podem adicionar ações.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  if(flowMode === 'tobe') {
-    if(!step.tobe) step.tobe = {};
-    if(!Array.isArray(step.tobe.actions)) step.tobe.actions = [];
-    step.tobe.actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''});
-    renderStep(p,si); markChanged(true, true);
-    openActionModal(p, si, step.tobe.actions.length-1);
-  } else {
-    step.actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''});
-    renderStep(p,si); markChanged(true, true);
-    openActionModal(p, si, step.actions.length-1);
-  }
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  if(!Array.isArray(step.actions)) step.actions = [];
+  step.actions.push({type:'atividade',text:'Nova ação',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''});
+  renderStep(p,si); markChanged(true, true);
+  openActionModal(p, si, step.actions.length-1);
 }
 
 // Sync action text to matching role duties when action is saved
@@ -6024,81 +5997,53 @@ function syncActionToRole(p, actionText, responsible) {
 }
 function rmStepAction(p,si,ai){
   if(!isEditor) { showToast('🔒 Apenas editores podem remover ações.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  if(flowMode === 'tobe') {
-    if(step.tobe && Array.isArray(step.tobe.actions)) step.tobe.actions.splice(ai,1);
-  } else {
-    step.actions.splice(ai,1);
-  }
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  if(Array.isArray(step.actions)) step.actions.splice(ai,1);
   renderStep(p,si); markChanged(true, true);
 }
 
 function copyFlowAsIsToTobe(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem copiar fluxos.', 'warn'); return; }
-  const steps = DATA[p].steps;
-  const hasAsis = steps.some(s => (s.actions||[]).length > 0);
-  if(!hasAsis) { showToast('O fluxo AS IS está vazio — nada a copiar.', 'warn'); return; }
-  const tobeHasData = steps.some(s => (s.tobe?.actions||[]).length > 0);
-  if(tobeHasData && !confirm('O TO BE já possui ações. Substituir todo o TO BE pelo AS IS?')) return;
-  steps.forEach(s => {
-    if(!s.tobe) s.tobe = {};
-    s.tobe.actions     = structuredClone(s.actions || []);
-    s.tobe.title       = s.title       || '';
-    s.tobe.subtitle    = s.subtitle    || '';
-    s.tobe.responsible = s.responsible || '';
-    s.tobe.respClass   = s.respClass   || '';
-    s.tobe.note        = s.note        || '';
-    s.tobe.duracao     = s.duracao     || '';
-    s.tobe.sistemas    = s.sistemas    || '';
-    s.tobe.documentos  = s.documentos  || '';
-    s.tobe.observacoes = s.observacoes || '';
-  });
+  _ensureTobeSteps(p);
+  const asis = DATA[p].steps || [];
+  if(!asis.length) { showToast('O fluxo AS IS está vazio — nada a copiar.', 'warn'); return; }
+  const tobeHasData = (DATA[p].tobeSteps || []).length > 0;
+  if(tobeHasData && !confirm('O TO BE já possui etapas. Substituir todo o TO BE pelo AS IS?')) return;
+  DATA[p].tobeSteps = structuredClone(asis);
   renderStep(p, DATA[p].currentStep); markChanged(true, true);
-  showToast('⎘ AS IS copiado para o TO BE (' + steps.length + ' etapa(s)).', 'success');
+  showToast('⎘ AS IS copiado para o TO BE (' + asis.length + ' etapa(s)).', 'success');
 }
 
 function copyFlowTobeToAsis(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem copiar fluxos.', 'warn'); return; }
-  const steps = DATA[p].steps;
-  const hasTobe = steps.some(s => (s.tobe?.actions||[]).length > 0);
-  if(!hasTobe) { showToast('O fluxo TO BE está vazio — nada a copiar.', 'warn'); return; }
-  const asisHasData = steps.some(s => (s.actions||[]).length > 0);
-  if(asisHasData && !confirm('O AS IS já possui ações. Substituir todo o AS IS pelo TO BE?')) return;
-  steps.forEach(s => {
-    const tb = s.tobe || {};
-    s.actions = structuredClone(tb.actions || []);
-    if(tb.title)                                     s.title       = tb.title;
-    if(tb.subtitle)                                  s.subtitle    = tb.subtitle;
-    if(tb.responsible)                               s.responsible = tb.responsible;
-    if(tb.respClass)                                 s.respClass   = tb.respClass;
-    if(tb.note)                                      s.note        = tb.note;
-    if(tb.duracao)                                   s.duracao     = tb.duracao;
-    if(tb.sistemas)                                  s.sistemas    = tb.sistemas;
-    if(tb.documentos)                                s.documentos  = tb.documentos;
-    if(tb.observacoes)                               s.observacoes = tb.observacoes;
-  });
+  _ensureTobeSteps(p);
+  const tobe = DATA[p].tobeSteps || [];
+  if(!tobe.length) { showToast('O fluxo TO BE está vazio — nada a copiar.', 'warn'); return; }
+  const asisHasData = (DATA[p].steps || []).length > 0;
+  if(asisHasData && !confirm('O AS IS já possui etapas. Substituir todo o AS IS pelo TO BE?')) return;
+  DATA[p].steps = structuredClone(tobe);
   renderStep(p, DATA[p].currentStep); markChanged(true, true);
-  showToast('⎘ TO BE copiado para o AS IS (' + steps.length + ' etapa(s)).', 'success');
+  showToast('⎘ TO BE copiado para o AS IS (' + tobe.length + ' etapa(s)).', 'success');
 }
 
 function clearCurrentFlow(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem limpar fluxos.', 'warn'); return; }
   const label = flowMode === 'tobe' ? 'TO BE' : 'AS IS';
-  const total = DATA[p].steps.length;
+  const steps = _stepsArr(p);
+  const total = steps.length;
   if(!confirm(`Limpar o fluxo ${label} inteiro — todas as ${total} etapa(s) e suas ações? Esta ação não pode ser desfeita.`)) return;
-  DATA[p].steps.forEach(step => {
-    if(flowMode === 'tobe') {
-      if(!step.tobe) step.tobe = {};
-      step.tobe.actions = [];
-    } else {
-      step.actions = [];
-    }
-  });
-  renderStep(p, DATA[p].currentStep);
+  if(flowMode === 'tobe') {
+    DATA[p].tobeSteps = [];
+  } else {
+    DATA[p].steps = [];
+  }
+  DATA[p].currentStep = 0;
+  renderStep(p, 0);
   markChanged(true, true);
   showToast(`🗑 Fluxo ${label} inteiro limpo (${total} etapa(s)).`, 'success');
 }
-function navStep(p,dir){ const n=DATA[p].currentStep+dir; if(n>=0&&n<DATA[p].steps.length){DATA[p].currentStep=n;renderStep(p,n);} }
+function navStep(p,dir){ const n=DATA[p].currentStep+dir; if(n>=0&&n<_stepsArr(p).length){DATA[p].currentStep=n;renderStep(p,n);} }
 
 // ── Flow picker — seletor genérico de AS IS / TO BE ─────────
 let _flowPickCb = null;
@@ -6126,17 +6071,8 @@ function _flowPickCancel() {
 }
 
 // ── Helper: resolve step data according to AS IS / TO BE mode ─
+// With independent arrays, just returns the step's own data directly
 function resolveStep(step, mode) {
-  if(mode === 'tobe') {
-    const tb = step.tobe || {};
-    return {
-      title:       tb.title       || step.title       || '',
-      subtitle:    tb.subtitle    || (step.subtitle || ''),
-      responsible: tb.responsible || step.responsible || '',
-      note:        tb.note        || step.note        || '',
-      actions:     Array.isArray(tb.actions) && tb.actions.length > 0 ? tb.actions : (step.actions || []),
-    };
-  }
   return {
     title:       step.title       || '',
     subtitle:    step.subtitle    || '',
@@ -6144,6 +6080,43 @@ function resolveStep(step, mode) {
     note:        step.note        || '',
     actions:     step.actions     || [],
   };
+}
+
+// ── Ensure tobeSteps array exists (migrate from legacy step.tobe) ─
+function _ensureTobeSteps(p) {
+  if(!DATA[p]) return;
+  if(Array.isArray(DATA[p].tobeSteps)) return; // already migrated
+  const asisSteps = DATA[p].steps || [];
+  const hasLegacyTobe = asisSteps.some(s => s.tobe &&
+    (s.tobe.title || (Array.isArray(s.tobe.actions) && s.tobe.actions.length > 0)));
+  if(hasLegacyTobe) {
+    DATA[p].tobeSteps = asisSteps.map(s => {
+      const tb = s.tobe || {};
+      return {
+        title:       tb.title       || s.title       || 'Etapa',
+        subtitle:    tb.subtitle    || '',
+        responsible: tb.responsible || '',
+        respClass:   tb.respClass   || s.respClass   || 'resp-green',
+        actions:     Array.isArray(tb.actions) ? structuredClone(tb.actions) : [],
+        note:        tb.note        || null,
+        decision:    null,
+      };
+    });
+  } else {
+    DATA[p].tobeSteps = [];
+  }
+  // Remove legacy tobe sub-objects to keep data clean
+  asisSteps.forEach(s => { delete s.tobe; });
+}
+
+// ── Active steps array based on current flowMode ──────────────
+function _stepsArr(p) {
+  _ensureTobeSteps(p);
+  if(flowMode === 'tobe') {
+    if(!Array.isArray(DATA[p].tobeSteps)) DATA[p].tobeSteps = [];
+    return DATA[p].tobeSteps;
+  }
+  return DATA[p].steps;
 }
 
 // ── AS IS / TO BE mode toggle ──────────────────
@@ -6159,8 +6132,12 @@ function setFlowMode(mode) {
     btn.className = 'flow-mode-btn' + activeClass;
   });
   const p = popPrefix(currentPop);
-  if(DATA[p] && Array.isArray(DATA[p].steps) && DATA[p].steps.length > 0) {
-    renderStep(p, DATA[p].currentStep || 0);
+  if(DATA[p]) {
+    _ensureTobeSteps(p);
+    const steps = _stepsArr(p);
+    // Cap currentStep to active array length
+    DATA[p].currentStep = Math.max(0, Math.min(DATA[p].currentStep || 0, steps.length - 1));
+    renderStep(p, DATA[p].currentStep);
   }
   try { renderRoles(p); } catch(e) { console.warn('[siga]', e); }
 }
@@ -6176,32 +6153,21 @@ function toggleStepDetails(btn) {
 
 // ── Build expanded step details HTML ───────────
 function _buildStepDetailsHTML(p, i, s, em) {
-  if(!s.tobe) s.tobe = {};
-  const tb = s.tobe;
   const ceAttr = (field) => em ? `contenteditable="true" data-sp="${p}" data-si="${i}" data-sf="${field}"` : '';
   const emptySpan = '<span class="sdf-empty">—</span>';
   const val = (v) => (v && v.trim()) ? v : emptySpan;
 
   const rows = [
-    { label: '⏱ Prazo / Duração',        asIs: 'duracao',     tobe: 'tobe_duracao'     },
-    { label: '💻 Sistemas Envolvidos',    asIs: 'sistemas',    tobe: 'tobe_sistemas'    },
-    { label: '📄 Documentos Utilizados',  asIs: 'documentos',  tobe: 'tobe_documentos'  },
-    { label: '💬 Observações',            asIs: 'observacoes', tobe: 'tobe_observacoes' }
+    { label: '⏱ Prazo / Duração',        field: 'duracao'     },
+    { label: '💻 Sistemas Envolvidos',    field: 'sistemas'    },
+    { label: '📄 Documentos Utilizados',  field: 'documentos'  },
+    { label: '💬 Observações',            field: 'observacoes' }
   ];
 
   const rowsHTML = rows.map(r => `
     <div class="sdf-row">
       <div class="sdf-label">${r.label}</div>
-      <div class="sdf-cols">
-        <div class="sdf-col">
-          <span class="sdf-tag asis">AS IS</span>
-          <div class="sdf-val" ${ceAttr(r.asIs)}>${val(s[r.asIs] || '')}</div>
-        </div>
-        <div class="sdf-col">
-          <span class="sdf-tag tobe">TO BE</span>
-          <div class="sdf-val tobe-val" ${ceAttr(r.tobe)}>${val(tb[r.tobe.slice(5)] || '')}</div>
-        </div>
-      </div>
+      <div class="sdf-val" ${ceAttr(r.field)}>${val(s[r.field] || '')}</div>
     </div>`).join('');
 
   const pmHTML = `
@@ -6239,14 +6205,13 @@ function _groupsForActor(steps, name) {
   const key = name.trim().toLowerCase();
   const result = [];
   steps.forEach(s => {
-    const rs = resolveStep(s, flowMode);
-    const isResp = (rs.responsible || '').trim().toLowerCase() === key;
+    const isResp = (s.responsible || '').trim().toLowerCase() === key;
     const flatActions = [];
-    _collectFlowActions(rs.actions || [], flatActions);
+    _collectFlowActions(s.actions || [], flatActions);
     const matched = flatActions.filter(a =>
       (a.actor || '').trim().toLowerCase() === key && a.type !== 'observacao'
     );
-    if(isResp || matched.length) result.push({ stepTitle: rs.title || '', actions: matched, isResp });
+    if(isResp || matched.length) result.push({ stepTitle: s.title || '', actions: matched, isResp });
   });
   return result;
 }
@@ -6319,7 +6284,7 @@ function _renderRoleCard(p, r, ri, colors, steps) {
 function renderRoles(p) {
   const el = document.getElementById(p + '-role-grid');
   if(!el) return;
-  const steps  = DATA[p].steps || [];
+  const steps  = _stepsArr(p);
   const colors = ['role-green','role-blue','role-gold','role-red','role-purple'];
 
   // === 1. Coletar todos os atores únicos do fluxo (na ordem de aparecimento) ===
@@ -6333,10 +6298,9 @@ function renderRoles(p) {
     if(!seen.has(key)) { seen.add(key); flowActors.push(norm); }
   };
   steps.forEach(s => {
-    const rs = resolveStep(s, flowMode);
-    _addActor(rs.responsible);
+    _addActor(s.responsible);
     const flatActions = [];
-    _collectFlowActions(rs.actions || [], flatActions);
+    _collectFlowActions(s.actions || [], flatActions);
     flatActions.forEach(a => _addActor(a.actor));
   });
 
@@ -8996,13 +8960,14 @@ function mountNewPopTab(key, label, silent=false) {
 // ── Helper: add step ──────────────────────────
 function addStep(p) {
   if(!isEditor) { showToast('🔒 Apenas editores podem adicionar etapas.', 'warn'); return; }
-  const n = DATA[p].steps.length + 1;
-  DATA[p].steps.push({
+  const steps = _stepsArr(p);
+  const n = steps.length + 1;
+  steps.push({
     title: 'Etapa ' + n, subtitle: '', responsible: 'Responsável', respClass: 'resp-green',
     actions: [{type:'atividade', text:'Nova ação', actor:''}],
-    duracao: '', sistemas: '', documentos: '', pontosMelhoria: '', observacoes: '', tobe: {}
+    duracao: '', sistemas: '', documentos: '', pontosMelhoria: '', observacoes: ''
   });
-  DATA[p].currentStep = DATA[p].steps.length - 1;
+  DATA[p].currentStep = steps.length - 1;
   renderStep(p, DATA[p].currentStep);
   markChanged(true, true);
 }
@@ -9010,23 +8975,12 @@ function addStep(p) {
 // ── Helper: remove step ───────────────────────
 function rmStep(p, si) {
   if(!isEditor) { showToast('🔒 Apenas editores podem apagar etapas.', 'warn'); return; }
-  if(DATA[p].steps.length <= 1) { showToast('O processo precisa ter pelo menos uma etapa.', 'warn'); return; }
-  const step = DATA[p].steps[si];
-  const hasTobe = step.tobe && (
-    (step.tobe.title && step.tobe.title !== 'Etapa') ||
-    (Array.isArray(step.tobe.actions) && step.tobe.actions.length > 0)
-  );
-  const hasAsis = Array.isArray(step.actions) && step.actions.length > 0;
-  // Warn if the OTHER mode has content, to prevent accidental data loss
-  const modeLabel  = flowMode === 'tobe' ? 'TO BE' : 'AS IS';
-  const otherLabel = flowMode === 'tobe' ? 'AS IS' : 'TO BE';
-  const otherHasContent = flowMode === 'tobe' ? hasAsis : hasTobe;
-  const warningLine = otherHasContent
-    ? `\n\n⚠️ Esta etapa também possui conteúdo no fluxo ${otherLabel}. Excluir irá remover AMBOS os fluxos.`
-    : '';
-  if(!confirm(`Apagar a Etapa ${si+1} — "${step.title}"?${warningLine}\nEsta ação não pode ser desfeita.`)) return;
-  DATA[p].steps.splice(si, 1);
-  DATA[p].currentStep = Math.max(0, Math.min(DATA[p].currentStep, DATA[p].steps.length - 1));
+  const steps = _stepsArr(p);
+  if(steps.length <= 1) { showToast('O processo precisa ter pelo menos uma etapa.', 'warn'); return; }
+  const step = steps[si];
+  if(!confirm(`Apagar a Etapa ${si+1} — "${step.title}"?\nEsta ação não pode ser desfeita.`)) return;
+  steps.splice(si, 1);
+  DATA[p].currentStep = Math.max(0, Math.min(DATA[p].currentStep, steps.length - 1));
   renderTracker(p);
   renderStep(p, DATA[p].currentStep);
   markChanged(true, true);
@@ -9036,7 +8990,7 @@ function rmStep(p, si) {
 // ── Helper: move step up/down ─────────────────
 function moveStep(p, si, dir) {
   if(!isEditor) { showToast('🔒 Apenas editores podem reordenar etapas.', 'warn'); return; }
-  const steps = DATA[p].steps;
+  const steps = _stepsArr(p);
   const ni = si + dir;
   if(ni < 0 || ni >= steps.length) return;
   [steps[si], steps[ni]] = [steps[ni], steps[si]];
@@ -9053,18 +9007,14 @@ function moveActionToStep() {
   if(!sel) return;
   const toIdx = Number.parseInt(sel.value);
   if(Number.isNaN(toIdx)) return;
-  const fromStep = DATA[_actP].steps[_actSi];
-  const toStep   = DATA[_actP].steps[toIdx];
+  const steps = _stepsArr(_actP);
+  const fromStep = steps[_actSi];
+  const toStep   = steps[toIdx];
   if(!fromStep || !toStep) return;
-  const fromArr = _actIsTobe ? (fromStep.tobe?.actions || []) : fromStep.actions;
-  const action  = fromArr.splice(_actAi, 1)[0];
-  if(_actIsTobe) {
-    if(!toStep.tobe) toStep.tobe = {};
-    if(!Array.isArray(toStep.tobe.actions)) toStep.tobe.actions = [];
-    toStep.tobe.actions.push(action);
-  } else {
-    toStep.actions.push(action);
-  }
+  if(!Array.isArray(fromStep.actions)) return;
+  const action = fromStep.actions.splice(_actAi, 1)[0];
+  if(!Array.isArray(toStep.actions)) toStep.actions = [];
+  toStep.actions.push(action);
   closeActionModal();
   renderStep(_actP, _actSi);
   markChanged(true, true);
@@ -9073,8 +9023,8 @@ function moveActionToStep() {
 
 // ── Decision branches ─────────────────────────
 function _decActions(p, si, ai) {
-  const step = DATA[p].steps[si];
-  return flowMode === 'tobe' ? (step.tobe?.actions || []) : step.actions;
+  const step = _stepsArr(p)[si];
+  return step ? (step.actions || []) : [];
 }
 
 function addDecisionBranch(p, si, ai) {
@@ -9173,8 +9123,9 @@ function openNestedBranchActionModal(p, si, ai, bi, bai, nbi, nbai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar ações.', 'warn'); return; }
   _actP = p; _actSi = si; _actAi = ai; _actIsTobe = (flowMode === 'tobe');
   _actBi = bi; _actBai = bai; _actNbi = nbi; _actNbai = nbai;
-  const step = DATA[p].steps[si];
-  const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  const actions = step.actions || [];
   const parent = actionObj(actions[ai]);
   const subDec = actionObj((parent.branches[bi].actions || [])[bai] || {});
   const obj = actionObj((subDec.branches[nbi]?.actions || [])[nbai] || {});
@@ -9239,27 +9190,23 @@ function applyIaResult(parsed) {
   const key = 'pop_' + Date.now();
   const importTarget = globalThis._npopImportTarget || 'asis';
   const rawActions = s => (s.actions || []).map(a => typeof a === 'string' ? {type:'atividade',text:a,actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''} : a);
-  const steps = (parsed.steps || []).map(s => {
-    const acts = rawActions(s);
-    const step = {
-      title: importTarget === 'tobe' ? 'Etapa' : (s.title || 'Etapa'),
-      subtitle: importTarget === 'tobe' ? '' : (s.subtitle || ''),
-      responsible: importTarget === 'tobe' ? '' : (s.responsible || ''),
-      respClass: 'resp-green',
-      actions: importTarget === 'tobe' ? [] : acts,
-      note: importTarget === 'tobe' ? null : (s.note || null),
-      decision: s.decision || null,
-      tobe: importTarget === 'tobe' ? {
-        title: s.title || 'Etapa',
-        subtitle: s.subtitle || '',
-        responsible: s.responsible || '',
-        actions: acts,
-        note: s.note || null,
-      } : {},
-    };
-    return step;
+  const makeStep = s => ({
+    title: s.title || 'Etapa', subtitle: s.subtitle || '',
+    responsible: s.responsible || '', respClass: 'resp-green',
+    actions: rawActions(s), note: s.note || null, decision: s.decision || null,
+    duracao: '', sistemas: '', documentos: '', pontosMelhoria: '', observacoes: ''
   });
-  if(steps.length === 0) steps.push({title:'Etapa 1',subtitle:'',responsible:'',respClass:'resp-green',actions:[{type:'atividade',text:'Ação a definir',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''}],tobe:{}});
+  const emptyStep = {title:'Etapa 1',subtitle:'',responsible:'',respClass:'resp-green',actions:[{type:'atividade',text:'Ação a definir',actor:'',duracao:'',sistemas:'',documentos:'',observacoes:'',pontosMelhoria:''}]};
+  const parsedSteps = (parsed.steps || []).map(makeStep);
+  // When importing to tobe, build tobeSteps; AS IS steps are empty placeholders
+  let steps, tobeSteps;
+  if(importTarget === 'tobe') {
+    tobeSteps = parsedSteps.length > 0 ? parsedSteps : [emptyStep];
+    steps = [];
+  } else {
+    steps = parsedSteps.length > 0 ? parsedSteps : [emptyStep];
+    tobeSteps = [];
+  }
   // Reset import target for next import
   globalThis._npopImportTarget = 'asis';
 
@@ -9299,6 +9246,7 @@ function applyIaResult(parsed) {
       clientes:     _splitLines(parsed.clientes),
     },
     steps,
+    tobeSteps,
     roles: (() => {
       const COLOR_CYCLE = ['role-green','role-blue','role-gold','role-purple','role-red'];
       const ICONS = ['👤','👩‍💼','🔍','📋','⚙️'];
@@ -9444,8 +9392,9 @@ function openActionModal(p, si, ai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar ações.', 'warn'); return; }
   _actP = p; _actSi = si; _actAi = ai;
   _actIsTobe = (flowMode === 'tobe');
-  const step = DATA[p].steps[si];
-  const actArr = _actIsTobe ? (step.tobe?.actions || []) : (step.actions || []);
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  const actArr = step.actions || [];
   const obj = actionObj(actArr[ai]);
   _setSelectedActionType(obj.type);
   _populateActionActorList();
@@ -9622,7 +9571,7 @@ function _populateActionMoveSteps(p, si) {
   const moveWrap = document.getElementById('act-move-step-wrap');
   const moveSelect = document.getElementById('act-move-step-select');
   if(!moveWrap || !moveSelect) return;
-  const steps = DATA[p].steps;
+  const steps = _stepsArr(p);
   moveSelect.innerHTML = steps
     .map((s, idx) => idx === si ? null : `<option value="${idx}">Etapa ${idx + 1}: ${s.title}</option>`)
     .filter(Boolean)
@@ -9651,8 +9600,9 @@ function openBranchActionModal(p, si, ai, bi, bai) {
   if(!isEditor) { showToast('🔒 Apenas editores podem editar ações.', 'warn'); return; }
   _actP = p; _actSi = si; _actAi = ai; _actIsTobe = (flowMode === 'tobe');
   _actBi = bi; _actBai = bai; _actNbi = -1; _actNbai = -1;
-  const step = DATA[p].steps[si];
-  const actions = _actIsTobe ? (step.tobe?.actions || []) : step.actions;
+  const step = _stepsArr(p)[si];
+  if(!step) return;
+  const actions = step.actions || [];
   const parent = actionObj(actions[ai]);
   const obj = actionObj((parent.branches[bi].actions || [])[bai] || {});
   // Populate modal same as openActionModal
@@ -9742,11 +9692,6 @@ function _resolveExistingActionObj(existingActions, actAi, actBi, actBai, actNbi
 
 // Atualizado: aceita objeto context ao invés de 8 parâmetros
 function _getActionCollection(step, actIsTobe) {
-  if(actIsTobe) {
-    if(!step.tobe) step.tobe = {};
-    if(!Array.isArray(step.tobe.actions)) step.tobe.actions = [];
-    return step.tobe.actions;
-  }
   if(!Array.isArray(step.actions)) step.actions = [];
   return step.actions;
 }
@@ -9805,8 +9750,9 @@ function saveActionModal() {
   const etipoBtn = document.querySelector('[data-etipo].selected');
   const eventoTipo = (type === 'evento' && etipoBtn) ? etipoBtn.dataset.etipo : '';
   // Preserve flags toggled via ícone (⚙️ automatico, 🔄 loop) — não passam pelo modal
-  const step = DATA[_actP].steps[_actSi];
-  const _existingActions = _actIsTobe ? (step.tobe?.actions || step.actions) : step.actions;
+  const step = _stepsArr(_actP)[_actSi];
+  if(!step) return;
+  const _existingActions = step.actions || [];
   const _existingObj = _resolveExistingActionObj(_existingActions, _actAi, _actBi, _actBai, _actNbi, _actNbai);
   const _existingAuto = _existingObj.automatico || false;
   const _existingLoop = _existingObj.loop || false;
@@ -15206,6 +15152,8 @@ async function buildPptx(D, _popKey) {
     const isAsis = mode === 'asis';
     const modeLabel = isAsis ? 'AS IS' : 'TO BE';
     const modeColor = isAsis ? C.navy : '15803D';
+    const modeSteps = isAsis ? (D.steps || []) : (D.tobeSteps || []);
+    if(!modeSteps.length) return;
     // Slide divisório do fluxo
     const div = pres.addSlide();
     div.background = { color: isAsis ? C.navy : '14532D' };
@@ -15216,17 +15164,11 @@ async function buildPptx(D, _popKey) {
     div.addText(nome, { x:0.5, y:3.1, w:7.5, h:0.35, fontSize:11, color:'8898BB', margin:0 });
     _cageLogoAdd(div, { x:8.1, y:4.95, w:1.65, h:0.5, sizing:{ type:'contain', w:1.65, h:0.5 } });
 
-    steps.forEach((step, si) => {
+    modeSteps.forEach((step, si) => {
       const rs = resolveStep(step, mode);
-      // Para TO BE: só incluir se a etapa tem dados próprios de TO BE
-      if(!isAsis) {
-        const tb = step.tobe || {};
-        const hasTobeData = (tb.title || tb.responsible || (Array.isArray(tb.actions) && tb.actions.length > 0));
-        if(!hasTobeData) return;
-      }
       const s = pres.addSlide();
       s.background = { color: C.light };
-      hdr(s, (isAsis ? '⚙️  FLUXO AS IS' : '🔄  FLUXO TO BE'), `Etapa ${si+1} de ${steps.length}`);
+      hdr(s, (isAsis ? '⚙️  FLUXO AS IS' : '🔄  FLUXO TO BE'), `Etapa ${si+1} de ${modeSteps.length}`);
       s.addShape(pres.ShapeType.rect, { x:0, y:0.84, w:10, h:0.04, fill:{ color: isAsis ? C.green : '22c55e' } });
       s.addShape(pres.ShapeType.ellipse, { x:0.3, y:1.0, w:0.7, h:0.7, fill:{ color: modeColor } });
       s.addText(String(si+1), { x:0.3, y:1.0, w:0.7, h:0.7, fontSize:16, color:C.white, bold:true, align:'center', valign:'middle', margin:0 });
@@ -15247,12 +15189,7 @@ async function buildPptx(D, _popKey) {
     });
   };
   addFlowSlides('asis');
-  // TO BE: incluir apenas se alguma etapa tiver dados TO BE
-  const hasTobeContent = steps.some(st => {
-    const tb = st.tobe || {};
-    return tb.title || tb.responsible || (Array.isArray(tb.actions) && tb.actions.length > 0);
-  });
-  if(hasTobeContent) addFlowSlides('tobe');
+  if((D.tobeSteps || []).length > 0) addFlowSlides('tobe');
 
   // ── SLIDE RESPONSABILIDADES ─────────────────────────────────────────────
   if(roles.length) {
@@ -16578,18 +16515,16 @@ function _getSipocItems(sipoc, key) {
 }
 
 function _getSipocProcessItems(p, sipoc) {
-  const steps = DATA[p]?.steps;
-  if (Array.isArray(steps) && steps.length) {
-    // Usa TO BE se alguma etapa tiver conteúdo TO BE; senão usa AS IS
-    const hasTobeContent = steps.some(s => {
-      const tb = s.tobe || {};
-      return tb.title || (Array.isArray(tb.actions) && tb.actions.length > 0);
-    });
-    const titles = steps.map(s => {
-      const tb = s.tobe || {};
-      return (hasTobeContent ? (tb.title || s.title) : s.title) || '';
-    }).filter(Boolean);
-    if (titles.length) return titles;
+  if(DATA[p]) {
+    // Prefer TO BE steps if they exist, otherwise AS IS
+    const tobeSteps = DATA[p].tobeSteps;
+    const asisSteps = DATA[p].steps;
+    const useSteps = (Array.isArray(tobeSteps) && tobeSteps.length) ? tobeSteps
+                   : (Array.isArray(asisSteps) && asisSteps.length) ? asisSteps : null;
+    if(useSteps) {
+      const titles = useSteps.map(s => s.title || '').filter(Boolean);
+      if(titles.length) return titles;
+    }
   }
   return _getSipocItems(sipoc, 'processo');
 }
@@ -22839,8 +22774,11 @@ function auditAddQuestao() {
   const pergunta = prompt('Pergunta de auditoria:');
   if(!pergunta?.trim()) return;
   if(!Array.isArray(plan.questoes)) plan.questoes = [];
-  const steps = plan.processo ? (DATA[plan.processo]?.steps || []) : [];
-  const etapa = steps.length ? prompt(`Etapa relacionada (deixe em branco para nenhuma):\n${steps.map((s,i)=>`${i+1}. ${s.tobe?.title||s.title||'Etapa '+(i+1)}`).join('\n')}`) || '' : '';
+  const proc = plan.processo ? DATA[plan.processo] : null;
+  const tobeSteps = proc ? (proc.tobeSteps || []) : [];
+  const asisSteps = proc ? (proc.steps || []) : [];
+  const steps = tobeSteps.length ? tobeSteps : asisSteps;
+  const etapa = steps.length ? prompt(`Etapa relacionada (deixe em branco para nenhuma):\n${steps.map((s,i)=>`${i+1}. ${s.title||'Etapa '+(i+1)}`).join('\n')}`) || '' : '';
   plan.questoes.push({ id:'q_'+Date.now(), pergunta: pergunta.trim(), etapa: etapa.trim(), referencia:'' });
   saveToCloud();
   auditRenderQuestoes(planId);
@@ -22864,7 +22802,9 @@ async function auditGerarQuestoesIA() {
   const proc = pKey ? DATA[pKey] : null;
   if(!proc) { showToast('Processo não vinculado ao plano. Edite o plano e selecione o processo.', 'warn'); return; }
   showToast('🤖 Gerando questões com IA…', 'info');
-  const steps = (proc.steps||[]).map((s,i)=>`${i+1}. ${s.title||'Etapa '+(i+1)}`).join('\n');
+  const tobeSteps = proc.tobeSteps || [];
+  const stepsForAI = (tobeSteps.length ? tobeSteps : (proc.steps||[]));
+  const steps = stepsForAI.map((s,i)=>`${i+1}. ${s.title||'Etapa '+(i+1)}`).join('\n');
   const prompt = `Você é um auditor sênior. Com base nas etapas do processo "${proc.meta?.name||''}", gere questões de auditoria objetivas que verifiquem conformidade, qualidade e eficiência.
 
 Etapas do processo:
@@ -23048,8 +22988,9 @@ function exportFluxoWord(p) {
   const typeLabel = { atividade:'Atividade', evento:'Evento', decisao:'Decisão', observacao:'Observação' };
 
   function renderStepsHtml(mode) {
-    return steps.map((step, i) => {
-      const s = resolveStep(step, mode);
+    const modeSteps = mode === 'tobe' ? (pop.tobeSteps || []) : steps;
+    return modeSteps.map((step, i) => {
+      const s = step;
       const actRows = s.actions.map(a => {
         const obj = actionObj(a);
         const icon = typeIcon[obj.type] || '▶';
@@ -23092,10 +23033,7 @@ function exportFluxoWord(p) {
     }).join('');
   }
 
-  const hasTobeData = steps.some(s => {
-    const tb = s.tobe || {};
-    return tb.title || (Array.isArray(tb.actions) && tb.actions.length);
-  });
+  const hasTobeData = (pop.tobeSteps || []).length > 0;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <style>
@@ -24051,11 +23989,8 @@ function openStatusModal(p) {
   // Oculta a seção de estrutura do fluxo quando a aba Fluxo já tiver conteúdo,
   // pois o campo só é útil para POPs novos ainda sem fluxo preenchido.
   const _stepsParaChecar = DATA[p]?.steps;
-  const _fluxoJaPreenchido = Array.isArray(_stepsParaChecar) && _stepsParaChecar.length > 0 &&
-    _stepsParaChecar.some(s =>
-      (Array.isArray(s.actions) && s.actions.length > 0) ||
-      (s.tobe && (s.tobe.title || (Array.isArray(s.tobe.actions) && s.tobe.actions.length > 0)))
-    );
+  const _fluxoJaPreenchido = (Array.isArray(_stepsParaChecar) && _stepsParaChecar.some(s => Array.isArray(s.actions) && s.actions.length > 0)) ||
+    (Array.isArray(DATA[p]?.tobeSteps) && DATA[p].tobeSteps.length > 0);
   const _outlineSection = document.getElementById('status-modal-flow-outline-section');
   if(_outlineSection) _outlineSection.style.display = _fluxoJaPreenchido ? 'none' : '';
   // Vínculo com PAT
@@ -24125,11 +24060,8 @@ function saveStatusModal() {
   // conteúdo (nem AS IS nem TO BE). Se já estiver preenchida, apenas persiste
   // o outline como metadado sem sobrescrever o trabalho existente.
   const _existingSteps = DATA[p].steps;
-  const _fluxoPreenchido = Array.isArray(_existingSteps) && _existingSteps.length > 0 &&
-    _existingSteps.some(s =>
-      (Array.isArray(s.actions) && s.actions.length > 0) ||
-      (s.tobe && (s.tobe.title || (Array.isArray(s.tobe.actions) && s.tobe.actions.length > 0)))
-    );
+  const _fluxoPreenchido = (Array.isArray(_existingSteps) && _existingSteps.some(s => Array.isArray(s.actions) && s.actions.length > 0)) ||
+    (Array.isArray(DATA[p].tobeSteps) && DATA[p].tobeSteps.length > 0);
   if (_fluxoPreenchido) {
     DATA[p].meta.flowOutline = _npopNormalizeOutline(m.flowOutline);
   } else {
@@ -24937,16 +24869,10 @@ function statusModalAutoFill() {
     }).join('\n');
   }
   function _fdDescribeStep(step, index) {
-    // Usa as ações do flowMode atual; se estiver vazio, tenta o outro modo
-    const isTobe = flowMode === 'tobe';
-    const tb = step.tobe || {};
-    const tobeActions = Array.isArray(tb.actions) ? tb.actions : [];
-    const asisActions = Array.isArray(step.actions) ? step.actions : [];
-    const actions = isTobe
-      ? (tobeActions.length ? tobeActions : asisActions)
-      : (asisActions.length  ? asisActions  : tobeActions);
-    const title      = (isTobe ? (tb.title || step.title) : step.title) || step.subtitle || `Etapa ${index + 1}`;
-    const responsible = (isTobe ? (tb.responsible || step.responsible) : step.responsible) || '';
+    // Step is already the correct mode's data (from _stepsArr)
+    const actions = Array.isArray(step.actions) ? step.actions : [];
+    const title       = step.title       || step.subtitle || `Etapa ${index + 1}`;
+    const responsible = step.responsible || '';
     const head = `${index + 1}. ${title}${responsible ? ` [${responsible}]` : ''}`;
     const body = actions.map(action => {
       const base = _fdDescribeAction(action, '  - ');
@@ -24962,7 +24888,7 @@ function statusModalAutoFill() {
   window.fdGenerateWithAI = async function() {
     const p = popPrefix(currentPop);
     if (!p || !DATA[p]) { showToast('Nenhum processo selecionado.', 'warn'); return; }
-    const steps = DATA[p].steps || [];
+    const steps = _stepsArr(p);
     const meta  = DATA[p].meta  || {};
     const dir   = _direction;
     const stepsText = _fdStepsPrompt(steps);
@@ -27168,17 +27094,17 @@ function matSetVersion(p, v) {
 }
 
 function matAuditDetails(p, version) {
-  const steps = (DATA[p] && DATA[p].steps) || [];
+  if(!DATA[p]) return { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], startEvents:[], endEvents:[], actors:new Set() };
+  const isTobe = version === 'tobe';
+  const steps = isTobe ? (DATA[p].tobeSteps || []) : (DATA[p].steps || []);
   const APPROVAL_KW = ['aprovação','aprovacao','revisão','revisao','autorização','autorizacao','validação','validacao'];
   const audit = { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], startEvents:[], endEvents:[], actors:new Set() };
 
   let prevActor = '';
   steps.forEach((step, si) => {
-    const isTobe   = version === 'tobe';
-    const tb       = (isTobe && step.tobe) ? step.tobe : {};
-    const actions  = isTobe ? (tb.actions || []) : (step.actions || []);
-    const stepName = (isTobe ? (tb.title || step.title) : step.title) || `Etapa ${si+1}`;
-    const stepResp = (isTobe ? (tb.responsible || step.responsible) : step.responsible) || '';
+    const actions  = step.actions || [];
+    const stepName = step.title || `Etapa ${si+1}`;
+    const stepResp = step.responsible || '';
     if(stepResp) audit.actors.add(stepResp.toLowerCase());
     const seenHandoffs = new Set();
 
@@ -27349,7 +27275,8 @@ function matShowAudit(p) {
 }
 
 function matComputeMetrics(p, version='asis') {
-  const steps = (DATA[p] && DATA[p].steps) || [];
+  const isTobe = version === 'tobe';
+  const steps = DATA[p] ? (isTobe ? (DATA[p].tobeSteps || []) : (DATA[p].steps || [])) : [];
   let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, actionsWithSistema = 0, totalAutomatico = 0, totalStartEvents = 0, totalEndEvents = 0;
   // Contadores por natureza (7 naturezas)
   let totalExecucao = 0, totalControle = 0, totalDistribuicao = 0, totalComunicacao = 0, totalPlanejamento = 0;
@@ -27360,10 +27287,8 @@ function matComputeMetrics(p, version='asis') {
 
   let prevActor = '';
   steps.forEach((step) => {
-    const isTobe   = version === 'tobe';
-    const tb       = (isTobe && step.tobe) ? step.tobe : {};
-    const actions  = isTobe ? (tb.actions || []) : (step.actions || []);
-    const stepResp = (isTobe ? (tb.responsible || step.responsible) : step.responsible) || '';
+    const actions  = step.actions || [];
+    const stepResp = step.responsible || '';
     const seenHandoffs = new Set(); // dedup por etapa: mesmo par A→B conta só 1x por etapa
     if(stepResp) allActors.add(stepResp.toLowerCase());
 
