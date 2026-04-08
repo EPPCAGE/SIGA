@@ -1597,7 +1597,7 @@
     <button class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)" role="tab">👥 Responsabilidades</button>
     <button class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)" role="tab">📊 Indicadores</button>
     <button class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)" role="tab">❓ FAQ</button>
-    <button class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)" role="tab">📜 Normas & Revisões</button>
+    <button class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)" role="tab">📜 Normas e Documentação</button>
     <button class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)" role="tab">⚠️ Riscos</button>
     <button class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)" role="tab">✅ Plano de Ação</button>
     <button class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)" role="tab">🤝 Reuniões</button>
@@ -3423,31 +3423,53 @@
 
     <!-- Subabas do plano -->
     <div style="display:flex;gap:2px;border-bottom:2px solid #e2e8f0;margin-bottom:24px;overflow-x:auto;">
-      <button class="audit-tab active" data-ptab="exec"    onclick="auditPlanSubTab('exec',this)">▶ Execução</button>
-      <button class="audit-tab"        data-ptab="nc"      onclick="auditPlanSubTab('nc',this)">⚠️ Não Conformidades</button>
-      <button class="audit-tab"        data-ptab="actions" onclick="auditPlanSubTab('actions',this)">✅ Plano de Ação</button>
-      <button class="audit-tab"        data-ptab="trail"   onclick="auditPlanSubTab('trail',this)">🕐 Trilha</button>
-      <button class="audit-tab"        data-ptab="heatmap" onclick="auditPlanSubTab('heatmap',this)">🗺 Matriz de Riscos</button>
+      <button class="audit-tab active" data-ptab="planejamento" onclick="auditPlanSubTab('planejamento',this)">📋 Planejamento</button>
+      <button class="audit-tab"        data-ptab="exec"         onclick="auditPlanSubTab('exec',this)">▶ Execução</button>
+      <button class="audit-tab"        data-ptab="nc"           onclick="auditPlanSubTab('nc',this)">⚠️ Não Conformidades</button>
+      <button class="audit-tab"        data-ptab="riscos"       onclick="auditPlanSubTab('riscos',this)">🗺 Matriz de Riscos</button>
+      <button class="audit-tab"        data-ptab="trail"        onclick="auditPlanSubTab('trail',this)">🕐 Trilha</button>
+      <button class="audit-tab"        data-ptab="relatorio"    onclick="auditPlanSubTab('relatorio',this)">📄 Relatório</button>
+    </div>
+
+    <!-- Painel: Planejamento -->
+    <div id="audit-tab-planejamento" class="audit-tab-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:14px;font-weight:600;color:#1B3022;">Planejamento da Auditoria</div>
+        <button class="btn btn-outline audit-edit-only" onclick="auditOpenPlanModal(_auditCurrentPlanId)" style="font-size:12px;">✏️ Editar Plano</button>
+      </div>
+      <div id="audit-plan-info"></div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:13px;font-weight:600;color:#1B3022;">📝 Questões de Auditoria (Checklist)</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-outline audit-edit-only" onclick="auditGerarQuestoesIA()" style="font-size:11px;padding:4px 12px;color:#1e40af;border-color:#93c5fd;font-weight:600;">🤖 Gerar com IA</button>
+            <button class="btn btn-outline audit-edit-only" onclick="auditAddQuestao()" style="font-size:11px;padding:4px 10px;">＋ Adicionar</button>
+          </div>
+        </div>
+        <div id="audit-plan-questoes"></div>
+        <div id="audit-plan-questoes-empty" style="display:none;text-align:center;padding:32px 20px;color:#94a3b8;border:1px dashed #e2e8f0;border-radius:8px;">
+          <div style="font-size:32px;margin-bottom:8px;">📝</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Nenhuma questão definida</div>
+          <div style="font-size:12px;">Defina as questões de auditoria que guiarão os testes de execução</div>
+        </div>
+      </div>
     </div>
 
     <!-- Painel: Execução -->
-    <div id="audit-tab-exec" class="audit-tab-panel">
+    <div id="audit-tab-exec" class="audit-tab-panel" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-        <div style="font-size:14px;font-weight:600;color:#1B3022;">Execução de Auditorias</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-outline" onclick="auditExportRelatorioFinal(_auditCurrentPlanId)" style="font-size:12px;color:#1e40af;border-color:#bfdbfe;">📄 Exportar Relatório Final</button>
-          <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">&#65291; Nova Execu&ccedil;&atilde;o</button>
-        </div>
+        <div style="font-size:14px;font-weight:600;color:#1B3022;">Execução da Auditoria</div>
+        <button class="btn btn-primary audit-edit-only" onclick="auditOpenExecModal()" style="font-size:12px;">＋ Registrar Ação</button>
       </div>
       <div id="audit-exec-list"></div>
       <div id="audit-exec-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
         <div style="font-size:48px;margin-bottom:12px;">▶</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma execução registrada</div>
-        <div style="font-size:13px;">Inicie a execução com checklist para este plano</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma ação de execução registrada</div>
+        <div style="font-size:13px;">Registre reuniões, testes, papéis de trabalho e alterações de planejamento</div>
       </div>
     </div>
 
-    <!-- Painel: NCs -->
+    <!-- Painel: NCs + Plano de Ação -->
     <div id="audit-tab-nc" class="audit-tab-panel" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
         <div style="font-size:14px;font-weight:600;color:#1B3022;">Não Conformidades</div>
@@ -3460,30 +3482,45 @@
         <button class="audit-nc-filter" data-g="leve" onclick="auditFilterNc('leve',this)">🟢 Leve</button>
       </div>
       <div id="audit-nc-list"></div>
-      <div id="audit-nc-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-        <div style="font-size:48px;margin-bottom:12px;">✅</div>
+      <div id="audit-nc-empty" style="display:none;text-align:center;padding:40px 20px;color:#94a3b8;">
+        <div style="font-size:40px;margin-bottom:10px;">✅</div>
         <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma não conformidade registrada</div>
         <div style="font-size:13px;">Ótimo! Nenhuma NC encontrada neste plano.</div>
       </div>
+      <!-- Plano de Ação (embutido) -->
+      <div style="margin-top:28px;padding-top:20px;border-top:2px solid #e2e8f0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:14px;font-weight:600;color:#1B3022;">✅ Plano de Ação Corretiva</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              <button class="audit-nc-filter active" data-g="" onclick="auditFilterAction('',this)">Todas</button>
+              <button class="audit-nc-filter" data-g="pendente" onclick="auditFilterAction('pendente',this)">Pendente</button>
+              <button class="audit-nc-filter" data-g="em_andamento" onclick="auditFilterAction('em_andamento',this)">Em Andamento</button>
+              <button class="audit-nc-filter" data-g="concluida" onclick="auditFilterAction('concluida',this)">Concluída</button>
+            </div>
+            <button class="btn btn-primary audit-edit-only" onclick="auditOpenActionModal()" style="font-size:12px;background:#1B3022;border-color:#1B3022;">＋ Nova Ação</button>
+          </div>
+        </div>
+        <div id="audit-actions-list"></div>
+        <div id="audit-actions-empty" style="display:none;text-align:center;padding:32px 20px;color:#94a3b8;border:1px dashed #e2e8f0;border-radius:8px;">
+          <div style="font-size:32px;margin-bottom:8px;">✅</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Nenhuma ação corretiva cadastrada</div>
+          <div style="font-size:11px;">Registre NCs e crie ações corretivas com prazos e responsáveis</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Painel: Ações -->
-    <div id="audit-tab-actions" class="audit-tab-panel" style="display:none;">
+    <!-- Painel: Matriz de Riscos (do processo) -->
+    <div id="audit-tab-riscos" class="audit-tab-panel" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-        <div style="font-size:14px;font-weight:600;color:#1B3022;">Plano de Ação — Correções</div>
-        <button class="btn btn-primary audit-edit-only" onclick="auditOpenActionModal()" style="font-size:12px;background:#1B3022;border-color:#1B3022;">&#65291; Nova A&ccedil;&atilde;o</button>
+        <div style="font-size:14px;font-weight:600;color:#1B3022;">Matriz de Riscos do Processo</div>
+        <div style="font-size:12px;color:#64748b;">Riscos mapeados na aba Riscos do processo auditado</div>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-        <button class="audit-nc-filter active" data-g="" onclick="auditFilterAction('',this)">Todas</button>
-        <button class="audit-nc-filter" data-g="pendente" onclick="auditFilterAction('pendente',this)">Pendente</button>
-        <button class="audit-nc-filter" data-g="em_andamento" onclick="auditFilterAction('em_andamento',this)">Em Andamento</button>
-        <button class="audit-nc-filter" data-g="concluida" onclick="auditFilterAction('concluida',this)">Concluída</button>
-      </div>
-      <div id="audit-actions-list"></div>
-      <div id="audit-actions-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-        <div style="font-size:48px;margin-bottom:12px;">✅</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhuma ação cadastrada</div>
-        <div style="font-size:13px;">Registre não conformidades e crie ações corretivas</div>
+      <div id="audit-riscos-body"></div>
+      <div id="audit-riscos-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">🗺</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Sem riscos mapeados</div>
+        <div style="font-size:13px;">O processo auditado ainda não possui riscos mapeados na aba Riscos do mapeamento</div>
       </div>
     </div>
 
@@ -3496,29 +3533,31 @@
       <div id="audit-trail-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
         <div style="font-size:48px;margin-bottom:12px;">🕐</div>
         <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Nenhum evento registrado</div>
-        <div style="font-size:13px;">A trilha aparece conforme execuções e NCs são criadas neste plano</div>
+        <div style="font-size:13px;">A trilha registra automaticamente todas as ações: reuniões, testes, NCs, ações corretivas</div>
       </div>
     </div>
 
-    <!-- Painel: Matriz de Riscos -->
-    <div id="audit-tab-heatmap" class="audit-tab-panel" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-        <div style="font-size:14px;font-weight:600;color:#1B3022;">Matriz de Riscos por Etapa</div>
-        <div style="font-size:12px;color:#64748b;">Incidência de não conformidades por etapa do processo</div>
+    <!-- Painel: Relatório Final -->
+    <div id="audit-tab-relatorio" class="audit-tab-panel" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:14px;font-weight:600;color:#1B3022;">Relatório Final da Auditoria</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-outline" onclick="auditGerarRelatorioPreview(_auditCurrentPlanId)" style="font-size:12px;color:#1e40af;border-color:#bfdbfe;">👁 Visualizar</button>
+          <button class="btn btn-primary" onclick="auditExportRelatorioFinal(_auditCurrentPlanId)" style="font-size:12px;">🤖 Gerar com IA e Exportar</button>
+        </div>
       </div>
-      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;font-size:12px;align-items:center;">
-        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#dcfce7;border-radius:3px;border:1px solid #86efac;"></span> 0 NCs</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fef9c3;border-radius:3px;border:1px solid #fde047;"></span> 1-2 NCs</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fed7aa;border-radius:3px;border:1px solid #fb923c;"></span> 3-4 NCs</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fecaca;border-radius:3px;border:1px solid #f87171;"></span> 5+ NCs</span>
-      </div>
-      <div id="audit-heatmap-body"></div>
-      <div id="audit-heatmap-empty" style="display:none;text-align:center;padding:60px 20px;color:#94a3b8;">
-        <div style="font-size:48px;margin-bottom:12px;">🗺</div>
-        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Sem dados suficientes</div>
-        <div style="font-size:13px;">Registre não conformidades neste plano para visualizar a matriz</div>
+      <div id="audit-relatorio-preview"></div>
+      <div id="audit-relatorio-empty" style="text-align:center;padding:60px 20px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">📄</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Relatório não gerado</div>
+        <div style="font-size:13px;">Clique em "Visualizar" para ver um resumo ou "Gerar com IA" para relatório completo</div>
       </div>
     </div>
+
+    <!-- Legado: manter heatmap oculto para compatibilidade -->
+    <div id="audit-tab-heatmap" class="audit-tab-panel" style="display:none;"></div>
+    <!-- Legado: manter actions oculto para compatibilidade -->
+    <div id="audit-tab-actions" class="audit-tab-panel" style="display:none;"></div>
 
   </div><!-- /audit-view-detail -->
 </div>
@@ -3618,6 +3657,23 @@
             <option value="">— Selecione o plano —</option>
           </select>
         </div>
+        <div style="grid-column:1/-1;">
+          <label for="ae-tipo" class="audit-label">Tipo de Ação *</label>
+          <select class="modal-input" id="ae-tipo" onchange="auditExecTipoChange()">
+            <option value="reuniao_abertura">🤝 Reunião de Abertura</option>
+            <option value="reuniao_encerramento">🤝 Reunião de Encerramento</option>
+            <option value="teste" selected>🔍 Teste de Auditoria</option>
+            <option value="papel_trabalho">📄 Papel de Trabalho</option>
+            <option value="alteracao_planejamento">✏️ Alteração de Planejamento</option>
+          </select>
+        </div>
+        <div id="ae-questao-wrap" style="grid-column:1/-1;">
+          <label for="ae-questao" class="audit-label">Questão de Auditoria Respondida (opcional)</label>
+          <select class="modal-input" id="ae-questao">
+            <option value="">— Nenhuma —</option>
+          </select>
+          <div style="font-size:11px;color:#94a3b8;margin-top:3px;">Vincule este teste a uma questão de auditoria definida no Planejamento.</div>
+        </div>
         <div>
           <label for="ae-data" class="audit-label">Data de Execução</label>
           <input class="modal-input" id="ae-data" type="date">
@@ -3639,8 +3695,8 @@
           <div style="font-size:11px;color:#94a3b8;margin-top:3px;">Registre os números de identificação dos expedientes utilizados como base da auditoria.</div>
         </div>
       </div>
-      <!-- Checklist -->
-      <div>
+      <!-- Checklist (apenas para tipo=teste) -->
+      <div id="ae-checklist-section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
           <span class="audit-label" style="margin-bottom:0;">Checklist de Auditoria</span>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
@@ -3649,7 +3705,7 @@
           </div>
         </div>
         <div id="ae-checklist-hint" style="font-size:11px;color:#64748b;margin-bottom:8px;background:#f8fafc;border-radius:6px;padding:6px 10px;display:none;">
-          ℹ️ Selecione um plano de auditoria acima e clique em <strong>🤖 Gerar do processo</strong> para gerar o checklist automaticamente com base no mapeamento do processo.
+          ℹ️ Selecione um plano e clique em <strong>🤖 Gerar do processo</strong> para gerar o checklist automaticamente.
         </div>
         <div id="ae-checklist" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
@@ -9254,8 +9310,13 @@ function applyIaResult(parsed) {
       periodicidade: ind.periodicidade||'', responsavel: ind.responsavel||'', meta: ind.meta||''
     })),
     faqs:     (parsed.faqs    || []),
-    normas:   (parsed.normas  || []).map(n => ({icon: n.icon||'📄', code: n.code||'', name: n.name||''})),
-    revisions:[{num:'0', date: today, desc:'Emissão Inicial (importado via IA).', author: parsed.elaborado||''}],
+    normas:   (parsed.normas  || []).map(n => ({icon: n.icon||'📄', code: n.code||'', name: n.name||'', url: n.url||''})),
+    revisions: (() => {
+      const docRevs = (parsed.revisoes || []).map(r => ({
+        num: String(r.num||''), date: r.date||today, desc: r.desc||'', author: r.author||''
+      }));
+      return docRevs.length > 0 ? docRevs : [{num:'0', date: today, desc:'Emissão Inicial (importado via IA).', author: parsed.elaborado||''}];
+    })(),
     siglas: (parsed.siglas || []),
     flowDiagram: null,  // will be built below if flow[] exists
   };
@@ -14696,7 +14757,7 @@ function _renderSearchResultItem(r, q, lower) {
     </div>`;
   if(r.type === 'norma') return `
     <div class="search-result-item" onclick="goToNorma('${r.key}', ${r.idx})">
-      <div class="search-result-pop">📜 ${r.popName} · Normas & Revisões</div>
+      <div class="search-result-pop">📜 ${r.popName} · Normas e Documentação</div>
       <div class="search-result-q">${highlight(r.norma.code||'', q)}</div>
       ${r.norma.name ? `<div class="search-result-a">${highlight(r.norma.name, q)}</div>` : ''}
       ${r.norma.url ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:4px;">🔗 ${r.norma.url}</div>` : ''}
@@ -14752,7 +14813,7 @@ function runSearch(raw) {
   const repoFaqResults = results.filter(r => r.type === 'repo_faq');
   resultsEl.innerHTML =
     _renderSearchSection(faqResults,     `FAQs (${faqResults.length})`, q, lower) +
-    _renderSearchSection(normaResults,   `Normas & Revisões (${normaResults.length})`, q, lower) +
+    _renderSearchSection(normaResults,   `Normas e Documentação (${normaResults.length})`, q, lower) +
     _renderSearchSection(repoResults,    `Documentos & Manuais (${repoResults.length})`, q, lower) +
     _renderSearchSection(repoFaqResults, `FAQs de Manuais (${repoFaqResults.length})`, q, lower);
 }
@@ -17114,7 +17175,7 @@ const SECTION_VERSION_LABELS = {
   'responsabilidades': 'Responsabilidades',
   'indicadores':       'Indicadores',
   'faq':               'FAQ',
-  'normas':            'Normas & Siglas',
+  'normas':            'Normas e Documentação',
   'riscos':            'Riscos',
   'plano-acao':        'Plano de Ação',
   'reunioes':          'Reuniões',
@@ -18457,7 +18518,7 @@ function arqShowProcessDetail(idx) {
             ${risksHtml}
           </div>
           <div>
-            <div style="font-size:12px;font-weight:700;color:#1B3022;margin-bottom:8px;">📄 Normas e Referências</div>
+            <div style="font-size:12px;font-weight:700;color:#1B3022;margin-bottom:8px;">📄 Normas e Documentação</div>
             ${normasHtml}
             <div style="font-size:12px;font-weight:700;color:#1B3022;margin:12px 0 8px;">🗂 Fluxograma</div>
             ${fluxoSection}
@@ -21831,12 +21892,12 @@ function auditOpenPlan(planId, subTab) {
   if(newBtn) newBtn.style.display = 'none';
   document.querySelectorAll('#audit-module .audit-edit-only').forEach(b => b.style.display = isEditor ? '' : 'none');
   auditRenderPlanSummary(plan);
-  auditPlanSubTab(subTab || _auditCurrentPlanSubTab || 'exec');
+  auditPlanSubTab(subTab || _auditCurrentPlanSubTab || 'planejamento');
 }
 
 function auditClosePlan() {
   _auditCurrentPlanId = null;
-  _auditCurrentPlanSubTab = 'exec';
+  _auditCurrentPlanSubTab = 'planejamento';
   _auditNcFilter = '';
   _auditActFilter = '';
   auditShowPlansView();
@@ -21876,11 +21937,12 @@ function auditPlanSubTab(tab, el) {
   document.querySelectorAll('#audit-view-detail .audit-tab-panel').forEach(p => p.style.display='none');
   const panel = document.getElementById('audit-tab-' + tab);
   if(panel) panel.style.display = 'block';
-  if(tab === 'exec')    auditRenderExec();
-  if(tab === 'nc')      auditRenderNc();
-  if(tab === 'actions') auditRenderActions();
-  if(tab === 'trail')   auditRenderTrail();
-  if(tab === 'heatmap') auditRenderHeatmap();
+  if(tab === 'planejamento') auditRenderPlanejamento(_auditCurrentPlanId);
+  if(tab === 'exec')         auditRenderExec();
+  if(tab === 'nc')           { auditRenderNc(); auditRenderActions(); }
+  if(tab === 'riscos')       auditRenderRiscos(_auditCurrentPlanId);
+  if(tab === 'trail')        auditRenderTrail();
+  if(tab === 'relatorio')    auditGerarRelatorioPreview(_auditCurrentPlanId);
 }
 
 function _auditBadge(status) {
@@ -21909,30 +21971,18 @@ function auditRenderPlans() {
   list.innerHTML = plans.map(p => {
     const ncCount   = DATA.audits.nonconformities.filter(nc => nc.planId === p.id).length;
     const execCount = DATA.audits.executions.filter(e => e.planId === p.id).length;
-    const patItem   = p.patId ? (DATA.pat||[]).find(pt => pt.id === p.patId) : null;
-    const patBadge  = patItem
-      ? '<span style="background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap;">📅 PTA: '+patItem.titulo+'</span>'
-      : '';
-    return '<button class="audit-card" onclick="auditOpenPlan(\''+p.id+'\')" style="cursor:pointer;border:none;font-family:inherit;font-size:inherit;text-align:left;background:inherit;" title="Abrir pasta do plano" role="button">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
-        '<div class="audit-card-title">📁 '+(p.processoNome||p.processo||'(sem processo)')+'</div>'+
-        _auditBadge(p.status||'planejada')+
-      '</div>'+
-      (patBadge ? '<div style="margin-bottom:8px;">'+patBadge+'</div>' : '')+
-      '<div style="font-size:13px;color:#475569;margin-bottom:8px;">'+(p.objetivo||'—')+'</div>'+
-      '<div class="audit-card-meta">'+
-        '<span>👤 '+(p.auditor||'—')+'</span>'+
-        '<span>📅 '+_fmtDate(p.dataPrevista)+'</span>'+
-        '<span>🏢 '+(p.unidade||'—')+'</span>'+
-        (p.criterios ? '<span>📌 '+p.criterios+'</span>' : '')+
-      '</div>'+
-      '<div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'+
-        '<div style="display:flex;gap:10px;font-size:12px;color:#94a3b8;">'+
-          '<span>▶ '+execCount+' execução(ões)</span>'+
-          '<span>⚠️ '+ncCount+' NC(s)</span>'+
-        '</div>'+
-        '<span style="font-size:11px;color:#2563eb;font-weight:600;">Abrir pasta →</span>'+
-      '</div></button>';
+    const nome = p.processoNome || p.processo || p.objetivo || '(sem nome)';
+    return `<button class="audit-card" onclick="auditOpenPlan('${p.id}')" style="cursor:pointer;border:none;font-family:inherit;font-size:inherit;text-align:left;background:inherit;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;" title="Abrir auditoria" role="button">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+        <span style="font-size:22px;flex-shrink:0;">🛡️</span>
+        <span style="font-size:15px;font-weight:700;color:#1B3022;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(nome)}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        ${_auditBadge(p.status||'planejada')}
+        <span style="font-size:12px;color:#94a3b8;">▶ ${execCount} · ⚠️ ${ncCount}</span>
+        <span style="font-size:12px;color:#2563eb;font-weight:600;white-space:nowrap;">Abrir →</span>
+      </div>
+    </button>`;
   }).join('');
 }
 
@@ -22092,23 +22142,31 @@ function auditRenderExec() {
   if(!execs.length) { list.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
   list.innerHTML = execs.map(e => {
-    const plan = DATA.audits.plans.find(p=>p.id===e.planId);
+    const plan  = DATA.audits.plans.find(p=>p.id===e.planId);
+    const tipo  = e.tipo || 'teste';
+    const tipoLabel = _AUDIT_EXEC_TIPO_LABEL[tipo] || tipo;
     const total = (e.checklist||[]).length;
-    const conf  = (e.checklist||[]).filter(c=>c.conformidade==='conforme').length;
-    const nc    = (e.checklist||[]).filter(c=>c.conformidade==='nao_conforme').length;
-    return '<button class="audit-card" style="border-left-color:#003366;border:none;font-family:inherit;font-size:inherit;text-align:left;background:inherit;" onclick="auditOpenExecModal(\''+e.id+'\')" role="button">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'+
-        '<div class="audit-card-title">▶ '+(plan?.processoNome||plan?.objetivo||'Execução')+'</div>'+
-        _auditBadge(e.status||'em_andamento')+
-      '</div>'+
-      '<div class="audit-card-meta">'+
-        '<span>📅 '+_fmtDate(e.dataExecucao)+'</span>'+
-        '<span>✅ '+conf+'/'+total+' conformes</span>'+
-        (nc ? '<span style="color:#dc2626;">⚠️ '+nc+' NC(s)</span>' : '')+
-      '</div>'+
-      (e.observacoes ? '<div style="font-size:12px;color:#64748b;margin-top:6px;">'+e.observacoes+'</div>' : '')+
-      (e.amostra ? '<div style="font-size:11px;color:#2563eb;background:#eff6ff;border-radius:6px;padding:5px 9px;margin-top:6px;white-space:pre-wrap;font-family:monospace;">📂 Amostra: '+e.amostra+'</div>' : '')+
-      '</button>';
+    const conf  = (e.checklist||[]).filter(c=>c.conformidade==='conforme'||c.conformidade==='C').length;
+    const nc    = (e.checklist||[]).filter(c=>c.conformidade==='nao_conforme'||c.conformidade==='NC').length;
+    const questao = e.questaoRef ? (() => {
+      const q = (plan?.questoes||[]).find(q=>q.id===e.questaoRef);
+      return q ? q.pergunta : '';
+    })() : '';
+    const accentColor = {reuniao_abertura:'#0369a1',reuniao_encerramento:'#0369a1',teste:'#003366',papel_trabalho:'#1B3022',alteracao_planejamento:'#b45309'}[tipo]||'#003366';
+    return `<button class="audit-card" style="border-left:4px solid ${accentColor};border-top:1px solid #e2e8f0;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;font-family:inherit;font-size:inherit;text-align:left;background:inherit;cursor:pointer;" onclick="auditOpenExecModal('${e.id}')" role="button">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+        <div class="audit-card-title">${tipoLabel}</div>
+        ${_auditBadge(e.status||'em_andamento')}
+      </div>
+      <div class="audit-card-meta">
+        <span>📅 ${_fmtDate(e.dataExecucao)}</span>
+        ${total ? `<span>✅ ${conf}/${total} conformes</span>` : ''}
+        ${nc ? `<span style="color:#dc2626;">⚠️ ${nc} NC(s)</span>` : ''}
+      </div>
+      ${questao ? `<div style="font-size:11px;color:#0369a1;margin-top:6px;padding:4px 8px;background:#f0f9ff;border-radius:4px;">📝 ${escapeHtml(questao.substring(0,100))}</div>` : ''}
+      ${e.observacoes ? `<div style="font-size:12px;color:#64748b;margin-top:6px;">${escapeHtml(e.observacoes)}</div>` : ''}
+      ${e.amostra ? `<div style="font-size:11px;color:#2563eb;background:#eff6ff;border-radius:6px;padding:5px 9px;margin-top:6px;white-space:pre-wrap;font-family:monospace;">📂 Amostra: ${escapeHtml(e.amostra)}</div>` : ''}
+    </button>`;
   }).join('');
 }
 
@@ -22125,12 +22183,23 @@ function auditOpenExecModal(id) {
   document.getElementById('ae-status').value  = exec?.status       || 'em_andamento';
   document.getElementById('ae-obs').value     = exec?.observacoes  || '';
   document.getElementById('ae-amostra').value = exec?.amostra      || '';
+  // Tipo e questão de auditoria
+  const tipoEl = document.getElementById('ae-tipo');
+  if(tipoEl) tipoEl.value = exec?.tipo || 'teste';
+  // Popula questoes do plano
+  const planForQ = exec?.planId ? DATA.audits.plans.find(p=>p.id===exec.planId) : (_auditCurrentPlanId ? DATA.audits.plans.find(p=>p.id===_auditCurrentPlanId) : null);
+  const questaoSel = document.getElementById('ae-questao');
+  if(questaoSel) {
+    const qs = Array.isArray(planForQ?.questoes) ? planForQ.questoes : [];
+    questaoSel.innerHTML = '<option value="">— Nenhuma —</option>' +
+      qs.map(q=>`<option value="${escapeHtml(q.id)}"${exec?.questaoRef===q.id?' selected':''}>${escapeHtml(q.pergunta||q.id)}</option>`).join('');
+  }
+  auditExecTipoChange();
   _auditTempChecklist = exec?.checklist ? JSON.parse(JSON.stringify(exec.checklist)) : [];
   if(!_auditTempChecklist.length && exec?.planId) auditAutoChecklist(exec.planId);
   auditRenderChecklistEditor();
-  document.getElementById('audit-exec-modal-title').textContent = id ? '✏️ Editar Execução' : '▶ Nova Execução de Auditoria';
+  document.getElementById('audit-exec-modal-title').textContent = id ? '✏️ Editar Execução' : '▶ Nova Ação de Execução';
   document.getElementById('ae-delete-btn').style.display = id ? 'inline-block' : 'none';
-  // Mostra hint se não há plano selecionado e checklist vazio
   const hint = document.getElementById('ae-checklist-hint');
   if(hint) hint.style.display = (!id && !_auditTempChecklist.length) ? 'block' : 'none';
   document.getElementById('audit-exec-modal').style.display='flex';
@@ -22141,6 +22210,14 @@ function auditExecPlanChange() {
   const planId = document.getElementById('ae-plan').value;
   const hint = document.getElementById('ae-checklist-hint');
   if(hint) hint.style.display = planId ? 'none' : 'block';
+  // Atualiza questões
+  const plan = DATA.audits.plans.find(p=>p.id===planId);
+  const questaoSel = document.getElementById('ae-questao');
+  if(questaoSel) {
+    const qs = Array.isArray(plan?.questoes) ? plan.questoes : [];
+    questaoSel.innerHTML = '<option value="">— Nenhuma —</option>' +
+      qs.map(q=>`<option value="${escapeHtml(q.id)}">${escapeHtml(q.pergunta||q.id)}</option>`).join('');
+  }
 }
 
 async function auditGerarChecklistBtn() {
@@ -22303,6 +22380,8 @@ function auditSaveExec() {
   const exec = {
     id:            _auditEditExecId || 'exec_'+Date.now(),
     planId,
+    tipo:          document.getElementById('ae-tipo')?.value || 'teste',
+    questaoRef:    document.getElementById('ae-questao')?.value || '',
     dataExecucao:  document.getElementById('ae-data').value,
     status:        document.getElementById('ae-status').value,
     observacoes:   document.getElementById('ae-obs').value.trim(),
@@ -22468,7 +22547,9 @@ function auditRenderActions() {
 
 function auditFilterAction(s, el) {
   _auditActFilter = s;
-  document.querySelectorAll('#audit-tab-actions .audit-nc-filter').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#audit-tab-nc .audit-nc-filter[data-g]').forEach(b => {
+    if(b.onclick && String(b.onclick).includes('auditFilterAction')) b.classList.remove('active');
+  });
   if(el) el.classList.add('active');
   auditRenderActions();
 }
@@ -22562,12 +22643,18 @@ function auditRenderTrail() {
   });
   _tExecs.forEach(e => {
     const plan = (DATA.audits.plans||[]).find(p=>p.id===e.planId);
-    const conf = (e.checklist||[]).filter(c=>c.conformidade==='conforme').length;
-    const nc   = (e.checklist||[]).filter(c=>c.conformidade==='nao_conforme').length;
+    const conf = (e.checklist||[]).filter(c=>c.conformidade==='conforme'||c.conformidade==='C').length;
+    const nc   = (e.checklist||[]).filter(c=>c.conformidade==='nao_conforme'||c.conformidade==='NC').length;
     const tot  = (e.checklist||[]).length;
-    events.push({ ts: e.criadoEm, type:'exec', icon:'▶', color:'#003366',
-      title:'Execução: ' + (plan?.processoNome||plan?.objetivo||'Auditoria'),
-      detail: `✅ ${conf}/${tot} conformes` + (nc ? ` · ⚠️ ${nc} NC(s)` : '') + (e.dataExecucao ? ' · ' + _fmtDate(e.dataExecucao) : ''),
+    const tipo = e.tipo || 'teste';
+    const tipoLabel = _AUDIT_EXEC_TIPO_LABEL[tipo] || tipo;
+    const tipoColor = {reuniao_abertura:'#0369a1',reuniao_encerramento:'#0369a1',teste:'#003366',papel_trabalho:'#1B3022',alteracao_planejamento:'#b45309'}[tipo]||'#003366';
+    let detail = e.dataExecucao ? _fmtDate(e.dataExecucao) : '';
+    if(tipo==='teste' && tot) detail += ` · ✅ ${conf}/${tot} conformes` + (nc ? ` · ⚠️ ${nc} NC(s)` : '');
+    if(e.observacoes) detail += (detail?' · ':'')+e.observacoes.substring(0,80);
+    events.push({ ts: e.criadoEm, type:'exec', icon: tipoLabel.split(' ')[0], color: tipoColor,
+      title: tipoLabel,
+      detail,
       badge: e.status, badgeClass: e.status });
   });
   _tNcs.forEach(nc => {
@@ -22668,6 +22755,271 @@ function auditRenderHeatmap() {
     html += `</div></div>`;
   });
   body.innerHTML = html;
+}
+
+// ── ABA PLANEJAMENTO ────────────────────────────────────────────
+function auditRenderPlanejamento(planId) {
+  auditEnsure();
+  const plan = DATA.audits.plans.find(p => p.id === planId);
+  if(!plan) return;
+
+  // Painel de info do plano
+  const infoEl = document.getElementById('audit-plan-info');
+  if(infoEl) {
+    const crits = Array.isArray(plan.criterios) ? plan.criterios : (plan.criterios ? [{titulo:plan.criterios,descricao:''}] : []);
+    const critHtml = crits.length
+      ? crits.map(c=>`<div style="padding:8px 12px;background:#f0f9ff;border-left:3px solid #3b82f6;border-radius:0 6px 6px 0;margin-bottom:6px;font-size:13px;">
+          <strong style="color:#1e40af;">${escapeHtml(c.titulo||'')}</strong>
+          ${c.descricao ? `<div style="color:#475569;margin-top:2px;">${escapeHtml(c.descricao)}</div>` : ''}
+        </div>`).join('')
+      : '<div style="color:#94a3b8;font-size:13px;font-style:italic;">Nenhum critério definido</div>';
+    infoEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:16px;">
+      ${_auditInfoCard('🎯 Objetivo', plan.objetivo||'—')}
+      ${_auditInfoCard('📐 Escopo', plan.escopo||'—')}
+      ${_auditInfoCard('👤 Auditor', plan.auditor||'—')}
+      ${_auditInfoCard('📅 Data Prevista', _fmtDate(plan.dataPrevista))}
+      ${_auditInfoCard('🗓 Período', plan.periodo||'—')}
+      ${_auditInfoCard('🏢 Equipe Auditada', plan.unidade||'—')}
+    </div>
+    <div style="margin-top:4px;">
+      <div style="font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Critérios de Auditoria</div>
+      ${critHtml}
+    </div>`;
+  }
+
+  // Questões de auditoria
+  auditRenderQuestoes(planId);
+}
+
+function _auditInfoCard(label, value) {
+  return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;">
+    <div style="font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;">${label}</div>
+    <div style="font-size:13px;color:#1B3022;font-weight:500;">${escapeHtml(value)}</div>
+  </div>`;
+}
+
+function auditRenderQuestoes(planId) {
+  const plan = DATA.audits.plans.find(p => p.id === planId);
+  if(!plan) return;
+  if(!Array.isArray(plan.questoes)) plan.questoes = [];
+  const el    = document.getElementById('audit-plan-questoes');
+  const empty = document.getElementById('audit-plan-questoes-empty');
+  if(!el) return;
+  if(!plan.questoes.length) { el.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  el.innerHTML = plan.questoes.map((q, i) => `
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;">
+      <span style="background:#1B3022;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${i+1}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;color:#1e293b;">${escapeHtml(q.pergunta||'')}</div>
+        ${q.etapa ? `<div style="font-size:11px;color:#64748b;margin-top:3px;">📌 Etapa: ${escapeHtml(q.etapa)}</div>` : ''}
+        ${q.referencia ? `<div style="font-size:11px;color:#2563eb;margin-top:2px;">📎 ${escapeHtml(q.referencia)}</div>` : ''}
+      </div>
+      ${isEditor ? `<button onclick="auditRemoveQuestao('${planId}',${i})" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;padding:0 4px;flex-shrink:0;" title="Remover">✕</button>` : ''}
+    </div>`).join('');
+}
+
+function auditAddQuestao() {
+  const planId = _auditCurrentPlanId;
+  const plan = DATA.audits.plans.find(p => p.id === planId);
+  if(!plan || !isEditor) return;
+  const pergunta = prompt('Pergunta de auditoria:');
+  if(!pergunta?.trim()) return;
+  if(!Array.isArray(plan.questoes)) plan.questoes = [];
+  const steps = plan.processo ? (DATA[plan.processo]?.steps || []) : [];
+  const etapa = steps.length ? prompt(`Etapa relacionada (deixe em branco para nenhuma):\n${steps.map((s,i)=>`${i+1}. ${s.title||'Etapa '+(i+1)}`).join('\n')}`) || '' : '';
+  plan.questoes.push({ id:'q_'+Date.now(), pergunta: pergunta.trim(), etapa: etapa.trim(), referencia:'' });
+  saveToCloud();
+  auditRenderQuestoes(planId);
+  showToast('✅ Questão adicionada!', 'success');
+}
+
+function auditRemoveQuestao(planId, idx) {
+  if(!isEditor || !confirm('Remover esta questão?')) return;
+  const plan = DATA.audits.plans.find(p => p.id === planId);
+  if(!plan || !Array.isArray(plan.questoes)) return;
+  plan.questoes.splice(idx, 1);
+  saveToCloud();
+  auditRenderQuestoes(planId);
+}
+
+async function auditGerarQuestoesIA() {
+  const planId = _auditCurrentPlanId;
+  const plan = DATA.audits.plans.find(p => p.id === planId);
+  if(!plan || !isEditor) return;
+  const pKey = plan.processo;
+  const proc = pKey ? DATA[pKey] : null;
+  if(!proc) { showToast('Processo não vinculado ao plano. Edite o plano e selecione o processo.', 'warn'); return; }
+  showToast('🤖 Gerando questões com IA…', 'info');
+  const steps = (proc.steps||[]).map((s,i)=>`${i+1}. ${s.title||'Etapa '+(i+1)}`).join('\n');
+  const prompt = `Você é um auditor sênior. Com base nas etapas do processo "${proc.meta?.name||''}", gere questões de auditoria objetivas que verifiquem conformidade, qualidade e eficiência.
+
+Etapas do processo:
+${steps}
+
+Objetivo da auditoria: ${plan.objetivo||'Verificar aderência ao POP vigente'}
+
+Gere de 5 a 10 questões. Retorne APENAS JSON:
+[{"pergunta":"...","etapa":"nome da etapa relacionada"}]`;
+  try {
+    const raw = await callGemini(prompt);
+    const parsed = parseAiJson(raw);
+    if(!Array.isArray(parsed)) throw new Error('Resposta inválida');
+    if(!Array.isArray(plan.questoes)) plan.questoes = [];
+    parsed.forEach(q => { if(q.pergunta) plan.questoes.push({ id:'q_'+Date.now()+'_'+Math.random(), pergunta:q.pergunta, etapa:q.etapa||'', referencia:'' }); });
+    saveToCloud();
+    auditRenderQuestoes(planId);
+    showToast(`✅ ${parsed.length} questões geradas com IA!`, 'success');
+  } catch(e) { showToast('⚠️ Erro ao gerar questões: ' + e.message, 'warn'); }
+}
+
+// ── TIPO DE EXECUÇÃO ─────────────────────────────────────────────
+function auditExecTipoChange() {
+  const tipo = document.getElementById('ae-tipo')?.value;
+  const questaoWrap = document.getElementById('ae-questao-wrap');
+  const checklistSection = document.getElementById('ae-checklist-section');
+  if(questaoWrap) questaoWrap.style.display = (tipo === 'teste') ? '' : 'none';
+  if(checklistSection) checklistSection.style.display = (tipo === 'teste') ? '' : 'none';
+}
+
+const _AUDIT_EXEC_TIPO_LABEL = {
+  reuniao_abertura:      '🤝 Reunião de Abertura',
+  reuniao_encerramento:  '🤝 Reunião de Encerramento',
+  teste:                 '🔍 Teste de Auditoria',
+  papel_trabalho:        '📄 Papel de Trabalho',
+  alteracao_planejamento:'✏️ Alteração de Planejamento',
+};
+
+// ── MATRIZ DE RISCOS (do processo auditado) ───────────────────────
+function auditRenderRiscos(planId) {
+  auditEnsure();
+  const body  = document.getElementById('audit-riscos-body');
+  const empty = document.getElementById('audit-riscos-empty');
+  if(!body) return;
+
+  const plan = DATA.audits.plans.find(p => p.id === planId);
+  const pKey = plan?.processo;
+  const risks = (pKey && DATA[pKey]?.risks) ? DATA[pKey].risks : [];
+
+  if(!risks.length) { body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  // Nível por score
+  const _lvl = sc => sc >= 15 ? {label:'Crítico',bg:'#fecaca',tx:'#991b1b'} : sc >= 8 ? {label:'Alto',bg:'#fed7aa',tx:'#9a3412'} : sc >= 4 ? {label:'Moderado',bg:'#fef9c3',tx:'#854d0e'} : {label:'Baixo',bg:'#dcfce7',tx:'#15803d'};
+
+  // Matriz 5×5 (prob × impacto)
+  const COLS = [1,2,3,4,5];
+  let matrixHtml = `<div style="overflow-x:auto;margin-bottom:24px;">
+    <table style="border-collapse:collapse;min-width:340px;width:100%;">
+      <thead><tr>
+        <th style="padding:6px 10px;font-size:11px;color:#64748b;text-align:center;background:#f8fafc;border:1px solid #e2e8f0;" rowspan="2">Prob ↕ / Impacto →</th>
+        ${COLS.map(c=>`<th style="padding:6px 10px;font-size:11px;color:#64748b;text-align:center;background:#f8fafc;border:1px solid #e2e8f0;">${c}</th>`).join('')}
+      </tr></thead>
+      <tbody>`;
+  for(let prob=5; prob>=1; prob--) {
+    matrixHtml += `<tr><td style="padding:6px 10px;font-size:11px;font-weight:700;text-align:center;background:#f8fafc;border:1px solid #e2e8f0;">${prob}</td>`;
+    for(let imp=1; imp<=5; imp++) {
+      const sc = prob * imp;
+      const lvl = _lvl(sc);
+      const cell = risks.filter(r => r.prob == prob && r.impact == imp);
+      matrixHtml += `<td style="padding:8px;background:${lvl.bg};border:1px solid #e2e8f0;vertical-align:top;min-width:60px;">
+        <div style="font-size:10px;font-weight:700;color:${lvl.tx};text-align:center;margin-bottom:3px;">${sc}</div>
+        ${cell.map(r=>`<div style="font-size:10px;color:${lvl.tx};background:rgba(255,255,255,.6);border-radius:4px;padding:2px 4px;margin-bottom:2px;word-break:break-word;" title="${escapeHtml(r.desc||r.title||'')}">• ${escapeHtml((r.title||'').substring(0,40))}</div>`).join('')}
+      </td>`;
+    }
+    matrixHtml += '</tr>';
+  }
+  matrixHtml += '</tbody></table></div>';
+
+  // Legenda
+  const legendaHtml = `<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:12px;margin-bottom:16px;">
+    <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#dcfce7;border-radius:3px;border:1px solid #86efac;"></span> Baixo (1–3)</span>
+    <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fef9c3;border-radius:3px;border:1px solid #fde047;"></span> Moderado (4–7)</span>
+    <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fed7aa;border-radius:3px;border:1px solid #fb923c;"></span> Alto (8–14)</span>
+    <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:14px;height:14px;background:#fecaca;border-radius:3px;border:1px solid #f87171;"></span> Crítico (≥15)</span>
+  </div>`;
+
+  // Cards de riscos
+  const riskCards = risks.slice().sort((a,b)=>(b.score||0)-(a.score||0)).map(r => {
+    const sc = r.score || (r.prob * r.impact) || 0;
+    const lvl = _lvl(sc);
+    const ncVinc = DATA.audits.nonconformities.filter(nc => nc.planId === planId && (nc.etapa||'') === (r.title||''));
+    return `<div style="background:white;border:1px solid #e2e8f0;border-left:4px solid ${lvl.tx};border-radius:8px;padding:12px 16px;margin-bottom:10px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+        <div style="font-size:13px;font-weight:700;color:#1B3022;">${r.type==='oportunidade'?'💡':'⚠️'} ${escapeHtml(r.title||'Risco')}</div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <span style="background:${lvl.bg};color:${lvl.tx};font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;">${lvl.label}</span>
+          <span style="background:#f1f5f9;color:#475569;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;">Score ${sc}</span>
+        </div>
+      </div>
+      ${r.desc ? `<div style="font-size:12px;color:#64748b;margin-bottom:6px;">${escapeHtml(r.desc)}</div>` : ''}
+      <div style="display:flex;gap:12px;font-size:11px;color:#94a3b8;flex-wrap:wrap;">
+        <span>📊 Prob: ${r.prob||'—'} × Impacto: ${r.impact||'—'}</span>
+        ${r.treat ? `<span>🔧 ${escapeHtml(r.treat)}</span>` : ''}
+        ${ncVinc.length ? `<span style="color:#dc2626;font-weight:600;">⚠️ ${ncVinc.length} NC(s) associada(s)</span>` : ''}
+      </div>
+      ${r.solucao ? `<div style="font-size:12px;color:#0369a1;margin-top:6px;padding:6px 10px;background:#f0f9ff;border-radius:6px;">💡 Mitigação: ${escapeHtml(r.solucao)}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  body.innerHTML = legendaHtml + matrixHtml + `<div style="font-size:13px;font-weight:600;color:#1B3022;margin-bottom:12px;">Detalhamento dos Riscos</div>` + riskCards;
+}
+
+// ── ABA RELATÓRIO ────────────────────────────────────────────────
+function auditGerarRelatorioPreview(planId) {
+  auditEnsure();
+  const el    = document.getElementById('audit-relatorio-preview');
+  const empty = document.getElementById('audit-relatorio-empty');
+  if(!el) return;
+  const plan = DATA.audits.plans.find(p => p.id === planId);
+  if(!plan) return;
+
+  const execs   = DATA.audits.executions.filter(e => e.planId === planId);
+  const ncs     = DATA.audits.nonconformities.filter(n => n.planId === planId);
+  const ncIds   = ncs.map(n=>n.id);
+  const actions = DATA.audits.actions.filter(a => ncIds.includes(a.ncId));
+  const pKey    = plan.processo;
+  const risks   = (pKey && DATA[pKey]?.risks) ? DATA[pKey].risks : [];
+
+  let totalQ=0, conforme=0, naoConf=0;
+  execs.forEach(e => (e.checklist||[]).forEach(c => { totalQ++; if(c.conformidade==='conforme'||c.conformidade==='C') conforme++; if(c.conformidade==='nao_conforme'||c.conformidade==='NC') naoConf++; }));
+  const pct = totalQ ? Math.round((conforme/totalQ)*100) : null;
+  const ncCrit = ncs.filter(n=>n.gravidade==='critica').length;
+  const ncMod  = ncs.filter(n=>n.gravidade==='moderada').length;
+  const ncLeve = ncs.filter(n=>n.gravidade==='leve').length;
+  const acConc = actions.filter(a=>a.status==='concluida').length;
+
+  const kpiCard = (icon, label, value, color='#1B3022') =>
+    `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;text-align:center;">
+      <div style="font-size:22px;margin-bottom:4px;">${icon}</div>
+      <div style="font-size:22px;font-weight:800;color:${color};">${value}</div>
+      <div style="font-size:11px;color:#64748b;">${label}</div>
+    </div>`;
+
+  empty.style.display = 'none';
+  el.innerHTML = `
+    <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;color:#1B3022;margin-bottom:4px;">${escapeHtml(plan.processoNome||plan.objetivo||'Auditoria')}</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:16px;">
+        👤 ${escapeHtml(plan.auditor||'—')} · 📅 ${_fmtDate(plan.dataPrevista)} · 🏢 ${escapeHtml(plan.unidade||'—')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
+        ${kpiCard('▶', 'Ações de Execução', execs.length)}
+        ${pct !== null ? kpiCard('✅', 'Conformidade', pct+'%', pct>=80?'#15803d':pct>=50?'#ca8a04':'#dc2626') : ''}
+        ${kpiCard('⚠️', 'Não Conformidades', ncs.length, ncs.length?'#dc2626':'#15803d')}
+        ${kpiCard('✅', 'Ações Concluídas', `${acConc}/${actions.length}`)}
+        ${kpiCard('🗺', 'Riscos Mapeados', risks.length)}
+      </div>
+      ${ncs.length ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0;">
+        <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:8px;">Não Conformidades por Gravidade</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${ncCrit ? `<span style="background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;">🔴 ${ncCrit} Crítica${ncCrit!==1?'s':''}</span>` : ''}
+          ${ncMod  ? `<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;">🟡 ${ncMod} Moderada${ncMod!==1?'s':''}</span>` : ''}
+          ${ncLeve ? `<span style="background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;">🟢 ${ncLeve} Leve${ncLeve!==1?'s':''}</span>` : ''}
+        </div>
+      </div>` : ''}
+    </div>
+    <div style="font-size:12px;color:#94a3b8;text-align:center;">Use "Gerar com IA e Exportar" para relatório completo com análise técnica.</div>`;
 }
 
 // ── EXPORTAÇÃO RELATÓRIO WORD ───────────────────────────────
@@ -23272,19 +23624,58 @@ async function _npopExtractWordParsed(file) {
   const mimeType = _npopGetPopFileMime(file);
 
   const prompt =
-`Extraia o mapeamento de processo deste POP Word. Retorne APENAS JSON válido e completo, sem markdown, sem texto extra.
-Nao invente dados ausentes. Use strings curtas e objetivas.
+`# EXTRAÇÃO INTELIGENTE DE POP — SIGA/CAGE-RS
+Analise este documento Word (POP/Procedimento Operacional Padrão) e extraia TODAS as informações estruturadas. Leia o documento INTEIRO. Nunca invente dados ausentes. Retorne APENAS JSON puro, sem markdown, sem texto extra. O JSON deve ser sintaticamente completo e fechado.
 
-Esquema obrigatório (mantenha TODOS os campos, mesmo que vazios):
-{"nome":"","macro":"","processo":"","subprocesso":"","unidade":"","elaborado":"","desc":"","input":"","output":"","fornecedores":"","clientes":"","atores":[""],"steps":[{"title":"","responsible":"","note":null,"actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":"","branches":[]}]}]}
+# 1. METADADOS
+nome, macro, processo, subprocesso, unidade, elaborado (quem elaborou), revisado (quem revisou), aprovado (quem aprovou), versao, data_emissao, desc (objetivo/finalidade), input (entradas/insumos), output (saídas/produtos), resultados (resultados esperados), fornecedores (quem fornece os insumos), clientes (quem recebe o resultado), sistemas (sistemas de TI utilizados).
 
-IMPORTANTE: o JSON deve ser sintaticamente completo e fechado. Não corte no meio.`;
+# 2. ATORES / EXECUTORES
+atores[] — lista simples de nomes (strings) de todos os atores/executores.
+executores[] — lista detalhada: "name" (nome exato), "title" (cargo/função), "duties" (array de responsabilidades). NUNCA concatene múltiplos nomes num único item.
 
-  const respText = await callGeminiProxy(prompt, { data: base64, mimeType }, { maxTokens: 8192 });
+# 3. ETAPAS DO PROCESSO (steps[]) — FOCO PRINCIPAL
+Identifique a seção de Execução/Procedimento/Descrição das Atividades. Cada fase/agrupamento lógico = uma step. NUNCA mescle fases distintas.
+
+Para cada step: "title" (nome da etapa), "responsible" (executor principal, igual a executores[].name), "note" (observação geral ou null), "actions" (lista de ações — uma por linha/bullet/item).
+
+Para cada action:
+- "type": "atividade" | "decisao" | "evento" | "observacao"
+  · atividade = ação executável · decisao = ponto de escolha/bifurcação com caminhos alternativos
+  · evento = marco de início ou fim · observacao = nota, OBS:, aviso, texto não-ação
+- "text": texto exato (não resuma, não parafraseie)
+- "actor": executor (somente type="atividade"; "" para demais)
+- "natureza": "aprovacao" | "revisao" | ""
+- "sistemas": sistema de TI (somente type="atividade"; "" se não houver)
+- "eventoTipo": somente type="evento" — "inicio" | "encerramento" | "intermediario"
+- "branches": somente type="decisao" — [{"label":"Sim","actions":[...]},{"label":"Não","actions":[...]}]
+
+REGRAS: ✓ Primeira action do processo = evento "inicio"; última = evento "encerramento". ✓ Decisões usam type="decisao" com branches — NUNCA classifique como "atividade". ✓ Não inclua FAQ/Normas/Indicadores/Revisões nas steps.
+
+# 4. PERGUNTAS FREQUENTES (faqs[])
+Extraia da seção de FAQ ou perguntas frequentes. Cada item: "q" (pergunta), "a" (resposta).
+
+# 5. INDICADORES (indicators[])
+Extraia da seção de indicadores/métricas/KPIs. Cada item: "title", "desc", "formula", "fonte", "periodicidade", "responsavel", "meta".
+
+# 6. NORMAS E LEGISLAÇÃO (normas[])
+Extraia da seção de referências/normas/base legal. Cada item: "code" (número da norma), "name" (descrição), "url" (link ou "").
+
+# 7. HISTÓRICO DE REVISÕES (revisoes[])
+Extraia do controle de versões/histórico. Cada item: "num" (número da versão), "date" (DD/MM/AAAA), "desc" (descrição), "author" (autor).
+
+# FORMATO JSON OBRIGATÓRIO
+{"nome":"","macro":"","processo":"","subprocesso":"","unidade":"","elaborado":"","revisado":"","aprovado":"","versao":"","data_emissao":"","desc":"","input":"","output":"","resultados":"","fornecedores":"","clientes":"","sistemas":"","atores":[],"executores":[{"name":"","title":"","duties":[]}],"steps":[{"title":"","responsible":"","note":null,"actions":[{"type":"atividade","text":"","actor":"","natureza":"","sistemas":"","eventoTipo":"","branches":[]}]}],"faqs":[{"q":"","a":""}],"indicators":[{"title":"","desc":"","formula":"","fonte":"","periodicidade":"","responsavel":"","meta":""}],"normas":[{"code":"","name":"","url":""}],"revisoes":[{"num":"","date":"","desc":"","author":""}]}`;
+
+  const respText = await callGeminiProxy(prompt, { data: base64, mimeType }, { maxTokens: 16384 });
   const extracted = parseAiJson(respText);
 
-  if(!Array.isArray(extracted.steps)) extracted.steps = [];
-  if(!Array.isArray(extracted.atores)) extracted.atores = [];
+  if(!Array.isArray(extracted.steps))     extracted.steps     = [];
+  if(!Array.isArray(extracted.atores))    extracted.atores    = [];
+  if(!Array.isArray(extracted.faqs))      extracted.faqs      = [];
+  if(!Array.isArray(extracted.indicators))extracted.indicators= [];
+  if(!Array.isArray(extracted.normas))    extracted.normas    = [];
+  if(!Array.isArray(extracted.revisoes))  extracted.revisoes  = [];
   return extracted;
 }
 
