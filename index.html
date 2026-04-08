@@ -26989,12 +26989,9 @@ function arqCompRenderSection(idx) {
 
 const MAT_QUESTIONS = [
   { text: 'Mesmo com o fluxo definido, você ainda precisa tirar dúvidas para executar o processo?', inverted: false },
-  { text: 'Existem situações em que você não sabe qual decisão tomar?', inverted: false },
-  { text: 'O processo funciona bem quando surgem casos fora do padrão?', inverted: true },
   { text: 'Existem muitas exceções que não estão representadas no fluxo?', inverted: false },
   { text: 'Você precisa refazer atividades com frequência?', inverted: false },
   { text: 'Problemas em etapas anteriores impactam seu trabalho?', inverted: false },
-  { text: 'As informações que você recebe chegam completas para executar sua etapa?', inverted: true },
   { text: 'Você precisa buscar dados adicionais fora do processo?', inverted: false },
   { text: 'O processo depende de conhecimento informal (não documentado)?', inverted: false },
   { text: 'Existem diferenças relevantes entre o processo desenhado e o que acontece na prática?', inverted: false },
@@ -27006,7 +27003,7 @@ const MAT_QUESTIONNAIRE_COUNT = 3;
 const MAT_DIGITAL_QUESTIONS = [
   { text: 'As atividades do processo são executadas com suporte de sistemas informatizados (TI)?', inverted: false },
   { text: 'Os dados e informações gerados no processo são registrados e consultados em sistemas digitais?', inverted: false },
-  { text: 'Há troca automática de dados ou integração entre os sistemas utilizados no processo?', inverted: false },
+  { text: 'O processo gera registros ou relatórios digitais que permitem rastreabilidade e consulta posterior?', inverted: false },
 ];
 
 function matCreateEmptyDigitalAnswers() {
