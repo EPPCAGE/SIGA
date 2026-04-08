@@ -19826,7 +19826,7 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
 
     // Métricas do processo
     if (matMetrics) {
-      const automLabel = matMetrics.automRate >= 0.6 ? 'Alta' : matMetrics.automRate >= 0.3 ? 'Média' : 'Baixa';
+      const automLabel = matMetrics.automacaoRate >= 0.5 ? 'Alta' : matMetrics.automacaoRate >= 0.2 ? 'Média' : 'Baixa';
       h += `<h3 class="rel-h2">11.2 Métricas do Processo</h3>
       <table class="rel-table">
         <tr><th>Métrica</th><th>Valor</th></tr>
@@ -19836,7 +19836,7 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
         <tr><td>Loops / Retrabalho</td><td>${matMetrics.totalLoops}</td></tr>
         <tr><td>Handoffs (trocas de ator)</td><td>${matMetrics.totalHandoffs}</td></tr>
         <tr><td>Aprovações / Revisões</td><td>${matMetrics.totalApprovals}</td></tr>
-        <tr><td>Digitalização</td><td>${(matMetrics.automRate*100).toFixed(0)}% (${automLabel})</td></tr>
+        <tr><td>Automação (⚙️)</td><td>${(matMetrics.automacaoRate*100).toFixed(0)}% (${automLabel})</td></tr>
         <tr><td>Complexidade</td><td>${matMetrics.complexScore.toFixed(1)} — ${matMetrics.complexLabel}</td></tr>
         <tr><td>Burocracia</td><td>${(matMetrics.burocracia*100).toFixed(1)}% — ${matMetrics.burocLabel}</td></tr>
         ${matRiscoR ? `<tr><td>Risco Operacional</td><td>${matRiscoR.score} — ${matRiscoR.label}</td></tr>` : ''}
@@ -21565,8 +21565,8 @@ function eppRenderDashboard() {
       overhead:     Math.round(metrics.overhead * 100),
       overheadColor: metrics.overheadCls,
       overheadLabel: metrics.overheadLabel,
-      digital:      Math.round(metrics.automRate * 100),
-      digitalColor: metrics.automRate >= 0.6 ? '#0891b2' : metrics.automRate >= 0.3 ? '#eab308' : '#94a3b8',
+      digital:      Math.round(matScoreDigital(matGetData(p).digitalAnswers) ?? 50),
+      digitalColor: '#0891b2',
     });
   });
   window._eppRankingItems = rankingItems;
@@ -27002,6 +27002,17 @@ const MAT_QUESTIONS = [
 
 const MAT_QUESTIONNAIRE_COUNT = 3;
 
+// Perguntas sobre digitalização — respondidas no questionário (não mais por marcação no fluxo)
+const MAT_DIGITAL_QUESTIONS = [
+  { text: 'As atividades do processo são executadas com suporte de sistemas informatizados (TI)?', inverted: false },
+  { text: 'Os dados e informações gerados no processo são registrados e consultados em sistemas digitais?', inverted: false },
+  { text: 'Há troca automática de dados ou integração entre os sistemas utilizados no processo?', inverted: false },
+];
+
+function matCreateEmptyDigitalAnswers() {
+  return new Array(MAT_DIGITAL_QUESTIONS.length).fill(null);
+}
+
 function matCreateEmptyAnswers() {
   return new Array(MAT_QUESTIONS.length).fill(null);
 }
@@ -27034,6 +27045,16 @@ function matNormalizeQuestionnaires(mat) {
   mat.questionnaires = questionnaires;
   // Compatibilidade com estruturas antigas que ainda leem mat.answers.
   mat.answers = questionnaires[0].slice();
+
+  // Normalizar respostas do questionário de digitalização
+  if(!Array.isArray(mat.digitalAnswers) || mat.digitalAnswers.length !== MAT_DIGITAL_QUESTIONS.length) {
+    mat.digitalAnswers = matCreateEmptyDigitalAnswers();
+  } else {
+    mat.digitalAnswers = mat.digitalAnswers.map(v =>
+      (v === 'sim' || v === 'talvez' || v === 'nao') ? v : null
+    );
+  }
+
   return questionnaires;
 }
 
@@ -27060,6 +27081,7 @@ function matGetData(p) {
     const fallback = {
       questionnaires: Array.from({ length: MAT_QUESTIONNAIRE_COUNT }, () => matCreateEmptyAnswers()),
       answers: matCreateEmptyAnswers(),
+      digitalAnswers: matCreateEmptyDigitalAnswers(),
       indispensaveis: 0,
       sistIndispensaveis: 0,
       version: 'asis',
@@ -27073,6 +27095,7 @@ function matGetData(p) {
     DATA[p].maturity = {
       questionnaires: Array.from({ length: MAT_QUESTIONNAIRE_COUNT }, () => matCreateEmptyAnswers()),
       answers: matCreateEmptyAnswers(),
+      digitalAnswers: matCreateEmptyDigitalAnswers(),
       indispensaveis: 0,
       sistIndispensaveis: 0,
       version: 'asis',
@@ -27094,11 +27117,11 @@ function matSetVersion(p, v) {
 }
 
 function matAuditDetails(p, version) {
-  if(!DATA[p]) return { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], startEvents:[], endEvents:[], actors:new Set() };
+  if(!DATA[p]) return { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], automaticas:[], startEvents:[], endEvents:[], actors:new Set() };
   const isTobe = version === 'tobe';
   const steps = isTobe ? (DATA[p].tobeSteps || []) : (DATA[p].steps || []);
   const APPROVAL_KW = ['aprovação','aprovacao','revisão','revisao','autorização','autorizacao','validação','validacao'];
-  const audit = { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], digitalized:[], startEvents:[], endEvents:[], actors:new Set() };
+  const audit = { activities:[], decisions:[], approvals:[], loops:[], handoffs:[], automaticas:[], startEvents:[], endEvents:[], actors:new Set() };
 
   let prevActor = '';
   steps.forEach((step, si) => {
@@ -27145,9 +27168,9 @@ function matAuditDetails(p, version) {
           if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: actor }); }
         }
         if(actor) { prevActor = actor; audit.actors.add(actor.toLowerCase()); }
-        // Digitalização: tem sistema registrado OU está marcada como automática (⚙️)
-        if(action.automatico || (action.sistemas && action.sistemas.trim()))
-          audit.digitalized.push({ step: stepName, text: txt, sistemas: action.sistemas || '⚙️ automático' });
+        // Automação: marcada como automática (⚙️)
+        if(action.automatico)
+          audit.automaticas.push({ step: stepName, text: txt });
       }
 
       // Processar caminhos de decisão (espelha matComputeMetrics)
@@ -27189,8 +27212,8 @@ function matAuditDetails(p, version) {
                       if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: nbaActor }); }
                     }
                     if(nbaActor) { prevActor = nbaActor; audit.actors.add(nbaActor.toLowerCase()); }
-                    if(nba.automatico || (nba.sistemas && nba.sistemas.trim()))
-                      audit.digitalized.push({ step: stepName, text: nbaTxt, sistemas: nba.sistemas || '⚙️ automático' });
+                    if(nba.automatico)
+                      audit.automaticas.push({ step: stepName, text: nbaTxt });
                   }
                 });
               });
@@ -27209,8 +27232,8 @@ function matAuditDetails(p, version) {
                 if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: baActor }); }
               }
               if(baActor) { prevActor = baActor; audit.actors.add(baActor.toLowerCase()); }
-              if(ba.automatico || (ba.sistemas && ba.sistemas.trim()))
-                audit.digitalized.push({ step: stepName, text: baTxt, sistemas: ba.sistemas || '⚙️ automático' });
+              if(ba.automatico)
+                audit.automaticas.push({ step: stepName, text: baTxt });
             }
           });
         });
@@ -27254,7 +27277,7 @@ function matShowAudit(p) {
     ${section('🔄','Loops',                 audit.loops,       i => row(i.text, i.step))}
     ${section('🔀','Handoffs',              audit.handoffs,    i => row(`${i.from} → ${i.to}`, i.step))}
     ${section('✅','Aprovações/Burocracia', audit.approvals,   i => row(i.text + ` <span style="color:#94a3b8;">(via ${i.via})</span>`, i.step))}
-    ${section('⚡','Ações Digitalizadas',   audit.digitalized, i => row(i.text + ` <span style="color:#94a3b8;">[${i.sistemas}]</span>`, i.step))}
+    ${section('⚙️','Ações Automáticas',      audit.automaticas, i => row(i.text, i.step))}
     ${section('👤','Atores',               actorsList,        i => row(i.text, 'ator'))}`;
 
   let modal = document.getElementById('mat-audit-modal');
@@ -27277,32 +27300,20 @@ function matShowAudit(p) {
 function matComputeMetrics(p, version='asis') {
   const isTobe = version === 'tobe';
   const steps = DATA[p] ? (isTobe ? (DATA[p].tobeSteps || []) : (DATA[p].steps || [])) : [];
-  let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, actionsWithSistema = 0, totalAutomatico = 0, totalStartEvents = 0, totalEndEvents = 0;
-  // Contadores por natureza (7 naturezas)
+  let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, totalAutomatico = 0, totalStartEvents = 0, totalEndEvents = 0;
+  // Contadores por natureza
   let totalExecucao = 0, totalControle = 0, totalDistribuicao = 0, totalComunicacao = 0, totalPlanejamento = 0;
   let anyNatDefined = false;
   const allActors = new Set();
-  const allSistemas = new Set();
   const APPROVAL_KW = ['aprovação', 'aprovacao', 'revisão', 'revisao', 'autorização', 'autorizacao', 'validação', 'validacao'];
 
-  let prevActor = '';
-  steps.forEach((step) => {
-    const actions  = step.actions || [];
-    const stepResp = step.responsible || '';
-    const seenHandoffs = new Set(); // dedup por etapa: mesmo par A→B conta só 1x por etapa
-    if(stepResp) allActors.add(stepResp.toLowerCase());
-
-    actions.forEach(action => {
-      const type    = action.type || 'atividade';
-      const nat     = action.natureza || '';
-      const actor   = action.actor || stepResp || '';
-      const textLow = (action.text || '').toLowerCase();
-      const hasBranches = type === 'decisao' && Array.isArray(action.branches) && action.branches.length > 0;
-
-      if(type === 'atividade') totalActivities++;
-      if(type === 'decisao')   totalDecisions++;
-      // Rastrear naturezas das atividades
-      if(type === 'atividade' && nat) {
+  // Helper para processar uma ação individualmente
+  const processAction = (action, actorCtx) => {
+    const type = action.type || 'atividade';
+    const nat  = action.natureza || '';
+    if(type === 'atividade') {
+      totalActivities++;
+      if(nat) {
         anyNatDefined = true;
         if(nat === 'execucao')       totalExecucao++;
         else if(nat === 'controle')  totalControle++;
@@ -27310,95 +27321,121 @@ function matComputeMetrics(p, version='asis') {
         else if(nat === 'comunicacao')  totalComunicacao++;
         else if(nat === 'planejamento') totalPlanejamento++;
       }
+      if(action.automatico) totalAutomatico++;
+      if(action.loop) totalLoops++;
+      const actor = action.actor || actorCtx || '';
+      if(actor) {
+        allActors.add(actor.toLowerCase());
+        if(actorCtx && actor.toLowerCase() !== actorCtx.toLowerCase()) totalHandoffs++;
+      }
+    }
+    if(type === 'decisao') totalDecisions++;
+    if(type === 'evento') {
+      if(action.eventoTipo === 'inicio') totalStartEvents++;
+      else if(action.eventoTipo === 'encerramento') totalEndEvents++;
+    }
+    return action.actor || actorCtx || '';
+  };
+
+  let prevActor = '';
+  steps.forEach((step) => {
+    const stepResp = step.responsible || '';
+    if(stepResp) allActors.add(stepResp.toLowerCase());
+    const seenHandoffs = new Set();
+    let localPrev = prevActor;
+
+    (step.actions || []).forEach(action => {
+      const type    = action.type || 'atividade';
+      const nat     = action.natureza || '';
+      const actor   = action.actor || stepResp || '';
+      const textLow = (action.text || '').toLowerCase();
+      const hasBranches = type === 'decisao' && Array.isArray(action.branches) && action.branches.length > 0;
+
+      if(type === 'atividade') {
+        totalActivities++;
+        if(nat) {
+          anyNatDefined = true;
+          if(nat === 'execucao')          totalExecucao++;
+          else if(nat === 'controle')     totalControle++;
+          else if(nat === 'distribuicao') totalDistribuicao++;
+          else if(nat === 'comunicacao')  totalComunicacao++;
+          else if(nat === 'planejamento') totalPlanejamento++;
+        }
+        if(action.automatico) totalAutomatico++;
+        if(action.loop) totalLoops++;
+        if(actor && localPrev && actor.toLowerCase() !== localPrev.toLowerCase()) {
+          const key = `${localPrev.toLowerCase()}→${actor.toLowerCase()}`;
+          if(!seenHandoffs.has(key)) { seenHandoffs.add(key); totalHandoffs++; }
+        }
+        if(actor) { localPrev = actor; allActors.add(actor.toLowerCase()); }
+      }
+      if(type === 'decisao') totalDecisions++;
       if(type === 'evento') {
-        const etipo = action.eventoTipo || '';
-        if(etipo === 'inicio') totalStartEvents++;
-        else if(etipo === 'encerramento') totalEndEvents++;
+        if(action.eventoTipo === 'inicio') totalStartEvents++;
+        else if(action.eventoTipo === 'encerramento') totalEndEvents++;
       }
 
-      // Overhead burocrático: aprovacao e revisao por natureza ou palavra-chave
-      // controle é rastreado separadamente em totalControle (acima)
+      // Overhead burocrático por natureza ou palavra-chave
       if(!hasBranches) {
         const isBurocByNat = (nat === 'aprovacao' || nat === 'revisao');
         const isBurocByKw  = !nat && APPROVAL_KW.some(k => textLow.includes(k));
         if(isBurocByNat || isBurocByKw) totalApprovals++;
       }
 
-      // Loop: conta apenas atividades marcadas manualmente com 🔄
-      if(type === 'atividade' && action.loop) totalLoops++;
-
-      if(type === 'atividade') {
-        if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
-          const key = `${prevActor.toLowerCase()}→${actor.toLowerCase()}`;
-          if(!seenHandoffs.has(key)) { seenHandoffs.add(key); totalHandoffs++; }
-        }
-        if(actor) { prevActor = actor; allActors.add(actor.toLowerCase()); }
-      }
-
-      // Sistemas: adiciona ao índice de sistemas únicos
-      if(action.sistemas && action.sistemas.trim())
-        action.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
-      // Digitalização: atividade com sistema registrado OU marcada como automática (⚙️)
-      if(type === 'atividade' && (action.automatico || (action.sistemas && action.sistemas.trim()))) actionsWithSistema++;
-      // Automação: atividades marcadas explicitamente como automáticas (⚙️)
-      if(type === 'atividade' && action.automatico) totalAutomatico++;
-
-      // Processar caminhos de decisão: conta atividades/aprovações, mas deduplica aprovações (conta 1 por decisão)
+      // Processar caminhos de decisão
       if(hasBranches) {
         let decisionHasApproval = false;
         action.branches.forEach(branch => {
           (branch.actions || []).forEach(ba => {
-            const baType = ba.type || 'atividade';
-            const baNat  = ba.natureza || '';
+            const baType    = ba.type || 'atividade';
+            const baNat     = ba.natureza || '';
             const baTextLow = (ba.text || '').toLowerCase();
             const baActor   = ba.actor || '';
             if(baType === 'atividade') {
               totalActivities++;
-              // Rastrear naturezas dentro de branches
               if(baNat) {
                 anyNatDefined = true;
-                if(baNat === 'execucao')       totalExecucao++;
-                else if(baNat === 'controle')  totalControle++;
+                if(baNat === 'execucao')          totalExecucao++;
+                else if(baNat === 'controle')     totalControle++;
                 else if(baNat === 'distribuicao') totalDistribuicao++;
                 else if(baNat === 'comunicacao')  totalComunicacao++;
                 else if(baNat === 'planejamento') totalPlanejamento++;
               }
-              if(baActor && prevActor && baActor.toLowerCase() !== prevActor.toLowerCase()) {
-                const key = `${prevActor.toLowerCase()}→${baActor.toLowerCase()}`;
+              if(ba.automatico) totalAutomatico++;
+              if(ba.loop) totalLoops++;
+              if(baActor && localPrev && baActor.toLowerCase() !== localPrev.toLowerCase()) {
+                const key = `${localPrev.toLowerCase()}→${baActor.toLowerCase()}`;
                 if(!seenHandoffs.has(key)) { seenHandoffs.add(key); totalHandoffs++; }
               }
-              if(baActor) { prevActor = baActor; allActors.add(baActor.toLowerCase()); }
+              if(baActor) { localPrev = baActor; allActors.add(baActor.toLowerCase()); }
             }
             if(baType === 'decisao') totalDecisions++;
             if(baType === 'evento') {
               if(ba.eventoTipo === 'inicio') totalStartEvents++;
               else if(ba.eventoTipo === 'encerramento') totalEndEvents++;
             }
-            // Decisão aninhada dentro do caminho (nível 3): processar seus sub-ramos
+            // Nível 3: sub-decisões aninhadas
             if(baType === 'decisao' && Array.isArray(ba.branches)) {
               ba.branches.forEach(nbranch => {
                 (nbranch.actions || []).forEach(nba => {
                   const nbaType = nba.type || 'atividade';
-                  if(nbaType === 'evento') {
-                    if(nba.eventoTipo === 'inicio') totalStartEvents++;
-                    else if(nba.eventoTipo === 'encerramento') totalEndEvents++;
-                  }
                   if(nbaType === 'atividade') {
                     totalActivities++;
                     const nbaNat = nba.natureza || '';
                     if(nbaNat) {
                       anyNatDefined = true;
-                      if(nbaNat === 'execucao') totalExecucao++;
-                      else if(nbaNat === 'controle') totalControle++;
+                      if(nbaNat === 'execucao')          totalExecucao++;
+                      else if(nbaNat === 'controle')     totalControle++;
                       else if(nbaNat === 'distribuicao') totalDistribuicao++;
-                      else if(nbaNat === 'comunicacao') totalComunicacao++;
+                      else if(nbaNat === 'comunicacao')  totalComunicacao++;
                       else if(nbaNat === 'planejamento') totalPlanejamento++;
                     }
                     if(nba.automatico) totalAutomatico++;
                     if(nba.loop) totalLoops++;
-                    if(nba.automatico || (nba.sistemas && nba.sistemas.trim())) actionsWithSistema++;
-                    if(nba.sistemas && nba.sistemas.trim())
-                      nba.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
+                  }
+                  if(nbaType === 'evento') {
+                    if(nba.eventoTipo === 'inicio') totalStartEvents++;
+                    else if(nba.eventoTipo === 'encerramento') totalEndEvents++;
                   }
                 });
               });
@@ -27406,22 +27443,15 @@ function matComputeMetrics(p, version='asis') {
             const baBurocByNat = (baNat === 'aprovacao' || baNat === 'revisao');
             const baBurocByKw  = !baNat && APPROVAL_KW.some(k => baTextLow.includes(k));
             if(baBurocByNat || baBurocByKw) decisionHasApproval = true;
-            if(baType === 'atividade' && ba.automatico) totalAutomatico++;
-            if(ba.sistemas && ba.sistemas.trim())
-              ba.sistemas.split(/[,;]/).forEach(s => { const st = s.trim(); if(st) allSistemas.add(st.toLowerCase()); });
-            // Digitalização: atividade com sistema OU automática
-            if(baType === 'atividade' && (ba.automatico || (ba.sistemas && ba.sistemas.trim()))) actionsWithSistema++;
-            if(baType === 'atividade' && ba.loop) totalLoops++;
           });
         });
-        if(decisionHasApproval) totalApprovals++; // conta 1 aprovação por decisão, independente de quantos caminhos
+        if(decisionHasApproval) totalApprovals++;
       }
     });
+    prevActor = localPrev;
   });
 
   const totalActors   = allActors.size;
-  const totalSistemas = allSistemas.size;
-  const automRate     = totalActivities > 0 ? actionsWithSistema / totalActivities : 0;
   const automacaoRate = totalActivities > 0 ? totalAutomatico / totalActivities : 0;
   const complexScore  = totalActivities * 1 + totalDecisions * 2 + totalActors * 1.5 + totalLoops * 3 + totalStartEvents * 1.5 + totalEndEvents * 1;
 
@@ -27442,8 +27472,8 @@ function matComputeMetrics(p, version='asis') {
   const burocLabel = overheadLabel;
   const burocCls   = overheadCls;
 
-  return { totalActivities, totalDecisions, totalActors, totalLoops, totalHandoffs, totalApprovals, totalSistemas,
-           actionsWithSistema, automRate, totalAutomatico, automacaoRate, totalStartEvents, totalEndEvents,
+  return { totalActivities, totalDecisions, totalActors, totalLoops, totalHandoffs, totalApprovals,
+           totalAutomatico, automacaoRate, totalStartEvents, totalEndEvents,
            totalExecucao, totalControle, totalDistribuicao, totalComunicacao, totalPlanejamento, anyNatDefined,
            complexScore, complexLabel, complexCls,
            overhead, overheadLabel, overheadCls,
@@ -27543,15 +27573,17 @@ function matComputeFinal(p) {
   // Normalise all to 0–100 where 100 = most mature
   // Risco: decaimento exponencial (meia-vida ≈ 45 pts)
   const normRisco   = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-riscoRaw / 45))));
-  // Digitalização: % de atividades com sistema registrado OU automáticas (0–100)
-  const normAutom   = Math.round(metrics.automRate * 100);
+  // Digitalização: baseada no questionário de digitalização (3 perguntas)
+  // Se não respondido, usa 50 como neutro (não penaliza nem beneficia)
+  const digitalScore = matScoreDigital(mat.digitalAnswers);
+  const normAutom   = digitalScore !== null ? Math.round(digitalScore) : 50;
   // Lean Operacional: execução / (execução + overhead) — mede proporção de valor direto vs. controle
   // Se nenhuma atividade "opinada" (execucao/aprovacao/controle) → neutro (50)
   const leanDenom = metrics.totalExecucao + metrics.totalApprovals + metrics.totalControle;
   const normLean  = leanDenom > 0
     ? Math.min(100, Math.round((metrics.totalExecucao / leanDenom) * 100))
     : 50;
-  // Automação: % de atividades marcadas como automáticas (⚙️)
+  // Automação: % de atividades marcadas como automáticas (⚙️) no fluxo
   const normAutomacao = Math.round(metrics.automacaoRate * 100);
 
   // Pesos: Equipe 30% · Risco 20% · Lean 30% · Digitalização 10% · Automação 10%
@@ -27595,6 +27627,24 @@ function matSetSistIndispensaveis(p, val) {
   mat.sistIndispensaveis = Number.parseInt(val) || 0;
   markChanged(true, true);
   matRender(p);
+}
+
+function matSetDigitalAnswer(p, qi, val) {
+  const mat = matGetData(p);
+  matNormalizeQuestionnaires(mat); // garante que digitalAnswers existe
+  mat.digitalAnswers[qi] = val;
+  markChanged(true, true);
+  matRender(p);
+}
+
+// Retorna score de digitalização (0–100) baseado no questionário, ou null se nenhuma pergunta respondida.
+// Questões normais: sim=100, talvez=50, nao=0
+function matScoreDigital(digitalAnswers) {
+  if(!Array.isArray(digitalAnswers)) return null;
+  const valid = digitalAnswers.filter(a => a === 'sim' || a === 'talvez' || a === 'nao');
+  if(!valid.length) return null;
+  const total = valid.reduce((sum, a) => sum + (a === 'sim' ? 100 : a === 'talvez' ? 50 : 0), 0);
+  return total / valid.length;
 }
 
 function matSetQuestionnaireView(p, idx) {
@@ -27698,12 +27748,14 @@ function matRender(p) {
       ${metricCard('◉', 'Ev. Encerramento', metrics.totalEndEvents, 'eventos de fim')}
       ${metricCard('🎯','Execução',      metrics.totalExecucao, 'nat. execução')}
       ${metricCard('📤','Distribuição',  metrics.totalDistribuicao, 'nat. distribuição')}
-      ${metricCard('⚡','Digitalização', (metrics.automRate*100).toFixed(0)+'%', 'c/ sistema ou automáticas')}
+      ${metricCard('⚙️','Automáticas',  metrics.totalAutomatico, 'atividades ⚙️')}
     </div>`;
 
   // índices calculados com escala de referência
-  const automLabel = metrics.automRate >= 0.6 ? 'Alta' : metrics.automRate >= 0.3 ? 'Média' : 'Baixa';
-  const automCls   = metrics.automRate >= 0.6 ? '#22c55e' : metrics.automRate >= 0.3 ? '#eab308' : '#ef4444';
+  const digitalScore = matScoreDigital(mat.digitalAnswers);
+  const digitalVal   = digitalScore !== null ? digitalScore.toFixed(0)+'%' : 'N/D';
+  const digitalLabel = digitalScore === null ? 'Não avaliado' : digitalScore >= 60 ? 'Alta' : digitalScore >= 30 ? 'Média' : 'Baixa';
+  const digitalCls   = digitalScore === null ? '#94a3b8' : digitalScore >= 60 ? '#22c55e' : digitalScore >= 30 ? '#eab308' : '#ef4444';
   const indicesHtml = `
     <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:6px;">📊 Índices Calculados</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
@@ -27718,8 +27770,8 @@ function matRender(p) {
         return indexCard('Lean Operacional ↑', lv, ll, lc,
           `execução ÷ (execução + aprovações + controle)<br>Escala: ≥60% lean · 35–60% moderado · &lt;35% burocrático<br><span style="color:#64748b;">Mede proporção de valor direto vs. etapas de controle no fluxo</span>`);
       })()}
-      ${indexCard('Digitalização ↑', (metrics.automRate*100).toFixed(0)+'%', automLabel, automCls,
-        `atividades com sistema registrado ou automáticas (⚙️) ÷ total de atividades<br>Escala: &lt;30% baixa · 30–60% média · &gt;60% alta<br><span style="color:#64748b;">Mede penetração digital no fluxo (sistema registrado ou execução automática)</span>`)}
+      ${indexCard('Digitalização ↑', digitalVal, digitalLabel, digitalCls,
+        `baseado no questionário de digitalização (3 perguntas)<br>Escala: &lt;30% baixa · 30–60% média · &gt;60% alta<br><span style="color:#64748b;">Responda as perguntas de digitalização abaixo para calcular este índice</span>`)}
       ${(()=>{
         const ar = metrics.automacaoRate;
         const av = (ar*100).toFixed(0)+'%';
@@ -27855,7 +27907,7 @@ function matRender(p) {
         ${scoreCard('Percepção da Equipe', final.equipe+'/100', `média de ${completedQuestionnaires} questionário(s) ↑`, '30%', '#6366f1', '↑ maior = melhor')}
         ${(()=>{ const rc = final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444'; return scoreCard('Risco Operacional', final.normRisco+'/100', 'maior = melhor', '20%', rc, ''); })()}
         ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '30%', '#22c55e', '↑ mais lean = melhor')}
-        ${scoreCard('Digitalização', final.normAutom+'/100', '% atividades com sistema ↑', '10%', '#0891b2', '↑ maior = melhor')}
+        ${scoreCard('Digitalização', final.normAutom+'/100', 'baseado no questionário ↑', '10%', '#0891b2', '↑ maior = melhor')}
         ${scoreCard('Automação', final.normAutomacao+'/100', '% atividades automáticas ⚙️ ↑', '10%', '#7c3aed', '↑ mais automático = melhor')}
       </div>
       <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;">
@@ -27916,11 +27968,43 @@ function matRender(p) {
       ${matRenderHistory(p, snapshots)}
     </div>`;
 
+  // ── Digital questionnaire (Digitalização) ─────────────────────────────
+  const ansBtnDig = (pi, qi, val, lbl, cur) => {
+    const sel  = cur === val;
+    const cols = { sim:'#22c55e', talvez:'#eab308', nao:'#ef4444' };
+    return `<button onclick="matSetDigitalAnswer('${pi}',${qi},'${val}')"
+      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${sel ? cols[val] : '#e2e8f0'};
+             background:${sel ? cols[val] : '#f8fafc'};color:${sel ? '#fff' : '#64748b'};
+             font-size:12px;font-weight:${sel ? '700' : '400'};cursor:pointer;">${lbl}</button>`;
+  };
+  const digitalAnsweredCount = (mat.digitalAnswers || []).filter(a => a !== null).length;
+  const digitalQHtml = `
+    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;background:#ffffff;">
+      ${MAT_DIGITAL_QUESTIONS.map((q, i) => {
+        const cur = (mat.digitalAnswers || [])[i] ?? null;
+        return `
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${cur !== null ? '#f0f9ff' : '#f8fafc'};border-radius:8px;margin-bottom:8px;border:1px solid ${cur !== null ? '#bae6fd' : '#f1f5f9'};flex-wrap:wrap;">
+            <div style="min-width:22px;font-size:12px;font-weight:800;color:#94a3b8;">${i+1}</div>
+            <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}</div>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              ${ansBtnDig(p, i, 'sim',    'Sim',    cur)}
+              ${ansBtnDig(p, i, 'talvez', 'Talvez', cur)}
+              ${ansBtnDig(p, i, 'nao',    'Não',    cur)}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+
   container.innerHTML = `
     ${versionToggle}
     ${metricsHtml}
     ${indicesHtml}
     ${manualHtml}
+    <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:10px;">
+      ⚡ Questionário de Digitalização
+      <span style="color:#94a3b8;font-size:12px;font-weight:400;margin-left:6px;">${digitalAnsweredCount}/${MAT_DIGITAL_QUESTIONS.length} respondidas</span>
+    </div>
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:24px;">${digitalQHtml}</div>
     <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:10px;">
       📋 Questionário de Percepção da Equipe
       <span style="color:#94a3b8;font-size:12px;font-weight:400;margin-left:6px;">${answered}/${totalAnswers} respostas</span>
@@ -28049,8 +28133,9 @@ function matExportPdf(p) {
   const ansLabel = { sim:'Sim', talvez:'Talvez', nao:'Não' };
   const ansColor = { sim:'#22c55e', talvez:'#eab308', nao:'#ef4444' };
 
-  const automLabel = metrics.automRate >= 0.6 ? 'Alta' : metrics.automRate >= 0.3 ? 'Média' : 'Baixa';
-  const automCls   = metrics.automRate >= 0.6 ? '#22c55e' : metrics.automRate >= 0.3 ? '#eab308' : '#ef4444';
+  const digScore   = matScoreDigital(mat.digitalAnswers);
+  const automLabel = digScore === null ? 'Não avaliado' : digScore >= 60 ? 'Alta' : digScore >= 30 ? 'Média' : 'Baixa';
+  const automCls   = digScore === null ? '#94a3b8' : digScore >= 60 ? '#22c55e' : digScore >= 30 ? '#eab308' : '#ef4444';
 
   // ── Score block ────────────────────────────────────────────────────────
   const scoreBlock = final ? `
@@ -28069,7 +28154,7 @@ function matExportPdf(p) {
             ['👥 Percepção da Equipe',  '30%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média das respostas de 3 questionários de percepção (Sim/Talvez/Não), com consolidação por pergunta. Perguntas invertidas têm lógica oposta.'],
             ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas críticos×3 + eventos início×1,5 + eventos fim×1. Score bruto alto → nota baixa.'],
             ['🌿 Lean Operacional',     '30%', final.normLean,      '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma atividade opinada existe.'],
-            ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Percentual de atividades com sistema registrado ou marcadas como automáticas (⚙️), incluindo atividades dentro de decisões.'],
+            ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Baseado no questionário de digitalização (3 perguntas). Sim=100%, Talvez=50%, Não=0%. Score = média das respostas. Neutro (50) quando não respondido.'],
             ['⚙️ Automação',            '10%', final.normAutomacao, '#7c3aed', '100 = totalmente automatizado', 'Percentual de atividades marcadas com ⚙️ (automático) ÷ total de atividades. Marque via ícone ⚙️ em cada atividade no fluxo.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
@@ -28107,7 +28192,7 @@ function matExportPdf(p) {
       <tr><td>Distribuição (natureza distribuição)</td><td>${metrics.totalDistribuicao}</td></tr>
       <tr><td>Comunicação (natureza comunicação)</td><td>${metrics.totalComunicacao}</td></tr>
       <tr><td>Planejamento (natureza planejamento)</td><td>${metrics.totalPlanejamento}</td></tr>
-      <tr><td>Atividades digitalizadas (c/ sistema ou automáticas)</td><td>${metrics.actionsWithSistema} (${(metrics.automRate*100).toFixed(0)}%)</td></tr>
+      <tr><td>Atividades automáticas (⚙️)</td><td>${metrics.totalAutomatico} (${(metrics.automacaoRate*100).toFixed(0)}%)</td></tr>
       <tr><td>Pessoas indispensáveis (manual)</td><td>${ind}</td></tr>
       <tr><td>Sistemas indispensáveis (manual)</td><td>${sist}</td></tr>
     </table>`;
@@ -28138,8 +28223,8 @@ function matExportPdf(p) {
         })()}
       </tr>
       <tr>
-        <td>Digitalização <span class="note">(bruto = normalizado — ↑ maior = melhor; atividades c/ sistema ou automáticas ⚙️, incl. dentro de decisões)</span></td>
-        <td>${(metrics.automRate*100).toFixed(0)}%</td>
+        <td>Digitalização <span class="note">(baseado no questionário de digitalização — ↑ maior = melhor; Sim=100%, Talvez=50%, Não=0%)</span></td>
+        <td>${digScore !== null ? digScore.toFixed(0)+'%' : 'N/D'}</td>
         <td><span class="badge" style="background:${automCls}20;color:${automCls};">${automLabel}</span></td>
       </tr>
       <tr>
@@ -28351,16 +28436,16 @@ Descrição: ${popMeta.desc || 'Não informado'}
 - Loops/retrabalho marcados (🔄): ${metrics.totalLoops}
 - Handoffs (trocas de responsável): ${metrics.totalHandoffs}
 - Aprovações: ${metrics.totalApprovals}
-- Sistemas únicos referenciados: ${metrics.totalSistemas}
-- Atividades digitalizadas (c/ sistema ou automáticas): ${metrics.actionsWithSistema} de ${metrics.totalActivities} (${(metrics.automRate*100).toFixed(0)}%)
+- Atividades automáticas (⚙️): ${metrics.totalAutomatico} de ${metrics.totalActivities} (${(metrics.automacaoRate*100).toFixed(0)}%)
 - Pessoas indispensáveis (informado pelo usuário): ${ind}
 - Sistemas indispensáveis (informado pelo usuário): ${sist}
+- Digitalização (questionário): ${matScoreDigital(mat.digitalAnswers) !== null ? matScoreDigital(mat.digitalAnswers).toFixed(0)+'%' : 'não respondido'}
 
 ## ÍNDICES
 - Complexidade: ${metrics.complexScore.toFixed(1)} → ${metrics.complexLabel} (escala: 0–20 simples, 21–40 moderado, 41–70 complexo, 70+ muito complexo)
 - Burocracia: ${(metrics.burocracia*100).toFixed(1)}% → ${metrics.burocLabel} (escala: <15% saudável, 15–30% moderado, >30% burocrático)
 - Risco Operacional: ${risco.score} → ${risco.label} (escala: 0–15 baixo, 16–35 médio, 36+ alto)
-- Digitalização: ${(metrics.automRate*100).toFixed(0)}% das atividades possuem sistema registrado ou são automáticas (escala: <30% baixa, 30–60% média, >60% alta)
+- Digitalização (questionário): ${matScoreDigital(mat.digitalAnswers) !== null ? matScoreDigital(mat.digitalAnswers).toFixed(0)+'% de digitalização declarada pela equipe' : 'não respondido'}
 
 ## QUESTIONÁRIOS DA EQUIPE (3 respondentes; Sim=maduro nessa pergunta / Talvez=incerto / Não=imaduro)
 ${answersText}
