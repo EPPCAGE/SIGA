@@ -1597,7 +1597,7 @@
     <button class="nav-tab" data-sortkey="responsabilidades" onclick="showSection('responsabilidades',this)" role="tab">👥 Responsabilidades</button>
     <button class="nav-tab" data-sortkey="indicadores" onclick="showSection('indicadores',this)" role="tab">📊 Indicadores</button>
     <button class="nav-tab" data-sortkey="faq" onclick="showSection('faq',this)" role="tab">❓ FAQ</button>
-    <button class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)" role="tab">📜 Normas & Revisões</button>
+    <button class="nav-tab" data-sortkey="normas" onclick="showSection('normas',this)" role="tab">📜 Normas e Documentação</button>
     <button class="nav-tab" data-sortkey="riscos" onclick="showSection('riscos',this)" role="tab">⚠️ Riscos</button>
     <button class="nav-tab" data-sortkey="plano-acao" onclick="showSection('plano-acao',this)" role="tab">✅ Plano de Ação</button>
     <button class="nav-tab" data-sortkey="reunioes" onclick="showSection('reunioes',this)" role="tab">🤝 Reuniões</button>
@@ -14757,7 +14757,7 @@ function _renderSearchResultItem(r, q, lower) {
     </div>`;
   if(r.type === 'norma') return `
     <div class="search-result-item" onclick="goToNorma('${r.key}', ${r.idx})">
-      <div class="search-result-pop">📜 ${r.popName} · Normas & Revisões</div>
+      <div class="search-result-pop">📜 ${r.popName} · Normas e Documentação</div>
       <div class="search-result-q">${highlight(r.norma.code||'', q)}</div>
       ${r.norma.name ? `<div class="search-result-a">${highlight(r.norma.name, q)}</div>` : ''}
       ${r.norma.url ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:4px;">🔗 ${r.norma.url}</div>` : ''}
@@ -14813,7 +14813,7 @@ function runSearch(raw) {
   const repoFaqResults = results.filter(r => r.type === 'repo_faq');
   resultsEl.innerHTML =
     _renderSearchSection(faqResults,     `FAQs (${faqResults.length})`, q, lower) +
-    _renderSearchSection(normaResults,   `Normas & Revisões (${normaResults.length})`, q, lower) +
+    _renderSearchSection(normaResults,   `Normas e Documentação (${normaResults.length})`, q, lower) +
     _renderSearchSection(repoResults,    `Documentos & Manuais (${repoResults.length})`, q, lower) +
     _renderSearchSection(repoFaqResults, `FAQs de Manuais (${repoFaqResults.length})`, q, lower);
 }
@@ -17175,7 +17175,7 @@ const SECTION_VERSION_LABELS = {
   'responsabilidades': 'Responsabilidades',
   'indicadores':       'Indicadores',
   'faq':               'FAQ',
-  'normas':            'Normas & Siglas',
+  'normas':            'Normas e Documentação',
   'riscos':            'Riscos',
   'plano-acao':        'Plano de Ação',
   'reunioes':          'Reuniões',
@@ -18518,7 +18518,7 @@ function arqShowProcessDetail(idx) {
             ${risksHtml}
           </div>
           <div>
-            <div style="font-size:12px;font-weight:700;color:#1B3022;margin-bottom:8px;">📄 Normas e Referências</div>
+            <div style="font-size:12px;font-weight:700;color:#1B3022;margin-bottom:8px;">📄 Normas e Documentação</div>
             ${normasHtml}
             <div style="font-size:12px;font-weight:700;color:#1B3022;margin:12px 0 8px;">🗂 Fluxograma</div>
             ${fluxoSection}
