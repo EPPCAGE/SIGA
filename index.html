@@ -9011,7 +9011,20 @@ function addStep(p) {
 function rmStep(p, si) {
   if(!isEditor) { showToast('🔒 Apenas editores podem apagar etapas.', 'warn'); return; }
   if(DATA[p].steps.length <= 1) { showToast('O processo precisa ter pelo menos uma etapa.', 'warn'); return; }
-  if(!confirm(`Apagar a Etapa ${si+1} — "${DATA[p].steps[si].title}"? Esta ação não pode ser desfeita.`)) return;
+  const step = DATA[p].steps[si];
+  const hasTobe = step.tobe && (
+    (step.tobe.title && step.tobe.title !== 'Etapa') ||
+    (Array.isArray(step.tobe.actions) && step.tobe.actions.length > 0)
+  );
+  const hasAsis = Array.isArray(step.actions) && step.actions.length > 0;
+  // Warn if the OTHER mode has content, to prevent accidental data loss
+  const modeLabel  = flowMode === 'tobe' ? 'TO BE' : 'AS IS';
+  const otherLabel = flowMode === 'tobe' ? 'AS IS' : 'TO BE';
+  const otherHasContent = flowMode === 'tobe' ? hasAsis : hasTobe;
+  const warningLine = otherHasContent
+    ? `\n\n⚠️ Esta etapa também possui conteúdo no fluxo ${otherLabel}. Excluir irá remover AMBOS os fluxos.`
+    : '';
+  if(!confirm(`Apagar a Etapa ${si+1} — "${step.title}"?${warningLine}\nEsta ação não pode ser desfeita.`)) return;
   DATA[p].steps.splice(si, 1);
   DATA[p].currentStep = Math.max(0, Math.min(DATA[p].currentStep, DATA[p].steps.length - 1));
   renderTracker(p);
@@ -22827,7 +22840,7 @@ function auditAddQuestao() {
   if(!pergunta?.trim()) return;
   if(!Array.isArray(plan.questoes)) plan.questoes = [];
   const steps = plan.processo ? (DATA[plan.processo]?.steps || []) : [];
-  const etapa = steps.length ? prompt(`Etapa relacionada (deixe em branco para nenhuma):\n${steps.map((s,i)=>`${i+1}. ${s.title||'Etapa '+(i+1)}`).join('\n')}`) || '' : '';
+  const etapa = steps.length ? prompt(`Etapa relacionada (deixe em branco para nenhuma):\n${steps.map((s,i)=>`${i+1}. ${s.tobe?.title||s.title||'Etapa '+(i+1)}`).join('\n')}`) || '' : '';
   plan.questoes.push({ id:'q_'+Date.now(), pergunta: pergunta.trim(), etapa: etapa.trim(), referencia:'' });
   saveToCloud();
   auditRenderQuestoes(planId);
