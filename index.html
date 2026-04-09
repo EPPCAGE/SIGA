@@ -26989,21 +26989,21 @@ function arqCompRenderSection(idx) {
 
 const MAT_QUESTIONS = [
   // Execução do Processo
-  { text: 'Existem muitas exceções que não estão representadas no fluxo?',                           inverted: false, section: 'Execução do Processo' },
-  { text: 'Você precisa refazer atividades com frequência?',                                          inverted: false, section: 'Execução do Processo' },
-  { text: 'Existem diferenças relevantes entre o processo desenhado e o que acontece na prática?',   inverted: false, section: 'Execução do Processo' },
+  { text: 'Existem muitas exceções que não estão representadas no fluxo?',                                      section: 'Execução do Processo' },
+  { text: 'Você precisa refazer atividades com frequência?',                                                    section: 'Execução do Processo' },
+  { text: 'Existem diferenças relevantes entre o processo desenhado e o que acontece na prática?',             section: 'Execução do Processo' },
   // Tecnologia
-  { text: 'Você precisa buscar dados ou informações fora do processo para executar sua atividade?',  inverted: false, section: 'Tecnologia' },
-  { text: 'Os sistemas e ferramentas disponíveis são adequados para executar o processo?',            inverted: true,  section: 'Tecnologia' },
-  { text: 'Problemas com sistemas ou ferramentas causam atrasos ou interrupções na execução?',        inverted: false, section: 'Tecnologia' },
+  { text: 'Você precisa buscar dados ou informações fora do processo para executar sua atividade?',            section: 'Tecnologia' },
+  { text: 'Os sistemas e ferramentas disponíveis são inadequados ou insuficientes para o processo?',           section: 'Tecnologia' },
+  { text: 'Problemas com sistemas ou ferramentas causam atrasos ou interrupções na execução?',                 section: 'Tecnologia' },
   // Pessoas
-  { text: 'Mesmo com o fluxo definido, você ainda precisa tirar dúvidas para executar o processo?', inverted: false, section: 'Pessoas' },
-  { text: 'O processo depende de conhecimento informal (não documentado)?',                           inverted: false, section: 'Pessoas' },
-  { text: 'Problemas em etapas anteriores impactam seu trabalho?',                                   inverted: false, section: 'Pessoas' },
+  { text: 'Mesmo com o fluxo definido, você ainda precisa tirar dúvidas para executar o processo?',           section: 'Pessoas' },
+  { text: 'O processo depende de conhecimento informal (não documentado)?',                                    section: 'Pessoas' },
+  { text: 'Problemas em etapas anteriores impactam seu trabalho?',                                             section: 'Pessoas' },
   // Monitoramento e Métricas
-  { text: 'O desempenho do processo é acompanhado com indicadores ou métricas claras?',              inverted: true,  section: 'Monitoramento e Métricas' },
-  { text: 'Falhas ou gargalos no processo são identificados e tratados com agilidade?',               inverted: true,  section: 'Monitoramento e Métricas' },
-  { text: 'Há registros históricos que permitem analisar a evolução do processo ao longo do tempo?', inverted: true,  section: 'Monitoramento e Métricas' },
+  { text: 'O processo não possui indicadores ou métricas de desempenho definidos?',                           section: 'Monitoramento e Métricas' },
+  { text: 'Falhas ou gargalos no processo demoram a ser identificados ou não são tratados com agilidade?',    section: 'Monitoramento e Métricas' },
+  { text: 'Faltam registros históricos que permitam analisar a evolução do processo ao longo do tempo?',      section: 'Monitoramento e Métricas' },
 ];
 
 const MAT_QUESTIONNAIRE_COUNT = 3;
@@ -27853,7 +27853,7 @@ function matRender(p) {
           return header + `
             <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${cur !== null ? '#f0fdf4' : '#f8fafc'};border-radius:8px;margin-bottom:8px;border:1px solid ${cur !== null ? '#bbf7d0' : '#f1f5f9'};flex-wrap:wrap;">
               <div style="min-width:22px;font-size:12px;font-weight:800;color:#94a3b8;">${i+1}</div>
-              <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}${q.inverted ? ' <span style="font-size:10px;color:#6366f1;font-weight:600;">(invertida)</span>' : ''}</div>
+              <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}</div>
               <div style="display:flex;gap:6px;flex-shrink:0;">
                 ${ansBtn(p, i, activeQIndex, 'sim',    'Sim',    cur)}
                 ${ansBtn(p, i, activeQIndex, 'talvez', 'Talvez', cur)}
