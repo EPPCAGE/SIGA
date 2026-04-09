@@ -7412,6 +7412,14 @@ function _resetNpopTextFields() {
   });
 }
 
+function _renderObjTags(containerId, objs) {
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = objs && objs.length
+    ? objs.map(o=>`<span style="display:inline-block;background:#e8f0fe;color:#1a56db;font-size:11px;padding:2px 9px;border-radius:10px;border:1px solid #c5d8f5;">${o}</span>`).join('')
+    : '<span style="color:#94a3b8;font-size:12px;">Nenhum objetivo estratégico associado</span>';
+}
+
 function _resetNpopStatusFields() {
   ['nf-unidade','nf-status-display','nf-status-map','nf-obj-estrategico','npop-json-paste'].forEach(id => {
     const el = document.getElementById(id);
