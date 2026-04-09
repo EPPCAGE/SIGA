@@ -1656,6 +1656,34 @@
     </div>
   </div>
 
+  <!-- ══ PAINEL DE INFORMAÇÕES ══ -->
+  <div id="home-info-panel" style="margin-bottom:32px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;">
+      <!-- Widget: Avisos -->
+      <div id="home-avisos-widget" style="background:white;border-radius:14px;border:1.5px solid #e2e8f0;border-top:4px solid #f59e0b;padding:20px 22px;box-shadow:0 2px 8px rgba(0,0,0,.05);min-height:120px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:800;color:#1B3022;">&#128226; Avisos</div>
+        </div>
+        <div id="home-avisos-list" style="font-size:13px;color:#64748b;"></div>
+      </div>
+      <!-- Widget: Processos em Mapeamento -->
+      <div id="home-mapeamentos-widget" style="background:white;border-radius:14px;border:1.5px solid #e2e8f0;border-top:4px solid #00a86b;padding:20px 22px;box-shadow:0 2px 8px rgba(0,0,0,.05);min-height:120px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:800;color:#1B3022;">&#128506;&#65039; Processos em Mapeamento</div>
+          <button onclick="showHomePops()" style="font-size:11px;color:#00a86b;font-weight:700;background:none;border:none;cursor:pointer;padding:0;">Ver todos &#8594;</button>
+        </div>
+        <div id="home-mapeamentos-list" style="font-size:13px;color:#64748b;"></div>
+      </div>
+      <!-- Widget: Projetos em Andamento -->
+      <div id="home-projetos-widget" style="background:white;border-radius:14px;border:1.5px solid #e2e8f0;border-top:4px solid #2563eb;padding:20px 22px;box-shadow:0 2px 8px rgba(0,0,0,.05);min-height:120px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:800;color:#1B3022;">&#128193; Projetos em Andamento</div>
+        </div>
+        <div id="home-projetos-list" style="font-size:13px;color:#94a3b8;font-style:italic;">M&oacute;dulo de gest&atilde;o de projetos em prepara&ccedil;&atilde;o.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ MÓDULOS ══ -->
   <div id="home-block-processos" style="display:block;margin-bottom:40px;">
     <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
@@ -1918,7 +1946,7 @@
       <button class="epp-tab" data-system-tab="users" onclick="systemTab('users',this)">&#128101; Usu&aacute;rios</button>
       <button class="epp-tab" data-system-tab="params" onclick="systemTab('params',this)">&#128736; Par&acirc;metros Globais</button>
       <button class="epp-tab" data-system-tab="monitoring" onclick="systemTab('monitoring',this)" id="epp-tab-monitoring">&#128203; Monitoramento</button>
-      <button class="epp-tab" data-system-tab="modules" onclick="systemTab('modules',this)" id="epp-tab-modules" style="display:none;">&#129529; M&oacute;dulos</button>
+      <button class="epp-tab" data-system-tab="avisos" onclick="systemTab('avisos',this)" id="epp-tab-avisos">&#128226; Avisos</button>
     </div>
   </div>
 </div>
@@ -2278,13 +2306,51 @@
   </div>
 </div>
 
-<!-- EPP: Modules visibility panel -->
-<div id="epp-modules-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
+<!-- EPP: Avisos panel -->
+<div id="epp-avisos-panel" style="display:none;max-width:900px;margin:0 auto;padding:24px 32px 80px;">
   <div style="margin-bottom:20px;">
-    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">&#129529; Visibilidade de M&oacute;dulos</h3>
-    <p style="font-size:13px;color:#64748b;margin:0;">Defina quais m&oacute;dulos ficam vis&iacute;veis para cada perfil. Apenas administradores v&ecirc;em tudo.</p>
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">&#128226; Avisos da P&aacute;gina Inicial</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Configure os avisos exibidos no painel da p&aacute;gina inicial do SIGA. Avisos ativos e n&atilde;o expirados ficam vis&iacute;veis a todos os usu&aacute;rios.</p>
   </div>
-  <div id="epp-modules-content"><!-- preenchido por renderModulesPanel() --></div>
+  <div id="epp-avisos-list-panel" style="margin-bottom:20px;"></div>
+  <button class="btn btn-primary" style="font-size:13px;" onclick="avisosOpenForm()">&#10011; Novo Aviso</button>
+  <!-- Form de cria&ccedil;&atilde;o/edi&ccedil;&atilde;o -->
+  <div id="epp-avisos-form" style="display:none;margin-top:20px;background:#f8fafc;border-radius:12px;padding:20px 24px;border:1.5px solid #e2e8f0;">
+    <h4 style="font-size:14px;font-weight:700;color:#1B3022;margin:0 0 16px;" id="epp-avisos-form-title">Novo Aviso</h4>
+    <input type="hidden" id="avisos-edit-id">
+    <div class="gmod-row" style="margin-bottom:12px;">
+      <div style="flex:1;">
+        <label class="gmod-label" for="avisos-titulo">T&iacute;tulo *</label>
+        <input class="modal-input" id="avisos-titulo" type="text" placeholder="T&iacute;tulo do aviso..." maxlength="200">
+      </div>
+      <div style="min-width:165px;">
+        <label class="gmod-label" for="avisos-tipo">Tipo</label>
+        <select id="avisos-tipo" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;width:100%;">
+          <option value="info">&#8505;&#65039; Informativo</option>
+          <option value="alerta">&#9888;&#65039; Alerta</option>
+          <option value="importante">&#128680; Importante</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="gmod-label" for="avisos-conteudo">Conte&uacute;do</label>
+      <textarea id="avisos-conteudo" class="modal-input" rows="3" placeholder="Texto detalhado do aviso (opcional)..." style="resize:vertical;"></textarea>
+    </div>
+    <div class="gmod-row" style="margin-bottom:12px;align-items:flex-end;">
+      <div>
+        <label class="gmod-label" for="avisos-expiracao">Data de Expira&ccedil;&atilde;o (opcional)</label>
+        <input class="modal-input" id="avisos-expiracao" type="date">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding-bottom:4px;">
+        <input type="checkbox" id="avisos-ativo" checked style="width:16px;height:16px;cursor:pointer;">
+        <label for="avisos-ativo" style="font-size:13px;font-weight:600;color:#1B3022;cursor:pointer;">Aviso ativo</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-success" style="font-size:13px;" onclick="avisosSave()">&#128190; Salvar</button>
+      <button class="btn btn-outline" style="font-size:13px;" onclick="avisosCloseForm()">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -12716,7 +12782,7 @@ let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
 let workspaceId = localStorage.getItem('gestpop_wsid') || sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
-  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','simulator-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-work-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','indicadores-cage-module','indcage-panel','cockpit-module','process-management-module','project-management-module'].forEach(id => {
+  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','simulator-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-work-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','epp-avisos-panel','indicadores-cage-module','indcage-panel','cockpit-module','process-management-module','project-management-module'].forEach(id => {
     const el = document.getElementById(id);
     if(el) { el.style.display = 'none'; el.classList.remove('active'); }
   });
@@ -12764,17 +12830,10 @@ function _applyPermissionsCore() {
 
   const hasAccess = isEditor || isViewer; // qualquer um dos dois tem acesso ao sistema
 
-  // Aba "Módulos" no Gestão do Sistema — somente admin
-  const modTab = document.getElementById('epp-tab-modules');
-  if(modTab) modTab.style.display = isAdmin ? '' : 'none';
-
   // Atualizar cards da home imediatamente ao aplicar permissões
   document.querySelectorAll('.home-card-editor').forEach(el => {
     el.style.display = isEditor ? '' : 'none';
   });
-
-  // Aplicar visibilidade configurada de módulos (não-admin)
-  if(typeof applyModuleVisibility === 'function') applyModuleVisibility();
 
   if(hasAccess) {
     // Viewer e Editor: removem overlay de bloqueio
@@ -19239,6 +19298,177 @@ function homeRefresh() {
   try { _dndApplyOrder(); } catch(e) { console.warn('[siga]', e); }
   try { if(typeof editMode !== 'undefined' && editMode) _dndReinitStats(); } catch(e) { console.warn('[siga]', e); }
 
+  renderHomeInfoPanel();
+}
+
+// ══ HOME INFO PANEL ══════════════════════════════════════════════════
+function renderHomeInfoPanel() {
+  _homeRenderAvisosWidget();
+  _homeRenderMapeamentosWidget();
+}
+
+function _homeRenderAvisosWidget() {
+  const list = document.getElementById('home-avisos-list');
+  if(!list) return;
+  const today = new Date().toISOString().slice(0,10);
+  const avisos = (getConfig('avisos') || []).filter(function(a) {
+    if(!a.ativo) return false;
+    if(a.dataExpiracao && a.dataExpiracao < today) return false;
+    return true;
+  });
+  if(!avisos.length) {
+    list.innerHTML = '<span style="color:#94a3b8;font-style:italic;font-size:12px;">Nenhum aviso ativo.</span>';
+    return;
+  }
+  const tipoColors = {
+    info:       { bg:'#eff6ff', border:'#bfdbfe', color:'#1d4ed8', icon:'ℹ️' },
+    alerta:     { bg:'#fffbeb', border:'#fde68a', color:'#b45309', icon:'⚠️' },
+    importante: { bg:'#fff1f2', border:'#fecdd3', color:'#be123c', icon:'🚨' },
+  };
+  list.innerHTML = avisos.map(function(a) {
+    const tc = tipoColors[a.tipo] || tipoColors.info;
+    const exp = a.dataExpiracao ? '<div style="font-size:10px;color:#94a3b8;margin-top:4px;">Válido até ' + new Date(a.dataExpiracao + 'T00:00:00').toLocaleDateString('pt-BR') + '</div>' : '';
+    const body = a.conteudo ? '<div style="font-size:12px;color:#475569;line-height:1.5;">' + a.conteudo + '</div>' : '';
+    return '<div style="background:' + tc.bg + ';border:1px solid ' + tc.border + ';border-radius:8px;padding:10px 12px;margin-bottom:8px;">'
+      + '<div style="font-size:12px;font-weight:700;color:' + tc.color + ';margin-bottom:' + (a.conteudo ? '4px' : '0') + ';">' + tc.icon + ' ' + a.titulo + '</div>'
+      + body + exp + '</div>';
+  }).join('');
+}
+
+function _homeRenderMapeamentosWidget() {
+  const list = document.getElementById('home-mapeamentos-list');
+  if(!list) return;
+  const SKIP = new Set(['config','pat','patrocinadores','_logoUrl','_repoDocs','_drops','indicadoresCage','_arqOverrides','competencyManagement','audits','_popDefs']);
+  const emAndamento = Object.keys(DATA)
+    .filter(function(k) { return !SKIP.has(k) && typeof DATA[k] === 'object' && DATA[k] && DATA[k].meta && !_popGalleryIsDone(DATA[k].meta.statusMap); })
+    .map(function(k) { return { key: k, meta: DATA[k].meta }; })
+    .filter(function(r) { return r.meta.name; })
+    .sort(function(a,b) { return (a.meta.name||'').localeCompare(b.meta.name||'','pt-BR',{sensitivity:'base'}); });
+  if(!emAndamento.length) {
+    list.innerHTML = '<span style="color:#94a3b8;font-style:italic;font-size:12px;">Nenhum processo em mapeamento no momento.</span>';
+    return;
+  }
+  const statusColors = {
+    planejado:    { bg:'#f0f9ff', color:'#0369a1', border:'#bae6fd', label:'📋 Planejado' },
+    em_andamento: { bg:'#fffbeb', color:'#b45309', border:'#fde68a', label:'🔄 Em Andamento' },
+    atrasado:     { bg:'#fff1f2', color:'#be123c', border:'#fecdd3', label:'⚠️ Atrasado' },
+    suspenso:     { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe', label:'⏸ Suspenso' },
+  };
+  const MAX = 8;
+  const shown = emAndamento.slice(0, MAX);
+  const rest  = emAndamento.length - MAX;
+  list.innerHTML = shown.map(function(r) {
+    const sc = statusColors[r.meta.statusMap] || null;
+    const badge = sc ? '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:' + sc.bg + ';color:' + sc.color + ';border:1px solid ' + sc.border + ';white-space:nowrap;">' + sc.label + '</span>' : '';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="showHomePops()">'
+      + '<div style="font-size:12px;font-weight:600;color:#1B3022;line-height:1.3;">' + r.meta.name + '</div>'
+      + badge + '</div>';
+  }).join('') + (rest > 0 ? '<div style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center;padding-top:4px;">+' + rest + ' outros</div>' : '');
+}
+
+// ══ AVISOS — Gestão do Sistema ══════════════════════════════════════
+function renderAvisosPanel() {
+  const panel = document.getElementById('epp-avisos-list-panel');
+  if(!panel) return;
+  if(!isEditor) {
+    panel.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:14px;">🔒 Apenas editores podem gerenciar os avisos.</div>';
+    return;
+  }
+  const avisos = getConfig('avisos') || [];
+  if(!avisos.length) {
+    panel.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:12px 0;">Nenhum aviso cadastrado.</div>';
+    return;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  const tipoLabels = { info:'ℹ️ Informativo', alerta:'⚠️ Alerta', importante:'🚨 Importante' };
+  panel.innerHTML = avisos.map(function(a) {
+    const expired = a.dataExpiracao && a.dataExpiracao < today;
+    let statusBadge;
+    if(expired) {
+      statusBadge = '<span style="font-size:10px;background:#f1f5f9;color:#94a3b8;border-radius:20px;padding:2px 7px;font-weight:700;">Expirado</span>';
+    } else if(a.ativo) {
+      statusBadge = '<span style="font-size:10px;background:#f0fdf4;color:#16a34a;border-radius:20px;padding:2px 7px;font-weight:700;border:1px solid #bbf7d0;">Ativo</span>';
+    } else {
+      statusBadge = '<span style="font-size:10px;background:#f8fafc;color:#94a3b8;border-radius:20px;padding:2px 7px;font-weight:700;border:1px solid #e2e8f0;">Inativo</span>';
+    }
+    const corpo = a.conteudo ? '<div style="font-size:12px;color:#64748b;line-height:1.5;margin-bottom:4px;">' + a.conteudo + '</div>' : '';
+    const exp   = a.dataExpiracao ? '<div style="font-size:11px;color:#94a3b8;">Expira em: ' + new Date(a.dataExpiracao + 'T00:00:00').toLocaleDateString('pt-BR') + '</div>' : '';
+    const id = a.id;
+    return '<div style="background:white;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">'
+      + '<span style="font-size:13px;font-weight:700;color:#1B3022;">' + a.titulo + '</span>'
+      + statusBadge
+      + '<span style="font-size:11px;color:#94a3b8;">' + (tipoLabels[a.tipo] || a.tipo) + '</span>'
+      + '</div>' + corpo + exp + '</div>'
+      + '<div style="display:flex;gap:6px;flex-shrink:0;">'
+      + '<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;" onclick="avisosOpenForm(\'' + id + '\')">✏️ Editar</button>'
+      + '<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;color:#e11d48;border-color:#e11d48;" onclick="avisosDelete(\'' + id + '\')">🗑️ Excluir</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+function avisosOpenForm(id) {
+  const form = document.getElementById('epp-avisos-form');
+  if(!form) return;
+  document.getElementById('avisos-edit-id').value = id || '';
+  document.getElementById('avisos-titulo').value = '';
+  document.getElementById('avisos-tipo').value = 'info';
+  document.getElementById('avisos-conteudo').value = '';
+  document.getElementById('avisos-expiracao').value = '';
+  document.getElementById('avisos-ativo').checked = true;
+  if(id) {
+    const aviso = (getConfig('avisos') || []).find(function(a) { return a.id === id; });
+    if(aviso) {
+      document.getElementById('avisos-titulo').value     = aviso.titulo || '';
+      document.getElementById('avisos-tipo').value       = aviso.tipo || 'info';
+      document.getElementById('avisos-conteudo').value   = aviso.conteudo || '';
+      document.getElementById('avisos-expiracao').value  = aviso.dataExpiracao || '';
+      document.getElementById('avisos-ativo').checked    = aviso.ativo !== false;
+    }
+    document.getElementById('epp-avisos-form-title').textContent = 'Editar Aviso';
+  } else {
+    document.getElementById('epp-avisos-form-title').textContent = 'Novo Aviso';
+  }
+  form.style.display = 'block';
+  document.getElementById('avisos-titulo').focus();
+}
+
+function avisosCloseForm() {
+  const form = document.getElementById('epp-avisos-form');
+  if(form) form.style.display = 'none';
+}
+
+function avisosSave() {
+  const titulo = (document.getElementById('avisos-titulo').value || '').trim();
+  if(!titulo) { showToast('📢 Informe o título do aviso.', 'warn'); return; }
+  const editId = document.getElementById('avisos-edit-id').value;
+  const id = editId || ('aviso_' + Date.now());
+  const aviso = {
+    id,
+    titulo,
+    tipo:          document.getElementById('avisos-tipo').value || 'info',
+    conteudo:      (document.getElementById('avisos-conteudo').value || '').trim(),
+    ativo:         document.getElementById('avisos-ativo').checked,
+    dataExpiracao: document.getElementById('avisos-expiracao').value || null,
+  };
+  const lista = getConfig('avisos') || [];
+  const idx = lista.findIndex(function(a) { return a.id === id; });
+  if(idx >= 0) lista[idx] = aviso; else lista.push(aviso);
+  setConfig('avisos', lista);
+  markChanged();
+  avisosCloseForm();
+  renderAvisosPanel();
+  showToast('✅ Aviso salvo com sucesso.', 'success');
+}
+
+function avisosDelete(id) {
+  if(!confirm('Excluir este aviso?')) return;
+  const lista = (getConfig('avisos') || []).filter(function(a) { return a.id !== id; });
+  setConfig('avisos', lista);
+  markChanged();
+  renderAvisosPanel();
+  showToast('🗑️ Aviso excluído.', 'info');
 }
 
 // Override switchPop to hide home
@@ -21217,7 +21447,7 @@ function eppTab(tab, el) {
 }
 
 function _hideSystemPanels() {
-  ['epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','epp-modules-panel']
+  ['epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','epp-avisos-panel']
     .forEach((id) => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
 }
 
@@ -21231,123 +21461,27 @@ function _showUsersPanel() {
 }
 
 function _showSystemPanel(tab) {
-  if(tab === 'config')     document.getElementById('epp-config-panel').style.display = 'block';
-  if(tab === 'users')      _showUsersPanel();
-  if(tab === 'params')     document.getElementById('epp-params-panel').style.display = 'block';
+  if(tab === 'config') document.getElementById('epp-config-panel').style.display = 'block';
+  if(tab === 'users') _showUsersPanel();
+  if(tab === 'params') document.getElementById('epp-params-panel').style.display = 'block';
   if(tab === 'monitoring') document.getElementById('epp-monitoring-panel').style.display = 'block';
-  if(tab === 'modules')    document.getElementById('epp-modules-panel').style.display = 'block';
+  if(tab === 'avisos') document.getElementById('epp-avisos-panel').style.display = 'block';
 }
 
 function _renderSystemTab(tab) {
-  if(tab === 'config')     renderConfigPanel();
-  if(tab === 'params')     eppRenderParams();
+  if(tab === 'config') renderConfigPanel();
+  if(tab === 'params') eppRenderParams();
   if(tab === 'monitoring') eppMonTab('online');
-  if(tab === 'modules')    renderModulesPanel();
+  if(tab === 'avisos') renderAvisosPanel();
 }
 
 function systemTab(tab, el) {
-  if((tab === 'monitoring' || tab === 'modules') && !isAdmin) {
-    showToast('🔒 Acesso restrito a administradores.', 'warn');
-    return systemTab('config');
-  }
+  if(tab === 'monitoring' && !isAdmin) { showToast('🔒 Acesso restrito a administradores.', 'warn'); return systemTab('config'); }
   _systemCurrentTab = tab;
   _activateModuleTab('.epp-tab[data-system-tab]', tab, el, 'data-system-tab');
   _hideSystemPanels();
   _showSystemPanel(tab);
   _renderSystemTab(tab);
-}
-
-// ── Visibilidade de Módulos ────────────────────────────────────────────────
-const _CONFIGURABLE_MODULES = [
-  { key: 'process-mgmt',  label: '🧭 Gestão de Processos'  },
-  { key: 'projects-mgmt', label: '📁 Gestão de Projetos'   },
-  { key: 'bi',            label: '📊 BI e Relatórios'       },
-  { key: 'cockpit',       label: '🎯 Cockpit de Gestão'     },
-  { key: 'ind-cage',      label: '📈 Indicadores CAGE'      },
-  { key: 'epp',           label: '🏢 EPP'                   },
-  { key: 'repo',          label: '📚 Documentos e Manuais'  },
-  { key: 'drops',         label: '💧 Drops de Conhecimento' },
-  { key: 'quadro',        label: '🗒 Quadro de Esboço'      },
-  { key: 'arq',           label: '🏛 Arquitetura de Processos' },
-];
-
-function _getModuleVisibilityCfg() {
-  DATA.config = DATA.config || {};
-  DATA.config.moduleVisibility = DATA.config.moduleVisibility || {};
-  return DATA.config.moduleVisibility;
-}
-
-function getModuleVisible(modKey, role) {
-  const cfg = _getModuleVisibilityCfg();
-  if(!cfg[modKey]) return true; // padrão: visível
-  return cfg[modKey][role] !== false;
-}
-
-function setModuleVisible(modKey, role, visible) {
-  const cfg = _getModuleVisibilityCfg();
-  if(!cfg[modKey]) cfg[modKey] = {};
-  cfg[modKey][role] = visible;
-  markChanged(true, true);
-  applyModuleVisibility();
-}
-
-function applyModuleVisibility() {
-  if(isAdmin) return; // admin vê tudo sempre
-  const role = isEditor ? 'editor' : 'viewer';
-  _CONFIGURABLE_MODULES.forEach(({ key }) => {
-    const visible = getModuleVisible(key, role);
-    // Sidebar buttons (data-mod) e home cards (data-sortkey)
-    document.querySelectorAll(`[data-mod="${key}"], .home-card[data-sortkey="${key}"]`).forEach(el => {
-      el.style.display = visible ? '' : 'none';
-    });
-  });
-}
-
-function renderModulesPanel() {
-  if(!isAdmin) return;
-  const content = document.getElementById('epp-modules-content');
-  if(!content) return;
-  const cfg = _getModuleVisibilityCfg();
-
-  content.innerHTML = `
-    <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:#92400e;">
-      ⚠️ <strong>Apenas administradores veem todos os módulos.</strong> As configurações abaixo se aplicam a editores e visualizadores.
-      Módulos ocultos ficam invisíveis na barra lateral e na página inicial para os perfis selecionados.
-    </div>
-    <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);">
-      <thead>
-        <tr style="background:#f8fafc;">
-          <th style="text-align:left;padding:12px 16px;font-size:12px;color:#64748b;font-weight:700;border-bottom:1px solid #e2e8f0;">Módulo</th>
-          <th style="text-align:center;padding:12px 16px;font-size:12px;color:#6366f1;font-weight:700;border-bottom:1px solid #e2e8f0;">Editor</th>
-          <th style="text-align:center;padding:12px 16px;font-size:12px;color:#0891b2;font-weight:700;border-bottom:1px solid #e2e8f0;">Visualizador</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${_CONFIGURABLE_MODULES.map(({ key, label }, idx) => {
-          const visEditor = getModuleVisible(key, 'editor');
-          const visViewer = getModuleVisible(key, 'viewer');
-          return `<tr style="border-bottom:1px solid #f1f5f9;${idx % 2 ? 'background:#fafbfc;' : ''}">
-            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#1B3022;">${label}</td>
-            <td style="text-align:center;padding:12px 16px;">
-              <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-                <input type="checkbox" onchange="setModuleVisible('${key}','editor',this.checked)"
-                  ${visEditor ? 'checked' : ''}
-                  style="width:16px;height:16px;cursor:pointer;accent-color:#6366f1;">
-              </label>
-            </td>
-            <td style="text-align:center;padding:12px 16px;">
-              <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-                <input type="checkbox" onchange="setModuleVisible('${key}','viewer',this.checked)"
-                  ${visViewer ? 'checked' : ''}
-                  style="width:16px;height:16px;cursor:pointer;accent-color:#0891b2;">
-              </label>
-            </td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-    <div style="font-size:11px;color:#94a3b8;margin-top:12px;">As alterações são salvas automaticamente e aplicadas imediatamente.</div>
-  `;
 }
 
 function eppSwitchUsersTab(tab) {
@@ -23446,9 +23580,7 @@ function _flowBranchPath(path) {
 }
 
 function _flowImportedAction(row) {
-  const action = { type:row._type, text:row._text, decisionText:row._type === 'decisao' ? row._text : '', actor:row._type === 'atividade' ? String(row['Executor'] || '').trim() : '', duracao:'', sistemas:String(row['Sistema envolvido'] || '').trim(), documentos:'', observacoes:'', pontosMelhoria:'', natureza:row._type === 'atividade' ? String(row['Natureza da atividade'] || '').trim() : '', eventoTipo:'', automatico:_flowBool(row['Automática? (sim ou nao)']), loop:_flowBool(row['Retrabalho? (sim ou nao)']) };
-  if(row._type === 'decisao') action.branches = [];
-  return action;
+  return { type:row._type, text:row._text, decisionText:row._type === 'decisao' ? row._text : '', actor:row._type === 'atividade' ? String(row['Executor'] || '').trim() : '', duracao:'', sistemas:String(row['Sistema envolvido'] || '').trim(), documentos:'', observacoes:'', pontosMelhoria:'', natureza:row._type === 'atividade' ? String(row['Natureza da atividade'] || '').trim() : '', eventoTipo:'', automatico:_flowBool(row['Automática? (sim ou nao)']), loop:_flowBool(row['Retrabalho? (sim ou nao)']) };
 }
 
 function _flowImportType(value) {
@@ -23499,25 +23631,16 @@ function _flowAppendImportedRow(state, row) {
   const action = _flowImportedAction(row);
   if(!row._path.length) {
     step.actions.push(action);
-    if(action.type === 'decisao') {
-      state.pending.set(stepName, action);
-      state.lastDecision = action; // rastreia globalmente para ramos em outras etapas
-    } else {
-      state.pending.set(stepName, null);
-    }
+    state.pending.set(stepName, action.type === 'decisao' ? action : null);
     return;
   }
-  // Busca decisão pai: primeiro na mesma etapa, depois na última decisão global
-  const perStepPending = state.pending.get(stepName);
-  const parent = (perStepPending && step.actions.includes(perStepPending))
-    ? perStepPending
-    : (state.lastDecision || null);
+  const parent = _flowEnsureDecisionParent(step, state.pending.get(stepName));
   if(parent) _flowAttachToBranches(parent, row._path, action);
   else step.actions.push(action);
 }
 
 function _flowBuildImportedSteps(rows) {
-  const state = { map:new Map(), pending:new Map(), lastDecision:null };
+  const state = { map:new Map(), pending:new Map() };
   rows.map(_flowNormalizeImportRow).filter(row => row._text).forEach(row => _flowAppendImportedRow(state, row));
   return [...state.map.values()];
 }
@@ -27954,6 +28077,16 @@ function matAnsScore(ans) {
   return ans === 'discordo' ? 100 : ans === 'parcialmente' ? 50 : 0;
 }
 
+function matScoreEquipe(answers) {
+  const totalQuestions = MAT_QUESTIONS.length;
+  let total = 0, count = 0;
+  (answers || []).forEach((ans) => {
+    if(!MAT_VALID_ANSWERS.includes(ans)) return;
+    total += matAnsScore(ans); count++;
+  });
+  return count >= totalQuestions ? total / totalQuestions : null;
+}
+
 function matScoreEquipeMedia(questionnaires) {
   if(!Array.isArray(questionnaires) || questionnaires.length !== MAT_QUESTIONNAIRE_COUNT) return null;
   const valid = questionnaires.filter(q =>
@@ -27992,6 +28125,7 @@ function matComputeFinal(p) {
   const sist    = Number.parseInt(mat.sistIndispensaveis) || 0;
   const { score: riscoRaw, label: riscoLabel } = matComputeRisco(metrics, ind, sist);
   const equipe  = matScoreEquipeMedia(questionnaires);
+  if(equipe === null) return null;
 
   // Normalise all to 0–100 where 100 = most mature
   // Risco: decaimento exponencial (meia-vida ≈ 45 pts)
@@ -28009,16 +28143,9 @@ function matComputeFinal(p) {
   // Automação: % de atividades marcadas como automáticas (⚙️) no fluxo
   const normAutomacao = Math.round(metrics.automacaoRate * 100);
 
-  let f, partial = false;
-  if(equipe !== null) {
-    // Score completo — Pesos: Equipe 40% · Risco 20% · Lean 20% · Digitalização 10% · Automação 10%
-    f = Math.round(equipe * 0.40 + normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10);
-  } else {
-    // Score parcial (sem questionários completos): normaliza os 60% disponíveis para escala 0–100
-    // Risco×20% + Lean×20% + Digital×10% + Automação×10% / 0,60
-    f = Math.round((normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10) / 0.60);
-    partial = true;
-  }
+  // Pesos: Equipe 40% · Risco 20% · Lean 20% · Digitalização 10% · Automação 10%
+  const final = equipe * 0.40 + normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10;
+  const f = Math.round(final);
 
   let level, levelColor, levelIcon;
   if(f <= 20)      { level = 'Inicial';    levelColor = '#ef4444'; levelIcon = '🔴'; }
@@ -28027,9 +28154,8 @@ function matComputeFinal(p) {
   else if(f <= 80) { level = 'Previsível'; levelColor = '#22c55e'; levelIcon = '🟢'; }
   else             { level = 'Otimizado';  levelColor = '#10b981'; levelIcon = '💚'; }
 
-  return { final: f, level, levelColor, levelIcon, partial,
-           equipe: equipe !== null ? Math.round(equipe) : null,
-           normLean, normRisco, normAutom, normAutomacao,
+  return { final: f, level, levelColor, levelIcon,
+           equipe: Math.round(equipe), normLean, normRisco, normAutom, normAutomacao,
            riscoRaw, riscoLabel };
 }
 
@@ -28314,39 +28440,29 @@ function matRender(p) {
     </div>`;
 
   let resultHtml = '';
-  if(!final) {
+  if(completedQuestionnaires < 1 || !final) {
     resultHtml = `
       ${levelsLegend}
       <div style="text-align:center;padding:28px;background:#f8fafc;border-radius:10px;border:1.5px dashed #e2e8f0;">
-        <div style="font-size:36px;">⚠️</div>
-        <div style="font-size:14px;color:#64748b;margin-top:8px;">Não foi possível calcular o score — verifique se o processo possui etapas.</div>
+        <div style="font-size:36px;">📋</div>
+        <div style="font-size:14px;color:#64748b;margin-top:8px;">Responda pelo menos <strong>1 questionário completo</strong> para ver o score final.</div>
+        <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${answered}/${totalAnswers} respostas preenchidas · ${completedQuestionnaires} questionário(s) completo(s)</div>
       </div>`;
   } else {
     // issue #4: mostrar valores BRUTOS (↓ menor = melhor) para burocracia, complexidade e risco
-    const scoreCard = (title, value, sub, weight, color, arrow, dimmed) =>
-      `<div style="background:#fff;border-top:4px solid ${color};border:1px solid ${color}33;border-radius:10px;padding:14px;flex:1;min-width:120px;text-align:center;${dimmed ? 'opacity:.45;' : ''}">
+    const scoreCard = (title, value, sub, weight, color, arrow) =>
+      `<div style="background:#fff;border-top:4px solid ${color};border:1px solid ${color}33;border-radius:10px;padding:14px;flex:1;min-width:120px;text-align:center;">
         <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">${title}</div>
         <div style="font-size:30px;font-weight:900;color:${color};margin:6px 0;">${value}</div>
         <div style="font-size:10px;color:#94a3b8;">${sub}</div>
         <div style="font-size:11px;color:#64748b;margin-top:3px;">${arrow} · peso ${weight}</div>
       </div>`;
 
-    const partialBanner = final.partial ? `
-      <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">📋</span>
-        <div>
-          <div style="font-size:12px;font-weight:700;color:#92400e;">Score Parcial — questionários não respondidos</div>
-          <div style="font-size:11px;color:#b45309;">Percepção da Equipe (40%) não incluída. Complete pelo menos 1 questionário para ver o score final.</div>
-          <div style="font-size:11px;color:#b45309;margin-top:2px;">${answered}/${totalAnswers} respostas · ${completedQuestionnaires} questionário(s) completo(s)</div>
-        </div>
-      </div>` : '';
-
     resultHtml = `
-      ${partialBanner}
-      <div style="text-align:center;padding:28px 20px;background:linear-gradient(135deg,#f8fafc,#fff);border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;${final.partial ? 'border-style:dashed;' : ''}">
+      <div style="text-align:center;padding:28px 20px;background:linear-gradient(135deg,#f8fafc,#fff);border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;">
         <div style="font-size:48px;margin-bottom:6px;">${final.levelIcon}</div>
         <div style="font-size:56px;font-weight:900;color:${final.levelColor};line-height:1;">${final.final}</div>
-        <div style="font-size:13px;color:#64748b;margin-top:4px;">${final.partial ? 'Score Parcial (0–100) · sem Percepção da Equipe' : 'Score de Maturidade (0–100)'}</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px;">Score de Maturidade (0–100)</div>
         <div style="display:inline-block;padding:5px 20px;border-radius:20px;background:${final.levelColor};color:#fff;font-size:17px;font-weight:800;margin-top:8px;">${final.levelIcon} ${final.level}</div>
         <div style="margin-top:16px;background:#334155;border-radius:8px;height:14px;overflow:hidden;">
           <div style="height:100%;width:${final.final}%;background:linear-gradient(90deg,${final.levelColor}88,${final.levelColor});border-radius:8px;"></div>
@@ -28355,25 +28471,19 @@ function matRender(p) {
       ${levelsLegend}
       <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;">Componentes do score (normalizado 0–100):</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
-        ${scoreCard('Percepção da Equipe', final.equipe !== null ? final.equipe+'/100' : '—', final.equipe !== null ? `média de ${completedQuestionnaires} questionário(s) ↑` : 'preencha os questionários', '40%', '#6366f1', '↑ maior = melhor', final.partial)}
-        ${(()=>{ const rc = final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444'; return scoreCard('Risco Operacional', final.normRisco+'/100', 'maior = melhor', '20%', rc, '', false); })()}
-        ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '20%', '#22c55e', '↑ mais lean = melhor', false)}
-        ${scoreCard('Digitalização', final.normAutom+'/100', 'baseado no questionário ↑', '10%', '#0891b2', '↑ maior = melhor', false)}
-        ${scoreCard('Automação', final.normAutomacao+'/100', '% atividades automáticas ⚙️ ↑', '10%', '#7c3aed', '↑ mais automático = melhor', false)}
+        ${scoreCard('Percepção da Equipe', final.equipe+'/100', `média de ${completedQuestionnaires} questionário(s) ↑`, '40%', '#6366f1', '↑ maior = melhor')}
+        ${(()=>{ const rc = final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444'; return scoreCard('Risco Operacional', final.normRisco+'/100', 'maior = melhor', '20%', rc, ''); })()}
+        ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '20%', '#22c55e', '↑ mais lean = melhor')}
+        ${scoreCard('Digitalização', final.normAutom+'/100', 'baseado no questionário ↑', '10%', '#0891b2', '↑ maior = melhor')}
+        ${scoreCard('Automação', final.normAutomacao+'/100', '% atividades automáticas ⚙️ ↑', '10%', '#7c3aed', '↑ mais automático = melhor')}
       </div>
       <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;">
-        ${final.partial
-          ? 'Score Parcial = (Risco×20% + Lean×20% + Digitalização×10% + Automação×10%) ÷ 60% — normalizado para escala 0–100'
-          : 'Score = Equipe×40% + Risco×20% + Lean×20% + Digitalização×10% + Automação×10% — todos normalizados 0–100 (100 = mais maduro)'}
+        Score = Equipe×40% + Risco×20% + Lean×20% + Digitalização×10% + Automação×10% — todos normalizados 0–100 (100 = mais maduro)
       </div>
       <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-        ${isEditor && !final.partial ? `
+        ${isEditor ? `
         <button onclick="matSaveSnapshot('${p}')"
           style="padding:10px 24px;background:#1B3022;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(27,48,34,.55);">
-          💾 Salvar Nota
-        </button>` : isEditor ? `
-        <button disabled title="Complete pelo menos 1 questionário para salvar a nota"
-          style="padding:10px 24px;background:#94a3b8;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:not-allowed;display:inline-flex;align-items:center;gap:8px;">
           💾 Salvar Nota
         </button>` : ''}
         <button onclick="matExportPdf('${p}')"
@@ -28382,7 +28492,7 @@ function matRender(p) {
         </button>
       </div>
       <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:-12px;margin-bottom:20px;">
-        ${isEditor && !final.partial ? '"Salvar Nota" registra a pontuação com a data de hoje · ' : isEditor ? 'Complete os questionários para habilitar "Salvar Nota" · ' : ''}"Exportar PDF" gera relatório completo
+        ${isEditor ? '"Salvar Nota" registra a pontuação com a data de hoje · ' : ''}"Exportar PDF" gera relatório completo
       </div>
       `;
   }
@@ -28445,7 +28555,7 @@ function matRender(p) {
 // ── Maturidade: Histórico de snapshots ──────────────────────────────────
 function matSaveSnapshot(p) {
   const final = matComputeFinal(p);
-  if(!final || final.partial) { showToast('Responda ao menos 1 questionário completo antes de salvar a nota.', 'warn'); return; }
+  if(!final) { showToast('Responda ao menos 1 questionário completo antes de salvar.', 'warn'); return; }
   const mat = matGetData(p);
   if(!Array.isArray(mat.snapshots)) mat.snapshots = [];
   const today = new Date().toISOString().slice(0,10);
@@ -28571,37 +28681,35 @@ function matExportPdf(p) {
         <div class="score-label">/ 100</div>
       </div>
       <div class="score-info">
-        <div class="level-badge" style="background:${final.levelColor};">${final.levelIcon} ${final.level}${final.partial ? ' (Parcial)' : ''}</div>
-        ${final.partial ? '<div style="font-size:10px;color:#b45309;background:#fef3c7;border-radius:4px;padding:4px 8px;margin:4px 0;">⚠️ Score parcial — Percepção da Equipe não incluída (questionários pendentes)</div>' : ''}
+        <div class="level-badge" style="background:${final.levelColor};">${final.levelIcon} ${final.level}</div>
         <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${final.final}%;background:${final.levelColor};"></div></div>
         <table class="comp-table">
           <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Sentido</th><th>Barra</th></tr>
           ${[
-            ['👥 Percepção da Equipe',  '40%', final.equipe !== null ? final.equipe : '—',    '#6366f1', '↑ maior = melhor', final.equipe !== null ? 'Média das respostas de 3 questionários de percepção (12 afirmações, excluindo as 2 de digitalização = 10 afirmações). Concordo=0, Concordo Parcialmente=50, Discordo=100.' : 'Não calculado — nenhum questionário completo preenchido.'],
+            ['👥 Percepção da Equipe',  '40%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média das respostas de 3 questionários de percepção (12 afirmações, excluindo as 2 de digitalização = 10 afirmações). Concordo=0, Concordo Parcialmente=50, Discordo=100.'],
             ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas críticos×3 + eventos início×1,5 + eventos fim×1. Score bruto alto → nota baixa.'],
             ['🌿 Lean Operacional',     '20%', final.normLean,      '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma natureza preenchida.'],
             ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Baseado nas 2 afirmações de digitalização do eixo Tecnologia (Q5 e Q6). Discordo=100, Concordo Parcialmente=50, Concordo=0. Neutro (50) quando não respondido.'],
             ['⚙️ Automação',            '10%', final.normAutomacao, '#7c3aed', '100 = totalmente automatizado', 'Percentual de atividades marcadas com ⚙️ (automático) ÷ total de atividades. Marque via ícone ⚙️ em cada atividade no fluxo.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
-            <tr${val === '—' ? ' style="opacity:.5;"' : ''}>
+            <tr>
               <td>${lbl}</td>
               <td style="text-align:center;">${peso}</td>
-              <td style="text-align:center;font-weight:700;color:${col};">${val}${val !== '—' ? '/100' : ''}</td>
+              <td style="text-align:center;font-weight:700;color:${col};">${val}/100</td>
               <td style="font-size:10px;color:#64748b;white-space:nowrap;">${sentido}</td>
-              <td>${val !== '—' ? `<div style="background:#e2e8f0;border-radius:4px;height:8px;width:100px;overflow:hidden;"><div style="height:8px;width:${val}%;background:${col};border-radius:4px;"></div></div>` : '—'}</td>
+              <td><div style="background:#e2e8f0;border-radius:4px;height:8px;width:100px;overflow:hidden;"><div style="height:8px;width:${val}%;background:${col};border-radius:4px;"></div></div></td>
             </tr>
             <tr style="background:#f8fafc;">
               <td colspan="5" style="font-size:10px;color:#94a3b8;padding:3px 8px 6px;">${formula}</td>
             </tr>`).join('')}
         </table>
         <p class="formula-note" style="margin-top:10px;padding:8px 10px;background:#334155;border-radius:6px;border-left:3px solid #1B3022;">
-          ${final.partial
-            ? '<strong>Fórmula Parcial:</strong> Score = (Risco×0,20 + Lean×0,20 + Digitalização×0,10 + Automação×0,10) ÷ 0,60<br><span style="color:#fbbf24;">Complete os questionários de percepção para ver o score final completo.</span>'
-            : '<strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,40) + (Risco × 0,20) + (Lean × 0,20) + (Digitalização × 0,10) + (Automação × 0,10)'}
-          <br><span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span>
+          <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,40) + (Risco × 0,20) + (Lean × 0,20) + (Digitalização × 0,10) + (Automação × 0,10)<br>
+          <span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span><br><br>
+          <strong>Lean</strong> = execução ÷ (execução + aprovações + controle). <strong>Automação</strong> = % de atividades marcadas com ⚙️ no fluxo.
         </p>
       </div>
-    </div>` : `<div class="empty-block">⚠️ Score não disponível — verifique se o processo possui etapas cadastradas.</div>`;
+    </div>` : `<div class="empty-block">⚠️ Score não disponível — nenhum questionário foi respondido completamente.</div>`;
 
   // ── Métricas ───────────────────────────────────────────────────────────
   const metricsBlock = `
