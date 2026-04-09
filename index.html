@@ -23695,7 +23695,9 @@ function _flowBranchPath(path) {
 }
 
 function _flowImportedAction(row) {
-  return { type:row._type, text:row._text, decisionText:row._type === 'decisao' ? row._text : '', actor:row._type === 'atividade' ? String(row['Executor'] || '').trim() : '', duracao:'', sistemas:String(row['Sistema envolvido'] || '').trim(), documentos:'', observacoes:'', pontosMelhoria:'', natureza:row._type === 'atividade' ? String(row['Natureza da atividade'] || '').trim() : '', eventoTipo:'', automatico:_flowBool(row['Automática? (sim ou nao)']), loop:_flowBool(row['Retrabalho? (sim ou nao)']) };
+  const action = { type:row._type, text:row._text, decisionText:row._type === 'decisao' ? row._text : '', actor:row._type === 'atividade' ? String(row['Executor'] || '').trim() : '', duracao:'', sistemas:String(row['Sistema envolvido'] || '').trim(), documentos:'', observacoes:'', pontosMelhoria:'', natureza:row._type === 'atividade' ? String(row['Natureza da atividade'] || '').trim() : '', eventoTipo:'', automatico:_flowBool(row['Automática? (sim ou nao)']), loop:_flowBool(row['Retrabalho? (sim ou nao)']) };
+  if(row._type === 'decisao') action.branches = [];
+  return action;
 }
 
 function _flowImportType(value) {
@@ -23752,16 +23754,25 @@ function _flowAppendImportedRow(state, row) {
   const action = _flowImportedAction(row);
   if(!row._path.length) {
     step.actions.push(action);
-    state.pending.set(stepName, action.type === 'decisao' ? action : null);
+    if(action.type === 'decisao') {
+      state.pending.set(stepName, action);
+      state.lastDecision = action; // rastreia globalmente para ramos em outras etapas
+    } else {
+      state.pending.set(stepName, null);
+    }
     return;
   }
-  const parent = _flowEnsureDecisionParent(step, state.pending.get(stepName));
+  // Busca decisão pai: primeiro na mesma etapa, depois na última decisão global
+  const perStepPending = state.pending.get(stepName);
+  const parent = (perStepPending && step.actions.includes(perStepPending))
+    ? perStepPending
+    : (state.lastDecision || null);
   if(parent) _flowAttachToBranches(parent, row._path, action);
   else step.actions.push(action);
 }
 
 function _flowBuildImportedSteps(rows) {
-  const state = { map:new Map(), pending:new Map() };
+  const state = { map:new Map(), pending:new Map(), lastDecision:null };
   rows.map(_flowNormalizeImportRow).filter(row => row._text).forEach(row => _flowAppendImportedRow(state, row));
   return [...state.map.values()];
 }
@@ -28199,16 +28210,6 @@ function matAnsScore(ans) {
   return ans === 'discordo' ? 100 : ans === 'parcialmente' ? 50 : 0;
 }
 
-function matScoreEquipe(answers) {
-  const totalQuestions = MAT_QUESTIONS.length;
-  let total = 0, count = 0;
-  (answers || []).forEach((ans) => {
-    if(!MAT_VALID_ANSWERS.includes(ans)) return;
-    total += matAnsScore(ans); count++;
-  });
-  return count >= totalQuestions ? total / totalQuestions : null;
-}
-
 function matScoreEquipeMedia(questionnaires) {
   if(!Array.isArray(questionnaires) || questionnaires.length !== MAT_QUESTIONNAIRE_COUNT) return null;
   const valid = questionnaires.filter(q =>
@@ -28247,7 +28248,6 @@ function matComputeFinal(p) {
   const sist    = Number.parseInt(mat.sistIndispensaveis) || 0;
   const { score: riscoRaw, label: riscoLabel } = matComputeRisco(metrics, ind, sist);
   const equipe  = matScoreEquipeMedia(questionnaires);
-  if(equipe === null) return null;
 
   // Normalise all to 0–100 where 100 = most mature
   // Risco: decaimento exponencial (meia-vida ≈ 45 pts)
@@ -28266,8 +28266,15 @@ function matComputeFinal(p) {
   const normAutomacao = Math.round(metrics.automacaoRate * 100);
 
   // Pesos: Equipe 40% · Risco 20% · Lean 20% · Digitalização 10% · Automação 10%
-  const final = equipe * 0.40 + normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10;
-  const f = Math.round(final);
+  // Se equipe é null (nenhum questionário completo), computa score parcial
+  // normalizado pelos 60% restantes disponíveis.
+  let f, partial = false;
+  if(equipe !== null) {
+    f = Math.round(equipe * 0.40 + normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10);
+  } else {
+    f = Math.round((normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10) / 0.60);
+    partial = true;
+  }
 
   let level, levelColor, levelIcon;
   if(f <= 20)      { level = 'Inicial';    levelColor = '#ef4444'; levelIcon = '🔴'; }
@@ -28276,8 +28283,9 @@ function matComputeFinal(p) {
   else if(f <= 80) { level = 'Previsível'; levelColor = '#22c55e'; levelIcon = '🟢'; }
   else             { level = 'Otimizado';  levelColor = '#10b981'; levelIcon = '💚'; }
 
-  return { final: f, level, levelColor, levelIcon,
-           equipe: Math.round(equipe), normLean, normRisco, normAutom, normAutomacao,
+  return { final: f, level, levelColor, levelIcon, partial,
+           equipe: equipe !== null ? Math.round(equipe) : null,
+           normLean, normRisco, normAutom, normAutomacao,
            riscoRaw, riscoLabel };
 }
 
