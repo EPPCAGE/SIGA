@@ -2897,14 +2897,36 @@
 
     <p style="font-size:13px;color:#64748b;margin:0 0 14px;">Preencha estes dados para enriquecer o relatório gerado na aba <strong>Análise Inteligente</strong>.</p>
 
-    <!-- Dados Quantitativos -->
+    <!-- Comparativo Pré/Pós -->
+    <div class="rel-quant-box" style="margin-bottom:14px;">
+      <div style="padding:10px 16px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e2e8f0;">📈 Comparativo Pré / Pós Melhoria</div>
+      <div class="rel-quant-body" style="display:grid;border-top:none;">
+        <div class="rel-quant-field"><label>Volume Mensal Pré</label><input type="number" id="rq-vol-pre" placeholder="ex: 200" min="0" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Volume Mensal Pós</label><input type="number" id="rq-vol-pos" placeholder="ex: 180" min="0" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Ciclo Pré (horas)</label><input type="number" id="rq-ciclo-pre" placeholder="ex: 4.5" min="0" step="0.1" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Ciclo Pós (horas)</label><input type="number" id="rq-ciclo-pos" placeholder="ex: 2.0" min="0" step="0.1" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field" style="grid-column:1/-1;"><label>Horas Economizadas / mês (calculado)</label><input type="text" id="rq-horas-econ" readonly placeholder="—" style="background:#f1f5f9;color:#1B3022;font-weight:700;cursor:default;"></div>
+      </div>
+    </div>
+
+    <!-- Tempos para Simulação -->
+    <div class="rel-quant-box" style="margin-bottom:14px;">
+      <div style="padding:10px 16px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e2e8f0;">⏱️ Tempos para Simulação</div>
+      <div class="rel-quant-body" style="display:grid;border-top:none;">
+        <div class="rel-quant-field"><label>Tempo Estimado Total — Lead Time (dias)</label><input type="number" id="rq-lead-time" placeholder="ex: 15" min="0" step="0.5" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Tempo Estimado Puro (horas)</label><input type="number" id="rq-tempo-puro" placeholder="ex: 3.5" min="0" step="0.5" oninput="saveRelQuant()"></div>
+      </div>
+    </div>
+
+    <!-- Volumetria e Contexto -->
     <div class="rel-quant-box">
+      <div style="padding:10px 16px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e2e8f0;">📊 Volumetria e Contexto</div>
       <div id="rel-quant-body" class="rel-quant-body" style="display:grid;border-top:none;">
-        <div class="rel-quant-field"><label for="rq-vol-anual">Execuções médias / mês</label><input type="text" id="rq-vol-mensal" placeholder="ex: 120" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label for="rq-sazonalidade">Execuções anuais estimadas</label><input type="text" id="rq-vol-anual" placeholder="ex: 1.440" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label for="rq-tempo-medio">Variação sazonal</label><input type="text" id="rq-sazonalidade" placeholder="ex: maior no 1º trimestre" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label for="rq-tempo-espera">Tempo médio de execução</label><input type="text" id="rq-tempo-medio" placeholder="ex: 12 dias úteis" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label for="rq-tempo-espera">Tempo médio de espera</label><input type="text" id="rq-tempo-espera" placeholder="ex: 3 dias" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Execuções médias / mês</label><input type="text" id="rq-vol-mensal" placeholder="ex: 120" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Execuções anuais estimadas</label><input type="text" id="rq-vol-anual" placeholder="ex: 1.440" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Variação sazonal</label><input type="text" id="rq-sazonalidade" placeholder="ex: maior no 1º trimestre" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Tempo médio de execução</label><input type="text" id="rq-tempo-medio" placeholder="ex: 12 dias úteis" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label>Tempo médio de espera</label><input type="text" id="rq-tempo-espera" placeholder="ex: 3 dias" oninput="saveRelQuant()"></div>
       </div>
     </div>
   </div>
@@ -4925,20 +4947,7 @@ function _harvestStepFields() {
 }
 
 function _harvestMetricFields() {
-  const keyMap = {
-    'metric-vol-pre': 'volPre',
-    'metric-vol-pos': 'volPos',
-    'metric-ciclo-pre': 'cicloPre',
-    'metric-ciclo-pos': 'cicloPos',
-  };
-  document.querySelectorAll('[id*="-metric-vol-"],[id*="-metric-ciclo-"]').forEach(el => {
-    const match = el.id.match(/^(.+)-(metric-(?:vol|ciclo)-(?:pre|pos))$/);
-    if(!match) return;
-    const [, p, field] = match;
-    if(!DATA[p]?.meta) return;
-    const val = Number.parseFloat(el.textContent?.trim()) || 0;
-    if(keyMap[field]) DATA[p].meta[keyMap[field]] = val;
-  });
+  // Vol/ciclo são agora persistidos via saveRelQuant() nos inputs de dados quantitativos
 }
 
 function _setHarvestActionText(actions, index, text) {
@@ -5275,7 +5284,6 @@ function enableEditables(on) {
     '.faq-q-text', '.faq-a span',
     '.action-text', '.resp-tag',
     '.step-info h3', '.step-info p',
-    '[id*="-metric-vol-"]', '[id*="-metric-ciclo-"]',
     '.home-card-title', '.home-card-desc',
     '.home-selector-title', '.home-selector-sub',
   ];
@@ -8762,23 +8770,6 @@ function mountNewPopTab(key, label, silent=false) {
             <span class="ver-badge" id="${key}-ver-badge" onclick="openVersionSelector('${key}',this)">v1</span>
           </div>
         </div>
-      </div>
-      <div class="overview-grid fade-up delay-1" id="${key}-overview-grid">
-        <div class="metric-card green"><div class="metric-icon">📊</div>
-          <span class="metric-value" contenteditable="false" id="${key}-metric-vol-pre" oninput="calcHorasEcon('${key}');markChanged()">—</span>
-          <span class="metric-label">Vol. Mensal Pré</span></div>
-        <div class="metric-card blue"><div class="metric-icon">📉</div>
-          <span class="metric-value" contenteditable="false" id="${key}-metric-vol-pos" oninput="calcHorasEcon('${key}');markChanged()">—</span>
-          <span class="metric-label">Vol. Mensal Pós</span></div>
-        <div class="metric-card gold"><div class="metric-icon">⏱</div>
-          <span class="metric-value" contenteditable="false" id="${key}-metric-ciclo-pre" oninput="calcHorasEcon('${key}');markChanged()">—</span>
-          <span class="metric-label">Ciclo Pré (h)</span></div>
-        <div class="metric-card red"><div class="metric-icon">⚡</div>
-          <span class="metric-value" contenteditable="false" id="${key}-metric-ciclo-pos" oninput="calcHorasEcon('${key}');markChanged()">—</span>
-          <span class="metric-label">Ciclo Pós (h)</span></div>
-        <div class="metric-card teal"><div class="metric-icon">💡</div>
-          <span class="metric-value" id="${key}-metric-horas" style="font-size:22px;">—</span>
-          <span class="metric-label">Horas Economizadas</span></div>
       </div>
       <div id="${key}-ficha-card" class="card fade-up delay-2" style="margin-top:0;margin-bottom:16px;display:none;">
         <div class="card-header"><span class="card-title">📋 Ficha Técnica</span><div style="display:flex;gap:8px;margin-left:auto;"><button class="btn btn-outline" id="pop-relatar-btn" onclick="exportPptx()" style="font-size:11px;padding:4px 10px;">📊 Relatar POP</button><button class="btn btn-outline" onclick="openStatusModal('${key}')" style="font-size:11px;padding:4px 10px;">✏️ Editar</button></div></div>
@@ -14526,8 +14517,15 @@ function _simulatorSendCurrentPop(frame) {
     const popName = (pop.meta && pop.meta.name) ? pop.meta.name : (currentPop || '');
     const savedGraph = pop.simulatorGraph || null;
     if(!savedGraph) return; // no saved graph; simulator starts fresh
+    const meta = pop.meta || {};
     frame.contentWindow.postMessage(
-      { type: 'SIGA_LOAD_GRAPH', payload: { graph: savedGraph, popName, popKey: p } },
+      { type: 'SIGA_LOAD_GRAPH', payload: {
+          graph: savedGraph, popName, popKey: p,
+          leadTime:   meta.leadTime   || '',
+          tempoPuro:  meta.tempoPuro  || '',
+          volPre:     meta.volPre     || 0,
+          cicloPre:   meta.cicloPre   || 0,
+      }},
       globalThis.location.origin
     );
   } catch(e) { console.warn('[siga]', e); }
@@ -16627,44 +16625,26 @@ function _srAddIndicatorRows(sInd, pres, rows, unidade, tblY, colW) {
 
 // ═══ MÉTRICAS VOLUME/CICLO ════════════════════════════
 function calcHorasEcon(p) {
-  const getVal = id => Number.parseFloat(document.getElementById(id)?.textContent?.trim()) || 0;
-  const volPre  = getVal(p + '-metric-vol-pre');
-  const volPos  = getVal(p + '-metric-vol-pos');
-  const cicloPre = getVal(p + '-metric-ciclo-pre');
-  const cicloPos = getVal(p + '-metric-ciclo-pos');
+  const getVal = id => Number.parseFloat(document.getElementById(id)?.value) || 0;
+  const volPre   = getVal('rq-vol-pre');
+  const volPos   = getVal('rq-vol-pos');
+  const cicloPre = getVal('rq-ciclo-pre');
+  const cicloPos = getVal('rq-ciclo-pos');
   const horas = (volPre * cicloPre) - (volPos * cicloPos);
-  const el = document.getElementById(p + '-metric-horas');
-  if(el) el.textContent = Number.isNaN(horas) ? '—' : (horas >= 0 ? '+' : '') + horas.toFixed(1);
+  const el = document.getElementById('rq-horas-econ');
+  const anyVal = volPre || volPos || cicloPre || cicloPos;
+  if(el) el.value = (anyVal && !Number.isNaN(horas)) ? (horas >= 0 ? '+' : '') + horas.toFixed(1) + ' h/mês' : '—';
   // Persist to DATA
   if(DATA[p]?.meta) {
-    DATA[p].meta.volPre   = volPre   || DATA[p].meta.volPre   || 0;
-    DATA[p].meta.volPos   = volPos   || DATA[p].meta.volPos   || 0;
-    DATA[p].meta.cicloPre = cicloPre || DATA[p].meta.cicloPre || 0;
-    DATA[p].meta.cicloPos = cicloPos || DATA[p].meta.cicloPos || 0;
+    DATA[p].meta.volPre   = volPre;
+    DATA[p].meta.volPos   = volPos;
+    DATA[p].meta.cicloPre = cicloPre;
+    DATA[p].meta.cicloPos = cicloPos;
   }
 }
 
-function _setMetricText(id, val) {
-  const el = document.getElementById(id);
-  if(el) el.textContent = val || '—';
-}
-
-function _toggleOverviewGrid(p, meta) {
-  const grid = document.getElementById(p + '-overview-grid');
-  if(!grid) return;
-  const hasValues = meta.volPre || meta.volPos || meta.cicloPre || meta.cicloPos;
-  grid.style.display = (editMode || hasValues) ? '' : 'none';
-}
-
 function renderMetrics(p) {
-  const m = DATA[p]?.meta || {};
-  _setMetricText(p + '-metric-vol-pre',   m.volPre   || '—');
-  _setMetricText(p + '-metric-vol-pos',   m.volPos   || '—');
-  _setMetricText(p + '-metric-ciclo-pre', m.cicloPre || '—');
-  _setMetricText(p + '-metric-ciclo-pos', m.cicloPos || '—');
-  calcHorasEcon(p);
   renderBanner(p);
-  _toggleOverviewGrid(p, m);
 }
 
 // fim legado
@@ -19925,11 +19905,18 @@ function showAiQuant(tab) {
   document.getElementById('rel-pop-name').textContent = meta.name || currentPop || '—';
 
   // Preencher campos quantitativos com dados salvos
+  document.getElementById('rq-vol-pre').value       = meta.volPre    || '';
+  document.getElementById('rq-vol-pos').value       = meta.volPos    || '';
+  document.getElementById('rq-ciclo-pre').value     = meta.cicloPre  || '';
+  document.getElementById('rq-ciclo-pos').value     = meta.cicloPos  || '';
+  document.getElementById('rq-lead-time').value     = meta.leadTime  || '';
+  document.getElementById('rq-tempo-puro').value    = meta.tempoPuro || '';
   document.getElementById('rq-vol-mensal').value    = meta.volumetria_mensal  || '';
   document.getElementById('rq-vol-anual').value     = meta.volumetria_anual   || '';
   document.getElementById('rq-sazonalidade').value  = meta.variacao_sazonal   || '';
   document.getElementById('rq-tempo-medio').value   = meta.tempo_medio        || '';
   document.getElementById('rq-tempo-espera').value  = meta.tempo_espera       || '';
+  calcHorasEcon(p);
   mod._lastPop = p;
 }
 
@@ -19949,11 +19936,18 @@ function saveRelQuant() {
   if (!DATA[p]) return;
   if (!DATA[p].meta) DATA[p].meta = {};
   const m = DATA[p].meta;
+  m.volPre    = Number.parseFloat(document.getElementById('rq-vol-pre').value)    || 0;
+  m.volPos    = Number.parseFloat(document.getElementById('rq-vol-pos').value)    || 0;
+  m.cicloPre  = Number.parseFloat(document.getElementById('rq-ciclo-pre').value)  || 0;
+  m.cicloPos  = Number.parseFloat(document.getElementById('rq-ciclo-pos').value)  || 0;
+  m.leadTime  = document.getElementById('rq-lead-time').value;
+  m.tempoPuro = document.getElementById('rq-tempo-puro').value;
   m.volumetria_mensal = document.getElementById('rq-vol-mensal').value;
   m.volumetria_anual  = document.getElementById('rq-vol-anual').value;
   m.variacao_sazonal  = document.getElementById('rq-sazonalidade').value;
   m.tempo_medio       = document.getElementById('rq-tempo-medio').value;
   m.tempo_espera      = document.getElementById('rq-tempo-espera').value;
+  calcHorasEcon(p);
   markChanged(true);
 }
 
