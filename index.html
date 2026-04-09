@@ -21565,7 +21565,7 @@ function eppRenderDashboard() {
       overhead:     Math.round(metrics.overhead * 100),
       overheadColor: metrics.overheadCls,
       overheadLabel: metrics.overheadLabel,
-      digital:      Math.round(matScoreDigital(matGetData(p).digitalAnswers) ?? 50),
+      digital:      Math.round(matScoreDigital(matNormalizeQuestionnaires(matGetData(p))) ?? 50),
       digitalColor: '#0891b2',
     });
   });
@@ -26989,45 +26989,37 @@ function arqCompRenderSection(idx) {
 
 const MAT_QUESTIONS = [
   // Execução do Processo
-  { text: 'Existem muitas exceções que não estão representadas no fluxo?',                                      section: 'Execução do Processo' },
-  { text: 'Você precisa refazer atividades com frequência?',                                                    section: 'Execução do Processo' },
-  { text: 'Existem diferenças relevantes entre o processo desenhado e o que acontece na prática?',             section: 'Execução do Processo' },
+  { text: 'O processo apresenta muitas exceções que não estão mapeadas no fluxo.',              section: 'Execução do Processo' },
+  { text: 'As atividades precisam ser refeitas com frequência por erros ou retrabalho.',        section: 'Execução do Processo' },
+  { text: 'Há diferenças relevantes entre o processo desenhado e o que acontece na prática.',  section: 'Execução do Processo' },
   // Tecnologia
-  { text: 'Você precisa buscar dados ou informações fora do processo para executar sua atividade?',            section: 'Tecnologia' },
-  { text: 'Os sistemas e ferramentas disponíveis são inadequados ou insuficientes para o processo?',           section: 'Tecnologia' },
-  { text: 'Problemas com sistemas ou ferramentas causam atrasos ou interrupções na execução?',                 section: 'Tecnologia' },
+  { text: 'Problemas com sistemas ou ferramentas causam atrasos ou interrupções na execução.', section: 'Tecnologia' },
+  { text: 'O processo é executado sem suporte adequado de sistemas informatizados.',            section: 'Tecnologia', digital: true },
+  { text: 'Os dados e registros do processo não são armazenados ou consultados digitalmente.', section: 'Tecnologia', digital: true },
   // Pessoas
-  { text: 'Mesmo com o fluxo definido, você ainda precisa tirar dúvidas para executar o processo?',           section: 'Pessoas' },
-  { text: 'O processo depende de conhecimento informal (não documentado)?',                                    section: 'Pessoas' },
-  { text: 'Problemas em etapas anteriores impactam seu trabalho?',                                             section: 'Pessoas' },
+  { text: 'Mesmo com o fluxo definido, há dúvidas frequentes sobre como executar o processo.',  section: 'Pessoas' },
+  { text: 'O processo depende de conhecimento informal, não documentado.',                       section: 'Pessoas' },
+  { text: 'Problemas em etapas anteriores impactam o andamento das etapas seguintes.',          section: 'Pessoas' },
   // Monitoramento e Métricas
-  { text: 'O processo não possui indicadores ou métricas de desempenho definidos?',                           section: 'Monitoramento e Métricas' },
-  { text: 'Falhas ou gargalos no processo demoram a ser identificados ou não são tratados com agilidade?',    section: 'Monitoramento e Métricas' },
-  { text: 'Faltam registros históricos que permitam analisar a evolução do processo ao longo do tempo?',      section: 'Monitoramento e Métricas' },
+  { text: 'O processo não possui indicadores ou métricas de desempenho definidos.',             section: 'Monitoramento e Métricas' },
+  { text: 'Falhas ou gargalos no processo demoram a ser identificados ou tratados.',            section: 'Monitoramento e Métricas' },
+  { text: 'Faltam registros históricos que permitam analisar a evolução do processo.',          section: 'Monitoramento e Métricas' },
 ];
 
 const MAT_QUESTIONNAIRE_COUNT = 3;
 
-// Perguntas sobre digitalização — respondidas no questionário (não mais por marcação no fluxo)
-const MAT_DIGITAL_QUESTIONS = [
-  { text: 'As atividades do processo são executadas com suporte de sistemas informatizados (TI)?', inverted: false },
-  { text: 'Os dados e informações gerados no processo são registrados e consultados em sistemas digitais?', inverted: false },
-];
-
-function matCreateEmptyDigitalAnswers() {
-  return new Array(MAT_DIGITAL_QUESTIONS.length).fill(null);
-}
-
 function matCreateEmptyAnswers() {
   return new Array(MAT_QUESTIONS.length).fill(null);
 }
+
+const MAT_VALID_ANSWERS = ['concordo', 'parcialmente', 'discordo'];
 
 function matNormalizeAnswersArray(arr) {
   const base = matCreateEmptyAnswers();
   if(!Array.isArray(arr)) return base;
   return base.map((_, idx) => {
     const v = arr[idx];
-    return (v === 'sim' || v === 'talvez' || v === 'nao') ? v : null;
+    return MAT_VALID_ANSWERS.includes(v) ? v : null;
   });
 }
 
@@ -27048,18 +27040,7 @@ function matNormalizeQuestionnaires(mat) {
   }
 
   mat.questionnaires = questionnaires;
-  // Compatibilidade com estruturas antigas que ainda leem mat.answers.
   mat.answers = questionnaires[0].slice();
-
-  // Normalizar respostas do questionário de digitalização
-  if(!Array.isArray(mat.digitalAnswers) || mat.digitalAnswers.length !== MAT_DIGITAL_QUESTIONS.length) {
-    mat.digitalAnswers = matCreateEmptyDigitalAnswers();
-  } else {
-    mat.digitalAnswers = mat.digitalAnswers.map(v =>
-      (v === 'sim' || v === 'talvez' || v === 'nao') ? v : null
-    );
-  }
-
   return questionnaires;
 }
 
@@ -27073,7 +27054,7 @@ function matCompletedQuestionnaires(questionnaires) {
   return (questionnaires || []).filter(q =>
     Array.isArray(q) &&
     q.length === MAT_QUESTIONS.length &&
-    q.every(a => a === 'sim' || a === 'talvez' || a === 'nao')
+    q.every(a => MAT_VALID_ANSWERS.includes(a))
   ).length;
 }
 
@@ -27086,7 +27067,6 @@ function matGetData(p) {
     const fallback = {
       questionnaires: Array.from({ length: MAT_QUESTIONNAIRE_COUNT }, () => matCreateEmptyAnswers()),
       answers: matCreateEmptyAnswers(),
-      digitalAnswers: matCreateEmptyDigitalAnswers(),
       indispensaveis: 0,
       sistIndispensaveis: 0,
       version: 'asis',
@@ -27100,7 +27080,6 @@ function matGetData(p) {
     DATA[p].maturity = {
       questionnaires: Array.from({ length: MAT_QUESTIONNAIRE_COUNT }, () => matCreateEmptyAnswers()),
       answers: matCreateEmptyAnswers(),
-      digitalAnswers: matCreateEmptyDigitalAnswers(),
       indispensaveis: 0,
       sistIndispensaveis: 0,
       version: 'asis',
@@ -27500,51 +27479,32 @@ function matComputeRisco(metrics, indispensaveis, sistIndispensaveis) {
   return { score, label, cls };
 }
 
+// Pontuação: Discordo=100 (nega o problema = maduro), Concordo Parcialmente=50, Concordo=0 (confirma problema)
+function matAnsScore(ans) {
+  return ans === 'discordo' ? 100 : ans === 'parcialmente' ? 50 : 0;
+}
+
 function matScoreEquipe(answers) {
   const totalQuestions = MAT_QUESTIONS.length;
   let total = 0, count = 0;
-  (answers || []).forEach((ans, i) => {
-    if(ans === null || ans === undefined) return;
-    const q   = MAT_QUESTIONS[i];
-    let pts;
-    if(q.inverted) pts = ans === 'sim' ? 100 : ans === 'talvez' ? 50 : 0;
-    else           pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
-    total += pts; count++;
+  (answers || []).forEach((ans) => {
+    if(!MAT_VALID_ANSWERS.includes(ans)) return;
+    total += matAnsScore(ans); count++;
   });
   return count >= totalQuestions ? total / totalQuestions : null;
 }
 
 function matScoreEquipeMedia(questionnaires) {
   if(!Array.isArray(questionnaires) || questionnaires.length !== MAT_QUESTIONNAIRE_COUNT) return null;
-
-  // Considera apenas questionários completamente preenchidos (sem nenhum null).
-  // Questionários vazios ou parciais são ignorados — o score é a média dos válidos.
   const valid = questionnaires.filter(q =>
     Array.isArray(q) &&
     q.length === MAT_QUESTIONS.length &&
-    q.every(a => a === 'sim' || a === 'talvez' || a === 'nao')
+    q.every(a => MAT_VALID_ANSWERS.includes(a))
   );
   if(!valid.length) return null;
-
   let total = 0;
   for(let i = 0; i < MAT_QUESTIONS.length; i++) {
-    let qTotal = 0;
-    for(const q of valid) {
-      const ans = q[i];
-      const question = MAT_QUESTIONS[i];
-      let pts;
-      if(question.inverted) {
-        if(ans === 'sim')    pts = 100;
-        else if(ans === 'talvez') pts = 50;
-        else                 pts = 0;
-      } else {
-        if(ans === 'nao')    pts = 100;
-        else if(ans === 'talvez') pts = 50;
-        else                 pts = 0;
-      }
-      qTotal += pts;
-    }
-    total += qTotal / valid.length;
+    total += valid.reduce((sum, q) => sum + matAnsScore(q[i]), 0) / valid.length;
   }
   return total / MAT_QUESTIONS.length;
 }
@@ -27554,12 +27514,8 @@ function matQuestionAverage(questionnaires, questionIndex) {
   let total = 0, count = 0;
   questionnaires.forEach((answers) => {
     const ans = answers && answers[questionIndex];
-    if(ans === null || ans === undefined) return;
-    const q   = MAT_QUESTIONS[questionIndex];
-    let pts;
-    if(q.inverted) pts = ans === 'sim' ? 100 : ans === 'talvez' ? 50 : 0;
-    else           pts = ans === 'nao' ? 100 : ans === 'talvez' ? 50 : 0;
-    total += pts; count++;
+    if(!MAT_VALID_ANSWERS.includes(ans)) return;
+    total += matAnsScore(ans); count++;
   });
   return count > 0 ? Math.round(total / count) : null;
 }
@@ -27578,9 +27534,9 @@ function matComputeFinal(p) {
   // Normalise all to 0–100 where 100 = most mature
   // Risco: decaimento exponencial (meia-vida ≈ 45 pts)
   const normRisco   = Math.max(0, Math.min(100, Math.round(100 * Math.exp(-riscoRaw / 45))));
-  // Digitalização: baseada no questionário de digitalização (3 perguntas)
-  // Se não respondido, usa 50 como neutro (não penaliza nem beneficia)
-  const digitalScore = matScoreDigital(mat.digitalAnswers);
+  // Digitalização: derivada das perguntas com digital:true no questionário principal (eixo Tecnologia)
+  // Se não respondido, usa 50 como neutro
+  const digitalScore = matScoreDigital(questionnaires);
   const normAutom   = digitalScore !== null ? Math.round(digitalScore) : 50;
   // Lean Operacional: execução / (execução + overhead) — mede proporção de valor direto vs. controle
   // Se nenhuma atividade "opinada" (execucao/aprovacao/controle) → neutro (50)
@@ -27634,22 +27590,22 @@ function matSetSistIndispensaveis(p, val) {
   matRender(p);
 }
 
-function matSetDigitalAnswer(p, qi, val) {
-  const mat = matGetData(p);
-  matNormalizeQuestionnaires(mat); // garante que digitalAnswers existe
-  mat.digitalAnswers[qi] = val;
-  markChanged(true, true);
-  matRender(p);
-}
 
-// Retorna score de digitalização (0–100) baseado no questionário, ou null se nenhuma pergunta respondida.
-// Questões normais: sim=100, talvez=50, nao=0
-function matScoreDigital(digitalAnswers) {
-  if(!Array.isArray(digitalAnswers)) return null;
-  const valid = digitalAnswers.filter(a => a === 'sim' || a === 'talvez' || a === 'nao');
-  if(!valid.length) return null;
-  const total = valid.reduce((sum, a) => sum + (a === 'sim' ? 100 : a === 'talvez' ? 50 : 0), 0);
-  return total / valid.length;
+// Retorna score de digitalização (0–100) derivado das perguntas com digital:true nos questionários principais.
+// Discordo=100 (processo digitalizado), Parcialmente=50, Concordo=0 (não digitalizado).
+const MAT_DIGITAL_INDICES = MAT_QUESTIONS.map((q, i) => q.digital ? i : -1).filter(i => i >= 0);
+function matScoreDigital(questionnaires) {
+  const valid = (questionnaires || []).filter(q =>
+    Array.isArray(q) && q.length === MAT_QUESTIONS.length && q.every(a => MAT_VALID_ANSWERS.includes(a))
+  );
+  if(!valid.length || !MAT_DIGITAL_INDICES.length) return null;
+  let total = 0, count = 0;
+  for(const qset of valid) {
+    for(const idx of MAT_DIGITAL_INDICES) {
+      total += matAnsScore(qset[idx]); count++;
+    }
+  }
+  return count > 0 ? total / count : null;
 }
 
 function matSetQuestionnaireView(p, idx) {
@@ -27713,7 +27669,7 @@ function matRender(p) {
 
   const ansBtn = (pi, idx, qx, val, lbl, cur) => {
     const sel  = cur === val;
-    const cols = { sim:'#22c55e', talvez:'#eab308', nao:'#ef4444' };
+    const cols = { concordo:'#ef4444', parcialmente:'#eab308', discordo:'#22c55e' };
     return `<button onclick="matSetAnswer('${pi}',${idx},'${val}',${qx})"
       style="padding:6px 14px;border-radius:20px;border:1.5px solid ${sel ? cols[val] : '#e2e8f0'};
              background:${sel ? cols[val] : '#f8fafc'};color:${sel ? '#fff' : '#64748b'};
@@ -27757,7 +27713,7 @@ function matRender(p) {
     </div>`;
 
   // índices calculados com escala de referência
-  const digitalScore = matScoreDigital(mat.digitalAnswers);
+  const digitalScore = matScoreDigital(questionnaires);
   const digitalVal   = digitalScore !== null ? digitalScore.toFixed(0)+'%' : 'N/D';
   const digitalLabel = digitalScore === null ? 'Não avaliado' : digitalScore >= 60 ? 'Alta' : digitalScore >= 30 ? 'Média' : 'Baixa';
   const digitalCls   = digitalScore === null ? '#94a3b8' : digitalScore >= 60 ? '#22c55e' : digitalScore >= 30 ? '#eab308' : '#ef4444';
@@ -27855,9 +27811,9 @@ function matRender(p) {
               <div style="min-width:22px;font-size:12px;font-weight:800;color:#94a3b8;">${i+1}</div>
               <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}</div>
               <div style="display:flex;gap:6px;flex-shrink:0;">
-                ${ansBtn(p, i, activeQIndex, 'sim',    'Sim',    cur)}
-                ${ansBtn(p, i, activeQIndex, 'talvez', 'Talvez', cur)}
-                ${ansBtn(p, i, activeQIndex, 'nao',    'Não',    cur)}
+                ${ansBtn(p, i, activeQIndex, 'concordo',     'Concordo',             cur)}
+                ${ansBtn(p, i, activeQIndex, 'parcialmente', 'Concordo Parcialmente', cur)}
+                ${ansBtn(p, i, activeQIndex, 'discordo',     'Discordo',             cur)}
               </div>
             </div>`;
         }).join('');
@@ -27983,43 +27939,11 @@ function matRender(p) {
       ${matRenderHistory(p, snapshots)}
     </div>`;
 
-  // ── Digital questionnaire (Digitalização) ─────────────────────────────
-  const ansBtnDig = (pi, qi, val, lbl, cur) => {
-    const sel  = cur === val;
-    const cols = { sim:'#22c55e', talvez:'#eab308', nao:'#ef4444' };
-    return `<button onclick="matSetDigitalAnswer('${pi}',${qi},'${val}')"
-      style="padding:6px 14px;border-radius:20px;border:1.5px solid ${sel ? cols[val] : '#e2e8f0'};
-             background:${sel ? cols[val] : '#f8fafc'};color:${sel ? '#fff' : '#64748b'};
-             font-size:12px;font-weight:${sel ? '700' : '400'};cursor:pointer;">${lbl}</button>`;
-  };
-  const digitalAnsweredCount = (mat.digitalAnswers || []).filter(a => a !== null).length;
-  const digitalQHtml = `
-    <div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;background:#ffffff;">
-      ${MAT_DIGITAL_QUESTIONS.map((q, i) => {
-        const cur = (mat.digitalAnswers || [])[i] ?? null;
-        return `
-          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${cur !== null ? '#f0f9ff' : '#f8fafc'};border-radius:8px;margin-bottom:8px;border:1px solid ${cur !== null ? '#bae6fd' : '#f1f5f9'};flex-wrap:wrap;">
-            <div style="min-width:22px;font-size:12px;font-weight:800;color:#94a3b8;">${i+1}</div>
-            <div style="flex:1;font-size:13px;color:#1e293b;min-width:200px;">${q.text}</div>
-            <div style="display:flex;gap:6px;flex-shrink:0;">
-              ${ansBtnDig(p, i, 'sim',    'Sim',    cur)}
-              ${ansBtnDig(p, i, 'talvez', 'Talvez', cur)}
-              ${ansBtnDig(p, i, 'nao',    'Não',    cur)}
-            </div>
-          </div>`;
-      }).join('')}
-    </div>`;
-
   container.innerHTML = `
     ${versionToggle}
     ${metricsHtml}
     ${indicesHtml}
     ${manualHtml}
-    <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:10px;">
-      ⚡ Questionário de Digitalização
-      <span style="color:#94a3b8;font-size:12px;font-weight:400;margin-left:6px;">${digitalAnsweredCount}/${MAT_DIGITAL_QUESTIONS.length} respondidas</span>
-    </div>
-    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:24px;">${digitalQHtml}</div>
     <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:10px;">
       📋 Questionário de Percepção da Equipe
       <span style="color:#94a3b8;font-size:12px;font-weight:400;margin-left:6px;">${answered}/${totalAnswers} respostas</span>
@@ -28145,10 +28069,11 @@ function matExportPdf(p) {
   const fmtDate  = d => { try { return new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){ return d; } };
   const esc      = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  const ansLabel = { sim:'Sim', talvez:'Talvez', nao:'Não' };
-  const ansColor = { sim:'#22c55e', talvez:'#eab308', nao:'#ef4444' };
+  const ansLabel = { concordo:'Concordo', parcialmente:'Concordo Parcialmente', discordo:'Discordo' };
+  const ansColor = { concordo:'#ef4444', parcialmente:'#eab308', discordo:'#22c55e' };
 
-  const digScore   = matScoreDigital(mat.digitalAnswers);
+  const questionnaires = matNormalizeQuestionnaires(mat);
+  const digScore   = matScoreDigital(questionnaires);
   const automLabel = digScore === null ? 'Não avaliado' : digScore >= 60 ? 'Alta' : digScore >= 30 ? 'Média' : 'Baixa';
   const automCls   = digScore === null ? '#94a3b8' : digScore >= 60 ? '#22c55e' : digScore >= 30 ? '#eab308' : '#ef4444';
 
@@ -28454,15 +28379,15 @@ Descrição: ${popMeta.desc || 'Não informado'}
 - Atividades automáticas (⚙️): ${metrics.totalAutomatico} de ${metrics.totalActivities} (${(metrics.automacaoRate*100).toFixed(0)}%)
 - Pessoas indispensáveis (informado pelo usuário): ${ind}
 - Sistemas indispensáveis (informado pelo usuário): ${sist}
-- Digitalização (questionário): ${matScoreDigital(mat.digitalAnswers) !== null ? matScoreDigital(mat.digitalAnswers).toFixed(0)+'%' : 'não respondido'}
+- Digitalização (eixo Tecnologia do questionário): ${(()=>{ const ds=matScoreDigital(questionnaires); return ds!==null?ds.toFixed(0)+'%':'não respondido'; })()}
 
 ## ÍNDICES
 - Complexidade: ${metrics.complexScore.toFixed(1)} → ${metrics.complexLabel} (escala: 0–20 simples, 21–40 moderado, 41–70 complexo, 70+ muito complexo)
 - Burocracia: ${(metrics.burocracia*100).toFixed(1)}% → ${metrics.burocLabel} (escala: <15% saudável, 15–30% moderado, >30% burocrático)
 - Risco Operacional: ${risco.score} → ${risco.label} (escala: 0–15 baixo, 16–35 médio, 36+ alto)
-- Digitalização (questionário): ${matScoreDigital(mat.digitalAnswers) !== null ? matScoreDigital(mat.digitalAnswers).toFixed(0)+'% de digitalização declarada pela equipe' : 'não respondido'}
+- Digitalização (eixo Tecnologia): ${(()=>{ const ds=matScoreDigital(questionnaires); return ds!==null?ds.toFixed(0)+'% declarado pela equipe':'não respondido'; })()}
 
-## QUESTIONÁRIOS DA EQUIPE (3 respondentes; Sim=maduro nessa pergunta / Talvez=incerto / Não=imaduro)
+## QUESTIONÁRIOS DA EQUIPE (3 respondentes; Concordo=problema/imaduro · Concordo Parcialmente=parcial · Discordo=maduro)
 ${answersText}
 
 ## SCORES FINAIS (0–100, quanto maior melhor — normalização exponencial para complexidade e risco)
