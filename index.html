@@ -1608,7 +1608,7 @@
     <button class="nav-tab nav-tab-fd" data-sortkey="flow-designer" onclick="showFlowDesigner(this)" id="tab-fd" role="tab">🎨 Desenhar Fluxo</button>
     <button class="nav-tab" data-sortkey="maturidade" onclick="showSection('maturidade',this)" role="tab">📊 Maturidade</button>
     <button class="nav-tab nav-tab-ai" data-sortkey="ai-analysis" onclick="showAiAnalysis(this)" id="tab-ai" role="tab">🤖 Análise Inteligente</button>
-    <button class="nav-tab nav-tab-relatorio" data-sortkey="ai-relatorio" onclick="showAiRelatorio(this)" id="tab-relatorio" role="tab">📄 Relatório IA</button>
+    <button class="nav-tab nav-tab-relatorio" data-sortkey="ai-quant" onclick="showAiQuant(this)" id="tab-quant" role="tab">📊 Dados Quantitativos</button>
   </div>
 </nav>
 
@@ -2883,25 +2883,23 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
-<!-- MÓDULO: RELATÓRIO DE MAPEAMENTO DE PROCESSO (IA)          -->
+<!-- MÓDULO: DADOS QUANTITATIVOS (IA)                          -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div id="ai-relatorio-module" style="display:none;">
   <div class="rel-gen-wrap">
     <div class="rel-gen-header">
       <div class="rel-gen-icon">📄</div>
       <div>
-        <div class="rel-gen-title">Relatório de Mapeamento de Processo</div>
-        <div class="rel-gen-sub" id="rel-pop-name">Selecione um POP para gerar o relatório</div>
+        <div class="rel-gen-title">Dados Quantitativos do Processo</div>
+        <div class="rel-gen-sub" id="rel-pop-name">Selecione um POP para preencher volumetria e tempo</div>
       </div>
     </div>
 
-    <!-- Dados Quantitativos (opcional) -->
+    <p style="font-size:13px;color:#64748b;margin:0 0 14px;">Preencha estes dados para enriquecer o relatório gerado na aba <strong>Análise Inteligente</strong>.</p>
+
+    <!-- Dados Quantitativos -->
     <div class="rel-quant-box">
-      <button class="rel-quant-toggle" onclick="toggleRelQuantBody(this)">
-        📊 Dados Quantitativos <span style="font-weight:400;color:#64748b;">— volumetria e tempo (opcional, enriquece o relatório)</span>
-        <span class="rq-arrow" style="margin-left:auto;font-size:11px;">▼</span>
-      </button>
-      <div id="rel-quant-body" class="rel-quant-body" style="display:none;">
+      <div id="rel-quant-body" class="rel-quant-body" style="display:grid;border-top:none;">
         <div class="rel-quant-field"><label for="rq-vol-anual">Execuções médias / mês</label><input type="text" id="rq-vol-mensal" placeholder="ex: 120" oninput="saveRelQuant()"></div>
         <div class="rel-quant-field"><label for="rq-sazonalidade">Execuções anuais estimadas</label><input type="text" id="rq-vol-anual" placeholder="ex: 1.440" oninput="saveRelQuant()"></div>
         <div class="rel-quant-field"><label for="rq-tempo-medio">Variação sazonal</label><input type="text" id="rq-sazonalidade" placeholder="ex: maior no 1º trimestre" oninput="saveRelQuant()"></div>
@@ -2909,23 +2907,6 @@
         <div class="rel-quant-field"><label for="rq-tempo-espera">Tempo médio de espera</label><input type="text" id="rq-tempo-espera" placeholder="ex: 3 dias" oninput="saveRelQuant()"></div>
       </div>
     </div>
-
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
-      <button class="rel-gen-btn" id="rel-gen-btn" onclick="runAiRelatorio()">📄 Gerar Relatório com IA</button>
-      <span style="font-size:12px;color:#94a3b8;">Powered by GitHub Copilot · Baseado em todas as abas do mapeamento</span>
-    </div>
-
-    <!-- Spinner -->
-    <div id="rel-spinner" style="display:none;flex-direction:column;align-items:center;gap:16px;padding:48px 0;">
-      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style="animation:ai-spin 1s linear infinite;">
-        <circle cx="22" cy="22" r="18" stroke="#1B3022" stroke-width="4" stroke-dasharray="90 28" stroke-linecap="round"/>
-      </svg>
-      <div style="font-size:14px;font-weight:700;color:#1B3022;">Gerando relatório com IA…</div>
-      <div style="font-size:12px;color:#94a3b8;">Analisando todas as abas do mapeamento, aguarde</div>
-    </div>
-
-    <!-- Report Output -->
-    <div id="rel-output"></div>
   </div>
 </div>
 
@@ -2943,6 +2924,7 @@
     </div>
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
       <button class="ai-run-btn" id="ai-run-btn" onclick="runAiAnalysis()">✨ Analisar Fluxo com IA</button>
+      <button class="rel-gen-btn" id="rel-gen-btn" onclick="runAiRelatorio()">📄 Gerar Relatório com IA</button>
       <span style="font-size:12px;color:#94a3b8;">Powered by GitHub Copilot · Análise baseada nas etapas e ações do processo</span>
     </div>
 
@@ -2957,6 +2939,18 @@
 
     <!-- Resultado -->
     <div id="ai-output"></div>
+
+    <!-- Spinner do Relatório IA -->
+    <div id="rel-spinner" style="display:none;flex-direction:column;align-items:center;gap:16px;padding:32px 0;">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" style="animation:ai-spin 1s linear infinite;">
+        <circle cx="22" cy="22" r="18" stroke="#1B3022" stroke-width="4" stroke-dasharray="90 28" stroke-linecap="round"/>
+      </svg>
+      <div style="font-size:14px;font-weight:700;color:#1B3022;">Gerando relatório com IA…</div>
+      <div style="font-size:12px;color:#94a3b8;">Analisando todas as abas do mapeamento, aguarde</div>
+    </div>
+
+    <!-- Resultado do Relatório IA -->
+    <div id="rel-output"></div>
   </div>
 </div>
 
@@ -16802,6 +16796,24 @@ function _formatFichaFullDate(d) {
   return d ? new Date(d+'T12:00').toLocaleDateString('pt-BR') : '';
 }
 
+function _getFichaDelayDays(m) {
+  if(!m?.dataPrevista || !m?.dataEfetiva) return null;
+  const prevista = Date.parse(m.dataPrevista + 'T12:00:00');
+  const efetiva  = Date.parse(m.dataEfetiva + 'T12:00:00');
+  if(Number.isNaN(prevista) || Number.isNaN(efetiva)) return null;
+  const diffDays = Math.floor((efetiva - prevista) / 86400000);
+  return diffDays > 0 ? diffDays : null;
+}
+
+function _getFichaEfetivaWithDelay(m) {
+  const dataEfetiva = _formatFichaFullDate(m?.dataEfetiva);
+  if(!dataEfetiva) return '';
+  const atrasoDias = _getFichaDelayDays(m);
+  if(!atrasoDias) return dataEfetiva;
+  const labelDias = atrasoDias === 1 ? 'dia' : 'dias';
+  return `${dataEfetiva} (+${atrasoDias} ${labelDias} de atraso)`;
+}
+
 function _getFichaFields(m) {
   return [
     { label:'Subprocesso', icon:'📋', value:m.name, group:'Identificação' },
@@ -16814,7 +16826,7 @@ function _getFichaFields(m) {
     { label:'Dificuldade', icon:'📶', value:m.dificuldade, group:'Identificação' },
     { label:'Data de Início', icon:'📅', value:_formatFichaFullDate(m.dataInicio), group:'Datas' },
     { label:'Previsão de Entrega', icon:'🗓', value:_formatFichaFullDate(m.dataPrevista), group:'Datas' },
-    { label:'Data Efetiva Entrega', icon:'✅', value:_formatFichaFullDate(m.dataEfetiva), group:'Datas' },
+    { label:'Data Efetiva Entrega', icon:'✅', value:_getFichaEfetivaWithDelay(m), group:'Datas' },
     { label:'Solicitante', icon:'📩', value:m.solicitante, group:'Pessoas' },
     { label:'Patrocinador', icon:'🤝', value:m.patrocinador, group:'Pessoas' },
     { label:'Elaborado por', icon:'✍️', value:m.elaborado, group:'Pessoas' },
@@ -19632,7 +19644,10 @@ function showAiAnalysis(tab) {
 async function runAiAnalysis() {
   const p = popPrefix(currentPop);
   const pop = DATA[p];
-  if (!pop || !pop.steps || pop.steps.length === 0) {
+  _ensureTobeSteps(p);
+  const hasAsIs = Array.isArray(pop?.steps) && pop.steps.length > 0;
+  const hasToBe = Array.isArray(pop?.tobeSteps) && pop.tobeSteps.length > 0;
+  if (!pop || (!hasAsIs && !hasToBe)) {
     document.getElementById('ai-output').innerHTML =
       '<div class="ai-no-data">⚠️ Este POP não possui etapas cadastradas. Adicione etapas na aba <strong>Fluxo</strong> antes de analisar.</div>';
     return;
@@ -19645,6 +19660,13 @@ async function _runAiAnalysisWithMode(p, pop, mode) {
   const btn = document.getElementById('ai-run-btn');
   const spinner = document.getElementById('ai-spinner');
   const output = document.getElementById('ai-output');
+
+  _ensureTobeSteps(p);
+  const sourceSteps = mode === 'tobe' ? (pop.tobeSteps || []) : (pop.steps || []);
+  if(!sourceSteps.length) {
+    output.innerHTML = `<div class="ai-no-data">⚠️ O fluxo ${modeLabel} não possui etapas cadastradas.</div>`;
+    return;
+  }
 
   btn.disabled = true;
   spinner.style.display = 'flex';
@@ -19659,7 +19681,7 @@ async function _runAiAnalysisWithMode(p, pop, mode) {
   if (meta.output) linhas.push(`SAÍDAS: ${meta.output}`);
   linhas.push('');
   linhas.push(`ETAPAS DO FLUXO (${modeLabel}):`);
-  pop.steps.forEach((step, i) => {
+  sourceSteps.forEach((step, i) => {
     const rs = resolveStep(step, mode);
     linhas.push(`\n[${i + 1}] "${rs.title || '(sem título)'}"`);
     if (rs.subtitle)    linhas.push(`  Subtítulo: ${rs.subtitle}`);
@@ -19878,7 +19900,7 @@ function _updateAiRunBtn(p) {
 // RELATÓRIO IA — Geração automática com Gemini
 // ══════════════════════════════════════════════════════════════
 
-function showAiRelatorio(tab) {
+function showAiQuant(tab) {
   const activePop = document.getElementById('pop-' + popDomId(currentPop));
   if (activePop) activePop.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
   ['bpmn-module','fd-module','ai-module'].forEach(id => {
@@ -19900,11 +19922,11 @@ function showAiRelatorio(tab) {
   document.getElementById('rq-sazonalidade').value  = meta.variacao_sazonal   || '';
   document.getElementById('rq-tempo-medio').value   = meta.tempo_medio        || '';
   document.getElementById('rq-tempo-espera').value  = meta.tempo_espera       || '';
-
-  if (mod._lastPop && mod._lastPop !== p) {
-    document.getElementById('rel-output').innerHTML = '';
-  }
   mod._lastPop = p;
+}
+
+function showAiRelatorio(tab) {
+  return showAiQuant(tab);
 }
 
 function toggleRelQuantBody(btn) {
@@ -19937,7 +19959,8 @@ async function runAiRelatorio() {
 async function _runAiRelatorioWithMode(p, pop, mode) {
   const modeLabel = mode === 'tobe' ? 'TO BE (Futuro)' : 'AS IS (Atual)';
   const meta       = pop.meta || {};
-  const steps      = pop.steps || [];
+  _ensureTobeSteps(p);
+  const steps      = mode === 'tobe' ? (pop.tobeSteps || []) : (pop.steps || []);
   const roles      = pop.roles || [];
   const risks      = pop.risks || [];
   const indicators = pop.indicators || [];
