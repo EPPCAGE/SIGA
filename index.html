@@ -16313,7 +16313,7 @@ async function _buildEppStatusReport(opts = {}) {
       {
         label: 'Equipe  ·  40%',
         col:   '6366F1',
-        desc:  'Média de 10 questões de percepção respondidas pela equipe: Sim = 100, Talvez = 50, Não = 0. Exige pelo menos 1 resposta para o índice ser calculado.',
+        desc:  'Média de 10 afirmações respondidas pela equipe (12 no total, excluindo as 2 de digitalização): Discordo = 100, Concordo Parcialmente = 50, Concordo = 0. Exige pelo menos 1 questionário completo.',
       },
       {
         label: 'Risco Operacional  ·  20%',
@@ -19916,9 +19916,9 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
     const answered   = (typeof matAnsweredCount === 'function')
       ? matAnsweredCount(matQuestionnaires)
       : matQuestionnaires.flat().filter(a => a !== null).length;
-    const ansLbl     = { sim:'Sim', talvez:'Talvez', nao:'Não' };
-    const ansBg      = { sim:'#dcfce7', talvez:'#fef9c3', nao:'#fee2e2' };
-    const ansColor   = { sim:'#166534', talvez:'#854d0e', nao:'#991b1b' };
+    const ansLbl     = { concordo:'Concordo', parcialmente:'Concordo Parcialmente', discordo:'Discordo' };
+    const ansBg      = { concordo:'#fee2e2', parcialmente:'#fef9c3', discordo:'#dcfce7' };
+    const ansColor   = { concordo:'#991b1b', parcialmente:'#854d0e', discordo:'#166534' };
     const fmtDate    = d => { try { return new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){ return d; } };
 
     h += `<h2 class="rel-h1">11. Análise de Maturidade do Processo</h2>`;
@@ -19983,15 +19983,29 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
 
     // Questionário
     if (typeof MAT_QUESTIONS !== 'undefined' && answered > 0) {
+      const sectionColsRel = {
+        'Execução do Processo': '#f97316',
+        'Tecnologia':           '#0891b2',
+        'Pessoas':              '#6366f1',
+        'Monitoramento e Métricas': '#22c55e',
+      };
+      let lastSecRel = null;
       h += `<h3 class="rel-h2">11.3 Questionários de Percepção da Equipe (${answered}/${totalAnswers})</h3>
       <table class="rel-table">
-        <tr><th>#</th><th>Pergunta</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Média</th></tr>
+        <tr><th>#</th><th>Afirmação</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Média</th></tr>
         ${MAT_QUESTIONS.map((q, i) => {
           const qAnswers = matQuestionnaires.map(set => (set && set[i]) || null);
           const avg = (typeof matQuestionAverage === 'function') ? matQuestionAverage(matQuestionnaires, i) : null;
-          return `<tr>
+          let header = '';
+          if(q.section !== lastSecRel) {
+            lastSecRel = q.section;
+            const col = sectionColsRel[q.section] || '#64748b';
+            header = `<tr style="background:${col}15;"><td colspan="6" style="font-weight:700;font-size:11px;color:${col};padding:4px 8px;">▶ ${q.section}</td></tr>`;
+          }
+          const digitalTag = q.digital ? ' <span style="font-size:9px;background:#0891b220;color:#0891b2;padding:1px 4px;border-radius:3px;">DIGITAL</span>' : '';
+          return header + `<tr>
             <td style="text-align:center;font-weight:700;color:#94a3b8;">${i+1}</td>
-            <td>${esc(q.text)}${q.inverted ? ' <em style="font-size:10px;color:#6366f1;">(invertida)</em>' : ''}</td>
+            <td>${esc(q.text)}${digitalTag}</td>
             ${qAnswers.map(ans => ans
               ? `<td style="text-align:center;"><span class="rel-status" style="background:${ansBg[ans]};color:${ansColor[ans]};">${ansLbl[ans]}</span></td>`
               : '<td style="text-align:center;"><span style="color:#94a3b8;">—</span></td>').join('')}
@@ -28405,7 +28419,6 @@ function matExportPdf(p) {
   const ansLabel = { concordo:'Concordo', parcialmente:'Concordo Parcialmente', discordo:'Discordo' };
   const ansColor = { concordo:'#ef4444', parcialmente:'#eab308', discordo:'#22c55e' };
 
-  const questionnaires = matNormalizeQuestionnaires(mat);
   const digScore   = matScoreDigital(questionnaires);
   const automLabel = digScore === null ? 'Não avaliado' : digScore >= 60 ? 'Alta' : digScore >= 30 ? 'Média' : 'Baixa';
   const automCls   = digScore === null ? '#94a3b8' : digScore >= 60 ? '#22c55e' : digScore >= 30 ? '#eab308' : '#ef4444';
@@ -28424,10 +28437,10 @@ function matExportPdf(p) {
         <table class="comp-table">
           <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Sentido</th><th>Barra</th></tr>
           ${[
-            ['👥 Percepção da Equipe',  '40%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média das respostas de 3 questionários de percepção (10 afirmações, excluindo as 2 de digitalização). Concordo=0, Concordo Parcialmente=50, Discordo=100.'],
+            ['👥 Percepção da Equipe',  '40%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média das respostas de 3 questionários de percepção (12 afirmações, excluindo as 2 de digitalização = 10 afirmações). Concordo=0, Concordo Parcialmente=50, Discordo=100.'],
             ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas críticos×3 + eventos início×1,5 + eventos fim×1. Score bruto alto → nota baixa.'],
             ['🌿 Lean Operacional',     '20%', final.normLean,      '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma natureza preenchida.'],
-            ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Baseado no questionário de digitalização (3 perguntas). Sim=100%, Talvez=50%, Não=0%. Score = média das respostas. Neutro (50) quando não respondido.'],
+            ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Baseado nas 2 afirmações de digitalização do eixo Tecnologia (Q5 e Q6). Discordo=100, Concordo Parcialmente=50, Concordo=0. Neutro (50) quando não respondido.'],
             ['⚙️ Automação',            '10%', final.normAutomacao, '#7c3aed', '100 = totalmente automatizado', 'Percentual de atividades marcadas com ⚙️ (automático) ÷ total de atividades. Marque via ícone ⚙️ em cada atividade no fluxo.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
             <tr>
@@ -28496,7 +28509,7 @@ function matExportPdf(p) {
         })()}
       </tr>
       <tr>
-        <td>Digitalização <span class="note">(baseado no questionário de digitalização — ↑ maior = melhor; Sim=100%, Talvez=50%, Não=0%)</span></td>
+        <td>Digitalização <span class="note">(afirmações Q5–Q6 do eixo Tecnologia — ↑ maior = melhor; Discordo=100, Parcialmente=50, Concordo=0)</span></td>
         <td>${digScore !== null ? digScore.toFixed(0)+'%' : 'N/D'}</td>
         <td><span class="badge" style="background:${automCls}20;color:${automCls};">${automLabel}</span></td>
       </tr>
@@ -28516,21 +28529,37 @@ function matExportPdf(p) {
   const questBlock = `
     <h2 class="section-title">📋 Questionários de Percepção da Equipe <span class="note">(${answered}/${totalAnswers} respostas)</span></h2>
     <table class="data-table">
-      <tr><th>#</th><th>Pergunta</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Média</th></tr>
-      ${MAT_QUESTIONS.map((q, i) => {
-        const qAnswers = questionnaires.map(qset => (qset && qset[i]) || null);
-        const avg = matQuestionAverage(questionnaires, i);
-        return `<tr>
-          <td style="text-align:center;font-weight:700;color:#94a3b8;">${i+1}</td>
-          <td>${esc(q.text)}${q.inverted ? ' <em style="color:#6366f1;font-size:10px;">(invertida)</em>' : ''}</td>
-          ${qAnswers.map(ans => {
-            const lbl = ans ? ansLabel[ans] : '—';
-            const col = ans ? ansColor[ans] : '#94a3b8';
-            return `<td style="text-align:center;"><span class="badge" style="background:${col}20;color:${col};font-weight:700;">${lbl}</span></td>`;
-          }).join('')}
-          <td style="text-align:center;font-weight:700;color:#6366f1;">${avg !== null ? avg + '/100' : '—'}</td>
-        </tr>`;
-      }).join('')}
+      <tr><th>#</th><th>Afirmação</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Média</th></tr>
+      ${(()=>{
+        let lastSection = null;
+        const sectionColors = {
+          'Execução do Processo': '#f97316',
+          'Tecnologia':           '#0891b2',
+          'Pessoas':              '#6366f1',
+          'Monitoramento e Métricas': '#22c55e',
+        };
+        return MAT_QUESTIONS.map((q, i) => {
+          const qAnswers = questionnaires.map(qset => (qset && qset[i]) || null);
+          const avg = matQuestionAverage(questionnaires, i);
+          let header = '';
+          if(q.section !== lastSection) {
+            lastSection = q.section;
+            const col = sectionColors[q.section] || '#64748b';
+            header = `<tr style="background:${col}18;"><td colspan="6" style="font-weight:700;font-size:11px;color:${col};padding:5px 8px;letter-spacing:.5px;">▶ ${q.section}${q.digital ? ' · <em style=\'font-style:normal;\'>digitalização</em>' : ''}</td></tr>`;
+          }
+          const digitalBadge = q.digital ? ' <span style="font-size:9px;background:#0891b220;color:#0891b2;padding:1px 4px;border-radius:3px;">DIGITAL</span>' : '';
+          return header + `<tr>
+            <td style="text-align:center;font-weight:700;color:#94a3b8;">${i+1}</td>
+            <td>${esc(q.text)}${digitalBadge}</td>
+            ${qAnswers.map(ans => {
+              const lbl = ans ? ansLabel[ans] : '—';
+              const col = ans ? ansColor[ans] : '#94a3b8';
+              return `<td style="text-align:center;"><span class="badge" style="background:${col}20;color:${col};font-weight:700;">${lbl}</span></td>`;
+            }).join('')}
+            <td style="text-align:center;font-weight:700;color:#6366f1;">${avg !== null ? avg + '/100' : '—'}</td>
+          </tr>`;
+        }).join('');
+      })()}
     </table>`;
 
   // ── Escala de Maturidade ───────────────────────────────────────────────
@@ -28689,11 +28718,12 @@ async function matGeminiAnalyze(p) {
     const answersText = MAT_QUESTIONS.map((q, i) => {
       const labels = questionnaires.map((set, idx) => {
         const a = set && set[i];
-        const label = a === 'sim' ? 'Sim' : a === 'nao' ? 'Não' : a === 'talvez' ? 'Talvez' : '—';
+        const label = a === 'concordo' ? 'Concordo' : a === 'discordo' ? 'Discordo' : a === 'parcialmente' ? 'Concordo Parcialmente' : '—';
         return `Q${idx + 1}: ${label}`;
       }).join(' | ');
       const avg = matQuestionAverage(questionnaires, i);
-      return `${i+1}. [${labels}] [Média: ${avg !== null ? avg + '/100' : '—'}] ${q.text}${q.inverted ? ' (pergunta invertida)' : ''}`;
+      const secTag = q.section ? ` [${q.section}${q.digital ? ' / Digital' : ''}]` : '';
+      return `${i+1}.${secTag} [${labels}] [Média: ${avg !== null ? avg + '/100' : '—'}] ${q.text}`;
     }).join('\n');
 
     const prompt = `Você é um especialista em gestão por processos e maturidade organizacional. Analise os dados abaixo do processo "${procName}" e gere insights práticos e acionáveis em português brasileiro.
