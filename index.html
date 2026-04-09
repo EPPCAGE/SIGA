@@ -27519,16 +27519,6 @@ function matAnsScore(ans) {
   return ans === 'discordo' ? 100 : ans === 'parcialmente' ? 50 : 0;
 }
 
-function matScoreEquipe(answers) {
-  const totalQuestions = MAT_QUESTIONS.length;
-  let total = 0, count = 0;
-  (answers || []).forEach((ans) => {
-    if(!MAT_VALID_ANSWERS.includes(ans)) return;
-    total += matAnsScore(ans); count++;
-  });
-  return count >= totalQuestions ? total / totalQuestions : null;
-}
-
 function matScoreEquipeMedia(questionnaires) {
   if(!Array.isArray(questionnaires) || questionnaires.length !== MAT_QUESTIONNAIRE_COUNT) return null;
   const valid = questionnaires.filter(q =>
@@ -27567,7 +27557,6 @@ function matComputeFinal(p) {
   const sist    = Number.parseInt(mat.sistIndispensaveis) || 0;
   const { score: riscoRaw, label: riscoLabel } = matComputeRisco(metrics, ind, sist);
   const equipe  = matScoreEquipeMedia(questionnaires);
-  if(equipe === null) return null;
 
   // Normalise all to 0–100 where 100 = most mature
   // Risco: decaimento exponencial (meia-vida ≈ 45 pts)
@@ -27585,9 +27574,16 @@ function matComputeFinal(p) {
   // Automação: % de atividades marcadas como automáticas (⚙️) no fluxo
   const normAutomacao = Math.round(metrics.automacaoRate * 100);
 
-  // Pesos: Equipe 40% · Risco 20% · Lean 20% · Digitalização 10% · Automação 10%
-  const final = equipe * 0.40 + normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10;
-  const f = Math.round(final);
+  let f, partial = false;
+  if(equipe !== null) {
+    // Score completo — Pesos: Equipe 40% · Risco 20% · Lean 20% · Digitalização 10% · Automação 10%
+    f = Math.round(equipe * 0.40 + normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10);
+  } else {
+    // Score parcial (sem questionários completos): normaliza os 60% disponíveis para escala 0–100
+    // Risco×20% + Lean×20% + Digital×10% + Automação×10% / 0,60
+    f = Math.round((normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10) / 0.60);
+    partial = true;
+  }
 
   let level, levelColor, levelIcon;
   if(f <= 20)      { level = 'Inicial';    levelColor = '#ef4444'; levelIcon = '🔴'; }
@@ -27596,8 +27592,9 @@ function matComputeFinal(p) {
   else if(f <= 80) { level = 'Previsível'; levelColor = '#22c55e'; levelIcon = '🟢'; }
   else             { level = 'Otimizado';  levelColor = '#10b981'; levelIcon = '💚'; }
 
-  return { final: f, level, levelColor, levelIcon,
-           equipe: Math.round(equipe), normLean, normRisco, normAutom, normAutomacao,
+  return { final: f, level, levelColor, levelIcon, partial,
+           equipe: equipe !== null ? Math.round(equipe) : null,
+           normLean, normRisco, normAutom, normAutomacao,
            riscoRaw, riscoLabel };
 }
 
@@ -27882,29 +27879,39 @@ function matRender(p) {
     </div>`;
 
   let resultHtml = '';
-  if(completedQuestionnaires < 1 || !final) {
+  if(!final) {
     resultHtml = `
       ${levelsLegend}
       <div style="text-align:center;padding:28px;background:#f8fafc;border-radius:10px;border:1.5px dashed #e2e8f0;">
-        <div style="font-size:36px;">📋</div>
-        <div style="font-size:14px;color:#64748b;margin-top:8px;">Responda pelo menos <strong>1 questionário completo</strong> para ver o score final.</div>
-        <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${answered}/${totalAnswers} respostas preenchidas · ${completedQuestionnaires} questionário(s) completo(s)</div>
+        <div style="font-size:36px;">⚠️</div>
+        <div style="font-size:14px;color:#64748b;margin-top:8px;">Não foi possível calcular o score — verifique se o processo possui etapas.</div>
       </div>`;
   } else {
     // issue #4: mostrar valores BRUTOS (↓ menor = melhor) para burocracia, complexidade e risco
-    const scoreCard = (title, value, sub, weight, color, arrow) =>
-      `<div style="background:#fff;border-top:4px solid ${color};border:1px solid ${color}33;border-radius:10px;padding:14px;flex:1;min-width:120px;text-align:center;">
+    const scoreCard = (title, value, sub, weight, color, arrow, dimmed) =>
+      `<div style="background:#fff;border-top:4px solid ${color};border:1px solid ${color}33;border-radius:10px;padding:14px;flex:1;min-width:120px;text-align:center;${dimmed ? 'opacity:.45;' : ''}">
         <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">${title}</div>
         <div style="font-size:30px;font-weight:900;color:${color};margin:6px 0;">${value}</div>
         <div style="font-size:10px;color:#94a3b8;">${sub}</div>
         <div style="font-size:11px;color:#64748b;margin-top:3px;">${arrow} · peso ${weight}</div>
       </div>`;
 
+    const partialBanner = final.partial ? `
+      <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">📋</span>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#92400e;">Score Parcial — questionários não respondidos</div>
+          <div style="font-size:11px;color:#b45309;">Percepção da Equipe (40%) não incluída. Complete pelo menos 1 questionário para ver o score final.</div>
+          <div style="font-size:11px;color:#b45309;margin-top:2px;">${answered}/${totalAnswers} respostas · ${completedQuestionnaires} questionário(s) completo(s)</div>
+        </div>
+      </div>` : '';
+
     resultHtml = `
-      <div style="text-align:center;padding:28px 20px;background:linear-gradient(135deg,#f8fafc,#fff);border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;">
+      ${partialBanner}
+      <div style="text-align:center;padding:28px 20px;background:linear-gradient(135deg,#f8fafc,#fff);border:1px solid #e2e8f0;border-radius:12px;margin-bottom:16px;${final.partial ? 'border-style:dashed;' : ''}">
         <div style="font-size:48px;margin-bottom:6px;">${final.levelIcon}</div>
         <div style="font-size:56px;font-weight:900;color:${final.levelColor};line-height:1;">${final.final}</div>
-        <div style="font-size:13px;color:#64748b;margin-top:4px;">Score de Maturidade (0–100)</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px;">${final.partial ? 'Score Parcial (0–100) · sem Percepção da Equipe' : 'Score de Maturidade (0–100)'}</div>
         <div style="display:inline-block;padding:5px 20px;border-radius:20px;background:${final.levelColor};color:#fff;font-size:17px;font-weight:800;margin-top:8px;">${final.levelIcon} ${final.level}</div>
         <div style="margin-top:16px;background:#334155;border-radius:8px;height:14px;overflow:hidden;">
           <div style="height:100%;width:${final.final}%;background:linear-gradient(90deg,${final.levelColor}88,${final.levelColor});border-radius:8px;"></div>
@@ -27913,19 +27920,25 @@ function matRender(p) {
       ${levelsLegend}
       <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;">Componentes do score (normalizado 0–100):</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
-        ${scoreCard('Percepção da Equipe', final.equipe+'/100', `média de ${completedQuestionnaires} questionário(s) ↑`, '40%', '#6366f1', '↑ maior = melhor')}
-        ${(()=>{ const rc = final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444'; return scoreCard('Risco Operacional', final.normRisco+'/100', 'maior = melhor', '20%', rc, ''); })()}
-        ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '20%', '#22c55e', '↑ mais lean = melhor')}
-        ${scoreCard('Digitalização', final.normAutom+'/100', 'baseado no questionário ↑', '10%', '#0891b2', '↑ maior = melhor')}
-        ${scoreCard('Automação', final.normAutomacao+'/100', '% atividades automáticas ⚙️ ↑', '10%', '#7c3aed', '↑ mais automático = melhor')}
+        ${scoreCard('Percepção da Equipe', final.equipe !== null ? final.equipe+'/100' : '—', final.equipe !== null ? `média de ${completedQuestionnaires} questionário(s) ↑` : 'preencha os questionários', '40%', '#6366f1', '↑ maior = melhor', final.partial)}
+        ${(()=>{ const rc = final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444'; return scoreCard('Risco Operacional', final.normRisco+'/100', 'maior = melhor', '20%', rc, '', false); })()}
+        ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '20%', '#22c55e', '↑ mais lean = melhor', false)}
+        ${scoreCard('Digitalização', final.normAutom+'/100', 'baseado no questionário ↑', '10%', '#0891b2', '↑ maior = melhor', false)}
+        ${scoreCard('Automação', final.normAutomacao+'/100', '% atividades automáticas ⚙️ ↑', '10%', '#7c3aed', '↑ mais automático = melhor', false)}
       </div>
       <div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:16px;">
-        Score = Equipe×40% + Risco×20% + Lean×20% + Digitalização×10% + Automação×10% — todos normalizados 0–100 (100 = mais maduro)
+        ${final.partial
+          ? 'Score Parcial = (Risco×20% + Lean×20% + Digitalização×10% + Automação×10%) ÷ 60% — normalizado para escala 0–100'
+          : 'Score = Equipe×40% + Risco×20% + Lean×20% + Digitalização×10% + Automação×10% — todos normalizados 0–100 (100 = mais maduro)'}
       </div>
       <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-        ${isEditor ? `
+        ${isEditor && !final.partial ? `
         <button onclick="matSaveSnapshot('${p}')"
           style="padding:10px 24px;background:#1B3022;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(27,48,34,.55);">
+          💾 Salvar Nota
+        </button>` : isEditor ? `
+        <button disabled title="Complete pelo menos 1 questionário para salvar a nota"
+          style="padding:10px 24px;background:#94a3b8;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:not-allowed;display:inline-flex;align-items:center;gap:8px;">
           💾 Salvar Nota
         </button>` : ''}
         <button onclick="matExportPdf('${p}')"
@@ -27934,7 +27947,7 @@ function matRender(p) {
         </button>
       </div>
       <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:-12px;margin-bottom:20px;">
-        ${isEditor ? '"Salvar Nota" registra a pontuação com a data de hoje · ' : ''}"Exportar PDF" gera relatório completo
+        ${isEditor && !final.partial ? '"Salvar Nota" registra a pontuação com a data de hoje · ' : isEditor ? 'Complete os questionários para habilitar "Salvar Nota" · ' : ''}"Exportar PDF" gera relatório completo
       </div>
       `;
   }
@@ -27997,7 +28010,7 @@ function matRender(p) {
 // ── Maturidade: Histórico de snapshots ──────────────────────────────────
 function matSaveSnapshot(p) {
   const final = matComputeFinal(p);
-  if(!final) { showToast('Responda ao menos 1 questionário completo antes de salvar.', 'warn'); return; }
+  if(!final || final.partial) { showToast('Responda ao menos 1 questionário completo antes de salvar a nota.', 'warn'); return; }
   const mat = matGetData(p);
   if(!Array.isArray(mat.snapshots)) mat.snapshots = [];
   const today = new Date().toISOString().slice(0,10);
@@ -28123,35 +28136,37 @@ function matExportPdf(p) {
         <div class="score-label">/ 100</div>
       </div>
       <div class="score-info">
-        <div class="level-badge" style="background:${final.levelColor};">${final.levelIcon} ${final.level}</div>
+        <div class="level-badge" style="background:${final.levelColor};">${final.levelIcon} ${final.level}${final.partial ? ' (Parcial)' : ''}</div>
+        ${final.partial ? '<div style="font-size:10px;color:#b45309;background:#fef3c7;border-radius:4px;padding:4px 8px;margin:4px 0;">⚠️ Score parcial — Percepção da Equipe não incluída (questionários pendentes)</div>' : ''}
         <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${final.final}%;background:${final.levelColor};"></div></div>
         <table class="comp-table">
           <tr><th>Componente</th><th>Peso</th><th>Valor</th><th>Sentido</th><th>Barra</th></tr>
           ${[
-            ['👥 Percepção da Equipe',  '40%', final.equipe,    '#6366f1', '↑ maior = melhor', 'Média das respostas de 3 questionários de percepção (12 afirmações, excluindo as 2 de digitalização = 10 afirmações). Concordo=0, Concordo Parcialmente=50, Discordo=100.'],
+            ['👥 Percepção da Equipe',  '40%', final.equipe !== null ? final.equipe : '—',    '#6366f1', '↑ maior = melhor', final.equipe !== null ? 'Média das respostas de 3 questionários de percepção (12 afirmações, excluindo as 2 de digitalização = 10 afirmações). Concordo=0, Concordo Parcialmente=50, Discordo=100.' : 'Não calculado — nenhum questionário completo preenchido.'],
             ['⚠️ Risco Operacional',   '20%', final.normRisco, '#ef4444', '100 = risco mínimo (invertido)', 'Decaimento exponencial (meia-vida ≈ 45 pts) sobre: decisões×2 + handoffs×2 + pessoas indispensáveis×5 + sistemas críticos×3 + eventos início×1,5 + eventos fim×1. Score bruto alto → nota baixa.'],
             ['🌿 Lean Operacional',     '20%', final.normLean,      '#22c55e', '100 = totalmente lean', 'execução ÷ (execução + aprovações + controle) × 100. Mede a proporção de atividades de valor direto vs. etapas de controle/burocracia. Neutro (50) quando nenhuma natureza preenchida.'],
             ['💻 Digitalização',        '10%', final.normAutom,     '#0891b2', '100 = totalmente digitalizado', 'Baseado nas 2 afirmações de digitalização do eixo Tecnologia (Q5 e Q6). Discordo=100, Concordo Parcialmente=50, Concordo=0. Neutro (50) quando não respondido.'],
             ['⚙️ Automação',            '10%', final.normAutomacao, '#7c3aed', '100 = totalmente automatizado', 'Percentual de atividades marcadas com ⚙️ (automático) ÷ total de atividades. Marque via ícone ⚙️ em cada atividade no fluxo.'],
           ].map(([lbl, peso, val, col, sentido, formula]) => `
-            <tr>
+            <tr${val === '—' ? ' style="opacity:.5;"' : ''}>
               <td>${lbl}</td>
               <td style="text-align:center;">${peso}</td>
-              <td style="text-align:center;font-weight:700;color:${col};">${val}/100</td>
+              <td style="text-align:center;font-weight:700;color:${col};">${val}${val !== '—' ? '/100' : ''}</td>
               <td style="font-size:10px;color:#64748b;white-space:nowrap;">${sentido}</td>
-              <td><div style="background:#e2e8f0;border-radius:4px;height:8px;width:100px;overflow:hidden;"><div style="height:8px;width:${val}%;background:${col};border-radius:4px;"></div></div></td>
+              <td>${val !== '—' ? `<div style="background:#e2e8f0;border-radius:4px;height:8px;width:100px;overflow:hidden;"><div style="height:8px;width:${val}%;background:${col};border-radius:4px;"></div></div>` : '—'}</td>
             </tr>
             <tr style="background:#f8fafc;">
               <td colspan="5" style="font-size:10px;color:#94a3b8;padding:3px 8px 6px;">${formula}</td>
             </tr>`).join('')}
         </table>
         <p class="formula-note" style="margin-top:10px;padding:8px 10px;background:#334155;border-radius:6px;border-left:3px solid #1B3022;">
-          <strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,40) + (Risco × 0,20) + (Lean × 0,20) + (Digitalização × 0,10) + (Automação × 0,10)<br>
-          <span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span><br><br>
-          <strong>Lean</strong> = execução ÷ (execução + aprovações + controle). <strong>Automação</strong> = % de atividades marcadas com ⚙️ no fluxo.
+          ${final.partial
+            ? '<strong>Fórmula Parcial:</strong> Score = (Risco×0,20 + Lean×0,20 + Digitalização×0,10 + Automação×0,10) ÷ 0,60<br><span style="color:#fbbf24;">Complete os questionários de percepção para ver o score final completo.</span>'
+            : '<strong>Fórmula do Score Final:</strong> Score = (Equipe × 0,40) + (Risco × 0,20) + (Lean × 0,20) + (Digitalização × 0,10) + (Automação × 0,10)'}
+          <br><span style="color:#94a3b8;">Todos os componentes são normalizados para a escala 0–100, onde 100 representa sempre o estado mais maduro/favorável.</span>
         </p>
       </div>
-    </div>` : `<div class="empty-block">⚠️ Score não disponível — nenhum questionário foi respondido completamente.</div>`;
+    </div>` : `<div class="empty-block">⚠️ Score não disponível — verifique se o processo possui etapas cadastradas.</div>`;
 
   // ── Métricas ───────────────────────────────────────────────────────────
   const metricsBlock = `
