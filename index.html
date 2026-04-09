@@ -977,7 +977,7 @@
   button.home-card{
     padding: 24px 28px 22px !important;
     text-align: left !important;
-  // }
+  }
   .home-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(27,48,34,.55); }
   .home-card-icon {
     width: 48px; height: 48px; border-radius: 12px;
@@ -1567,6 +1567,7 @@
       <button data-mod="home"        data-sortkey="home"        class="sidebar-pat-btn" onclick="closeSidebar();showHome();" style="margin-bottom:8px;background:#047857;color:white;border:none;">🏠 Página Inicial</button>
       <button data-mod="process-mgmt" data-sortkey="process-mgmt" class="sidebar-pat-btn" onclick="closeSidebar();showProcessManagementHub();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(15,91,87,.5);">🧭 Gestão de Processos</button>
       <button data-mod="projects-mgmt" data-sortkey="projects-mgmt" class="sidebar-pat-btn" onclick="closeSidebar();showProjectManagementHub();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(37,99,235,.5);">📁 Gestão de Projetos</button>
+      <button data-mod="bi"          data-sortkey="bi"          class="sidebar-pat-btn" onclick="closeSidebar();showBiModule();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(245,158,11,.5);">📊 Cadeia de Valor e Mapa Estratégico</button>
       <button data-mod="repo"        data-sortkey="repo"        class="sidebar-pat-btn" onclick="closeSidebar();showRepoModule();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(225,29,72,.5);">📚 Documentos e Manuais</button>
       <button data-mod="drops"       data-sortkey="drops"       class="sidebar-pat-btn" onclick="closeSidebar();showDropsModule();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(14,165,233,.5);">💧 Drops de Conhecimento</button>
       <button data-mod="epp"         data-sortkey="epp"         class="sidebar-pat-btn" onclick="closeSidebar();openEppIfAllowed();" style="margin-bottom:4px;background:#047857;color:white;border-color:rgba(59,130,246,.5);">🏢 EPP</button>
@@ -1632,7 +1633,7 @@
     <div>
       <div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#00a86b;margin-bottom:6px;">CAGE-RS · Contadoria e Auditoria-Geral do Estado</div>
       <div style="font-family:'DM Serif Display',serif;font-size:34px;color:#1B3022;line-height:1.15;">SIGA</div>
-      <div style="font-size:15px;color:#64748b;margin-top:4px;font-weight:500;">Sistema Integrado de Gestão Estratégica Alinhada</div>
+      <div style="font-size:15px;color:#64748b;margin-top:4px;font-weight:500;">SIGA Sistema Integrado de Gestão Estratégica e Alinhamento</div>
     </div>
     <!-- Logos -->
     <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
@@ -1652,6 +1653,30 @@
         </div>
         <button id="logo2-remove-btn" onclick="event.stopPropagation();logo2Remove()" style="display:none;position:absolute;top:4px;right:6px;font-size:11px;color:#94a3b8;background:#334155;border-radius:4px;padding:1px 5px;cursor:pointer;border:none;" title="Remover logo">✕</button>
         <input type="file" id="logo2-file-input" accept="image/*" style="display:none;" onchange="logo2FileSelected(this.files[0])">
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ MÓDULOS ══ -->
+  <div id="home-block-processos" style="display:block;margin-bottom:40px;">
+    <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
+      <button class="home-card" data-sortkey="process-mgmt" onclick="showProcessManagementHub()" style="border-top:4px solid #0f5b57;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
+        <div class="home-card-icon" style="background:#047857;color:white;">🧭</div>
+        <div class="home-card-title" contenteditable="false">Gestão de Processos</div>
+        <div class="home-card-desc" contenteditable="false">Hub com os submódulos de Arquitetura de Processos, Mapeamentos, Auditoria de Processos, Simulador de Processos e Modelador BPMN.</div>
+        <div class="home-card-footer">5 submódulos integrados</div>
+      </button>
+      <button class="home-card" data-sortkey="projects-mgmt" onclick="showProjectManagementHub()" style="border-top:4px solid #2563eb;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
+        <div class="home-card-icon" style="background:#047857;color:white;">📁</div>
+        <div class="home-card-title" contenteditable="false">Gestão de Projetos</div>
+        <div class="home-card-desc" contenteditable="false">Novo hub para centralizar futuros submódulos de projetos, portfólio, cronogramas e acompanhamento executivo.</div>
+        <div class="home-card-footer">Módulo-base preparado</div>
+      </button>
+      <button class="home-card" id="home-competency-card" data-sortkey="competency" onclick="if(typeof showCompetencyModule==='function'){showCompetencyModule();}" style="border-top:4px solid #15803d;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
+        <div class="home-card-icon" style="background:#047857;color:white;">👥</div>
+        <div class="home-card-title" contenteditable="false">Gestão de Pessoas</div>
+        <div class="home-card-desc" contenteditable="false">Gerencie quadro de pessoal, competências, trilhas e banco de talentos com busca inteligente.</div>
+        <div class="home-card-footer" id="home-competency-count">0 pessoa(s) ⬢ 0 trilha(s)</div>
       </button>
     </div>
   </div>
@@ -1681,66 +1706,6 @@
         </div>
         <div id="home-projetos-list" style="font-size:13px;color:#94a3b8;font-style:italic;">M&oacute;dulo de gest&atilde;o de projetos em prepara&ccedil;&atilde;o.</div>
       </div>
-    </div>
-  </div>
-
-  <!-- ══ MÓDULOS ══ -->
-  <div id="home-block-processos" style="display:block;margin-bottom:40px;">
-    <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
-      <button class="home-card" data-sortkey="process-mgmt" onclick="showProcessManagementHub()" style="border-top:4px solid #0f5b57;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">🧭</div>
-        <div class="home-card-title" contenteditable="false">Gestão de Processos</div>
-        <div class="home-card-desc" contenteditable="false">Hub com os submódulos de Arquitetura de Processos, Mapeamentos, Auditoria de Processos, Simulador de Processos e Modelador BPMN.</div>
-        <div class="home-card-footer">5 submódulos integrados</div>
-      </button>
-      <button class="home-card" data-sortkey="bi" onclick="showBiModule()" style="border-top:4px solid #f59e0b;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">📊</div>
-        <div class="home-card-title" contenteditable="false">Cadeia de Valor e Mapa Estratégico</div>
-        <div class="home-card-desc" contenteditable="false">Acesse a cadeia de valor institucional e o mapa estratégico da CAGE-RS com indicadores.</div>
-        <div class="home-card-footer">Imagens configuráveis</div>
-      </button>
-      <button class="home-card" data-sortkey="projects-mgmt" onclick="showProjectManagementHub()" style="border-top:4px solid #2563eb;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">📁</div>
-        <div class="home-card-title" contenteditable="false">Gestão de Projetos</div>
-        <div class="home-card-desc" contenteditable="false">Novo hub para centralizar futuros submódulos de projetos, portfólio, cronogramas e acompanhamento executivo.</div>
-        <div class="home-card-footer">Módulo-base preparado</div>
-      </button>
-      <button class="home-card" data-sortkey="ind-cage" onclick="showIndCageModule()" style="border-top:4px solid #e8a020;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">📈</div>
-        <div class="home-card-title" contenteditable="false">Indicadores CAGE</div>
-        <div class="home-card-desc" contenteditable="false">Gerencie indicadores de desempenho, importe resultados do SISPLAN e acompanhe a evolução e comparativos anuais.</div>
-        <div class="home-card-footer" id="home-indcage-count">—</div>
-      </button>
-      <button class="home-card" data-sortkey="cockpit" onclick="showCockpitModule()" style="border-top:4px solid #0ea5e9;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">🎯</div>
-        <div class="home-card-title" contenteditable="false">Cockpit de Gestão</div>
-        <div class="home-card-desc" contenteditable="false">Acompanhe indicadores executivos, sinais de desempenho e uma visão tática consolidada para tomada de decisão.</div>
-        <div class="home-card-footer">Painel de gestão integrada</div>
-      </button>
-      <button class="home-card home-card-editor" data-sortkey="epp" onclick="openEppIfAllowed()" style="border-top:4px solid #3b82f6;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">🏢</div>
-        <div class="home-card-title" contenteditable="false">EPP</div>
-        <div class="home-card-desc" contenteditable="false">Plano Anual de Trabalho e dashboard executivo do EPP, com visão de impacto, cobertura e execução.</div>
-        <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
-      </button>
-      <button class="home-card home-card-editor" data-sortkey="system-mgmt" onclick="openSystemManagementIfAllowed()" style="border-top:4px solid #9333ea;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">⚙️</div>
-        <div class="home-card-title" contenteditable="false">Gestão do Sistema</div>
-        <div class="home-card-desc" contenteditable="false">Administração do SIGA: tabelas de referência, usuários, parâmetros globais e monitoramento operacional.</div>
-        <div class="home-card-footer home-card-editor-badge">🔒 Apenas editores</div>
-      </button>
-      <button class="home-card" data-sortkey="repo" onclick="showRepoModule()" style="border-top:4px solid #e11d48;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">📚</div>
-        <div class="home-card-title" contenteditable="false">Documentos e Manuais</div>
-        <div class="home-card-desc" contenteditable="false">Repositório de documentos do escritório de processos: PDFs, Word, apresentações e imagens.</div>
-        <div class="home-card-footer" id="home-repo-count">—</div>
-      </button>
-      <button class="home-card" data-sortkey="drops" onclick="showDropsModule()" style="border-top:4px solid #0ea5e9;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">💧</div>
-        <div class="home-card-title" contenteditable="false">Drops de Conhecimento</div>
-        <div class="home-card-desc" contenteditable="false">Publicações mensais do escritório de processos com dicas, conceitos e boas práticas.</div>
-        <div class="home-card-footer" id="home-drops-count">—</div>
-      </button>
     </div>
   </div>
 
@@ -1944,6 +1909,7 @@
     <div style="display:flex;gap:0;">
       <button class="epp-tab active" data-system-tab="config" onclick="systemTab('config',this)">&#9881;&#65039; Tabelas de Refer&ecirc;ncia</button>
       <button class="epp-tab" data-system-tab="users" onclick="systemTab('users',this)">&#128101; Usu&aacute;rios</button>
+      <button class="epp-tab" data-system-tab="modules" onclick="systemTab('modules',this)" id="epp-tab-modules" style="display:none;">&#129513; M&oacute;dulos</button>
       <button class="epp-tab" data-system-tab="params" onclick="systemTab('params',this)">&#128736; Par&acirc;metros Globais</button>
       <button class="epp-tab" data-system-tab="monitoring" onclick="systemTab('monitoring',this)" id="epp-tab-monitoring">&#128203; Monitoramento</button>
       <button class="epp-tab" data-system-tab="avisos" onclick="systemTab('avisos',this)" id="epp-tab-avisos">&#128226; Avisos</button>
@@ -2351,6 +2317,18 @@
       <button class="btn btn-outline" style="font-size:13px;" onclick="avisosCloseForm()">Cancelar</button>
     </div>
   </div>
+</div>
+
+<!-- EPP: Module visibility panel -->
+<div id="epp-modules-panel" style="display:none;max-width:900px;margin:0 auto;padding:24px 32px 80px;">
+  <div style="margin-bottom:18px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div>
+      <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">&#129513; Visibilidade de M&oacute;dulos</h3>
+      <p style="font-size:13px;color:#64748b;margin:0;">Defina quais m&oacute;dulos ficam vis&iacute;veis para os perfis Editor e Visualizador. Administradores sempre visualizam tudo.</p>
+    </div>
+    <button class="btn btn-outline" style="font-size:12px;padding:6px 12px;" onclick="resetModuleVisibilityDefaults()">Restaurar padr&atilde;o</button>
+  </div>
+  <div id="epp-modules-list-panel"></div>
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -7478,14 +7456,6 @@ function _resetNpopTextFields() {
   });
 }
 
-function _renderObjTags(containerId, objs) {
-  const el = document.getElementById(containerId);
-  if(!el) return;
-  el.innerHTML = objs && objs.length
-    ? objs.map(o=>`<span style="display:inline-block;background:#e8f0fe;color:#1a56db;font-size:11px;padding:2px 9px;border-radius:10px;border:1px solid #c5d8f5;">${o}</span>`).join('')
-    : '<span style="color:#94a3b8;font-size:12px;">Nenhum objetivo estratégico associado</span>';
-}
-
 function _resetNpopStatusFields() {
   ['nf-unidade','nf-status-display','nf-status-map','nf-obj-estrategico','npop-json-paste'].forEach(id => {
     const el = document.getElementById(id);
@@ -10092,7 +10062,6 @@ const CONFIG_DEFAULTS = {
     { key:'execucao',     label:'Execução',     icon:'▶',  bg:'#dcfce7', color:'#166534' },
     { key:'planejamento', label:'Planejamento',  icon:'🗓', bg:'#e0f2fe', color:'#075985' },
     { key:'revisao',      label:'Revisão',       icon:'🔍', bg:'#dbeafe', color:'#1e40af' },
-    { key:'controle',     label:'Controle',      icon:'🔎', bg:'#f1f5f9', color:'#334155' },
     { key:'aprovacao',    label:'Aprovação',     icon:'✅', bg:'#fef9c3', color:'#854d0e' },
     { key:'distribuicao', label:'Distribuição',  icon:'📤', bg:'#f3e8ff', color:'#6b21a8' },
     { key:'comunicacao',  label:'Comunicação',   icon:'📢', bg:'#ffedd5', color:'#9a3412' },
@@ -10107,11 +10076,12 @@ function getConfig(key) {
     // Migration: servidoresEPP may be stored as plain strings from earlier version
     if(key === 'servidoresEPP' && Array.isArray(val) && val.length > 0 && typeof val[0] === 'string')
       return val.map(nome => ({nome, email:''}));
-    // Migration: naturezaAtividade — add missing entries from defaults
+    // Migration: naturezaAtividade — add missing entries from defaults and drop deprecated ones
     if(key === 'naturezaAtividade' && Array.isArray(val)) {
-      const existingKeys = new Set(val.map(n => n.key));
+      const cleaned = val.filter(n => n && n.key !== 'controle');
+      const existingKeys = new Set(cleaned.map(n => n.key));
       const missing = (CONFIG_DEFAULTS.naturezaAtividade || []).filter(n => !existingKeys.has(n.key));
-      if(missing.length) return [...val, ...missing];
+      if(missing.length || cleaned.length !== val.length) return [...cleaned, ...missing];
     }
     // Migration: macroprocessos — renomeia entradas antigas salvas na nuvem
     if(key === 'macroprocessos' && Array.isArray(val)) {
@@ -10152,6 +10122,9 @@ function getMacroprocessos() { return getConfig('macroprocessos'); }
 
 // ── Classificação automática de natureza por verbos ──────────────────────
 const NATUREZA_VERBOS = {
+  execucao:     ['controlar','acompanhar','monitorar','supervisionar','gerenciar',
+                 'coordenar','gerir','medir','calcular','quantificar','registrar',
+                 'lancar','inserir','alimentar','processar','atualizar'],
   aprovacao:    ['aprovar','assinar','atestar','validar','autorizar','homologar','ratificar',
                  'deferir','indeferir','sancionar','endossar','certificar','deliberar',
                  'diligenciar','aquiescer','chancela','referendar','autenticar','vetar',
@@ -10172,9 +10145,6 @@ const NATUREZA_VERBOS = {
                  'desenhar','desenvolver','redigir','escrever','minutar','instaurar',
                  'instruir','estabelecer','padronizar','mapear','propor','criar',
                  'constituir','institui'],
-  controle:     ['controlar','acompanhar','monitorar','supervisionar','gerenciar',
-                 'coordenar','gerir','medir','calcular','quantificar','registrar',
-                 'lancar','inserir','alimentar','processar','atualizar'],
 };
 // Constrói índice normalizado: stem → natureza (calculado uma vez)
 let _natVerbIndex = null;
@@ -10341,6 +10311,7 @@ function applySidebarNav() {
   container.replaceChildren(...(homeBtn ? [homeBtn, ...otherButtons] : otherButtons));
   container.querySelectorAll('[data-mod]').forEach(btn => { btn.style.display = ''; });
   applySidebarBtnColors();
+  applyModuleVisibilityRules();
 }
 
 function _getSidebarButtonSortLabel(button) {
@@ -12790,7 +12761,7 @@ let isViewer = false;   // acesso leitura apenas (sem edição/PAT)
 let workspaceId = localStorage.getItem('gestpop_wsid') || sessionStorage.getItem('gestpop_wsid') || null;
 
 function hideAllModules() {
-  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','simulator-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-work-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','epp-avisos-panel','indicadores-cage-module','indcage-panel','cockpit-module','process-management-module','project-management-module'].forEach(id => {
+  ['repo-module','drops-module','pat-module','bi-module','organograma-module','quadro-module','simulator-module','arq-module','bpmn-module','fd-module','ai-module','ai-relatorio-module','audit-module','epp-work-module','epp-module','epp-dash-panel','epp-config-panel','epp-users-panel','epp-modules-panel','epp-params-panel','epp-monitoring-panel','epp-avisos-panel','indicadores-cage-module','indcage-panel','cockpit-module','process-management-module','project-management-module'].forEach(id => {
     const el = document.getElementById(id);
     if(el) { el.style.display = 'none'; el.classList.remove('active'); }
   });
@@ -12887,6 +12858,8 @@ function _applyPermissionsCore() {
       showAccessRequestOverlay();
     }
   }
+
+  applyModuleVisibilityRules();
 }
 
 // ── Viewer Preview (apenas admin) ──────────────────────────
@@ -19307,6 +19280,103 @@ function homeRefresh() {
   try { if(typeof editMode !== 'undefined' && editMode) _dndReinitStats(); } catch(e) { console.warn('[siga]', e); }
 
   renderHomeInfoPanel();
+  applyModuleVisibilityRules();
+}
+
+const _MODULE_VISIBILITY_DEFS = [
+  { key:'process-mgmt', label:'🧭 Gestão de Processos' },
+  { key:'projects-mgmt', label:'📁 Gestão de Projetos' },
+  { key:'bi', label:'📊 Cadeia de Valor e Mapa Estratégico' },
+  { key:'cockpit', label:'🎯 Cockpit de Gestão' },
+  { key:'ind-cage', label:'📈 Indicadores CAGE' },
+  { key:'epp', label:'🏢 EPP' },
+  { key:'repo', label:'📚 Documentos e Manuais' },
+  { key:'drops', label:'💧 Drops de Conhecimento' },
+  { key:'quadro', label:'🗒 Quadro de Esboço' },
+  { key:'arq', label:'🏛 Arquitetura de Processos' },
+];
+
+function _getModuleVisibility() {
+  const saved = getConfig('moduleVisibility') || {};
+  const normalized = {};
+  _MODULE_VISIBILITY_DEFS.forEach(function(def) {
+    const row = saved[def.key] || {};
+    normalized[def.key] = {
+      editor: row.editor !== false,
+      viewer: row.viewer !== false,
+    };
+  });
+  return normalized;
+}
+
+function _setModuleVisibilityValue(key, profile, checked) {
+  if(!isAdmin) { showToast('🔒 Apenas administradores podem alterar esta configuração.', 'warn'); return; }
+  const raw = { ...(getConfig('moduleVisibility') || {}) };
+  const row = { ...(raw[key] || {}) };
+  row[profile] = Boolean(checked);
+  raw[key] = row;
+  setConfig('moduleVisibility', raw);
+  markChanged(true);
+  applyModuleVisibilityRules();
+}
+
+function _isModuleVisibleForCurrentProfile(key) {
+  if(isAdmin) return true;
+  const vis = _getModuleVisibility();
+  const row = vis[key] || { editor:true, viewer:true };
+  if(isEditor) return row.editor !== false;
+  if(isViewer) return row.viewer !== false;
+  return true;
+}
+
+function applyModuleVisibilityRules() {
+  if(typeof getConfig !== 'function') return;
+  _MODULE_VISIBILITY_DEFS.forEach(function(def) {
+    const visible = _isModuleVisibleForCurrentProfile(def.key);
+    const sidebarBtn = document.querySelector('#sidebar-nav-btns [data-mod="' + def.key + '"]');
+    if(sidebarBtn) sidebarBtn.style.display = visible ? '' : 'none';
+    const homeCard = document.querySelector('#home-cards-grid [data-sortkey="' + def.key + '"]');
+    if(homeCard) homeCard.style.display = visible ? '' : 'none';
+  });
+}
+
+function renderModulesPanel() {
+  const panel = document.getElementById('epp-modules-list-panel');
+  if(!panel) return;
+  if(!isAdmin) {
+    panel.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:14px;">🔒 Apenas administradores podem configurar a visibilidade dos módulos.</div>';
+    return;
+  }
+  const vis = _getModuleVisibility();
+  panel.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:separate;border-spacing:0;background:white;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;">'
+    + '<thead><tr><th style="text-align:left;padding:12px 14px;background:#f8fafc;color:#1B3022;font-size:12px;font-weight:800;border-bottom:1px solid #e2e8f0;">Módulo</th><th style="text-align:center;padding:12px 10px;background:#f8fafc;color:#1B3022;font-size:12px;font-weight:800;border-bottom:1px solid #e2e8f0;width:140px;">Editor</th><th style="text-align:center;padding:12px 10px;background:#f8fafc;color:#1B3022;font-size:12px;font-weight:800;border-bottom:1px solid #e2e8f0;width:140px;">Visualizador</th></tr></thead>'
+    + '<tbody>'
+    + _MODULE_VISIBILITY_DEFS.map(function(def) {
+      const row = vis[def.key] || { editor:true, viewer:true };
+      return '<tr>'
+        + '<td style="padding:11px 14px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#1B3022;font-weight:600;">' + def.label + '</td>'
+        + '<td style="padding:11px 10px;border-bottom:1px solid #f1f5f9;text-align:center;"><input type="checkbox" data-module-key="' + escapeHtml(def.key) + '" data-module-profile="editor" ' + (row.editor ? 'checked' : '') + ' onchange="toggleModuleVisibility(this)" style="width:16px;height:16px;cursor:pointer;"></td>'
+        + '<td style="padding:11px 10px;border-bottom:1px solid #f1f5f9;text-align:center;"><input type="checkbox" data-module-key="' + escapeHtml(def.key) + '" data-module-profile="viewer" ' + (row.viewer ? 'checked' : '') + ' onchange="toggleModuleVisibility(this)" style="width:16px;height:16px;cursor:pointer;"></td>'
+        + '</tr>';
+    }).join('')
+    + '</tbody></table></div>';
+}
+
+function toggleModuleVisibility(el) {
+  const key = el?.dataset?.moduleKey;
+  const profile = el?.dataset?.moduleProfile;
+  if(!key || !profile) return;
+  _setModuleVisibilityValue(key, profile, el.checked);
+}
+
+function resetModuleVisibilityDefaults() {
+  if(!isAdmin) { showToast('🔒 Apenas administradores podem alterar esta configuração.', 'warn'); return; }
+  if(!confirm('Restaurar visibilidade padrão (todos os módulos visíveis para Editor e Visualizador)?')) return;
+  setConfig('moduleVisibility', {});
+  markChanged(true);
+  renderModulesPanel();
+  applyModuleVisibilityRules();
+  showToast('✅ Visibilidade padrão restaurada.', 'success');
 }
 
 // ══ HOME INFO PANEL ══════════════════════════════════════════════════
@@ -21406,6 +21476,8 @@ function _showModuleHeader(id) {
 function _toggleSystemMonitoringTab() {
   const tab = document.getElementById('epp-tab-monitoring');
   if(tab) tab.style.display = isAdmin ? '' : 'none';
+  const modulesTab = document.getElementById('epp-tab-modules');
+  if(modulesTab) modulesTab.style.display = isAdmin ? '' : 'none';
 }
 
 function showEppModule(tab) {
@@ -21420,6 +21492,7 @@ function showEppModule(tab) {
 function showSystemManagementModule(tab) {
   _navPush();
   _systemCurrentTab = tab || _systemCurrentTab || 'config';
+  if(_systemCurrentTab === 'modules' && !isAdmin) _systemCurrentTab = 'config';
   hideHome();
   hideAllModules();
   _showModuleHeader('epp-module');
@@ -21455,7 +21528,7 @@ function eppTab(tab, el) {
 }
 
 function _hideSystemPanels() {
-  ['epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','epp-avisos-panel']
+  ['epp-config-panel','epp-users-panel','epp-modules-panel','epp-params-panel','epp-monitoring-panel','epp-avisos-panel']
     .forEach((id) => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
 }
 
@@ -21471,6 +21544,7 @@ function _showUsersPanel() {
 function _showSystemPanel(tab) {
   if(tab === 'config') document.getElementById('epp-config-panel').style.display = 'block';
   if(tab === 'users') _showUsersPanel();
+  if(tab === 'modules') document.getElementById('epp-modules-panel').style.display = 'block';
   if(tab === 'params') document.getElementById('epp-params-panel').style.display = 'block';
   if(tab === 'monitoring') document.getElementById('epp-monitoring-panel').style.display = 'block';
   if(tab === 'avisos') document.getElementById('epp-avisos-panel').style.display = 'block';
@@ -21478,6 +21552,7 @@ function _showSystemPanel(tab) {
 
 function _renderSystemTab(tab) {
   if(tab === 'config') renderConfigPanel();
+  if(tab === 'modules') renderModulesPanel();
   if(tab === 'params') eppRenderParams();
   if(tab === 'monitoring') eppMonTab('online');
   if(tab === 'avisos') renderAvisosPanel();
@@ -21485,6 +21560,7 @@ function _renderSystemTab(tab) {
 
 function systemTab(tab, el) {
   if(tab === 'monitoring' && !isAdmin) { showToast('🔒 Acesso restrito a administradores.', 'warn'); return systemTab('config'); }
+  if(tab === 'modules' && !isAdmin) { showToast('🔒 Acesso restrito a administradores.', 'warn'); return systemTab('config'); }
   _systemCurrentTab = tab;
   _activateModuleTab('.epp-tab[data-system-tab]', tab, el, 'data-system-tab');
   _hideSystemPanels();
@@ -23608,6 +23684,7 @@ function _flowEnsureDecisionParent(step, pending) {
 }
 
 function _flowFindOrCreateBranch(branches, label) {
+  if(!Array.isArray(branches)) branches = [];
   const found = branches.find(item => String(item.label || '') === label);
   if(found) return found;
   const created = { label, actions:[] };
@@ -23617,15 +23694,20 @@ function _flowFindOrCreateBranch(branches, label) {
 
 function _flowBranchDecision(branch, label) {
   const last = actionObj(branch.actions[branch.actions.length - 1] || {});
-  if(last.type === 'decisao') return last;
+  if(last.type === 'decisao') {
+    if(!Array.isArray(last.branches)) last.branches = [];
+    return last;
+  }
   const created = { type:'decisao', text:label, decisionText:label, actor:'', duracao:'', sistemas:'', documentos:'', observacoes:'', pontosMelhoria:'', natureza:'', eventoTipo:'', automatico:false, loop:false, branches:[] };
   branch.actions.push(created);
   return created;
 }
 
 function _flowAttachToBranches(root, path, action) {
+  if(!Array.isArray(root.branches)) root.branches = [];
   let current = root;
   path.forEach((label, index) => {
+    if(!Array.isArray(current.branches)) current.branches = [];
     const branch = _flowFindOrCreateBranch(current.branches, label);
     if(index === path.length - 1) branch.actions.push(action);
     else current = _flowBranchDecision(branch, label);
