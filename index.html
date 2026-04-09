@@ -1918,6 +1918,7 @@
       <button class="epp-tab" data-system-tab="users" onclick="systemTab('users',this)">&#128101; Usu&aacute;rios</button>
       <button class="epp-tab" data-system-tab="params" onclick="systemTab('params',this)">&#128736; Par&acirc;metros Globais</button>
       <button class="epp-tab" data-system-tab="monitoring" onclick="systemTab('monitoring',this)" id="epp-tab-monitoring">&#128203; Monitoramento</button>
+      <button class="epp-tab" data-system-tab="modules" onclick="systemTab('modules',this)" id="epp-tab-modules" style="display:none;">&#129529; M&oacute;dulos</button>
     </div>
   </div>
 </div>
@@ -2275,6 +2276,15 @@
     </div>
     <button class="mon-load-more" id="mon-access-more" style="display:none;" onclick="eppLoadMoreAccess()">Carregar mais...</button>
   </div>
+</div>
+
+<!-- EPP: Modules visibility panel -->
+<div id="epp-modules-panel" style="display:none;max-width:1100px;margin:0 auto;padding:24px 32px 80px;">
+  <div style="margin-bottom:20px;">
+    <h3 style="font-size:16px;font-family:'DM Serif Display',serif;color:#1B3022;margin:0 0 4px;">&#129529; Visibilidade de M&oacute;dulos</h3>
+    <p style="font-size:13px;color:#64748b;margin:0;">Defina quais m&oacute;dulos ficam vis&iacute;veis para cada perfil. Apenas administradores v&ecirc;em tudo.</p>
+  </div>
+  <div id="epp-modules-content"><!-- preenchido por renderModulesPanel() --></div>
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -12636,10 +12646,17 @@ function _applyPermissionsCore() {
 
   const hasAccess = isEditor || isViewer; // qualquer um dos dois tem acesso ao sistema
 
+  // Aba "Módulos" no Gestão do Sistema — somente admin
+  const modTab = document.getElementById('epp-tab-modules');
+  if(modTab) modTab.style.display = isAdmin ? '' : 'none';
+
   // Atualizar cards da home imediatamente ao aplicar permissões
   document.querySelectorAll('.home-card-editor').forEach(el => {
     el.style.display = isEditor ? '' : 'none';
   });
+
+  // Aplicar visibilidade configurada de módulos (não-admin)
+  if(typeof applyModuleVisibility === 'function') applyModuleVisibility();
 
   if(hasAccess) {
     // Viewer e Editor: removem overlay de bloqueio
@@ -21083,7 +21100,7 @@ function eppTab(tab, el) {
 }
 
 function _hideSystemPanels() {
-  ['epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel']
+  ['epp-config-panel','epp-users-panel','epp-params-panel','epp-monitoring-panel','epp-modules-panel']
     .forEach((id) => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
 }
 
@@ -21097,25 +21114,123 @@ function _showUsersPanel() {
 }
 
 function _showSystemPanel(tab) {
-  if(tab === 'config') document.getElementById('epp-config-panel').style.display = 'block';
-  if(tab === 'users') _showUsersPanel();
-  if(tab === 'params') document.getElementById('epp-params-panel').style.display = 'block';
+  if(tab === 'config')     document.getElementById('epp-config-panel').style.display = 'block';
+  if(tab === 'users')      _showUsersPanel();
+  if(tab === 'params')     document.getElementById('epp-params-panel').style.display = 'block';
   if(tab === 'monitoring') document.getElementById('epp-monitoring-panel').style.display = 'block';
+  if(tab === 'modules')    document.getElementById('epp-modules-panel').style.display = 'block';
 }
 
 function _renderSystemTab(tab) {
-  if(tab === 'config') renderConfigPanel();
-  if(tab === 'params') eppRenderParams();
+  if(tab === 'config')     renderConfigPanel();
+  if(tab === 'params')     eppRenderParams();
   if(tab === 'monitoring') eppMonTab('online');
+  if(tab === 'modules')    renderModulesPanel();
 }
 
 function systemTab(tab, el) {
-  if(tab === 'monitoring' && !isAdmin) { showToast('🔒 Acesso restrito a administradores.', 'warn'); return systemTab('config'); }
+  if((tab === 'monitoring' || tab === 'modules') && !isAdmin) {
+    showToast('🔒 Acesso restrito a administradores.', 'warn');
+    return systemTab('config');
+  }
   _systemCurrentTab = tab;
   _activateModuleTab('.epp-tab[data-system-tab]', tab, el, 'data-system-tab');
   _hideSystemPanels();
   _showSystemPanel(tab);
   _renderSystemTab(tab);
+}
+
+// ── Visibilidade de Módulos ────────────────────────────────────────────────
+const _CONFIGURABLE_MODULES = [
+  { key: 'process-mgmt',  label: '🧭 Gestão de Processos'  },
+  { key: 'projects-mgmt', label: '📁 Gestão de Projetos'   },
+  { key: 'bi',            label: '📊 BI e Relatórios'       },
+  { key: 'cockpit',       label: '🎯 Cockpit de Gestão'     },
+  { key: 'ind-cage',      label: '📈 Indicadores CAGE'      },
+  { key: 'epp',           label: '🏢 EPP'                   },
+  { key: 'repo',          label: '📚 Documentos e Manuais'  },
+  { key: 'drops',         label: '💧 Drops de Conhecimento' },
+  { key: 'quadro',        label: '🗒 Quadro de Esboço'      },
+  { key: 'arq',           label: '🏛 Arquitetura de Processos' },
+];
+
+function _getModuleVisibilityCfg() {
+  DATA.config = DATA.config || {};
+  DATA.config.moduleVisibility = DATA.config.moduleVisibility || {};
+  return DATA.config.moduleVisibility;
+}
+
+function getModuleVisible(modKey, role) {
+  const cfg = _getModuleVisibilityCfg();
+  if(!cfg[modKey]) return true; // padrão: visível
+  return cfg[modKey][role] !== false;
+}
+
+function setModuleVisible(modKey, role, visible) {
+  const cfg = _getModuleVisibilityCfg();
+  if(!cfg[modKey]) cfg[modKey] = {};
+  cfg[modKey][role] = visible;
+  markChanged(true, true);
+  applyModuleVisibility();
+}
+
+function applyModuleVisibility() {
+  if(isAdmin) return; // admin vê tudo sempre
+  const role = isEditor ? 'editor' : 'viewer';
+  _CONFIGURABLE_MODULES.forEach(({ key }) => {
+    const visible = getModuleVisible(key, role);
+    // Sidebar buttons (data-mod) e home cards (data-sortkey)
+    document.querySelectorAll(`[data-mod="${key}"], .home-card[data-sortkey="${key}"]`).forEach(el => {
+      el.style.display = visible ? '' : 'none';
+    });
+  });
+}
+
+function renderModulesPanel() {
+  if(!isAdmin) return;
+  const content = document.getElementById('epp-modules-content');
+  if(!content) return;
+  const cfg = _getModuleVisibilityCfg();
+
+  content.innerHTML = `
+    <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:#92400e;">
+      ⚠️ <strong>Apenas administradores veem todos os módulos.</strong> As configurações abaixo se aplicam a editores e visualizadores.
+      Módulos ocultos ficam invisíveis na barra lateral e na página inicial para os perfis selecionados.
+    </div>
+    <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);">
+      <thead>
+        <tr style="background:#f8fafc;">
+          <th style="text-align:left;padding:12px 16px;font-size:12px;color:#64748b;font-weight:700;border-bottom:1px solid #e2e8f0;">Módulo</th>
+          <th style="text-align:center;padding:12px 16px;font-size:12px;color:#6366f1;font-weight:700;border-bottom:1px solid #e2e8f0;">Editor</th>
+          <th style="text-align:center;padding:12px 16px;font-size:12px;color:#0891b2;font-weight:700;border-bottom:1px solid #e2e8f0;">Visualizador</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${_CONFIGURABLE_MODULES.map(({ key, label }, idx) => {
+          const visEditor = getModuleVisible(key, 'editor');
+          const visViewer = getModuleVisible(key, 'viewer');
+          return `<tr style="border-bottom:1px solid #f1f5f9;${idx % 2 ? 'background:#fafbfc;' : ''}">
+            <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#1B3022;">${label}</td>
+            <td style="text-align:center;padding:12px 16px;">
+              <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                <input type="checkbox" onchange="setModuleVisible('${key}','editor',this.checked)"
+                  ${visEditor ? 'checked' : ''}
+                  style="width:16px;height:16px;cursor:pointer;accent-color:#6366f1;">
+              </label>
+            </td>
+            <td style="text-align:center;padding:12px 16px;">
+              <label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                <input type="checkbox" onchange="setModuleVisible('${key}','viewer',this.checked)"
+                  ${visViewer ? 'checked' : ''}
+                  style="width:16px;height:16px;cursor:pointer;accent-color:#0891b2;">
+              </label>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    <div style="font-size:11px;color:#94a3b8;margin-top:12px;">As alterações são salvas automaticamente e aplicadas imediatamente.</div>
+  `;
 }
 
 function eppSwitchUsersTab(tab) {
