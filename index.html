@@ -23446,7 +23446,9 @@ function _flowBranchPath(path) {
 }
 
 function _flowImportedAction(row) {
-  return { type:row._type, text:row._text, decisionText:row._type === 'decisao' ? row._text : '', actor:row._type === 'atividade' ? String(row['Executor'] || '').trim() : '', duracao:'', sistemas:String(row['Sistema envolvido'] || '').trim(), documentos:'', observacoes:'', pontosMelhoria:'', natureza:row._type === 'atividade' ? String(row['Natureza da atividade'] || '').trim() : '', eventoTipo:'', automatico:_flowBool(row['Automática? (sim ou nao)']), loop:_flowBool(row['Retrabalho? (sim ou nao)']) };
+  const action = { type:row._type, text:row._text, decisionText:row._type === 'decisao' ? row._text : '', actor:row._type === 'atividade' ? String(row['Executor'] || '').trim() : '', duracao:'', sistemas:String(row['Sistema envolvido'] || '').trim(), documentos:'', observacoes:'', pontosMelhoria:'', natureza:row._type === 'atividade' ? String(row['Natureza da atividade'] || '').trim() : '', eventoTipo:'', automatico:_flowBool(row['Automática? (sim ou nao)']), loop:_flowBool(row['Retrabalho? (sim ou nao)']) };
+  if(row._type === 'decisao') action.branches = [];
+  return action;
 }
 
 function _flowImportType(value) {
