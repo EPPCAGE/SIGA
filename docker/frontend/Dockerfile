@@ -2,6 +2,7 @@ FROM docker.io/library/nginx:1.27-alpine
 
 COPY docker/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY index.html /usr/share/nginx/html/index.html
+COPY __main__.js /usr/share/nginx/html/__main__.js
 COPY sw.js /usr/share/nginx/html/sw.js
 COPY public-config.js /usr/share/nginx/html/public-config.js
 COPY modules /usr/share/nginx/html/modules
