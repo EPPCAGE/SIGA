@@ -23499,16 +23499,25 @@ function _flowAppendImportedRow(state, row) {
   const action = _flowImportedAction(row);
   if(!row._path.length) {
     step.actions.push(action);
-    state.pending.set(stepName, action.type === 'decisao' ? action : null);
+    if(action.type === 'decisao') {
+      state.pending.set(stepName, action);
+      state.lastDecision = action; // rastreia globalmente para ramos em outras etapas
+    } else {
+      state.pending.set(stepName, null);
+    }
     return;
   }
-  const parent = _flowEnsureDecisionParent(step, state.pending.get(stepName));
+  // Busca decisão pai: primeiro na mesma etapa, depois na última decisão global
+  const perStepPending = state.pending.get(stepName);
+  const parent = (perStepPending && step.actions.includes(perStepPending))
+    ? perStepPending
+    : (state.lastDecision || null);
   if(parent) _flowAttachToBranches(parent, row._path, action);
   else step.actions.push(action);
 }
 
 function _flowBuildImportedSteps(rows) {
-  const state = { map:new Map(), pending:new Map() };
+  const state = { map:new Map(), pending:new Map(), lastDecision:null };
   rows.map(_flowNormalizeImportRow).filter(row => row._text).forEach(row => _flowAppendImportedRow(state, row));
   return [...state.map.values()];
 }
