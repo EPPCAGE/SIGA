@@ -15632,7 +15632,8 @@ async function buildPptx(D, _popKey) {
         const done  = (ck.items||[]).filter(i => i.checked).length;
         const total = (ck.items||[]).length;
         const pct   = total ? Math.round(done / total * 100) : 0;
-        const barColor = pct >= 80 ? C.green : pct >= 40 ? C.amber : 'EF4444';
+        const _barColor = pct >= 40 ? C.amber : 'EF4444';
+        const barColor = pct >= 80 ? C.green : _barColor;
         const cardH = Math.min(1.5, 0.8 + (ck.items||[]).length * 0.22);
         const y = 1.05 + idx * (cardH + 0.2);
         const stepLabel = ck.stepIndex >= 0 && steps[ck.stepIndex] ? `Etapa ${ck.stepIndex+1}: ${steps[ck.stepIndex].title||''}` : 'Processo geral';
@@ -16215,7 +16216,8 @@ async function _buildEppStatusReport(opts = {}) {
     macroEntries.slice(0, maxR).forEach(([macro, d], idx) => {
       const pct = d.total ? d.mapeados / d.total : 0;
       const pctR = Math.round(pct * 100);
-      const col  = pct === 1 ? '15803d' : pct >= 0.6 ? 'b45309' : 'dc2626';
+      const _col = pct >= 0.6 ? 'b45309' : 'dc2626';
+      const col = pct === 1 ? '15803d' : _col;
       const ry   = sY + hH + idx * rH;
       const bg   = idx % 2 === 0 ? 'F4FFFE' : 'FFFFFF';
 
@@ -16294,7 +16296,8 @@ async function _buildEppStatusReport(opts = {}) {
       objEntries.slice(0, maxR2).forEach(([obj, d], idx) => {
         const pct = d.total ? d.mapeados / d.total : 0;
         const pctR = Math.round(pct * 100);
-        const col  = pct === 1 ? '15803d' : pct >= 0.6 ? 'b45309' : 'dc2626';
+        const _col = pct >= 0.6 ? 'b45309' : 'dc2626';
+        const col = pct === 1 ? '15803d' : _col;
         const ry   = sY2 + hH2 + idx * rH2;
         const bg   = idx % 2 === 0 ? 'F0F4FF' : 'FFFFFF';
 
@@ -18074,7 +18077,8 @@ function arqApplyFilter() {
     filtered = [...filtered].sort((a, b) => {
       const va = (a[col] || '').toLowerCase();
       const vb = (b[col] || '').toLowerCase();
-      return va < vb ? -dir : va > vb ? dir : 0;
+      const _r = va > vb ? dir : 0;
+      return va < vb ? -dir : _r;
     });
   }
 
@@ -18627,7 +18631,8 @@ function arqShowProcessDetail(idx) {
     // Risks matrix mini
     const risksHtml = risks.length ? risks.map(rk => {
       const score = (rk.impacto||1) * (rk.probabilidade||1);
-      const rCol = score >= 15 ? '#dc2626' : score >= 8 ? '#f59e0b' : '#16a34a';
+      const _rCol = score >= 8 ? '#f59e0b' : '#16a34a';
+      const rCol = score >= 15 ? '#dc2626' : _rCol;
       return `<div style="background:#f8fafc;border-left:3px solid ${rCol};border-radius:4px;padding:6px 10px;margin-bottom:6px;font-size:12px;">
         <strong style="color:#1e293b;">${rk.title||'Risco'}</strong>
         ${rk.tipo==='oportunidade'?'<span style="font-size:10px;color:#16a34a;margin-left:6px;">▲ Oportunidade</span>':''}
@@ -20345,7 +20350,8 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
 
     // Métricas do processo
     if (matMetrics) {
-      const automLabel = matMetrics.automacaoRate >= 0.5 ? 'Alta' : matMetrics.automacaoRate >= 0.2 ? 'Média' : 'Baixa';
+      const _automLabel = matMetrics.automacaoRate >= 0.2 ? 'Média' : 'Baixa';
+      const automLabel = matMetrics.automacaoRate >= 0.5 ? 'Alta' : _automLabel;
       h += `<h3 class="rel-h2">11.2 Métricas do Processo</h3>
       <table class="rel-table">
         <tr><th>Métrica</th><th>Valor</th></tr>
@@ -20404,8 +20410,10 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
         ${[...matSnaps].reverse().map((s, idx, arr) => {
           const prev = arr[idx + 1];
           const delta = prev ? s.score - prev.score : null;
-          const deltaStr = delta === null ? '—' : delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : '= 0';
-          const deltaCol = delta > 0 ? '#166534' : delta < 0 ? '#991b1b' : '#64748b';
+          const _deltaStr = delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : '= 0';
+          const deltaStr = delta === null ? '—' : _deltaStr;
+          const _deltaCol = delta < 0 ? '#991b1b' : '#64748b';
+          const deltaCol = delta > 0 ? '#166534' : _deltaCol;
           return `<tr>
             <td>${fmtDate(s.date)}</td>
             <td style="font-weight:800;color:${s.levelColor||'#1B3022'};">${s.score}/100</td>
@@ -21813,7 +21821,8 @@ function eppFilterAccessLogs() {
   tbody.innerHTML = rows.map(r => {
     const dt = new Date(r.created_at).toLocaleString('pt-BR');
     const eventType = r.event_type || r.action || '';
-    const badgeClass = eventType === 'login' ? 'mon-badge-login' : eventType === 'logout' ? 'mon-badge-logout' : 'mon-badge-save';
+    const _badgeClass = eventType === 'logout' ? 'mon-badge-logout' : 'mon-badge-save';
+    const badgeClass = eventType === 'login' ? 'mon-badge-login' : _badgeClass;
     const label = _accessEventLabel(r);
     return `<tr>
       <td style="white-space:nowrap;color:var(--text-muted);">${dt}</td>
@@ -21925,7 +21934,8 @@ function eppRenderDashboard() {
     const entries = Object.entries(macroMap).sort((a,b)=>b[1].mapeados/b[1].total - a[1].mapeados/a[1].total);
     macroListEl.innerHTML = entries.map(([macro,d]) => {
       const pct = d.total ? Math.round(d.mapeados/d.total*100) : 0;
-      const col = pct===100?'#15803d':pct>=60?'#f59e0b':'#dc2626';
+      const _col = pct>=60?'#f59e0b':'#dc2626';
+      const col = pct===100 ? '#15803d' : _col;
       return '<div class="epp-macro-row">'+
         '<div style="width:180px;font-size:12px;font-weight:600;color:#334155;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+macro+'">'+macro+'</div>'+
         '<div style="flex:1;"><div class="epp-prog-bar"><div class="epp-prog-fill" style="width:'+pct+'%;background:'+col+';"></div></div></div>'+
@@ -21957,7 +21967,8 @@ function eppRenderDashboard() {
     } else {
       objListEl.innerHTML = objEntries.map(([obj, d]) => {
         const pct = d.total ? Math.round(d.mapeados / d.total * 100) : 0;
-        const col = pct === 100 ? '#15803d' : pct >= 60 ? '#f59e0b' : '#dc2626';
+        const _col = pct >= 60 ? '#f59e0b' : '#dc2626';
+        const col = pct === 100 ? '#15803d' : _col;
         return '<div class="epp-macro-row">' +
           '<div style="flex:1;min-width:0;font-size:12px;font-weight:600;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + obj + '">' + obj + '</div>' +
           '<div style="width:180px;flex-shrink:0;margin:0 12px;"><div class="epp-prog-bar"><div class="epp-prog-fill" style="width:' + pct + '%;background:' + col + ';"></div></div></div>' +
@@ -22166,7 +22177,8 @@ function eppRenderRanking(activeKey) {
     sorted.map((it, i) => {
       const val   = it[activeKey];
       const color = it[activeKey + 'Color'] || '#6366f1';
-      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="color:#94a3b8;font-weight:700;font-size:12px;">${i+1}</span>`;
+      const _medal = i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="color:#94a3b8;font-weight:700;font-size:12px;">${i+1}</span>`;
+      const medal = i === 0 ? '🥇' : _medal;
       const barW  = Math.min(val, 100);
       const barCol = _eppRankingBarColor(isOverhead, val, color);
       const sub   = _eppRankingSubLabel(isOverhead, activeKey, it);
@@ -23218,9 +23230,12 @@ function auditRenderHeatmap() {
     byProc[proc][etapa].total++;
   });
 
-  const heatColor = n => n === 0 ? '#f0fdf4' : n <= 2 ? '#fef9c3' : n <= 4 ? '#fed7aa' : '#fecaca';
-  const heatBorder = n => n === 0 ? '#86efac' : n <= 2 ? '#fde047' : n <= 4 ? '#fb923c' : '#f87171';
-  const heatText = n => n === 0 ? '#15803d' : n <= 2 ? '#854d0e' : n <= 4 ? '#9a3412' : '#991b1b';
+  const _heatColor = n <= 2 ? '#fef9c3' : n <= 4 ? '#fed7aa' : '#fecaca';
+  const heatColor = n => n === 0 ? '#f0fdf4' : _heatColor;
+  const _heatBorder = n <= 2 ? '#fde047' : n <= 4 ? '#fb923c' : '#f87171';
+  const heatBorder = n => n === 0 ? '#86efac' : _heatBorder;
+  const _heatText = n <= 2 ? '#854d0e' : n <= 4 ? '#9a3412' : '#991b1b';
+  const heatText = n => n === 0 ? '#15803d' : _heatText;
 
   let html = '';
   Object.entries(byProc).forEach(([proc, etapas]) => {
@@ -23431,7 +23446,8 @@ function auditRenderRiscos(planId) {
   empty.style.display='none';
 
   // Nível por score
-  const _lvl = sc => sc >= 15 ? {label:'Crítico',bg:'#fecaca',tx:'#991b1b'} : sc >= 8 ? {label:'Alto',bg:'#fed7aa',tx:'#9a3412'} : sc >= 4 ? {label:'Moderado',bg:'#fef9c3',tx:'#854d0e'} : {label:'Baixo',bg:'#dcfce7',tx:'#15803d'};
+  const __lvl = sc >= 8 ? {label:'Alto',bg:'#fed7aa',tx:'#9a3412'} : sc >= 4 ? {label:'Moderado',bg:'#fef9c3',tx:'#854d0e'} : {label:'Baixo',bg:'#dcfce7',tx:'#15803d'};
+  const _lvl = sc => sc >= 15 ? {label:'Crítico',bg:'#fecaca',tx:'#991b1b'} : __lvl;
 
   // Matriz 5×5 (prob × impacto)
   const COLS = [1,2,3,4,5];
@@ -24160,7 +24176,8 @@ Retorne APENAS JSON válido (sem markdown, sem \`\`\`):
     actHtml = '<p style="color:#94a3b8;font-size:10pt;font-style:italic;">Nenhuma ação corretiva registrada.</p>';
   }
 
-  const pctColor = pct >= 80 ? '#065f46' : pct >= 60 ? '#92400e' : '#991b1b';
+  const _pctColor = pct >= 60 ? '#92400e' : '#991b1b';
+  const pctColor = pct >= 80 ? '#065f46' : _pctColor;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório Final de Auditoria</title><style>${_auditDocStyle()}</style></head><body><div class="doc-shell">
 
@@ -24996,7 +25013,8 @@ function statusModalAutoFill() {
       return pb - pa;
     });
 
-    const col = pct => pct === 100 ? '#15803d' : pct >= 60 ? '#f59e0b' : '#ef4444';
+    const _col = pct >= 60 ? '#f59e0b' : '#ef4444';
+    const col = pct => pct === 100 ? '#15803d' : _col;
 
     el.innerHTML =
       // Resumo geral
@@ -26772,9 +26790,11 @@ Regras obrigatórias:
   function _pctClass(pct, cfg) {
     if(pct === null || pct === undefined) return 'pct-cinza';
     if(cfg.sentido === 'menor') {
-      return pct <= cfg.faixaVerde ? 'pct-verde' : pct <= cfg.faixaAmarelo ? 'pct-amarelo' : 'pct-vermelho';
+      const _r = pct <= cfg.faixaAmarelo ? 'pct-amarelo' : 'pct-vermelho';
+      return pct <= cfg.faixaVerde ? 'pct-verde' : _r;
     } else {
-      return pct >= cfg.faixaVerde ? 'pct-verde' : pct >= cfg.faixaAmarelo ? 'pct-amarelo' : 'pct-vermelho';
+      const _r = pct >= cfg.faixaAmarelo ? 'pct-amarelo' : 'pct-vermelho';
+      return pct >= cfg.faixaVerde ? 'pct-verde' : _r;
     }
   }
 
@@ -26915,7 +26935,8 @@ Regras obrigatórias:
         if(m === null || m === 0) return 'rgba(27,48,34,.7)';
         const ratio = v / m * 100;
         const cls = _pctClass(ratio, cfg);
-        return cls === 'pct-verde' ? 'rgba(22,163,74,.7)' : cls === 'pct-amarelo' ? 'rgba(234,179,8,.7)' : 'rgba(220,38,38,.7)';
+        const _r = cls === 'pct-amarelo' ? 'rgba(234,179,8,.7)' : 'rgba(220,38,38,.7)';
+        return cls === 'pct-verde' ? 'rgba(22,163,74,.7)' : _r;
       });
 
       const ctxAbs = document.getElementById('indcage-chart-absoluto');
@@ -27251,7 +27272,8 @@ Regras obrigatórias:
           if(m === null || m === 0) return 'rgba(27,48,34,.7)';
           const ratio = v / m * 100;
           const cls = _pctClass(ratio, cfg);
-          return cls === 'pct-verde' ? 'rgba(22,163,74,.8)' : cls === 'pct-amarelo' ? 'rgba(234,179,8,.8)' : 'rgba(220,38,38,.8)';
+          const _r = cls === 'pct-amarelo' ? 'rgba(234,179,8,.8)' : 'rgba(220,38,38,.8)';
+          return cls === 'pct-verde' ? 'rgba(22,163,74,.8)' : _r;
         });
         chartCfg = {
           type: 'bar',
@@ -28239,7 +28261,8 @@ function matComputeRisco(metrics, indispensaveis, sistIndispensaveis) {
 
 // Pontuação: Discordo=100 (nega o problema = maduro), Concordo Parcialmente=50, Concordo=0 (confirma problema)
 function matAnsScore(ans) {
-  return ans === 'discordo' ? 100 : ans === 'parcialmente' ? 50 : 0;
+  const _r = ans === 'parcialmente' ? 50 : 0;
+  return ans === 'discordo' ? 100 : _r;
 }
 
 function matScoreEquipeMedia(questionnaires) {
@@ -28473,8 +28496,10 @@ function matRender(p) {
   // índices calculados com escala de referência
   const digitalScore = matScoreDigital(questionnaires);
   const digitalVal   = digitalScore !== null ? digitalScore.toFixed(0)+'%' : 'N/D';
-  const digitalLabel = digitalScore === null ? 'Não avaliado' : digitalScore >= 60 ? 'Alta' : digitalScore >= 30 ? 'Média' : 'Baixa';
-  const digitalCls   = digitalScore === null ? '#94a3b8' : digitalScore >= 60 ? '#22c55e' : digitalScore >= 30 ? '#eab308' : '#ef4444';
+  const _digitalLabel = digitalScore >= 60 ? 'Alta' : digitalScore >= 30 ? 'Média' : 'Baixa';
+  const digitalLabel = digitalScore === null ? 'Não avaliado' : _digitalLabel;
+  const _digitalCls = digitalScore >= 60 ? '#22c55e' : digitalScore >= 30 ? '#eab308' : '#ef4444';
+  const digitalCls = digitalScore === null ? '#94a3b8' : _digitalCls;
   const indicesHtml = `
     <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:6px;">📊 Índices Calculados</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
@@ -28484,8 +28509,10 @@ function matRender(p) {
         const ld = metrics.totalExecucao + metrics.totalApprovals + metrics.totalControle;
         const lr = ld > 0 ? metrics.totalExecucao / ld : null;
         const lv = lr !== null ? (lr*100).toFixed(1)+'%' : 'N/D';
-        const ll = lr === null ? 'Sem dados' : lr >= 0.6 ? 'Lean' : lr >= 0.35 ? 'Moderado' : 'Burocrático';
-        const lc = lr === null ? '#94a3b8' : lr >= 0.6 ? '#22c55e' : lr >= 0.35 ? '#eab308' : '#ef4444';
+        const _ll = lr >= 0.6 ? 'Lean' : lr >= 0.35 ? 'Moderado' : 'Burocrático';
+        const ll = lr === null ? 'Sem dados' : _ll;
+        const _lc = lr >= 0.6 ? '#22c55e' : lr >= 0.35 ? '#eab308' : '#ef4444';
+        const lc = lr === null ? '#94a3b8' : _lc;
         return indexCard('Lean Operacional ↑', lv, ll, lc,
           `execução ÷ (execução + aprovações + controle)<br>Escala: ≥60% lean · 35–60% moderado · &lt;35% burocrático<br><span style="color:#64748b;">Mede proporção de valor direto vs. etapas de controle no fluxo</span>`);
       })()}
@@ -28494,8 +28521,10 @@ function matRender(p) {
       ${(()=>{
         const ar = metrics.automacaoRate;
         const av = (ar*100).toFixed(0)+'%';
-        const al = ar >= 0.5 ? 'Alta' : ar >= 0.2 ? 'Média' : 'Baixa';
-        const ac = ar >= 0.5 ? '#22c55e' : ar >= 0.2 ? '#eab308' : '#ef4444';
+        const _al = ar >= 0.2 ? 'Média' : 'Baixa';
+        const al = ar >= 0.5 ? 'Alta' : _al;
+        const _ac = ar >= 0.2 ? '#eab308' : '#ef4444';
+        const ac = ar >= 0.5 ? '#22c55e' : _ac;
         return indexCard('Automação ⚙️ ↑', av, al, ac,
           `atividades marcadas como automáticas (⚙️) ÷ total de atividades<br>Escala: &lt;20% baixa · 20–50% média · &gt;50% alta<br><span style="color:#64748b;">Clique em ⚙️ em cada atividade no fluxo para marcar</span>`);
       })()}
@@ -28831,8 +28860,10 @@ function matExportPdf(p) {
   const ansColor = { concordo:'#ef4444', parcialmente:'#eab308', discordo:'#22c55e' };
 
   const digScore   = matScoreDigital(questionnaires);
-  const automLabel = digScore === null ? 'Não avaliado' : digScore >= 60 ? 'Alta' : digScore >= 30 ? 'Média' : 'Baixa';
-  const automCls   = digScore === null ? '#94a3b8' : digScore >= 60 ? '#22c55e' : digScore >= 30 ? '#eab308' : '#ef4444';
+  const _automLabel = digScore >= 60 ? 'Alta' : digScore >= 30 ? 'Média' : 'Baixa';
+  const automLabel = digScore === null ? 'Não avaliado' : _automLabel;
+  const _automCls = digScore >= 60 ? '#22c55e' : digScore >= 30 ? '#eab308' : '#ef4444';
+  const automCls = digScore === null ? '#94a3b8' : _automCls;
 
   // ── Score block ────────────────────────────────────────────────────────
   const scoreBlock = final ? `
@@ -28912,8 +28943,10 @@ function matExportPdf(p) {
           const ld = metrics.totalExecucao + metrics.totalApprovals + metrics.totalControle;
           const lr = ld > 0 ? metrics.totalExecucao / ld : null;
           const lv = lr !== null ? (lr*100).toFixed(1)+'%' : 'N/D';
-          const ll = lr === null ? 'Sem dados' : lr >= 0.6 ? 'Lean' : lr >= 0.35 ? 'Moderado' : 'Burocrático';
-          const lc = lr === null ? '#94a3b8' : lr >= 0.6 ? '#22c55e' : lr >= 0.35 ? '#eab308' : '#ef4444';
+          const _ll = lr >= 0.6 ? 'Lean' : lr >= 0.35 ? 'Moderado' : 'Burocrático';
+          const ll = lr === null ? 'Sem dados' : _ll;
+          const _lc = lr >= 0.6 ? '#22c55e' : lr >= 0.35 ? '#eab308' : '#ef4444';
+          const lc = lr === null ? '#94a3b8' : _lc;
           return `<td>Lean Operacional <span class="note">(bruto — ↑ maior = melhor; execução ÷ (execução+overhead))</span></td>
         <td>${lv}</td>
         <td><span class="badge" style="background:${lc}20;color:${lc};">${ll}</span></td>`;
@@ -28927,8 +28960,10 @@ function matExportPdf(p) {
       <tr>
         ${(()=>{
           const ar = metrics.automacaoRate;
-          const al = ar >= 0.5 ? 'Alta' : ar >= 0.2 ? 'Média' : 'Baixa';
-          const ac = ar >= 0.5 ? '#22c55e' : ar >= 0.2 ? '#eab308' : '#ef4444';
+          const _al = ar >= 0.2 ? 'Média' : 'Baixa';
+          const al = ar >= 0.5 ? 'Alta' : _al;
+          const _ac = ar >= 0.2 ? '#eab308' : '#ef4444';
+          const ac = ar >= 0.5 ? '#22c55e' : _ac;
           return `<td>Automação ⚙️ <span class="note">(bruto = normalizado — ↑ maior = melhor; atividades marcadas no fluxo)</span></td>
         <td>${(ar*100).toFixed(0)}%</td>
         <td><span class="badge" style="background:${ac}20;color:${ac};">${al}</span></td>`;
@@ -29000,8 +29035,10 @@ function matExportPdf(p) {
       ${[...snapshots].reverse().map((s, idx, arr) => {
         const prevSnap = arr[idx + 1];
         const delta = prevSnap ? s.score - prevSnap.score : null;
-        const deltaStr = delta === null ? '—' : delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : '= 0';
-        const deltaCol = delta === null ? '#94a3b8' : delta > 0 ? '#22c55e' : delta < 0 ? '#ef4444' : '#94a3b8';
+        const _deltaStr = delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : '= 0';
+        const deltaStr = delta === null ? '—' : _deltaStr;
+        const _deltaCol = delta > 0 ? '#22c55e' : delta < 0 ? '#ef4444' : '#94a3b8';
+        const deltaCol = delta === null ? '#94a3b8' : _deltaCol;
         return `<tr>
           <td style="white-space:nowrap;">${fmtDate(s.date)}</td>
           <td style="text-align:center;font-weight:800;color:${s.levelColor||'#1B3022'};">${s.score}</td>
@@ -29129,7 +29166,8 @@ async function matGeminiAnalyze(p) {
     const answersText = MAT_QUESTIONS.map((q, i) => {
       const labels = questionnaires.map((set, idx) => {
         const a = set && set[i];
-        const label = a === 'concordo' ? 'Concordo' : a === 'discordo' ? 'Discordo' : a === 'parcialmente' ? 'Concordo Parcialmente' : '—';
+        const _label = a === 'discordo' ? 'Discordo' : a === 'parcialmente' ? 'Concordo Parcialmente' : '—';
+        const label = a === 'concordo' ? 'Concordo' : _label;
         return `Q${idx + 1}: ${label}`;
       }).join(' | ');
       const avg = matQuestionAverage(questionnaires, i);
