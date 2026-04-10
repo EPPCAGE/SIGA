@@ -8013,8 +8013,8 @@ function _npopMatchesScope(meta, scope) {
 
 function _npopOpenDuplicates(info, ignoreKey) {
   const scope = _npopScopeTerms(info);
-  return ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
-    .filter((k, i, arr) => arr.indexOf(k) === i && k !== ignoreKey)
+  return [...new Set(['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))])]
+    .filter(k => k !== ignoreKey)
     .filter(k => _npopMatchesScope(DATA[k]?.meta, scope) && _npopIsOpenStatus(DATA[k]?.meta?.statusMap));
 }
 
@@ -10953,14 +10953,14 @@ function _renderCfgCardAptCatalog(title, desc) {
             <label for="cfg-apt-cat-${i}" style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Categoria</label>
             <select id="cfg-apt-cat-${i}" class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;"
               onchange="cfgAptField(${i},'categoria',this.value)">
-              ${catOpts.replace(`value="${a.categoria||''}"`,`value="${a.categoria||''}" selected`)}
+              ${catOpts.replaceAll(`value="${a.categoria||''}"`,`value="${a.categoria||''}" selected`)}
             </select>
           </div>
           <div>
             <label for="cfg-apt-crit-${i}" style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Criticidade</label>
             <select id="cfg-apt-crit-${i}" class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;"
               onchange="cfgAptField(${i},'criticidade',this.value)">
-              ${critOpts.replace(`value="${a.criticidade||''}"`,`value="${a.criticidade||''}" selected`)}
+              ${critOpts.replaceAll(`value="${a.criticidade||''}"`,`value="${a.criticidade||''}" selected`)}
             </select>
           </div>
           <div>
@@ -12363,8 +12363,7 @@ function showPatModule(show = true) {
 function populatePatPopSelect() {
   const sel = document.getElementById('pat-pop-vinc');
   if(!sel) return;
-  const pops = ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
-    .filter((k, i, arr) => arr.indexOf(k) === i)
+  const pops = [...new Set(['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))])]
     .filter(k => typeof DATA[k] === 'object' && DATA[k]?.meta)
     .map(k => ({ key:k, label: DATA[k]?.meta?.name || 'Novo POP' }));
   sel.innerHTML = '<option value="">Nenhum</option>' + pops.map(p=>`<option value="${escapeHtml(p.key)}">${escapeHtml(p.label)}</option>`).join('');
@@ -19070,8 +19069,7 @@ function showPopGallery() {
   if(!gallery) return;
 
   const _GALLERY_SKIP = new Set(['_arqOverrides','pat','_logoUrl','_repoDocs','_drops']);
-  const keys = ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
-    .filter((k, i, arr) => arr.indexOf(k) === i)
+  const keys = [...new Set(['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))])]
     .filter(k => !_GALLERY_SKIP.has(k) && typeof DATA[k] === 'object' && DATA[k]?.meta);
   const subtitle = document.getElementById('pop-gallery-subtitle');
   if(subtitle) subtitle.textContent = `${keys.length} POP${keys.length !== 1 ? 's' : ''} cadastrado${keys.length !== 1 ? 's' : ''} na galeria principal de processos.`;
@@ -24933,8 +24931,7 @@ function statusModalAutoFill() {
   };
 
   function _allPops() {
-    return ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
-      .filter((k, i, arr) => arr.indexOf(k) === i)
+    return [...new Set(['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))])]
       .filter(k => typeof DATA[k] === 'object' && DATA[k]?.meta);
   }
 
