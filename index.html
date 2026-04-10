@@ -8414,7 +8414,8 @@ function _extractFaqJsonArray(rawText) {
     try {
       JSON.parse(potentialJson);
       return potentialJson;
-    } catch(e) {
+    } catch {
+      // Ignore: candidate is not valid JSON, continue fallback strategies.
     }
   }
   
@@ -20915,7 +20916,6 @@ async function repoGenerateFaqsFromPdf(id) {
     
     // PRIORIDADE 1: Usar textContent já indexado (mais eficiente)
     if(d.textContent && d.textContent.trim().length > 100) {
-      console.log('[repoGenerateFaqsFromPdf] Usando textContent indexado:', d.textContent.length, 'bytes');
       contentToAnalyze = d.textContent;
     } else {
       // PRIORIDADE 2: Baixar e converter PDF para base64
@@ -20968,8 +20968,6 @@ async function repoGenerateFaqsFromPdf(id) {
           .map(idx => chunks[idx])
           .map(c => `[SEÇÃO ${c.id}: ${c.title}]\n${c.content}`)
           .join('\n\n---\n\n');
-        
-        console.log('[repoGenerateFaqsFromPdf] Total chunks:', chunks.length, '| Usando distribuídos:', selectedIndices.length);
       }
     }
     
