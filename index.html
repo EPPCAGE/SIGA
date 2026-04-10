@@ -8156,7 +8156,7 @@ function _npopStepFlowItems(step, items) {
 }
 
 function _npopMermaidNode(id, label) {
-  return `  ${id}["${String(label || '').replace(/"/g, "'")}"]`;
+  return `  ${id}["${String(label || '').replaceAll('"', "'")}"]`;
 }
 
 function _npopBuildMermaidFromSteps(steps) {
@@ -22578,7 +22578,7 @@ function auditAddCriterio(titulo='', descricao='') {
   item.className = 'ap-criterio-item';
   item.style.cssText = 'border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;background:#f8fafc;display:flex;flex-direction:column;gap:6px;';
   item.innerHTML = `<div style="display:flex;gap:6px;align-items:center;">
-    <input class="modal-input ap-crit-titulo" style="flex:1;font-size:13px;" placeholder="Título do critério" value="${titulo.replace(/"/g,'&quot;')}">
+    <input class="modal-input ap-crit-titulo" style="flex:1;font-size:13px;" placeholder="Título do critério" value="${titulo.replaceAll('"','&quot;')}">
     <button type="button" onclick="this.closest('.ap-criterio-item').remove()" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:18px;line-height:1;padding:0 2px;" title="Remover">✕</button>
   </div>
   <textarea class="modal-input ap-crit-desc" rows="2" placeholder="Descrição (opcional)" style="resize:vertical;min-height:48px;font-size:12px;">${descricao}</textarea>`;
@@ -22863,7 +22863,7 @@ function auditRenderChecklistEditor() {
     '<div class="checklist-row">'+
       '<div class="checklist-row-top">'+
         '<span class="checklist-row-num">'+(i+1)+'</span>'+
-        '<textarea class="checklist-row-q" placeholder="Pergunta do checklist" onchange="_auditTempChecklist['+i+'].pergunta=this.value">'+( (c.pergunta||'').replace(/</g,'&lt;'))+'</textarea>'+
+        '<textarea class="checklist-row-q" placeholder="Pergunta do checklist" onchange="_auditTempChecklist['+i+'].pergunta=this.value">'+( (c.pergunta||'').replaceAll('<','&lt;'))+'</textarea>'+
       '</div>'+
       '<div class="checklist-row-bottom">'+
         '<select onchange="_auditTempChecklist['+i+'].conformidade=this.value">'+
@@ -22873,7 +22873,7 @@ function auditRenderChecklistEditor() {
           '<option value="nao_conforme"'+(c.conformidade==='nao_conforme'?' selected':'')+'>❌ Não Conforme</option>'+
           '<option value="na"'+(c.conformidade==='na'?' selected':'')+'>— N/A</option>'+
         '</select>'+
-        '<input class="checklist-row-obs" type="text" value="'+( (c.observacao||'').replace(/"/g,'&quot;'))+'" placeholder="Observação" onchange="_auditTempChecklist['+i+'].observacao=this.value">'+
+        '<input class="checklist-row-obs" type="text" value="'+( (c.observacao||'').replaceAll('"','&quot;'))+'" placeholder="Observação" onchange="_auditTempChecklist['+i+'].observacao=this.value">'+
         '<button onclick="_auditTempChecklist.splice('+i+',1);auditRenderChecklistEditor()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;flex-shrink:0;">✕</button>'+
       '</div>'+
     '</div>'
@@ -25810,7 +25810,7 @@ Regras obrigatórias:
     const dir = _direction || 'LR';
     const lines = [`flowchart ${dir}`];
     flowArr.forEach(n => {
-      const lbl = (n.name || n.id).replace(/"/g, "'");
+      const lbl = (n.name || n.id).replaceAll('"', "'");
       if (n.type === 'start' || n.type === 'end') lines.push(`  ${n.id}(["${lbl}"])`);
       else if (n.type === 'decision') lines.push(`  ${n.id}{"${lbl}"}`);
       else lines.push(`  ${n.id}["${lbl}"]`);
@@ -27714,7 +27714,7 @@ function arqCompRenderSection(idx) {
     const selectedHtml = selected.length
       ? selected.map((v, i) => `
           <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f0f4ff;border-radius:7px;margin-bottom:4px;">
-            <span style="flex:1;font-size:13px;color:#1e293b;">${v.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}</span>
+            <span style="flex:1;font-size:13px;color:#1e293b;">${v.replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}</span>
             ${em ? `<button class="arq-comp-remove" data-idx="${idx}" data-cat="${cat.key}" data-item="${i}" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;" title="Remover">✕</button>` : ''}
           </div>`).join('')
       : '<div style="color:#94a3b8;font-size:12px;padding:6px 0;">Nenhuma competência selecionada.</div>';
