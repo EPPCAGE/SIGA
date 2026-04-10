@@ -15260,7 +15260,7 @@ async function buildPptx(D, _popKey) {
     navy:'0A2540', mid:'1A4A7A', green:'00A86B', gold:'E8A020',
     white:'FFFFFF', light:'F4F7FB', text:'0A1929', muted:'8898AA', amber:'F59E0B'
   };
-  const mks = () => ({ type:'outer', blur:8, offset:2, angle:135, color:'000000', opacity:0.10 });
+  const mks = () => ({ type:'outer', blur:8, offset:2, angle:135, color:'000000', opacity:0.1 });
   const hdr = (s, title, subtitle) => {
     s.addShape(pres.ShapeType.rect, { x:0, y:0, w:10, h:0.8, fill:{ color:C.navy } });
     s.addShape(pres.ShapeType.rect, { x:0, y:0.8, w:10, h:0.04, fill:{ color:C.green } });
@@ -16197,22 +16197,22 @@ async function _buildEppStatusReport(opts = {}) {
       return pb - pa;
     });
 
-    const sY   = 0.90;   // inicio do cabeçalho da tabela
+    const sY   = 0.9;   // inicio do cabeçalho da tabela
     const hH   = 0.28;   // altura linha header
     const rH   = 0.34;   // altura linha dados
     const lbW  = 3.55;   // largura coluna nome
-    const bXS  = 3.80;   // inicio barra
+    const bXS  = 3.8;   // inicio barra
     const bW   = 3.65;   // largura zona barra
     const pXS  = 7.55;   // inicio % col
     const cXS  = 8.22;   // inicio contagem
     const maxR = Math.min(macroEntries.length, 10);
 
     // Cabeçalho
-    s.addShape(pres.ShapeType.rect, { x:0.15, y:sY, w:9.70, h:hH, fill:{color:'006B63'} });
+    s.addShape(pres.ShapeType.rect, { x:0.15, y:sY, w:9.7, h:hH, fill:{color:'006B63'} });
     s.addText('Macroprocesso',   { x:0.22, y:sY, w:lbW,  h:hH, fontSize:8.5, bold:true, color:C.white, valign:'middle', margin:[0,4,0,4] });
     s.addText('Cobertura',       { x:bXS,  y:sY, w:bW,   h:hH, fontSize:8.5, bold:true, color:C.white, valign:'middle', align:'center', margin:0 });
     s.addText('%',               { x:pXS,  y:sY, w:0.62, h:hH, fontSize:8.5, bold:true, color:C.white, valign:'middle', align:'center', margin:0 });
-    s.addText('Mapeados/Total',  { x:cXS,  y:sY, w:1.70, h:hH, fontSize:8.5, bold:true, color:C.white, valign:'middle', align:'center', margin:0 });
+    s.addText('Mapeados/Total',  { x:cXS,  y:sY, w:1.7, h:hH, fontSize:8.5, bold:true, color:C.white, valign:'middle', align:'center', margin:0 });
 
     macroEntries.slice(0, maxR).forEach(([macro, d], idx) => {
       const pct = d.total ? d.mapeados / d.total : 0;
@@ -16221,7 +16221,7 @@ async function _buildEppStatusReport(opts = {}) {
       const ry   = sY + hH + idx * rH;
       const bg   = idx % 2 === 0 ? 'F4FFFE' : 'FFFFFF';
 
-      s.addShape(pres.ShapeType.rect, { x:0.15, y:ry, w:9.70, h:rH-0.03, fill:{color:bg}, line:{color:'D0E8E6',pt:0.5} });
+      s.addShape(pres.ShapeType.rect, { x:0.15, y:ry, w:9.7, h:rH-0.03, fill:{color:bg}, line:{color:'D0E8E6',pt:0.5} });
       s.addText(macro, { x:0.22, y:ry, w:lbW, h:rH-0.03, fontSize:8.5, color:C.black, bold:true, valign:'middle', margin:[0,4,0,4] });
 
       // Barra de progresso
@@ -16232,7 +16232,7 @@ async function _buildEppStatusReport(opts = {}) {
       if(pct > 0) s.addShape(pres.ShapeType.rect, { x:bFX, y:bFY, w:bFW*pct, h:0.18, fill:{color:col} });
 
       s.addText(pctR+'%',            { x:pXS, y:ry, w:0.62, h:rH-0.03, fontSize:10, bold:true, color:col, align:'center', valign:'middle', margin:0 });
-      s.addText(d.mapeados+'/'+d.total, { x:cXS, y:ry, w:1.70, h:rH-0.03, fontSize:9, color:C.gray, align:'center', valign:'middle', margin:0 });
+      s.addText(d.mapeados+'/'+d.total, { x:cXS, y:ry, w:1.7, h:rH-0.03, fontSize:9, color:C.gray, align:'center', valign:'middle', margin:0 });
     });
 
     // Rodapé-resumo
@@ -16240,9 +16240,9 @@ async function _buildEppStatusReport(opts = {}) {
     const tot  = arqData.length;
     const map  = arqData.filter(r=>r.mapeado).length;
     const pctG = tot ? Math.round(map/tot*100) : 0;
-    s.addShape(pres.ShapeType.rect, { x:0.15, y:sumY, w:9.70, h:0.30, fill:{color:'E6FAF8'}, line:{color:'00B0A3',pt:1} });
+    s.addShape(pres.ShapeType.rect, { x:0.15, y:sumY, w:9.7, h:0.3, fill:{color:'E6FAF8'}, line:{color:'00B0A3',pt:1} });
     s.addText(`Cobertura global: ${map} de ${tot} processos/subprocessos mapeados (${pctG}%)`, {
-      x:0.28, y:sumY, w:9.40, h:0.30, fontSize:9.5, bold:true, color:'006B63', valign:'middle', margin:0
+      x:0.28, y:sumY, w:9.4, h:0.3, fontSize:9.5, bold:true, color:'006B63', valign:'middle', margin:0
     });
     addLogos(s);
   }
@@ -16277,21 +16277,21 @@ async function _buildEppStatusReport(opts = {}) {
         x:1, y:2.6, w:8, h:0.5, fontSize:13, color:C.gray, align:'center', valign:'middle', margin:0
       });
     } else {
-      const sY2  = 0.90;
+      const sY2  = 0.9;
       const hH2  = 0.28;
       const rH2  = 0.33;
-      const lbW2 = 3.80;
+      const lbW2 = 3.8;
       const bXS2 = 4.05;
-      const bW2  = 3.40;
+      const bW2  = 3.4;
       const pXS2 = 7.55;
       const cXS2 = 8.22;
       const maxR2 = Math.min(objEntries.length, 11);
 
-      s.addShape(pres.ShapeType.rect, { x:0.15, y:sY2, w:9.70, h:hH2, fill:{color:'0A3560'} });
+      s.addShape(pres.ShapeType.rect, { x:0.15, y:sY2, w:9.7, h:hH2, fill:{color:'0A3560'} });
       s.addText('Objetivo Estratégico', { x:0.22, y:sY2, w:lbW2,  h:hH2, fontSize:8.5, bold:true, color:C.white, valign:'middle', margin:[0,4,0,4] });
       s.addText('Cobertura',            { x:bXS2, y:sY2, w:bW2,   h:hH2, fontSize:8.5, bold:true, color:C.white, valign:'middle', align:'center', margin:0 });
       s.addText('%',                    { x:pXS2, y:sY2, w:0.62,  h:hH2, fontSize:8.5, bold:true, color:C.white, valign:'middle', align:'center', margin:0 });
-      s.addText('Mapeados/Total',       { x:cXS2, y:sY2, w:1.70,  h:hH2, fontSize:8.5, bold:true, color:C.white, valign:'middle', align:'center', margin:0 });
+      s.addText('Mapeados/Total',       { x:cXS2, y:sY2, w:1.7,  h:hH2, fontSize:8.5, bold:true, color:C.white, valign:'middle', align:'center', margin:0 });
 
       objEntries.slice(0, maxR2).forEach(([obj, d], idx) => {
         const pct = d.total ? d.mapeados / d.total : 0;
@@ -16300,7 +16300,7 @@ async function _buildEppStatusReport(opts = {}) {
         const ry   = sY2 + hH2 + idx * rH2;
         const bg   = idx % 2 === 0 ? 'F0F4FF' : 'FFFFFF';
 
-        s.addShape(pres.ShapeType.rect, { x:0.15, y:ry, w:9.70, h:rH2-0.03, fill:{color:bg}, line:{color:'D0D8F0',pt:0.5} });
+        s.addShape(pres.ShapeType.rect, { x:0.15, y:ry, w:9.7, h:rH2-0.03, fill:{color:bg}, line:{color:'D0D8F0',pt:0.5} });
         s.addText(obj, { x:0.22, y:ry, w:lbW2, h:rH2-0.03, fontSize:8, color:C.black, bold:true, valign:'middle', margin:[0,4,0,4] });
 
         const bFX2 = bXS2 + 0.12;
@@ -16310,7 +16310,7 @@ async function _buildEppStatusReport(opts = {}) {
         if(pct > 0) s.addShape(pres.ShapeType.rect, { x:bFX2, y:bFY2,   w:bFW2*pct, h:0.18, fill:{color:col} });
 
         s.addText(pctR+'%',               { x:pXS2, y:ry, w:0.62, h:rH2-0.03, fontSize:10, bold:true, color:col, align:'center', valign:'middle', margin:0 });
-        s.addText(d.mapeados+'/'+d.total, { x:cXS2, y:ry, w:1.70, h:rH2-0.03, fontSize:9, color:C.gray, align:'center', valign:'middle', margin:0 });
+        s.addText(d.mapeados+'/'+d.total, { x:cXS2, y:ry, w:1.7, h:rH2-0.03, fontSize:9, color:C.gray, align:'center', valign:'middle', margin:0 });
       });
     }
     addLogos(s);
@@ -16348,7 +16348,7 @@ async function _buildEppStatusReport(opts = {}) {
     const tblX = 0.15;
     const tblW = 5.85;
     const tblY = 0.85;
-    const colWR = [0.48, 3.30, 1.12, 0.95];
+    const colWR = [0.48, 3.3, 1.12, 0.95];
     const rkRows = [
       [ thCell('#',         {fontSize:8}),
         thCell('Processo',  {fontSize:8}),
@@ -16377,18 +16377,18 @@ async function _buildEppStatusReport(opts = {}) {
     const fY = 0.85;
 
     // Caixa externa
-    s.addShape(pres.ShapeType.rect, { x:fX, y:fY, w:fW, h:4.60, fill:{color:'F8FAFC'}, line:{color:'CBD5E1',pt:1} });
+    s.addShape(pres.ShapeType.rect, { x:fX, y:fY, w:fW, h:4.6, fill:{color:'F8FAFC'}, line:{color:'CBD5E1',pt:1} });
 
     // Topo da caixa — header roxo escuro
     s.addShape(pres.ShapeType.rect, { x:fX, y:fY, w:fW, h:0.32, fill:{color:'2D1B69'} });
     s.addText('Como é calculado o Índice de Maturidade', {
-      x:fX+0.10, y:fY, w:fW-0.15, h:0.32, fontSize:8.5, bold:true, color:C.white, valign:'middle', margin:0
+      x:fX+0.1, y:fY, w:fW-0.15, h:0.32, fontSize:8.5, bold:true, color:C.white, valign:'middle', margin:0
     });
 
     // Fórmula
-    s.addShape(pres.ShapeType.rect, { x:fX+0.10, y:fY+0.37, w:fW-0.20, h:0.50, fill:{color:'EDE9FE'}, line:{color:'9F7AEA',pt:1} });
+    s.addShape(pres.ShapeType.rect, { x:fX+0.1, y:fY+0.37, w:fW-0.2, h:0.5, fill:{color:'EDE9FE'}, line:{color:'9F7AEA',pt:1} });
     s.addText('Índice  =  Equipe×40%  +  Risco×20%  +  Lean×20%  +  Digital×10%  +  Automação×10%', {
-      x:fX+0.14, y:fY+0.37, w:fW-0.28, h:0.50, fontSize:7.5, bold:true, color:'4C1D95', valign:'middle', align:'center', margin:0
+      x:fX+0.14, y:fY+0.37, w:fW-0.28, h:0.5, fontSize:7.5, bold:true, color:'4C1D95', valign:'middle', align:'center', margin:0
     });
 
     // Componentes
@@ -16422,7 +16422,7 @@ async function _buildEppStatusReport(opts = {}) {
 
     let cy2 = fY + 0.93;
     comps2.forEach(c => {
-      s.addShape(pres.ShapeType.rect, { x:fX+0.10, y:cy2, w:0.09, h:0.50, fill:{color:c.col} });
+      s.addShape(pres.ShapeType.rect, { x:fX+0.1, y:cy2, w:0.09, h:0.5, fill:{color:c.col} });
       s.addText(c.label, { x:fX+0.24, y:cy2+0.01, w:fW-0.34, h:0.18, fontSize:8, bold:true, color:c.col, valign:'bottom', margin:0 });
       s.addText(c.desc,  { x:fX+0.24, y:cy2+0.19, w:fW-0.34, h:0.32, fontSize:6.8, color:'475569', valign:'top', margin:0 });
       cy2 += 0.53;
@@ -16430,11 +16430,11 @@ async function _buildEppStatusReport(opts = {}) {
 
     // Escala de níveis
     cy2 += 0.04;
-    s.addShape(pres.ShapeType.rect, { x:fX+0.10, y:cy2,       w:fW-0.20, h:0.20, fill:{color:'1C1C2E'} });
+    s.addShape(pres.ShapeType.rect, { x:fX+0.1, y:cy2,       w:fW-0.2, h:0.2, fill:{color:'1C1C2E'} });
     s.addText('ESCALA DE NÍVEIS DE MATURIDADE', {
-      x:fX+0.10, y:cy2, w:fW-0.20, h:0.20, fontSize:7, bold:true, color:C.white, align:'center', valign:'middle', margin:0
+      x:fX+0.1, y:cy2, w:fW-0.2, h:0.2, fontSize:7, bold:true, color:C.white, align:'center', valign:'middle', margin:0
     });
-    cy2 += 0.20;
+    cy2 += 0.2;
     const levels2 = [
       { range:'0–20',   label:'Inicial',    col:'EF4444' },
       { range:'21–40',  label:'Gerenciado', col:'F97316' },
@@ -16442,9 +16442,9 @@ async function _buildEppStatusReport(opts = {}) {
       { range:'61–80',  label:'Previsível', col:'22C55E' },
       { range:'81–100', label:'Otimizado',  col:'10B981' },
     ];
-    const lw2 = (fW-0.20) / 5;
+    const lw2 = (fW-0.2) / 5;
     levels2.forEach((lv, i) => {
-      const lx2 = fX + 0.10 + i * lw2;
+      const lx2 = fX + 0.1 + i * lw2;
       s.addShape(pres.ShapeType.rect, { x:lx2, y:cy2, w:lw2, h:0.26, fill:{color:lv.col} });
       s.addText(lv.label, { x:lx2, y:cy2+0.01, w:lw2, h:0.14, fontSize:6.5, bold:true, color:C.white, align:'center', valign:'middle', margin:0 });
       s.addText(lv.range, { x:lx2, y:cy2+0.14, w:lw2, h:0.11, fontSize:6,   color:C.white, align:'center', valign:'middle', margin:0 });
@@ -28208,7 +28208,7 @@ function matComputeMetrics(p, version='asis') {
   // Overhead expandido: aprovacao + revisao (via nat/kw) + controle (via nat)
   const overhead = totalActivities > 0 ? (totalApprovals + totalControle) / totalActivities : 0;
   let overheadLabel, overheadCls;
-  if(overhead < 0.20)       { overheadLabel = 'Saudável';  overheadCls = '#22c55e'; }
+  if(overhead < 0.2)       { overheadLabel = 'Saudável';  overheadCls = '#22c55e'; }
   else if(overhead <= 0.35) { overheadLabel = 'Moderado';  overheadCls = '#eab308'; }
   else                      { overheadLabel = 'Elevado';   overheadCls = '#ef4444'; }
   // Alias legado (burocracia = overhead para compatibilidade)
@@ -28304,9 +28304,9 @@ function matComputeFinal(p) {
   // normalizado pelos 60% restantes disponíveis.
   let f, partial = false;
   if(equipe !== null) {
-    f = Math.round(equipe * 0.40 + normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10);
+    f = Math.round(equipe * 0.4 + normRisco * 0.2 + normLean * 0.2 + normAutom * 0.1 + normAutomacao * 0.1);
   } else {
-    f = Math.round((normRisco * 0.20 + normLean * 0.20 + normAutom * 0.10 + normAutomacao * 0.10) / 0.60);
+    f = Math.round((normRisco * 0.2 + normLean * 0.2 + normAutom * 0.1 + normAutomacao * 0.1) / 0.6);
     partial = true;
   }
 
