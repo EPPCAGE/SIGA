@@ -8362,7 +8362,6 @@ function _extractFaqJsonArray(rawText) {
   }
   
   if(faqs.length > 0) {
-    console.log('[_extractFaqJsonArray] Estratégia 0 (formato narrativo) funcionou:', faqs.length, 'FAQs extraídas');
     return JSON.stringify(faqs.slice(0, 15));
   }
   
@@ -8414,10 +8413,8 @@ function _extractFaqJsonArray(rawText) {
     const potentialJson = clean.slice(firstBracket, lastBracket + 1);
     try {
       JSON.parse(potentialJson);
-      console.log('[_extractFaqJsonArray] Estratégia 5 (brackets agressivo) funcionou');
       return potentialJson;
     } catch(e) {
-      console.debug('[_extractFaqJsonArray] Estratégia 5 (brackets) falhou:', e.message);
     }
   }
   
@@ -8428,7 +8425,6 @@ function _extractFaqJsonArray(rawText) {
   
   if(matches?.length > 0) {
     const faqs = matches;
-    console.log('[_extractFaqJsonArray] Estratégia 6 (objetos individuais) funcionou:', faqs.length);
     return JSON.stringify(faqs);
   }
   
@@ -8508,7 +8504,6 @@ function indexDocumentForFaq(content, maxChunks = 20) {
   // Criar índice resumido
   const index = chunks.map(c => `[Seção ${c.id}] ${c.title}`).join('\n');
   
-  console.log('[indexDocumentForFaq] Documento indexado em', chunks.length, 'chunks');
   return { chunks, index, totalChunks: chunks.length };
 }
 
@@ -20924,7 +20919,6 @@ async function repoGenerateFaqsFromPdf(id) {
       contentToAnalyze = d.textContent;
     } else {
       // PRIORIDADE 2: Baixar e converter PDF para base64
-      console.log('[repoGenerateFaqsFromPdf] Baixando PDF para análise…');
       const resp = await fetch(d.fileUrl);
       if(!resp.ok) throw new Error('Não foi possível baixar o PDF');
       const blob = await resp.blob();
@@ -20935,7 +20929,6 @@ async function repoGenerateFaqsFromPdf(id) {
         r.readAsDataURL(blob);
       });
       
-      console.log('[repoGenerateFaqsFromPdf] PDF base64 length:', base64.length, 'bytes');
       if(base64.length > 5000000) {
         throw new Error('PDF muito grande (>5MB). Tente indexar o documento primeiro: clique em "Indexar".');
       }
@@ -20947,7 +20940,6 @@ async function repoGenerateFaqsFromPdf(id) {
     let selectedChunks = contentToAnalyze;
     
     if(contentToAnalyze.length > 50000) {
-      console.log('[repoGenerateFaqsFromPdf] Documento > 50KB, indexando…');
       const indexed = indexDocumentForFaq(contentToAnalyze, 20);
       if(indexed && indexed.chunks.length > 0) {
         indexInfo = `\n\n=== ÍNDICE DO DOCUMENTO (${indexed.totalChunks} seções) ===\n${indexed.index}\n\nNOTA: Este é um documento LONGO. Você DEVE gerar FAQs que cubram TODA a extensão do documento, não apenas as primeiras seções abaixo.\n`;
@@ -21014,14 +21006,12 @@ EXEMPLO DE FORMATO CORRETO:
 
 COMECE AGORA COM O JSON:`;
 
-    console.log('[repoGenerateFaqsFromPdf] Prompt size:', prompt.length, 'bytes | Enviando para IA…');
     
     // Chamar IA com timeout estendido para documentos longos
     let text;
     try {
       text = await callGeminiProxy(prompt, null, { maxTokens: 3000 });
     } catch(e) {
-      console.error('[repoGenerateFaqsFromPdf] Erro ao chamar IA:', e.message);
       // Se falhar por tamanho, sugerir indexação
       if(e.message.includes('large') || e.message.includes('limit') || e.message.includes('quota')) {
         showToast('⚠️ Documento muito grande para análise direta. Clique em "Indexar" primeiro para processar o conteúdo de forma eficiente.', 'warn');
@@ -21034,12 +21024,9 @@ COMECE AGORA COM O JSON:`;
       return;
     }
     
-    console.log('[repoGenerateFaqsFromPdf] Resposta da IA recebida:', text?.length, 'bytes');
-    
     // Extrair JSON com múltiplas estratégias
     const jsonStr = _extractFaqJsonArray(text);
     if(!jsonStr) {
-      console.error('[repoGenerateFaqsFromPdf] JSON parsing failed. Response preview:', text?.substring(0, 300));
       throw new Error('IA não retornou JSON válido. Verifique se o documento tem conteúdo legível. Resposta: ' + (text?.substring(0, 80) || 'vazia'));
     }
     
@@ -21062,7 +21049,6 @@ COMECE AGORA COM O JSON:`;
       throw new Error('Nenhuma FAQ válida após filtro. Tente usar "Indexar" para documentos complexos.');
     }
     
-    console.log('[repoGenerateFaqsFromPdf] ✅ Success:', d.faqs.length, 'FAQs geradas cobrindo o documento inteiro');
     repoRender();
     saveToCloud();
     showToast(`✅ ${d.faqs.length} FAQs geradas com sucesso! Todas cobrindo múltiplas seções do documento.`, 'success');
