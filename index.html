@@ -8041,12 +8041,13 @@ function _npopOutlineItem(text, isActivity) {
 }
 
 function _npopOutlineKind(line) {
-  if(/^\s*(?:\[m\]|m|macro-?etapa)\s*[:-]/i.test(line)) return false;
-  return /^\s*(?:\[a\]|a|atividade)\s*[:-]/i.test(line);
+  const t = line.trimStart();
+  if(/^(?:\[m\]|m|macro-?etapa)\s*[:-]/i.test(t)) return false;
+  return /^(?:\[a\]|a|atividade)\s*[:-]/i.test(t);
 }
 
 function _npopOutlineText(line) {
-  return line.replace(/^\s*(?:\[[ma]\]|[ma]|macro-?etapa|atividade)\s*[:-]\s*/i, '').trim();
+  return line.trimStart().replace(/^(?:\[[ma]\]|[ma]|macro-?etapa|atividade)\s*[:-]\s*/i, '').trim();
 }
 
 function _npopNormalizeOutline(items) {
@@ -9382,7 +9383,7 @@ function applyIaResult(parsed) {
       // Flatten entries where AI concatenated multiple executors in one "name" (e.g. "A; B; C")
       const rawExec = parsed.executores || parsed.roles || [];
       const expanded = rawExec.flatMap(r => {
-        const names = (r.name||'').split(/[;\/]/).map(n => n.trim()).filter(Boolean);
+        const names = (r.name||'').split(/[;/]/).map(n => n.trim()).filter(Boolean);
         if(names.length <= 1) return [r];
         return names.map(name => ({ ...r, name, duties: r.duties||[] }));
       });
@@ -11887,7 +11888,7 @@ function _orgEquipeMatches(recordEquipe, equipeNome) {
   if(!recordEquipe || !equipeNome) return false;
   const target = equipeNome.trim().toLowerCase();
   const parts = String(recordEquipe)
-    .split(/[,;\n\/|]+/)
+    .split(/[,;\n/|]+/)
     .map(s => s.trim().toLowerCase())
     .filter(Boolean);
   if(parts.includes(target)) return true;
@@ -14004,7 +14005,7 @@ function _getEntraConfig() {
 
 function _getEntraApiAudience(cfg = _getEntraConfig()) {
   const explicit = String(cfg.apiAudience || '').trim();
-  if (explicit) return explicit.replace(/\/$/, '');
+  if (explicit) return explicit.endsWith('/') ? explicit.slice(0, -1) : explicit;
   const apiClientId = String(cfg.apiClientId || '').trim();
   return apiClientId ? `api://${apiClientId}` : '';
 }
@@ -14116,7 +14117,8 @@ async function callGeminiProxy(prompt, image = null, options = {}) {
     maxTokens: options.maxTokens || undefined,
   };
 
-  const apiBase = String(API_URL || '').replace(/\/$/, '');
+  const apiBaseRaw = String(API_URL || '');
+  const apiBase = apiBaseRaw.endsWith('/') ? apiBaseRaw.slice(0, -1) : apiBaseRaw;
   const endpointCandidates = [
     `${apiBase}/ai`,
     'http://127.0.0.1:3000/ai',
@@ -24381,7 +24383,7 @@ IMPORTANTE: coloque os campos simples e os arrays curtos (faqs, normas, indicato
 function _npopFileBaseName(name) {
   return String(name || '')
     .replace(/\.[^.]+$/, '')
-    .replace(/[\-_]+/g, ' ')
+    .replace(/[-_]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -26478,7 +26480,7 @@ Regras obrigatórias:
   function _parseNum(v) {
     if(v === null || v === undefined || v === '') return null;
     if(typeof v === 'number') return v;
-    const s = String(v).replaceAll(',','.').replace(/[^0-9.\-]/g,'');
+    const s = String(v).replaceAll(',','.').replace(/[^0-9.-]/g,'');
     const n = Number.parseFloat(s);
     return Number.isNaN(n) ? null : n;
   }
@@ -26496,17 +26498,17 @@ Regras obrigatórias:
     const meses = { jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12,
       january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12 };
     // Try "Mmm/YYYY" or "MMMM/YYYY"
-    const m1 = s.match(/^([a-záàâãçéê]+)[\/\s\-](\d{4})$/i);
+    const m1 = s.match(/^([a-záàâãçéê]+)[/\s-](\d{4})$/i);
     if(m1) {
       const mKey = m1[1].toLowerCase().slice(0,3);
       const mNum = meses[mKey];
       if(mNum) return m1[2] + '-' + String(mNum).padStart(2,'0');
     }
     // Try "MM/YYYY"
-    const m2 = s.match(/^(\d{1,2})[\/\-](\d{4})$/);
+    const m2 = s.match(/^(\d{1,2})[/-](\d{4})$/);
     if(m2) return m2[2] + '-' + m2[1].padStart(2,'0');
     // Try "YYYY-MM"
-    const m3 = s.match(/^(\d{4})[\/\-](\d{1,2})$/);
+    const m3 = s.match(/^(\d{4})[/-](\d{1,2})$/);
     if(m3) return m3[1] + '-' + m3[2].padStart(2,'0');
     return s;
   }
