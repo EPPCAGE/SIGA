@@ -5573,7 +5573,7 @@ function _activityToggleBtns(obj, em, loopOnClick, autoOnClick) {
   if(obj.type !== 'atividade') return { loopBtn:'', autoBtn:'' };
   if(!em) return { loopBtn:'', autoBtn:'' };
 
-  const loopOn     = !!obj.loop;
+  const loopOn     = Boolean(obj.loop);
   const loopClass  = loopOn ? ' loop-on' : '';
   const loopTitle  = loopOn ? 'Loop/retrabalho — clique para desmarcar' : 'Marcar como loop/retrabalho';
   const loopBg     = loopOn ? '#fef3c7' : 'transparent';
@@ -5581,7 +5581,7 @@ function _activityToggleBtns(obj, em, loopOnClick, autoOnClick) {
   const loopBorder = loopOn ? '#b4530944' : '#e2e8f0';
   const loopBtn = `<button class="edit-rm-btn loop-toggle-btn${loopClass}" onclick="${loopOnClick}" title="${loopTitle}" style="margin-left:4px;background:${loopBg};color:${loopColor};border:1px solid ${loopBorder};font-size:13px;">🔄</button>`;
 
-  const autoOn     = !!obj.automatico;
+  const autoOn     = Boolean(obj.automatico);
   const autoClass  = autoOn ? ' auto-on' : '';
   const autoTitle  = autoOn ? 'Automático — clique para desmarcar' : 'Marcar como automático';
   const autoBg     = autoOn ? '#dcfce7' : 'transparent';
@@ -8039,7 +8039,7 @@ function _npopOutlineLines(text) {
 }
 
 function _npopOutlineItem(text, isActivity) {
-  return { text: String(text || '').trim(), isActivity: !!isActivity };
+  return { text: String(text || '').trim(), isActivity: Boolean(isActivity) };
 }
 
 function _npopOutlineKind(line) {
@@ -11648,7 +11648,7 @@ function renderSidebar() {
 
 function _isArqModuleVisible() {
   const el = document.getElementById('arq-module');
-  return !!el && el.style.display !== 'none';
+  return Boolean(el) && el.style.display !== 'none';
 }
 
 function _renderArqSidebar(el) {
@@ -11671,7 +11671,7 @@ function _renderArqSidebar(el) {
   }
 
   const total = entries.length;
-  const mapped = entries.filter(({ record }) => !!record.mapeado).length;
+  const mapped = entries.filter(({ record }) => Boolean(record.mapeado)).length;
   let currentMacro = '';
   const chunks = [
     `<div class="sidebar-group">
@@ -17126,8 +17126,8 @@ function _getFichaNaBtn(p, e, isNA) {
 
 function _renderFichaEtapaItem(p, e, i, etapas, ep, fmtD, diffDays) {
   const st = ep[e.id] || {};
-  const isDone = !!st.ok;
-  const isNA = !!st.na;
+  const isDone = Boolean(st.ok);
+  const isNA = Boolean(st.na);
   const durDone = isDone ? diffDays(st.inicio, st.fim) : null;
   const durAtiv = !isDone && !isNA && st.inicio ? diffDays(st.inicio, null) : null;
   const circleStyle = _getFichaCircleStyle(isDone, isNA);
@@ -18067,7 +18067,7 @@ function arqApplyFilter() {
     const matchGerente = !gerente || (r.gerente||'') === gerente;
     const matchObj     = !obj     || (r.objEstrategicos || []).includes(obj);
     const matchMapeado = !mapeado || mapStatus === mapeado;
-    const matchCritico = !critico || (critico === 'sim' ? !!r.critico : !r.critico);
+    const matchCritico = !critico || (critico === 'sim' ? Boolean(r.critico) : !r.critico);
     const matchSearch  = !search  || [r.macroprocesso, r.processo, r.subprocesso, r.area, r.gerente]
       .some(v => (v||'').toLowerCase().includes(search));
     return matchMacro && matchNat && matchArea && matchGerente && matchObj && matchMapeado && matchCritico && matchSearch;
@@ -18254,7 +18254,7 @@ function arqRenderTable(filtered, all) {
     const realIdx = all.indexOf(r);
     const mappedUi = arqGetMapeadoUi(r);
     const mapped  = mappedUi.status === 'sim';
-    const critico = !!r.critico;
+    const critico = Boolean(r.critico);
     const critBg    = critico ? '#fee2e2' : '#f1f5f9';
     const critColor = critico ? '#dc2626' : '#94a3b8';
     const critLabel = critico ? '⚠️ Sim'  : '○ Não';
@@ -18318,7 +18318,7 @@ function arqShowForm(idx = null) {
     document.getElementById('arq-f-entradas').value = r.entradas      || '';
     document.getElementById('arq-f-entregas').value = r.entregas      || '';
     document.getElementById('arq-f-clientes').value = r.clientes      || '';
-    document.getElementById('arq-f-critico').checked = !!r.critico;
+    document.getElementById('arq-f-critico').checked = Boolean(r.critico);
   } else {
     title.textContent = 'Novo Processo';
     ['macro','processo','sub','area','gerente','objetivo','entradas','entregas','clientes'].forEach(f =>
