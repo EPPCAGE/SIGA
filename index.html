@@ -23952,13 +23952,18 @@ function _flowApplyImportedSteps(p, steps) {
   }
 }
 
-function importFluxoExcel(p, input) {
+async function importFluxoExcel(p, input) {
   const file = input?.files?.[0];
   if(!file) return;
   const isCsv = /\.csv$/i.test(file.name) || file.type === 'text/csv';
-  const reader = new FileReader();
-  reader.onload = function(e) { try { _processImportFluxoExcel(p, e.target.result, isCsv); input.value = ''; } catch(err) { input.value = ''; showToast('Erro ao importar fluxo: ' + err.message, 'warn'); } };
-  if(isCsv) reader.readAsText(file, 'UTF-8'); else reader.readAsArrayBuffer(file);
+  try {
+    const content = isCsv ? await file.text() : await file.arrayBuffer();
+    _processImportFluxoExcel(p, content, isCsv);
+    input.value = '';
+  } catch(err) {
+    input.value = '';
+    showToast('Erro ao importar fluxo: ' + err.message, 'warn');
+  }
 }
 
 function _processImportFluxoExcel(p, content, isCsv) {
@@ -26424,30 +26429,26 @@ Regras obrigatórias:
   };
 
   // ─── Importar Excel ───────────────────────────────────────────────
-  globalThis.indcageImportExcel = function(input) {
+  globalThis.indcageImportExcel = async function(input) {
     const file = input?.files?.[0];
     if(!file) return;
     const status = document.getElementById('indcage-import-status');
     if(status) status.textContent = '⏳ Lendo arquivo…';
 
     const isCsv = /\.csv$/i.test(file.name) || file.type === 'text/csv';
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      try {
-        ensureData();
-        const wb = isCsv
-          ? XLSX.read(e.target.result, { type: 'string', cellDates: true })
-          : XLSX.read(e.target.result, { type: 'array',  cellDates: true });
-        _indcageProcessWb(wb, status);
-        input.value = '';
-      } catch(err) {
-        /* notifica o usuario do erro */
-        if(status) status.textContent = '❌ Erro ao importar';
-        showToast('Erro ao importar planilha: ' + err.message, 'warn');
-      }
-    };
-    if(isCsv) reader.readAsText(file, 'UTF-8');
-    else       reader.readAsArrayBuffer(file);
+    try {
+      ensureData();
+      const content = isCsv ? await file.text() : await file.arrayBuffer();
+      const wb = isCsv
+        ? XLSX.read(content, { type: 'string', cellDates: true })
+        : XLSX.read(content, { type: 'array',  cellDates: true });
+      _indcageProcessWb(wb, status);
+      input.value = '';
+    } catch(err) {
+      /* notifica o usuario do erro */
+      if(status) status.textContent = '❌ Erro ao importar';
+      showToast('Erro ao importar planilha: ' + err.message, 'warn');
+    }
   };
 
   // ─── Processamento interno de workbook (reutilizado por import e sync URL) ─
