@@ -4818,8 +4818,9 @@ function _captureState() {
   const auditEl = document.getElementById('audit-module');
   if(auditEl && auditEl.style.display !== 'none') {
     const detail = document.getElementById('audit-view-detail');
-    if(detail && detail.style.display !== 'none' && _auditCurrentPlanId)
+    if(detail && detail.style.display !== 'none' && _auditCurrentPlanId) {
       return { type:'audit-plan', planId:_auditCurrentPlanId, subTab:_auditCurrentPlanSubTab };
+    }
     return { type:'audit' };
   }
   const eppEl = document.getElementById('epp-module');
@@ -4853,8 +4854,9 @@ function _restoreState(state) {
       break;
     case 'pop':
       switchPop(state.pop);
-      if(state.section && state.section !== 'visao-geral')
+      if(state.section && state.section !== 'visao-geral') {
         setTimeout(() => showSection(state.section), 120);
+      }
       break;
     case 'audit':
       _auditCurrentPlanId = null;
@@ -8013,8 +8015,8 @@ function _npopMatchesScope(meta, scope) {
 
 function _npopOpenDuplicates(info, ignoreKey) {
   const scope = _npopScopeTerms(info);
-  return ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
-    .filter((k, i, arr) => arr.indexOf(k) === i && k !== ignoreKey)
+  return [...new Set(['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))])]
+    .filter(k => k !== ignoreKey)
     .filter(k => _npopMatchesScope(DATA[k]?.meta, scope) && _npopIsOpenStatus(DATA[k]?.meta?.statusMap));
 }
 
@@ -8041,12 +8043,13 @@ function _npopOutlineItem(text, isActivity) {
 }
 
 function _npopOutlineKind(line) {
-  if(/^\s*(?:\[m\]|m|macro-?etapa)\s*[:-]/i.test(line)) return false;
-  return /^\s*(?:\[a\]|a|atividade)\s*[:-]/i.test(line);
+  const t = line.trimStart();
+  if(/^(?:\[m\]|m|macro-?etapa)\s*[:-]/i.test(t)) return false;
+  return /^(?:\[a\]|a|atividade)\s*[:-]/i.test(t);
 }
 
 function _npopOutlineText(line) {
-  return line.replace(/^\s*(?:\[[ma]\]|[ma]|macro-?etapa|atividade)\s*[:-]\s*/i, '').trim();
+  return line.trimStart().replace(/^(?:\[[ma]\]|[ma]|macro-?etapa|atividade)\s*[:-]\s*/i, '').trim();
 }
 
 function _npopNormalizeOutline(items) {
@@ -9382,7 +9385,7 @@ function applyIaResult(parsed) {
       // Flatten entries where AI concatenated multiple executors in one "name" (e.g. "A; B; C")
       const rawExec = parsed.executores || parsed.roles || [];
       const expanded = rawExec.flatMap(r => {
-        const names = (r.name||'').split(/[;\/]/).map(n => n.trim()).filter(Boolean);
+        const names = (r.name||'').split(/[;/]/).map(n => n.trim()).filter(Boolean);
         if(names.length <= 1) return [r];
         return names.map(name => ({ ...r, name, duties: r.duties||[] }));
       });
@@ -10121,10 +10124,12 @@ function getConfig(key) {
     return val;
   }
   // Sem dado salvo: seed a partir do CAGE_PROCESSOS
-  if(key === 'gerentesProcessos')
+  if(key === 'gerentesProcessos') {
     return [...new Set(CAGE_PROCESSOS.map(r => r.gerente).filter(Boolean))].sort();
-  if(key === 'objetivosEstrategicos')
+  }
+  if(key === 'objetivosEstrategicos') {
     return [...new Set(CAGE_PROCESSOS.flatMap(r => r.objEstrategicos || []).filter(Boolean))].sort();
+  }
   return CONFIG_DEFAULTS[key] ?? [];
 }
 function setConfig(key, val) {
@@ -10952,14 +10957,14 @@ function _renderCfgCardAptCatalog(title, desc) {
             <label for="cfg-apt-cat-${i}" style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Categoria</label>
             <select id="cfg-apt-cat-${i}" class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;"
               onchange="cfgAptField(${i},'categoria',this.value)">
-              ${catOpts.replace(`value="${a.categoria||''}"`,`value="${a.categoria||''}" selected`)}
+              ${catOpts.replaceAll(`value="${a.categoria||''}"`,`value="${a.categoria||''}" selected`)}
             </select>
           </div>
           <div>
             <label for="cfg-apt-crit-${i}" style="font-size:11px;color:#64748b;font-weight:600;display:block;margin-bottom:3px;">Criticidade</label>
             <select id="cfg-apt-crit-${i}" class="modal-input" style="margin:0;font-size:12px;padding:4px 8px;"
               onchange="cfgAptField(${i},'criticidade',this.value)">
-              ${critOpts.replace(`value="${a.criticidade||''}"`,`value="${a.criticidade||''}" selected`)}
+              ${critOpts.replaceAll(`value="${a.criticidade||''}"`,`value="${a.criticidade||''}" selected`)}
             </select>
           </div>
           <div>
@@ -11696,7 +11701,7 @@ function _renderArqSidebar(el) {
       record.critico ? '<span class="sidebar-item-badge" style="background:#dc2626;">Crítico</span>' : '',
       (() => {
         const mapUi = arqGetMapeadoUi(record);
-        return mapUi.status === 'nao' ? '' : `<span class="sidebar-item-badge" style="${mapUi.status === 'andamento' ? 'background:#f59e0b;' : ''}">${mapUi.badge.replace('✅ ','').replace('🔄 ','')}</span>`;
+        return mapUi.status === 'nao' ? '' : `<span class="sidebar-item-badge" style="${mapUi.status === 'andamento' ? 'background:#f59e0b;' : ''}">${mapUi.badge.replaceAll('✅ ','').replaceAll('🔄 ','')}</span>`;
       })()
     ].filter(Boolean).join('');
     const activeClass = _arqSidebarState.selectedRealIdx === realIdx ? ' active' : '';
@@ -11887,7 +11892,7 @@ function _orgEquipeMatches(recordEquipe, equipeNome) {
   if(!recordEquipe || !equipeNome) return false;
   const target = equipeNome.trim().toLowerCase();
   const parts = String(recordEquipe)
-    .split(/[,;\n\/|]+/)
+    .split(/[,;\n/|]+/)
     .map(s => s.trim().toLowerCase())
     .filter(Boolean);
   if(parts.includes(target)) return true;
@@ -12362,8 +12367,7 @@ function showPatModule(show = true) {
 function populatePatPopSelect() {
   const sel = document.getElementById('pat-pop-vinc');
   if(!sel) return;
-  const pops = ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
-    .filter((k, i, arr) => arr.indexOf(k) === i)
+  const pops = [...new Set(['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))])]
     .filter(k => typeof DATA[k] === 'object' && DATA[k]?.meta)
     .map(k => ({ key:k, label: DATA[k]?.meta?.name || 'Novo POP' }));
   sel.innerHTML = '<option value="">Nenhum</option>' + pops.map(p=>`<option value="${escapeHtml(p.key)}">${escapeHtml(p.label)}</option>`).join('');
@@ -14004,7 +14008,7 @@ function _getEntraConfig() {
 
 function _getEntraApiAudience(cfg = _getEntraConfig()) {
   const explicit = String(cfg.apiAudience || '').trim();
-  if (explicit) return explicit.replace(/\/$/, '');
+  if (explicit) return explicit.endsWith('/') ? explicit.slice(0, -1) : explicit;
   const apiClientId = String(cfg.apiClientId || '').trim();
   return apiClientId ? `api://${apiClientId}` : '';
 }
@@ -14116,7 +14120,8 @@ async function callGeminiProxy(prompt, image = null, options = {}) {
     maxTokens: options.maxTokens || undefined,
   };
 
-  const apiBase = String(API_URL || '').replace(/\/$/, '');
+  const apiBaseRaw = String(API_URL || '');
+  const apiBase = apiBaseRaw.endsWith('/') ? apiBaseRaw.slice(0, -1) : apiBaseRaw;
   const endpointCandidates = [
     `${apiBase}/ai`,
     'http://127.0.0.1:3000/ai',
@@ -15660,7 +15665,7 @@ async function buildPptx(D, _popKey) {
         const s = pres.addSlide();
         s.background = { color: C.light };
         hdr(s, '📊  MATURIDADE DO PROCESSO', nome);
-        const lvCol = matResult.levelColor ? matResult.levelColor.replace('#','') : C.green;
+        const lvCol = matResult.levelColor ? matResult.levelColor.replaceAll('#','') : C.green;
         // Score central
         s.addShape(pres.ShapeType.ellipse, { x:0.5, y:1.2, w:2.5, h:2.5, fill:{ color:lvCol } });
         s.addText(matResult.levelIcon||'', { x:0.5, y:1.3, w:2.5, h:0.7, fontSize:28, align:'center', valign:'middle', margin:0 });
@@ -15823,7 +15828,7 @@ function _srChartToBase64(codigo, chartType, resultados) {
     const hasPercentage = cfg.tipo !== 'numero' && cfg.tipo !== 'moeda' &&
       all.some(r => r.pctRealizado !== null && r.pctRealizado !== undefined && r.pctRealizado !== 0);
     const periodoLbl = p => { if(!p) return ''; const [y,m]=p.split('-'); return m&&y ? new Date(Number.parseInt(y),Number.parseInt(m)-1,1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}) : p; };
-    const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replace('.',','); };
+    const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replaceAll('.',','); };
 
     let chartCfg;
     if(chartType==='yoy' && hasPercentage) {
@@ -16353,7 +16358,7 @@ async function _buildEppStatusReport(opts = {}) {
     const medals3 = ['🥇','🥈','🥉'];
     const showN = Math.min(rkItems.length, 10);
     rkItems.slice(0, showN).forEach((it, idx) => {
-      const col3 = (it.matColor || '#334155').replace('#','');
+      const col3 = (it.matColor || '#334155').replaceAll('#','');
       rkRows.push([
         tdCell(idx < 3 ? medals3[idx] : String(idx+1), { align:'center', fontSize:idx<3?11:9, bold:true }),
         tdCell(it.nome,     { fontSize:8 }),
@@ -16516,7 +16521,7 @@ async function _buildEppStatusReport(opts = {}) {
       const tituloInd = [codigo, ind?.enunciado].filter(Boolean).join(' — ');
       showToast(`Processando indicador ${idx+1}/${selectedCodigos.length}: ${codigo}…`, 'info');
       const periodoLbl = p => { if(!p) return ''; const [y,m]=p.split('-'); return m&&y ? new Date(Number.parseInt(y),Number.parseInt(m)-1,1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}) : p; };
-      const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replace('.',','); };
+      const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replaceAll('.',','); };
 
       // Slide: ficha + gráfico
       const sInd = pres.addSlide();
@@ -16977,8 +16982,9 @@ const _ETAPAS_MAP = [
 function _initEtapas(p) {
   if(!DATA[p].etapasProgress) DATA[p].etapasProgress = {};
   _ETAPAS_MAP.forEach(e => {
-    if(!DATA[p].etapasProgress[e.id])
+    if(!DATA[p].etapasProgress[e.id]) {
       DATA[p].etapasProgress[e.id] = { ok:false, na:false, inicio:null, fim:null };
+    }
   });
   return DATA[p].etapasProgress;
 }
@@ -17597,7 +17603,7 @@ function escapeHtml(v) {
 // Parseia texto colado em array de itens [{text, checked}]
 function _parseChecklistText(raw) {
   return raw.split('\n')
-    .map(l => l.replace(/^[\s]*[-*•□✓✗\d]+[.):\s]+/, '').trim())
+    .map(l => l.replace(/^\s*[-*•□✓✗\d]+[.):\s]+/, '').trim())
     .filter(l => l.length > 0)
     .map(text => ({ text, checked: false }));
 }
@@ -19068,8 +19074,7 @@ function showPopGallery() {
   if(!gallery) return;
 
   const _GALLERY_SKIP = new Set(['_arqOverrides','pat','_logoUrl','_repoDocs','_drops']);
-  const keys = ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
-    .filter((k, i, arr) => arr.indexOf(k) === i)
+  const keys = [...new Set(['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))])]
     .filter(k => !_GALLERY_SKIP.has(k) && typeof DATA[k] === 'object' && DATA[k]?.meta);
   const subtitle = document.getElementById('pop-gallery-subtitle');
   if(subtitle) subtitle.textContent = `${keys.length} POP${keys.length !== 1 ? 's' : ''} cadastrado${keys.length !== 1 ? 's' : ''} na galeria principal de processos.`;
@@ -22189,7 +22194,7 @@ function eppSetValorHora() {
   const cur = DATA._valorHora ? String(DATA._valorHora) : '';
   const val = prompt('Informe o valor da hora (R$/h) para cálculo do valor economizado:\n(Deixe em branco para remover)', cur);
   if(val === null) return;
-  const num = Number.parseFloat(val.replace(',','.'));
+  const num = Number.parseFloat(val.replaceAll(',','.'));
   DATA._valorHora = Number.isNaN(num) ? null : num;
   markChanged(true, true);
   eppRenderDashboard();
@@ -22336,8 +22341,9 @@ function auditEnsure() {
   if(!Array.isArray(DATA.audits.actions))         DATA.audits.actions = [];
   if(!Array.isArray(DATA.aptCatalog))             DATA.aptCatalog = [];
   // Seed catálogo built-in se ainda vazio
-  if(DATA.aptCatalog.length === 0)
+  if(DATA.aptCatalog.length === 0) {
     DATA.aptCatalog = APT_CATALOG_BUILTIN.map(a => ({...a, recomendacoes:[...a.recomendacoes]}));
+  }
 }
 
 function showAuditModule(show=true) {
@@ -24381,7 +24387,7 @@ IMPORTANTE: coloque os campos simples e os arrays curtos (faqs, normas, indicato
 function _npopFileBaseName(name) {
   return String(name || '')
     .replace(/\.[^.]+$/, '')
-    .replace(/[\-_]+/g, ' ')
+    .replace(/[-_]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -24931,8 +24937,7 @@ function statusModalAutoFill() {
   };
 
   function _allPops() {
-    return ['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))]
-      .filter((k, i, arr) => arr.indexOf(k) === i)
+    return [...new Set(['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))])]
       .filter(k => typeof DATA[k] === 'object' && DATA[k]?.meta);
   }
 
@@ -26478,7 +26483,7 @@ Regras obrigatórias:
   function _parseNum(v) {
     if(v === null || v === undefined || v === '') return null;
     if(typeof v === 'number') return v;
-    const s = String(v).replaceAll(',','.').replace(/[^0-9.\-]/g,'');
+    const s = String(v).replaceAll(',','.').replace(/[^0-9.-]/g,'');
     const n = Number.parseFloat(s);
     return Number.isNaN(n) ? null : n;
   }
@@ -26496,17 +26501,17 @@ Regras obrigatórias:
     const meses = { jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12,
       january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12 };
     // Try "Mmm/YYYY" or "MMMM/YYYY"
-    const m1 = s.match(/^([a-záàâãçéê]+)[\/\s\-](\d{4})$/i);
+    const m1 = s.match(/^([a-záàâãçéê]+)[/\s-](\d{4})$/i);
     if(m1) {
       const mKey = m1[1].toLowerCase().slice(0,3);
       const mNum = meses[mKey];
       if(mNum) return m1[2] + '-' + String(mNum).padStart(2,'0');
     }
     // Try "MM/YYYY"
-    const m2 = s.match(/^(\d{1,2})[\/\-](\d{4})$/);
+    const m2 = s.match(/^(\d{1,2})[/-](\d{4})$/);
     if(m2) return m2[2] + '-' + m2[1].padStart(2,'0');
     // Try "YYYY-MM"
-    const m3 = s.match(/^(\d{4})[\/\-](\d{1,2})$/);
+    const m3 = s.match(/^(\d{4})[/-](\d{1,2})$/);
     if(m3) return m3[1] + '-' + m3[2].padStart(2,'0');
     return s;
   }
@@ -26727,7 +26732,7 @@ Regras obrigatórias:
     const cfg = _getOverride(selInd);
     function kpiClass(v) {
       if(v===null) return '';
-      return _pctClass(v, cfg).replace('pct-', '');
+      return _pctClass(v, cfg).replaceAll('pct-', '');
     }
     const unidade      = cfg?.unidade || '';
     const sentidoLabel = cfg.sentido === 'menor' ? '↓ menor melhor' : '↑ maior melhor';
@@ -27713,12 +27718,12 @@ function arqCompRenderSection(idx) {
       if(!btn) return;
 
       if(btn.classList.contains('arq-comp-remove')) {
-        const i = parseInt(btn.dataset.idx);
+        const i = Number.parseInt(btn.dataset.idx);
         const c = btn.dataset.cat;
-        const ci = parseInt(btn.dataset.item);
+        const ci = Number.parseInt(btn.dataset.item);
         arqCompRemove(i, c, ci);
       } else if(btn.classList.contains('arq-comp-custom')) {
-        const i = parseInt(btn.dataset.idx);
+        const i = Number.parseInt(btn.dataset.idx);
         const c = btn.dataset.cat;
         arqCompAddCustom(i, c);
       }
@@ -27885,14 +27890,16 @@ function matAuditDetails(p, version) {
         const isBurocByNat = (nat === 'aprovacao' || nat === 'revisao');
         const isBurocByKw  = !nat && APPROVAL_KW.some(k => textLow.includes(k));
         const isControle   = nat === 'controle';
-        if(isBurocByNat || isBurocByKw)
+        if(isBurocByNat || isBurocByKw) {
           audit.approvals.push({ step: stepName, text: txt, via: isBurocByNat ? `nat: ${nat}` : 'palavra-chave' });
-        else if(isControle)
+        } else if(isControle) {
           audit.approvals.push({ step: stepName, text: txt, via: 'nat: controle' });
+        }
       }
 
-      if(type === 'atividade' && action.loop)
+      if(type === 'atividade' && action.loop) {
         audit.loops.push({ step: stepName, text: txt });
+      }
 
       if(type === 'atividade') {
         if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
@@ -27901,8 +27908,9 @@ function matAuditDetails(p, version) {
         }
         if(actor) { prevActor = actor; audit.actors.add(actor.toLowerCase()); }
         // Automação: marcada como automática (⚙️)
-        if(action.automatico)
+        if(action.automatico) {
           audit.automaticas.push({ step: stepName, text: txt });
+        }
       }
 
       // Processar caminhos de decisão (espelha matComputeMetrics)
@@ -27944,8 +27952,9 @@ function matAuditDetails(p, version) {
                       if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: nbaActor }); }
                     }
                     if(nbaActor) { prevActor = nbaActor; audit.actors.add(nbaActor.toLowerCase()); }
-                    if(nba.automatico)
+                    if(nba.automatico) {
                       audit.automaticas.push({ step: stepName, text: nbaTxt });
+                    }
                   }
                 });
               });
@@ -27955,8 +27964,9 @@ function matAuditDetails(p, version) {
             const baBurocByKw  = !baNat && APPROVAL_KW.some(k => baTextLow.includes(k));
             if(baBurocByNat || baBurocByKw) decisionHasApproval = true;
 
-            if(baType === 'atividade' && ba.loop)
+            if(baType === 'atividade' && ba.loop) {
               audit.loops.push({ step: stepName, text: baTxt });
+            }
 
             if(baType === 'atividade') {
               if(baActor && prevActor && baActor.toLowerCase() !== prevActor.toLowerCase()) {
@@ -27964,14 +27974,16 @@ function matAuditDetails(p, version) {
                 if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: baActor }); }
               }
               if(baActor) { prevActor = baActor; audit.actors.add(baActor.toLowerCase()); }
-              if(ba.automatico)
+              if(ba.automatico) {
                 audit.automaticas.push({ step: stepName, text: baTxt });
+              }
             }
           });
         });
         // Conta 1 aprovação por decisão que tiver caminhos com aprovação (igual matComputeMetrics)
-        if(decisionHasApproval)
+        if(decisionHasApproval) {
           audit.approvals.push({ step: stepName, text: txt, via: 'decisão c/ caminho de aprovação' });
+        }
       }
     });
   });
