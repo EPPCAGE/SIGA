@@ -14412,7 +14412,7 @@ async function signOut() {
         postLogoutRedirectUri: globalThis.location.origin,
       });
     } catch(e) {
-      /* intentional */
+      console.debug('[siga] logoutPopup fallback:', e?.message || e);
     }
   }
 
@@ -14518,7 +14518,7 @@ function _simulatorInit(frame) {
         const { graph, popKey, linkedProcess, simResults } = msg.payload || {};
         // Validate popKey to prevent prototype pollution
         if(!graph || !popKey || typeof popKey !== 'string' || !/^[a-zA-Z0-9_:./-]+$/.test(popKey)) return;
-        if(!Object.prototype.hasOwnProperty.call(DATA, popKey)) return;
+        if(!Object.hasOwn(DATA, popKey)) return;
         DATA[popKey].simulatorGraph = graph;
         // Vincula processo da Arquitetura de Processos, se informado
         if(linkedProcess) DATA[popKey].linkedProcess = linkedProcess;
@@ -14536,7 +14536,7 @@ function _simulatorInit(frame) {
         try {
           const list = typeof arqGetData === 'function' ? arqGetData() : [];
           ev.source?.postMessage({ type: 'SIGA_PROCESS_LIST', payload: { list } }, globalThis.location.origin);
-        } catch(e2) { console.warn('[siga]', e2); }
+        } catch(error_) { console.warn('[siga]', error_); }
       }
     } catch(e) { console.warn('[siga]', e); }
   });
@@ -26021,7 +26021,7 @@ Regras obrigatórias:
         await _modeler.importXML(DEFAULT_BPMN);
         _fdApplyBpmnColors();
         _modeler.get('canvas').zoom('fit-viewport');
-      } catch(e2) { console.warn('[siga]', e2); }
+      } catch(error_) { console.warn('[siga]', error_); }
     }
 
     // Update title in toolbar
