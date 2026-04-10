@@ -4818,8 +4818,9 @@ function _captureState() {
   const auditEl = document.getElementById('audit-module');
   if(auditEl && auditEl.style.display !== 'none') {
     const detail = document.getElementById('audit-view-detail');
-    if(detail && detail.style.display !== 'none' && _auditCurrentPlanId)
+    if(detail && detail.style.display !== 'none' && _auditCurrentPlanId) {
       return { type:'audit-plan', planId:_auditCurrentPlanId, subTab:_auditCurrentPlanSubTab };
+    }
     return { type:'audit' };
   }
   const eppEl = document.getElementById('epp-module');
@@ -4853,8 +4854,9 @@ function _restoreState(state) {
       break;
     case 'pop':
       switchPop(state.pop);
-      if(state.section && state.section !== 'visao-geral')
+      if(state.section && state.section !== 'visao-geral') {
         setTimeout(() => showSection(state.section), 120);
+      }
       break;
     case 'audit':
       _auditCurrentPlanId = null;
@@ -10122,10 +10124,12 @@ function getConfig(key) {
     return val;
   }
   // Sem dado salvo: seed a partir do CAGE_PROCESSOS
-  if(key === 'gerentesProcessos')
+  if(key === 'gerentesProcessos') {
     return [...new Set(CAGE_PROCESSOS.map(r => r.gerente).filter(Boolean))].sort();
-  if(key === 'objetivosEstrategicos')
+  }
+  if(key === 'objetivosEstrategicos') {
     return [...new Set(CAGE_PROCESSOS.flatMap(r => r.objEstrategicos || []).filter(Boolean))].sort();
+  }
   return CONFIG_DEFAULTS[key] ?? [];
 }
 function setConfig(key, val) {
@@ -16978,8 +16982,9 @@ const _ETAPAS_MAP = [
 function _initEtapas(p) {
   if(!DATA[p].etapasProgress) DATA[p].etapasProgress = {};
   _ETAPAS_MAP.forEach(e => {
-    if(!DATA[p].etapasProgress[e.id])
+    if(!DATA[p].etapasProgress[e.id]) {
       DATA[p].etapasProgress[e.id] = { ok:false, na:false, inicio:null, fim:null };
+    }
   });
   return DATA[p].etapasProgress;
 }
@@ -17598,7 +17603,7 @@ function escapeHtml(v) {
 // Parseia texto colado em array de itens [{text, checked}]
 function _parseChecklistText(raw) {
   return raw.split('\n')
-    .map(l => l.replace(/^[\s]*[-*•□✓✗\d]+[.):\s]+/, '').trim())
+    .map(l => l.replace(/^\s*[-*•□✓✗\d]+[.):\s]+/, '').trim())
     .filter(l => l.length > 0)
     .map(text => ({ text, checked: false }));
 }
@@ -22336,8 +22341,9 @@ function auditEnsure() {
   if(!Array.isArray(DATA.audits.actions))         DATA.audits.actions = [];
   if(!Array.isArray(DATA.aptCatalog))             DATA.aptCatalog = [];
   // Seed catálogo built-in se ainda vazio
-  if(DATA.aptCatalog.length === 0)
+  if(DATA.aptCatalog.length === 0) {
     DATA.aptCatalog = APT_CATALOG_BUILTIN.map(a => ({...a, recomendacoes:[...a.recomendacoes]}));
+  }
 }
 
 function showAuditModule(show=true) {
@@ -27712,12 +27718,12 @@ function arqCompRenderSection(idx) {
       if(!btn) return;
 
       if(btn.classList.contains('arq-comp-remove')) {
-        const i = parseInt(btn.dataset.idx);
+        const i = Number.parseInt(btn.dataset.idx);
         const c = btn.dataset.cat;
-        const ci = parseInt(btn.dataset.item);
+        const ci = Number.parseInt(btn.dataset.item);
         arqCompRemove(i, c, ci);
       } else if(btn.classList.contains('arq-comp-custom')) {
-        const i = parseInt(btn.dataset.idx);
+        const i = Number.parseInt(btn.dataset.idx);
         const c = btn.dataset.cat;
         arqCompAddCustom(i, c);
       }
@@ -27884,14 +27890,16 @@ function matAuditDetails(p, version) {
         const isBurocByNat = (nat === 'aprovacao' || nat === 'revisao');
         const isBurocByKw  = !nat && APPROVAL_KW.some(k => textLow.includes(k));
         const isControle   = nat === 'controle';
-        if(isBurocByNat || isBurocByKw)
+        if(isBurocByNat || isBurocByKw) {
           audit.approvals.push({ step: stepName, text: txt, via: isBurocByNat ? `nat: ${nat}` : 'palavra-chave' });
-        else if(isControle)
+        } else if(isControle) {
           audit.approvals.push({ step: stepName, text: txt, via: 'nat: controle' });
+        }
       }
 
-      if(type === 'atividade' && action.loop)
+      if(type === 'atividade' && action.loop) {
         audit.loops.push({ step: stepName, text: txt });
+      }
 
       if(type === 'atividade') {
         if(actor && prevActor && actor.toLowerCase() !== prevActor.toLowerCase()) {
@@ -27900,8 +27908,9 @@ function matAuditDetails(p, version) {
         }
         if(actor) { prevActor = actor; audit.actors.add(actor.toLowerCase()); }
         // Automação: marcada como automática (⚙️)
-        if(action.automatico)
+        if(action.automatico) {
           audit.automaticas.push({ step: stepName, text: txt });
+        }
       }
 
       // Processar caminhos de decisão (espelha matComputeMetrics)
@@ -27943,8 +27952,9 @@ function matAuditDetails(p, version) {
                       if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: nbaActor }); }
                     }
                     if(nbaActor) { prevActor = nbaActor; audit.actors.add(nbaActor.toLowerCase()); }
-                    if(nba.automatico)
+                    if(nba.automatico) {
                       audit.automaticas.push({ step: stepName, text: nbaTxt });
+                    }
                   }
                 });
               });
@@ -27954,8 +27964,9 @@ function matAuditDetails(p, version) {
             const baBurocByKw  = !baNat && APPROVAL_KW.some(k => baTextLow.includes(k));
             if(baBurocByNat || baBurocByKw) decisionHasApproval = true;
 
-            if(baType === 'atividade' && ba.loop)
+            if(baType === 'atividade' && ba.loop) {
               audit.loops.push({ step: stepName, text: baTxt });
+            }
 
             if(baType === 'atividade') {
               if(baActor && prevActor && baActor.toLowerCase() !== prevActor.toLowerCase()) {
@@ -27963,14 +27974,16 @@ function matAuditDetails(p, version) {
                 if(!seenHandoffs.has(key)) { seenHandoffs.add(key); audit.handoffs.push({ step: stepName, from: prevActor, to: baActor }); }
               }
               if(baActor) { prevActor = baActor; audit.actors.add(baActor.toLowerCase()); }
-              if(ba.automatico)
+              if(ba.automatico) {
                 audit.automaticas.push({ step: stepName, text: baTxt });
+              }
             }
           });
         });
         // Conta 1 aprovação por decisão que tiver caminhos com aprovação (igual matComputeMetrics)
-        if(decisionHasApproval)
+        if(decisionHasApproval) {
           audit.approvals.push({ step: stepName, text: txt, via: 'decisão c/ caminho de aprovação' });
+        }
       }
     });
   });
