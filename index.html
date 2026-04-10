@@ -6649,7 +6649,7 @@ function _indicatorIaNormalize(item) {
   return { icon: item.icon || '📊', title: item.title || 'Indicador sugerido', desc: item.desc || '', tag: item.tag === 'time' ? 'time' : 'perc', formula: item.formula || '', fonte: item.fonte || '', periodicidade: item.periodicidade || 'Mensal', responsavel: item.responsavel || '', meta: item.meta || '' };
 }
 function _indicatorIaParse(text) {
-  let clean = String(text || '').trim().replace(/```json|```/g, '').trim();
+  let clean = String(text || '').trim().replaceAll('```json', '').replaceAll('```', '').trim();
   const match = _extractOuterJsonArray(clean);
   if(match) clean = match;
   const items = JSON.parse(clean);
@@ -6901,7 +6901,7 @@ async function _generateFaqIAWithMode(p, mode) {
     let clean = text.trim();
     const jsonMatchF = _extractOuterJsonArray(clean);
     if(jsonMatchF) clean = jsonMatchF;
-    else clean = clean.replace(/```json|```/g,'').trim();
+    else clean = clean.replaceAll('```json', '').replaceAll('```', '').trim();
     const faqs = JSON.parse(clean);
     if(!Array.isArray(faqs)) throw new Error('Formato inválido');
     faqs.forEach(f => { if(f.q && f.a) DATA[p].faqs.push({q:f.q, a:f.a, pending:false}); });
@@ -18187,7 +18187,7 @@ async function generateRisksIA_v2(p) {
       : '';
     const prompt = `Voce e um especialista em gestao de riscos de processos publicos. Analise o processo abaixo e identifique de 5 a 8 riscos e/ou oportunidades relevantes e especificos ao conteudo real do processo. Evite riscos genericos. Para cada item forneca: titulo objetivo (max. 80 chars), descricao breve, causa provavel, tratamento sugerido, impacto (1=minimo a 5=maximo) e probabilidade (1=raro a 5=quase certo).\n\nPROCESSO: ${procName}\n${desc ? 'DESCRICAO: ' + desc + '\n' : ''}FLUXO:\n${stepsCtx}${existingCtx}\n\nResponda APENAS em JSON puro (sem markdown, sem crases), como array:\n[{\"type\":\"risco\",\"title\":\"\",\"desc\":\"\",\"causa\":\"\",\"solucao\":\"\",\"impact\":3,\"prob\":2,\"treat\":\"Mitigar\"}]\nValores possiveis para type: risco ou oportunidade.\nValores possiveis para treat: Mitigar, Aceitar, Transferir, Eliminar, Explorar.`;
     const text = await callGemini(prompt);
-    let clean = text.trim().replace(/```json|```/g, '').trim();
+    let clean = text.trim().replaceAll('```json', '').replaceAll('```', '').trim();
     const match = _extractOuterJsonArray(clean);
     if(match) clean = match;
     const items = JSON.parse(clean);
@@ -22842,7 +22842,7 @@ Retorne APENAS JSON puro (sem markdown, sem \`\`\`):
     let clean = text.trim();
     const match = _extractOuterJsonArray(clean);
     if(match) clean = match;
-    else clean = clean.replace(/```json|```/g,'').trim();
+    else clean = clean.replaceAll('```json', '').replaceAll('```', '').trim();
     const items = JSON.parse(clean);
     _auditTempChecklist = items.map(it => _mk(it.label||'Item', it.pergunta||''));
   } catch(e) {
