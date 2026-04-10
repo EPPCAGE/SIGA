@@ -11697,7 +11697,7 @@ function _renderArqSidebar(el) {
       record.critico ? '<span class="sidebar-item-badge" style="background:#dc2626;">Crítico</span>' : '',
       (() => {
         const mapUi = arqGetMapeadoUi(record);
-        return mapUi.status === 'nao' ? '' : `<span class="sidebar-item-badge" style="${mapUi.status === 'andamento' ? 'background:#f59e0b;' : ''}">${mapUi.badge.replace('✅ ','').replace('🔄 ','')}</span>`;
+        return mapUi.status === 'nao' ? '' : `<span class="sidebar-item-badge" style="${mapUi.status === 'andamento' ? 'background:#f59e0b;' : ''}">${mapUi.badge.replaceAll('✅ ','').replaceAll('🔄 ','')}</span>`;
       })()
     ].filter(Boolean).join('');
     const activeClass = _arqSidebarState.selectedRealIdx === realIdx ? ' active' : '';
@@ -15662,7 +15662,7 @@ async function buildPptx(D, _popKey) {
         const s = pres.addSlide();
         s.background = { color: C.light };
         hdr(s, '📊  MATURIDADE DO PROCESSO', nome);
-        const lvCol = matResult.levelColor ? matResult.levelColor.replace('#','') : C.green;
+        const lvCol = matResult.levelColor ? matResult.levelColor.replaceAll('#','') : C.green;
         // Score central
         s.addShape(pres.ShapeType.ellipse, { x:0.5, y:1.2, w:2.5, h:2.5, fill:{ color:lvCol } });
         s.addText(matResult.levelIcon||'', { x:0.5, y:1.3, w:2.5, h:0.7, fontSize:28, align:'center', valign:'middle', margin:0 });
@@ -15825,7 +15825,7 @@ function _srChartToBase64(codigo, chartType, resultados) {
     const hasPercentage = cfg.tipo !== 'numero' && cfg.tipo !== 'moeda' &&
       all.some(r => r.pctRealizado !== null && r.pctRealizado !== undefined && r.pctRealizado !== 0);
     const periodoLbl = p => { if(!p) return ''; const [y,m]=p.split('-'); return m&&y ? new Date(Number.parseInt(y),Number.parseInt(m)-1,1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}) : p; };
-    const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replace('.',','); };
+    const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replaceAll('.',','); };
 
     let chartCfg;
     if(chartType==='yoy' && hasPercentage) {
@@ -16355,7 +16355,7 @@ async function _buildEppStatusReport(opts = {}) {
     const medals3 = ['🥇','🥈','🥉'];
     const showN = Math.min(rkItems.length, 10);
     rkItems.slice(0, showN).forEach((it, idx) => {
-      const col3 = (it.matColor || '#334155').replace('#','');
+      const col3 = (it.matColor || '#334155').replaceAll('#','');
       rkRows.push([
         tdCell(idx < 3 ? medals3[idx] : String(idx+1), { align:'center', fontSize:idx<3?11:9, bold:true }),
         tdCell(it.nome,     { fontSize:8 }),
@@ -16518,7 +16518,7 @@ async function _buildEppStatusReport(opts = {}) {
       const tituloInd = [codigo, ind?.enunciado].filter(Boolean).join(' — ');
       showToast(`Processando indicador ${idx+1}/${selectedCodigos.length}: ${codigo}…`, 'info');
       const periodoLbl = p => { if(!p) return ''; const [y,m]=p.split('-'); return m&&y ? new Date(Number.parseInt(y),Number.parseInt(m)-1,1).toLocaleString('pt-BR',{month:'short',year:'2-digit'}) : p; };
-      const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replace('.',','); };
+      const fmtN = v => { if(v===null||v===undefined) return '—'; if(Math.abs(v)>=1000) return v.toLocaleString('pt-BR'); return String(Math.round(v*10)/10).replaceAll('.',','); };
 
       // Slide: ficha + gráfico
       const sInd = pres.addSlide();
@@ -22191,7 +22191,7 @@ function eppSetValorHora() {
   const cur = DATA._valorHora ? String(DATA._valorHora) : '';
   const val = prompt('Informe o valor da hora (R$/h) para cálculo do valor economizado:\n(Deixe em branco para remover)', cur);
   if(val === null) return;
-  const num = Number.parseFloat(val.replace(',','.'));
+  const num = Number.parseFloat(val.replaceAll(',','.'));
   DATA._valorHora = Number.isNaN(num) ? null : num;
   markChanged(true, true);
   eppRenderDashboard();
@@ -26729,7 +26729,7 @@ Regras obrigatórias:
     const cfg = _getOverride(selInd);
     function kpiClass(v) {
       if(v===null) return '';
-      return _pctClass(v, cfg).replace('pct-', '');
+      return _pctClass(v, cfg).replaceAll('pct-', '');
     }
     const unidade      = cfg?.unidade || '';
     const sentidoLabel = cfg.sentido === 'menor' ? '↓ menor melhor' : '↑ maior melhor';
