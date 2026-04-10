@@ -2453,11 +2453,6 @@
       <div id="bi-cadeia-preview" style="display:none;text-align:center;">
         <img id="bi-cadeia-img" src="" alt="Cadeia de Valor" style="max-width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.90);">
       </div>
-      <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;">
-        <div style="font-size:13px;font-weight:700;color:#1B3022;margin-bottom:8px;">Macroprocessos interativos</div>
-        <div id="bi-cadeia-macro-tabs" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-        <div style="font-size:12px;color:#64748b;margin-top:8px;line-height:1.5;">Clique em um macroprocesso para abrir a Arquitetura de Processos com o filtro aplicado.</div>
-      </div>
     </div>
 
     <!-- Imagem: Mapa Estratégico -->
@@ -11735,38 +11730,6 @@ function showBiModule(show=true) {
   document.getElementById('bi-module').style.display = 'block';
   biImgRefresh('cadeia');
   biImgRefresh('mapa');
-  biRenderMacroTabs();
-}
-
-function biRenderMacroTabs() {
-  const host = document.getElementById('bi-cadeia-macro-tabs');
-  if(!host) return;
-  host.innerHTML = '';
-  const data = arqGetData ? arqGetData() : CAGE_PROCESSOS;
-  const macros = [...new Set((data || []).map(r => String(r.macroprocesso || '').trim()).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  if(!macros.length) {
-    host.innerHTML = '<span style="font-size:12px;color:#94a3b8;">Nenhum macroprocesso encontrado.</span>';
-    return;
-  }
-  macros.forEach((macro) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = macro;
-    btn.style.cssText = 'background:#f8fafc;border:1px solid #cbd5e1;color:#1e293b;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;';
-    btn.onmouseenter = () => { btn.style.background = '#e2e8f0'; };
-    btn.onmouseleave = () => { btn.style.background = '#f8fafc'; };
-    btn.onclick = () => biOpenMacroInArq(macro);
-    host.appendChild(btn);
-  });
-}
-
-function biOpenMacroInArq(macro) {
-  const macroValue = String(macro || '').trim();
-  if(!macroValue) return;
-  showArqModule(true);
-  arqApplyMacroFilterOnly(macroValue);
-  showToast('Filtro aplicado na Arquitetura: ' + macroValue, 'success');
 }
 
 function showOrganogramaModule(show=true) {
@@ -18153,36 +18116,6 @@ function arqClearFilter() {
   const c = document.getElementById('arq-filter-critico'); if(c) c.value = '';
   _arqSort = { col: null, dir: 1 };
   document.querySelectorAll('.arq-th-sort .sort-arrow').forEach(el => el.textContent = ' ↕');
-  arqApplyFilter();
-}
-
-function arqApplyMacroFilterOnly(macro) {
-  const macroValue = String(macro || '').trim();
-  const macroSel = document.getElementById('arq-filter-macro');
-  const natSel = document.getElementById('arq-filter-natureza');
-  const areaSel = document.getElementById('arq-filter-area');
-  const gerenteSel = document.getElementById('arq-filter-gerente');
-  const objSel = document.getElementById('arq-filter-obj');
-  const mapeadoSel = document.getElementById('arq-filter-mapeado');
-  const criticoSel = document.getElementById('arq-filter-critico');
-  const searchInp = document.getElementById('arq-filter-search');
-  if(!macroSel) return;
-
-  if(![...macroSel.options].some(opt => opt.value === macroValue)) {
-    const opt = document.createElement('option');
-    opt.value = macroValue;
-    opt.textContent = macroValue;
-    macroSel.appendChild(opt);
-  }
-
-  macroSel.value = macroValue;
-  if(natSel) natSel.value = '';
-  if(areaSel) areaSel.value = '';
-  if(gerenteSel) gerenteSel.value = '';
-  if(objSel) objSel.value = '';
-  if(mapeadoSel) mapeadoSel.value = '';
-  if(criticoSel) criticoSel.value = '';
-  if(searchInp) searchInp.value = '';
   arqApplyFilter();
 }
 
