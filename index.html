@@ -15312,18 +15312,18 @@ async function buildPptx(D, _popKey) {
     const s = pres.addSlide();
     s.background = { color: C.light };
     hdr(s, '🏠  VISÃO GERAL', nome);
-    s.addShape(pres.ShapeType.rect, { x:0.3, y:1.0, w:6.2, h:2.2, fill:{ color:C.white }, shadow:mks() });
-    s.addShape(pres.ShapeType.rect, { x:0.3, y:1.0, w:0.08, h:2.2, fill:{ color:C.green } });
+    s.addShape(pres.ShapeType.rect, { x:0.3, y:1, w:6.2, h:2.2, fill:{ color:C.white }, shadow:mks() });
+    s.addShape(pres.ShapeType.rect, { x:0.3, y:1, w:0.08, h:2.2, fill:{ color:C.green } });
     s.addText('Objetivo', { x:0.5, y:1.1, w:5.8, h:0.3, fontSize:10, color:C.muted, bold:true, margin:0 });
     s.addText(desc || '—', { x:0.5, y:1.45, w:5.8, h:1.6, fontSize:12, color:C.text, margin:0, valign:'top' });
-    s.addShape(pres.ShapeType.rect, { x:6.8, y:1.0, w:2.9, h:1.0, fill:{ color:C.white }, shadow:mks() });
-    s.addShape(pres.ShapeType.rect, { x:6.8, y:1.0, w:0.08, h:1.0, fill:{ color:C.gold } });
-    s.addText('📥  Entradas', { x:7.0, y:1.05, w:2.5, h:0.25, fontSize:9, color:C.muted, bold:true, margin:0 });
-    s.addText(input || '—', { x:7.0, y:1.3, w:2.5, h:0.6, fontSize:11, color:C.text, margin:0 });
-    s.addShape(pres.ShapeType.rect, { x:6.8, y:2.2, w:2.9, h:1.0, fill:{ color:C.white }, shadow:mks() });
-    s.addShape(pres.ShapeType.rect, { x:6.8, y:2.2, w:0.08, h:1.0, fill:{ color:C.green } });
-    s.addText('📤  Saídas', { x:7.0, y:2.25, w:2.5, h:0.25, fontSize:9, color:C.muted, bold:true, margin:0 });
-    s.addText(output || '—', { x:7.0, y:2.5, w:2.5, h:0.6, fontSize:11, color:C.text, margin:0 });
+    s.addShape(pres.ShapeType.rect, { x:6.8, y:1, w:2.9, h:1, fill:{ color:C.white }, shadow:mks() });
+    s.addShape(pres.ShapeType.rect, { x:6.8, y:1, w:0.08, h:1, fill:{ color:C.gold } });
+    s.addText('📥  Entradas', { x:7, y:1.05, w:2.5, h:0.25, fontSize:9, color:C.muted, bold:true, margin:0 });
+    s.addText(input || '—', { x:7, y:1.3, w:2.5, h:0.6, fontSize:11, color:C.text, margin:0 });
+    s.addShape(pres.ShapeType.rect, { x:6.8, y:2.2, w:2.9, h:1, fill:{ color:C.white }, shadow:mks() });
+    s.addShape(pres.ShapeType.rect, { x:6.8, y:2.2, w:0.08, h:1, fill:{ color:C.green } });
+    s.addText('📤  Saídas', { x:7, y:2.25, w:2.5, h:0.25, fontSize:9, color:C.muted, bold:true, margin:0 });
+    s.addText(output || '—', { x:7, y:2.5, w:2.5, h:0.6, fontSize:11, color:C.text, margin:0 });
     const stats = [
       { v:steps.length,   l:'Etapas',      col:C.navy },
       { v:roles.length,   l:'Atores',      col:C.mid },
@@ -15380,7 +15380,7 @@ async function buildPptx(D, _popKey) {
     const div = pres.addSlide();
     div.background = { color: isAsis ? C.navy : '14532D' };
     div.addShape(pres.ShapeType.rect, { x:0, y:0, w:0.25, h:5.625, fill:{ color:C.green } });
-    div.addShape(pres.ShapeType.ellipse, { x:7.5, y:1.0, w:4, h:4, fill:{ color:'FFFFFF', transparency:94 } });
+    div.addShape(pres.ShapeType.ellipse, { x:7.5, y:1, w:4, h:4, fill:{ color:'FFFFFF', transparency:94 } });
     div.addText(isAsis ? '⚙️ FLUXO AS IS' : '🔄 FLUXO TO BE', { x:0.5, y:1.8, w:8, h:0.7, fontSize:32, color:C.white, bold:true, margin:0 });
     div.addText(isAsis ? 'Situação atual do processo' : 'Situação futura / redesenhada do processo', { x:0.5, y:2.6, w:7.5, h:0.4, fontSize:14, color:'CADCFC', margin:0 });
     div.addText(nome, { x:0.5, y:3.1, w:7.5, h:0.35, fontSize:11, color:'8898BB', margin:0 });
@@ -15392,9 +15392,9 @@ async function buildPptx(D, _popKey) {
       s.background = { color: C.light };
       hdr(s, (isAsis ? '⚙️  FLUXO AS IS' : '🔄  FLUXO TO BE'), `Etapa ${si+1} de ${modeSteps.length}`);
       s.addShape(pres.ShapeType.rect, { x:0, y:0.84, w:10, h:0.04, fill:{ color: isAsis ? C.green : '22c55e' } });
-      s.addShape(pres.ShapeType.ellipse, { x:0.3, y:1.0, w:0.7, h:0.7, fill:{ color: modeColor } });
-      s.addText(String(si+1), { x:0.3, y:1.0, w:0.7, h:0.7, fontSize:16, color:C.white, bold:true, align:'center', valign:'middle', margin:0 });
-      s.addText(rs.title || '', { x:1.15, y:1.0, w:7.5, h:0.7, fontSize:22, color:C.navy, bold:true, valign:'middle', margin:0 });
+      s.addShape(pres.ShapeType.ellipse, { x:0.3, y:1, w:0.7, h:0.7, fill:{ color: modeColor } });
+      s.addText(String(si+1), { x:0.3, y:1, w:0.7, h:0.7, fontSize:16, color:C.white, bold:true, align:'center', valign:'middle', margin:0 });
+      s.addText(rs.title || '', { x:1.15, y:1, w:7.5, h:0.7, fontSize:22, color:C.navy, bold:true, valign:'middle', margin:0 });
       s.addShape(pres.ShapeType.rect, { x:0.3, y:1.85, w:3.2, h:0.45, fill:{ color:C.mid }, shadow:mks() });
       s.addText('👤  ' + (rs.responsible || ''), { x:0.3, y:1.85, w:3.2, h:0.45, fontSize:11, color:C.white, bold:true, valign:'middle', align:'center', margin:0 });
       rs.actions.forEach((raw, ai) => {
@@ -15540,8 +15540,8 @@ async function buildPptx(D, _popKey) {
         s.addText(pa.desc || '', { x:0.5, y:y+0.04, w:6.2, h:0.54, fontSize:11, color:C.text, valign:'middle', margin:0 });
         if(pa.resp) s.addText('👤 ' + pa.resp, { x:6.8, y:y+0.04, w:1.5, h:0.28, fontSize:9, color:C.muted, valign:'middle', align:'right', margin:0 });
         if(pa.prazo) s.addText('📅 ' + pa.prazo, { x:6.8, y:y+0.3, w:1.5, h:0.25, fontSize:9, color:C.muted, valign:'middle', align:'right', margin:0 });
-        s.addShape(pres.ShapeType.rect, { x:8.4, y:y+0.14, w:1.0, h:0.28, fill:{ color:sc } });
-        s.addText(sl, { x:8.4, y:y+0.14, w:1.0, h:0.28, fontSize:8, color:C.white, bold:true, align:'center', valign:'middle', margin:0 });
+        s.addShape(pres.ShapeType.rect, { x:8.4, y:y+0.14, w:1, h:0.28, fill:{ color:sc } });
+        s.addText(sl, { x:8.4, y:y+0.14, w:1, h:0.28, fontSize:8, color:C.white, bold:true, align:'center', valign:'middle', margin:0 });
       });
     }
   }
@@ -15559,8 +15559,8 @@ async function buildPptx(D, _popKey) {
         const y = 1.05 + idx * 1.12;
         const fmtD = d => { try { return new Date(d+'T12:00:00Z').toLocaleDateString('pt-BR'); } catch(e){ return d||''; } };
         /* tratamento de erro */
-        s.addShape(pres.ShapeType.rect, { x:0.3, y, w:9.2, h:1.0, fill:{ color:C.white }, shadow:mks() });
-        s.addShape(pres.ShapeType.rect, { x:0.3, y, w:0.06, h:1.0, fill:{ color:C.mid } });
+        s.addShape(pres.ShapeType.rect, { x:0.3, y, w:9.2, h:1, fill:{ color:C.white }, shadow:mks() });
+        s.addShape(pres.ShapeType.rect, { x:0.3, y, w:0.06, h:1, fill:{ color:C.mid } });
         s.addText((meetTypeLabel[m.type]||m.type||'Reunião') + (m.date ? '  ·  ' + fmtD(m.date) : ''), { x:0.5, y:y+0.05, w:8.7, h:0.28, fontSize:11, color:C.navy, bold:true, valign:'middle', margin:0 });
         if(m.participants) s.addText('👥 ' + m.participants, { x:0.5, y:y+0.32, w:8.7, h:0.22, fontSize:9, color:C.muted, margin:0 });
         if(m.ata) s.addText((m.ata).substring(0,220) + (m.ata.length>220?'…':''), { x:0.5, y:y+0.54, w:8.7, h:0.38, fontSize:9.5, color:C.text, margin:0 });
@@ -15591,10 +15591,10 @@ async function buildPptx(D, _popKey) {
       const x = idx === 0 ? 0.3 : 5.15;
       const w = 4.55;
       const sc = sitColor[a.situacao] || 'CBD5E1';
-      s.addShape(pres.ShapeType.rect, { x, y:1.0, w, h:4.3, fill:{ color:C.white }, shadow:mks() });
-      s.addShape(pres.ShapeType.rect, { x, y:1.0, w, h:0.5, fill:{ color:C.navy } });
-      s.addText(ap.badge, { x:x+0.1, y:1.0, w:0.9, h:0.5, fontSize:9, color:C.green, bold:true, valign:'middle', margin:0 });
-      s.addText(ap.label, { x:x+1.1, y:1.0, w:w-1.2, h:0.5, fontSize:11, color:C.white, bold:true, valign:'middle', margin:0 });
+      s.addShape(pres.ShapeType.rect, { x, y:1, w, h:4.3, fill:{ color:C.white }, shadow:mks() });
+      s.addShape(pres.ShapeType.rect, { x, y:1, w, h:0.5, fill:{ color:C.navy } });
+      s.addText(ap.badge, { x:x+0.1, y:1, w:0.9, h:0.5, fontSize:9, color:C.green, bold:true, valign:'middle', margin:0 });
+      s.addText(ap.label, { x:x+1.1, y:1, w:w-1.2, h:0.5, fontSize:11, color:C.white, bold:true, valign:'middle', margin:0 });
       s.addText('📅 ' + fmtD(a.data), { x:x+0.15, y:1.6, w:w-0.3, h:0.28, fontSize:10, color:C.muted, margin:0 });
       if(a.situacao) {
         s.addShape(pres.ShapeType.rect, { x:x+0.15, y:1.95, w:w-0.3, h:0.32, fill:{ color:sc } });
@@ -15608,7 +15608,7 @@ async function buildPptx(D, _popKey) {
         { label:'Encaminhamentos', val:a.encaminhamentos },
       ];
       fields.forEach(f => {
-        if(!f.val || yOff > 5.0) return;
+        if(!f.val || yOff > 5) return;
         s.addText(f.label + ':', { x:x+0.15, y:yOff, w:w-0.3, h:0.22, fontSize:8.5, color:C.muted, bold:true, margin:0 });
         yOff += 0.22;
         const txt = f.val.substring(0, 130) + (f.val.length > 130 ? '…' : '');
@@ -15640,8 +15640,8 @@ async function buildPptx(D, _popKey) {
         const stepLabel = ck.stepIndex >= 0 && steps[ck.stepIndex] ? `Etapa ${ck.stepIndex+1}: ${steps[ck.stepIndex].title||''}` : 'Processo geral';
         s.addShape(pres.ShapeType.rect, { x:0.3, y, w:9.2, h:cardH, fill:{ color:C.white }, shadow:mks() });
         s.addShape(pres.ShapeType.rect, { x:0.3, y, w:0.06, h:cardH, fill:{ color:barColor } });
-        s.addText(ck.title||'', { x:0.5, y:y+0.05, w:7.0, h:0.3, fontSize:12, color:C.navy, bold:true, margin:0 });
-        s.addText(stepLabel, { x:0.5, y:y+0.35, w:4.0, h:0.22, fontSize:9, color:C.muted, margin:0 });
+        s.addText(ck.title||'', { x:0.5, y:y+0.05, w:7, h:0.3, fontSize:12, color:C.navy, bold:true, margin:0 });
+        s.addText(stepLabel, { x:0.5, y:y+0.35, w:4, h:0.22, fontSize:9, color:C.muted, margin:0 });
         s.addText(`${done}/${total} (${pct}%)`, { x:7.8, y:y+0.05, w:1.5, h:0.3, fontSize:13, color:barColor, bold:true, align:'right', margin:0 });
         // Barra de progresso
         s.addShape(pres.ShapeType.rect, { x:0.5, y:y+0.6, w:8.8, h:0.12, fill:{ color:'E2E8F0' } });
@@ -15669,7 +15669,7 @@ async function buildPptx(D, _popKey) {
         // Score central
         s.addShape(pres.ShapeType.ellipse, { x:0.5, y:1.2, w:2.5, h:2.5, fill:{ color:lvCol } });
         s.addText(matResult.levelIcon||'', { x:0.5, y:1.3, w:2.5, h:0.7, fontSize:28, align:'center', valign:'middle', margin:0 });
-        s.addText(String(matResult.final), { x:0.5, y:2.0, w:2.5, h:1.0, fontSize:42, color:C.white, bold:true, align:'center', valign:'middle', margin:0 });
+        s.addText(String(matResult.final), { x:0.5, y:2, w:2.5, h:1, fontSize:42, color:C.white, bold:true, align:'center', valign:'middle', margin:0 });
         s.addText(matResult.level||'', { x:0.5, y:3.1, w:2.5, h:0.35, fontSize:13, color:lvCol, bold:true, align:'center', margin:0 });
         s.addText('Nível de Maturidade', { x:0.5, y:3.45, w:2.5, h:0.28, fontSize:9, color:C.muted, align:'center', margin:0 });
         // Componentes
@@ -15710,7 +15710,7 @@ async function buildPptx(D, _popKey) {
     s.addShape(pres.ShapeType.rect, { x:0, y:0, w:0.25, h:5.625, fill:{ color:C.green } });
     s.addShape(pres.ShapeType.ellipse, { x:6.5, y:2.5, w:5, h:5, fill:{ color:'FFFFFF', transparency:94 } });
     s.addText('SIGA', { x:0.5, y:1.5, w:8, h:0.5, fontSize:13, color:C.green, bold:true, charSpacing:2, margin:0 });
-    s.addText(nome, { x:0.5, y:2.1, w:8, h:1.0, fontSize:32, color:C.white, bold:true, margin:0 });
+    s.addText(nome, { x:0.5, y:2.1, w:8, h:1, fontSize:32, color:C.white, bold:true, margin:0 });
     s.addText('Procedimento Operacional Padrão', { x:0.5, y:3.2, w:8, h:0.4, fontSize:12, color:'8898BB', margin:0 });
     s.addText([
       { text:'Elaborado por ', options:{ color:'8898BB', fontSize:11 } },
@@ -15751,7 +15751,7 @@ function _srCarregarIndicadores() {
   if(!list) return;
 
   const allInds = (typeof getAllIndicators === 'function') ? getAllIndicators() : [];
-  const resultados = (window.DATA?.indicadoresCage?.resultados) || [];
+  const resultados = (globalThis.DATA?.indicadoresCage?.resultados) || [];
   const codigosComDados = new Set(resultados.map(r => r.codigo).filter(Boolean));
 
   if(allInds.length === 0) {
@@ -15956,8 +15956,8 @@ async function _buildEppStatusReport(opts = {}) {
 
   // ── Helpers de slide ───────────────────────────────────
   const addLogos = s => {
-    _cageLogoAdd(s, { x:7.3, y:5.0, w:1.4, h:0.45, sizing:{type:'contain',w:1.4,h:0.45} });
-    if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:8.9, y:5.0, w:1.0, h:0.45, sizing:{type:'contain',w:1.0,h:0.45} });
+    _cageLogoAdd(s, { x:7.3, y:5, w:1.4, h:0.45, sizing:{type:'contain',w:1.4,h:0.45} });
+    if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:8.9, y:5, w:1, h:0.45, sizing:{type:'contain',w:1,h:0.45} });
   };
 
   // Dots decoration (top-right)
@@ -16004,7 +16004,7 @@ async function _buildEppStatusReport(opts = {}) {
     // Teal separator
     s.addShape(pres.ShapeType.rect, { x:0.6, y:2.82, w:5.5, h:0.07, fill:{color:C.teal} });
     // Institution subtitle
-    s.addText('EPP', { x:0.6, y:3.0, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
+    s.addText('EPP', { x:0.6, y:3, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
     s.addText('CAGE-RS — Controladoria e Auditoria-Geral do Estado', { x:0.6, y:3.38, w:6.5, h:0.3, fontSize:10, color:'5B8C8A', margin:0 });
     // Cycle pill
     s.addShape(pres.ShapeType.rect, { x:0.6, y:3.9, w:2.8, h:0.45, fill:{color:C.teal} });
@@ -16062,13 +16062,13 @@ async function _buildEppStatusReport(opts = {}) {
     s.background = { color:C.white };
     s.addShape(pres.ShapeType.rect, { x:0, y:0, w:2.8, h:1.05, fill:{color:C.teal} });
     s.addText('Trabalhos concluídos no mês', {
-      x:0.1, y:0.05, w:9.0, h:0.95,
+      x:0.1, y:0.05, w:9, h:0.95,
       fontSize:28, color:C.black, bold:true, fontFace:'Calibri', valign:'middle', margin:0
     });
     s.addShape(pres.ShapeType.rect, { x:0.1, y:1.02, w:4.5, h:0.1, fill:{color:C.teal} });
     addDots(s, 8.5, 0.1);
 
-    const colW2 = [1.0, 1.8, 1.4, 1.2, 0.7, 0.8, 2.9];
+    const colW2 = [1, 1.8, 1.4, 1.2, 0.7, 0.8, 2.9];
     const tblRows2 = [
       [ thCell('Tipo'), thCell('Processo'), thCell('Gerente do Processo'),
         thCell('Patrocinador'), thCell('Início'), thCell('Entrega'),
@@ -16103,8 +16103,8 @@ async function _buildEppStatusReport(opts = {}) {
       s.addShape(pres.ShapeType.ellipse, { x:0.1+c*0.22, y:1.7+r*0.28, w:0.1, h:0.1, fill:{color:'CCCCCC'} });
 
     // Title box with dashed border
-    s.addShape(pres.ShapeType.rect, { x:0.7, y:0.18, w:5.2, h:1.0, line:{type:'dash',color:C.teal,pt:1.5}, fill:{color:C.white} });
-    s.addText('Próximos trabalhos', { x:0.8, y:0.22, w:5.0, h:0.62, fontSize:32, color:C.black, bold:true, fontFace:'Calibri', margin:0 });
+    s.addShape(pres.ShapeType.rect, { x:0.7, y:0.18, w:5.2, h:1, line:{type:'dash',color:C.teal,pt:1.5}, fill:{color:C.white} });
+    s.addText('Próximos trabalhos', { x:0.8, y:0.22, w:5, h:0.62, fontSize:32, color:C.black, bold:true, fontFace:'Calibri', margin:0 });
     s.addShape(pres.ShapeType.rect, { x:0.8, y:0.88, w:2.8, h:0.14, fill:{color:C.teal} });
     _cageLogoAdd(s, { x:8.5, y:0.15, w:1.3, h:0.55, sizing:{type:'contain',w:1.3,h:0.55} });
 
@@ -16131,16 +16131,16 @@ async function _buildEppStatusReport(opts = {}) {
           { text:'\n', options:{ fontSize:7 } },
         ];
       }).flat();
-      s.addText(bulletArr, { x:0.9, y:1.5, w:8.0, h:3.3, fontSize:11, color:C.black, valign:'top', margin:0, paraSpaceAfter:6 });
+      s.addText(bulletArr, { x:0.9, y:1.5, w:8, h:3.3, fontSize:11, color:C.black, valign:'top', margin:0, paraSpaceAfter:6 });
     } else {
       s.addText('Nenhum trabalho planejado para o trimestre atual e próximo.', {
-        x:0.9, y:2.8, w:8.0, h:0.5, fontSize:11, color:C.gray, align:'center', margin:0
+        x:0.9, y:2.8, w:8, h:0.5, fontSize:11, color:C.gray, align:'center', margin:0
       });
     }
 
     // Bottom right hatched decoration (approximated with thin dark rects)
     for(let i=0;i<6;i++)
-      s.addShape(pres.ShapeType.rect, { x:8.8+i*0.1, y:4.0+i*0.16, w:1.2-i*0.1, h:0.06, fill:{color:'BBBBBB'} });
+      s.addShape(pres.ShapeType.rect, { x:8.8+i*0.1, y:4+i*0.16, w:1.2-i*0.1, h:0.06, fill:{color:'BBBBBB'} });
   }
 
   // ── SLIDE 5: INDICADORES DO ESCRITÓRIO ────────────────
@@ -16165,7 +16165,7 @@ async function _buildEppStatusReport(opts = {}) {
     kpis.forEach((k,i) => {
       const col = i%3, row = Math.floor(i/3);
       const x = 0.3+col*3.18, y = 1.05+row*2.05;
-      s.addShape(pres.ShapeType.rect, { x, y, w:3.0, h:1.85, fill:{color:'F8FAFC'}, line:{color:'E2E8F0',pt:1} });
+      s.addShape(pres.ShapeType.rect, { x, y, w:3, h:1.85, fill:{color:'F8FAFC'}, line:{color:'E2E8F0',pt:1} });
       s.addShape(pres.ShapeType.rect, { x, y, w:0.14, h:1.85, fill:{color:k.col} });
       s.addText(k.val,   { x:x+0.22, y:y+0.3,  w:2.6, h:0.8, fontSize:30, color:k.col, bold:true, margin:0 });
       s.addText(k.label, { x:x+0.22, y:y+1.1,  w:2.6, h:0.55, fontSize:10, color:'334155', margin:0 });
@@ -16274,7 +16274,7 @@ async function _buildEppStatusReport(opts = {}) {
 
     if(!objEntries.length) {
       s.addText('Nenhum processo vinculado a objetivos estratégicos.', {
-        x:1.0, y:2.6, w:8.0, h:0.5, fontSize:13, color:C.gray, align:'center', valign:'middle', margin:0
+        x:1, y:2.6, w:8, h:0.5, fontSize:13, color:C.gray, align:'center', valign:'middle', margin:0
       });
     } else {
       const sY2  = 0.90;
@@ -16328,7 +16328,7 @@ async function _buildEppStatusReport(opts = {}) {
     });
     s.addText(monthLong, { x:0.3, y:0.05, w:9.4, h:0.73, fontSize:10, color:'8888AA', align:'right', valign:'middle', margin:0 });
 
-    // Calcular ranking inline (não depende de window._eppRankingItems)
+    // Calcular ranking inline (não depende de globalThis._eppRankingItems)
     const rkItems = [];
     arqData.filter(r => r.mapeado).forEach(r => {
       const pk2 = arqFindLinkedPop(r);
@@ -16471,13 +16471,13 @@ async function _buildEppStatusReport(opts = {}) {
     // "Obrigado!" large white
     s.addText('Obrigado!', { x:0.6, y:1.1, w:6.8, h:1.2, fontSize:58, color:C.white, bold:true, fontFace:'Calibri', margin:0 });
     // Teal separator
-    s.addShape(pres.ShapeType.rect, { x:0.6, y:2.4, w:5.0, h:0.07, fill:{color:C.teal} });
+    s.addShape(pres.ShapeType.rect, { x:0.6, y:2.4, w:5, h:0.07, fill:{color:C.teal} });
     // Institution
     s.addText('EPP', { x:0.6, y:2.6, w:6.5, h:0.38, fontSize:16, color:'A8D8D5', bold:true, margin:0 });
     s.addText('CAGE-RS — Comprometidos com a melhoria contínua dos processos do Estado', { x:0.6, y:2.98, w:6.5, h:0.35, fontSize:10, color:'5B8C8A', margin:0 });
     // Second teal separator
-    s.addShape(pres.ShapeType.rect, { x:0.6, y:3.5, w:3.0, h:0.05, fill:{color:'006B63'} });
-    s.addText(monthLong, { x:0.6, y:3.65, w:4.0, h:0.3, fontSize:11, color:'5B8C8A', margin:0 });
+    s.addShape(pres.ShapeType.rect, { x:0.6, y:3.5, w:3, h:0.05, fill:{color:'006B63'} });
+    s.addText(monthLong, { x:0.6, y:3.65, w:4, h:0.3, fontSize:11, color:'5B8C8A', margin:0 });
     // Bottom footer bar
     s.addShape(pres.ShapeType.rect, { x:0, y:5.05, w:10, h:0.575, fill:{color:'061828'} });
     if(eppLogoB64)  s.addImage({ data:eppLogoB64,  x:0.5, y:5.1, w:1.2, h:0.45, sizing:{type:'contain',w:1.2,h:0.45} });
@@ -16546,7 +16546,7 @@ async function _buildEppStatusReport(opts = {}) {
       const imgB64 = await _srChartToBase64(codigo, 'evo', resultados);
       if(imgB64) {
         sInd.addImage({data:imgB64,x:3.85,y:0.9,w:5.95,h:3.1});
-        sInd.addText('Evolução dos Resultados',{x:3.85,y:4.0,w:5.95,h:0.28,fontSize:9,italic:true,color:CI.muted,align:'center'});
+        sInd.addText('Evolução dos Resultados',{x:3.85,y:4,w:5.95,h:0.28,fontSize:9,italic:true,color:CI.muted,align:'center'});
       } else {
         sInd.addText('Sem dados de resultados disponíveis.',{x:3.85,y:2.5,w:5.95,h:1,fontSize:11,color:CI.muted,align:'center',valign:'middle',italic:true});
       }
@@ -16774,7 +16774,7 @@ async function renderFlowPreview(p) {
   const card = document.getElementById(p + '-flow-preview-card');
   if(!card) return;
   const mermaidCode = DATA[p]?.flowDiagram?.mermaid;
-  if(!mermaidCode || !window.mermaid) { card.style.display = 'none'; return; }
+  if(!mermaidCode || !globalThis.mermaid) { card.style.display = 'none'; return; }
   card.style.display = '';
   const body = document.getElementById(p + '-flow-preview-body');
   if(!body) return;
@@ -17898,7 +17898,7 @@ function gerarAtaAcomp(pop, period) {
 function printAtaAcomp() {
   const content = document.getElementById('ata-print-area')?.innerHTML;
   if(!content) return;
-  const win = window.open('', '_blank');
+  const win = globalThis.open('', '_blank');
   const _ataHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ata de Acompanhamento</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -18485,7 +18485,7 @@ function arqSaveToCloud() {
   if(!currentUser) { showToast('⚠️ Faça login para salvar as alterações na nuvem.', 'warn'); return; }
   // Não salvar antes do app inicializar — as mudanças em DATA._arqOverrides já estão
   // na memória e serão incluídas no próximo saveToCloud() após _appInitialized = true
-  if(!window._appInitialized) return;
+  if(!globalThis._appInitialized) return;
   saveToCloud();
 }
 
@@ -18782,7 +18782,7 @@ function arqShowProcessDetail(idx) {
         mDiv.innerHTML = `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-size:12px;color:#64748b;text-align:center;">
           <div style="font-size:20px;margin-bottom:6px;">🎨</div>
           Diagrama Excalidraw salvo — abra o <strong>Fluxo</strong> para visualizar e editar.</div>`;
-      } else if(popData.flowDiagram.mermaid && window.mermaid) {
+      } else if(popData.flowDiagram.mermaid && globalThis.mermaid) {
         try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{ /* Intentional: suppress mermaid render errors */ }); } catch(e) { console.warn('[siga]', e); }
       }
     }
@@ -19086,7 +19086,7 @@ function showPopGallery() {
     ? _popGallerySection('🔄 Em andamento', andamento, 'Mapeamentos ativos, planejados, atrasados ou suspensos.')
       + _popGallerySection('✅ Concluídos', concluidos, 'Mapeamentos já finalizados e mantidos para consulta.')
     : '<div style="color:#94a3b8;font-size:14px;padding:40px 0;text-align:center;">Nenhum processo cadastrado. Clique em ＋ Novo Processo para começar.</div>';
-  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e) { window.scrollTo(0, 0); }
+  try { globalThis.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e) { globalThis.scrollTo(0, 0); }
 }
 
 function _popGalleryRecord(key) {
@@ -19146,7 +19146,7 @@ function _popGalleryCard(record) {
 function renderPopsGrid() {
   const body = document.getElementById('pops-grid-body');
   if(!body) return;
-  const defs = window._popDefs || [];
+  const defs = globalThis._popDefs || [];
   const search  = (document.getElementById('pops-search')?.value || '').toLowerCase();
   const fMacro  = document.getElementById('pops-filter-macro')?.value  || '';
   const fStatus = document.getElementById('pops-filter-status')?.value || '';
@@ -19846,7 +19846,7 @@ ${fluxoTexto}`;
       </div>`;
 
       // Renderizar Mermaid sugerido pela IA
-      if(window.mermaid) {
+      if(globalThis.mermaid) {
         setTimeout(() => {
           try {
             mermaid.render(mermaidId + '-svg', mermaidCode).then(({ svg }) => {
@@ -20478,7 +20478,7 @@ function printAiRelatorio() {
   const docEl = document.getElementById('rel-doc-content');
   if (!docEl) return;
   const content = docEl.innerHTML.replace(/<div class="rel-print-bar">[\s\S]*?<\/div>\s*<\/div>$/, '</div>');
-  const win = window.open('', '_blank', 'width=960,height=700');
+  const win = globalThis.open('', '_blank', 'width=960,height=700');
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
 <meta charset="utf-8">
 <title>Relatório de Mapeamento — ${document.getElementById('rel-pop-name').textContent}</title>
@@ -20524,7 +20524,7 @@ body{font-family:'Inter',sans-serif;color:#1e293b;padding:40px 52px;max-width:92
 </style>
 </head><body>
 ${content}
-<script>window.onload=function(){window.print();}<\/script>
+<script>globalThis.onload=function(){globalThis.print();}<\/script>
 </body></html>`);
   win.document.close();
 }
@@ -22113,7 +22113,7 @@ function eppRenderDashboard() {
       digitalColor: '#0891b2',
     });
   });
-  window._eppRankingItems = rankingItems;
+  globalThis._eppRankingItems = rankingItems;
   eppRenderRanking('maturidade');
 }
 
@@ -22141,7 +22141,7 @@ function _eppRankingSubLabel(isOverhead, activeKey, item) {
 function eppRenderRanking(activeKey) {
   const tabs   = document.getElementById('epp-ranking-tabs');
   const body   = document.getElementById('epp-ranking-body');
-  const items  = window._eppRankingItems || [];
+  const items  = globalThis._eppRankingItems || [];
   if(!tabs || !body) return;
 
   tabs.innerHTML = _RANKING_TABS.map(t =>
@@ -23697,7 +23697,7 @@ function exportFluxoExcel(p) {
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, 'Fluxo');
-  const safe = (pop?.meta?.name || 'processo').replace(/[\\/:*?"<>|]+/g, '_');
+  const safe = (pop?.meta?.name || 'processo').replace(/[\\:*?"<>|/]+/g, '_');
   XLSX.writeFile(wb, `Fluxo_${safe}_${_flowModeLabel()}.xlsx`);
   showToast('📊 Fluxo exportado para Excel!', 'success');
 }
@@ -24426,7 +24426,7 @@ function blobToBase64(blob) {
 }
 async function npopExtractWithGemini() {
   const popFile  = _npopFile;
-  const bpmnFile = window._npopBpmnFile || null;
+  const bpmnFile = globalThis._npopBpmnFile || null;
 
   if(!popFile) { showToast('Selecione o documento POP antes de extrair.', 'warn'); return; }
 
@@ -24590,8 +24590,8 @@ FORMATO: {"flow":[{"id":"n1","type":"start","name":"Início","actor":"","next":[
         /* intentional */
       }
 
-      window._npopExtractedEtapas = extracted.steps || extracted.etapas || [];
-      window._npopExtractedFull   = extracted;
+      globalThis._npopExtractedEtapas = extracted.steps || extracted.etapas || [];
+      globalThis._npopExtractedFull   = extracted;
       const bpmnMsg = bpmnFile ? ' Fluxo extraído do BPMN.' : '';
       showToast('✅ Extração concluída!' + bpmnMsg + ' Revise os campos e clique em Criar Mapeamento.', 'success');
     }, 300);
@@ -24925,7 +24925,7 @@ function statusModalAutoFill() {
 
   let _donutChart = null;
 
-  window.showCockpitModule = function() {
+  globalThis.showCockpitModule = function() {
     hideAllModules(); // já oculta nav-tabs e pop-switcher-bar
     // Ocultar home-page diretamente — NÃO chamar hideHome() porque ela
     // re-exibe nav-tabs e pop-switcher-bar (a barra "PROCESSO: Tratar Denúncias")
@@ -25086,7 +25086,7 @@ function statusModalAutoFill() {
   }
 
   let _distChart = null;
-  window.cockpitDistBy = function(dim) {
+  globalThis.cockpitDistBy = function(dim) {
     const pops = _allPops();
     // update button styles
     document.querySelectorAll('#cockpit-dist-filters button').forEach(b => {
@@ -25100,7 +25100,7 @@ function statusModalAutoFill() {
 
   function _renderDistChart(pops, dim) {
     const canvas = document.getElementById('cockpit-dist-chart');
-    if (!canvas || !window.Chart) return;
+    if (!canvas || !globalThis.Chart) return;
 
     // Sem POPs: mostrar estado vazio, preservando o canvas para reuso posterior
     let _distNoData = document.getElementById('cockpit-dist-nodata');
@@ -25231,7 +25231,7 @@ function statusModalAutoFill() {
     if (totalEl) totalEl.textContent = total;
 
     const canvas = document.getElementById('cockpit-donut-chart');
-    if (!canvas || !window.Chart) return;
+    if (!canvas || !globalThis.Chart) return;
 
     // Limpar gráfico anterior
     if (_donutChart) { _donutChart.destroy(); _donutChart = null; }
@@ -25345,7 +25345,7 @@ function statusModalAutoFill() {
           .map(k => `<option value="${k}">${DATA[k].meta?.name || k}</option>`).join('');
   }
 
-  window.cockpitLoadPop = function() {
+  globalThis.cockpitLoadPop = function() {
     const k      = document.getElementById('cockpit-pop-selector')?.value;
     const detail = document.getElementById('cockpit-pop-detail');
     const empty  = document.getElementById('cockpit-pop-empty');
@@ -25466,10 +25466,10 @@ function statusModalAutoFill() {
   let _direction   = 'LR';
   let _currentMode = 'mermaid'; // 'mermaid' | 'bpmn'
   let _renderedSvg = null; // cached SVG for export
-  let _fdZoomLevel = 1.0;
+  let _fdZoomLevel = 1;
   let _fdBaseW = 0, _fdBaseH = 0; // dimensões naturais do SVG após renderização
 
-  window.fdApplyZoom = function() {
+  globalThis.fdApplyZoom = function() {
     const output = document.getElementById('fd-mermaid-output');
     const svgEl  = output?.querySelector('svg');
     if(!svgEl) return;
@@ -25524,14 +25524,14 @@ function statusModalAutoFill() {
   }, { passive: false });
 
   // delta=0 resets to 100%
-  window.fdZoom = function(delta) {
-    if(delta === 0) _fdZoomLevel = 1.0;
+  globalThis.fdZoom = function(delta) {
+    if(delta === 0) _fdZoomLevel = 1;
     else _fdZoomLevel = Math.max(0.2, Math.min(3, _fdZoomLevel + delta));
     fdApplyZoom();
   };
 
   // ── Mode switching ────────────────────────────────────────────
-  window.fdSetMode = function(mode) {
+  globalThis.fdSetMode = function(mode) {
     const textMode = document.getElementById('fd-text-mode');
     const bpmnMode = document.getElementById('fd-bpmn-mode');
     const mermaidBtn = document.getElementById('fd-btn-mermaid');
@@ -25554,7 +25554,7 @@ function statusModalAutoFill() {
   };
 
   // ── Show tab (entry point) ────────────────────────────────────
-  window.showFlowDesigner = function(tab, options = {}) {
+  globalThis.showFlowDesigner = function(tab, options = {}) {
     const standalone = Boolean(options?.standalone);
     ensureFlowDesignerPopContext();
     _navPush();
@@ -25565,7 +25565,7 @@ function statusModalAutoFill() {
     if (tab && !standalone) tab.classList.add('active');
     document.getElementById('fd-module').style.display = 'block';
     // Initialize mermaid once
-    if (window.mermaid) {
+    if (globalThis.mermaid) {
       try { mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' }); } catch(e) { console.warn('[siga]', e); }
     }
     fdSetMode('mermaid');
@@ -25584,7 +25584,7 @@ function statusModalAutoFill() {
   }
 
   // ── Render Mermaid code ───────────────────────────────────────
-  window.fdRenderMermaid = async function() {
+  globalThis.fdRenderMermaid = async function() {
     const code = document.getElementById('fd-text-input').value.trim();
     if (!code) { showToast('Insira código Mermaid para renderizar.', 'warn'); return; }
     const output  = document.getElementById('fd-mermaid-output');
@@ -25593,7 +25593,7 @@ function statusModalAutoFill() {
     if (loading) loading.style.display = 'none';
     output.innerHTML = '<div style="color:#64748b;font-size:13px;padding:20px;">Renderizando…</div>';
     try {
-      if (!window.mermaid) throw new Error('Mermaid não carregado');
+      if (!globalThis.mermaid) throw new Error('Mermaid não carregado');
       const id  = 'fdm-' + Date.now();
       const { svg } = await mermaid.render(id, code);
       _renderedSvg  = svg;
@@ -25638,7 +25638,7 @@ function statusModalAutoFill() {
       ? steps.map(_fdDescribeStep).join('\n\n')
       : 'Sem ações definidas. Crie um fluxo genérico de mapeamento de processos.';
   }
-  window.fdGenerateWithAI = async function() {
+  globalThis.fdGenerateWithAI = async function() {
     const p = popPrefix(currentPop);
     if (!p || !DATA[p]) { showToast('Nenhum processo selecionado.', 'warn'); return; }
     const steps = _stepsArr(p);
@@ -25689,7 +25689,7 @@ Regras obrigatórias:
   };
 
   // ── Direction toggle ──────────────────────────────────────────
-  window.fdToggleDirection = function(isLR) {
+  globalThis.fdToggleDirection = function(isLR) {
     _direction = isLR ? 'LR' : 'TD';
     const textarea = document.getElementById('fd-text-input');
     if (!textarea) return;
@@ -25701,7 +25701,7 @@ Regras obrigatórias:
   };
 
   // ── Left panel toggle ─────────────────────────────────────────
-  window.fdToggleLeftPanel = function() {
+  globalThis.fdToggleLeftPanel = function() {
     const panel  = document.getElementById('fd-left-panel');
     const colBtn = document.getElementById('fd-collapse-btn');
     const expBtn = document.getElementById('fd-expand-btn');
@@ -25711,7 +25711,7 @@ Regras obrigatórias:
   };
 
   // ── Save ──────────────────────────────────────────────────────
-  window.fdSave = function() {
+  globalThis.fdSave = function() {
     const code = document.getElementById('fd-text-input').value.trim();
     const p    = popPrefix(currentPop);
     if (!p || !DATA[p]) return;
@@ -25725,7 +25725,7 @@ Regras obrigatórias:
   };
 
   // ── Export SVG ────────────────────────────────────────────────
-  window.fdExportSVG = function() {
+  globalThis.fdExportSVG = function() {
     if (!_renderedSvg) { showToast('Renderize o diagrama primeiro.', 'warn'); return; }
     const blob = new Blob([_renderedSvg], { type: 'image/svg+xml' });
     const a = document.createElement('a');
@@ -25735,7 +25735,7 @@ Regras obrigatórias:
   };
 
   // ── Export PNG ────────────────────────────────────────────────
-  window.fdExportPNG = function() {
+  globalThis.fdExportPNG = function() {
     const svgEl = document.querySelector('#fd-mermaid-output svg');
     if (!svgEl) { showToast('Renderize o diagrama primeiro.', 'warn'); return; }
     const svgData = new XMLSerializer().serializeToString(svgEl);
@@ -25762,7 +25762,7 @@ Regras obrigatórias:
   };
 
   // ── Build from flow JSON (called after POP import) ────────────
-  window.fdBuildFromFlowJSON = function(flowArr) {
+  globalThis.fdBuildFromFlowJSON = function(flowArr) {
     if (!Array.isArray(flowArr) || !flowArr.length) return;
     const p = popPrefix(currentPop);
     if (!DATA[p]) DATA[p] = {};
@@ -25885,7 +25885,7 @@ Regras obrigatórias:
   }
 
   // ── Save BPMN to DATA + cloud ─────────────────────────────────
-  window.fdSaveBpmn = async function() {
+  globalThis.fdSaveBpmn = async function() {
     if (!_modeler) { showToast('Editor não inicializado.', 'warn'); return; }
     try {
       const { xml } = await _modeler.saveXML({ format: true });
@@ -25903,20 +25903,20 @@ Regras obrigatórias:
   };
 
   // ── Fit viewport ───────────────────────────────────────────────
-  window.fdFitView = function() {
+  globalThis.fdFitView = function() {
     try { _modeler?.get('canvas').zoom('fit-viewport'); } catch(e) { console.warn('[siga]', e); }
   };
 
   // ── Undo / Redo ────────────────────────────────────────────────
-  window.fdUndo = function() {
+  globalThis.fdUndo = function() {
     try { _modeler?.get('commandStack').undo(); } catch(e) { console.warn('[siga]', e); }
   };
-  window.fdRedo = function() {
+  globalThis.fdRedo = function() {
     try { _modeler?.get('commandStack').redo(); } catch(e) { console.warn('[siga]', e); }
   };
 
   // ── Export BPMN SVG ───────────────────────────────────────────
-  window.fdExportBpmnSVG = async function() {
+  globalThis.fdExportBpmnSVG = async function() {
     if (!_modeler) return;
     try {
       const { svg } = await _modeler.saveSVG();
@@ -25929,7 +25929,7 @@ Regras obrigatórias:
   };
 
   // ── Export BPMN PNG ────────────────────────────────────────────
-  window.fdExportBpmnPNG = async function() {
+  globalThis.fdExportBpmnPNG = async function() {
     if (!_modeler) return;
     try {
       const { svg } = await _modeler.saveSVG();
@@ -25960,7 +25960,7 @@ Regras obrigatórias:
   };
 
   // ── Export BPMN XML file ───────────────────────────────────────
-  window.fdExportBPMN = async function() {
+  globalThis.fdExportBPMN = async function() {
     if (!_modeler) return;
     try {
       const { xml } = await _modeler.saveXML({ format: true });
@@ -26008,7 +26008,7 @@ Regras obrigatórias:
   }
 
   // ─── Module show/hide ─────────────────────────────────────────────
-  window.showIndCageModule = function(show=true) {
+  globalThis.showIndCageModule = function(show=true) {
     if(!show) { showHome(); return; }
     _navPush();
     if(typeof hideHome === 'function') hideHome();
@@ -26027,7 +26027,7 @@ Regras obrigatórias:
   };
 
   // ─── Tab switching ────────────────────────────────────────────────
-  window.indcageTab = function(tab, btn) {
+  globalThis.indcageTab = function(tab, btn) {
     _tab = tab;
     document.querySelectorAll('.indcage-tab').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
@@ -26157,10 +26157,10 @@ Regras obrigatórias:
     return list;
   }
 
-  window.getAllIndicators = getAllIndicators;
+  globalThis.getAllIndicators = getAllIndicators;
 
   // ─── Render: Lista de Indicadores ────────────────────────────────
-  window.indcageRenderIndicadores = function() {
+  globalThis.indcageRenderIndicadores = function() {
     ensureData();
     const search  = (document.getElementById('indcage-search')?.value || '').toLowerCase();
     const divisao = document.getElementById('indcage-filter-divisao')?.value || '';
@@ -26188,7 +26188,7 @@ Regras obrigatórias:
   };
 
   // ─── Modal: Abrir ─────────────────────────────────────────────────
-  window.indcageOpenModal = function(id) {
+  globalThis.indcageOpenModal = function(id) {
     ensureData();
     _editId = id;
     const ind = id ? DATA.indicadoresCage.indicadores.find(i => i.id === id) : null;
@@ -26213,12 +26213,12 @@ Regras obrigatórias:
     document.getElementById('indcage-modal').classList.add('open');
   };
 
-  window.indcageCloseModal = function() {
+  globalThis.indcageCloseModal = function() {
     document.getElementById('indcage-modal').classList.remove('open');
     _editId = null;
   };
 
-  window.indcageSaveModal = function() {
+  globalThis.indcageSaveModal = function() {
     ensureData();
     const enunciado = document.getElementById('ic-enunciado').value.trim();
     if(!enunciado) { showToast('Informe o enunciado do indicador.', 'warn'); return; }
@@ -26248,7 +26248,7 @@ Regras obrigatórias:
     showToast('✅ Indicador salvo!', 'success');
   };
 
-  window.indcageDelete = function(id) {
+  globalThis.indcageDelete = function(id) {
     if(!confirm('Remover este indicador?')) return;
     ensureData();
     DATA.indicadoresCage.indicadores = DATA.indicadoresCage.indicadores.filter(i => i.id !== id);
@@ -26257,7 +26257,7 @@ Regras obrigatórias:
     showToast('Indicador removido.', 'success');
   };
 
-  window.indcageClearImportados = function() {
+  globalThis.indcageClearImportados = function() {
     ensureData();
     const importados = DATA.indicadoresCage.indicadores.filter(i =>
       (i.fonte || '').toLowerCase().includes('importado sisplan')
@@ -26276,14 +26276,14 @@ Regras obrigatórias:
     showToast(`🗑 ${importados.length} indicador(es) SISPLAN removidos.`, 'success');
   };
 
-  window.indcageGoToPop = function(popKey) {
+  globalThis.indcageGoToPop = function(popKey) {
     if(typeof switchPop === 'function' && (popKey === 'd' || popKey === 'r')) {
       switchPop(popKey);
     }
   };
 
   // ─── Importar Excel ───────────────────────────────────────────────
-  window.indcageImportExcel = function(input) {
+  globalThis.indcageImportExcel = function(input) {
     const file = input?.files?.[0];
     if(!file) return;
     const status = document.getElementById('indcage-import-status');
@@ -26418,14 +26418,14 @@ Regras obrigatórias:
   };
 
   // ─── Sincronização via URL ────────────────────────────────────────────────
-  window.indcageSaveUrl = function() {
+  globalThis.indcageSaveUrl = function() {
     ensureData();
     DATA.indicadoresCage.sisplanUrl      = document.getElementById('indcage-sync-url')?.value.trim()  || '';
     DATA.indicadoresCage.sisplanAutoSync = document.getElementById('indcage-sync-auto')?.checked || false;
     markChanged(true, true);
   };
 
-  window.indcageLoadUrlConfig = function() {
+  globalThis.indcageLoadUrlConfig = function() {
     ensureData();
     const urlEl  = document.getElementById('indcage-sync-url');
     const autoEl = document.getElementById('indcage-sync-auto');
@@ -26440,7 +26440,7 @@ Regras obrigatórias:
     }
   };
 
-  window.indcageSyncFromUrl = async function(silent = false) {
+  globalThis.indcageSyncFromUrl = async function(silent = false) {
     ensureData();
     const urlInput = document.getElementById('indcage-sync-url');
     const url = (urlInput?.value.trim() || DATA.indicadoresCage.sisplanUrl || '').trim();
@@ -26526,7 +26526,7 @@ Regras obrigatórias:
   }
 
   // ─── Limpar resultados ────────────────────────────────────────────
-  window.indcageClearResultados = function() {
+  globalThis.indcageClearResultados = function() {
     if(!confirm('Remover todos os resultados importados? Os indicadores cadastrados serão mantidos.')) return;
     ensureData();
     DATA.indicadoresCage.resultados = [];
@@ -26536,7 +26536,7 @@ Regras obrigatórias:
   };
 
   // ─── Render: Resultados ───────────────────────────────────────────
-  window.indcageRenderResultados = function() {
+  globalThis.indcageRenderResultados = function() {
     ensureData();
     const resultados = DATA.indicadoresCage.resultados;
 
@@ -27019,7 +27019,7 @@ Regras obrigatórias:
     }
   }
 
-  window.indcageCfgToggle = function() {
+  globalThis.indcageCfgToggle = function() {
     const body = document.getElementById('indcage-cfg-body');
     const chevron = document.getElementById('indcage-cfg-chevron');
     if(!body) return;
@@ -27027,7 +27027,7 @@ Regras obrigatórias:
     if(chevron) chevron.style.transform = open ? 'rotate(180deg)' : '';
   };
 
-  window.indcageSaveOverride = function() {
+  globalThis.indcageSaveOverride = function() {
     if(!_cfgCurrentCodigo) return;
     ensureData();
 
@@ -27061,7 +27061,7 @@ Regras obrigatórias:
     indcageRenderResultados();
   };
 
-  window.indcageResetOverride = function() {
+  globalThis.indcageResetOverride = function() {
     if(!_cfgCurrentCodigo) return;
     if(!confirm('Restaurar configurações padrão para este indicador?')) return;
     ensureData();
@@ -27091,7 +27091,7 @@ Regras obrigatórias:
 
   // ─── Aba Relatório PPT ────────────────────────────────────────────
 
-  window.indcageRenderRelatorioTab = function() {
+  globalThis.indcageRenderRelatorioTab = function() {
     ensureData();
     const all = getAllIndicators();
     const resultados = DATA.indicadoresCage.resultados || [];
@@ -27134,19 +27134,19 @@ Regras obrigatórias:
     indcageRelUpdateCount();
   };
 
-  window.indcageRelUpdateCount = function() {
+  globalThis.indcageRelUpdateCount = function() {
     const total = document.querySelectorAll('.rel-ind-check').length;
     const sel   = document.querySelectorAll('.rel-ind-check:checked').length;
     const el = document.getElementById('rel-count-sel');
     if(el) el.textContent = sel > 0 ? `(${sel} de ${total} selecionados)` : `(${total} disponíveis)`;
   };
 
-  window.indcageRelSelecionarTodos = function() {
+  globalThis.indcageRelSelecionarTodos = function() {
     document.querySelectorAll('.rel-ind-check').forEach(cb => cb.checked = true);
     indcageRelUpdateCount();
   };
 
-  window.indcageRelDesmarcarTodos = function() {
+  globalThis.indcageRelDesmarcarTodos = function() {
     document.querySelectorAll('.rel-ind-check').forEach(cb => cb.checked = false);
     indcageRelUpdateCount();
   };
@@ -27286,7 +27286,7 @@ Regras obrigatórias:
   }
 
   // ─── Gerar Relatório PPT com análise IA ───────────────────────────
-  window.indcageGerarRelatorioPpt = async function() {
+  globalThis.indcageGerarRelatorioPpt = async function() {
     if(typeof PptxGenJS === 'undefined') {
       showToast('Biblioteca PptxGenJS não carregada. Verifique a conexão e recarregue a página.', 'warn');
       return;
@@ -27385,7 +27385,7 @@ Regras obrigatórias:
         const imgB64 = await _chartToBase64(codigo, 'evo');
         if(imgB64) {
           sInd.addImage({ data: imgB64, x:3.85, y:0.9, w:5.95, h:3.1 });
-          sInd.addText('Evolução dos Resultados', { x:3.85, y:4.0, w:5.95, h:0.28, fontSize:9, italic:true, color:C.muted, align:'center' });
+          sInd.addText('Evolução dos Resultados', { x:3.85, y:4, w:5.95, h:0.28, fontSize:9, italic:true, color:C.muted, align:'center' });
         } else {
           sInd.addText('Sem dados de resultados disponíveis para este indicador.', { x:3.85, y:2.5, w:5.95, h:1, fontSize:11, color:C.muted, align:'center', valign:'middle', italic:true });
         }
@@ -28743,7 +28743,7 @@ function matSaveSnapshot(p) {
   mat.snapshots.sort((a,b) => a.date.localeCompare(b.date));
   markChanged(true, true);
   // Salvar imediatamente na nuvem (independente do modo edição)
-  if(currentUser && window._appInitialized) saveToCloud();
+  if(currentUser && globalThis._appInitialized) saveToCloud();
   showToast('✅ Nota de maturidade salva!', 'success');
   matRender(p);
 }
@@ -28752,7 +28752,7 @@ function matDeleteSnapshot(p, idx) {
   const mat = matGetData(p);
   if(Array.isArray(mat.snapshots)) mat.snapshots.splice(idx, 1);
   markChanged(true, true);
-  if(currentUser && window._appInitialized) saveToCloud();
+  if(currentUser && globalThis._appInitialized) saveToCloud();
   matRender(p);
 }
 function matRenderHistory(p, snapshots) {
@@ -29030,7 +29030,7 @@ function matExportPdf(p) {
       .replace(/\n/g,'<br>')
     }</div>` : '';
 
-  const win = window.open('', '_blank', 'width=960,height=750');
+  const win = globalThis.open('', '_blank', 'width=960,height=750');
   if(!win) { showToast('Popup bloqueado. Permita popups para este site.', 'warn'); return; }
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
 <meta charset="utf-8">
@@ -29079,7 +29079,7 @@ body{font-family:'Inter',sans-serif;color:#1e293b;font-size:13px;padding:36px 48
 }
 </style>
 </head><body>
-<button class="print-btn" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+<button class="print-btn" onclick="globalThis.print()">🖨 Imprimir / Salvar PDF</button>
 <div class="doc-header">
   <div class="doc-header-left">
     <div class="badge-org">CAGE-RS · SIGA</div>
@@ -29101,7 +29101,7 @@ ${indicesBlock}
 ${questBlock}
 ${histBlock}
 ${aiBlock}
-<script>window.onload=function(){window.print();}<\/script>
+<script>globalThis.onload=function(){globalThis.print();}<\/script>
 </body></html>`);
   win.document.close();
 }
