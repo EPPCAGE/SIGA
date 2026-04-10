@@ -14281,8 +14281,6 @@ async function _loadMsalBrowser() {
   }
 
   throw lastError || new Error('Falha ao carregar MSAL Browser');
-
-  return globalThis.msal;
 }
 
 async function signInMicrosoft() {
@@ -22169,7 +22167,7 @@ function eppRenderRanking(activeKey) {
       const val   = it[activeKey];
       const color = it[activeKey + 'Color'] || '#6366f1';
       const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="color:#94a3b8;font-weight:700;font-size:12px;">${i+1}</span>`;
-      const barW  = isOverhead ? Math.min(val, 100) : Math.min(val, 100);
+      const barW  = Math.min(val, 100);
       const barCol = _eppRankingBarColor(isOverhead, val, color);
       const sub   = _eppRankingSubLabel(isOverhead, activeKey, it);
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;">
@@ -26757,7 +26755,7 @@ Regras obrigatórias:
     const sentido = saved.sentido || defaultSentido;
     const menorMelhor = sentido === 'menor';
     // Thresholds
-    const defaultVerde   = menorMelhor ? 100 : 100;
+    const defaultVerde   = 100;
     const defaultAmarelo = menorMelhor ? 120 : 80;
     return {
       tipo,
