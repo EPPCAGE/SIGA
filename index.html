@@ -18018,9 +18018,10 @@ function arqGetData() {
 }
 
 function showArqModule(show = true) {
-  if(!show) { showHome(); return; }
+  if(!show) { arqCloseCadeiaModal(); showHome(); return; }
   hideHome();
   hideAllModules();
+  arqCloseCadeiaModal();
   document.getElementById('arq-module').style.display = 'block';
   _arqSidebarState.selectedRealIdx = null;
   arqInit();
@@ -18054,8 +18055,19 @@ function arqInit() {
   const filterObj = document.getElementById('arq-filter-obj');
   if(filterObj) filterObj.innerHTML = '<option value="">Todos</option>' + allObjs.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('');
 
-  arqRenderCadeiaInterativa();
   arqApplyFilter();
+}
+
+function arqOpenCadeiaModal() {
+  const modal = document.getElementById('arq-cadeia-modal');
+  if(!modal) return;
+  arqRenderCadeiaInterativa();
+  modal.style.display = 'flex';
+}
+
+function arqCloseCadeiaModal() {
+  const modal = document.getElementById('arq-cadeia-modal');
+  if(modal) modal.style.display = 'none';
 }
 
 function arqRenderCadeiaInterativa() {
@@ -18154,6 +18166,7 @@ function arqApplyMacroFilterOnly(macroName) {
   if(searchInp) searchInp.value = '';
 
   arqApplyFilter();
+  arqCloseCadeiaModal();
   document.getElementById('arq-module')?.scrollTo({ top: 260, behavior: 'smooth' });
   showToast('Macroprocesso filtrado: ' + macro, 'success');
 }
@@ -29597,23 +29610,9 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <div style="font-size:13px;color:#64748b;margin-top:2px;">Gerencie macroprocessos, processos e subprocessos</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="arqOpenCadeiaModal()">🗺 Cadeia de Valor</button>
         <button class="btn btn-primary editor-only" onclick="arqShowForm()">＋ Novo Processo</button>
         <button class="btn btn-outline" onclick="showArqModule(false)">✕ Fechar</button>
-      </div>
-    </div>
-
-    <div style="background:white;border-radius:12px;padding:16px 18px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
-        <div style="font-size:14px;font-weight:700;color:#1B3022;">🔗 Cadeia de Valor Interativa</div>
-        <button class="btn btn-outline" onclick="showBiModule(true)" style="font-size:12px;padding:6px 10px;">Gerenciar imagem no módulo BI</button>
-      </div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:10px;">Clique diretamente sobre um macroprocesso da imagem para filtrar os processos correspondentes na arquitetura.</div>
-      <div id="arq-cadeia-placeholder" style="border:2px dashed #cbd5e1;border-radius:10px;padding:24px 16px;text-align:center;color:#94a3b8;font-size:13px;">
-        Nenhuma imagem da cadeia de valor cadastrada. Use "Gerenciar imagem no módulo BI".
-      </div>
-      <div id="arq-cadeia-wrap" style="display:none;position:relative;border-radius:10px;overflow:hidden;border:1px solid #dbe4ee;background:#f8fafc;">
-        <img id="arq-cadeia-img" src="" alt="Cadeia de Valor interativa" style="width:100%;display:block;">
-        <div id="arq-cadeia-hotspots" style="position:absolute;inset:0;"></div>
       </div>
     </div>
 
@@ -29697,6 +29696,29 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
         <tbody id="arq-tbody"></tbody>
       </table>
       <div id="arq-empty" style="display:none;text-align:center;padding:40px;color:#94a3b8;">Nenhum processo encontrado.</div>
+    </div>
+  </div>
+</div>
+
+<div id="arq-cadeia-modal" style="display:none;position:fixed;inset:0;z-index:1150;background:rgba(15,23,42,.55);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:14px;max-width:1160px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 32px 80px rgba(0,0,0,.35);padding:18px 18px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:#1B3022;">🗺 Cadeia de Valor Interativa</div>
+        <div style="font-size:12px;color:#64748b;">Clique em um macroprocesso para filtrar a arquitetura.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="showBiModule(true)" style="font-size:12px;padding:6px 10px;">Gerenciar imagem no módulo BI</button>
+        <button class="btn btn-outline" onclick="arqCloseCadeiaModal()" style="font-size:12px;padding:6px 10px;">✕ Fechar</button>
+      </div>
+    </div>
+
+    <div id="arq-cadeia-placeholder" style="border:2px dashed #cbd5e1;border-radius:10px;padding:24px 16px;text-align:center;color:#94a3b8;font-size:13px;">
+      Nenhuma imagem da cadeia de valor cadastrada. Use "Gerenciar imagem no módulo BI".
+    </div>
+    <div id="arq-cadeia-wrap" style="display:none;position:relative;border-radius:10px;overflow:hidden;border:1px solid #dbe4ee;background:#f8fafc;">
+      <img id="arq-cadeia-img" src="" alt="Cadeia de Valor interativa" style="width:100%;display:block;">
+      <div id="arq-cadeia-hotspots" style="position:absolute;inset:0;"></div>
     </div>
   </div>
 </div>
