@@ -7987,7 +7987,10 @@ async function confirmNovoPop() {
 // Helper: parse JSON safely
 function _tryParseJson(str, fallback) {
   if(!str) return fallback;
-  try { return JSON.parse(str); } catch(e) { return fallback; }
+  try { return JSON.parse(str); } catch(e) {
+    console.debug('[siga] _tryParseJson fallback:', e?.message || e);
+    return fallback;
+  }
 }
 // Helper: split text into array (comma, semicolon or newline separated)
 function _splitLines(str) {
@@ -8414,8 +8417,8 @@ function _extractFaqJsonArray(rawText) {
     try {
       JSON.parse(potentialJson);
       return potentialJson;
-    } catch {
-      // Ignore: candidate is not valid JSON, continue fallback strategies.
+    } catch(e) {
+      console.debug('[siga] _extractFaqJsonArray bracket candidate invalid:', e?.message || e);
     }
   }
   
@@ -9505,6 +9508,7 @@ function validateNpopJson(val) {
     el.innerHTML = '<span style="color:#16a34a;">✅ JSON válido — ' + steps + ' etapa(s), ' + roles + ' ator(es), fluxo: ' + (hasFlow ? 'sim' : 'nao') + '. Clique em Importar.</span>';
     document.getElementById('npop-confirm-btn').textContent = '📥 Importar JSON →';
   } catch(e) {
+    console.debug('[siga] validateNpopJsonInput invalid JSON:', e?.message || e);
     /* exibe mensagem de erro na interface */
     el.innerHTML = '<span style="color:#dc2626;">⚠️ JSON inválido — verifique o conteúdo copiado.</span>';
   }
@@ -9644,7 +9648,10 @@ function _decisionActionData(row) {
 function _decisionActionBase(row) {
   const raw = row.dataset.original || '';
   try { return actionObj(JSON.parse(decodeURIComponent(raw))); }
-  catch(e) { return actionObj({ type:'atividade' }); }
+  catch(e) {
+    console.debug('[siga] _decisionActionBase fallback:', e?.message || e);
+    return actionObj({ type:'atividade' });
+  }
 }
 function addActionDecisionBranch() {
   const branches = _decisionBranchesSnapshot();
@@ -12074,7 +12081,7 @@ function _markPatAlertsAsShownForUser() {
       try {
         if(new Date(dateStr) < sevenDaysAgo) localStorage.removeItem(k);
       } catch(e) {
-        // Intentional: invalid date format, skip removal
+        console.debug('[siga] pat cleanup invalid date key:', k, e?.message || e);
       }
     }
   }
@@ -13207,7 +13214,7 @@ async function _fetchMergeNewPopsFromServer(apiUrl, dirtyPops) {
       }
     });
   } catch(e) {
-    /* fetch-merge error suppressed */
+    console.debug('[siga] _syncFromCloud merge fallback:', e?.message || e);
   }
 }
 
