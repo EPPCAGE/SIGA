@@ -18142,9 +18142,17 @@ function arqRenderCadeiaInterativa() {
   const data   = (typeof arqGetData === 'function') ? arqGetData() : CAGE_PROCESSOS;
   const macros = [...new Set(data.map(r => r.macroprocesso).filter(Boolean))].sort();
 
-  linksEl.innerHTML = macros.map(macro =>
-    `<button type="button" class="arq-cadeia-link" onclick="arqApplyMacroFilterOnly(${JSON.stringify(macro)})">${escapeHtml(macro)}</button>`
-  ).join('');
+  linksEl.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  macros.forEach(macro => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'arq-cadeia-link';
+    btn.textContent = macro;
+    btn.addEventListener('click', () => arqApplyMacroFilterOnly(macro));
+    frag.appendChild(btn);
+  });
+  linksEl.appendChild(frag);
 
   // Imagem decorativa (opcional)
   const src = DATA._cadeiaValorImg || '';
