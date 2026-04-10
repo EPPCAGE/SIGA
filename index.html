@@ -201,6 +201,24 @@
   .card-body{padding:24px;}
 
   .overview-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;}
+  /* ── Ticker de avisos ── */
+  #home-avisos-ticker{background:#fefce8;border-bottom:2px solid #fde68a;height:38px;display:none;align-items:center;overflow:hidden;flex-shrink:0;}
+  #home-avisos-ticker.has-avisos{display:flex;}
+  .ticker-label{flex-shrink:0;padding:0 14px;font-size:11px;font-weight:800;color:#92400e;letter-spacing:.04em;text-transform:uppercase;border-right:2px solid #fde68a;height:100%;display:flex;align-items:center;white-space:nowrap;gap:6px;}
+  .ticker-track{flex:1;overflow:hidden;position:relative;}
+  .ticker-inner{display:flex;white-space:nowrap;will-change:transform;}
+  .ticker-inner.running{animation:ticker-scroll var(--ticker-dur,30s) linear infinite;}
+  .ticker-inner:hover{animation-play-state:paused;}
+  .ticker-item{display:inline-flex;align-items:center;gap:6px;padding:0 32px;font-size:12px;font-weight:600;color:#78350f;}
+  .ticker-item-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;}
+  @keyframes ticker-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  /* ── Home 2 colunas ── */
+  #home-main-layout{display:grid;grid-template-columns:1fr 280px;gap:28px;align-items:start;}
+  #home-modules-col{display:flex;justify-content:center;}
+  #home-sidebar-col{display:flex;flex-direction:column;gap:16px;}
+  .home-sidebar-widget{background:white;border-radius:12px;border:1.5px solid #e2e8f0;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+  .home-sidebar-widget-title{font-size:12px;font-weight:800;color:#1B3022;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+  @media(max-width:900px){#home-main-layout{grid-template-columns:1fr;}#home-sidebar-col{display:none;}}
   .overview-grid.four-col{grid-template-columns:repeat(4,1fr);}
   .metric-card{background:white;border:1px solid var(--cage-border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;}
   .metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
@@ -1657,57 +1675,60 @@
     </div>
   </div>
 
-  <!-- ══ MÓDULOS ══ -->
-  <div id="home-block-processos" style="display:block;margin-bottom:40px;">
-    <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px;">
-      <button class="home-card" data-sortkey="process-mgmt" onclick="showProcessManagementHub()" style="border-top:4px solid #0f5b57;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">🧭</div>
-        <div class="home-card-title" contenteditable="false">Gestão de Processos</div>
-        <div class="home-card-desc" contenteditable="false">Hub com os submódulos de Arquitetura de Processos, Mapeamentos, Auditoria de Processos, Simulador de Processos e Modelador BPMN.</div>
-        <div class="home-card-footer">5 submódulos integrados</div>
-      </button>
-      <button class="home-card" data-sortkey="projects-mgmt" onclick="showProjectManagementHub()" style="border-top:4px solid #2563eb;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">📁</div>
-        <div class="home-card-title" contenteditable="false">Gestão de Projetos</div>
-        <div class="home-card-desc" contenteditable="false">Novo hub para centralizar futuros submódulos de projetos, portfólio, cronogramas e acompanhamento executivo.</div>
-        <div class="home-card-footer">Módulo-base preparado</div>
-      </button>
-      <button class="home-card" id="home-competency-card" data-sortkey="competency" onclick="if(typeof showCompetencyModule==='function'){showCompetencyModule();}" style="border-top:4px solid #15803d;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
-        <div class="home-card-icon" style="background:#047857;color:white;">👥</div>
-        <div class="home-card-title" contenteditable="false">Gestão de Pessoas</div>
-        <div class="home-card-desc" contenteditable="false">Gerencie quadro de pessoal, competências, trilhas e banco de talentos com busca inteligente.</div>
-        <div class="home-card-footer" id="home-competency-count">0 pessoa(s) ⬢ 0 trilha(s)</div>
-      </button>
+  <!-- ══ FAIXA DE AVISOS (ticker) ══ -->
+  <div id="home-avisos-ticker" style="margin:0 -32px 20px;border-radius:0;">
+    <div class="ticker-label">📢 Avisos</div>
+    <div class="ticker-track">
+      <div id="home-avisos-ticker-inner" class="ticker-inner"></div>
     </div>
   </div>
 
-  <!-- ══ PAINEL DE INFORMAÇÕES ══ -->
-  <div id="home-info-panel" style="margin-bottom:32px;">
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;">
-      <!-- Widget: Avisos -->
-      <div id="home-avisos-widget" style="background:white;border-radius:14px;border:1.5px solid #e2e8f0;border-top:4px solid #f59e0b;padding:20px 22px;box-shadow:0 2px 8px rgba(0,0,0,.05);min-height:120px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div style="font-size:13px;font-weight:800;color:#1B3022;">&#128226; Avisos</div>
-        </div>
-        <div id="home-avisos-list" style="font-size:13px;color:#64748b;"></div>
+  <!-- ══ LAYOUT PRINCIPAL (módulos + sidebar) ══ -->
+  <div id="home-main-layout">
+    <!-- Coluna central: 3 módulos -->
+    <div id="home-modules-col">
+      <div id="home-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;width:100%;">
+        <button class="home-card" data-sortkey="process-mgmt" onclick="showProcessManagementHub()" style="border-top:4px solid #0f5b57;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
+          <div class="home-card-icon" style="background:#047857;color:white;">🧭</div>
+          <div class="home-card-title" contenteditable="false">Gestão de Processos</div>
+          <div class="home-card-desc" contenteditable="false">Hub com os submódulos de Arquitetura de Processos, Mapeamentos, Auditoria de Processos, Simulador de Processos e Modelador BPMN.</div>
+          <div class="home-card-footer">5 submódulos integrados</div>
+        </button>
+        <button class="home-card" data-sortkey="projects-mgmt" onclick="showProjectManagementHub()" style="border-top:4px solid #2563eb;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
+          <div class="home-card-icon" style="background:#047857;color:white;">📁</div>
+          <div class="home-card-title" contenteditable="false">Gestão de Projetos</div>
+          <div class="home-card-desc" contenteditable="false">Novo hub para centralizar futuros submódulos de projetos, portfólio, cronogramas e acompanhamento executivo.</div>
+          <div class="home-card-footer">Módulo-base preparado</div>
+        </button>
+        <button class="home-card" id="home-competency-card" data-sortkey="competency" onclick="if(typeof showCompetencyModule==='function'){showCompetencyModule();}" style="border-top:4px solid #15803d;background:none;border:none;width:100%;cursor:pointer;padding:0;font-family:inherit;font-size:inherit;text-align:left;">
+          <div class="home-card-icon" style="background:#047857;color:white;">👥</div>
+          <div class="home-card-title" contenteditable="false">Gestão de Pessoas</div>
+          <div class="home-card-desc" contenteditable="false">Gerencie quadro de pessoal, competências, trilhas e banco de talentos com busca inteligente.</div>
+          <div class="home-card-footer" id="home-competency-count">0 pessoa(s) ⬢ 0 trilha(s)</div>
+        </button>
       </div>
-      <!-- Widget: Processos em Mapeamento -->
-      <div id="home-mapeamentos-widget" style="background:white;border-radius:14px;border:1.5px solid #e2e8f0;border-top:4px solid #00a86b;padding:20px 22px;box-shadow:0 2px 8px rgba(0,0,0,.05);min-height:120px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div style="font-size:13px;font-weight:800;color:#1B3022;">&#128506;&#65039; Processos em Mapeamento</div>
-          <button onclick="showHomePops()" style="font-size:11px;color:#00a86b;font-weight:700;background:none;border:none;cursor:pointer;padding:0;">Ver todos &#8594;</button>
+    </div>
+
+    <!-- Sidebar direita: processos + projetos em andamento -->
+    <div id="home-sidebar-col">
+      <div class="home-sidebar-widget" style="border-top:3px solid #00a86b;">
+        <div class="home-sidebar-widget-title">
+          <span>🗺️ Processos em Mapeamento</span>
+          <button onclick="showHomePops()" style="font-size:10px;color:#00a86b;font-weight:700;background:none;border:none;cursor:pointer;padding:0;">Ver todos →</button>
         </div>
-        <div id="home-mapeamentos-list" style="font-size:13px;color:#64748b;"></div>
+        <div id="home-mapeamentos-list" style="font-size:12px;color:#64748b;"></div>
       </div>
-      <!-- Widget: Projetos em Andamento -->
-      <div id="home-projetos-widget" style="background:white;border-radius:14px;border:1.5px solid #e2e8f0;border-top:4px solid #2563eb;padding:20px 22px;box-shadow:0 2px 8px rgba(0,0,0,.05);min-height:120px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div style="font-size:13px;font-weight:800;color:#1B3022;">&#128193; Projetos em Andamento</div>
+      <div class="home-sidebar-widget" style="border-top:3px solid #2563eb;">
+        <div class="home-sidebar-widget-title">
+          <span>📁 Projetos em Andamento</span>
         </div>
-        <div id="home-projetos-list" style="font-size:13px;color:#94a3b8;font-style:italic;">M&oacute;dulo de gest&atilde;o de projetos em prepara&ccedil;&atilde;o.</div>
+        <div id="home-projetos-list" style="font-size:12px;color:#94a3b8;font-style:italic;">Módulo de gestão de projetos em preparação.</div>
       </div>
     </div>
   </div>
+
+  <!-- elemento legado mantido para compatibilidade com código que usa home-avisos-list -->
+  <div id="home-avisos-list" style="display:none;"></div>
 
 
   <!-- Rodapé de contato -->
@@ -8020,12 +8041,12 @@ function _npopOutlineItem(text, isActivity) {
 }
 
 function _npopOutlineKind(line) {
-  if(/^\s*(\[?\s*m\s*\]?|macro-?etapa)\s*[:\-]/i.test(line)) return false;
-  return /^\s*(\[?\s*a\s*\]?|atividade)\s*[:\-]/i.test(line);
+  if(/^\s*(?:\[m\]|m|macro-?etapa)\s*[:-]/i.test(line)) return false;
+  return /^\s*(?:\[a\]|a|atividade)\s*[:-]/i.test(line);
 }
 
 function _npopOutlineText(line) {
-  return line.replace(/^\s*(\[?\s*[ma]\s*\]?|macro-?etapa|atividade)\s*[:\-]\s*/i, '').trim();
+  return line.replace(/^\s*(?:\[[ma]\]|[ma]|macro-?etapa|atividade)\s*[:-]\s*/i, '').trim();
 }
 
 function _npopNormalizeOutline(items) {
@@ -19386,31 +19407,38 @@ function renderHomeInfoPanel() {
 }
 
 function _homeRenderAvisosWidget() {
-  const list = document.getElementById('home-avisos-list');
-  if(!list) return;
+  const ticker  = document.getElementById('home-avisos-ticker');
+  const inner   = document.getElementById('home-avisos-ticker-inner');
+  if(!ticker || !inner) return;
   const today = new Date().toISOString().slice(0,10);
   const avisos = (getConfig('avisos') || []).filter(function(a) {
     if(!a.ativo) return false;
     if(a.dataExpiracao && a.dataExpiracao < today) return false;
     return true;
   });
-  if(!avisos.length) {
-    list.innerHTML = '<span style="color:#94a3b8;font-style:italic;font-size:12px;">Nenhum aviso ativo.</span>';
-    return;
-  }
-  const tipoColors = {
-    info:       { bg:'#eff6ff', border:'#bfdbfe', color:'#1d4ed8', icon:'ℹ️' },
-    alerta:     { bg:'#fffbeb', border:'#fde68a', color:'#b45309', icon:'⚠️' },
-    importante: { bg:'#fff1f2', border:'#fecdd3', color:'#be123c', icon:'🚨' },
+  if(!avisos.length) { ticker.classList.remove('has-avisos'); return; }
+  const tipoStyle = {
+    info:       { bg:'#dbeafe', color:'#1d4ed8', icon:'ℹ️' },
+    alerta:     { bg:'#fef3c7', color:'#b45309', icon:'⚠️' },
+    importante: { bg:'#fee2e2', color:'#be123c', icon:'🚨' },
   };
-  list.innerHTML = avisos.map(function(a) {
-    const tc = tipoColors[a.tipo] || tipoColors.info;
-    const exp = a.dataExpiracao ? '<div style="font-size:10px;color:#94a3b8;margin-top:4px;">Válido até ' + new Date(a.dataExpiracao + 'T00:00:00').toLocaleDateString('pt-BR') + '</div>' : '';
-    const body = a.conteudo ? '<div style="font-size:12px;color:#475569;line-height:1.5;">' + a.conteudo + '</div>' : '';
-    return '<div style="background:' + tc.bg + ';border:1px solid ' + tc.border + ';border-radius:8px;padding:10px 12px;margin-bottom:8px;">'
-      + '<div style="font-size:12px;font-weight:700;color:' + tc.color + ';margin-bottom:' + (a.conteudo ? '4px' : '0') + ';">' + tc.icon + ' ' + a.titulo + '</div>'
-      + body + exp + '</div>';
-  }).join('');
+  const buildItems = function() {
+    return avisos.map(function(a) {
+      const ts = tipoStyle[a.tipo] || tipoStyle.info;
+      const badge = '<span class="ticker-item-badge" style="background:' + ts.bg + ';color:' + ts.color + ';">' + ts.icon + ' ' + a.tipo.toUpperCase() + '</span>';
+      const sep   = '<span style="color:#d1d5db;margin:0 28px;">|</span>';
+      return '<span class="ticker-item">' + badge + ' ' + escapeHtml(a.titulo) + (a.conteudo ? ' — ' + escapeHtml(a.conteudo) : '') + sep + '</span>';
+    }).join('');
+  };
+  // Duplica itens para loop contínuo sem salto
+  const html = buildItems() + buildItems();
+  inner.innerHTML = html;
+  // Velocidade: ~80px/s, largura estimada
+  const chars = avisos.reduce(function(s,a){ return s + (a.titulo||'').length + (a.conteudo||'').length; }, 0);
+  const dur = Math.max(12, Math.min(60, chars * 0.18));
+  inner.style.setProperty('--ticker-dur', dur + 's');
+  inner.classList.add('running');
+  ticker.classList.add('has-avisos');
 }
 
 function _homeRenderMapeamentosWidget() {
@@ -23360,7 +23388,7 @@ FORMATO
     const parsed = parseAiJson(raw);
     if(!Array.isArray(parsed)) throw new Error('Resposta inválida');
     if(!Array.isArray(plan.questoes)) plan.questoes = [];
-    parsed.forEach(q => { if(q.pergunta) plan.questoes.push({ id:'q_'+Date.now()+'_'+Math.random(), pergunta:q.pergunta, etapa:q.etapa||'', referencia:'' }); });
+    parsed.forEach(q => { if(q.pergunta) plan.questoes.push({ id:'q_'+(typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)), pergunta:q.pergunta, etapa:q.etapa||'', referencia:'' }); });
     saveToCloud();
     auditRenderQuestoes(planId);
     showToast(`✅ ${parsed.length} questões geradas com IA!`, 'success');
