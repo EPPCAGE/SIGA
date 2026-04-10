@@ -14656,41 +14656,37 @@ async function exportBackup() {
   }
 }
 
-function previewBackupFile(input) {
+async function previewBackupFile(input) {
   const file = input.files[0];
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const payload = JSON.parse(e.target.result);
-      if(!payload.d || !payload.r) throw new Error('Arquivo inválido: dados de POPs não encontrados.');
-      _backupFileData = payload;
-      const npCount   = (payload.newPops || []).length;
-      const patCount  = (payload.pat || []).length;
-      const dFaqs     = (payload.d?.faqs || []).length;
-      const rFaqs     = (payload.r?.faqs || []).length;
-      const exported  = payload._exported ? new Date(payload._exported).toLocaleString('pt-BR') : 'desconhecida';
-      const preview   = document.getElementById('backup-preview');
-      preview.innerHTML = `
-        <strong>✅ Arquivo válido — ${file.name}</strong><br><br>
-        📅 Data do backup: ${exported}<br>
-        📋 Tratar Denúncias: ${(payload.d?.steps||[]).length} etapas · ${dFaqs} FAQs<br>
-        📄 Tratar Representações: ${(payload.r?.steps||[]).length} etapas · ${rFaqs} FAQs<br>
-        ${npCount ? `📝 Outros POPs: ${npCount}<br>` : ''}
-        ${patCount ? `📅 Plano de Trabalho do EPP: ${patCount} atividades<br>` : ''}
-      `;
-      preview.classList.add('visible');
-      document.getElementById('backup-import-btn').style.display = 'block';
-    } catch(err) {
-      /* exibe mensagem de erro na interface */
-      _backupFileData = null;
-      const preview = document.getElementById('backup-preview');
-      preview.innerHTML = `<span style="color:var(--cage-red);">❌ ${escapeHtml(err.message)}</span>`;
-      preview.classList.add('visible');
-      document.getElementById('backup-import-btn').style.display = 'none';
-    }
-  };
-  reader.readAsText(file);
+  try {
+    const payload = JSON.parse(await file.text());
+    if(!payload.d || !payload.r) throw new Error('Arquivo inválido: dados de POPs não encontrados.');
+    _backupFileData = payload;
+    const npCount   = (payload.newPops || []).length;
+    const patCount  = (payload.pat || []).length;
+    const dFaqs     = (payload.d?.faqs || []).length;
+    const rFaqs     = (payload.r?.faqs || []).length;
+    const exported  = payload._exported ? new Date(payload._exported).toLocaleString('pt-BR') : 'desconhecida';
+    const preview   = document.getElementById('backup-preview');
+    preview.innerHTML = `
+      <strong>✅ Arquivo válido — ${file.name}</strong><br><br>
+      📅 Data do backup: ${exported}<br>
+      📋 Tratar Denúncias: ${(payload.d?.steps||[]).length} etapas · ${dFaqs} FAQs<br>
+      📄 Tratar Representações: ${(payload.r?.steps||[]).length} etapas · ${rFaqs} FAQs<br>
+      ${npCount ? `📝 Outros POPs: ${npCount}<br>` : ''}
+      ${patCount ? `📅 Plano de Trabalho do EPP: ${patCount} atividades<br>` : ''}
+    `;
+    preview.classList.add('visible');
+    document.getElementById('backup-import-btn').style.display = 'block';
+  } catch(err) {
+    /* exibe mensagem de erro na interface */
+    _backupFileData = null;
+    const preview = document.getElementById('backup-preview');
+    preview.innerHTML = `<span style="color:var(--cage-red);">❌ ${escapeHtml(err.message)}</span>`;
+    preview.classList.add('visible');
+    document.getElementById('backup-import-btn').style.display = 'none';
+  }
 }
 
 function importBackup() {
