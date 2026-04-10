@@ -8534,6 +8534,36 @@ function _stripMarkdownCodeFence(text) {
   return clean.trim();
 }
 
+function _sanitizeMermaidDiagramText(raw, fallbackDirection = 'LR') {
+  let clean = _stripMarkdownCodeFence(raw);
+  clean = String(clean || '').replaceAll('\uFEFF', '').replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
+  if (!clean) return '';
+
+  let lines = clean.split('\n').map(line => line.trimEnd());
+  while (lines.length && !lines[0].trim()) lines.shift();
+  if (!lines.length) return '';
+
+  if (/^mermaid$/i.test(lines[0].trim())) {
+    lines.shift();
+    while (lines.length && !lines[0].trim()) lines.shift();
+  }
+  if (!lines.length) return '';
+
+  const headerIdx = lines.findIndex(line => /^\s*(flowchart|graph)\b/i.test(line));
+  if (headerIdx > 0) {
+    lines = lines.slice(headerIdx);
+  }
+
+  const first = (lines[0] || '').trim();
+  if (/^graph\b/i.test(first)) {
+    lines[0] = first.replace(/^graph\b/i, 'flowchart');
+  } else if (!/^flowchart\b/i.test(first)) {
+    lines.unshift(`flowchart ${fallbackDirection}`);
+  }
+
+  return lines.join('\n').trim();
+}
+
 function _extractDataUrlMimeType(header, fallback = 'application/octet-stream') {
   const source = String(header || '');
   const colonIndex = source.indexOf(':');
@@ -16805,7 +16835,7 @@ function renderSipoc(p) {
 async function renderFlowPreview(p) {
   const card = document.getElementById(p + '-flow-preview-card');
   if(!card) return;
-  const mermaidCode = DATA[p]?.flowDiagram?.mermaid;
+  const mermaidCode = _sanitizeMermaidDiagramText(DATA[p]?.flowDiagram?.mermaid);
   if(!mermaidCode || !globalThis.mermaid) { card.style.display = 'none'; return; }
   card.style.display = '';
   const body = document.getElementById(p + '-flow-preview-body');
@@ -16818,7 +16848,19 @@ async function renderFlowPreview(p) {
     const svgEl = body.querySelector('svg');
     if(svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto'; }
   } catch(e) {
-    /* exibe mensagem de erro na interface */
+    const fallback = _sanitizeMermaidDiagramText(_npopBuildMermaidFromSteps(DATA[p]?.steps || []));
+    if(fallback && fallback !== mermaidCode) {
+      try {
+        const id2 = 'fpp-fallback-' + p + '-' + Date.now();
+        const { svg } = await mermaid.render(id2, fallback);
+        body.innerHTML = svg;
+        const svgEl = body.querySelector('svg');
+        if(svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto'; }
+        return;
+      } catch(_err) {
+        console.debug('[siga] mermaid fallback render failed:', _err?.message);
+      }
+    }
     body.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:12px;">Erro ao renderizar o diagrama de fluxo.</div>';
   }
 }
@@ -18894,7 +18936,14 @@ function arqShowProcessDetail(idx) {
           <div style="font-size:20px;margin-bottom:6px;">🎨</div>
           Diagrama Excalidraw salvo — abra o <strong>Fluxo</strong> para visualizar e editar.</div>`;
       } else if(popData.flowDiagram.mermaid && globalThis.mermaid) {
-        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch((mErr)=>{ console.debug('[siga] mermaid render suppressed:', mErr?.message); }); } catch(e) { console.warn('[siga]', e); }
+        const mermaidCode = _sanitizeMermaidDiagramText(popData.flowDiagram.mermaid);
+        if(mermaidCode) {
+          try {
+            mermaid.render('arq-mmd-'+Date.now(), mermaidCode)
+              .then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; })
+              .catch((mErr)=>{ console.debug('[siga] mermaid render suppressed:', mErr?.message); });
+          } catch(e) { console.warn('[siga]', e); }
+        }
       }
     }
   }
@@ -25718,8 +25767,12 @@ function statusModalAutoFill() {
 
   // ── Render Mermaid code ───────────────────────────────────────
   globalThis.fdRenderMermaid = async function() {
-    const code = document.getElementById('fd-text-input').value.trim();
+    const input = document.getElementById('fd-text-input');
+    if(!input) return;
+    const rawCode = input.value.trim();
+    const code = _sanitizeMermaidDiagramText(rawCode, _direction || 'LR');
     if (!code) { showToast('Insira código Mermaid para renderizar.', 'warn'); return; }
+    if(code !== rawCode) input.value = code;
     const output  = document.getElementById('fd-mermaid-output');
     const loading = document.getElementById('fd-mermaid-loading');
     if (!output) return;
@@ -25845,9 +25898,12 @@ Regras obrigatórias:
 
   // ── Save ──────────────────────────────────────────────────────
   globalThis.fdSave = function() {
-    const code = document.getElementById('fd-text-input').value.trim();
+    const input = document.getElementById('fd-text-input');
+    if(!input) return;
+    const code = _sanitizeMermaidDiagramText(input.value.trim(), _direction || 'LR');
     const p    = popPrefix(currentPop);
     if (!p || !DATA[p]) return;
+    input.value = code;
     if (!DATA[p].flowDiagram) DATA[p].flowDiagram = {};
     DATA[p].flowDiagram.mermaid = code;
     DATA[p].flowDiagram.text    = code;
