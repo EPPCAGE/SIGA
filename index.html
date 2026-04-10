@@ -11701,7 +11701,8 @@ function _renderArqSidebar(el) {
       record.critico ? '<span class="sidebar-item-badge" style="background:#dc2626;">Crítico</span>' : '',
       (() => {
         const mapUi = arqGetMapeadoUi(record);
-        return mapUi.status === 'nao' ? '' : `<span class="sidebar-item-badge" style="${mapUi.status === 'andamento' ? 'background:#f59e0b;' : ''}">${mapUi.badge.replaceAll('✅ ','').replaceAll('🔄 ','')}</span>`;
+        const _badgeStyle = mapUi.status === 'andamento' ? 'background:#f59e0b;' : '';
+        return mapUi.status === 'nao' ? '' : `<span class="sidebar-item-badge" style="${_badgeStyle}">${mapUi.badge.replaceAll('✅ ','').replaceAll('🔄 ','')}</span>`;
       })()
     ].filter(Boolean).join('');
     const activeClass = _arqSidebarState.selectedRealIdx === realIdx ? ' active' : '';
@@ -11942,7 +11943,8 @@ function _orgRenderProcessRows(list, all) {
         ${r.critico ? '<span title="Processo crítico" style="font-size:14px;flex-shrink:0;">⚠️</span>' : ''}
         ${(() => {
           const mapUi = arqGetMapeadoUi(r);
-          return `<span style="font-size:11px;color:${mapUi.color};font-weight:600;flex-shrink:0;">${mapUi.status === 'sim' ? '✅ Mapeado' : mapUi.status === 'andamento' ? '🔄 Em andamento' : '○'}</span>`;
+          const _statusLabel = mapUi.status === 'andamento' ? '🔄 Em andamento' : '○';
+          return `<span style="font-size:11px;color:${mapUi.color};font-weight:600;flex-shrink:0;">${mapUi.status === 'sim' ? '✅ Mapeado' : _statusLabel}</span>`;
         })()}
       </div>`;
   }).join('');
@@ -12290,7 +12292,9 @@ function _actionAlertStyle(kind) {
 
 function _actionAlertTitle(act, kind) {
   if(kind === 'overdue') return `⚙️ Ação Atrasada · ${act.popName}`;
-  return `⚙️ Vence em ${act.dias === 0 ? 'hoje' : act.dias + ' dia' + (act.dias > 1 ? 's' : '')} · ${act.popName}`;
+  const _diaSuffix = act.dias > 1 ? 's' : '';
+  const _diasStr = act.dias === 0 ? 'hoje' : act.dias + ' dia' + _diaSuffix;
+  return `⚙️ Vence em ${_diasStr} · ${act.popName}`;
 }
 
 function _createActionAlertCard(act, kind) {
@@ -13004,7 +13008,7 @@ function sanitizePopData(pd) {
     respClass:   s?.respClass   || 'resp-green',
     note:        s?.note        || '',
     decision:    s?.decision    || null,
-    actions:     Array.isArray(s?.actions) ? s.actions.map(a => (typeof a === 'string' ? {type:'atividade',text:a,actor:''} : {...a})) : []
+    actions:     Array.isArray(s?.actions) ? s.actions.map(a => typeof a === 'string' ? {type:'atividade',text:a,actor:''} : {...a}) : []
   }));
   if(pd.steps.length === 0) {
     pd.steps = [{ title:'Etapa 1', subtitle:'', responsible:'Responsável', respClass:'resp-green', actions:[{type:'atividade',text:'Nova ação',actor:''}] }];
@@ -13103,8 +13107,8 @@ globalThis.addEventListener('beforeunload', (e) => {
     arqOverrides:    DATA._arqOverrides || null,
     logoUrl:         DATA._logoUrl || null,
     logo2Url:        DATA._logo2Url || null,
-    cadeiaValorImg:  DATA._cadeiaValorImg ? (DATA._cadeiaValorImg.startsWith('http') ? DATA._cadeiaValorImg : (DATA._cadeiaValorImg.length < 300000 ? DATA._cadeiaValorImg : null)) : null,
-    mapaEstrategicoImg: DATA._mapaEstrategicoImg ? (DATA._mapaEstrategicoImg.startsWith('http') ? DATA._mapaEstrategicoImg : (DATA._mapaEstrategicoImg.length < 300000 ? DATA._mapaEstrategicoImg : null)) : null,
+    cadeiaValorImg:  (() => { if (!DATA._cadeiaValorImg) return null; if (DATA._cadeiaValorImg.startsWith('http')) return DATA._cadeiaValorImg; return DATA._cadeiaValorImg.length < 300000 ? DATA._cadeiaValorImg : null; })(),
+    mapaEstrategicoImg: (() => { if (!DATA._mapaEstrategicoImg) return null; if (DATA._mapaEstrategicoImg.startsWith('http')) return DATA._mapaEstrategicoImg; return DATA._mapaEstrategicoImg.length < 300000 ? DATA._mapaEstrategicoImg : null; })(),
     newPops:         newPopKeys.map(k => ({ key: k, data: _stripTrans(DATA[k]) })),
     indicadoresCage: DATA.indicadoresCage || { indicadores: [], resultados: [] },
     competencyManagement: DATA.competencyManagement || null,
@@ -16038,6 +16042,7 @@ async function _buildEppStatusReport(opts = {}) {
         const isAtrasado = i.status === 'atrasado';
         const prog = Number.parseFloat(i.progresso) || 0;
         const progLabel = prog > 0 ? prog + '%' : '—';
+        const _progColor = prog >= 50 ? 'b45309' : C.black;
         tblRows.push([
           tdCell(i.titulo||'—', {bold:true}),
           tdCell(getGerente(i), {align:'center'}),
@@ -16045,7 +16050,7 @@ async function _buildEppStatusReport(opts = {}) {
           tdCell(fmt(i.inicio), {align:'center'}),
           tdCell(isAtrasado ? fmt(i.fim)+'\n(Atrasado)' : fmt(i.fim), {align:'center', color:isAtrasado?'CC0000':C.black}),
           tdCell(getObjetivo(i), {italic:true}),
-          tdCell(progLabel, {align:'center', bold:true, color: prog >= 100 ? '15803d' : prog >= 50 ? 'b45309' : C.black}),
+          tdCell(progLabel, {align:'center', bold:true, color: prog >= 100 ? '15803d' : _progColor}),
         ]);
       });
     } else {
@@ -16606,7 +16611,8 @@ function _srIndicatorTableAlign(index) {
 }
 
 function _srIndicatorValueCell(value, unidade) {
-  return value !== null && value !== undefined ? fmtN(value) + (unidade ? ' ' + unidade : '') : '—';
+  const _unidStr = unidade ? ' ' + unidade : '';
+  return value !== null && value !== undefined ? fmtN(value) + _unidStr : '—';
 }
 
 function _srIndicatorPctCell(value) {
@@ -16660,7 +16666,8 @@ function calcHorasEcon(p) {
   const horas = (volPre * cicloPre) - (volPos * cicloPos);
   const el = document.getElementById('rq-horas-econ');
   const anyVal = volPre || volPos || cicloPre || cicloPos;
-  if(el) el.value = (anyVal && !Number.isNaN(horas)) ? (horas >= 0 ? '+' : '') + horas.toFixed(1) + ' h/mês' : '—';
+  const _horasSign = horas >= 0 ? '+' : '';
+  if(el) el.value = (anyVal && !Number.isNaN(horas)) ? _horasSign + horas.toFixed(1) + ' h/mês' : '—';
   // Persist to DATA
   if(DATA[p]?.meta) {
     DATA[p].meta.volPre   = volPre;
@@ -18224,7 +18231,8 @@ function arqSortBy(col) {
   // Update header arrows
   document.querySelectorAll('.arq-th-sort').forEach(th => {
     const c = th.dataset.col;
-    th.querySelector('.sort-arrow').textContent = c === col ? (_arqSort.dir === 1 ? ' ▲' : ' ▼') : ' ↕';
+    const _sortIcon = _arqSort.dir === 1 ? ' ▲' : ' ▼';
+    th.querySelector('.sort-arrow').textContent = c === col ? _sortIcon : ' ↕';
   });
   arqApplyFilter();
 }
@@ -20044,7 +20052,7 @@ async function _runAiRelatorioWithMode(p, pop, mode) {
       const rs = resolveStep(s, mode);
       return { numero: i+1, titulo: rs.title, responsavel: rs.responsible, acoes: rs.actions.map(a => typeof a==='string' ? a : (a.text||'')).filter(Boolean) };
     }),
-    riscos: risks.map(r => ({ titulo: r.title || '', descricao: r.desc || '', causa: r.causa || '', tratamento: r.solucao || '', nivel: r.score >= 16 ? 'Alto' : r.score >= 8 ? 'Médio' : 'Baixo' })),
+    riscos: risks.map(r => { const _rNivel = r.score >= 8 ? 'Médio' : 'Baixo'; return { titulo: r.title || '', descricao: r.desc || '', causa: r.causa || '', tratamento: r.solucao || '', nivel: r.score >= 16 ? 'Alto' : _rNivel }; }),
     normativos: normas.filter(n => n.name || n.code).map(n => n.code ? `${n.code} – ${n.name}` : n.name),
     indicadores: indicators.map(i => ({ titulo: i.title || '', descricao: i.desc || '', formula: i.formula || '' })),
     acoes_plano: actions.map(a => ({ acao: a.desc || '', responsavel: a.resp || '', prazo: a.prazo || '', status: a.status || '' })),
@@ -20114,7 +20122,10 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
     : `<p class="rel-empty">Nenhum item identificado.</p>`;
   const row  = (label, val) => val ? `<tr><td>${esc(label)}</td><td>${esc(val)}</td></tr>` : '';
   const scoreTag = score => {
-    const [cls, lbl] = score >= 16 ? ['alto','Alto'] : score >= 8 ? ['medio','Médio'] : ['baixo','Baixo'];
+    let cls, lbl;
+    if (score >= 16) { cls = 'alto'; lbl = 'Alto'; }
+    else if (score >= 8) { cls = 'medio'; lbl = 'Médio'; }
+    else { cls = 'baixo'; lbl = 'Baixo'; }
     return `<span class="rel-tag-risk ${cls}">${lbl}</span>`;
   };
   const statusLabel = { pendente:'Pendente', andamento:'Em andamento', concluido:'Concluído', atrasado:'Atrasado' };
@@ -20410,7 +20421,8 @@ function _buildRelHTML(p, meta, steps, roles, risks, indicators, actions, meetin
         ${[...matSnaps].reverse().map((s, idx, arr) => {
           const prev = arr[idx + 1];
           const delta = prev ? s.score - prev.score : null;
-          const _deltaStr = delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : '= 0';
+          const __deltaStr = delta < 0 ? `▼ ${delta}` : '= 0';
+          const _deltaStr = delta > 0 ? `▲ +${delta}` : __deltaStr;
           const deltaStr = delta === null ? '—' : _deltaStr;
           const _deltaCol = delta < 0 ? '#991b1b' : '#64748b';
           const deltaCol = delta > 0 ? '#166534' : _deltaCol;
@@ -21308,20 +21320,22 @@ async function repoSaveDoc() {
     }
   }
 
+  const _existingDoc = repoEditingId ? REPO_DOCS.find(x=>x.id===repoEditingId) : null;
+  const _existingFileType = _existingDoc?.fileType || 'outro';
   const doc = {
     id:         repoEditingId || 'repo_' + Date.now(),
     title:      title,
     cat:        document.getElementById('repo-cat').value,
     version:    document.getElementById('repo-version').value.trim(),
     desc:       document.getElementById('repo-desc').value.trim(),
-    fileUrl:    fileUrl   || (repoEditingId ? REPO_DOCS.find(x=>x.id===repoEditingId)?.fileUrl   : ''),
-    filePath:   filePath  || (repoEditingId ? REPO_DOCS.find(x=>x.id===repoEditingId)?.filePath  : ''),
-    fileName:   fileName  || (repoEditingId ? REPO_DOCS.find(x=>x.id===repoEditingId)?.fileName  : ''),
-    fileSize:   fileSize  || (repoEditingId ? REPO_DOCS.find(x=>x.id===repoEditingId)?.fileSize  : ''),
-    fileType:    fileType  !== 'outro' ? fileType : (repoEditingId ? REPO_DOCS.find(x=>x.id===repoEditingId)?.fileType : 'outro'),
-    uploadedAt:  repoEditingId ? REPO_DOCS.find(x=>x.id===repoEditingId)?.uploadedAt : new Date().toISOString(),
-    textContent: (typeof _extractedText !== 'undefined' ? _extractedText : null) ?? (repoEditingId ? REPO_DOCS.find(x=>x.id===repoEditingId)?.textContent : null),
-    thumbnail:   (typeof _thumbnail   !== 'undefined' ? _thumbnail   : null) ?? (repoEditingId ? REPO_DOCS.find(x=>x.id===repoEditingId)?.thumbnail   : null),
+    fileUrl:    fileUrl   || (_existingDoc?.fileUrl   || ''),
+    filePath:   filePath  || (_existingDoc?.filePath  || ''),
+    fileName:   fileName  || (_existingDoc?.fileName  || ''),
+    fileSize:   fileSize  || (_existingDoc?.fileSize  || ''),
+    fileType:    fileType  !== 'outro' ? fileType : _existingFileType,
+    uploadedAt:  _existingDoc?.uploadedAt || new Date().toISOString(),
+    textContent: (typeof _extractedText !== 'undefined' ? _extractedText : null) ?? (_existingDoc?.textContent ?? null),
+    thumbnail:   (typeof _thumbnail   !== 'undefined' ? _thumbnail   : null) ?? (_existingDoc?.thumbnail   ?? null),
   };
 
   if(repoEditingId) {
@@ -22105,6 +22119,7 @@ function eppRenderDashboard() {
     const final   = matComputeFinal(pk);
     const metrics = matComputeMetrics(pk, (matGetData(pk).version || 'asis'));
     if(!final) return;
+    const _riscoColor = final.normRisco >= 40 ? '#eab308' : '#ef4444';
     rankingItems.push({
       nome:    r.subprocesso || r.processo,
       macro:   r.macroprocesso,
@@ -22113,7 +22128,7 @@ function eppRenderDashboard() {
       matColor:     final.levelColor,
       matLevel:     final.level,
       risco:        final.normRisco,
-      riscoColor:   final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444',
+      riscoColor:   final.normRisco >= 70 ? '#22c55e' : _riscoColor,
       riscoLabel:   final.riscoLabel,
       overhead:     Math.round(metrics.overhead * 100),
       overheadColor: metrics.overheadCls,
@@ -22177,7 +22192,8 @@ function eppRenderRanking(activeKey) {
     sorted.map((it, i) => {
       const val   = it[activeKey];
       const color = it[activeKey + 'Color'] || '#6366f1';
-      const _medal = i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="color:#94a3b8;font-weight:700;font-size:12px;">${i+1}</span>`;
+      const __medal = i === 2 ? '🥉' : `<span style="color:#94a3b8;font-weight:700;font-size:12px;">${i+1}</span>`;
+      const _medal = i === 1 ? '🥈' : __medal;
       const medal = i === 0 ? '🥇' : _medal;
       const barW  = Math.min(val, 100);
       const barCol = _eppRankingBarColor(isOverhead, val, color);
@@ -22690,7 +22706,8 @@ function auditOpenExecModal(id) {
   const tipoEl = document.getElementById('ae-tipo');
   if(tipoEl) tipoEl.value = exec?.tipo || 'teste';
   // Popula questoes do plano
-  const planForQ = exec?.planId ? DATA.audits.plans.find(p=>p.id===exec.planId) : (_auditCurrentPlanId ? DATA.audits.plans.find(p=>p.id===_auditCurrentPlanId) : null);
+  const _planByCurrentId = _auditCurrentPlanId ? DATA.audits.plans.find(p=>p.id===_auditCurrentPlanId) : null;
+  const planForQ = exec?.planId ? DATA.audits.plans.find(p=>p.id===exec.planId) : _planByCurrentId;
   const questaoSel = document.getElementById('ae-questao');
   if(questaoSel) {
     const qs = Array.isArray(planForQ?.questoes) ? planForQ.questoes : [];
@@ -23230,11 +23247,14 @@ function auditRenderHeatmap() {
     byProc[proc][etapa].total++;
   });
 
-  const _heatColor = n <= 2 ? '#fef9c3' : n <= 4 ? '#fed7aa' : '#fecaca';
+  const __heatColor = n <= 4 ? '#fed7aa' : '#fecaca';
+  const _heatColor = n <= 2 ? '#fef9c3' : __heatColor;
   const heatColor = n => n === 0 ? '#f0fdf4' : _heatColor;
-  const _heatBorder = n <= 2 ? '#fde047' : n <= 4 ? '#fb923c' : '#f87171';
+  const __heatBorder = n <= 4 ? '#fb923c' : '#f87171';
+  const _heatBorder = n <= 2 ? '#fde047' : __heatBorder;
   const heatBorder = n => n === 0 ? '#86efac' : _heatBorder;
-  const _heatText = n <= 2 ? '#854d0e' : n <= 4 ? '#9a3412' : '#991b1b';
+  const __heatText = n <= 4 ? '#9a3412' : '#991b1b';
+  const _heatText = n <= 2 ? '#854d0e' : __heatText;
   const heatText = n => n === 0 ? '#15803d' : _heatText;
 
   let html = '';
@@ -23272,7 +23292,8 @@ function auditRenderPlanejamento(planId) {
   // Painel de info do plano
   const infoEl = document.getElementById('audit-plan-info');
   if(infoEl) {
-    const crits = Array.isArray(plan.criterios) ? plan.criterios : (plan.criterios ? [{titulo:plan.criterios,descricao:''}] : []);
+    const _criteriosFallback = plan.criterios ? [{titulo:plan.criterios,descricao:''}] : [];
+    const crits = Array.isArray(plan.criterios) ? plan.criterios : _criteriosFallback;
     const critHtml = crits.length
       ? crits.map(c=>`<div style="padding:8px 12px;background:#f0f9ff;border-left:3px solid #3b82f6;border-radius:0 6px 6px 0;margin-bottom:6px;font-size:13px;">
           <strong style="color:#1e40af;">${escapeHtml(c.titulo||'')}</strong>
@@ -23446,7 +23467,8 @@ function auditRenderRiscos(planId) {
   empty.style.display='none';
 
   // Nível por score
-  const __lvl = sc >= 8 ? {label:'Alto',bg:'#fed7aa',tx:'#9a3412'} : sc >= 4 ? {label:'Moderado',bg:'#fef9c3',tx:'#854d0e'} : {label:'Baixo',bg:'#dcfce7',tx:'#15803d'};
+  const ___lvl = sc >= 4 ? {label:'Moderado',bg:'#fef9c3',tx:'#854d0e'} : {label:'Baixo',bg:'#dcfce7',tx:'#15803d'};
+  const __lvl = sc >= 8 ? {label:'Alto',bg:'#fed7aa',tx:'#9a3412'} : ___lvl;
   const _lvl = sc => sc >= 15 ? {label:'Crítico',bg:'#fecaca',tx:'#991b1b'} : __lvl;
 
   // Matriz 5×5 (prob × impacto)
@@ -26716,7 +26738,8 @@ Regras obrigatórias:
     if(!kpiRow) return;
     if(filtered.length === 0) { kpiRow.innerHTML = ''; return; }
 
-    const periodo = selPer ? _periodoLabel(selPer) : (filtered[0]?.periodo ? _periodoLabel(filtered[0].periodo) : '—');
+    const _periodoFallback = filtered[0]?.periodo ? _periodoLabel(filtered[0].periodo) : '—';
+    const periodo = selPer ? _periodoLabel(selPer) : _periodoFallback;
 
     // Sem indicador específico: KPIs de contagem
     // (somar % de indicadores misturados com unidades diferentes não faz sentido)
@@ -26767,7 +26790,8 @@ Regras obrigatórias:
     const saved = DATA.indicadoresCage.overrides[codigo] || {};
     const ind = getAllIndicators().find(i => i.codigo === codigo);
     const enunciadoPrazo = /^(prazo|tempo)\b/i.test(ind?.enunciado || '');
-    let tipo = (saved.tipo && saved.tipo !== 'auto') ? saved.tipo : (enunciadoPrazo ? 'prazo' : 'percentual');
+    const _tipoDefault = enunciadoPrazo ? 'prazo' : 'percentual';
+    let tipo = (saved.tipo && saved.tipo !== 'auto') ? saved.tipo : _tipoDefault;
     const isPrazoTipo = tipo === 'prazo';
     const defaultSentido = isPrazoTipo ? 'menor' : 'maior';
     const sentido = saved.sentido || defaultSentido;
@@ -26775,10 +26799,13 @@ Regras obrigatórias:
     // Thresholds
     const defaultVerde   = 100;
     const defaultAmarelo = menorMelhor ? 120 : 80;
+    const _unidSuffix = tipo === 'percentual' ? '%' : '';
+    const _unidMid = tipo === 'moeda' ? 'R$' : _unidSuffix;
+    const _unidDefault = isPrazoTipo ? 'dias' : _unidMid;
     return {
       tipo,
       sentido,
-      unidade:       saved.unidade       !== undefined ? saved.unidade       : (isPrazoTipo ? 'dias' : tipo === 'moeda' ? 'R$' : tipo === 'percentual' ? '%' : ''),
+      unidade:       saved.unidade       !== undefined ? saved.unidade       : _unidDefault,
       casasDecimais: saved.casasDecimais !== undefined ? saved.casasDecimais : 1,
       faixaVerde:    saved.faixaVerde    !== undefined ? Number(saved.faixaVerde)    : defaultVerde,
       faixaAmarelo:  saved.faixaAmarelo  !== undefined ? Number(saved.faixaAmarelo)  : defaultAmarelo,
@@ -28063,7 +28090,8 @@ function matShowAudit(p) {
 
 function matComputeMetrics(p, version='asis') {
   const isTobe = version === 'tobe';
-  const steps = DATA[p] ? (isTobe ? (DATA[p].tobeSteps || []) : (DATA[p].steps || [])) : [];
+  const _popSteps = isTobe ? (DATA[p]?.tobeSteps || []) : (DATA[p]?.steps || []);
+  const steps = DATA[p] ? _popSteps : [];
   let totalActivities = 0, totalDecisions = 0, totalApprovals = 0, totalLoops = 0, totalHandoffs = 0, totalAutomatico = 0, totalStartEvents = 0, totalEndEvents = 0;
   // Contadores por natureza
   let totalExecucao = 0, totalControle = 0, totalDistribuicao = 0, totalComunicacao = 0, totalPlanejamento = 0;
@@ -28496,9 +28524,11 @@ function matRender(p) {
   // índices calculados com escala de referência
   const digitalScore = matScoreDigital(questionnaires);
   const digitalVal   = digitalScore !== null ? digitalScore.toFixed(0)+'%' : 'N/D';
-  const _digitalLabel = digitalScore >= 60 ? 'Alta' : digitalScore >= 30 ? 'Média' : 'Baixa';
+  const __digitalLabel = digitalScore >= 30 ? 'Média' : 'Baixa';
+  const _digitalLabel = digitalScore >= 60 ? 'Alta' : __digitalLabel;
   const digitalLabel = digitalScore === null ? 'Não avaliado' : _digitalLabel;
-  const _digitalCls = digitalScore >= 60 ? '#22c55e' : digitalScore >= 30 ? '#eab308' : '#ef4444';
+  const __digitalCls = digitalScore >= 30 ? '#eab308' : '#ef4444';
+  const _digitalCls = digitalScore >= 60 ? '#22c55e' : __digitalCls;
   const digitalCls = digitalScore === null ? '#94a3b8' : _digitalCls;
   const indicesHtml = `
     <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:6px;">📊 Índices Calculados</div>
@@ -28509,9 +28539,11 @@ function matRender(p) {
         const ld = metrics.totalExecucao + metrics.totalApprovals + metrics.totalControle;
         const lr = ld > 0 ? metrics.totalExecucao / ld : null;
         const lv = lr !== null ? (lr*100).toFixed(1)+'%' : 'N/D';
-        const _ll = lr >= 0.6 ? 'Lean' : lr >= 0.35 ? 'Moderado' : 'Burocrático';
+        const __ll = lr >= 0.35 ? 'Moderado' : 'Burocrático';
+        const _ll = lr >= 0.6 ? 'Lean' : __ll;
         const ll = lr === null ? 'Sem dados' : _ll;
-        const _lc = lr >= 0.6 ? '#22c55e' : lr >= 0.35 ? '#eab308' : '#ef4444';
+        const __lc = lr >= 0.35 ? '#eab308' : '#ef4444';
+        const _lc = lr >= 0.6 ? '#22c55e' : __lc;
         const lc = lr === null ? '#94a3b8' : _lc;
         return indexCard('Lean Operacional ↑', lv, ll, lc,
           `execução ÷ (execução + aprovações + controle)<br>Escala: ≥60% lean · 35–60% moderado · &lt;35% burocrático<br><span style="color:#64748b;">Mede proporção de valor direto vs. etapas de controle no fluxo</span>`);
@@ -28663,7 +28695,7 @@ function matRender(p) {
       <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;">Componentes do score (normalizado 0–100):</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         ${scoreCard('Percepção da Equipe', final.equipe+'/100', `média de ${completedQuestionnaires} questionário(s) ↑`, '40%', '#6366f1', '↑ maior = melhor')}
-        ${(()=>{ const rc = final.normRisco >= 70 ? '#22c55e' : final.normRisco >= 40 ? '#eab308' : '#ef4444'; return scoreCard('Risco Operacional', final.normRisco+'/100', 'maior = melhor', '20%', rc, ''); })()}
+        ${(()=>{ const _rcMid = final.normRisco >= 40 ? '#eab308' : '#ef4444'; const rc = final.normRisco >= 70 ? '#22c55e' : _rcMid; return scoreCard('Risco Operacional', final.normRisco+'/100', 'maior = melhor', '20%', rc, ''); })()}
         ${scoreCard('Lean Operacional', final.normLean+'/100', 'execução ÷ (exec+overhead) ↑', '20%', '#22c55e', '↑ mais lean = melhor')}
         ${scoreCard('Digitalização', final.normAutom+'/100', 'baseado no questionário ↑', '10%', '#0891b2', '↑ maior = melhor')}
         ${scoreCard('Automação', final.normAutomacao+'/100', '% atividades automáticas ⚙️ ↑', '10%', '#7c3aed', '↑ mais automático = melhor')}
@@ -28860,9 +28892,11 @@ function matExportPdf(p) {
   const ansColor = { concordo:'#ef4444', parcialmente:'#eab308', discordo:'#22c55e' };
 
   const digScore   = matScoreDigital(questionnaires);
-  const _automLabel = digScore >= 60 ? 'Alta' : digScore >= 30 ? 'Média' : 'Baixa';
+  const __automLabel = digScore >= 30 ? 'Média' : 'Baixa';
+  const _automLabel = digScore >= 60 ? 'Alta' : __automLabel;
   const automLabel = digScore === null ? 'Não avaliado' : _automLabel;
-  const _automCls = digScore >= 60 ? '#22c55e' : digScore >= 30 ? '#eab308' : '#ef4444';
+  const __automCls = digScore >= 30 ? '#eab308' : '#ef4444';
+  const _automCls = digScore >= 60 ? '#22c55e' : __automCls;
   const automCls = digScore === null ? '#94a3b8' : _automCls;
 
   // ── Score block ────────────────────────────────────────────────────────
@@ -28943,9 +28977,11 @@ function matExportPdf(p) {
           const ld = metrics.totalExecucao + metrics.totalApprovals + metrics.totalControle;
           const lr = ld > 0 ? metrics.totalExecucao / ld : null;
           const lv = lr !== null ? (lr*100).toFixed(1)+'%' : 'N/D';
-          const _ll = lr >= 0.6 ? 'Lean' : lr >= 0.35 ? 'Moderado' : 'Burocrático';
+          const __ll = lr >= 0.35 ? 'Moderado' : 'Burocrático';
+          const _ll = lr >= 0.6 ? 'Lean' : __ll;
           const ll = lr === null ? 'Sem dados' : _ll;
-          const _lc = lr >= 0.6 ? '#22c55e' : lr >= 0.35 ? '#eab308' : '#ef4444';
+          const __lc = lr >= 0.35 ? '#eab308' : '#ef4444';
+          const _lc = lr >= 0.6 ? '#22c55e' : __lc;
           const lc = lr === null ? '#94a3b8' : _lc;
           return `<td>Lean Operacional <span class="note">(bruto — ↑ maior = melhor; execução ÷ (execução+overhead))</span></td>
         <td>${lv}</td>
@@ -29035,9 +29071,11 @@ function matExportPdf(p) {
       ${[...snapshots].reverse().map((s, idx, arr) => {
         const prevSnap = arr[idx + 1];
         const delta = prevSnap ? s.score - prevSnap.score : null;
-        const _deltaStr = delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : '= 0';
+        const __deltaStr = delta < 0 ? `▼ ${delta}` : '= 0';
+        const _deltaStr = delta > 0 ? `▲ +${delta}` : __deltaStr;
         const deltaStr = delta === null ? '—' : _deltaStr;
-        const _deltaCol = delta > 0 ? '#22c55e' : delta < 0 ? '#ef4444' : '#94a3b8';
+        const __deltaCol = delta < 0 ? '#ef4444' : '#94a3b8';
+        const _deltaCol = delta > 0 ? '#22c55e' : __deltaCol;
         const deltaCol = delta === null ? '#94a3b8' : _deltaCol;
         return `<tr>
           <td style="white-space:nowrap;">${fmtDate(s.date)}</td>
@@ -29166,12 +29204,14 @@ async function matGeminiAnalyze(p) {
     const answersText = MAT_QUESTIONS.map((q, i) => {
       const labels = questionnaires.map((set, idx) => {
         const a = set && set[i];
-        const _label = a === 'discordo' ? 'Discordo' : a === 'parcialmente' ? 'Concordo Parcialmente' : '—';
+        const __label = a === 'parcialmente' ? 'Concordo Parcialmente' : '—';
+        const _label = a === 'discordo' ? 'Discordo' : __label;
         const label = a === 'concordo' ? 'Concordo' : _label;
         return `Q${idx + 1}: ${label}`;
       }).join(' | ');
       const avg = matQuestionAverage(questionnaires, i);
-      const secTag = q.section ? ` [${q.section}${q.digital ? ' / Digital' : ''}]` : '';
+      const _digitalSuffix = q.digital ? ' / Digital' : '';
+      const secTag = q.section ? ` [${q.section}${_digitalSuffix}]` : '';
       return `${i+1}.${secTag} [${labels}] [Média: ${avg !== null ? avg + '/100' : '—'}] ${q.text}`;
     }).join('\n');
 
