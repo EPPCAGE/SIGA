@@ -19973,7 +19973,13 @@ ${fluxoTexto}`;
 
     // Card com fluxo sugerido em Mermaid
     if (data.fluxo_sugerido_mermaid) {
-      const mermaidCode = data.fluxo_sugerido_mermaid.trim();
+      const mermaidCode = _sanitizeMermaidDiagramText(data.fluxo_sugerido_mermaid, 'LR');
+      if(!mermaidCode) {
+        data.fluxo_sugerido_mermaid = '';
+      }
+    }
+    if (data.fluxo_sugerido_mermaid) {
+      const mermaidCode = _sanitizeMermaidDiagramText(data.fluxo_sugerido_mermaid, 'LR');
       const mermaidId = 'ai-mermaid-' + Date.now();
       html += `<div class="ai-summary" style="margin-top:16px;padding:0;overflow:hidden;border-radius:12px;border:1.5px solid #c7d2fe;">
         <div style="padding:14px 18px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -25858,7 +25864,7 @@ Regras obrigatórias:
 
     try {
       const result = await callGemini(prompt);
-      let code = _stripMarkdownCodeFence(result);
+      const code = _sanitizeMermaidDiagramText(result, _direction || 'LR');
       if (code && code.startsWith('flowchart')) {
         document.getElementById('fd-text-input').value = code;
         await fdRenderMermaid();
