@@ -18054,7 +18054,108 @@ function arqInit() {
   const filterObj = document.getElementById('arq-filter-obj');
   if(filterObj) filterObj.innerHTML = '<option value="">Todos</option>' + allObjs.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('');
 
+  arqRenderCadeiaInterativa();
   arqApplyFilter();
+}
+
+function arqRenderCadeiaInterativa() {
+  const wrap = document.getElementById('arq-cadeia-wrap');
+  const placeholder = document.getElementById('arq-cadeia-placeholder');
+  const img = document.getElementById('arq-cadeia-img');
+  const hotspots = document.getElementById('arq-cadeia-hotspots');
+  if(!wrap || !placeholder || !img || !hotspots) return;
+
+  const src = DATA._cadeiaValorImg || '';
+  const macroHotspots = [
+    { macro: 'Gestão Estratégica', x: 27, y: 32, w: 20, h: 12 },
+    { macro: 'Comunicação', x: 49, y: 31, w: 26, h: 13 },
+    { macro: 'Orientação e Suporte à Tomada de Decisão', x: 21, y: 48, w: 23, h: 11 },
+    { macro: 'Contabilidade', x: 43, y: 48, w: 16, h: 11 },
+    { macro: 'Transparência e Estímulo ao Controle Social', x: 60, y: 47, w: 22, h: 12 },
+    { macro: 'Controle', x: 21, y: 59, w: 17, h: 10 },
+    { macro: 'Auditoria', x: 41, y: 59, w: 15, h: 10 },
+    { macro: 'Promoção da Integridade e Prevenção à Corrupção', x: 57, y: 57, w: 26, h: 13 },
+    { macro: 'Gestão de Dados e Informações', x: 31, y: 74, w: 24, h: 12 },
+    { macro: 'Gestão Administrativa', x: 55, y: 74, w: 21, h: 12 },
+    { macro: 'Gestão de TIC', x: 31, y: 87, w: 18, h: 9 },
+    { macro: 'Gestão de Pessoas', x: 51, y: 87, w: 20, h: 9 },
+  ];
+
+  hotspots.innerHTML = '';
+  if(!src) {
+    wrap.style.display = 'none';
+    placeholder.style.display = 'block';
+    return;
+  }
+
+  wrap.style.display = 'block';
+  placeholder.style.display = 'none';
+  img.src = src;
+
+  macroHotspots.forEach((item) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.title = item.macro;
+    btn.setAttribute('aria-label', 'Abrir processos do macroprocesso: ' + item.macro);
+    btn.style.cssText = [
+      'position:absolute',
+      `left:${item.x}%`,
+      `top:${item.y}%`,
+      `width:${item.w}%`,
+      `height:${item.h}%`,
+      'background:rgba(255,255,255,0.01)',
+      'border:1px dashed rgba(255,255,255,0.28)',
+      'border-radius:8px',
+      'cursor:pointer',
+      'transition:all .15s ease',
+      'z-index:2'
+    ].join(';');
+    btn.onmouseenter = () => {
+      btn.style.background = 'rgba(14,116,144,0.14)';
+      btn.style.border = '1px solid rgba(14,116,144,0.55)';
+    };
+    btn.onmouseleave = () => {
+      btn.style.background = 'rgba(255,255,255,0.01)';
+      btn.style.border = '1px dashed rgba(255,255,255,0.28)';
+    };
+    btn.onclick = () => arqApplyMacroFilterOnly(item.macro);
+    hotspots.appendChild(btn);
+  });
+}
+
+function arqApplyMacroFilterOnly(macroName) {
+  const macro = String(macroName || '').trim();
+  if(!macro) return;
+
+  const macroSel = document.getElementById('arq-filter-macro');
+  const natSel = document.getElementById('arq-filter-natureza');
+  const areaSel = document.getElementById('arq-filter-area');
+  const gerenteSel = document.getElementById('arq-filter-gerente');
+  const objSel = document.getElementById('arq-filter-obj');
+  const mapeadoSel = document.getElementById('arq-filter-mapeado');
+  const criticoSel = document.getElementById('arq-filter-critico');
+  const searchInp = document.getElementById('arq-filter-search');
+  if(!macroSel) return;
+
+  if(![...macroSel.options].some(opt => opt.value === macro)) {
+    const opt = document.createElement('option');
+    opt.value = macro;
+    opt.textContent = macro;
+    macroSel.appendChild(opt);
+  }
+
+  macroSel.value = macro;
+  if(natSel) natSel.value = '';
+  if(areaSel) areaSel.value = '';
+  if(gerenteSel) gerenteSel.value = '';
+  if(objSel) objSel.value = '';
+  if(mapeadoSel) mapeadoSel.value = '';
+  if(criticoSel) criticoSel.value = '';
+  if(searchInp) searchInp.value = '';
+
+  arqApplyFilter();
+  document.getElementById('arq-module')?.scrollTo({ top: 260, behavior: 'smooth' });
+  showToast('Macroprocesso filtrado: ' + macro, 'success');
 }
 
 function arqApplyFilter() {
@@ -29498,6 +29599,21 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-primary editor-only" onclick="arqShowForm()">＋ Novo Processo</button>
         <button class="btn btn-outline" onclick="showArqModule(false)">✕ Fechar</button>
+      </div>
+    </div>
+
+    <div style="background:white;border-radius:12px;padding:16px 18px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+        <div style="font-size:14px;font-weight:700;color:#1B3022;">🔗 Cadeia de Valor Interativa</div>
+        <button class="btn btn-outline" onclick="showBiModule(true)" style="font-size:12px;padding:6px 10px;">Gerenciar imagem no módulo BI</button>
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:10px;">Clique diretamente sobre um macroprocesso da imagem para filtrar os processos correspondentes na arquitetura.</div>
+      <div id="arq-cadeia-placeholder" style="border:2px dashed #cbd5e1;border-radius:10px;padding:24px 16px;text-align:center;color:#94a3b8;font-size:13px;">
+        Nenhuma imagem da cadeia de valor cadastrada. Use "Gerenciar imagem no módulo BI".
+      </div>
+      <div id="arq-cadeia-wrap" style="display:none;position:relative;border-radius:10px;overflow:hidden;border:1px solid #dbe4ee;background:#f8fafc;">
+        <img id="arq-cadeia-img" src="" alt="Cadeia de Valor interativa" style="width:100%;display:block;">
+        <div id="arq-cadeia-hotspots" style="position:absolute;inset:0;"></div>
       </div>
     </div>
 
