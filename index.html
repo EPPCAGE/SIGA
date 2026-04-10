@@ -2870,7 +2870,7 @@
   <!-- Process Inspector (full width) -->
   <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.05);">
     <div style="font-size:13px;font-weight:800;color:#1B3022;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em;">🔍 Inspetor de Processo</div>
-    <select id="cockpit-pop-selector" onchange="cockpitLoadPop()" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#1B3022;background:#f8fafc;margin-bottom:16px;cursor:pointer;">
+    <select id="cockpit-pop-selector" aria-label="Selecionar processo" onchange="cockpitLoadPop()" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#1B3022;background:#f8fafc;margin-bottom:16px;cursor:pointer;">
       <option value="">— Selecione um processo para inspecionar —</option>
     </select>
     <div id="cockpit-pop-detail" style="display:none;">
@@ -2892,8 +2892,8 @@
   <div class="modal">
     <h3>📋 Registrar Nova Revisão</h3>
     <p>Preencha as informações desta revisão. Ela será adicionada ao histórico de controle do POP.</p>
-    <label for="rm-date">Número da Revisão</label><input class="modal-input" id="rm-num" type="text">
-    <label for="rm-desc">Data</label><input class="modal-input" id="rm-date" type="text">
+    <label for="rm-num">Número da Revisão</label><input class="modal-input" id="rm-num" type="text">
+    <label for="rm-date">Data</label><input class="modal-input" id="rm-date" type="text">
     <label for="rm-author">Descrição</label><textarea class="modal-input modal-textarea" id="rm-desc"></textarea>
     <label for="rm-author">Autor</label><input class="modal-input" id="rm-author" type="text">
     <div class="modal-actions">
@@ -2922,11 +2922,11 @@
     <div class="rel-quant-box" style="margin-bottom:14px;">
       <div style="padding:10px 16px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e2e8f0;">📈 Comparativo Pré / Pós Melhoria</div>
       <div class="rel-quant-body" style="display:grid;border-top:none;">
-        <div class="rel-quant-field"><label>Volume Mensal Pré</label><input type="number" id="rq-vol-pre" placeholder="ex: 200" min="0" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Volume Mensal Pós</label><input type="number" id="rq-vol-pos" placeholder="ex: 180" min="0" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Ciclo Pré (horas)</label><input type="number" id="rq-ciclo-pre" placeholder="ex: 4.5" min="0" step="0.1" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Ciclo Pós (horas)</label><input type="number" id="rq-ciclo-pos" placeholder="ex: 2.0" min="0" step="0.1" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field" style="grid-column:1/-1;"><label>Horas Economizadas / mês (calculado)</label><input type="text" id="rq-horas-econ" readonly placeholder="—" style="background:#f1f5f9;color:#1B3022;font-weight:700;cursor:default;"></div>
+        <div class="rel-quant-field"><label for="rq-vol-pre">Volume Mensal Pré</label><input type="number" id="rq-vol-pre" placeholder="ex: 200" min="0" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label for="rq-vol-pos">Volume Mensal Pós</label><input type="number" id="rq-vol-pos" placeholder="ex: 180" min="0" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label for="rq-ciclo-pre">Ciclo Pré (horas)</label><input type="number" id="rq-ciclo-pre" placeholder="ex: 4.5" min="0" step="0.1" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label for="rq-ciclo-pos">Ciclo Pós (horas)</label><input type="number" id="rq-ciclo-pos" placeholder="ex: 2.0" min="0" step="0.1" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field" style="grid-column:1/-1;"><label for="rq-horas-econ">Horas Economizadas / mês (calculado)</label><input type="text" id="rq-horas-econ" readonly placeholder="—" style="background:#f1f5f9;color:#1B3022;font-weight:700;cursor:default;"></div>
       </div>
     </div>
 
@@ -2934,8 +2934,8 @@
     <div class="rel-quant-box" style="margin-bottom:14px;">
       <div style="padding:10px 16px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e2e8f0;">⏱️ Tempos para Simulação</div>
       <div class="rel-quant-body" style="display:grid;border-top:none;">
-        <div class="rel-quant-field"><label>Tempo Estimado Total — Lead Time (dias)</label><input type="number" id="rq-lead-time" placeholder="ex: 15" min="0" step="0.5" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Tempo Estimado Puro (horas)</label><input type="number" id="rq-tempo-puro" placeholder="ex: 3.5" min="0" step="0.5" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label for="rq-lead-time">Tempo Estimado Total — Lead Time (dias)</label><input type="number" id="rq-lead-time" placeholder="ex: 15" min="0" step="0.5" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label for="rq-tempo-puro">Tempo Estimado Puro (horas)</label><input type="number" id="rq-tempo-puro" placeholder="ex: 3.5" min="0" step="0.5" oninput="saveRelQuant()"></div>
       </div>
     </div>
 
@@ -2943,11 +2943,11 @@
     <div class="rel-quant-box">
       <div style="padding:10px 16px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e2e8f0;">📊 Volumetria e Contexto</div>
       <div id="rel-quant-body" class="rel-quant-body" style="display:grid;border-top:none;">
-        <div class="rel-quant-field"><label>Execuções médias / mês</label><input type="text" id="rq-vol-mensal" placeholder="ex: 120" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Execuções anuais estimadas</label><input type="text" id="rq-vol-anual" placeholder="ex: 1.440" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Variação sazonal</label><input type="text" id="rq-sazonalidade" placeholder="ex: maior no 1º trimestre" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Tempo médio de execução</label><input type="text" id="rq-tempo-medio" placeholder="ex: 12 dias úteis" oninput="saveRelQuant()"></div>
-        <div class="rel-quant-field"><label>Tempo médio de espera</label><input type="text" id="rq-tempo-espera" placeholder="ex: 3 dias" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label for="rq-vol-mensal">Execuções médias / mês</label><input type="text" id="rq-vol-mensal" placeholder="ex: 120" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label for="rq-vol-anual">Execuções anuais estimadas</label><input type="text" id="rq-vol-anual" placeholder="ex: 1.440" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label for="rq-sazonalidade">Variação sazonal</label><input type="text" id="rq-sazonalidade" placeholder="ex: maior no 1º trimestre" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label for="rq-tempo-medio">Tempo médio de execução</label><input type="text" id="rq-tempo-medio" placeholder="ex: 12 dias úteis" oninput="saveRelQuant()"></div>
+        <div class="rel-quant-field"><label for="rq-tempo-espera">Tempo médio de espera</label><input type="text" id="rq-tempo-espera" placeholder="ex: 3 dias" oninput="saveRelQuant()"></div>
       </div>
     </div>
   </div>
@@ -3213,7 +3213,7 @@
 
         <!-- IA desativada neste fluxo: placeholders ocultos para compatibilidade -->
         <div id="npop-ia-form" style="display:none;margin-top:16px;">
-          <textarea id="npop-json-paste" style="display:none;"></textarea>
+          <textarea id="npop-json-paste" aria-label="JSON extraído do POP" style="display:none;"></textarea>
           <div id="npop-json-status" style="display:none;"></div>
           <div id="npop-prompt-wrap" style="display:none;"><pre id="npop-prompt-text"></pre></div>
           <button id="npop-copy-btn" style="display:none;"></button>
@@ -4388,7 +4388,7 @@
     <p>Selecione um indicador importado do SISPLAN para vincular a este mapeamento.</p>
     <input type="hidden" id="ind-sisplan-picker-pop">
     <div style="margin-bottom:12px;">
-      <input class="modal-input" id="ind-sisplan-picker-search" type="text" placeholder="Filtrar por código ou nome..." oninput="renderSisplanPickerList()" style="width:100%;">
+      <input class="modal-input" id="ind-sisplan-picker-search" type="text" aria-label="Filtrar indicador SISPLAN" placeholder="Filtrar por código ou nome..." oninput="renderSisplanPickerList()" style="width:100%;">
     </div>
     <div id="ind-sisplan-picker-list" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;"></div>
     <div class="modal-actions">
