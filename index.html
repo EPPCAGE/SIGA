@@ -1493,8 +1493,8 @@
 <!-- ═══ AUTH OVERLAY ═══════════════════════ -->
 <div id="auth-overlay" class="auth-overlay">
   <div class="auth-box">
-    <div class="auth-logo-siga">
-      <svg viewBox="185 25 355 145" xmlns="http://www.w3.org/2000/svg" aria-label="SIGA">
+    <div class="auth-logo-siga" role="img" aria-label="SIGA — Sistema Integrado de Gestão Estratégica e Alinhamento">
+      <svg viewBox="185 25 355 145" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <!-- Text: SIGA -->
         <text x="188" y="96" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="80" fill="#1A3A8A">SIGA</text>
         <!-- Text: subtitle -->
@@ -6757,7 +6757,7 @@ function renderSisplanPickerList() {
     return;
   }
   list.innerHTML = filtered.map(ind => `
-    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')">
+    <button type="button" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;display:block;text-align:left;width:100%;" onmouseover="this.style.borderColor='#0369a1'" onmouseout="this.style.borderColor='#e2e8f0'" onclick="confirmIndFromSisplan('${ind.id}')">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
         <div style="flex:1;">
           <div style="font-size:11px;font-weight:700;color:#607070;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">${ind.codigo||'—'} · ${ind.divisao||''}</div>
@@ -6766,7 +6766,7 @@ function renderSisplanPickerList() {
         </div>
         <button class="btn btn-primary" style="font-size:11px;padding:5px 10px;flex-shrink:0;" onclick="event.stopPropagation();confirmIndFromSisplan('${ind.id}')">Vincular</button>
       </div>
-    </div>`).join('');
+    </button>`).join('');
 }
 function confirmIndFromSisplan(indId) {
   const p = document.getElementById('ind-sisplan-picker-pop').value;
@@ -11782,9 +11782,9 @@ function _renderOrganogramaUnitCard(area, teams) {
     ? `<div style="width:2px;height:14px;background:#cbd5e1;"></div><div style="display:flex;flex-direction:column;gap:5px;align-items:stretch;width:100%;">${teamsHtml}</div>`
     : '';
   return `<div style="display:flex;flex-direction:column;align-items:center;gap:0;min-width:0;width:100%;">
-    <div id="org-unit-${area}" data-org-unit="${area}" onclick="orgClickUnit('${area}')"
+    <button type="button" id="org-unit-${area}" data-org-unit="${area}" onclick="orgClickUnit('${area}')"
       style="background:#e8a020;color:#1B3022;border-radius:10px;padding:11px 20px;text-align:center;width:100%;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(232,160,32,.3);box-sizing:border-box;cursor:pointer;transition:all .15s;user-select:none;"
-      title="Clique para ver os processos desta unidade">${area}</div>
+      title="Clique para ver os processos desta unidade">${area}</button>
     ${teamBlock}
   </div>`;
 }
@@ -11931,8 +11931,8 @@ function _orgRenderProcessRows(list, all) {
     const idx = all.indexOf(r);
     const nat = NAT_COLORS[r.natureza] || { bg:'#f1f5f9', color:'#475569' };
     return `
-      <div onclick="arqShowProcessDetail(${idx})"
-        style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;margin-bottom:4px;border:1px solid #e2e8f0;cursor:pointer;background:white;transition:background .12s;"
+      <button type="button" onclick="arqShowProcessDetail(${idx})"
+        style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;margin-bottom:4px;border:1px solid #e2e8f0;cursor:pointer;background:white;transition:background .12s;none;border:none;padding:0;font-family:inherit;"
         onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background='white'">
         <span style="background:${nat.bg};color:${nat.color};font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;flex-shrink:0;white-space:nowrap;">${r.natureza||''}</span>
         <div style="flex:1;min-width:0;">
@@ -11946,7 +11946,7 @@ function _orgRenderProcessRows(list, all) {
           const _statusLabel = mapUi.status === 'andamento' ? '🔄 Em andamento' : '○';
           return `<span style="font-size:11px;color:${mapUi.color};font-weight:600;flex-shrink:0;">${mapUi.status === 'sim' ? '✅ Mapeado' : _statusLabel}</span>`;
         })()}
-      </div>`;
+      </button>`;
   }).join('');
 }
 
@@ -14933,28 +14933,28 @@ function _getRepoSearchContentMatch(doc, lower) {
 
 function _renderSearchResultItem(r, q, lower) {
   if(r.type === 'faq') return `
-    <div class="search-result-item" onclick="goToFaq('${r.key}', ${r.idx})">
+    <button type="button" class="search-result-item" onclick="goToFaq('${r.key}', ${r.idx})" style="border:none;background:none;text-align:left;width:100%;padding:0;font-family:inherit;">
       <div class="search-result-pop">📋 ${r.popName} · FAQ</div>
       <div class="search-result-q">${highlight(r.faq.q, q)}</div>
       ${r.faq.a ? `<div class="search-result-a">${highlight(r.faq.a.substring(0,200)+(r.faq.a.length>200?'…':''), q)}</div>` : ''}
-    </div>`;
+    </button>`;
   if(r.type === 'norma') return `
-    <div class="search-result-item" onclick="goToNorma('${r.key}', ${r.idx})">
+    <button type="button" class="search-result-item" onclick="goToNorma('${r.key}', ${r.idx})" style="border:none;background:none;text-align:left;width:100%;padding:0;font-family:inherit;">
       <div class="search-result-pop">📜 ${r.popName} · Normas e Documentação</div>
       <div class="search-result-q">${highlight(r.norma.code||'', q)}</div>
       ${r.norma.name ? `<div class="search-result-a">${highlight(r.norma.name, q)}</div>` : ''}
       ${r.norma.url ? `<div style="font-size:11px;color:var(--cage-accent);margin-top:4px;">🔗 ${r.norma.url}</div>` : ''}
-    </div>`;
+    </button>`;
   if(r.type === 'repo_faq') return `
-    <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-faq="true" onclick="openRepoDocViewer(this.dataset.docId,true)">
+    <button type="button" class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-faq="true" onclick="openRepoDocViewer(this.dataset.docId,true)" style="border:none;background:none;text-align:left;width:100%;padding:0;font-family:inherit;">
       <div class="search-result-pop">📚 ${r.doc.title} · FAQ do Manual</div>
       <div class="search-result-q">${highlight(r.faq.q, q)}</div>
       ${r.faq.a ? `<div class="search-result-a">${highlight(r.faq.a.substring(0,240)+(r.faq.a.length>240?'…':''), q)}</div>` : ''}
-    </div>`;
+    </button>`;
   if(r.type !== 'repo') return '';
   const inContent = _getRepoSearchContentMatch(r.doc, lower);
   return `
-    <div class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-in-content="${inContent ? 'true' : 'false'}" onclick="this.dataset.inContent==='true' ? openRepoDocViewer(this.dataset.docId) : goToRepoDoc(this.dataset.docId)">
+    <button type="button" class="search-result-item" data-doc-id="${escapeHtml(r.doc.id)}" data-in-content="${inContent ? 'true' : 'false'}" onclick="this.dataset.inContent==='true' ? openRepoDocViewer(this.dataset.docId) : goToRepoDoc(this.dataset.docId)" style="border:none;background:none;text-align:left;width:100%;padding:0;font-family:inherit;">
       <div class="search-result-pop">📚 Documentos & Manuais · ${r.doc.cat||'Documento'}</div>
       <div class="search-result-q">${highlight(r.doc.title||'', q)}</div>
       ${r.doc.desc ? `<div class="search-result-a">${highlight(r.doc.desc.substring(0,180)+(r.doc.desc.length>180?'…':''), q)}</div>` : ''}
@@ -14963,7 +14963,7 @@ function _renderSearchResultItem(r, q, lower) {
         ${r.doc.fileName ? `📎 ${highlight(r.doc.fileName, q)}` : ''}
         ${r.doc.fileUrl ? ` · <a href="${r.doc.fileUrl}" target="_blank" data-stop-propagation="true" style="color:inherit;text-decoration:underline;">Abrir arquivo</a>` : ''}
       </div>
-    </div>`;
+    </button>`;
 }
 
 function _renderSearchSection(items, label, q, lower) {
@@ -16909,7 +16909,7 @@ function _getFichaMaturityHtml(p) {
     return `
       <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cage-border);">
         <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cage-mid);margin-bottom:8px;">Maturidade</div>
-        <div style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
+        <button type="button" style="display:flex;align-items:center;gap:14px;background:${matFinal.levelColor}0d;border:1px solid ${matFinal.levelColor}33;border-radius:10px;padding:12px 14px;cursor:pointer;" onclick="showSection('maturidade',document.querySelector('[data-sortkey=maturidade]'))">
           <div style="text-align:center;flex-shrink:0;">
             <div style="font-size:30px;font-weight:900;color:${matFinal.levelColor};line-height:1;">${matFinal.final}</div>
             <div style="font-size:9px;color:#94a3b8;line-height:1.2;">/ 100</div>
@@ -16922,7 +16922,7 @@ function _getFichaMaturityHtml(p) {
             ${snapInfo}
           </div>
           <div style="font-size:10px;color:#94a3b8;flex-shrink:0;">Ver detalhes →</div>
-        </div>
+        </button>
       </div>`;
   } catch(e) {
     console.warn('[siga] matComputeFinal', e);
@@ -17141,7 +17141,7 @@ function _renderFichaEtapaItem(p, e, i, etapas, ep, fmtD, diffDays) {
   const naBtn = _getFichaNaBtn(p, e, isNA);
   const sep = i < etapas.length - 1 ? 'border-bottom:1px solid var(--cage-border);' : '';
   return `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;${sep}">
-    <div onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}">${checkSvg}</div>
+    <button type="button" onclick="toggleEtapaMap('${p}','${e.id}')" style="${circleStyle}">${checkSvg}</button>
     <div style="flex:1;min-width:0;">
       <div style="display:flex;align-items:center;flex-wrap:wrap;">
         <span style="${labelStyle}">${e.label}</span>${naBtn}
@@ -17461,15 +17461,15 @@ function openVersionSelector(p, badgeEl) {
 
   panel.innerHTML = allVersions.map(item => {
     const isActive = item.v === viewing;
-    return `<div class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();">
+    return `<button type="button" class="vs-item${isActive?' active':''}" onclick="switchViewVersion('${p}',${item.v});this.closest('.version-selector-panel').remove();" style="border:none;background:none;text-align:left;width:100%;padding:0;font-family:inherit;">
       <div>
         <div>${item.isCurrent ? '✏️' : '📄'} <strong>v${item.v}</strong>${item.isCurrent ? ' <span style="font-size:10px;color:#059669;">(atual)</span>' : ''}</div>
         <div class="vs-meta">${item.date}${item.note ? ' · ' + item.note : ''}</div>
       </div>
-    </div>`;
+    </button>`;
   }).join('') +
   (editMode && !d._viewingVersion || d._viewingVersion === cur ?
-    `<div class="vs-item vs-new" onclick="openNewVersionModal();this.closest('.version-selector-panel').remove();">＋ Nova Versão</div>` : '');
+    `<button type="button" class="vs-item vs-new" onclick="openNewVersionModal();this.closest('.version-selector-panel').remove();" style="border:none;background:none;text-align:left;width:100%;padding:0;font-family:inherit;">＋ Nova Versão</button>` : '');
 
   badgeEl.closest('.version-badge-wrap').appendChild(panel);
   // Fechar ao clicar fora
@@ -19141,7 +19141,7 @@ function _popGalleryCard(record) {
     ${canDelete ? `<button onclick="event.stopPropagation();popDeleteWork('${key}')"
       style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 5px;border-radius:4px;"
       onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
-    <div onclick="switchPop('${key}')">
+    <button type="button" onclick="switchPop('${key}')" style="border:none;background:none;text-align:left;width:100%;padding:0;font-family:inherit;">>
       <div style="font-size:28px;margin-bottom:10px;">📄</div>
       <div style="font-size:14px;font-weight:700;color:#1B3022;margin-bottom:6px;">${name}</div>
       ${macro ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macro}</div>` : ''}
@@ -19149,7 +19149,7 @@ function _popGalleryCard(record) {
       ${subprocesso ? `<div style="font-size:11px;color:#94a3b8;margin-bottom:2px;"><span style="font-weight:600;color:#64748b;">Subprocesso:</span> ${subprocesso}</div>` : ''}
       ${area && !processo && !macro ? `<div style="font-size:11px;color:#64748b;margin-bottom:8px;">${area}</div>` : ''}
       <div style="font-size:11px;color:#94a3b8;margin-top:6px;">${steps} etapa${steps !== 1 ? 's' : ''}</div>
-    </div>
+    </button>
   </div>`;
 }
 
@@ -19228,10 +19228,10 @@ function renderPopsGrid() {
               style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:16px;color:#cbd5e1;line-height:1;padding:2px 4px;border-radius:4px;z-index:1;"
               onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'" title="Excluir mapeamento">✕</button>` : ''}
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-right:${canDelete?'20px':'0'};">
-              <div style="font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;" onclick="hideHome();switchPop('${p.key}')">${meta.name || p.label}</div>
+              <button type="button" style="border:none;background:none;text-align:left;flex:0;padding:0;font-family:inherit;font-size:14px;font-weight:700;color:#1B3022;line-height:1.3;" onclick="hideHome();switchPop('${p.key}')">${meta.name || p.label}</button>
               ${sc ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};white-space:nowrap;flex-shrink:0;">${stLabel}</span>` : ''}
             </div>
-            <div onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;">
+            <button type="button" onclick="hideHome();switchPop('${p.key}')" style="display:flex;flex-direction:column;gap:4px;border:none;background:none;text-align:left;width:100%;padding:0;font-family:inherit;">
             ${macroMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Macro:</span> ${macroMeta}</div>` : ''}
             ${processoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Processo:</span> ${processoMeta}</div>` : ''}
             ${subprocessoMeta ? `<div style="font-size:11px;color:#94a3b8;"><span style="font-weight:600;color:#64748b;">Subprocesso:</span> ${subprocessoMeta}</div>` : ''}
@@ -19242,7 +19242,7 @@ function renderPopsGrid() {
               ${efetiva  ? `<div style="font-size:10px;color:#15803d;font-weight:600;">✅ Entregue: ${efetiva}</div>` : ''}
             </div>
             <div style="font-size:10px;color:#cbd5e1;margin-top:2px;">${steps} etapa${steps!==1?'s':''}</div>
-            </div>
+            </button>
           </div>`;
         }).join('')}
       </div>
@@ -19482,9 +19482,9 @@ function _homeRenderMapeamentosWidget() {
   list.innerHTML = shown.map(function(r) {
     const sc = statusColors[r.meta.statusMap] || null;
     const badge = sc ? '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:' + sc.bg + ';color:' + sc.color + ';border:1px solid ' + sc.border + ';white-space:nowrap;">' + sc.label + '</span>' : '';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="showHomePops()">'
+    return '<button type="button" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;cursor:pointer;border:none;background:none;text-align:left;width:100%;font-family:inherit;" onclick="showHomePops()">';
       + '<div style="font-size:12px;font-weight:600;color:#1B3022;line-height:1.3;">' + r.meta.name + '</div>'
-      + badge + '</div>';
+      + badge + '</button>';
   }).join('') + (rest > 0 ? '<div style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center;padding-top:4px;">+' + rest + ' outros</div>' : '');
 }
 
@@ -21394,7 +21394,7 @@ function dropsRender() {
     const pub = new Date(d.publishedAt);
     const dateLabel = pub.toLocaleDateString('pt-BR', {month:'long', year:'numeric', timeZone:'UTC'});
     const coverHtml = d.coverUrl
-      ? `<div style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)"><img src="${escapeHtml(d.coverUrl)}" alt="Capa do drop ${escapeHtml(d.title || '')}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></div>`
+      ? `<button type="button" style="height:140px;background:#f0f9ff;overflow:hidden;cursor:zoom-in;border:none;padding:0;font-family:inherit;" data-cover-url="${escapeHtml(d.coverUrl)}" onclick="dropsShowCover(this.dataset.coverUrl)"><img src="${escapeHtml(d.coverUrl)}" alt="Capa do drop ${escapeHtml(d.title || '')}" style="width:100%;height:100%;object-fit:cover;pointer-events:none;" onerror="this.parentElement.style.display='none'"></button>`
       : `<div style="height:80px;background:linear-gradient(135deg,#1B3022,#003366);display:flex;align-items:center;justify-content:center;font-size:36px;">💧</div>`;
     return `
     <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 6px 20px rgba(0,0,0,.90)'" onmouseout="this.style.boxShadow='none'">
