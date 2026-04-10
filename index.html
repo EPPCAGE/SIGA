@@ -767,6 +767,9 @@
   .quadro-toolbar { background:var(--cage-blue); padding:10px 20px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-bottom:2px solid var(--cage-accent); }
   .q-btn { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid rgba(255,255,255,.6); background:#1e293b; color:white; transition:all .15s; white-space:nowrap; }
   .q-btn:hover { background:#334155; color:white; }
+  /* ── CADEIA DE VALOR (links de texto) ─────────────────────── */
+  .arq-cadeia-link { background:none; border:none; text-align:left; padding:7px 12px; font-size:14px; color:#0369a1; text-decoration:underline; cursor:pointer; border-radius:6px; transition:background .12s; font-family:inherit; width:100%; }
+  .arq-cadeia-link:hover { background:#e0f2fe; color:#0c4a6e; }
 
   /* ── BUSCA GLOBAL ────────────────────────────────────────── */
   .search-input-wrap { position:relative; display:flex; align-items:center; }
@@ -2506,14 +2509,21 @@
     <span style="font-size:11px;color:rgba(255,255,255,.90);margin-left:6px;">— Excalidraw</span>
     <div style="flex:1;"></div>
     <button class="q-btn editor-only" onclick="quadroSaveCloud()" title="Salvar quadro na nuvem (preserva entre sessões)">☁️ Salvar</button>
+    <button class="q-btn" onclick="window.open('https://excalidraw.com','_blank')" title="Abrir Excalidraw em nova aba">🔗 Nova aba</button>
     <button class="q-btn" onclick="showQuadroModule(false)" title="Fechar">✕ Fechar</button>
   </div>
   <iframe id="excalidraw-frame" title="Quadro de esboço colaborativo"
-    src="https://excalidraw.com?embed=1"
+    src="https://excalidraw.com/?embed=1"
     style="flex:1;width:100%;border:none;display:block;"
-    allow="clipboard-read; clipboard-write"
-    title="Excalidraw — Quadro de Esboço">
+    allow="clipboard-read; clipboard-write">
   </iframe>
+  <div id="excalidraw-blocked" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#f8fafc;text-align:center;padding:40px;">
+    <div style="font-size:52px;">✏️</div>
+    <div style="font-size:18px;font-weight:700;color:#1e293b;">Quadro de Esboço — Excalidraw</div>
+    <div style="font-size:14px;color:#64748b;max-width:440px;line-height:1.6;">O excalidraw.com não pôde ser carregado em modo incorporado neste navegador (política de segurança do site). Clique abaixo para abrir em nova aba e continuar normalmente.</div>
+    <button onclick="window.open('https://excalidraw.com','_blank')" style="padding:12px 28px;background:#3C6E71;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(60,110,113,.3);">🔗 Abrir Excalidraw em nova aba</button>
+    <div style="font-size:12px;color:#94a3b8;">Dica: use ☁️ Salvar (quando disponível) para manter o quadro sincronizado com o SIGA.</div>
+  </div>
 </div>
 
 <!-- SIMULADOR DE PROCESSOS -->
@@ -12044,7 +12054,7 @@ function orgRenderTeamPanel(area, equipe) {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:15px;font-weight:800;color:#1B3022;">👥 Processos da equipe · <span style="color:#334155;">${equipe}</span></div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <span style="background:#e0f2fe;color:#075985;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;">${procs.length} processo${procs.length!==1?'s':''}</span>
+        <span style="background:#e0f2fe;color:#075985;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;">${procs.length} processo${procs.length === 1 ? '' : 's'}</span>
         <button onclick="orgClickTeam('${area}','${equipe}')" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;" title="Fechar painel">✕</button>
       </div>
     </div>
@@ -14570,6 +14580,8 @@ function _excalidrawInit() {
   if(frame.dataset.excalidrawInited) return;
   frame.dataset.excalidrawInited = '1';
 
+  let _excalidrawReady = false;
+
   globalThis.addEventListener('message', ev => {
     try {
       if(ev.origin !== 'https://excalidraw.com') return;
@@ -14577,19 +14589,30 @@ function _excalidrawInit() {
       if(!msg || typeof msg !== 'object') return;
       // Capture scene updates emitted by Excalidraw embed
       if(msg.type === 'SCENE_CHANGE' || msg.type === 'scene-change') {
+        _excalidrawReady = true;
         DATA.quadro = { elements: msg.elements, appState: msg.appState, files: msg.files };
       }
       // On ready, restore saved scene
       if(msg.type === 'READY' || msg.type === 'ready') {
+        _excalidrawReady = true;
         _excalidrawRestoreScene();
       }
-    } catch(e) { console.warn('[siga] cross-origin bloqueado (esperado)', e); }
+    } catch(e) { console.debug('[siga] cross-origin bloqueado (esperado):', e?.message); }
   });
 
   frame.addEventListener('load', () => {
     // Fallback: try to restore after the frame loads (in case READY fires before listener is set)
     setTimeout(_excalidrawRestoreScene, 800);
   });
+
+  // Detectar bloqueio CSP/X-Frame-Options: se após 5s não recebemos mensagem do excalidraw, exibir fallback
+  setTimeout(() => {
+    if(_excalidrawReady) return;
+    const f = document.getElementById('excalidraw-frame');
+    const blocked = document.getElementById('excalidraw-blocked');
+    if(f) f.style.display = 'none';
+    if(blocked) blocked.style.display = 'flex';
+  }, 5000);
 }
 
 function _excalidrawRestoreScene() {
@@ -18067,68 +18090,30 @@ function arqCloseCadeiaModal() {
 }
 
 function arqRenderCadeiaInterativa() {
-  const wrap = document.getElementById('arq-cadeia-wrap');
-  const placeholder = document.getElementById('arq-cadeia-placeholder');
-  const img = document.getElementById('arq-cadeia-img');
-  const hotspots = document.getElementById('arq-cadeia-hotspots');
-  if(!wrap || !placeholder || !img || !hotspots) return;
+  const linksEl = document.getElementById('arq-cadeia-links');
+  const imgWrap = document.getElementById('arq-cadeia-img-wrap');
+  const img     = document.getElementById('arq-cadeia-img');
+  const noImg   = document.getElementById('arq-cadeia-no-img');
+  if(!linksEl) return;
 
+  // Macroprocessos direto dos dados reais (não hardcoded)
+  const data   = (typeof arqGetData === 'function') ? arqGetData() : CAGE_PROCESSOS;
+  const macros = [...new Set(data.map(r => r.macroprocesso).filter(Boolean))].sort();
+
+  linksEl.innerHTML = macros.map(macro =>
+    `<button type="button" class="arq-cadeia-link" onclick="arqApplyMacroFilterOnly(${JSON.stringify(macro)})">${escapeHtml(macro)}</button>`
+  ).join('');
+
+  // Imagem decorativa (opcional)
   const src = DATA._cadeiaValorImg || '';
-  const macroHotspots = [
-    { macro: 'Gestão Estratégica', x: 27, y: 32, w: 20, h: 12 },
-    { macro: 'Comunicação', x: 49, y: 31, w: 26, h: 13 },
-    { macro: 'Orientação e Suporte à Tomada de Decisão', x: 21, y: 48, w: 23, h: 11 },
-    { macro: 'Contabilidade', x: 43, y: 48, w: 16, h: 11 },
-    { macro: 'Transparência e Estímulo ao Controle Social', x: 60, y: 47, w: 22, h: 12 },
-    { macro: 'Controle', x: 21, y: 59, w: 17, h: 10 },
-    { macro: 'Auditoria', x: 41, y: 59, w: 15, h: 10 },
-    { macro: 'Promoção da Integridade e Prevenção à Corrupção', x: 57, y: 57, w: 26, h: 13 },
-    { macro: 'Gestão de Dados e Informações', x: 31, y: 74, w: 24, h: 12 },
-    { macro: 'Gestão Administrativa', x: 55, y: 74, w: 21, h: 12 },
-    { macro: 'Gestão de TIC', x: 31, y: 87, w: 18, h: 9 },
-    { macro: 'Gestão de Pessoas', x: 51, y: 87, w: 20, h: 9 },
-  ];
-
-  hotspots.innerHTML = '';
-  if(!src) {
-    wrap.style.display = 'none';
-    placeholder.style.display = 'block';
-    return;
+  if(src && imgWrap && img) {
+    img.src = src;
+    imgWrap.style.display = 'block';
+    if(noImg) noImg.style.display = 'none';
+  } else if(imgWrap) {
+    imgWrap.style.display = 'none';
+    if(noImg) noImg.style.display = 'block';
   }
-
-  wrap.style.display = 'block';
-  placeholder.style.display = 'none';
-  img.src = src;
-
-  macroHotspots.forEach((item) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.title = item.macro;
-    btn.setAttribute('aria-label', 'Abrir processos do macroprocesso: ' + item.macro);
-    btn.style.cssText = [
-      'position:absolute',
-      `left:${item.x}%`,
-      `top:${item.y}%`,
-      `width:${item.w}%`,
-      `height:${item.h}%`,
-      'background:rgba(255,255,255,0.01)',
-      'border:1px dashed rgba(255,255,255,0.28)',
-      'border-radius:8px',
-      'cursor:pointer',
-      'transition:all .15s ease',
-      'z-index:2'
-    ].join(';');
-    btn.onmouseenter = () => {
-      btn.style.background = 'rgba(14,116,144,0.14)';
-      btn.style.border = '1px solid rgba(14,116,144,0.55)';
-    };
-    btn.onmouseleave = () => {
-      btn.style.background = 'rgba(255,255,255,0.01)';
-      btn.style.border = '1px dashed rgba(255,255,255,0.28)';
-    };
-    btn.onclick = () => arqApplyMacroFilterOnly(item.macro);
-    hotspots.appendChild(btn);
-  });
 }
 
 function arqApplyMacroFilterOnly(macroName) {
@@ -18909,7 +18894,7 @@ function arqShowProcessDetail(idx) {
           <div style="font-size:20px;margin-bottom:6px;">🎨</div>
           Diagrama Excalidraw salvo — abra o <strong>Fluxo</strong> para visualizar e editar.</div>`;
       } else if(popData.flowDiagram.mermaid && globalThis.mermaid) {
-        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch(()=>{ /* Intentional: suppress mermaid render errors */ }); } catch(e) { console.warn('[siga]', e); }
+        try { mermaid.render('arq-mmd-'+Date.now(), popData.flowDiagram.mermaid).then(({svg}) => { if(mDiv) mDiv.innerHTML = svg; }).catch((mErr)=>{ console.debug('[siga] mermaid render suppressed:', mErr?.message); }); } catch(e) { console.warn('[siga]', e); }
       }
     }
   }
@@ -19203,7 +19188,8 @@ function showPopGallery() {
   const keys = [...new Set(['d', 'r', ...Object.keys(DATA).filter(k => k.startsWith('pop_'))])]
     .filter(k => !_GALLERY_SKIP.has(k) && typeof DATA[k] === 'object' && DATA[k]?.meta);
   const subtitle = document.getElementById('pop-gallery-subtitle');
-  if(subtitle) subtitle.textContent = `${keys.length} POP${keys.length !== 1 ? 's' : ''} cadastrado${keys.length !== 1 ? 's' : ''} na galeria principal de processos.`;
+  const popPlural = keys.length === 1 ? '' : 's';
+  if(subtitle) subtitle.textContent = `${keys.length} POP${popPlural} cadastrado${popPlural} na galeria principal de processos.`;
 
   const records = keys.map(_popGalleryRecord).sort(_popGallerySort);
   const andamento = records.filter(record => !_popGalleryIsDone(record.meta?.statusMap));
@@ -19399,7 +19385,8 @@ function homeRefresh() {
 
   // Count labels
   const pcEl = document.getElementById('home-pops-count');
-  if(pcEl) pcEl.textContent = popKeys.length + ' POP' + (popKeys.length !== 1 ? 's' : '') + ' disponível' + (popKeys.length !== 1 ? 'eis' : '');
+  const pcPlural = popKeys.length === 1;
+  if(pcEl) pcEl.textContent = popKeys.length + ' POP' + (pcPlural ? '' : 's') + ' disponível' + (pcPlural ? '' : 'eis');
   const acEl = document.getElementById('home-arq-count');
   if(acEl) acEl.textContent = macros + ' macroprocessos · ' + procs + ' processos';
   const auditCountEl = document.getElementById('home-audit-count');
@@ -21184,7 +21171,7 @@ function repoRender() {
   const grid = document.getElementById('repo-grid');
   const empty = document.getElementById('repo-empty');
   const countEl = document.getElementById('home-repo-count');
-  if(countEl) countEl.textContent = REPO_DOCS.length + ' documento' + (REPO_DOCS.length !== 1 ? 's' : '');
+  if(countEl) countEl.textContent = REPO_DOCS.length + ' documento' + (REPO_DOCS.length === 1 ? '' : 's');
   if(!docs.length) { grid.innerHTML = ''; empty.style.display='block'; return; }
   empty.style.display='none';
   grid.innerHTML = docs.map(_repoCardHtml).join('');
@@ -21489,7 +21476,7 @@ function dropsRender() {
   const grid = document.getElementById('drops-grid');
   const empty = document.getElementById('drops-empty');
   const countEl = document.getElementById('home-drops-count');
-  if(countEl) countEl.textContent = DROPS.length + ' drop' + (DROPS.length !== 1 ? 's' : '');
+  if(countEl) countEl.textContent = DROPS.length + ' drop' + (DROPS.length === 1 ? '' : 's');
   if(!list.length) { grid.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
   grid.innerHTML = list.map(d => {
@@ -24458,9 +24445,9 @@ function parseAiJson(text) {
   const m = _extractOuterJsonValue(clean);
   if (m) clean = m;
   // 1) Tenta parse direto
-  try { return JSON.parse(clean); } catch (_e1) { /* intentional */ }
+  try { return JSON.parse(clean); } catch (_e1) { console.debug('[siga] JSON parse attempt 1 failed:', _e1?.message); }
   // 2) Tenta com repair de caracteres de controle
-  try { return JSON.parse(repairJsonString(clean)); } catch (_e2) { /* intentional */ }
+  try { return JSON.parse(repairJsonString(clean)); } catch (_e2) { console.debug('[siga] JSON parse attempt 2 failed:', _e2?.message); }
   // 3) Tenta fechar JSON truncado
   try { return JSON.parse(truncateRepairJson(clean)); } catch (e3) { throw e3; }
 }
@@ -24732,7 +24719,7 @@ FORMATO: {"flow":[{"id":"n1","type":"start","name":"Início","actor":"","next":[
           if(unEl) { unEl.readOnly = false; unEl.value = extracted.unidade; unEl.readOnly = true; }
         }
       } catch(fieldErr) {
-        /* intentional */
+        console.debug('[siga] field fill error:', fieldErr?.message);
       }
 
       globalThis._npopExtractedEtapas = extracted.steps || extracted.etapas || [];
@@ -28856,7 +28843,7 @@ function matRender(p) {
   const historyHtml = `
     <div style="font-size:14px;font-weight:700;color:#1B3022;margin:24px 0 12px;display:flex;align-items:center;gap:10px;">
       📈 Histórico de Maturidade
-      <span style="font-size:11px;font-weight:400;color:#94a3b8;">${snapshots.length} registro${snapshots.length !== 1 ? 's' : ''}</span>
+      <span style="font-size:11px;font-weight:400;color:#94a3b8;">${snapshots.length} registro${snapshots.length === 1 ? '' : 's'}</span>
     </div>
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;">
       ${matRenderHistory(p, snapshots)}
@@ -29265,7 +29252,7 @@ body{font-family:'Inter',sans-serif;color:#1e293b;font-size:13px;padding:36px 48
   </div>
   <div class="doc-header-right">
     <div><strong>Data:</strong> ${today}</div>
-    <div><strong>Histórico:</strong> ${snapshots.length} registro${snapshots.length !== 1 ? 's' : ''}</div>
+    <div><strong>Histórico:</strong> ${snapshots.length} registro${snapshots.length === 1 ? '' : 's'}</div>
   </div>
 </div>
 
@@ -29698,24 +29685,25 @@ Use linguagem direta, técnica e objetiva. Evite frases genéricas. Base todas a
 </div>
 
 <div id="arq-cadeia-modal" style="display:none;position:fixed;inset:0;z-index:1150;background:rgba(15,23,42,.55);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px;">
-  <div style="background:white;border-radius:14px;max-width:1160px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 32px 80px rgba(0,0,0,.35);padding:18px 18px 20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+  <div style="background:white;border-radius:14px;max-width:860px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 32px 80px rgba(0,0,0,.35);padding:18px 18px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
       <div>
-        <div style="font-size:18px;font-weight:700;color:#1B3022;">🗺 Cadeia de Valor Interativa</div>
-        <div style="font-size:12px;color:#64748b;">Clique em um macroprocesso para filtrar a arquitetura.</div>
+        <div style="font-size:18px;font-weight:700;color:#1B3022;">🗺 Cadeia de Valor</div>
+        <div style="font-size:12px;color:#64748b;">Clique em um macroprocesso para filtrar a Arquitetura de Processos.</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-outline" onclick="showBiModule(true)" style="font-size:12px;padding:6px 10px;">Gerenciar imagem no módulo BI</button>
-        <button class="btn btn-outline" onclick="arqCloseCadeiaModal()" style="font-size:12px;padding:6px 10px;">✕ Fechar</button>
-      </div>
+      <button class="btn btn-outline" onclick="arqCloseCadeiaModal()" style="font-size:12px;padding:6px 10px;">✕ Fechar</button>
     </div>
 
-    <div id="arq-cadeia-placeholder" style="border:2px dashed #cbd5e1;border-radius:10px;padding:24px 16px;text-align:center;color:#94a3b8;font-size:13px;">
-      Nenhuma imagem da cadeia de valor cadastrada. Use "Gerenciar imagem no módulo BI".
+    <!-- Links de texto — confiáveis independente da imagem -->
+    <div id="arq-cadeia-links" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px;margin-bottom:16px;"></div>
+
+    <!-- Imagem decorativa (opcional) -->
+    <div id="arq-cadeia-img-wrap" style="display:none;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-top:4px;">
+      <img id="arq-cadeia-img" src="" alt="Cadeia de Valor" style="width:100%;display:block;">
+      <div style="font-size:11px;color:#94a3b8;text-align:center;padding:6px 0;">Imagem de referência — use os links acima para filtrar.</div>
     </div>
-    <div id="arq-cadeia-wrap" style="display:none;position:relative;border-radius:10px;overflow:hidden;border:1px solid #dbe4ee;background:#f8fafc;">
-      <img id="arq-cadeia-img" src="" alt="Cadeia de Valor interativa" style="width:100%;display:block;">
-      <div id="arq-cadeia-hotspots" style="position:absolute;inset:0;"></div>
+    <div id="arq-cadeia-no-img" style="display:none;font-size:12px;color:#94a3b8;text-align:center;margin-top:8px;">
+      Nenhuma imagem da cadeia cadastrada. Configure em <button class="btn btn-outline" onclick="showBiModule(true)" style="font-size:11px;padding:2px 8px;display:inline;">Módulo BI → Gerenciar imagem</button>.
     </div>
   </div>
 </div>
