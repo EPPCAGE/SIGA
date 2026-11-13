@@ -26664,7 +26664,7 @@ Regras obrigatórias:
       const pctAcClass = _pctClass(r.pctRealizAcum, cfg);
       const unidade = cfg.unidade ? cfg.unidade : '%';
       const isPerc = cfg.tipo === 'percentual' || cfg.tipo === 'prazo' || cfg.tipo === 'auto';
-      const fmtVal = v => v !== null && v !== undefined ? _fmtNumDec(v, cfg.casasDecimais) : '—';
+      const fmtVal = v => v !== null && v !== undefined ? _fmtNum(v) : '—';
       const ppeBadge = r.ppe ? `<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${r.ppe.toLowerCase()==='sim'||r.ppe.toLowerCase()==='s'||r.ppe==='1'?'#dcfce7':'#f1f5f9'};color:${r.ppe.toLowerCase()==='sim'||r.ppe.toLowerCase()==='s'||r.ppe==='1'?'#166534':'#64748b'};">${r.ppe}</span>` : '—';
       return `<tr>
         <td>${r.divisao || '—'}</td>
@@ -26836,7 +26836,7 @@ Regras obrigatórias:
           options: {
             responsive:true, maintainAspectRatio:false,
             plugins:{ legend:{ labels:{ font:{ size:11 } } }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': '+(ctx.raw!==null?_fmtNum(ctx.raw)+'%':'—') } } },
-            scales:{ y:{ beginAtZero:true, ticks:{ callback: v => v+'%', font:{size:10} }, grid:{color:'rgba(0,0,0,.05)'} }, x:{ ticks:{font:{size:9}, maxRotation:45} } }
+            scales:{ y:{ beginAtZero:true, ticks:{ callback: v => _fmtNum(v) + '%', font:{size:10} }, grid:{color:'rgba(0,0,0,.05)'} }, x:{ ticks:{font:{size:9}, maxRotation:45} } }
           }
         });
       }
@@ -26875,7 +26875,7 @@ Regras obrigatórias:
           options: {
             responsive:true, maintainAspectRatio:false,
             plugins:{ legend:{ labels:{ font:{size:11} } }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': '+(ctx.raw!==null?_fmtNum(ctx.raw)+'%':'—') } } },
-            scales:{ y:{ beginAtZero:true, ticks:{ callback: v=>v+'%', font:{size:10} }, grid:{color:'rgba(0,0,0,.05)'} }, x:{ ticks:{font:{size:10}} } }
+            scales:{ y:{ beginAtZero:true, ticks:{ callback: v => _fmtNum(v) + '%', font:{size:10} }, grid:{color:'rgba(0,0,0,.05)'} }, x:{ ticks:{font:{size:10}} } }
           }
         });
       }
@@ -27076,18 +27076,22 @@ Regras obrigatórias:
     if(m) return _meses[Number.parseInt(m[2])-1] + '/' + m[1];
     return p;
   }
+  const _indicatorNumberFormat = new Intl.NumberFormat('pt-BR', {
+    useGrouping: true, minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
   function _fmtNum(v) {
-    if(v === null || v === undefined) return '—';
-    if(Number.isInteger(v)) return v.toLocaleString('pt-BR');
-    return Number(v).toLocaleString('pt-BR', { minimumFractionDigits:1, maximumFractionDigits:2 });
+    if(v === null || v === undefined || String(v).trim() === '') return '—';
+    const normalized = typeof v === 'string' && v.includes(',')
+      ? v.replace(/\./g, '').replace(',', '.') : v;
+    const number = Number(normalized);
+    return Number.isFinite(number) ? _indicatorNumberFormat.format(number) : '—';
   }
-  function _fmtNumDec(v, decimais) {
-    if(v === null || v === undefined) return '—';
-    const d = Number(decimais) || 0;
-    return Number(v).toLocaleString('pt-BR', { minimumFractionDigits:d, maximumFractionDigits:d });
+  function _fmtMeta(v) {
+    if(v === null || v === undefined || String(v).trim() === '') return '—';
+    const text = String(v).trim();
+    const match = text.match(/^(R\$\s*)?(-?\d[\d.,]*)(\s*%)?$/);
+    return match ? (match[1] || '') + _fmtNum(match[2]) + (match[3] || '') : text;
   }
-
-  // ─── Aba Relatório PPT ────────────────────────────────────────────
 
   globalThis.indcageRenderRelatorioTab = function() {
     ensureData();
@@ -27201,7 +27205,7 @@ Regras obrigatórias:
             responsive: false,
             animation: false,
             plugins: { legend: { labels: { font: { size: 13 } } }, tooltip: { enabled: false } },
-            scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%', font: { size: 12 } } }, x: { ticks: { font: { size: 12 } } } }
+            scales: { y: { beginAtZero: true, ticks: { callback: v => _fmtNum(v) + '%', font: { size: 12 } } }, x: { ticks: { font: { size: 12 } } } }
           }
         };
       } else if(hasPercentage) {
@@ -27225,7 +27229,7 @@ Regras obrigatórias:
             responsive: false,
             animation: false,
             plugins: { legend: { labels: { font: { size: 13 } } }, tooltip: { enabled: false } },
-            scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%', font: { size: 12 } }, grid: { color: 'rgba(0,0,0,.05)' } }, x: { ticks: { font: { size: 10 }, maxRotation: 45 } } }
+            scales: { y: { beginAtZero: true, ticks: { callback: v => _fmtNum(v) + '%', font: { size: 12 } }, grid: { color: 'rgba(0,0,0,.05)' } }, x: { ticks: { font: { size: 10 }, maxRotation: 45 } } }
           }
         };
       } else {
@@ -27366,7 +27370,7 @@ Regras obrigatórias:
           ['Divisão', ind?.divisao || '—'],
           ['Responsável', ind?.responsavel || '—'],
           ['Periodicidade', ind?.periodicidade || '—'],
-          ['Meta', ind?.meta ? String(ind.meta) : '—'],
+          ['Meta', _fmtMeta(ind?.meta)],
           ['Unidade', cfg?.unidade || '—'],
         ];
         const rowH = 0.36;
@@ -27446,11 +27450,13 @@ Regras obrigatórias:
 Indicador: ${ind?.enunciado || codigo}
 Código: ${codigo}
 Divisão: ${ind?.divisao || '—'}
-Meta: ${ind?.meta || '—'}
+Meta: ${_fmtMeta(ind?.meta)}
 Periodicidade: ${ind?.periodicidade || '—'}
 
 Série histórica (últimos 18 períodos):
 ${serieTexto}
+
+Use o formato 1.234,56 para valores numéricos, sempre com duas casas decimais.
 
 Responda apenas com o texto da análise, sem listas, sem títulos, sem markdown.`;
 
